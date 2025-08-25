@@ -1,0 +1,166 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    types: [opened, synchronize]
+
+env:
+  RUBY_VERSION: '3.1.2'
+  JAVA_VERSION: '22'
+
+jobs:
+  lint-swift:
+    name: Lint Swift code
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Run SwiftLint
+        uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
+        with:
+          args: --strict
+
+  license:
+    name: Verify license headers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - run: ./scripts/copy_license --check
+
+  check-packed-files:
+    name: Check package files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TERM: xterm
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - run: |
+          yarn module clean
+          yarn module build
+          yarn compare-snapshot
+
+  lint:
+    name: Lint module + sample
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - run: |
+          yarn module build
+          yarn module lint
+          yarn sample lint
+
+  test:
+    name: Run jest tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - run:
+          yarn test --coverage
+          --testPathPatterns="modules/@shopify/checkout-sheet-kit/tests"
+          --coverageReporters=json-summary
+
+      - name: Coverage comment
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/jest-coverage-comment@main
+        with:
+          coverage-summary-path: ./coverage/coverage-summary.json
+          title: 'Coverage Report'
+          create-new-comment: false
+
+  test-android:
+    name: Run Android Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [lint, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Install JDK
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        id: setup-java
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Run Android tests
+        timeout-minutes: 20
+        env:
+          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=768m
+          JAVA_HOME: ${{ steps.setup-java.outputs.path }}
+        run: |
+          echo "JAVA_HOME: $JAVA_HOME"
+          java -version
+          javac -version
+          echo "STOREFRONT_DOMAIN=myshopify.com" > sample/.env
+          yarn module build
+          yarn sample test:android --no-daemon
+
+  test-ios:
+    name: Run iOS Tests
+    runs-on: macos-15-xlarge
+    timeout-minutes: 20
+    needs: [lint, lint-swift, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Switch to Xcode 16.4
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_16.4.app
+
+      - name: Display Current Xcode Information
+        run: |
+          echo "Xcode Path: $(xcode-select -p)"
+          echo "Xcode Version: $(xcrun xcodebuild -version)"
+      - name: Setup iOS Simulator
+        uses: ./.github/actions/setup-simulator
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Check turbo cache
+        uses: ./.github/actions/use-turbo-cache
+
+      - name: Check build cache
+        run: |
+          CACHE_STATUS=$(./scripts/check_cache sample test:ios)
+          echo "[sample] build:ios - $CACHE_STATUS"
+          echo "turbo_cache_hit=$CACHE_STATUS" >> $GITHUB_ENV
+
+      - name: Install cocoapods
+        uses: ./.github/actions/install-cocoapods
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Run Swift tests
+        timeout-minutes: 15
+        # If turbo has already cached the build it will return instantly here
+        run: |
+          yarn turbo run test:ios --cache-dir=".turbo" --no-daemon
