@@ -1,0 +1,129 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@" : {
+
+    },
+    "%d" : {
+
+    },
+    "✓" : {
+
+    },
+    "Accelerated Checkouts" : {
+
+    },
+    "Add to Cart" : {
+
+    },
+    "Added" : {
+
+    },
+    "Adding..." : {
+
+    },
+    "By default, the app will only handle the selections above and route everything else to Safari. Enabling the \"Handle all Universal Links\" setting will route all Universal Links to this app." : {
+
+    },
+    "Check out" : {
+
+    },
+    "Checkout Sheet Kit" : {
+
+    },
+    "Checkout Sheet Kit version" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Clear logs" : {
+
+    },
+    "Events" : {
+
+    },
+    "Features" : {
+
+    },
+    "Handle all Universal Links" : {
+
+    },
+    "Handle Cart URLs" : {
+
+    },
+    "Handle Checkout URLs" : {
+
+    },
+    "Handle Product URLs" : {
+
+    },
+    "Loading products..." : {
+
+    },
+    "Logging" : {
+
+    },
+    "Logs" : {
+
+    },
+    "No logs available" : {
+
+    },
+    "OK" : {
+      "comment" : "Default action"
+    },
+    "Prefill buyer information" : {
+
+    },
+    "Preload checkout" : {
+
+    },
+    "Sample app version" : {
+
+    },
+    "Settings" : {
+
+    },
+    "shopify_checkout_sheet_title" : {
+      "comment" : "The title of the checkout sheet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checkout"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caisse"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caisse"
+          }
+        }
+      }
+    },
+    "Theme" : {
+
+    },
+    "Universal Links" : {
+
+    },
+    "Version" : {
+
+    },
+    "Web pixel events" : {
+
+    },
+    "Your cart is empty." : {
+
+    }
+  },
+  "version" : "1.0"
+}

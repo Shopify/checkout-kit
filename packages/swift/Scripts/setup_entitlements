@@ -1,0 +1,5 @@
+ #!/usr/bin/env bash
+
+set -e
+
+(cd Samples/MobileBuyIntegration && ./Scripts/generate_entitlements.sh)

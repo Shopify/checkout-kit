@@ -1,0 +1,32 @@
+{
+  "pins" : [
+    {
+      "identity" : "apollo-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apollographql/apollo-ios.git",
+      "state" : {
+        "revision" : "d591c1dd55824867877cff4f6551fe32983d7f51",
+        "version" : "1.23.0"
+      }
+    },
+    {
+      "identity" : "mobile-buy-sdk-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Shopify/mobile-buy-sdk-ios",
+      "state" : {
+        "revision" : "671019a3fd5ef3dd2399909fc8a4f4012baca166",
+        "version" : "2025.1.0"
+      }
+    },
+    {
+      "identity" : "swiftlintplugin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/SwiftLintPlugin",
+      "state" : {
+        "revision" : "ea6d3ca895b49910f790e98e4b4ca658e0fe490e",
+        "version" : "0.54.0"
+      }
+    }
+  ],
+  "version" : 2
+}
