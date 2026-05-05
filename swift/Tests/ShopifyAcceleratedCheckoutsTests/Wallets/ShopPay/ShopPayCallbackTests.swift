@@ -22,7 +22,7 @@
  */
 
 @testable import ShopifyAcceleratedCheckouts
-@testable import ShopifyCheckoutSheetKit
+@testable import ShopifyCheckoutKit
 import XCTest
 
 @available(iOS 17.0, *)

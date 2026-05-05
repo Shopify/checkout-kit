@@ -95,7 +95,7 @@ final class ApplePayStateTests: XCTestCase {
         XCTAssertFalse(fromState.canTransition(to: .idle), "Should not allow cartSubmittedForCompletion -> idle")
         XCTAssertFalse(fromState.canTransition(to: .startPaymentRequest), "Should not allow cartSubmittedForCompletion -> startPaymentRequest")
         XCTAssertFalse(fromState.canTransition(to: .reset), "Should not allow cartSubmittedForCompletion -> reset")
-        XCTAssertFalse(fromState.canTransition(to: .presentingCSK(url: nil)), "Should not allow cartSubmittedForCompletion -> presentingCSK")
+        XCTAssertFalse(fromState.canTransition(to: .presentingCheckoutKit(url: nil)), "Should not allow cartSubmittedForCompletion -> presentingCheckoutKit")
     }
 
     func test_canTransition_fromInterruptState_shouldAllowOnlyCompleted() {
@@ -106,7 +106,7 @@ final class ApplePayStateTests: XCTestCase {
         XCTAssertFalse(fromState.canTransition(to: .idle), "Should not allow interrupt -> idle")
         XCTAssertFalse(fromState.canTransition(to: .startPaymentRequest), "Should not allow interrupt -> startPaymentRequest")
         XCTAssertFalse(fromState.canTransition(to: .reset), "Should not allow interrupt -> reset")
-        XCTAssertFalse(fromState.canTransition(to: .presentingCSK(url: nil)), "Should not allow interrupt -> presentingCSK")
+        XCTAssertFalse(fromState.canTransition(to: .presentingCheckoutKit(url: nil)), "Should not allow interrupt -> presentingCheckoutKit")
     }
 
     func test_canTransition_fromUnexpectedErrorState_shouldAllowCompletedAndTerminalError() {
@@ -117,7 +117,7 @@ final class ApplePayStateTests: XCTestCase {
 
         XCTAssertFalse(fromState.canTransition(to: .idle), "Should not allow unexpectedError -> idle")
         XCTAssertFalse(fromState.canTransition(to: .reset), "Should not allow unexpectedError -> reset")
-        XCTAssertFalse(fromState.canTransition(to: .presentingCSK(url: nil)), "Should not allow unexpectedError -> presentingCSK")
+        XCTAssertFalse(fromState.canTransition(to: .presentingCheckoutKit(url: nil)), "Should not allow unexpectedError -> presentingCheckoutKit")
     }
 
     func test_canTransition_fromTerminalErrorState_shouldAllowOnlyCompleted() {
@@ -130,20 +130,20 @@ final class ApplePayStateTests: XCTestCase {
         XCTAssertFalse(fromState.canTransition(to: .startPaymentRequest), "Should not allow terminalError -> startPaymentRequest")
     }
 
-    func test_canTransition_fromPresentingCSKState_shouldAllowOnlyCompleted() {
-        let fromState = ApplePayState.presentingCSK(url: URL(string: "https://example.com"))
+    func test_canTransition_fromPresentingCheckoutKitState_shouldAllowOnlyCompleted() {
+        let fromState = ApplePayState.presentingCheckoutKit(url: URL(string: "https://example.com"))
 
-        XCTAssertTrue(fromState.canTransition(to: .completed), "Should allow presentingCSK -> completed")
+        XCTAssertTrue(fromState.canTransition(to: .completed), "Should allow presentingCheckoutKit -> completed")
 
-        XCTAssertFalse(fromState.canTransition(to: .idle), "Should not allow presentingCSK -> idle")
-        XCTAssertFalse(fromState.canTransition(to: .reset), "Should not allow presentingCSK -> reset")
-        XCTAssertFalse(fromState.canTransition(to: .startPaymentRequest), "Should not allow presentingCSK -> startPaymentRequest")
+        XCTAssertFalse(fromState.canTransition(to: .idle), "Should not allow presentingCheckoutKit -> idle")
+        XCTAssertFalse(fromState.canTransition(to: .reset), "Should not allow presentingCheckoutKit -> reset")
+        XCTAssertFalse(fromState.canTransition(to: .startPaymentRequest), "Should not allow presentingCheckoutKit -> startPaymentRequest")
     }
 
-    func test_canTransition_fromCompletedState_shouldAllowPresentingCSKAndReset() {
+    func test_canTransition_fromCompletedState_shouldAllowPresentingCheckoutKitAndReset() {
         let fromState = ApplePayState.completed
 
-        XCTAssertTrue(fromState.canTransition(to: .presentingCSK(url: URL(string: "https://example.com"))), "Should allow completed -> presentingCSK")
+        XCTAssertTrue(fromState.canTransition(to: .presentingCheckoutKit(url: URL(string: "https://example.com"))), "Should allow completed -> presentingCheckoutKit")
         XCTAssertTrue(fromState.canTransition(to: .reset), "Should allow completed -> reset")
 
         XCTAssertFalse(fromState.canTransition(to: .idle), "Should not allow completed -> idle")
@@ -174,7 +174,7 @@ final class ApplePayStateTests: XCTestCase {
             .interrupt(reason: .currencyChanged),
             .unexpectedError(error: MockError.testError),
             .terminalError(error: MockError.testError),
-            .presentingCSK(url: URL(string: "https://example.com")),
+            .presentingCheckoutKit(url: URL(string: "https://example.com")),
             .completed,
             .reset
         ]
@@ -199,8 +199,8 @@ final class ApplePayStateTests: XCTestCase {
         XCTAssertTrue(ApplePayState.appleSheetPresented.canTransition(to: .paymentAuthorized(payment: .createMockPayment())))
         XCTAssertTrue(try ApplePayState.paymentAuthorized(payment: .createMockPayment()).canTransition(to: .cartSubmittedForCompletion(redirectURL: XCTUnwrap(URL(string: "https://example.com")))))
         XCTAssertTrue(try ApplePayState.cartSubmittedForCompletion(redirectURL: XCTUnwrap(URL(string: "https://example.com"))).canTransition(to: .completed))
-        XCTAssertTrue(ApplePayState.completed.canTransition(to: .presentingCSK(url: URL(string: "https://example.com"))))
-        XCTAssertTrue(ApplePayState.presentingCSK(url: URL(string: "https://example.com")).canTransition(to: .completed))
+        XCTAssertTrue(ApplePayState.completed.canTransition(to: .presentingCheckoutKit(url: URL(string: "https://example.com"))))
+        XCTAssertTrue(ApplePayState.presentingCheckoutKit(url: URL(string: "https://example.com")).canTransition(to: .completed))
         XCTAssertTrue(ApplePayState.completed.canTransition(to: .reset))
         XCTAssertTrue(ApplePayState.reset.canTransition(to: .idle))
     }
@@ -210,8 +210,8 @@ final class ApplePayStateTests: XCTestCase {
         XCTAssertTrue(ApplePayState.startPaymentRequest.canTransition(to: .appleSheetPresented))
         XCTAssertTrue(ApplePayState.appleSheetPresented.canTransition(to: .paymentAuthorizationFailed(error: MockError.testError)))
         XCTAssertTrue(ApplePayState.paymentAuthorizationFailed(error: MockError.testError).canTransition(to: .completed))
-        XCTAssertTrue(ApplePayState.completed.canTransition(to: .presentingCSK(url: URL(string: "https://example.com"))))
-        XCTAssertTrue(ApplePayState.presentingCSK(url: URL(string: "https://example.com")).canTransition(to: .completed))
+        XCTAssertTrue(ApplePayState.completed.canTransition(to: .presentingCheckoutKit(url: URL(string: "https://example.com"))))
+        XCTAssertTrue(ApplePayState.presentingCheckoutKit(url: URL(string: "https://example.com")).canTransition(to: .completed))
         XCTAssertTrue(ApplePayState.completed.canTransition(to: .reset))
         XCTAssertTrue(ApplePayState.reset.canTransition(to: .idle))
     }
@@ -221,8 +221,8 @@ final class ApplePayStateTests: XCTestCase {
         XCTAssertTrue(ApplePayState.startPaymentRequest.canTransition(to: .appleSheetPresented))
         XCTAssertTrue(ApplePayState.appleSheetPresented.canTransition(to: .interrupt(reason: .currencyChanged)))
         XCTAssertTrue(ApplePayState.interrupt(reason: .currencyChanged).canTransition(to: .completed))
-        XCTAssertTrue(ApplePayState.completed.canTransition(to: .presentingCSK(url: URL(string: "https://example.com"))))
-        XCTAssertTrue(ApplePayState.presentingCSK(url: URL(string: "https://example.com")).canTransition(to: .completed))
+        XCTAssertTrue(ApplePayState.completed.canTransition(to: .presentingCheckoutKit(url: URL(string: "https://example.com"))))
+        XCTAssertTrue(ApplePayState.presentingCheckoutKit(url: URL(string: "https://example.com")).canTransition(to: .completed))
         XCTAssertTrue(ApplePayState.completed.canTransition(to: .reset))
         XCTAssertTrue(ApplePayState.reset.canTransition(to: .idle))
     }
@@ -246,7 +246,7 @@ final class ApplePayStateTests: XCTestCase {
             .paymentAuthorizationFailed(error: MockError.testError),
             .cartSubmittedForCompletion(redirectURL: XCTUnwrap(URL(string: "https://example.com"))),
             .interrupt(reason: .currencyChanged),
-            .presentingCSK(url: URL(string: "https://example.com")),
+            .presentingCheckoutKit(url: URL(string: "https://example.com")),
             .completed,
             .reset
         ]

@@ -236,7 +236,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				CBD9D6D02E12AE5A00D836A3 /* XCRemoteSwiftPackageReference "apollo-ios" */,
-				CBCDA6652E2117AF000463E9 /* XCLocalSwiftPackageReference "../../../checkout-sheet-kit-swift" */,
+				CBCDA6652E2117AF000463E9 /* XCLocalSwiftPackageReference "../.." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CBC3DEB62DD3607300376831 /* Products */;

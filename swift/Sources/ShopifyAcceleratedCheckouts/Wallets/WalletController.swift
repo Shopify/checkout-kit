@@ -21,7 +21,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 @available(iOS 16.0, *)
@@ -62,7 +62,7 @@ class WalletController: ObservableObject {
         guard let topViewController = getTopViewController() else {
             throw ShopifyAcceleratedCheckouts.Error.invariant(expected: "topViewController")
         }
-        checkoutViewController = ShopifyCheckoutSheetKit.present(
+        checkoutViewController = ShopifyCheckoutKit.present(
             checkout: url,
             from: topViewController,
             entryPoint: .acceleratedCheckouts,

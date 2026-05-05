@@ -22,7 +22,7 @@
  */
 
 import PassKit
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 /// A view that displays an Apple Pay button for checkout

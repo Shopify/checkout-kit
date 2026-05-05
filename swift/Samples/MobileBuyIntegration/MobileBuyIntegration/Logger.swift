@@ -22,7 +22,7 @@
  */
 
 import Foundation
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 
 class FileLogger: Logger {
     private var fileHandle: FileHandle?

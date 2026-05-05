@@ -23,10 +23,10 @@
 
 import PassKit
 @testable import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import XCTest
 
-/// Tests focused on onPresentingCSK behavior and URL computation for different states
+/// Tests focused on onPresentingCheckoutKit behavior and URL computation for different states
 @available(iOS 17.0, *)
 @MainActor
 final class ApplePayAuthorizationDelegateTests: XCTestCase {
@@ -78,11 +78,11 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
     func test_transition_withValidStateTransition_shouldUpdateStateCorrectly() async throws {
         XCTAssertEqual(delegate.state, initialState, "Should start in idle state")
 
-        // Use a valid state transition sequence: idle -> unexpectedError -> completed -> presentingCSK -> completed -> reset -> idle
+        // Use a valid state transition sequence: idle -> unexpectedError -> completed -> presentingCheckoutKit -> completed -> reset -> idle
         try await delegate.transition(to: .unexpectedError(error: NSError(domain: "test", code: 1)))
         try await delegate.transition(to: .completed)
 
-        // The onCompleted should automatically transition to presentingCSK, then we complete that
+        // The onCompleted should automatically transition to presentingCheckoutKit, then we complete that
         try await delegate.transition(to: .completed)
         // onCompleted will automatically transition to reset, then onReset will transition to idle
         XCTAssertEqual(delegate.state, initialState, "Should be back to idle after reset")
@@ -113,14 +113,14 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
     // MARK: - Side Effect Tests
 
-    func test_onCompleted_withErrorState_shouldTransitionToPresentingCSKWithCheckoutURL()
+    func test_onCompleted_withErrorState_shouldTransitionToPresentingCheckoutKitWithCheckoutURL()
         async throws
     {
         try await delegate.transition(to: .unexpectedError(error: NSError(domain: "test", code: 1)))
         try await delegate.transition(to: .completed)
-        guard case let .presentingCSK(url) = delegate.state else {
+        guard case let .presentingCheckoutKit(url) = delegate.state else {
             XCTFail(
-                "Should transition to presentingCSK for error states, but got \(delegate.state)"
+                "Should transition to presentingCheckoutKit for error states, but got \(delegate.state)"
             )
             return
         }
@@ -135,7 +135,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
     func test_url_withDefaultState_shouldReturnCheckoutURL() throws {
         XCTAssertEqual(delegate.state, .idle, "Should start in idle state")
 
-        let defaultURL = delegate.createSheetKitURL(for: delegate.state)
+        let defaultURL = delegate.createCheckoutKitURL(for: delegate.state)
         XCTAssertEqual(
             try XCTUnwrap(defaultURL?.absoluteString),
             try XCTUnwrap(delegate.checkoutURL?.absoluteString),
@@ -152,8 +152,8 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
         try await delegate.transition(to: .completed)
 
-        // The flow should be: .completed → onCompleted() → .presentingCSK → onPresentingCSK() → present()
-        XCTAssertEqual(mockController.presentCallCount, 1, "CSK should be presented once")
+        // The flow should be: .completed → onCompleted() → .presentingCheckoutKit → onPresentingCheckoutKit() → present()
+        XCTAssertEqual(mockController.presentCallCount, 1, "Checkout Kit should be presented once")
         XCTAssertEqual(
             mockController.presentCalledWith?.absoluteString,
             checkoutURL?.absoluteString
@@ -201,8 +201,8 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
             XCTAssertEqual(
                 testDelegate.state,
-                .presentingCSK(url: url),
-                "Should be in presentingCSK state after completed"
+                .presentingCheckoutKit(url: url),
+                "Should be in presentingCheckoutKit state after completed"
             )
         }
     }
@@ -232,7 +232,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
             try await testDelegate.transition(to: .startPaymentRequest)
             try await testDelegate.transition(to: .interrupt(reason: reason))
             try await testDelegate.transition(to: .completed)
-            let url = testDelegate.createSheetKitURL(for: testDelegate.state)
+            let url = testDelegate.createCheckoutKitURL(for: testDelegate.state)
 
             XCTAssertEqual(
                 try XCTUnwrap(url?.absoluteString),
@@ -250,7 +250,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
     // MARK: - Error Handling Tests
 
-    func test_onPresentingCSK_withPresentFailure_shouldStillTransitionToPresentingCSKState()
+    func test_onPresentingCheckoutKit_withPresentFailure_shouldStillTransitionToPresentingCheckoutKitState()
         async throws
     {
         let failingController = FailingMockPayController()
@@ -269,21 +269,21 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
         try await failingDelegate.transition(to: .completed)
 
-        XCTAssertEqual(failingController.presentCallCount, 1, "Should attempt to present CSK")
+        XCTAssertEqual(failingController.presentCallCount, 1, "Should attempt to present Checkout Kit")
 
-        guard case .presentingCSK = failingDelegate.state else {
-            XCTFail("Expected presentingCSK state but got \(failingDelegate.state)")
+        guard case .presentingCheckoutKit = failingDelegate.state else {
+            XCTFail("Expected presentingCheckoutKit state but got \(failingDelegate.state)")
             return
         }
     }
 
-    func test_onPresentingCSK_withNilURL_shouldTransitionToUnexpectedError() async throws {
+    func test_onPresentingCheckoutKit_withNilURL_shouldTransitionToUnexpectedError() async throws {
         delegate.checkoutURL = nil
 
         try await delegate.transition(to: .unexpectedError(error: NSError(domain: "test", code: 1)))
         try await delegate.transition(to: .completed)
 
-        // onComplete will move us to .presentingCSK which returns .terminalError due to nil url
+        // onComplete will move us to .presentingCheckoutKit which returns .terminalError due to nil url
         guard case .terminalError = delegate.state else {
             XCTFail("Expected terminalError state when URL is nil, but got \(delegate.state)")
             return
@@ -413,7 +413,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
     // MARK: onCompleted()
 
-    func test_onCompleted_withCartSubmittedForCompletion_shouldTransitionToPresentingCSKWithRedirectURL()
+    func test_onCompleted_withCartSubmittedForCompletion_shouldTransitionToPresentingCheckoutKitWithRedirectURL()
         async throws
     {
         let redirectURL = try XCTUnwrap(URL(string: "https://shop.example.com/thank-you"))
@@ -426,9 +426,9 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         // Transition to completed to trigger onCompleted
         try await delegate.transition(to: .completed)
 
-        // Should transition to presentingCSK with the redirect URL
-        guard case let .presentingCSK(url) = delegate.state else {
-            XCTFail("Expected presentingCSK state but got \(delegate.state)")
+        // Should transition to presentingCheckoutKit with the redirect URL
+        guard case let .presentingCheckoutKit(url) = delegate.state else {
+            XCTFail("Expected presentingCheckoutKit state but got \(delegate.state)")
             return
         }
 
@@ -440,7 +440,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         )
     }
 
-    func test_onCompleted_withPaymentAuthorizationFailed_shouldTransitionToPresentingCSKWithCheckoutURL()
+    func test_onCompleted_withPaymentAuthorizationFailed_shouldTransitionToPresentingCheckoutKitWithCheckoutURL()
         async throws
     {
         let testError = NSError(domain: "test", code: 1, userInfo: nil)
@@ -452,9 +452,9 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         // Transition to completed to trigger onCompleted
         try await delegate.transition(to: .completed)
 
-        // Should transition to presentingCSK with computed URL from getURLFromState
-        guard case let .presentingCSK(url) = delegate.state else {
-            XCTFail("Expected presentingCSK state but got \(delegate.state)")
+        // Should transition to presentingCheckoutKit with computed URL from getURLFromState
+        guard case let .presentingCheckoutKit(url) = delegate.state else {
+            XCTFail("Expected presentingCheckoutKit state but got \(delegate.state)")
             return
         }
 
@@ -482,17 +482,17 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         )
     }
 
-    // MARK: onPresentingCSK()
+    // MARK: onPresentingCheckoutKit()
 
-    func test_onPresentingCSK_withValidURL_shouldCallPresentSuccessfully() async throws {
+    func test_onPresentingCheckoutKit_withValidURL_shouldCallPresentSuccessfully() async throws {
         let testURL = try XCTUnwrap(URL(string: "https://test-shop.myshopify.com/checkout"))
 
-        // Transition to a state that leads to presentingCSK
+        // Transition to a state that leads to presentingCheckoutKit
         try await delegate.transition(to: .unexpectedError(error: NSError(domain: "test", code: 1)))
         try await delegate.transition(to: .completed)
 
-        guard case let .presentingCSK(url) = delegate.state else {
-            XCTFail("Expected presentingCSK state but got \(delegate.state)")
+        guard case let .presentingCheckoutKit(url) = delegate.state else {
+            XCTFail("Expected presentingCheckoutKit state but got \(delegate.state)")
             return
         }
 
@@ -501,7 +501,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         XCTAssertEqual(mockController.presentCalledWith, testURL, "Should present with correct URL")
     }
 
-    func test_onPresentingCSK_withCartSubmittedForCompletion_shouldSkipPersonalDataRemoval()
+    func test_onPresentingCheckoutKit_withCartSubmittedForCompletion_shouldSkipPersonalDataRemoval()
         async throws
     {
         let redirectURL = try XCTUnwrap(URL(string: "https://shop.example.com/thank-you"))
@@ -524,9 +524,9 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         try await spyDelegate.transition(to: .cartSubmittedForCompletion(redirectURL: redirectURL))
         try await spyDelegate.transition(to: .completed)
 
-        // Should be in presentingCSK state
-        guard case let .presentingCSK(url) = spyDelegate.state else {
-            XCTFail("Expected presentingCSK state but got \(spyDelegate.state)")
+        // Should be in presentingCheckoutKit state
+        guard case let .presentingCheckoutKit(url) = spyDelegate.state else {
+            XCTFail("Expected presentingCheckoutKit state but got \(spyDelegate.state)")
             return
         }
 
@@ -540,15 +540,15 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         // But we can verify the happy path behavior
     }
 
-    func test_onPresentingCSK_withNonCartSubmittedState_shouldCallPresentSuccessfully() async throws {
+    func test_onPresentingCheckoutKit_withNonCartSubmittedState_shouldCallPresentSuccessfully() async throws {
         // Test with interrupt state (not cartSubmittedForCompletion)
         try await delegate.transition(to: .startPaymentRequest)
         try await delegate.transition(to: .interrupt(reason: .currencyChanged))
         try await delegate.transition(to: .completed)
 
-        // Should be in presentingCSK state with query parameter
-        guard case let .presentingCSK(url) = delegate.state else {
-            XCTFail("Expected presentingCSK state but got \(delegate.state)")
+        // Should be in presentingCheckoutKit state with query parameter
+        guard case let .presentingCheckoutKit(url) = delegate.state else {
+            XCTFail("Expected presentingCheckoutKit state but got \(delegate.state)")
             return
         }
 
@@ -751,27 +751,27 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
     // MARK: - Customer Info Attachment Tests
 
-    func test_onPresentingCSK_fromCartSubmittedForCompletion_shouldNotModifyCustomerInfo() async throws {
+    func test_onPresentingCheckoutKit_fromCartSubmittedForCompletion_shouldNotModifyCustomerInfo() async throws {
         let redirectURL = try XCTUnwrap(URL(string: "https://shop.example.com/thank-you"))
 
         // Follow valid state transition path: idle -> startPaymentRequest -> appleSheetPresented -> paymentAuthorized -> cartSubmittedForCompletion -> completed
-        // The completed state will automatically transition to presentingCSK
+        // The completed state will automatically transition to presentingCheckoutKit
         try await delegate.transition(to: .startPaymentRequest)
         try await delegate.transition(to: .paymentAuthorized(payment: PKPayment()))
         try await delegate.transition(to: .cartSubmittedForCompletion(redirectURL: redirectURL))
         try await delegate.transition(to: .completed)
 
-        // Should call present with the redirect URL through the completed -> presentingCSK transition
+        // Should call present with the redirect URL through the completed -> presentingCheckoutKit transition
         XCTAssertEqual(mockController.presentCallCount, 1)
         XCTAssertEqual(mockController.presentCalledWith, redirectURL)
     }
 
-    func test_createSheetKitURL_withInterruptReasonHavingQueryParam_shouldAppendQueryParam() throws {
+    func test_createCheckoutKitURL_withInterruptReasonHavingQueryParam_shouldAppendQueryParam() throws {
         let baseURL = try XCTUnwrap(URL(string: "https://shop.example.com/checkout"))
         delegate.checkoutURL = baseURL
 
         let interruptState = ApplePayState.interrupt(reason: .dynamicTax)
-        let resultURL = delegate.createSheetKitURL(for: interruptState)
+        let resultURL = delegate.createCheckoutKitURL(for: interruptState)
 
         guard let resultURL else {
             XCTFail("Expected URL to be created")
@@ -784,30 +784,30 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         )
     }
 
-    func test_createSheetKitURL_withInterruptReasonWithoutQueryParam_shouldReturnOriginalURL() throws {
+    func test_createCheckoutKitURL_withInterruptReasonWithoutQueryParam_shouldReturnOriginalURL() throws {
         let baseURL = try XCTUnwrap(URL(string: "https://shop.example.com/checkout"))
         delegate.checkoutURL = baseURL
 
         let interruptState = ApplePayState.interrupt(reason: .outOfStock)
-        let resultURL = delegate.createSheetKitURL(for: interruptState)
+        let resultURL = delegate.createCheckoutKitURL(for: interruptState)
 
         XCTAssertEqual(resultURL, baseURL, "URL should remain unchanged when interrupt reason has no query param")
     }
 
-    func test_createSheetKitURL_withCartSubmittedForCompletion_shouldReturnRedirectURL() throws {
+    func test_createCheckoutKitURL_withCartSubmittedForCompletion_shouldReturnRedirectURL() throws {
         let redirectURL = try XCTUnwrap(URL(string: "https://shop.example.com/thank-you"))
         let state = ApplePayState.cartSubmittedForCompletion(redirectURL: redirectURL)
 
-        let resultURL = delegate.createSheetKitURL(for: state)
+        let resultURL = delegate.createCheckoutKitURL(for: state)
 
         XCTAssertEqual(resultURL, redirectURL)
     }
 
-    func test_createSheetKitURL_withNormalState_shouldReturnCheckoutURL() throws {
+    func test_createCheckoutKitURL_withNormalState_shouldReturnCheckoutURL() throws {
         let baseURL = try XCTUnwrap(URL(string: "https://shop.example.com/checkout"))
         delegate.checkoutURL = baseURL
 
-        let resultURL = delegate.createSheetKitURL(for: .appleSheetPresented)
+        let resultURL = delegate.createCheckoutKitURL(for: .appleSheetPresented)
 
         XCTAssertEqual(resultURL, baseURL)
     }

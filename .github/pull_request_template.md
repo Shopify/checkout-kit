@@ -22,8 +22,8 @@
 <details>
 <summary>Releasing a new Swift version?</summary>
 
-- [ ] I have bumped the version in `swift/ShopifyCheckoutSheetKit.podspec`
-- [ ] I have bumped the version in `swift/Sources/ShopifyCheckoutSheetKit/ShopifyCheckoutSheetKit.swift`
+- [ ] I have bumped the version in `swift/ShopifyCheckoutKit.podspec`
+- [ ] I have bumped the version in `swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`
 - [ ] I have updated `swift/CHANGELOG.md`
 - [ ] I have updated the SwiftPM/CocoaPods version snippets in `swift/README.md` (major version only)
 

@@ -70,8 +70,8 @@ cd swift && ./Scripts/lint fix
 
 Open a pull request with the following changes:
 
-1. Bump the package version in `swift/Sources/ShopifyCheckoutSheetKit/ShopifyCheckoutSheetKit.swift`.
-2. Bump the podspec version in `swift/ShopifyCheckoutSheetKit.podspec`.
+1. Bump the package version in `swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`.
+2. Bump the podspec version in `swift/ShopifyCheckoutKit.podspec`.
 3. Add an entry to the top of `swift/CHANGELOG.md`.
 
 Once merged, draft a release on GitHub:

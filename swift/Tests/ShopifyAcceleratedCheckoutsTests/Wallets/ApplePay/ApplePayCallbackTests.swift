@@ -22,7 +22,7 @@
  */
 
 @testable import ShopifyAcceleratedCheckouts
-@testable import ShopifyCheckoutSheetKit
+@testable import ShopifyCheckoutKit
 import XCTest
 
 @available(iOS 17.0, *)
@@ -327,8 +327,8 @@ final class ApplePayCallbackTests: XCTestCase {
     func testShouldRecoverFromErrorCallbackInvoked() async {
         let expectation = expectation(description: "shouldRecoverFromError callback should be invoked")
 
-        let testError = ShopifyCheckoutSheetKit.CheckoutError.checkoutUnavailable(message: "Test error", code: .clientError(code: .unknown), recoverable: true)
-        var capturedError: ShopifyCheckoutSheetKit.CheckoutError?
+        let testError = ShopifyCheckoutKit.CheckoutError.checkoutUnavailable(message: "Test error", code: .clientError(code: .unknown), recoverable: true)
+        var capturedError: ShopifyCheckoutKit.CheckoutError?
 
         viewController.onShouldRecoverFromError = { error in
             capturedError = error
@@ -353,7 +353,7 @@ final class ApplePayCallbackTests: XCTestCase {
             }
         }
 
-        let testError = ShopifyCheckoutSheetKit.CheckoutError.checkoutUnavailable(message: "Test", code: .clientError(code: .unknown), recoverable: true)
+        let testError = ShopifyCheckoutKit.CheckoutError.checkoutUnavailable(message: "Test", code: .clientError(code: .unknown), recoverable: true)
         let result = await MainActor.run {
             viewController.shouldRecoverFromError(error: testError)
         }

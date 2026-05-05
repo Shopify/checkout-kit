@@ -24,7 +24,7 @@
 import Foundation
 import PassKit
 @testable import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import XCTest
 
 // MARK: - Configuration Helpers

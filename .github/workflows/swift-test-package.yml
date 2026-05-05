@@ -8,5 +8,5 @@ jobs:
   package-tests:
     uses: ./.github/workflows/swift-test-workflow.yml
     with:
-      test-path: ./Scripts/xcode_run test ShopifyCheckoutSheetKit-Package
+      test-path: ./Scripts/xcode_run test ShopifyCheckoutKit-Package
       job-name: Run Package Tests

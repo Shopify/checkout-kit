@@ -24,7 +24,7 @@
 import ApolloAPI
 import Combine
 @preconcurrency import ShopifyAcceleratedCheckouts
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
 
@@ -392,7 +392,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
         tableView.reloadData()
 
         if let url = CartManager.shared.cart?.checkoutURL {
-            ShopifyCheckoutSheetKit.preload(checkout: url)
+            ShopifyCheckoutKit.preload(checkout: url)
         }
     }
 
@@ -417,7 +417,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
             self.checkoutButton.isEnabled = false
             self.setupCheckoutButtonContent()
 
-            ShopifyCheckoutSheetKit.invalidate()
+            ShopifyCheckoutKit.invalidate()
 
             _Concurrency.Task {
                 let cart = try await CartManager.shared.performCartLinesUpdate(id: node.id, quantity: quantity)
@@ -428,7 +428,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
                 cell.quantityLabel.text = "\(cart.lines.nodes[indexPath.item].quantity)"
 
                 if let checkoutUrl = cart.checkoutURL {
-                    ShopifyCheckoutSheetKit.preload(checkout: checkoutUrl)
+                    ShopifyCheckoutKit.preload(checkout: checkoutUrl)
                 }
             }
         }
@@ -464,7 +464,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
     @objc private func presentCheckout() {
         guard let url = CartManager.shared.cart?.checkoutURL else { return }
 
-        ShopifyCheckoutSheetKit.present(checkout: url, from: self, delegate: self)
+        ShopifyCheckoutKit.present(checkout: url, from: self, delegate: self)
     }
 
     @objc private func resetCart() {
@@ -488,10 +488,10 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
 }
 
 extension CartViewController: @preconcurrency CheckoutDelegate {
-    func checkoutDidComplete(event: ShopifyCheckoutSheetKit.CheckoutCompletedEvent) {
+    func checkoutDidComplete(event: ShopifyCheckoutKit.CheckoutCompletedEvent) {
         resetCart()
 
-        ShopifyCheckoutSheetKit.configuration.logger.log("Order created: \(event.orderDetails.id)")
+        ShopifyCheckoutKit.configuration.logger.log("Order created: \(event.orderDetails.id)")
     }
 
     func checkoutDidCancel() {
@@ -504,7 +504,7 @@ extension CartViewController: @preconcurrency CheckoutDelegate {
         }
     }
 
-    func checkoutDidFail(error: ShopifyCheckoutSheetKit.CheckoutError) {
+    func checkoutDidFail(error: ShopifyCheckoutKit.CheckoutError) {
         var errorMessage = ""
 
         if case let .sdkError(underlying, _) = error {
@@ -540,7 +540,7 @@ extension CartViewController: @preconcurrency CheckoutDelegate {
         }
     }
 
-    func checkoutDidEmitWebPixelEvent(event: ShopifyCheckoutSheetKit.PixelEvent) {
+    func checkoutDidEmitWebPixelEvent(event: ShopifyCheckoutKit.PixelEvent) {
         switch event {
         case let .customEvent(customEvent):
             print("[PIXEL - Custom]", customEvent.name!)
