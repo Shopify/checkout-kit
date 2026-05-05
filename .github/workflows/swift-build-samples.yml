@@ -1,26 +1,12 @@
 name: Swift — Build Sample Apps
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'swift/**'
-      - 'Package.swift'
-      - 'Package.resolved'
-      - '.github/workflows/swift-build-samples.yml'
-      - '.github/workflows/swift-test-workflow.yml'
-  pull_request:
-    paths:
-      - 'swift/**'
-      - 'Package.swift'
-      - 'Package.resolved'
-      - '.github/workflows/swift-build-samples.yml'
-      - '.github/workflows/swift-test-workflow.yml'
+  workflow_call:
   workflow_dispatch:
 
 jobs:
-  call-workflow-passing-data:
+  build-samples:
     uses: ./.github/workflows/swift-test-workflow.yml
     with:
       test-path: ./Scripts/build_samples
+      job-name: Build Sample Apps

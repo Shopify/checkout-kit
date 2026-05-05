@@ -12,6 +12,9 @@ included:
   - swift/Sources
   - swift/Tests
 
+excluded:
+  - swift/Samples
+
 opt_in_rules:
   - array_init
   - collection_alignment

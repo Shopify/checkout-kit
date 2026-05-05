@@ -1,10 +1,8 @@
 name: Android — Check License Headers
 
 on:
-  pull_request:
-    paths:
-      - 'android/**'
-      - '.github/workflows/android-license-headers.yml'
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   build:
