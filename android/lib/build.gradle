@@ -16,7 +16,7 @@ def resolveEnvVarValue(name, defaultValue) {
     return rawValue ? rawValue : defaultValue
 }
 
-def versionName = resolveEnvVarValue("CHECKOUT_SHEET_KIT_VERSION", "3.6.0")
+def versionName = resolveEnvVarValue("CHECKOUT_KIT_VERSION", "3.6.0")
 
 ext {
     app_compat_version = '1.7.1'
@@ -36,7 +36,7 @@ ext {
 }
 
 android {
-    namespace = 'com.shopify.checkoutsheetkit'
+    namespace = 'com.shopify.checkoutkit'
     compileSdk = 36
 
     defaultConfig {
@@ -147,11 +147,11 @@ project.afterEvaluate {
         publications {
             release(MavenPublication) {
                 pom {
-                    name = "CheckoutSheetKit"
-                    description = "Shopify's Checkout Sheet Kit makes it simple to render checkouts inside your mobile app."
-                    url = "https://github.com/Shopify/checkout-sheet-kit-android"
+                    name = "CheckoutKit"
+                    description = "Shopify's Checkout Kit makes it simple to render checkouts inside your mobile app."
+                    url = "https://github.com/Shopify/checkout-kit-android"
                     groupId = "com.shopify"
-                    artifactId = "checkout-sheet-kit"
+                    artifactId = "checkout-kit"
                     version = versionName
 
                     licenses {
@@ -168,9 +168,9 @@ project.afterEvaluate {
                     }
 
                     scm {
-                        connection = "https://github.com/Shopify/checkout-sheet-kit-android.git"
-                        developerConnection = "https://github.com/Shopify/checkout-sheet-kit-android.git"
-                        url = "https://github.com/Shopify/checkout-sheet-kit-android.git"
+                        connection = "https://github.com/Shopify/checkout-kit-android.git"
+                        developerConnection = "https://github.com/Shopify/checkout-kit-android.git"
+                        url = "https://github.com/Shopify/checkout-kit-android.git"
                     }
                 }
 

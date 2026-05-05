@@ -7,4 +7,4 @@ Simply rename it to `.env` and update the contained values to match your Shopify
 
 ### MobileBuyIntegration
 
-This project demonstrates how to use the [Mobile Buy SDK](https://github.com/Shopify/mobile-buy-sdk-android) in conjunction with the `Shopify Checkout Sheet Kit` library.
+This project demonstrates how to use the [Mobile Buy SDK](https://github.com/Shopify/mobile-buy-sdk-android) in conjunction with the `Shopify Checkout Kit` library.

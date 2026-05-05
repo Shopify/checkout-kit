@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository.
 
 ## Project overview
 
-Shopify Checkout Kit for Android is a published AAR library (`com.shopify:checkout-sheet-kit`) that presents Shopify checkouts as a native, dialog-hosted WebView in consumer apps. It is consumed by third-party Android apps via Maven Central, so changes to the library's public surface have real consumer impact and real reversal cost once released.
+Shopify Checkout Kit for Android is a published AAR library (`com.shopify:checkout-kit`) that presents Shopify checkouts as a native, dialog-hosted WebView in consumer apps. It is consumed by third-party Android apps via Maven Central, so changes to the library's public surface have real consumer impact and real reversal cost once released.
 
 Two modules matter:
 
@@ -15,13 +15,13 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 ## Where to make changes
 
-- Library source: `lib/src/main/java/com/shopify/checkoutsheetkit/`. Flat package at the top level with a few subpackages (`errorevents/`, `lifecycleevents/`, `pixelevents/`).
-- Library tests: `lib/src/test/java/com/shopify/checkoutsheetkit/`. "No test, no merge" is a listed reject criterion in `.github/CONTRIBUTING.md`.
-- Java interop is a first-class concern — the library is commonly consumed from Java code. `lib/src/test/java/com/shopify/checkoutsheetkit/InteropTest.java` exercises the public API from Java specifically; treat breakage there as a consumer-facing issue.
+- Library source: `lib/src/main/java/com/shopify/checkoutkit/`. Flat package at the top level with a few subpackages (`errorevents/`, `lifecycleevents/`, `pixelevents/`).
+- Library tests: `lib/src/test/java/com/shopify/checkoutkit/`. "No test, no merge" is a listed reject criterion in `.github/CONTRIBUTING.md`.
+- Java interop is a first-class concern — the library is commonly consumed from Java code. `lib/src/test/java/com/shopify/checkoutkit/InteropTest.java` exercises the public API from Java specifically; treat breakage there as a consumer-facing issue.
 
 ## Key components
 
-- **`ShopifyCheckoutSheetKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, preload, present).
+- **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, preload, present).
 - **`CheckoutDialog.kt`** — the dialog that hosts the WebView, including the progress indicator and error-recovery coordination.
 - **`CheckoutWebView.kt`** — primary WebView. Holds the URL-keyed cache with a **5-minute preload TTL**; instruments page loads; routes bridge messages.
 - **`BaseWebView.kt`** — abstract base class. Any new WebView variant must extend this so shared configuration (JS interface name, user agent suffix, client handling) is consistent.
@@ -82,7 +82,7 @@ Raising any of these is a consumer-facing breaking change and needs visible rele
 
 Versions are bumped via:
 
-1. The fallback value in `lib/build.gradle` for the `CHECKOUT_SHEET_KIT_VERSION` env var.
+1. The fallback value in `lib/build.gradle` for the `CHECKOUT_KIT_VERSION` env var.
 2. The install snippets in `README.md` (Gradle and Maven).
 
 Publishing goes through GitHub Releases → `.github/workflows/publish.yml` → manual approval gate before Maven Central deploy. Full procedure: `.github/CONTRIBUTING.md` "Releasing a new version".
