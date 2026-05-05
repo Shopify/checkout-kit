@@ -5,7 +5,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  call-workflow-passing-data:
+  build-samples:
     uses: ./.github/workflows/swift-test-workflow.yml
     with:
       test-path: ./Scripts/build_samples
+      job-name: Build Sample Apps

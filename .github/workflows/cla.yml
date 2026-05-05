@@ -19,7 +19,20 @@ jobs:
       )
       || (github.event.pull_request && !github.event.pull_request.merged)
     steps:
+      - name: Check CLA_TOKEN availability
+        id: gate
+        env:
+          CLA_TOKEN: ${{ secrets.CLA_TOKEN }}
+        run: |
+          if [ -z "$CLA_TOKEN" ]; then
+            echo "CLA_TOKEN not configured — skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: Shopify/shopify-cla-action@v1
+        if: steps.gate.outputs.skip != 'true'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cla-token: ${{ secrets.CLA_TOKEN }}

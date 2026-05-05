@@ -7,6 +7,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Default token permissions — dorny/paths-filter calls the PR Files API to
+# compute the diff, which needs pull-requests: read. contents: read covers
+# actions/checkout for both push and pull_request events.
+permissions:
+  contents: read
+  pull-requests: read
+
 # Cancel superseded runs on the same ref (PR pushes, branch updates).
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -19,7 +26,7 @@ jobs:
     outputs:
       android: ${{ steps.filter.outputs.android }}
       swift: ${{ steps.filter.outputs.swift }}
-      react-native: ${{ steps.filter.outputs.react-native }}
+      reactNative: ${{ steps.filter.outputs.reactNative }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -41,7 +48,7 @@ jobs:
               - '.github/workflows/swift-test-workflow.yml'
               - '.github/workflows/swift-lint.yml'
               - '.github/workflows/ci.yml'
-            react-native:
+            reactNative:
               - 'react-native/**'
               - '.github/workflows/ci.yml'
 

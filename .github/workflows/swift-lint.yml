@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
         with:
-          args: --strict swift
+          args: --strict
 
   swiftformat:
     name: SwiftFormat & SwiftLint
@@ -71,5 +71,4 @@ jobs:
       - uses: ruby/setup-ruby@dffb23f65a78bba8db45d387d5ea1bbd6be3ef18 # v1.293.0
         with:
           bundler-cache: true
-          working-directory: swift
       - run: bundle exec pod lib lint --allow-warnings

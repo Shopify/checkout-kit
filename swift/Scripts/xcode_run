@@ -29,6 +29,17 @@ fi
 
 xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destination \"$dest\" -skipPackagePluginValidation"
 
+# Package.swift lives at the monorepo root. For SwiftPM package schemes
+# (Xcode's auto-generated "-Package" suffix), cd up to the directory that
+# contains it before invoking xcodebuild — xcodebuild discovers SwiftPM
+# packages from CWD and has no equivalent flag for pointing at them.
+if [[ "$SCHEME" == *"-Package" ]]; then
+    PACKAGE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    if [[ -f "$PACKAGE_ROOT/Package.swift" ]]; then
+        cd "$PACKAGE_ROOT"
+    fi
+fi
+
 # Add test filtering if specified
 if [[ "$ACTION" == *"test"* && -n "$TEST_FILTER" ]]; then
     # If TEST_FILTER already contains a slash, use it as-is (e.g., "ShopifyAcceleratedCheckoutsTests/PKEncoderTests")
