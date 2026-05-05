@@ -1,0 +1,31 @@
+name: checkout-kit
+
+commands:
+  codegen:
+    desc: "Generate UCP models. Usage: dev codegen <kotlin|swift>"
+    syntax: "<kotlin|swift>"
+    run: |
+      case "$1" in
+        kotlin|swift) ./protocol/scripts/generate_models.sh --lang "$1" ;;
+        *) echo "Usage: dev codegen <kotlin|swift>"; exit 1 ;;
+      esac
+  apollo:
+    subcommands:
+      download_schema:
+        desc: "Download GraphQL schema. Usage: dev apollo download_schema <android|swift> [accelerated|mobile-buy|all]"
+        syntax: "<android|swift> [accelerated|mobile-buy|all]"
+        run: |
+          case "$1" in
+            android) cd android && ./scripts/apollo_download_schema ;;
+            swift) shift; cd swift && ./Scripts/apollo_download_schema "$@" ;;
+            *) echo "Usage: dev apollo download_schema <android|swift> [accelerated|mobile-buy|all]"; exit 1 ;;
+          esac
+      codegen:
+        desc: "Generate Apollo models. Usage: dev apollo codegen <android|swift> [accelerated|mobile-buy|all]"
+        syntax: "<android|swift> [accelerated|mobile-buy|all]"
+        run: |
+          case "$1" in
+            android) cd android && ./scripts/apollo_codegen ;;
+            swift) shift; cd swift && ./Scripts/apollo_codegen "$@" ;;
+            *) echo "Usage: dev apollo codegen <android|swift> [accelerated|mobile-buy|all]"; exit 1 ;;
+          esac

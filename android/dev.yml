@@ -49,15 +49,6 @@ commands:
         desc: Regenerate the baseline after intentional public API changes
         run: ./gradlew :lib:apiDump
 
-  apollo:
-    subcommands:
-      download_schema:
-        desc: "Download GraphQL Schema. Usage: dev apollo download_schema"
-        run: ./scripts/apollo_download_schema
-      codegen:
-        desc: "Generate Apollo Kotlin models. Usage: dev apollo codegen"
-        run: ./scripts/apollo_codegen
-
 check:
   license-headers: ./scripts/check_license_headers.rb
   detekt: ./gradlew detekt

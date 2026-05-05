@@ -22,7 +22,6 @@
  */
 package com.shopify.checkoutkit
 
-import android.webkit.WebView
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.COMPLETED
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.MODAL
 import com.shopify.checkoutkit.pixelevents.PixelEvent
@@ -33,15 +32,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -91,70 +87,6 @@ class CheckoutBridgeTest {
     fun `postMessage does not issue a msg to the event processor when unsupported message received`() {
         checkoutBridge.postMessage(Json.encodeToString(WebToSdkEvent("boom")))
         verifyNoInteractions(mockEventProcessor)
-    }
-
-    @Test
-    fun `sendMessage evaluates javascript on the provided WebView`() {
-        val webView = mock<WebView>()
-        checkoutBridge.sendMessage(webView, CheckoutBridge.SDKOperation.Presented)
-
-        verify(webView).evaluateJavascript(
-            """|
-        |if (window.MobileCheckoutSdk && window.MobileCheckoutSdk.dispatchMessage) {
-        |    window.MobileCheckoutSdk.dispatchMessage('presented');
-        |} else {
-        |    window.addEventListener('mobileCheckoutBridgeReady', function () {
-        |        window.MobileCheckoutSdk.dispatchMessage('presented');
-        |    }, {passive: true, once: true});
-        |}
-        |
-            """.trimMargin(),
-            null
-        )
-    }
-
-    @Test
-    fun `sendMessage returns error if evaluating javascript fails`() {
-        val webView = mock<WebView>()
-        whenever(webView.evaluateJavascript(any(), eq(null))).thenThrow(RuntimeException("something went wrong"))
-
-        checkoutBridge.sendMessage(webView, CheckoutBridge.SDKOperation.Presented)
-
-        val errorCaptor = argumentCaptor<CheckoutKitException>()
-        verify(mockEventProcessor).onCheckoutViewFailedWithError(errorCaptor.capture())
-
-        val error = errorCaptor.firstValue
-        assertThat(error.message).isEqualTo(
-            "Failed to send 'presented' message to checkout, some features may not work."
-        )
-        assertThat(error.isRecoverable).isTrue()
-        assertThat(error.errorCode).isEqualTo(CheckoutKitException.ERROR_SENDING_MESSAGE_TO_CHECKOUT)
-    }
-
-    @Test
-    fun `instrumentation sends message to the bridge`() {
-        val webView = mock<WebView>()
-        val payload = InstrumentationPayload(
-            name = "Test",
-            value = 123L,
-            type = InstrumentationType.histogram,
-            tags = mapOf("tag1" to "value1", "tag2" to "value2")
-        )
-        val expectedPayload = """{"detail":{"name":"Test","value":123,"type":"histogram","tags":{"tag1":"value1","tag2":"value2"}}}"""
-        val expectedJavascript = """|
-        |if (window.MobileCheckoutSdk && window.MobileCheckoutSdk.dispatchMessage) {
-        |    window.MobileCheckoutSdk.dispatchMessage('instrumentation', $expectedPayload);
-        |} else {
-        |    window.addEventListener('mobileCheckoutBridgeReady', function () {
-        |        window.MobileCheckoutSdk.dispatchMessage('instrumentation', $expectedPayload);
-        |    }, {passive: true, once: true});
-        |}
-        |
-        """.trimMargin()
-
-        checkoutBridge.sendMessage(webView, CheckoutBridge.SDKOperation.Instrumentation(payload))
-
-        Mockito.verify(webView).evaluateJavascript(expectedJavascript, null)
     }
 
     @Test

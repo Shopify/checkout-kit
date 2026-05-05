@@ -64,57 +64,11 @@ class FallbackWebViewTest {
     }
 
     @Test
-    fun `user agent suffix includes ShopifyCheckoutSDK and version number`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Dark()
+    fun `user agent suffix contains ShopifyCheckoutKit version and android platform`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val view = FallbackWebView(activityController.get())
-            assertThat(view.settings.userAgentString).contains("ShopifyCheckoutSDK/${BuildConfig.SDK_VERSION} ")
-        }
-    }
-
-    @Test
-    fun `user agent suffix includes metadata for the schema version, theme, and variant - dark`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Dark()
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            val view = FallbackWebView(activityController.get())
-            assertThat(view.settings.userAgentString).endsWith("(noconnect;dark;standard_recovery)")
-        }
-    }
-
-    @Test
-    fun `user agent suffix includes metadata for the schema version, theme, and variant - light`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Light()
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            val view = FallbackWebView(activityController.get())
-            assertThat(view.settings.userAgentString).endsWith("(noconnect;light;standard_recovery)")
-        }
-    }
-
-    @Test
-    fun `user agent suffix includes metadata for the schema version, theme, and variant - web`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Web()
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            val view = FallbackWebView(activityController.get())
-            assertThat(view.settings.userAgentString).endsWith("(noconnect;web_default;standard_recovery)")
-        }
-    }
-
-    @Test
-    fun `user agent suffix includes metadata for the schema version, theme, and variant - automatic`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Automatic()
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            val view = FallbackWebView(activityController.get())
-            assertThat(view.settings.userAgentString).endsWith("(noconnect;automatic;standard_recovery)")
-        }
-    }
-
-    @Test
-    fun `user agent suffix includes platform if specified`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Automatic()
-        ShopifyCheckoutKit.configuration.platform = Platform.REACT_NATIVE
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            val view = FallbackWebView(activityController.get())
-            assertThat(view.settings.userAgentString).endsWith("(noconnect;automatic;standard_recovery) ReactNative")
+            assertThat(view.settings.userAgentString).contains("ShopifyCheckoutKit/")
+            assertThat(view.settings.userAgentString).contains(" android")
         }
     }
 

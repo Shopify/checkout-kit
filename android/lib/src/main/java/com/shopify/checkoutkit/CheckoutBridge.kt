@@ -23,7 +23,6 @@
 package com.shopify.checkoutkit
 
 import android.webkit.JavascriptInterface
-import android.webkit.WebView
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.COMPLETED
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.ERROR
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.MODAL
@@ -33,7 +32,6 @@ import com.shopify.checkoutkit.errorevents.CheckoutErrorDecoder
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEventDecoder
 import com.shopify.checkoutkit.pixelevents.PixelEventDecoder
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 internal class CheckoutBridge(
@@ -64,11 +62,6 @@ internal class CheckoutBridge(
                 return entries.find { it.key == key }
             }
         }
-    }
-
-    sealed class SDKOperation(val key: String) {
-        data object Presented : SDKOperation("presented")
-        class Instrumentation(val payload: InstrumentationPayload) : SDKOperation("instrumentation")
     }
 
     // Allows Web to postMessages back to the SDK
@@ -137,71 +130,9 @@ internal class CheckoutBridge(
         }
     }
 
-    // Send messages from SDK to Web
-    @Suppress("SwallowedException")
-    fun sendMessage(view: WebView, operation: SDKOperation) {
-        val script = when (operation) {
-            is SDKOperation.Presented -> {
-                log.d(LOG_TAG, "Sending presented message to checkout, informing it that the sheet is now visible.")
-                dispatchMessageTemplate("'${operation.key}'")
-            }
-
-            is SDKOperation.Instrumentation -> {
-                log.d(LOG_TAG, "Sending instrumentation message to checkout.")
-                val body = Json.encodeToString(SdkToWebEvent(operation.payload))
-                dispatchMessageTemplate("'${operation.key}', $body")
-            }
-        }
-        try {
-            view.evaluateJavascript(script, null)
-        } catch (e: Exception) {
-            log.d(LOG_TAG, "Failed to send message to checkout, invoking onCheckoutViewFailedWithError")
-            onMainThread {
-                eventProcessor.onCheckoutViewFailedWithError(
-                    CheckoutKitException(
-                        errorDescription = "Failed to send '${operation.key}' message to checkout, some features may not work.",
-                        errorCode = CheckoutKitException.ERROR_SENDING_MESSAGE_TO_CHECKOUT,
-                        isRecoverable = true,
-                    )
-                )
-            }
-        }
-    }
-
     companion object {
         private const val LOG_TAG = "CheckoutBridge"
-        const val SCHEMA_VERSION_NUMBER: String = "8.1"
-
-        private fun dispatchMessageTemplate(body: String) = """|
-        |if (window.MobileCheckoutSdk && window.MobileCheckoutSdk.dispatchMessage) {
-        |    window.MobileCheckoutSdk.dispatchMessage($body);
-        |} else {
-        |    window.addEventListener('mobileCheckoutBridgeReady', function () {
-        |        window.MobileCheckoutSdk.dispatchMessage($body);
-        |    }, {passive: true, once: true});
-        |}
-        |
-        """.trimMargin()
     }
-}
-
-@Serializable
-internal data class SdkToWebEvent<T>(
-    val detail: T
-)
-
-@Serializable
-internal data class InstrumentationPayload(
-    val name: String,
-    val value: Long,
-    val type: InstrumentationType,
-    val tags: Map<String, String>
-)
-
-@Suppress("EnumNaming", "EnumEntryNameCase")
-@Serializable
-internal enum class InstrumentationType {
-    histogram
 }
 
 @Serializable

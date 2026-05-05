@@ -16,7 +16,7 @@ def resolveEnvVarValue(name, defaultValue) {
     return rawValue ? rawValue : defaultValue
 }
 
-def versionName = resolveEnvVarValue("CHECKOUT_KIT_VERSION", "3.6.0")
+def versionName = resolveEnvVarValue("CHECKOUT_KIT_VERSION", "1.0.0")
 
 ext {
     app_compat_version = '1.7.1'
@@ -139,6 +139,11 @@ detekt {
     buildUponDefaultConfig = true
     config.setFrom('detekt.config.yml')
     autoCorrect = true
+}
+
+// Models.kt is generated from UCP JSON Schemas — exclude it from static analysis.
+tasks.withType(io.gitlab.arturbosch.detekt.Detekt).configureEach {
+    exclude('**/Models.kt')
 }
 
 

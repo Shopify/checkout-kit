@@ -55,6 +55,7 @@ internal class CheckoutDialog(
     private val checkoutUrl: String,
     private val checkoutEventProcessor: CheckoutEventProcessor,
     context: Context,
+    private val communicationClient: CheckoutCommunicationClient? = null,
 ) : ComponentDialog(context) {
 
     internal var recoveryAttemptCount = 0
@@ -91,6 +92,8 @@ internal class CheckoutDialog(
         checkoutWebView.onResume()
         log.d(LOG_TAG, "Setting event processor on WebView.")
         checkoutWebView.setEventProcessor(eventProcessor())
+        log.d(LOG_TAG, "Setting communication client on WebView.")
+        checkoutWebView.setClient(communicationClient)
 
         val colorScheme = ShopifyCheckoutKit.configuration.colorScheme
         log.d(LOG_TAG, "Configured colorScheme $colorScheme")
@@ -122,11 +125,6 @@ internal class CheckoutDialog(
         setOnDismissListener {
             log.d(LOG_TAG, "Dismiss listener invoked.")
             removeWebViewFromContainer()
-        }
-
-        setOnShowListener {
-            log.d(LOG_TAG, "On show listener invoked, calling WebView notifyPresented.")
-            checkoutWebView.notifyPresented()
         }
 
         log.d(LOG_TAG, "Showing dialog.")

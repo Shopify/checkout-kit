@@ -31,7 +31,6 @@ import android.util.AttributeSet
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
-import com.shopify.checkoutkit.InstrumentationType.histogram
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import java.util.concurrent.CountDownLatch
 import kotlin.math.abs
@@ -41,35 +40,16 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     BaseWebView(context, attributeSet) {
 
     override val recoverErrors = true
-    override val variant = "standard"
-    override val cspSchema = CheckoutBridge.SCHEMA_VERSION_NUMBER
     var isPreload = false
 
     private val checkoutBridge = CheckoutBridge(CheckoutWebViewEventProcessor(NoopEventProcessor()))
+    private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocol(this)
     private var loadComplete = false
-        set(value) {
-            log.d(LOG_TAG, "Setting loadComplete to $value.")
-            field = value
-            dispatchWhenPresentedAndLoaded(value, presented)
-        }
-    private var presented = false
-        set(value) {
-            log.d(LOG_TAG, "Setting presented to $value.")
-            field = value
-            dispatchWhenPresentedAndLoaded(loadComplete, value)
-        }
-
-    private fun dispatchWhenPresentedAndLoaded(loadComplete: Boolean, hasBeenPresented: Boolean) {
-        if (loadComplete && hasBeenPresented) {
-            checkoutBridge.sendMessage(this, CheckoutBridge.SDKOperation.Presented)
-        }
-    }
-
-    private var initLoadTime: Long = -1
 
     init {
         webViewClient = CheckoutWebViewClient()
         addJavascriptInterface(checkoutBridge, JAVASCRIPT_INTERFACE_NAME)
+        addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocol.INTERFACE_NAME)
         settings.userAgentString = "${settings.userAgentString} ${userAgentSuffix()}"
     }
 
@@ -80,9 +60,9 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         checkoutBridge.setEventProcessor(eventProcessor)
     }
 
-    fun notifyPresented() {
-        log.d(LOG_TAG, "Notify presented called.")
-        presented = true
+    fun setClient(client: CheckoutCommunicationClient?) {
+        log.d(LOG_TAG, "Setting communication client $client.")
+        embeddedCheckoutProtocol.setClient(client)
     }
 
     override fun getEventProcessor(): CheckoutWebViewEventProcessor {
@@ -91,19 +71,20 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        log.d(LOG_TAG, "Attached to window. Adding JavaScript interface with name $JAVASCRIPT_INTERFACE_NAME.")
+        log.d(LOG_TAG, "Attached to window. Adding JavaScript interfaces.")
         addJavascriptInterface(checkoutBridge, JAVASCRIPT_INTERFACE_NAME)
+        addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocol.INTERFACE_NAME)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        log.d(LOG_TAG, "Detached from window. Removing JavaScript interface with name $JAVASCRIPT_INTERFACE_NAME.")
+        log.d(LOG_TAG, "Detached from window. Removing JavaScript interfaces.")
         removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME)
+        removeJavascriptInterface(EmbeddedCheckoutProtocol.INTERFACE_NAME)
     }
 
     fun loadCheckout(url: String, isPreload: Boolean) {
         log.d(LOG_TAG, "Loading checkout with url $url. IsPreload: $isPreload.")
-        initLoadTime = System.currentTimeMillis()
         this.isPreload = isPreload
         Handler(Looper.getMainLooper()).post {
             val headers = if (isPreload) mutableMapOf("Shopify-Purpose" to "prefetch") else mutableMapOf()
@@ -121,20 +102,8 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
-            log.d(LOG_TAG, "onPageFinished called $url, emitting instrumentation message.")
+            log.d(LOG_TAG, "onPageFinished called $url.")
             loadComplete = true
-            val timeToLoad = System.currentTimeMillis() - initLoadTime
-            checkoutBridge.sendMessage(
-                view,
-                CheckoutBridge.SDKOperation.Instrumentation(
-                    InstrumentationPayload(
-                        name = "checkout_finished_loading",
-                        value = timeToLoad,
-                        type = histogram,
-                        tags = mapOf("preloading" to isPreload.toString()),
-                    )
-                )
-            )
             getEventProcessor().onCheckoutViewLoadComplete()
         }
 
