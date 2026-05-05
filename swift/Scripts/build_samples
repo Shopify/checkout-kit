@@ -1,0 +1,34 @@
+ #!/usr/bin/env bash
+
+set -ex
+set -eo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cd Samples/
+
+EMPTY_ENTITLEMENTS="""
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict/>
+</plist>
+"""
+
+build_app() {
+    if [[ ! -f "$1/Storefront.xcconfig" ]]; then
+        cp "$1/Storefront.xcconfig.example" "$1/Storefront.xcconfig"
+    fi
+
+    # Create an empty entitlements file if it doesn't already exist
+    if [[ ! -f "$1/$1/$1.entitlements" ]]; then
+        echo $EMPTY_ENTITLEMENTS > "$1/$1/$1.entitlements"
+    else
+        echo "Entitlements file already exists for $1 project."
+    fi
+
+    $SCRIPT_DIR/xcode_run "clean build" $1 
+}
+
+build_app MobileBuyIntegration
+build_app ShopifyAcceleratedCheckoutsApp

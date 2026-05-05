@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>StorefrontMerchantIdentifier</key>
+	<string>$(STOREFRONT_MERCHANT_IDENTIFIER)</string>
+	<key>StorefrontDomain</key>
+	<string>$(STOREFRONT_DOMAIN)</string>
+	<key>StorefrontAccessToken</key>
+	<string>$(STOREFRONT_ACCESS_TOKEN)</string>
+	<key>CustomerAccountApiClientId</key>
+	<string>$(CUSTOMER_ACCOUNT_API_CLIENT_ID)</string>
+	<key>CustomerAccountApiShopId</key>
+	<string>$(CUSTOMER_ACCOUNT_API_SHOP_ID)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>shop.$(CUSTOMER_ACCOUNT_API_SHOP_ID).app</string>
+			</array>
+		</dict>
+	</array>
+	<key>Address1</key>
+	<string>$(ADDRESS_1)</string>
+	<key>Address2</key>
+	<string>$(ADDRESS_2)</string>
+	<key>City</key>
+	<string>$(CITY)</string>
+	<key>Country</key>
+	<string>$(COUNTRY)</string>
+	<key>FirstName</key>
+	<string>$(FIRST_NAME)</string>
+	<key>LastName</key>
+	<string>$(LAST_NAME)</string>
+	<key>Province</key>
+	<string>$(PROVINCE)</string>
+	<key>Zip</key>
+	<string>$(ZIP)</string>
+	<key>Email</key>
+	<string>$(EMAIL)</string>
+	<key>Phone</key>
+	<string>$(PHONE)</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your location may be required to locate pickup points near you when you request this shipping option.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>API_VERSION</key>
+	<string>$(API_VERSION)</string>
+</dict>
+</plist>

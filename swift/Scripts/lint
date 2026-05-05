@@ -1,0 +1,133 @@
+#!/bin/bash
+
+# Check for verbose flag
+VERBOSE=false
+if [[ "$*" == *"--verbose"* ]]; then
+    VERBOSE=true
+fi
+
+# Accept --verbose before check/fix
+if [[ "$1" == "--verbose" ]]; then
+    MODE="${2:-check}"
+else
+    MODE="${1:-check}"
+fi
+
+# Validate the mode
+if [[ "$MODE" != "check" && "$MODE" != "fix" ]]; then
+    echo "❌ Invalid mode: $MODE"
+    echo "Usage: $0 [check|fix] [--verbose]"
+    echo "  check: Run linters in check mode (default)"
+    echo "  fix:   Run linters in fix mode to auto-fix issues"
+    echo "  --verbose: Show detailed output from linters"
+    exit 1
+fi
+
+print_install_instructions() {
+    echo "🔧 FIX:"
+    echo "   Shopify employee? Run 'dev up'"
+    echo "   Not a Shopify employee? Install Mint and run 'mint bootstrap':"
+    echo "     brew install mint"
+    echo "     mint bootstrap"
+    echo "   See: https://github.com/yonaskolb/Mint"
+}
+
+if ! command -v mint >/dev/null; then
+    echo "❌ Mint is not installed"
+    print_install_instructions
+    exit 1
+fi
+
+if [ ! -f "Mintfile" ]; then
+    echo "❌ Mintfile not found in the current directory"
+    exit 1
+fi
+
+SWIFTLINT="mint run swiftlint"
+SWIFTFORMAT="mint run swiftformat"
+
+QUIET_FLAG=""
+if [[ "$VERBOSE" == "false" ]]; then
+    QUIET_FLAG="--quiet"
+fi
+
+if [[ "$MODE" == "fix" ]]; then
+    $SWIFTLINT lint --fix $QUIET_FLAG
+fi
+
+# SwiftLint doesn't report errors when running in fix mode
+# Running again in strict mode to ensure no errors are missed
+$SWIFTLINT lint --strict $QUIET_FLAG .
+LINT_STATUS=$?
+
+if [ $LINT_STATUS -eq 0 ]; then
+    echo "✅ SwiftLint exit status: $LINT_STATUS"
+else
+    echo "❌ SwiftLint exit status: $LINT_STATUS"
+fi
+
+echo ""
+
+# Run SwiftFormat
+if [[ "$MODE" == "fix" ]]; then
+    $SWIFTFORMAT . $QUIET_FLAG
+    FORMAT_STATUS=$?
+else
+    $SWIFTFORMAT . $QUIET_FLAG --lint
+    FORMAT_STATUS=$?
+fi
+
+if [ $FORMAT_STATUS -eq 0 ]; then
+    echo "✅ SwiftFormat exit status: $FORMAT_STATUS"
+else
+    echo "❌ SwiftFormat exit status: $FORMAT_STATUS"
+fi
+
+# Function to print error messages for linting issues
+print_linting_error() {
+    local tool_name=$1
+    echo "❌ $tool_name detected issues that need to be fixed."
+    if [[ "$MODE" == "check" ]]; then
+        echo "🔧 How to fix:"
+        echo "   Shopify employee? Run 'dev fix' and resolve remaining issues"
+        echo "   Not a Shopify employee? Run './Scripts/lint fix' and resolve remaining issues"
+    else
+        echo "🔧 These files will need to be fixed manually"
+    fi
+}
+
+# Handle exit codes for check mode
+echo ""
+
+if [ $LINT_STATUS -ne 0 ]; then
+    print_linting_error "SwiftLint"
+    exit 1
+fi
+
+if [ $FORMAT_STATUS -ne 0 ]; then
+    print_linting_error "SwiftFormat"
+    exit 1
+fi
+
+# Run CocoaPods lint (check mode only, not applicable to fix)
+# Skip with --skip-pod (e.g. in CI where pod lint runs as a separate job)
+SKIP_POD=false
+if [[ "$*" == *"--skip-pod"* ]]; then
+    SKIP_POD=true
+fi
+
+if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
+    echo ""
+    echo "🔍 Running CocoaPods lint..."
+    bundle exec pod lib lint --allow-warnings
+    POD_STATUS=$?
+
+    if [ $POD_STATUS -eq 0 ]; then
+        echo "✅ CocoaPods lint exit status: $POD_STATUS"
+    else
+        echo "❌ CocoaPods lint exit status: $POD_STATUS"
+        echo "❌ CocoaPods detected issues that need to be fixed."
+        echo "🔧 Run 'bundle exec pod lib lint --allow-warnings --verbose' for details"
+        exit 1
+    fi
+fi

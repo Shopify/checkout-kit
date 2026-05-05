@@ -1,0 +1,434 @@
+/*
+ MIT License
+
+ Copyright 2023 - Present, Shopify Inc.
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+import Foundation
+import PassKit
+@testable import ShopifyAcceleratedCheckouts
+import ShopifyCheckoutSheetKit
+import XCTest
+
+// MARK: - Configuration Helpers
+
+func XCTAssertThrowsErrorAsync(
+    _ expression: @autoclosure () async throws -> some Any,
+    _ errorHandler: (Error) -> Void,
+    _ message: @autoclosure () -> String = "Expected error to be thrown",
+    file: StaticString = #filePath,
+    line: UInt = #line
+) async {
+    do {
+        _ = try await expression()
+        XCTFail(message(), file: file, line: line)
+    } catch {
+        errorHandler(error)
+    }
+}
+
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.Configuration {
+    static var testConfiguration: ShopifyAcceleratedCheckouts.Configuration {
+        return ShopifyAcceleratedCheckouts.Configuration(
+            storefrontDomain: "test-shop.myshopify.com",
+            storefrontAccessToken: "test-token",
+            customer: ShopifyAcceleratedCheckouts.Customer.testCustomer
+        )
+    }
+
+    static func testConfiguration(
+        storefrontDomain: String = "test-shop.myshopify.com",
+        storefrontAccessToken: String = "test-token",
+        customer: ShopifyAcceleratedCheckouts.Customer? = nil
+    ) -> ShopifyAcceleratedCheckouts.Configuration {
+        return ShopifyAcceleratedCheckouts.Configuration(
+            storefrontDomain: storefrontDomain,
+            storefrontAccessToken: storefrontAccessToken,
+            customer: customer
+        )
+    }
+}
+
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.Customer {
+    static var testCustomer: ShopifyAcceleratedCheckouts.Customer {
+        return ShopifyAcceleratedCheckouts.Customer(
+            email: "test@shopify.com", phoneNumber: "+447777777777"
+        )
+    }
+
+    static func testCustomer(email: String = "test@shopify.com", phoneNumber: String = "+447777777777")
+        -> ShopifyAcceleratedCheckouts.Customer
+    {
+        return ShopifyAcceleratedCheckouts.Customer(email: email, phoneNumber: phoneNumber)
+    }
+
+    static func testAuthenticatedCustomer(accessToken: String = "test-access-token")
+        -> ShopifyAcceleratedCheckouts.Customer
+    {
+        return ShopifyAcceleratedCheckouts.Customer(customerAccessToken: accessToken)
+    }
+}
+
+@available(iOS 16.0, *)
+extension ShopSettings {
+    static var testShopSettings: ShopSettings {
+        return ShopSettings(
+            name: "Test Shop",
+            primaryDomain: Domain(
+                host: "test-shop.myshopify.com",
+                url: "https://test-shop.myshopify.com"
+            ),
+            paymentSettings: PaymentSettings(
+                countryCode: "US",
+                acceptedCardBrands: [.visa, .mastercard, .americanExpress, .discover]
+            )
+        )
+    }
+
+    static func testShopSettings(
+        name: String = "Test Shop",
+        primaryDomain: Domain = Domain(
+            host: "test-shop.myshopify.com",
+            url: "https://test-shop.myshopify.com"
+        ),
+        paymentSettings: PaymentSettings = PaymentSettings(
+            countryCode: "US",
+            acceptedCardBrands: [.visa, .mastercard, .americanExpress, .discover]
+        )
+    ) -> ShopSettings {
+        return ShopSettings(
+            name: name,
+            primaryDomain: primaryDomain,
+            paymentSettings: paymentSettings
+        )
+    }
+}
+
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.ApplePayConfiguration {
+    static var testConfiguration: ShopifyAcceleratedCheckouts.ApplePayConfiguration {
+        return ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+            merchantIdentifier: "merchant.test.id",
+            contactFields: [.email, .phone]
+        )
+    }
+
+    static func testConfiguration(
+        merchantIdentifier: String = "merchant.test.id",
+        supportedShippingCountries: Set<String>? = nil
+    ) -> ShopifyAcceleratedCheckouts.ApplePayConfiguration {
+        return ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+            merchantIdentifier: merchantIdentifier,
+            contactFields: [.email, .phone],
+            supportedShippingCountries: supportedShippingCountries
+        )
+    }
+}
+
+@available(iOS 16.0, *)
+extension ApplePayConfigurationWrapper {
+    static var testConfiguration: ApplePayConfigurationWrapper {
+        return ApplePayConfigurationWrapper(
+            common: ShopifyAcceleratedCheckouts.Configuration.testConfiguration,
+            applePay: ShopifyAcceleratedCheckouts.ApplePayConfiguration.testConfiguration,
+            shopSettings: ShopSettings.testShopSettings
+        )
+    }
+
+    static func testConfiguration(
+        common: ShopifyAcceleratedCheckouts.Configuration = .testConfiguration,
+        applePay: ShopifyAcceleratedCheckouts.ApplePayConfiguration = .testConfiguration,
+        shopSettings: ShopSettings = .testShopSettings
+    ) -> ApplePayConfigurationWrapper {
+        return ApplePayConfigurationWrapper(
+            common: common,
+            applePay: applePay,
+            shopSettings: shopSettings
+        )
+    }
+}
+
+// MARK: - StorefrontAPI.Cart Helpers
+
+@available(iOS 16.0, *)
+extension StorefrontAPI.Cart {
+    static var testCart: StorefrontAPI.Cart {
+        let checkoutURL = URL(string: "https://test-shop.myshopify.com/checkout")!
+
+        // Create delivery option that matches test expectations
+        let deliveryOption = StorefrontAPI.CartDeliveryOption(
+            handle: "standard-shipping",
+            title: "Standard Shipping",
+            code: "STANDARD",
+            deliveryMethodType: .shipping,
+            description: "5-7 business days",
+            estimatedCost: StorefrontAPI.MoneyV2(amount: Decimal(5.00), currencyCode: "USD")
+        )
+
+        // Create delivery group with the delivery option
+        let deliveryGroup = StorefrontAPI.CartDeliveryGroup(
+            id: GraphQLScalars.ID("gid://shopify/CartDeliveryGroup/1"),
+            groupType: .oneTimePurchase,
+            deliveryOptions: [deliveryOption],
+            selectedDeliveryOption: nil
+        )
+
+        return StorefrontAPI.Cart(
+            id: GraphQLScalars.ID("gid://Shopify/Cart/test-cart-id"),
+            checkoutUrl: GraphQLScalars.URL(checkoutURL),
+            totalQuantity: 1,
+            buyerIdentity: nil,
+            deliveryGroups: StorefrontAPI.CartDeliveryGroupConnection(nodes: [deliveryGroup]),
+            delivery: nil,
+            lines: StorefrontAPI.BaseCartLineConnection(nodes: []),
+            cost: StorefrontAPI.CartCost(
+                totalAmount: StorefrontAPI.MoneyV2(amount: Decimal(100.0), currencyCode: "USD"),
+                subtotalAmount: nil,
+                totalTaxAmount: nil,
+                totalDutyAmount: nil
+            ),
+            discountCodes: [],
+            discountAllocations: []
+        )
+    }
+
+    static func testCart(
+        id: String = "gid://Shopify/Cart/test-cart-id",
+        checkoutUrl: URL? = nil,
+        totalQuantity: Int = 1,
+        totalAmount: Double = 100.0,
+        currencyCode: String = "USD"
+    ) -> StorefrontAPI.Cart {
+        let url = checkoutUrl ?? URL(string: "https://test-shop.myshopify.com/checkout")!
+        return StorefrontAPI.Cart(
+            id: GraphQLScalars.ID(id),
+            checkoutUrl: GraphQLScalars.URL(url),
+            totalQuantity: totalQuantity,
+            buyerIdentity: nil,
+            deliveryGroups: StorefrontAPI.CartDeliveryGroupConnection(nodes: []),
+            delivery: nil,
+            lines: StorefrontAPI.BaseCartLineConnection(nodes: []),
+            cost: StorefrontAPI.CartCost(
+                totalAmount: StorefrontAPI.MoneyV2(
+                    amount: Decimal(totalAmount), currencyCode: currencyCode
+                ),
+                subtotalAmount: nil,
+                totalTaxAmount: nil,
+                totalDutyAmount: nil
+            ),
+            discountCodes: [],
+            discountAllocations: []
+        )
+    }
+
+    static func testCartWithBuyerIdentity(
+        id: String = "gid://Shopify/Cart/test-cart-id",
+        email: String? = nil,
+        phone: String? = nil,
+        customerEmail: String? = nil,
+        customerPhone: String? = nil
+    ) -> StorefrontAPI.Cart {
+        let customer: StorefrontAPI.CartCustomer? = (customerEmail != nil || customerPhone != nil)
+            ? StorefrontAPI.CartCustomer(email: customerEmail, phone: customerPhone)
+            : nil
+
+        let buyerIdentity = StorefrontAPI.CartBuyerIdentity(
+            email: email,
+            phone: phone,
+            customer: customer
+        )
+
+        let deliveryOption = StorefrontAPI.CartDeliveryOption(
+            handle: "standard-shipping",
+            title: "Standard Shipping",
+            code: "STANDARD",
+            deliveryMethodType: .shipping,
+            description: "5-7 business days",
+            estimatedCost: StorefrontAPI.MoneyV2(amount: Decimal(5.00), currencyCode: "USD")
+        )
+
+        let deliveryGroup = StorefrontAPI.CartDeliveryGroup(
+            id: GraphQLScalars.ID("gid://shopify/CartDeliveryGroup/1"),
+            groupType: .oneTimePurchase,
+            deliveryOptions: [deliveryOption],
+            selectedDeliveryOption: nil
+        )
+
+        return StorefrontAPI.Cart(
+            id: GraphQLScalars.ID(id),
+            checkoutUrl: GraphQLScalars.URL(URL(string: "https://test-shop.myshopify.com/checkout")!),
+            totalQuantity: 1,
+            buyerIdentity: buyerIdentity,
+            deliveryGroups: StorefrontAPI.CartDeliveryGroupConnection(nodes: [deliveryGroup]),
+            delivery: nil,
+            lines: StorefrontAPI.BaseCartLineConnection(nodes: []),
+            cost: StorefrontAPI.CartCost(
+                totalAmount: StorefrontAPI.MoneyV2(amount: Decimal(100.0), currencyCode: "USD"),
+                subtotalAmount: nil,
+                totalTaxAmount: nil,
+                totalDutyAmount: nil
+            ),
+            discountCodes: [],
+            discountAllocations: []
+        )
+    }
+}
+
+// MARK: - StorefrontAPI Mock
+
+/// This class conforms to StorefrontAPIProtocol with not implemented errors
+/// Extend this class and override only the methods you need, per test file
+@available(iOS 16.0, *)
+class MockStorefrontAPI: StorefrontAPIProtocol {
+    func cart(by _: GraphQLScalars.ID) async throws -> StorefrontAPI.Cart? {
+        fatalError("cart(by:) not implemented in test. Override this method in your test class.")
+    }
+
+    func shop() async throws -> StorefrontAPI.Shop {
+        fatalError("shop() not implemented in test. Override this method in your test class.")
+    }
+
+    func cartCreate(with _: [GraphQLScalars.ID], customer _: ShopifyAcceleratedCheckouts.Customer?)
+        async throws -> StorefrontAPI.Cart
+    {
+        fatalError(
+            "cartCreate(with:customer:) not implemented in test. Override this method in your test class."
+        )
+    }
+
+    @discardableResult func cartBuyerIdentityUpdate(
+        id _: GraphQLScalars.ID, input _: StorefrontAPI.CartBuyerIdentityUpdateInput
+    ) async throws -> StorefrontAPI.Cart {
+        fatalError(
+            "cartBuyerIdentityUpdate(id:input:) not implemented in test. Override this method in your test class."
+        )
+    }
+
+    func cartDeliveryAddressesReplace(
+        id _: GraphQLScalars.ID, address _: StorefrontAPI.Address, validate _: Bool
+    ) async throws -> StorefrontAPI.Cart {
+        fatalError(
+            "cartDeliveryAddressesReplace(id:address:validate:) not implemented in test. Override this method in your test class."
+        )
+    }
+
+    func cartSelectedDeliveryOptionsUpdate(
+        id _: GraphQLScalars.ID, deliveryGroupId _: GraphQLScalars.ID,
+        deliveryOptionHandle _: String
+    ) async throws -> StorefrontAPI.Cart? {
+        fatalError(
+            "cartSelectedDeliveryOptionsUpdate(id:deliveryGroupId:deliveryOptionHandle:) not implemented in test. Override this method in your test class."
+        )
+    }
+
+    @discardableResult func cartPaymentUpdate(
+        id _: GraphQLScalars.ID, totalAmount _: StorefrontAPI.MoneyV2,
+        applePayPayment _: StorefrontAPI.ApplePayPayment
+    ) async throws -> StorefrontAPI.Cart {
+        fatalError(
+            "cartPaymentUpdate(id:totalAmount:applePayPayment:) not implemented in test. Override this method in your test class."
+        )
+    }
+
+    @discardableResult func cartBillingAddressUpdate(
+        id _: GraphQLScalars.ID, billingAddress _: StorefrontAPI.Address
+    ) async throws -> StorefrontAPI.Cart {
+        fatalError(
+            "cartBillingAddressUpdate(id:billingAddress:) not implemented in test. Override this method in your test class."
+        )
+    }
+
+    func cartRemovePersonalData(id _: GraphQLScalars.ID) async throws {
+        fatalError(
+            "cartRemovePersonalData(id:) not implemented in test. Override this method in your test class."
+        )
+    }
+
+    func cartPrepareForCompletion(id _: GraphQLScalars.ID) async throws
+        -> StorefrontAPI.CartStatusReady
+    {
+        fatalError(
+            "cartPrepareForCompletion(id:) not implemented in test. Override this method in your test class."
+        )
+    }
+
+    func cartSubmitForCompletion(id _: GraphQLScalars.ID) async throws
+        -> StorefrontAPI.SubmitSuccess
+    {
+        fatalError(
+            "cartSubmitForCompletion(id:) not implemented in test. Override this method in your test class."
+        )
+    }
+}
+
+// MARK: - Test StorefrontAPI
+
+@available(iOS 16.0, *)
+class TestStorefrontAPI: MockStorefrontAPI {
+    var cartResult: Result<StorefrontAPI.Cart?, Error>?
+
+    override func cart(by _: GraphQLScalars.ID) async throws -> StorefrontAPI.Cart? {
+        guard let result = cartResult else {
+            fatalError("cartResult not configured for TestStorefrontAPI")
+        }
+        return try result.get()
+    }
+
+    var cartCreateResult: Result<StorefrontAPI.Cart, Error>?
+    override func cartCreate(with _: [GraphQLScalars.ID], customer _: ShopifyAcceleratedCheckouts.Customer?) async throws -> StorefrontAPI.Cart {
+        guard let result = cartCreateResult else {
+            fatalError("cartCreateResult not configured for TestStorefrontAPI")
+        }
+        return try result.get()
+    }
+}
+
+// MARK: - PKPaymentRequest Helpers
+
+@available(iOS 17.0, *)
+extension PKPaymentRequest {
+    static var testPaymentRequest: PKPaymentRequest {
+        let request = PKPaymentRequest()
+        request.countryCode = "US"
+        request.currencyCode = "USD"
+        request.paymentSummaryItems = [.init(label: "item 1", amount: 22.00, type: .final)]
+        request.supportedNetworks = .init([.amex, .masterCard, .visa])
+        request.merchantCapabilities = .threeDSecure
+        return request
+    }
+
+    static func testPaymentRequest(
+        countryCode: String = "US",
+        currencyCode: String = "USD",
+        label: String = "item 1",
+        amount: NSDecimalNumber = 22.00,
+        supportedNetworks: [PKPaymentNetwork] = [.amex, .masterCard, .visa]
+    ) -> PKPaymentRequest {
+        let request = PKPaymentRequest()
+        request.countryCode = countryCode
+        request.currencyCode = currencyCode
+        request.paymentSummaryItems = [.init(label: label, amount: amount, type: .final)]
+        request.supportedNetworks = .init(supportedNetworks)
+        request.merchantCapabilities = .threeDSecure
+        return request
+    }
+}
