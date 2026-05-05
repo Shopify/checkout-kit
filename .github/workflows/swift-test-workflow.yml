@@ -9,6 +9,9 @@ jobs:
   test:
     runs-on: ${{ vars.MACOS_RUNNER }}
     timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: swift
 
     steps:
       - name: Checkout Repository

@@ -1,0 +1,38 @@
+# OS
+.DS_Store
+
+# Editors
+*.iml
+.idea/
+.vscode/settings.json
+
+# Claude / dev tooling
+.claude/
+CLAUDE.md
+.dev/
+.mint
+
+# Swift / Xcode / SwiftPM
+.build/
+.swiftpm/
+xcuserdata/
+
+# Sample app secrets (Swift)
+**/Storefront.xcconfig
+**/*.entitlements
+
+# Apollo / GraphQL
+*.graphqls
+apollo-ios-cli
+
+# Android / Gradle
+.gradle/
+build/
+captures/
+.externalNativeBuild
+.cxx
+
+# Android local config / secrets
+local.properties
+.env
+upload-keystore.jks

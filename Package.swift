@@ -31,16 +31,19 @@ let package = Package(
         .target(
             name: "ShopifyCheckoutSheetKit",
             dependencies: [],
+            path: "swift/Sources/ShopifyCheckoutSheetKit",
             resources: [.process("Assets.xcassets")]
         ),
         .target(
             name: "ShopifyAcceleratedCheckouts",
             dependencies: ["ShopifyCheckoutSheetKit"],
+            path: "swift/Sources/ShopifyAcceleratedCheckouts",
             resources: [.process("Localizable.xcstrings"), .process("Media.xcassets")]
         ),
         .testTarget(
             name: "ShopifyCheckoutSheetKitTests",
             dependencies: ["ShopifyCheckoutSheetKit"],
+            path: "swift/Tests/ShopifyCheckoutSheetKitTests",
             plugins: [
                 .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
             ]
@@ -51,6 +54,7 @@ let package = Package(
                 "ShopifyAcceleratedCheckouts",
                 .product(name: "ViewInspector", package: "ViewInspector")
             ],
+            path: "swift/Tests/ShopifyAcceleratedCheckoutsTests",
             plugins: [
                 .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
             ]

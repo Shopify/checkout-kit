@@ -1,10 +1,17 @@
-name: Check License Headers
+name: Android — Check License Headers
 
-on: pull_request
+on:
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-license-headers.yml'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
 
     steps:
       - name: Checkout Repository

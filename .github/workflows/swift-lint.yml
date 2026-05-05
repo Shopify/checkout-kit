@@ -1,7 +1,10 @@
-name: Lint
+name: Swift — Lint
 
 on:
   pull_request:
+    paths:
+      - 'swift/**'
+      - '.github/workflows/swift-lint.yml'
   workflow_dispatch:
 
 jobs:
@@ -13,7 +16,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
         with:
-          args: --strict
+          args: --strict swift
 
   swiftformat:
     name: SwiftFormat & SwiftLint
@@ -21,6 +24,9 @@ jobs:
     env:
       MINT_PATH: ${{ github.workspace }}/.mint/lib
       MINT_LINK_PATH: ${{ github.workspace }}/.mint/bin
+    defaults:
+      run:
+        working-directory: swift
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -29,7 +35,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: .mint
-          key: ${{ runner.os }}-mint-${{ hashFiles('Mintfile') }}
+          key: ${{ runner.os }}-mint-${{ hashFiles('swift/Mintfile') }}
           restore-keys: |
             ${{ runner.os }}-mint-
 
@@ -48,6 +54,9 @@ jobs:
   check-license-headers:
     name: License Headers
     runs-on: ${{ vars.MACOS_RUNNER }}
+    defaults:
+      run:
+        working-directory: swift
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - run: ./Scripts/ensure_license
@@ -55,9 +64,15 @@ jobs:
   lint-podspec:
     name: CocoaPods
     runs-on: ${{ vars.MACOS_RUNNER }}
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/swift/Gemfile
+    defaults:
+      run:
+        working-directory: swift
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ruby/setup-ruby@dffb23f65a78bba8db45d387d5ea1bbd6be3ef18 # v1.293.0
         with:
           bundler-cache: true
+          working-directory: swift
       - run: bundle exec pod lib lint --allow-warnings
