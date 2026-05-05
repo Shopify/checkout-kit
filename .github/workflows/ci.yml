@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref (PR pushes, branch updates).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Detect Changed Areas
+    runs-on: ubuntu-latest
+    outputs:
+      android: ${{ steps.filter.outputs.android }}
+      swift: ${{ steps.filter.outputs.swift }}
+      react-native: ${{ steps.filter.outputs.react-native }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            android:
+              - 'android/**'
+              - '.github/workflows/android-test.yml'
+              - '.github/workflows/android-license-headers.yml'
+              - '.github/workflows/ci.yml'
+            swift:
+              - 'swift/**'
+              - 'Package.swift'
+              - 'Package.resolved'
+              - '.github/workflows/swift-test-package.yml'
+              - '.github/workflows/swift-build-samples.yml'
+              - '.github/workflows/swift-test-workflow.yml'
+              - '.github/workflows/swift-lint.yml'
+              - '.github/workflows/ci.yml'
+            react-native:
+              - 'react-native/**'
+              - '.github/workflows/ci.yml'
+
+  android-test:
+    name: Android
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    uses: ./.github/workflows/android-test.yml
+
+  android-license-headers:
+    name: Android
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    uses: ./.github/workflows/android-license-headers.yml
+
+  swift-test-package:
+    name: Swift
+    needs: changes
+    if: needs.changes.outputs.swift == 'true'
+    uses: ./.github/workflows/swift-test-package.yml
+
+  swift-build-samples:
+    name: Swift
+    needs: changes
+    if: needs.changes.outputs.swift == 'true'
+    uses: ./.github/workflows/swift-build-samples.yml
+
+  swift-lint:
+    name: Swift
+    needs: changes
+    if: needs.changes.outputs.swift == 'true'
+    uses: ./.github/workflows/swift-lint.yml
+
+  # Single required status check for branch protection.
+  # Passes when every relevant platform job either succeeded or was skipped
+  # because no files in that platform's tree changed.
+  ci-required:
+    name: CI Required
+    if: always()
+    needs:
+      - changes
+      - android-test
+      - android-license-headers
+      - swift-test-package
+      - swift-build-samples
+      - swift-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all upstream jobs succeeded or were skipped
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "Upstream job results:"
+          echo "$NEEDS_JSON" | jq '.'
+
+          failed=$(echo "$NEEDS_JSON" | jq -r '
+            to_entries
+            | map(select(.value.result == "failure" or .value.result == "cancelled"))
+            | .[].key
+          ')
+
+          if [ -n "$failed" ]; then
+            echo "::error::Required jobs failed or were cancelled:"
+            echo "$failed" | sed 's/^/  - /'
+            exit 1
+          fi
+
+          echo "All required jobs passed (or were skipped because no relevant files changed)."

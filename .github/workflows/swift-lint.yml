@@ -1,10 +1,7 @@
 name: Swift — Lint
 
 on:
-  pull_request:
-    paths:
-      - 'swift/**'
-      - '.github/workflows/swift-lint.yml'
+  workflow_call:
   workflow_dispatch:
 
 jobs:
