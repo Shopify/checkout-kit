@@ -6,10 +6,17 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
-  
-  # Main library
-  - package-ecosystem: gradle
+
+  - package-ecosystem: swift
     directory: "/"
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+
+  # Android library
+  - package-ecosystem: gradle
+    directory: "/android"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -28,10 +35,10 @@ updates:
       # Keep JUnit on 4.x (JUnit 5 incompatible with Robolectric)
       - dependency-name: "junit:junit"
         versions: [">=5.0.0"]
-  
-  # MobileBuyIntegration sample
+
+  # Android sample app
   - package-ecosystem: gradle
-    directory: "/samples/MobileBuyIntegration"
+    directory: "/android/samples/MobileBuyIntegration"
     schedule:
       interval: daily
     open-pull-requests-limit: 5

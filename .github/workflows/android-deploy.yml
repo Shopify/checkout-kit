@@ -1,4 +1,4 @@
-name: Deploy to Maven Central
+name: Android — Deploy to Maven Central
 
 on:
   release:
@@ -8,13 +8,20 @@ on:
 
 jobs:
   build:
+    # Only run for Android releases. Android releases are tagged `android/X.Y.Z`;
+    # Swift releases use bare semver (`X.Y.Z`).
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'android/') }}
     environment:
       name: Central Repository Deployment
 
     runs-on: ubuntu-latest
-    
+
     env:
       OSSRH_API_BASE_URL: https://ossrh-staging-api.central.sonatype.com
+
+    defaults:
+      run:
+        working-directory: android
 
     steps:
       - name: Checkout Repository

@@ -9,8 +9,8 @@ disabled_rules:
   - function_body_length 
 
 included:
-  - Sources
-  - Tests
+  - swift/Sources
+  - swift/Tests
 
 opt_in_rules:
   - array_init

@@ -1,4 +1,4 @@
-name: Update Linter Versions
+name: Swift — Update Linter Versions
 
 on:
   schedule:
@@ -21,8 +21,8 @@ jobs:
       - name: Read current versions from Mintfile
         id: current
         run: |
-          SWIFTLINT=$(grep 'realm/SwiftLint@' Mintfile | sed 's/.*@//')
-          SWIFTFORMAT=$(grep 'nicklockwood/SwiftFormat@' Mintfile | sed 's/.*@//')
+          SWIFTLINT=$(grep 'realm/SwiftLint@' swift/Mintfile | sed 's/.*@//')
+          SWIFTFORMAT=$(grep 'nicklockwood/SwiftFormat@' swift/Mintfile | sed 's/.*@//')
           echo "swiftlint=$SWIFTLINT" >> "$GITHUB_OUTPUT"
           echo "swiftformat=$SWIFTFORMAT" >> "$GITHUB_OUTPUT"
 
@@ -66,10 +66,11 @@ jobs:
           printf '%s\n' \
             "realm/SwiftLint@${{ steps.latest.outputs.swiftlint }}" \
             "nicklockwood/SwiftFormat@${{ steps.latest.outputs.swiftformat }}" \
-            > Mintfile
+            > swift/Mintfile
 
       - name: Install Mint and bootstrap new versions
         if: steps.check.outputs.has_updates == 'true' && steps.existing_pr.outputs.exists != 'true'
+        working-directory: swift
         run: |
           brew install mint
           echo "${{ github.workspace }}/.mint/bin" >> "$GITHUB_PATH"
@@ -77,6 +78,7 @@ jobs:
 
       - name: Run lint fix
         if: steps.check.outputs.has_updates == 'true' && steps.existing_pr.outputs.exists != 'true'
+        working-directory: swift
         run: ./Scripts/lint fix --verbose
 
       - name: Commit and push
@@ -85,7 +87,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "chore: update linter versions" \
+          git commit -m "chore: update Swift linter versions" \
             -m "SwiftLint: ${{ steps.current.outputs.swiftlint }} -> ${{ steps.latest.outputs.swiftlint }}" \
             -m "SwiftFormat: ${{ steps.current.outputs.swiftformat }} -> ${{ steps.latest.outputs.swiftformat }}"
           git push origin auto/update-linters
@@ -113,13 +115,13 @@ jobs:
           BODY+="1. **Close and reopen this PR** — this fires a new \`pull_request\` event from your user, which triggers all checks.\n"
           BODY+="2. **Trigger workflows via CLI:**\n"
           BODY+="\`\`\`bash\n"
-          BODY+="gh workflow run build-samples.yml --ref auto/update-linters\n"
-          BODY+="gh workflow run lint.yml --ref auto/update-linters\n"
-          BODY+="gh workflow run test-package.yml --ref auto/update-linters\n"
+          BODY+="gh workflow run swift-build-samples.yml --ref auto/update-linters\n"
+          BODY+="gh workflow run swift-lint.yml --ref auto/update-linters\n"
+          BODY+="gh workflow run swift-test-package.yml --ref auto/update-linters\n"
           BODY+="\`\`\`\n"
 
           gh pr create \
-            --title "chore: bump linter versions" \
+            --title "chore: bump Swift linter versions" \
             --body "$(echo -e "$BODY")" \
             --label "dependencies" \
             --head "auto/update-linters" \
