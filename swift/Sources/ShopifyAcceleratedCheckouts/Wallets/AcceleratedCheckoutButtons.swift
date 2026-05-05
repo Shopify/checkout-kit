@@ -22,7 +22,7 @@
  */
 
 import PassKit
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 /// Render state for AcceleratedCheckoutButtons

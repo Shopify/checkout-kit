@@ -22,7 +22,7 @@
  */
 
 import PassKit
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 import SwiftUI
 
 @available(iOS 16.0, *)
@@ -30,7 +30,7 @@ protocol PayController: AnyObject {
     var cart: StorefrontAPI.Types.Cart? { get set }
     var storefront: StorefrontAPIProtocol { get set }
 
-    /// Opens ShopifyCheckoutSheetKit
+    /// Opens ShopifyCheckoutKit
     func present(url: URL) async throws
 }
 
@@ -234,7 +234,7 @@ extension ApplePayViewController: CheckoutDelegate {
 
     func checkoutDidCancel() {
         Task { @MainActor in
-            // x right button on CSK doesn't dismiss automatically
+            // x right button on Checkout Kit doesn't dismiss automatically
             checkoutViewController?.dismiss(animated: true)
             self.onCheckoutCancel?()
             try await authorizationDelegate.transition(to: .completed)

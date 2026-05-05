@@ -21,7 +21,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 @available(iOS 16.0, *)

@@ -22,7 +22,7 @@
  */
 
 @testable import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import XCTest
 
 @available(iOS 16.0, *)
@@ -60,7 +60,7 @@ final class ShopPayViewControllerTests: XCTestCase {
             return mockTopViewController
         }
 
-        /// Mocks the calls to ShopifyCheckoutSheetKit
+        /// Mocks the calls to ShopifyCheckoutKit
         @MainActor
         override func present(url: URL, delegate: CheckoutDelegate) async throws {
             presentCalls.append((url: url, delegate: delegate))

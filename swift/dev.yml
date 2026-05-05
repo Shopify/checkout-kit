@@ -1,4 +1,4 @@
-name: checkout-sheet-kit-swift
+name: checkout-kit-swift
 
 type: ios
 
@@ -46,9 +46,9 @@ commands:
   build:
     subcommands:
       packages:
-        desc: Build both ShopifyCheckoutSheetKit and ShopifyAcceleratedCheckouts packages
+        desc: Build both ShopifyCheckoutKit and ShopifyAcceleratedCheckouts packages
         run: |
-          ./scripts/xcode_run build ShopifyCheckoutSheetKit
+          ./scripts/xcode_run build ShopifyCheckoutKit
           ./scripts/xcode_run build ShopifyAcceleratedCheckouts
       samples:
         desc: Build all sample applications to verify integration
@@ -56,9 +56,9 @@ commands:
 
   test:
     desc: |
-      `dev test` - Run all tests for the ShopifyCheckoutSheetKit-Package.
+      `dev test` - Run all tests for the ShopifyCheckoutKit-Package.
       `dev test <test_class_name>` - Run only the specified test class.
-    run: ./scripts/xcode_run test ShopifyCheckoutSheetKit-Package "$1"
+    run: ./scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
 
   apollo:
     subcommands:

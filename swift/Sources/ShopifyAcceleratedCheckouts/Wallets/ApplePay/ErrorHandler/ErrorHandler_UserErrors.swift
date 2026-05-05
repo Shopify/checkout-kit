@@ -286,7 +286,7 @@ extension ErrorHandler {
                         )
                     ])
                 } else {
-                    // Email field is not visible, user can't correct it, fallback to CSK
+                    // Email field is not visible, user can't correct it, fallback to Checkout Kit
                     return PaymentSheetAction.interrupt(
                         reason: .other, checkoutURL: cart?.checkoutUrl.url
                     )
@@ -307,7 +307,7 @@ extension ErrorHandler {
                         )
                     ])
                 } else {
-                    // Phone field is not visible, user can't correct it, fallback to CSK
+                    // Phone field is not visible, user can't correct it, fallback to Checkout Kit
                     return PaymentSheetAction.interrupt(
                         reason: .other, checkoutURL: cart?.checkoutUrl.url
                     )

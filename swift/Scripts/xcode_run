@@ -5,8 +5,8 @@ set -eo pipefail
 # Get action from first argument, default to build
 ACTION="${1:-build}"
 
-# Get scheme name from second argument, default to ShopifyCheckoutSheetKit
-SCHEME="${2:-ShopifyCheckoutSheetKit-Package}"
+# Get scheme name from second argument, default to ShopifyCheckoutKit
+SCHEME="${2:-ShopifyCheckoutKit-Package}"
 
 # Get optional test filter from third argument
 TEST_FILTER="${3:-}"

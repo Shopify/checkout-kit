@@ -23,7 +23,7 @@
 
 import Foundation
 import PassKit
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 
 // MARK: - PaymentAuthorizationController Protocol
 
@@ -56,7 +56,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
     var checkoutURL: URL?
 
     /// Computes URL for a given state
-    func createSheetKitURL(for state: ApplePayState) -> URL? {
+    func createCheckoutKitURL(for state: ApplePayState) -> URL? {
         if case let .cartSubmittedForCompletion(redirectURL) = state {
             return redirectURL
         }
@@ -135,8 +135,8 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         case .reset:
             try await onReset()
 
-        case let .presentingCSK(url):
-            try await onPresentingCSK(to: url, previousState: previousState)
+        case let .presentingCheckoutKit(url):
+            try await onPresentingCheckoutKit(to: url, previousState: previousState)
 
         // As a "terminal" state, acts as a decision point to either:
         // - present TYP (redirectUrl)
@@ -158,7 +158,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         try await transition(to: .idle)
     }
 
-    private func onPresentingCSK(to url: URL?, previousState: ApplePayState) async throws {
+    private func onPresentingCheckoutKit(to url: URL?, previousState: ApplePayState) async throws {
         guard let url else {
             try await transition(
                 to: .terminalError(
@@ -183,7 +183,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
                 // `cartRemovePersonalData` is used to clear PII collected via ApplePay
                 // This removes some data potentially provided externally
                 // e.g. via ShopifyAcceleratedCheckouts.Configuration.Customer
-                // It is safe for us to re-attach this prior to displaying CSK
+                // It is safe for us to re-attach this prior to displaying Checkout Kit
                 if let customer = configuration.common.customer,
                    customer.email != nil || customer.phoneNumber != nil
                    || customer.customerAccessToken != nil
@@ -200,7 +200,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
                     ShopifyAcceleratedCheckouts.logger.debug("Updated cart with ShopifyAcceleratedCheckouts.Customer")
                 }
             } catch {
-                // Whilst it would be best to be able to re-attach this, we can still present CSK
+                // Whilst it would be best to be able to re-attach this, we can still present Checkout Kit
                 // without a successful response on `cartBuyerIdentityUpdate`
                 ShopifyAcceleratedCheckouts.logger.error("Failed to update cart buyer identity: \(error)")
             }
@@ -214,10 +214,10 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         case .paymentAuthorizationFailed,
              .unexpectedError,
              .interrupt:
-            try await transition(to: .presentingCSK(url: createSheetKitURL(for: previousState)))
+            try await transition(to: .presentingCheckoutKit(url: createCheckoutKitURL(for: previousState)))
 
         case let .cartSubmittedForCompletion(redirectURL):
-            try await transition(to: .presentingCSK(url: redirectURL))
+            try await transition(to: .presentingCheckoutKit(url: redirectURL))
 
         default:
             try await transition(to: .reset)

@@ -24,12 +24,12 @@
 import Combine
 import PassKit
 @preconcurrency import ShopifyAcceleratedCheckouts
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 import SwiftUI
 
 enum AppStorageKeys: String {
     case acceleratedCheckoutsLogLevel
-    case checkoutSheetKitLogLevel
+    case checkoutKitLogLevel
     case buyerIdentityMode
     case applePayStyle
 }
@@ -37,11 +37,11 @@ enum AppStorageKeys: String {
 struct SettingsView: View {
     @ObservedObject var config: AppConfiguration = appConfiguration
 
-    @AppStorage(AppStorageKeys.checkoutSheetKitLogLevel.rawValue)
-    var checkoutSheetKitLogLevel: LogLevel = .all {
+    @AppStorage(AppStorageKeys.checkoutKitLogLevel.rawValue)
+    var checkoutKitLogLevel: LogLevel = .all {
         didSet {
-            ShopifyCheckoutSheetKit.configure {
-                $0.logLevel = checkoutSheetKitLogLevel
+            ShopifyCheckoutKit.configure {
+                $0.logLevel = checkoutKitLogLevel
             }
         }
     }
@@ -56,9 +56,9 @@ struct SettingsView: View {
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
 
-    @State private var preloadingEnabled = ShopifyCheckoutSheetKit.configuration.preloading.enabled
+    @State private var preloadingEnabled = ShopifyCheckoutKit.configuration.preloading.enabled
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
-    @State private var selectedColorScheme = ShopifyCheckoutSheetKit.configuration.colorScheme
+    @State private var selectedColorScheme = ShopifyCheckoutKit.configuration.colorScheme
     @State private var colorScheme: ColorScheme = .light
 
     var body: some View {
@@ -67,7 +67,7 @@ struct SettingsView: View {
                 Section(header: Text("Features")) {
                     Toggle("Preload checkout", isOn: $preloadingEnabled)
                         .onChange(of: preloadingEnabled) { newValue in
-                            ShopifyCheckoutSheetKit.configuration.preloading.enabled = newValue
+                            ShopifyCheckoutKit.configuration.preloading.enabled = newValue
                         }
                 }
 
@@ -114,9 +114,9 @@ struct SettingsView: View {
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 selectedColorScheme = scheme
-                                ShopifyCheckoutSheetKit.configuration.colorScheme = scheme
-                                ShopifyCheckoutSheetKit.configuration.tintColor = scheme.tintColor
-                                ShopifyCheckoutSheetKit.configuration.backgroundColor =
+                                ShopifyCheckoutKit.configuration.colorScheme = scheme
+                                ShopifyCheckoutKit.configuration.tintColor = scheme.tintColor
+                                ShopifyCheckoutKit.configuration.backgroundColor =
                                     scheme.backgroundColor
                                 NotificationCenter.default.post(
                                     name: .colorSchemeChanged, object: nil
@@ -162,10 +162,10 @@ struct SettingsView: View {
                     .pickerStyle(.menu)
 
                     Picker(
-                        "Checkout Sheet Kit",
+                        "Checkout Kit",
                         selection: Binding(
-                            get: { checkoutSheetKitLogLevel },
-                            set: { checkoutSheetKitLogLevel = $0 }
+                            get: { checkoutKitLogLevel },
+                            set: { checkoutKitLogLevel = $0 }
                         )
                     ) {
                         ForEach(LogLevel.allCases, id: \.self) { level in
@@ -193,9 +193,9 @@ struct SettingsView: View {
                             .foregroundStyle(.gray)
                     }
                     HStack {
-                        Text("Checkout Sheet Kit version")
+                        Text("Checkout Kit version")
                         Spacer()
-                        Text(ShopifyCheckoutSheetKit.version)
+                        Text(ShopifyCheckoutKit.version)
                             .font(.system(size: 14))
                             .foregroundStyle(.gray)
                     }
@@ -210,7 +210,7 @@ struct SettingsView: View {
         .navigationBarHidden(true)
         .preferredColorScheme(.dark)
         .onAppear {
-            switch ShopifyCheckoutSheetKit.configuration.colorScheme {
+            switch ShopifyCheckoutKit.configuration.colorScheme {
             case .light:
                 colorScheme = .light
             case .dark:

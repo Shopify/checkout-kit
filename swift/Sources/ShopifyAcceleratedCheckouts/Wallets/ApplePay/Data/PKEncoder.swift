@@ -22,7 +22,7 @@
  */
 
 import PassKit
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 
 /// Encodes PassKit -> Storefront
 @available(iOS 16.0, *)

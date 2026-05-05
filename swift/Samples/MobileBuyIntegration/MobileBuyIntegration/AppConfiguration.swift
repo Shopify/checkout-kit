@@ -23,7 +23,7 @@
 
 import Foundation
 import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 
 public enum BuyerIdentityMode: String, CaseIterable {
     case guest

@@ -181,7 +181,7 @@ class ErrorHandler_UserErrorsTest: XCTestCase {
                 expectedAction: .interrupt(.other),
                 expectedField: nil,
                 expectedMessageKey: nil,
-                testDescription: "returns other interrupt when email is invalid to fallback to CSK"
+                testDescription: "returns other interrupt when email is invalid to fallback to Checkout Kit"
             ),
             TestCase(
                 errorCode: .invalid,

@@ -22,7 +22,7 @@
  */
 
 import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 enum AppStorageKeys: String {

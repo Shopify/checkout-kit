@@ -1,5 +1,5 @@
 name: 🐛 Bug Report
-description: Something is wrong with the Checkout Sheet Kit.
+description: Something is wrong with the Checkout Kit.
 labels: ["Bug", "untriaged"]
 body:
   - type: markdown
@@ -7,13 +7,13 @@ body:
       value: |
         ## Hi there!
 
-        If your issue is **not** related to the Checkout Sheet Kit itself, but rather an internal checkout or storefront problem, please reach out to Shopify support directly where the issue will be triaged correctly.
+        If your issue is **not** related to the Checkout Kit itself, but rather an internal checkout or storefront problem, please reach out to Shopify support directly where the issue will be triaged correctly.
 
   - type: dropdown
     attributes:
       label: What area is the issue related to?
       options:
-        - Checkout Sheet Kit
+        - Checkout Kit
         - Storefront API
         - Multipass
         - Lifecycle methods
@@ -24,7 +24,7 @@ body:
 
   - type: input
     attributes:
-      label: What version of Checkout Sheet Kit are you using?
+      label: What version of Checkout Kit are you using?
       description: Please list the package version and device you are testing with.
     validations:
       required: true

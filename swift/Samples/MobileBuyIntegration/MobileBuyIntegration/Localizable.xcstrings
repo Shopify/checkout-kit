@@ -63,10 +63,10 @@
     "Check out" : {
 
     },
-    "Checkout Sheet Kit" : {
+    "Checkout Kit" : {
 
     },
-    "Checkout Sheet Kit version" : {
+    "Checkout Kit version" : {
 
     },
     "Clear" : {
@@ -136,7 +136,7 @@
     "Settings" : {
 
     },
-    "shopify_checkout_sheet_title" : {
+    "shopify_checkout_kit_title" : {
       "comment" : "The title of the checkout sheet.",
       "extractionState" : "manual",
       "localizations" : {

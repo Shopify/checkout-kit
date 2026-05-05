@@ -1,6 +1,6 @@
 # MobileBuyIntegration Sample App
 
-A sample iOS app demonstrating how to integrate [Checkout Sheet Kit](../../README.md) with the Shopify Storefront API using [Apollo iOS](https://github.com/apollographql/apollo-ios).
+A sample iOS app demonstrating how to integrate [Checkout Kit](../../README.md) with the Shopify Storefront API using [Apollo iOS](https://github.com/apollographql/apollo-ios).
 
 ## Architecture
 
@@ -85,7 +85,7 @@ API_VERSION = 2025-10
 
 ### 2. Download the new schema
 
-The schema defines what types and fields are available in the API. Run from the **repo root** (`checkout-sheet-kit-swift/`):
+The schema defines what types and fields are available in the API. Run from the **repo root** (`checkout-kit/`):
 
 ```bash
 dev apollo download_schema mobile-buy
@@ -131,7 +131,7 @@ Build the project in Xcode. If the new schema removed or renamed fields, you'll 
 
 ## Dev commands reference
 
-All commands are run from the **repo root** (`checkout-sheet-kit-swift/`):
+All commands are run from the **repo root** (`checkout-kit/`):
 
 | Command | Description |
 |---------|-------------|

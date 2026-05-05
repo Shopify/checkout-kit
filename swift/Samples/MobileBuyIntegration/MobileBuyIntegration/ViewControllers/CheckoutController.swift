@@ -22,7 +22,7 @@
  */
 
 import OSLog
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 import UIKit
 
 class CheckoutController: UIViewController {
@@ -43,7 +43,7 @@ class CheckoutController: UIViewController {
 
     public func present(checkout url: URL) {
         if let rootViewController = window?.topMostViewController() {
-            ShopifyCheckoutSheetKit.present(checkout: url, from: rootViewController, delegate: self)
+            ShopifyCheckoutKit.present(checkout: url, from: rootViewController, delegate: self)
             root = rootViewController
         }
     }
@@ -66,11 +66,11 @@ extension CheckoutController: @preconcurrency CheckoutDelegate {
         root?.dismiss(animated: true, completion: nil)
     }
 
-    func checkoutDidFail(error: ShopifyCheckoutSheetKit.CheckoutError) {
+    func checkoutDidFail(error: ShopifyCheckoutKit.CheckoutError) {
         OSLogger.shared.debug("[CheckoutDelegate] Checkout failed: \(error.localizedDescription)")
     }
 
-    func checkoutDidEmitWebPixelEvent(event: ShopifyCheckoutSheetKit.PixelEvent) {
+    func checkoutDidEmitWebPixelEvent(event: ShopifyCheckoutKit.PixelEvent) {
         var eventName: String?
 
         switch event {

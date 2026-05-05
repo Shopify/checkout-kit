@@ -1,5 +1,5 @@
 name: 💡 Feature Request
-description: An idea or suggestion for a new feature or enhancement to the Checkout Sheet Kit
+description: An idea or suggestion for a new feature or enhancement to the Checkout Kit
 labels: ["Feature-Request", "untriaged"]
 body:
   - type: markdown
@@ -7,7 +7,7 @@ body:
       value: |
         ## Hi there!
 
-        Please tell us about the new feature or enhancement you'd like to see implemented in the Checkout Sheet Kit.
+        Please tell us about the new feature or enhancement you'd like to see implemented in the Checkout Kit.
 
   - type: textarea
     attributes:
