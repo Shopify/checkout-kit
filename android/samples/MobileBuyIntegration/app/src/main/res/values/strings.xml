@@ -1,0 +1,102 @@
+<resources>
+    <string name="app_name" translatable="false">Checkout SDK Mobile Buy Integration Sample</string>
+    <string name="logo_content_description" translatable="false">Store logo</string>
+
+    <!-- Override Checkout Sheet Kit Default Title -->
+    <string name="checkout_web_view_title">Buy Now!</string>
+
+    <!-- Navigation -->
+    <string name="navigation_home" translatable="false">Home</string>
+    <string name="navigation_log_in" translatable="false">Log in</string>
+    <string name="navigation_shop" translatable="false">Shop</string>
+    <string name="cart_icon_content_description" translatable="false">Go to cart icon</string>
+
+    <!-- Settings -->
+    <string name="settings" translatable="false">Settings</string>
+
+    <string name="settings_account_details" translatable="false">Account details</string>
+
+    <string name="color_scheme" translatable="false">Color Scheme</string>
+    <string name="color_scheme_automatic" translatable="false">Automatic</string>
+    <string name="color_scheme_dark" translatable="false">Dark</string>
+    <string name="color_scheme_light" translatable="false">Light</string>
+    <string name="color_scheme_web" translatable="false">Web</string>
+
+    <string name="preloading_note" translatable="false">
+        NOTE: If preloading is enabled, color scheme changes may not be applied unless the cart is preloaded again.
+    </string>
+
+    <string name="sample_app_version" translatable="false">Sample app version</string>
+    <string name="sdk_version" translatable="false">Checkout Sheet Kit version</string>
+
+    <string name="view_logs" translatable="false">View logs</string>
+    <string name="delete_logs" translatable="false">Delete logs</string>
+
+    <string name="login" translatable="false">Log in</string>
+    <string name="logout" translatable="false">Log out</string>
+    <string name="login_retry" translatable="false">Retry</string>
+
+    <!-- Errors -->
+    <string name="checkout_error" translatable="false">Checkout failed, please try again</string>
+    <string name="collection_failed_to_load" translatable="false">Failed to load collection</string>
+    <string name="collections_failed_to_load" translatable="false">Failed to load collections</string>
+    <string name="products_failed_to_load" translatable="false">Failed to load products</string>
+    <string name="cart_error_creating" translatable="false">Failed to create cart</string>
+    <string name="cart_error_updating" translatable="false">Failed to update cart</string>
+    <string name="login_error" translatable="false">An error occurred when completing log in</string>
+    <string name="customer_failed_to_load" translatable="false">Failed to load customer</string>R
+
+    <!-- File chooser title - if an app is installed that requires media upload -->
+    <string name="filechooser_title">Select or Capture Image</string>
+
+    <!-- Home -->
+    <string name="hero_text" translatable="false">Stylish Plants for Modern Living</string>
+    <string name="hero_content_description" translatable="false">Image of living room with lots of plants</string>
+    <string name="hero_cta" translatable="false">Shop all</string>
+
+    <string name="collections_title" translatable="false">Collections</string>
+    <string name="collection_img_alt_default" translatable="false">Collection image</string>
+    <string name="collection_cta_content_description" translatable="false">View collection></string>
+    <string name="collections_no_collections_configured" translatable="false">No collections configured</string>
+
+    <string name="featured_title" translatable="false">Featured Products</string>
+    <string name="featured_default_alt_text" translatable="false">Featured plant image</string>
+
+    <!-- Products -->
+    <string name="product_taxes_included" translatable="false">Taxes included</string>
+    <string name="products_header" translatable="false">Products</string>
+
+    <string name="product_add_to_cart" translatable="false">Add to cart</string>
+    <string name="product_alt_text_default" translatable="false">Product image</string>
+
+    <string name="free" translatable="false">Free</string>
+
+    <!-- Cart -->
+    <string name="cart_header" translatable="false">Your cart</string>
+    <string name="cart_continue_shopping" translatable="false">Continue shopping</string>
+    <string name="cart_estimated_total" translatable="false">Estimated total</string>
+    <string name="cart_total" translatable="false">Total</string>
+    <string name="cart_taxes_included" translatable="false">Taxes included. Discounts and shipping calculated at checkout.</string>
+    <string name="cart_product_header" translatable="false">PRODUCT</string>
+    <string name="cart_total_header" translatable="false">TOTAL</string>
+    <string name="cart_checkout" translatable="false">Check out</string>
+    <string name="cart_empty" translatable="false">Your cart is empty</string>
+    <string name="cart_emtpy_description" translatable="false">Add products while you shop, so they\'ll be ready for checkout later.</string>
+    <string name="cart_trash_content_description" translatable="false">Delete line item</string>
+
+    <!-- Customer -->
+    <string name="customer_email" translatable="false">Email</string>
+    <string name="customer_phone" translatable="false">Phone</string>
+    <string name="customer_default_addr" translatable="false">Default Address</string>
+    <string name="customer_default_addr_first_name" translatable="false">First Name</string>
+    <string name="customer_default_addr_last_name" translatable="false">Last Name</string>
+    <string name="customer_default_addr_phone" translatable="false">Phone number</string>
+    <string name="customer_default_addr_address1" translatable="false">Address 1</string>
+    <string name="customer_default_addr_address2" translatable="false">Address 2</string>
+    <string name="customer_default_addr_city" translatable="false">City</string>
+    <string name="customer_default_addr_province" translatable="false">Province</string>
+    <string name="customer_default_addr_zip" translatable="false">Zip code</string>
+    <string name="customer_default_addr_country" translatable="false">Country</string>
+    <string name="customer_back_to_settings" translatable="false">Back to settings</string>
+    <string name="customer_image_alt" translatable="false">Customer image</string>
+</resources>
