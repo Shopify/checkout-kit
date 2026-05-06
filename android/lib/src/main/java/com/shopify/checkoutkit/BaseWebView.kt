@@ -57,8 +57,6 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
 
     abstract fun getEventProcessor(): CheckoutWebViewEventProcessor
     abstract val recoverErrors: Boolean
-    abstract val variant: String
-    abstract val cspSchema: String
 
     private fun configureWebView() {
         visibility = VISIBLE
@@ -125,11 +123,11 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
     private fun isOnConfirmationPage(): Boolean = url?.let(Uri::parse).isConfirmationPage()
 
     internal fun userAgentSuffix(): String {
-        val theme = ShopifyCheckoutKit.configuration.colorScheme.id
-        val version = ShopifyCheckoutKit.version.split("-").first()
         val platform = ShopifyCheckoutKit.configuration.platform
-        val platformSuffix = if (platform != null) " ${platform.displayName}" else ""
-        val suffix = "ShopifyCheckoutSDK/$version ($cspSchema;$theme;$variant)$platformSuffix"
+        val suffix = buildString {
+            append("ShopifyCheckoutKit/${BuildConfig.SDK_VERSION} android")
+            if (platform != null) append(" ${platform.displayName}")
+        }
         log.d(LOG_TAG, "Setting User-Agent suffix $suffix")
         return suffix
     }

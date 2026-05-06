@@ -125,13 +125,19 @@ public object ShopifyCheckoutKit {
      * @param context The context the checkout is being presented from
      * @param checkoutEventProcessor provides callbacks to allow clients to listen for and respond to checkout lifecycle events such as
      * (failure, completion, cancellation, external link clicks).
+     * @param communicationClient optional handler for Embedded Checkout Protocol (ECP) messages.
+     * Implement [CheckoutCommunicationClient] to intercept arbitrary ECP messages from the checkout
+     * web page. Built-in messages ([ec.ready][EmbeddedCheckoutProtocol.METHOD_READY] and
+     * [ec.start][EmbeddedCheckoutProtocol.METHOD_START]) are handled automatically by the SDK.
      * @return An instance of [CheckoutKitDialog] if the dialog was successfully created and displayed.
      */
+    @JvmOverloads
     @JvmStatic
     public fun <T : DefaultCheckoutEventProcessor> present(
         checkoutUrl: String,
         context: ComponentActivity,
-        checkoutEventProcessor: T
+        checkoutEventProcessor: T,
+        communicationClient: CheckoutCommunicationClient? = null,
     ): CheckoutKitDialog? {
         log.d("ShopifyCheckoutKit", "Present called with checkoutUrl $checkoutUrl.")
         if (context.isDestroyed || context.isFinishing) {
@@ -139,7 +145,7 @@ public object ShopifyCheckoutKit {
             return null
         }
         log.d("ShopifyCheckoutKit", "Constructing Dialog")
-        val dialog = CheckoutDialog(checkoutUrl, checkoutEventProcessor, context)
+        val dialog = CheckoutDialog(checkoutUrl, checkoutEventProcessor, context, communicationClient)
         context.lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
                 log.d("ShopifyCheckoutKit", "Context is being destroyed, dismissing dialog.")
