@@ -23,7 +23,7 @@
 
 import Foundation
 import Security
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 
 struct OAuthTokenResult: Codable {
     let accessToken: String
@@ -54,7 +54,7 @@ struct OAuthTokenResult: Codable {
 final class KeychainHelper: Sendable {
     static let shared = KeychainHelper()
 
-    private let logger = OSLogger(prefix: "Keychain", logLevel: ShopifyCheckoutSheetKit.configuration.logLevel)
+    private let logger = OSLogger(prefix: "Keychain", logLevel: ShopifyCheckoutKit.configuration.logLevel)
     private let service = "com.shopify.mobilebuyintegration"
     private let tokensKey = "customer_account_tokens"
     private let emailKey = "customer_account_email"

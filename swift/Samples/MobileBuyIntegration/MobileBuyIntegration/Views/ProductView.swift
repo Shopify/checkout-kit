@@ -24,7 +24,7 @@
 import Apollo
 import ApolloAPI
 @preconcurrency import ShopifyAcceleratedCheckouts
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
 
@@ -180,7 +180,7 @@ struct ProductView: View {
 
             let diff = Date().timeIntervalSince(start)
             let message = "Added item to cart in \(String(format: "%.0f", diff * 1000))ms"
-            ShopifyCheckoutSheetKit.configuration.logger.log(message)
+            ShopifyCheckoutKit.configuration.logger.log(message)
             loading = false
             addedToCart = true
 

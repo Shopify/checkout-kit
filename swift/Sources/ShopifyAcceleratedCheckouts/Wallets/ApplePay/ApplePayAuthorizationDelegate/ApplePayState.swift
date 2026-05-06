@@ -44,7 +44,7 @@ enum ApplePayState: Equatable {
 
     /// Payment was interrupted due to a validation violation Apple Pay sheet cannot handle
     /// Prior to the payment authorization
-    /// This occurs when cart api detects an issue that requires CSK intervention
+    /// This occurs when cart api detects an issue that requires Checkout Kit intervention
     /// (e.g., out of stock items)
     case interrupt(
         // The payment sheet will be interrupted and the user will be redirected to the checkout
@@ -70,30 +70,30 @@ enum ApplePayState: Equatable {
         redirectURL: URL
     )
 
-    /// Unexpected error occurred - falling back to CSK
-    /// Used for errors that are non recoverable in the Apple Pay sheet and require CSK recovery
+    /// Unexpected error occurred - falling back to Checkout Kit
+    /// Used for errors that are non recoverable in the Apple Pay sheet and require Checkout Kit recovery
     case unexpectedError(error: Error)
 
-    /// Use this when when ApplePay cannot handle the error, and CSK cannot be used as a fallback
-    /// e.g. cart query / cartCreate fails, so we don't have a checkoutURL to show CSK
+    /// Use this when when ApplePay cannot handle the error, and Checkout Kit cannot be used as a fallback
+    /// e.g. cart query / cartCreate fails, so we don't have a checkoutURL to show Checkout Kit
     case terminalError(error: Error)
 
-    /// Presenting CheckoutSheetKit (CSK)
+    /// Presenting CheckoutKit (Checkout Kit)
     /// Entering this state after `cartSubmittedForCompletion` will show the Thank You Page if payment is succesful
     /// Otherwise this will present checkout as a fallback
-    case presentingCSK(url: URL?)
+    case presentingCheckoutKit(url: URL?)
 
     /// Transition to completed at terminal points in the flow
     /// If all work processing is done, transition to completed, to activate final side effects
     /// where the delegate will relinquish responsibility
     ///
     /// Terminal states that lead here:
-    /// 1. Payment was successfully authorized and CSK was presented
+    /// 1. Payment was successfully authorized and Checkout Kit was presented
     /// 2. User cancelled the sheet (dismissed)
-    /// 3. SDK encountered an error and needed CSK fallback
+    /// 3. SDK encountered an error and needed Checkout Kit fallback
     /// 4. Payment was interrupted for business logic reasons
     ///
-    /// Note: Payment may still fail during payment processing - it is then CSK's responsibility to handle it
+    /// Note: Payment may still fail during payment processing - it is then Checkout Kit's responsibility to handle it
     case completed
 
     /// Reset to initial state
@@ -141,9 +141,9 @@ enum ApplePayState: Equatable {
 
              (.terminalError, .completed),
 
-             (.presentingCSK, .completed),
+             (.presentingCheckoutKit, .completed),
 
-             (.completed, .presentingCSK),
+             (.completed, .presentingCheckoutKit),
              (.completed, .reset),
 
              (.reset, .idle):

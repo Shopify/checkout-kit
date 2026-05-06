@@ -23,7 +23,7 @@
 
 import CommonCrypto
 import Foundation
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 
 enum CustomerAccountError: LocalizedError {
     case missingConfiguration
@@ -55,7 +55,7 @@ enum CustomerAccountError: LocalizedError {
 final class CustomerAccountManager: ObservableObject {
     static let shared = CustomerAccountManager()
 
-    private let logger = OSLogger(prefix: "CustomerAccount", logLevel: ShopifyCheckoutSheetKit.configuration.logLevel)
+    private let logger = OSLogger(prefix: "CustomerAccount", logLevel: ShopifyCheckoutKit.configuration.logLevel)
     private let shopId: String?
     private let clientId: String?
 

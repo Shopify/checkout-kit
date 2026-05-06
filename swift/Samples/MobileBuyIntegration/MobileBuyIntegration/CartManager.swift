@@ -26,7 +26,7 @@ import ApolloAPI
 import Combine
 import Foundation
 import PassKit
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 
 protocol UserErrorDisplayable {
     var message: String { get }
@@ -54,7 +54,7 @@ class CartManager: ObservableObject {
 
     public func preloadCheckout() {
         if let url = cart?.checkoutURL, isDirty {
-            ShopifyCheckoutSheetKit.preload(checkout: url)
+            ShopifyCheckoutKit.preload(checkout: url)
             markCartAsReady()
         }
     }

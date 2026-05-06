@@ -22,7 +22,7 @@
  */
 
 @testable import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import UIKit
 import XCTest
 
@@ -439,7 +439,7 @@ class ApplePayViewControllerTests: XCTestCase {
 
         XCTAssertEqual(result.id, mockCart.id)
 
-        // Invalid email errors trigger an interrupt to fallback to CSK
+        // Invalid email errors trigger an interrupt to fallback to Checkout Kit
         XCTAssertEqual(mockAuthorizationDelegate.transitionHistory.count, 1)
         XCTAssertEqual(
             mockAuthorizationDelegate.transitionHistory.first,

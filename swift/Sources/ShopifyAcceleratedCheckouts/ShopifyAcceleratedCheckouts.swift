@@ -21,7 +21,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 
 public enum ShopifyAcceleratedCheckouts {
     /// Storefront API version used for cart operations

@@ -24,7 +24,7 @@
 import ApolloAPI
 import PassKit
 import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 typealias CartLineNode = Storefront.CartFragment.Lines.Node
@@ -238,7 +238,7 @@ struct CartLines: View {
                                     }
                                     updating = node.id
 
-                                    ShopifyCheckoutSheetKit.invalidate()
+                                    ShopifyCheckoutKit.invalidate()
 
                                     _Concurrency.Task {
                                         let cart = try await CartManager.shared.performCartLinesUpdate(id: node.id, quantity: node.quantity - 1)
@@ -273,7 +273,7 @@ struct CartLines: View {
 
                                         updating = node.id
 
-                                        ShopifyCheckoutSheetKit.invalidate()
+                                        ShopifyCheckoutKit.invalidate()
 
                                         _Concurrency.Task {
                                             let cart = try await CartManager.shared.performCartLinesUpdate(
@@ -284,7 +284,7 @@ struct CartLines: View {
                                             updating = nil
 
                                             if let checkoutUrl = cart.checkoutURL {
-                                                ShopifyCheckoutSheetKit.preload(checkout: checkoutUrl)
+                                                ShopifyCheckoutKit.preload(checkout: checkoutUrl)
                                             }
                                         }
                                     },

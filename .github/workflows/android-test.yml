@@ -1,16 +1,7 @@
 name: Android — Lint, Build & Run Tests
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'android/**'
-      - '.github/workflows/android-test.yml'
-  pull_request:
-    paths:
-      - 'android/**'
-      - '.github/workflows/android-test.yml'
+  workflow_call:
   workflow_dispatch:
 
 jobs:

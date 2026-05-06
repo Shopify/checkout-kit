@@ -21,7 +21,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 @available(iOS 16.0, *)
@@ -72,7 +72,7 @@ extension ShopPayViewController: CheckoutDelegate {
     }
 
     func checkoutDidCancel() {
-        // x right button on CSK doesn't dismiss automatically
+        // x right button on Checkout Kit doesn't dismiss automatically
         checkoutViewController?.dismiss(animated: true)
         eventHandlers.checkoutDidCancel?()
     }

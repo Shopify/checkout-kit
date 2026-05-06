@@ -23,7 +23,7 @@
 
 import Apollo
 import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 struct ButtonSet: View {

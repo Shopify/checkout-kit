@@ -1,6 +1,6 @@
 # Sample Project
 
-This directory contains a sample project that implements the `ShopifyCheckoutSheetKit` library.
+This directory contains a sample project that implements the `ShopifyCheckoutKit` library.
 
 The project directory contains a `Storefront.xcconfig.example` file. Simply rename it to `Storefront.xcconfig` and update the contained values to match your Shopify storefront.
 
@@ -8,7 +8,7 @@ The project directory contains a `Storefront.xcconfig.example` file. Simply rena
 
 ## MobileBuyIntegration
 
-This project demonstrates how to use the [Mobile Buy SDK](https://github.com/Shopify/mobile-buy-sdk-ios) in conjunction with the `ShopifyCheckoutSheetKit` library.
+This project demonstrates how to use the [Mobile Buy SDK](https://github.com/Shopify/mobile-buy-sdk-ios) in conjunction with the `ShopifyCheckoutKit` library.
 
 ### Getting Started
 

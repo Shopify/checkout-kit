@@ -22,7 +22,7 @@
  */
 
 @preconcurrency import ShopifyAcceleratedCheckouts
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 import UIKit
 
 func getLogLevel(key: String) -> LogLevel {
@@ -45,13 +45,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let acceleratedCheckoutsLogLevel: LogLevel = getLogLevel(
             key: AppStorageKeys.acceleratedCheckoutsLogLevel.rawValue
         )
-        let checkoutSheetKitLogLevel: LogLevel = getLogLevel(
-            key: AppStorageKeys.checkoutSheetKitLogLevel.rawValue
+        let checkoutKitLogLevel: LogLevel = getLogLevel(
+            key: AppStorageKeys.checkoutKitLogLevel.rawValue
         )
 
         ShopifyAcceleratedCheckouts.logLevel = acceleratedCheckoutsLogLevel
 
-        ShopifyCheckoutSheetKit.configure {
+        ShopifyCheckoutKit.configure {
             // Checkout color scheme setting
             $0.colorScheme = .automatic
 
@@ -64,12 +64,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // Optional logger used for internal purposes
             $0.logger = FileLogger("log.txt")
 
-            // Optional log level for Checkout Sheet Kit
-            $0.logLevel = checkoutSheetKitLogLevel
+            // Optional log level for Checkout Kit
+            $0.logLevel = checkoutKitLogLevel
         }
 
         print("[MobileBuyIntegration] AcceleratedCheckout Log level set to \(acceleratedCheckoutsLogLevel)")
-        print("[MobileBuyIntegration] CheckoutSheetKit Log level set to \(checkoutSheetKitLogLevel)")
+        print("[MobileBuyIntegration] CheckoutKit Log level set to \(checkoutKitLogLevel)")
 
         UIBarButtonItem.appearance().tintColor = ColorPalette.primaryColor
 

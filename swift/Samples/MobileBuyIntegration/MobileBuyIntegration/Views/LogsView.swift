@@ -21,7 +21,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 import SwiftUI
 
 @available(iOS 15.0, *)
@@ -73,7 +73,7 @@ struct LogsView: View {
     }
 
     private func clearLogs() {
-        ShopifyCheckoutSheetKit.configuration.logger.clearLogs()
+        ShopifyCheckoutKit.configuration.logger.clearLogs()
         logs = readLogs()
     }
 

@@ -22,7 +22,7 @@
  */
 
 import Combine
-@preconcurrency import ShopifyCheckoutSheetKit
+@preconcurrency import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
 
@@ -180,7 +180,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = rootViewController
         window.makeKeyAndVisible()
         window.tintColor = ColorPalette.primaryColor
-        window.overrideUserInterfaceStyle = ShopifyCheckoutSheetKit.configuration.colorScheme.userInterfaceStyle
+        window.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.colorScheme.userInterfaceStyle
         return window
     }
 
@@ -307,7 +307,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     @objc func colorSchemeChanged() {
-        window?.overrideUserInterfaceStyle = ShopifyCheckoutSheetKit.configuration.colorScheme.userInterfaceStyle
+        window?.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.colorScheme.userInterfaceStyle
     }
 
     private func getRootViewController() -> UINavigationController? {

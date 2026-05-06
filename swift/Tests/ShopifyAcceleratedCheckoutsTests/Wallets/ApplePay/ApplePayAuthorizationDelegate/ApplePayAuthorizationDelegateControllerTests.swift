@@ -24,7 +24,7 @@
 import Contacts
 import PassKit
 @testable import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import XCTest
 
 @available(iOS 17.0, *)

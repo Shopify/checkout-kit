@@ -22,7 +22,7 @@
  */
 
 import Foundation
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 
 /// A lightweight GraphQL client for the Storefront API without external dependencies
 @available(iOS 16.0, *)
