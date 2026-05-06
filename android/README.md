@@ -1,14 +1,14 @@
 # Shopify Checkout Kit - Android
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](/LICENSE)
-![Tests](https://github.com/Shopify/checkout-sheet-kit-android/actions/workflows/test.yml/badge.svg?branch=main)
-[![GitHub Release](https://img.shields.io/github/release/shopify/checkout-sheet-kit-android.svg?style=flat)]()
+![Tests](https://github.com/Shopify/checkout-kit/actions/workflows/test.yml/badge.svg?branch=main)
+[![GitHub Release](https://img.shields.io/github/release/shopify/checkout-kit.svg?style=flat)]()
 
 <img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/1f1d7351-1715-4165-874e-c1f2195bcb20" />
 
 **Shopify's Checkout Kit for Android** is a library that enables Android apps to provide the world's highest converting, customizable, one-page checkout within an app. The presented experience is a fully-featured checkout that preserves all of the store customizations: Checkout UI extensions, Functions, Web Pixels, and more. It also provides idiomatic defaults such as support for light and dark mode, and convenient developer APIs to embed, customize and follow the lifecycle of the checkout experience. Check out our developer blog to [learn how Checkout Kit is built](https://www.shopify.com/partners/blog/mobile-checkout-sdks-for-ios-and-android).
 
-**Note**: We're in the process of renaming "Checkout Sheet Kit" to "Checkout Kit." The dev docs and README already use the new name, while the package itself will be updated in an upcoming version.
+**Note**: This library was previously published as `com.shopify:checkout-sheet-kit`. It has been renamed to `com.shopify:checkout-kit`. Update your Gradle/Maven dependency if upgrading from an older version.
 
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
@@ -48,14 +48,14 @@
 
 ## Getting Started
 
-The SDK is an [open source Android library](https://central.sonatype.com/artifact/com.shopify/checkout-sheet-kit). As a quick start, see
+The SDK is an [open source Android library](https://central.sonatype.com/artifact/com.shopify/checkout-kit). As a quick start, see
 [sample projects](samples/README.md) or use one of the following ways to integrate the SDK into
 your project:
 
 ### Gradle
 
 ```groovy
-implementation "com.shopify:checkout-sheet-kit:3.6.0"
+implementation "com.shopify:checkout-kit:3.6.0"
 ```
 
 ### Maven
@@ -64,7 +64,7 @@ implementation "com.shopify:checkout-sheet-kit:3.6.0"
 
 <dependency>
    <groupId>com.shopify</groupId>
-   <artifactId>checkout-sheet-kit</artifactId>
+   <artifactId>checkout-kit</artifactId>
    <version>3.6.0</version>
 </dependency>
 ```
@@ -74,7 +74,7 @@ implementation "com.shopify:checkout-sheet-kit:3.6.0"
 Once the SDK has been added as a dependency, you can import the library:
 
 ```kotlin
-import com.shopify.checkoutsheetkit.ShopifyCheckoutSheetKit
+import com.shopify.checkoutkit.ShopifyCheckoutKit
 ```
 
 To present a checkout to the buyer, your application must first obtain a checkout URL.
@@ -114,7 +114,7 @@ function provided by the SDK:
 ```kotlin
 fun presentCheckout() {
     val checkoutUrl = cart.checkoutUrl
-    ShopifyCheckoutSheetKit.present(checkoutUrl, context, checkoutEventProcessor)
+    ShopifyCheckoutKit.present(checkoutUrl, context, checkoutEventProcessor)
 }
 ```
 
@@ -125,7 +125,7 @@ fun presentCheckout() {
 ## Configuration
 
 The SDK provides a way to customize the presented checkout experience via
-the `ShopifyCheckoutSheetKit.configure` function.
+the `ShopifyCheckoutKit.configure` function.
 
 ### Color Scheme
 
@@ -133,7 +133,7 @@ By default, the SDK will match the user's device color appearance. This behavior
 via the `colorScheme` property:
 
 ```kotlin
-ShopifyCheckoutSheetKit.configure {
+ShopifyCheckoutKit.configure {
     // [Default] Automatically toggle idiomatic light and dark themes based on device preference.
     it.colorScheme = ColorScheme.Automatic()
 
@@ -183,7 +183,7 @@ val automatic = ColorScheme.Automatic(
 The close icon in the checkout dialog header can be customized using the `customize` method for an ergonomic API:
 
 ```kotlin
-ShopifyCheckoutSheetKit.configure {
+ShopifyCheckoutKit.configure {
     it.colorScheme = ColorScheme.Light().customize {
         // Option 1: Just tint the default close icon
         closeIconTint = Color.ResourceId(R.color.my_custom_tint_color)
@@ -197,7 +197,7 @@ ShopifyCheckoutSheetKit.configure {
 For automatic theme switching, you can provide different customizations for light and dark modes:
 
 ```kotlin
-ShopifyCheckoutSheetKit.configure {
+ShopifyCheckoutKit.configure {
     it.colorScheme = ColorScheme.Automatic().customize(
         light = {
             closeIconTint = Color.ResourceId(R.color.light_tint)
@@ -221,14 +221,14 @@ The colors that can be modified are:
 - closeIcon - Used to provide a completely custom close icon drawable
 - closeIconTint - Used to tint the default close icon with a custom color
 
-The current configuration can be obtained by calling `ShopifyCheckoutSheetKit.getConfiguration()`.
+The current configuration can be obtained by calling `ShopifyCheckoutKit.getConfiguration()`.
 
 ### Log Level
 
 Enable additional debug logs via the `logLevel` configuration option.
 
 ```kotlin
-ShopifyCheckoutSheetKit.configure {
+ShopifyCheckoutKit.configure {
     it.logLevel = LogLevel.DEBUG
 }
 ```
@@ -252,7 +252,7 @@ initialized in the background, ahead of time.
 Preloading is an advanced feature that can be disabled via a runtime flag:
 
 ```kotlin
-ShopifyCheckoutSheetKit.configure {
+ShopifyCheckoutKit.configure {
     it.preloading = Preloading(enabled = false) // defaults to true
 }
 ```
@@ -261,16 +261,16 @@ Once enabled, preloading a checkout is as simple as calling
 `preload(checkoutUrl)` with a valid `checkoutUrl`.
 
 ```kotlin
-ShopifyCheckoutSheetKit.preload(checkoutUrl)
+ShopifyCheckoutKit.preload(checkoutUrl)
 ```
 
 Setting enabled to `false` will cause all calls to the `preload` function to be ignored. This allows the application to selectively toggle preloading behavior as a remote feature flag or dynamically in response to client conditions - e.g. when data saver functionality is enabled by the user.
 
 ```kotlin
-ShopifyCheckoutSheetKit.configure {
+ShopifyCheckoutKit.configure {
     it.preloading = Preloading(enabled = false)
 }
-ShopifyCheckoutSheetKit.preload(checkoutUrl) // no-op
+ShopifyCheckoutKit.preload(checkoutUrl) // no-op
 ```
 
 ### Important considerations
@@ -303,13 +303,13 @@ Instead, a better approach is to call `preload()` when you have a strong enough 
 
 ### Cache invalidation
 
-Should you wish to manually clear the preload cache, there is a `ShopifyCheckoutSheetKit.invalidate()` helper function to do so. This function will be a no-op if no checkout is preloaded.
+Should you wish to manually clear the preload cache, there is a `ShopifyCheckoutKit.invalidate()` helper function to do so. This function will be a no-op if no checkout is preloaded.
 
 You may wish to do this if the buyer changes shortly before entering checkout, e.g. by changing cart quantity on a cart view.
 
 ### Lifecycle management for preloaded checkout
 
-Preloading renders a checkout in a background webview, which is brought to foreground when `ShopifyCheckoutSheetKit.present()` is called. The content of preloaded checkout reflects the state of the cart when `preload()` was initially called. If the cart is mutated after `preload()` is called, the application is responsible for invalidating the preloaded checkout to ensure that up-to-date checkout content is displayed to the buyer:
+Preloading renders a checkout in a background webview, which is brought to foreground when `ShopifyCheckoutKit.present()` is called. The content of preloaded checkout reflects the state of the cart when `preload()` was initially called. If the cart is mutated after `preload()` is called, the application is responsible for invalidating the preloaded checkout to ensure that up-to-date checkout content is displayed to the buyer:
 
 1. To update preloaded contents: call `preload()` once again
 2. To disable preloaded content: toggle the preload configuration setting
@@ -421,7 +421,7 @@ Should you wish to opt-out of this fallback experience entirely, you can do so b
 `preRecoveryActions()` can also be overridden to execute code before a fallback takes place, for example to add logging, or clear up any potentially problematic state such as in cookies. By default this function is a no-op.
 
 ```kotlin
-ShopifyCheckoutSheetKit.configure {
+ShopifyCheckoutKit.configure {
     it.errorRecovery = object: ErrorRecovery {
         override fun shouldRecoverFromError(checkoutException: CheckoutException): Boolean {
             // To disable recovery (default = checkoutException.isRecoverable)
@@ -447,10 +447,10 @@ ShopifyCheckoutSheetKit.configure {
 | `CheckoutExpiredException`     | 'cart_expired'                 | The cart or checkout is no longer available.                                 | Create a new cart and open a new checkout URL.                                              |
 | `CheckoutExpiredException`     | 'cart_completed'               | The cart associated with the checkout has completed checkout.                | Create new cart and open a new checkout URL.                                                |
 | `CheckoutExpiredException`     | 'invalid_cart'                 | The cart associated with the checkout is invalid (e.g. empty).               | Create a new cart and open a new checkout URL.                                              |
-| `CheckoutSheetKitException`    | 'error_receiving_message'      | Checkout Kit failed to receive a message from checkout.                      | Show checkout in a fallback WebView.                                                        |
-| `CheckoutSheetKitException`    | 'error_sending_message'        | Checkout Kit failed to send a message to checkout.                           | Show checkout in a fallback WebView.                                                        |
-| `CheckoutSheetKitException`    | 'render_process_gone'          | The render process for the checkout WebView is gone.                         | Show checkout in a fallback WebView.                                                        |
-| `CheckoutSheetKitException`    | 'unknown'                      | An error in Checkout Kit has occurred, see error details for more info.      | Show checkout in a fallback WebView.                                                        |
+| `CheckoutKitException`    | 'error_receiving_message'      | Checkout Kit failed to receive a message from checkout.                      | Show checkout in a fallback WebView.                                                        |
+| `CheckoutKitException`    | 'error_sending_message'        | Checkout Kit failed to send a message to checkout.                           | Show checkout in a fallback WebView.                                                        |
+| `CheckoutKitException`    | 'render_process_gone'          | The render process for the checkout WebView is gone.                         | Show checkout in a fallback WebView.                                                        |
+| `CheckoutKitException`    | 'unknown'                      | An error in Checkout Kit has occurred, see error details for more info.      | Show checkout in a fallback WebView.                                                        |
 | `HttpException`                | 'http_error'                   | An unexpected server error has been encountered.                             | Show checkout in a fallback WebView.                                                        |
 | `ClientException`              | 'client_error'                 | An unhandled client error was encountered.                                   | Show checkout in a fallback WebView.                                                        |
 | `CheckoutUnavailableException` | 'unknown'                      | Checkout is unavailable for another reason, see error details for more info. | Show checkout in a fallback WebView.                                                        |
@@ -464,7 +464,7 @@ title: Checkout Kit Exception Hierarchy
 classDiagram
     CheckoutException <|-- ConfigurationException
     CheckoutException <|-- CheckoutExpiredException
-    CheckoutException <|-- CheckoutSheetKitException
+    CheckoutException <|-- CheckoutKitException
     CheckoutException <|-- CheckoutUnavailableException
     CheckoutUnavailableException <|-- HttpException
     CheckoutUnavailableException <|-- ClientException
@@ -490,7 +490,7 @@ classDiagram
     class ClientException{
         note: "Unexpected client/web error"
     }
-    class CheckoutSheetKitException{
+    class CheckoutKitException{
         note: "Error in Checkout Kit code"
     }
 ```
@@ -574,7 +574,7 @@ and initialize a buyer-aware checkout session.
 1. Follow the [Multipass documentation](https://shopify.dev/docs/api/multipass) to create a
    multipass
    URL and set the `'return_to'` to be the obtained `checkoutUrl`
-2. Provide the Multipass URL to `ShopifyCheckoutSheetKit.present()`.
+2. Provide the Multipass URL to `ShopifyCheckoutKit.present()`.
 
 > [!Important]
 > the above JSON omits useful customer attributes that should be provided where possible and
@@ -595,7 +595,7 @@ checkout sessions.
 ### Customer Account API
 
 The Customer Account API allows you to authenticate buyers and provide a personalized checkout experience.
-For detailed implementation instructions, see our [Customer Account API Authentication Guide](https://shopify.dev/docs/storefronts/headless/mobile-apps/checkout-sheet-kit/authenticate-checkouts).
+For detailed implementation instructions, see our [Customer Account API Authentication Guide](https://shopify.dev/docs/storefronts/headless/mobile-apps/checkout-kit/authenticate-checkouts).
 
 ---
 

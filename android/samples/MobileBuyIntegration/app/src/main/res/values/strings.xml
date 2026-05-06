@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name" translatable="false">Checkout SDK Mobile Buy Integration Sample</string>
+    <string name="app_name" translatable="false">Checkout Kit Mobile Buy Integration Sample</string>
     <string name="logo_content_description" translatable="false">Store logo</string>
 
-    <!-- Override Checkout Sheet Kit Default Title -->
+    <!-- Override Checkout Kit Default Title -->
     <string name="checkout_web_view_title">Buy Now!</string>
 
     <!-- Navigation -->
@@ -27,7 +27,7 @@
     </string>
 
     <string name="sample_app_version" translatable="false">Sample app version</string>
-    <string name="sdk_version" translatable="false">Checkout Sheet Kit version</string>
+    <string name="sdk_version" translatable="false">Checkout Kit version</string>
 
     <string name="view_logs" translatable="false">View logs</string>
     <string name="delete_logs" translatable="false">Delete logs</string>
