@@ -1,12 +1,10 @@
 # Checkout Kit
 
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](LICENSE)
-[![Android tests](https://github.com/shopify-playground/checkout-kit/actions/workflows/android-test.yml/badge.svg?branch=main)](https://github.com/shopify-playground/checkout-kit/actions/workflows/android-test.yml)
-[![Swift tests](https://github.com/shopify-playground/checkout-kit/actions/workflows/swift-test-package.yml/badge.svg?branch=main)](https://github.com/shopify-playground/checkout-kit/actions/workflows/swift-test-package.yml)
+
+<img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
 
 Shopify's **Checkout Kit** lets native mobile apps embed Shopify's one-page checkout while preserving every store customization — Checkout UI extensions, Functions, Web Pixels, branding — and staying idiomatic to the host platform (light/dark mode, lifecycle hooks, native APIs to embed and customize the experience).
-
-> We're in the process of renaming "Checkout Sheet Kit" to "Checkout Kit". The dev docs and READMEs already use the new name; the published packages will follow in an upcoming version.
 
 ## Documentation
 
@@ -25,7 +23,7 @@ Feature guides:
 Each platform ships from its own subdirectory with a dedicated README covering installation, configuration, and the full API. We expect overlap between these READMEs to migrate up here (and into the dev docs) over time — for now, treat the per-platform READMEs as the source of truth.
 
 - **[Swift / iOS](swift/README.md)** — Swift Package and CocoaPods
-- **[Android](android/README.md)** — published to Maven Central as `com.shopify:checkout-sheet-kit`
+- **[Android](android/README.md)** — published to Maven Central as `com.shopify:checkout-kit`
 - **[React Native](react-native/README.md)** — placeholder; wrapper will be folded in soon
 - **[End-to-end tests](e2e/README.md)** — placeholder; cross-platform E2E suite incoming
 
