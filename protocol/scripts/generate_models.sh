@@ -38,11 +38,6 @@ if [[ -z "$LANG" ]]; then
   exit 1
 fi
 
-if ! command -v quicktype &>/dev/null; then
-  echo "quicktype not found. Install via: pnpm install -g quicktype"
-  exit 1
-fi
-
 TEMP_SCHEMAS=()
 cleanup() { rm -f "${TEMP_SCHEMAS[@]}"; }
 trap cleanup EXIT
@@ -133,7 +128,8 @@ case "$LANG" in
   swift)
     OUTPUT="${REPO_ROOT}/swift/Sources/ShopifyCheckoutKit/Models.swift"
     quicktype \
-      --lang swift5 \
+      --lang swift \
+      --swift-5-support \
       --src-lang schema \
       --src "${SPEC_DIR}/checkout.json" \
       --src "${SPEC_DIR}/types/"*.json \

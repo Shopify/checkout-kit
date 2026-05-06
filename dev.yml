@@ -1,5 +1,9 @@
 name: checkout-kit
 
+up:
+  - packages:
+    - quicktype
+
 commands:
   codegen:
     desc: "Generate UCP models. Usage: dev codegen <kotlin|swift>"
