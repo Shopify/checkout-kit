@@ -1,6 +1,6 @@
 # MobileBuyIntegration Sample App
 
-A sample Android app demonstrating how to integrate [Checkout Sheet Kit](../../README.md) with the Shopify Storefront API using [Apollo Kotlin](https://github.com/apollographql/apollo-kotlin).
+A sample Android app demonstrating how to integrate [Checkout Kit](../../README.md) with the Shopify Storefront API using [Apollo Kotlin](https://github.com/apollographql/apollo-kotlin).
 
 ## Architecture
 
@@ -73,7 +73,7 @@ API_VERSION=2025-10
 
 ### 2. Download the new schema
 
-The schema defines what types and fields are available in the API. Run from the **repo root** (`checkout-sheet-kit-android/`):
+The schema defines what types and fields are available in the API. Run from the **android module root** (`android/`):
 
 ```bash
 dev apollo download_schema
@@ -121,7 +121,7 @@ If the new schema removed or renamed fields, you'll get compile errors pointing 
 
 ## Dev commands reference
 
-All commands are run from the **repo root** (`checkout-sheet-kit-android/`):
+All commands are run from the **android module root** (`android/`):
 
 | Command | Description |
 |---------|-------------|

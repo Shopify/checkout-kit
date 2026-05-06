@@ -37,11 +37,11 @@ if (!storefrontDomain || !accessToken) {
 }
 
 android {
-    namespace = 'com.shopify.checkout_sdk_mobile_buy_integration_sample'
+    namespace = 'com.shopify.checkout_kit_mobile_buy_integration_sample'
     compileSdk = 36
 
     defaultConfig {
-        applicationId "com.shopify.checkout_sdk_mobile_buy_integration_sample"
+        applicationId "com.shopify.checkout_kit_mobile_buy_integration_sample"
         minSdk = 28
         targetSdk = 36
         versionCode = 34
@@ -91,7 +91,7 @@ tasks.withType(KotlinJvmCompile).configureEach {
 }
 
 dependencies {
-    // Checkout SDK
+    // Checkout Kit
     implementation project(':lib')
 
     implementation "androidx.appcompat:appcompat:$app_compat_version"
@@ -131,7 +131,7 @@ dependencies {
 
 apollo {
     service("storefront") {
-        packageName.set("com.shopify.checkout_sdk_mobile_buy_integration_sample.graphql")
+        packageName.set("com.shopify.checkout_kit_mobile_buy_integration_sample.graphql")
         srcDir("src/main/graphql")
     }
 }

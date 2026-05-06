@@ -1,4 +1,4 @@
-name: checkout-sheet-kit-android
+name: checkout-kit-android
 
 type: android
 
@@ -64,6 +64,6 @@ check:
   android-lint: ./gradlew lintRelease
 
 open:
-  "GitHub": "https://github.com/Shopify/checkout-sheet-kit-android"
-  "Issues": "https://github.com/Shopify/checkout-sheet-kit-android/issues"
-  "PRs": "https://github.com/Shopify/checkout-sheet-kit-android/pulls"
+  "GitHub": "https://github.com/Shopify/checkout-kit"
+  "Issues": "https://github.com/Shopify/checkout-kit/issues"
+  "PRs": "https://github.com/Shopify/checkout-kit/pulls"
