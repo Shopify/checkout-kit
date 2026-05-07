@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -ex
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$SCRIPT_DIR/android_sccache"
+
+cd android
+
+./gradlew assembleDebug --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a
