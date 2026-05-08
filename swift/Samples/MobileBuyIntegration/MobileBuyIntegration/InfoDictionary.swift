@@ -23,15 +23,14 @@
 
 import Foundation
 
-/**
- * Contains all of the values from the `info.plist`
- */
+/// Contains all of the values from the `info.plist`
 final class InfoDictionary: Sendable {
     static let shared = InfoDictionary()
 
     /// Required
     let address1, address2, city, country, firstName, lastName, province, zip,
-        email, phone, domain, accessToken, version, buildNumber, merchantIdentifier, apiVersion: String
+        email, phone, domain, accessToken, version, buildNumber, merchantIdentifier,
+        apiVersion: String
 
     // Customer Account API (optional)
     let customerAccountApiClientId: String?
@@ -101,8 +100,11 @@ extension URL {
     func appendingEcParams() -> URL {
         var components = URLComponents(url: self, resolvingAgainstBaseURL: false)
         var queryItems = components?.queryItems ?? []
-        queryItems.append(URLQueryItem(name: "ec_version", value: "2026-01-11"))
-        queryItems.append(URLQueryItem(name: "ec_delegate", value: "fulfillment.address_change,payment.instruments_change,payment.credential"))
+        queryItems.append(URLQueryItem(name: "ec_version", value: "2026-01-23"))
+        queryItems.append(
+            URLQueryItem(
+                name: "ec_delegate",
+                value: "fulfillment.address_change,payment.instruments_change,payment.credential"))
         if let token = InfoDictionary.shared.ecAuthToken, !token.isEmpty {
             Self.validateJWTExpiration(token)
             queryItems.append(URLQueryItem(name: "ec_auth", value: token))
@@ -123,12 +125,14 @@ extension URL {
         }
 
         guard let data = Data(base64Encoded: base64),
-              let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let exp = payload["exp"] as? TimeInterval
+            let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let exp = payload["exp"] as? TimeInterval
         else { return }
 
         if Date().timeIntervalSince1970 >= exp {
-            fatalError("EC_AUTH_TOKEN expired at \(Date(timeIntervalSince1970: exp)). Renew it in Storefront.xcconfig.")
+            fatalError(
+                "EC_AUTH_TOKEN expired at \(Date(timeIntervalSince1970: exp)). Renew it in Storefront.xcconfig."
+            )
         }
     }
 }
