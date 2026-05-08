@@ -104,7 +104,9 @@ extension URL {
         queryItems.append(
             URLQueryItem(
                 name: "ec_delegate",
-                value: "fulfillment.address_change,payment.instruments_change,payment.credential"))
+                value: "fulfillment.address_change,payment.instruments_change,payment.credential"
+            )
+        )
         if let token = InfoDictionary.shared.ecAuthToken, !token.isEmpty {
             Self.validateJWTExpiration(token)
             queryItems.append(URLQueryItem(name: "ec_auth", value: token))
@@ -125,8 +127,8 @@ extension URL {
         }
 
         guard let data = Data(base64Encoded: base64),
-            let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let exp = payload["exp"] as? TimeInterval
+              let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let exp = payload["exp"] as? TimeInterval
         else { return }
 
         if Date().timeIntervalSince1970 >= exp {

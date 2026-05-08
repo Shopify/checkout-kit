@@ -23,8 +23,8 @@
 
 import ApolloAPI
 import Combine
-import ShopifyCheckoutProtocol
 @preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import SwiftUI
 import UIKit
 

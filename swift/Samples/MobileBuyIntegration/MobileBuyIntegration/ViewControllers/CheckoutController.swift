@@ -22,8 +22,8 @@
  */
 
 import OSLog
-import ShopifyCheckoutProtocol
 @preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import UIKit
 
 class CheckoutController: UIViewController {

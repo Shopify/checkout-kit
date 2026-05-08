@@ -23,8 +23,8 @@
 
 import ApolloAPI
 import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutProtocol
 import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import SwiftUI
 
 typealias CartLineNode = Storefront.CartFragment.Lines.Node
