@@ -22,7 +22,6 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(url: "https://github.com/lukepistrol/SwiftLintPlugin", from: "0.2.2"),
         .package(url: "https://github.com/nalexn/ViewInspector", from: "0.10.0")
     ],
     targets: [
@@ -43,10 +42,7 @@ let package = Package(
         .testTarget(
             name: "ShopifyCheckoutKitTests",
             dependencies: ["ShopifyCheckoutKit"],
-            path: "swift/Tests/ShopifyCheckoutKitTests",
-            plugins: [
-                .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
-            ]
+            path: "swift/Tests/ShopifyCheckoutKitTests"
         ),
         .testTarget(
             name: "ShopifyAcceleratedCheckoutsTests",
@@ -54,10 +50,7 @@ let package = Package(
                 "ShopifyAcceleratedCheckouts",
                 .product(name: "ViewInspector", package: "ViewInspector")
             ],
-            path: "swift/Tests/ShopifyAcceleratedCheckoutsTests",
-            plugins: [
-                .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
-            ]
+            path: "swift/Tests/ShopifyAcceleratedCheckoutsTests"
         )
     ]
 )
