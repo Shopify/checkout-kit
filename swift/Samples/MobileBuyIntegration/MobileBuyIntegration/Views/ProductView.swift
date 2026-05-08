@@ -23,7 +23,7 @@
 
 import Apollo
 import ApolloAPI
-@preconcurrency import ShopifyAcceleratedCheckouts
+import ShopifyAcceleratedCheckouts
 @preconcurrency import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
@@ -136,18 +136,26 @@ struct ProductView: View {
                         .disabled(!variant.availableForSale || loading)
 
                         if variant.availableForSale {
-                            AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
-                                .applePayStyle(applePayStyle.style)
+                            AcceleratedCheckoutButtons(variantID: variant.id.rawValue, quantity: 1)
                                 .wallets([.applePay])
-                                .cornerRadius(DesignSystem.cornerRadius)
                                 .onFail { error in
-                                    print("Accelerated checkout failed: \(error)")
+                                    print("[AcceleratedCheckout] Failed: \(error)")
                                 }
                                 .onCancel {
-                                    print("Accelerated checkout cancelled")
+                                    print("[AcceleratedCheckout] Cancelled")
                                 }
-                                .environmentObject(appConfiguration.acceleratedCheckoutsStorefrontConfig)
-                                .environmentObject(appConfiguration.acceleratedCheckoutsApplePayConfig)
+                                .environmentObject(
+                                    ShopifyAcceleratedCheckouts.Configuration(
+                                        storefrontDomain: InfoDictionary.shared.domain,
+                                        storefrontAccessToken: InfoDictionary.shared.accessToken
+                                    )
+                                )
+                                .environmentObject(
+                                    ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+                                        merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
+                                        contactFields: [.email, .phone]
+                                    )
+                                )
                         }
                     }.padding([.leading, .trailing], 15)
                 }

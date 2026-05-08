@@ -22,20 +22,29 @@
  */
 
 import Foundation
+import ShopifyCheckoutKit
 
-class CheckoutCompletedEventDecoder {
-    func decode(from container: KeyedDecodingContainer<CheckoutBridge.WebEvent.CodingKeys>, using _: Decoder) -> CheckoutCompletedEvent {
-        do {
-            let messageBody = try container.decode(String.self, forKey: .body)
+/// Wraps a consumer's `CheckoutCommunicationProtocol` client to observe lifecycle events.
+/// Peeks at incoming JSON-RPC messages for `ec.complete`, fires the `onComplete` signal
+/// for the state machine, then delegates all processing to the underlying `base` client.
+struct LifecycleObservingClient: CheckoutCommunicationProtocol {
+    let base: (any CheckoutCommunicationProtocol)?
+    let onComplete: @Sendable @MainActor () -> Void
 
-            guard let data = messageBody.data(using: .utf8) else {
-                return createEmptyCheckoutCompletedEvent()
-            }
-
-            return try JSONDecoder().decode(CheckoutCompletedEvent.self, from: data)
-        } catch {
-            OSLogger.shared.error("Error decoding \"completed\" event - \(error.localizedDescription)")
-            return createEmptyCheckoutCompletedEvent()
+    func process(_ message: String) async -> String? {
+        if let method = extractMethod(from: message), method == "ec.complete" {
+            await onComplete()
         }
+        return await base?.process(message)
+    }
+
+    private func extractMethod(from message: String) -> String? {
+        guard let data = message.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let method = json["method"] as? String
+        else {
+            return nil
+        }
+        return method
     }
 }

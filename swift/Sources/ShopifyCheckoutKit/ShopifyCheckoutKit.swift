@@ -58,20 +58,16 @@ public func invalidate() {
     CheckoutWebView.invalidate(disconnect: true)
 }
 
-/// Presents the checkout from a given `UIViewController`.
 @discardableResult
-public func present(checkout url: URL, from: UIViewController, delegate: CheckoutDelegate? = nil) -> CheckoutViewController {
-    let viewController = CheckoutViewController(checkout: url, delegate: delegate)
+public func present(checkout url: URL, from: UIViewController, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
+    let viewController = CheckoutViewController(checkout: url, client: client)
     from.present(viewController, animated: true)
     return viewController
 }
 
-/// Internal function that presents the checkout from a given `UIViewController` with a specified entry point.
-/// This is only used by other modules such as ShopifyAcceleratedCheckouts.
-/// Consumers will use the public `present` function, and the UserAgent will *not* contain the entry field.
 @discardableResult
-package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, delegate: CheckoutDelegate? = nil) -> CheckoutViewController {
-    let viewController = CheckoutViewController(checkout: url, delegate: delegate, entryPoint: entryPoint)
+package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
+    let viewController = CheckoutViewController(checkout: url, client: client, entryPoint: entryPoint)
     from.present(viewController, animated: true)
     return viewController
 }
