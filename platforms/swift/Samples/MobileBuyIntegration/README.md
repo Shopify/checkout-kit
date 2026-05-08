@@ -123,7 +123,7 @@ From the **repo root**:
 dev apollo codegen mobile-buy
 ```
 
-This reads the schema + your `.graphql` files and regenerates the Swift code in `Generated/`. The command also runs `dev fix` to auto-format the output.
+This reads the schema + your `.graphql` files and regenerates the Swift code in `Generated/`. The command also runs `dev swift fix` to auto-format the output.
 
 ### 5. Build and fix any issues
 
@@ -138,9 +138,9 @@ All commands are run from the **repo root** (`checkout-kit/`):
 | `dev apollo download_schema mobile-buy` | Download the Storefront API schema for this sample app |
 | `dev apollo codegen mobile-buy` | Regenerate Swift types from `.graphql` files |
 | `dev apollo codegen all` | Regenerate for all sample apps |
-| `dev style` | Run SwiftLint + SwiftFormat checks |
-| `dev fix` | Auto-fix lint/format issues |
-| `dev build samples` | Build all sample apps |
+| `dev swift style` | Run SwiftLint + SwiftFormat checks |
+| `dev swift fix` | Auto-fix lint/format issues |
+| `dev swift build samples` | Build all sample apps |
 
 ## Key files
 

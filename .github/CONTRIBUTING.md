@@ -47,7 +47,7 @@ When in doubt about whether we will be interested in including a new feature, pl
 
 This project uses [Mint](https://github.com/yonaskolb/Mint) to manage Swift linting tools (SwiftLint and SwiftFormat) at pinned versions via `platforms/swift/Mintfile`. This ensures consistent formatting across all contributors and CI.
 
-**Shopify employees** (from `platforms/swift/`):
+**Shopify employees** (from the repo root):
 
 ```bash
 dev up
