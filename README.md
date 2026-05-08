@@ -76,6 +76,58 @@ Use the Shopify.dev guides for broader product workflows:
 | Android | [Samples](platforms/android/samples/README.md) | Storefront API cart flow, checkout presentation, protocol lifecycle events, file chooser, and geolocation callbacks. |
 | Web | [Sample](platforms/web/sample/README.md) | Local playground for the `<shopify-checkout>` web component and `checkout:*` events. |
 
+## AI Quick Start
+
+### Install Checkout Skills
+
+Install the Checkout Kit skills:
+
+```bash
+npx skills add Shopify/checkout-kit
+```
+
+Checkout Kit skills:
+
+| Skill                                                                                                           | Use when                                                                                            |
+| --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [Migrate from Checkout Sheet Kit to Checkout Kit](skills/checkout-sheet-kit-to-checkout-kit-migration/SKILL.md) | Moving from legacy package names to Checkout Kit package names, including current alpha versions and lifecycle changes. |
+| [Present, preload, and invalidate checkout](skills/checkout-kit-present-preload-invalidate/SKILL.md)            | Applying shared checkout lifecycle guidance across platforms.                                       |
+| [Lifecycle events](skills/checkout-kit-lifecycle-events/SKILL.md)                                               | Handling completion, cancellation, failure, external links, and protocol notifications.             |
+
+### Local Clone
+
+Checkout Kit works best with AI tools when they can inspect this repository locally instead of relying only on web search.
+
+1. Clone a shallow local copy of Checkout Kit:
+
+   ```bash
+   git clone --depth 1 https://github.com/Shopify/checkout-kit.git ~/.local/share/checkout-kit/checkout-kit
+   ```
+
+2. Add a reference to your app's agent instructions file. Replace `~/some-repo/CLAUDE.md` with your app's `CLAUDE.md`, `AGENTS.md`, or equivalent file:
+
+   ```bash
+   cat >> ~/some-repo/CLAUDE.md <<'EOF'
+   ## Local Checkout Kit Source
+
+   The Checkout Kit repository is cloned to
+   `~/.local/share/checkout-kit/checkout-kit` for reference. Use this local
+   source to explore APIs, find usage examples, inspect protocol schemas, and
+   understand implementation details when the documentation is not enough.
+
+   Prefer local source over memory. Use Shopify docs only to confirm current
+   public guidance: https://shopify.dev/docs/storefronts/mobile
+   EOF
+   ```
+
+3. Ask your AI assistant to read the relevant skill before suggesting code:
+
+   ```text
+   Launch a Checkout Kit research agent to understand the library on the `.local/share/checkout-kit/checkout-kit` clone.
+   Read README.md, relevant library source code (platforms/swift/, platforms/android/, platforms/react-native/),
+   protocol/schemas/, the relevant skill, and the skill's references/guide.md before suggesting code.
+   ```
+
 ## Versioning
 
 Checkout Kit is the current home for the SDKs that were previously published as Checkout Sheet Kit. The renamed packages use a shared `4.0.0-alpha.X` version format while the new package line settles:
@@ -85,7 +137,12 @@ Checkout Kit is the current home for the SDKs that were previously published as 
 - React Native requires React Native New Architecture.
 - Stable releases will continue on the same `4.x` package line after the alpha period.
 
-The legacy standalone Checkout Sheet Kit repositories remain available for apps that have not migrated.
+### Legacy Checkout Sheet Kit
+
+The legacy Checkout Sheet Kit lines are deprecated and remain available for apps maintaining older integrations. Checkout Sheet Kit for Swift and Checkout Sheet Kit for Android end on their `v3` major-version lines. Checkout Sheet Kit for React Native ends on its `v4` New Architecture release line. These versions do not roll forward into Checkout Kit; use the Checkout Kit package versions listed above.
+
+> [!TIP]
+> Use the [Migrate from Checkout Sheet Kit to Checkout Kit](skills/checkout-sheet-kit-to-checkout-kit-migration/SKILL.md) skill when upgrading.
 
 | Platform | Legacy package | Final legacy line |
 | --- | --- | --- |
