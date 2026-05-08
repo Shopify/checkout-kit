@@ -3,135 +3,192 @@
 # Check for verbose flag
 VERBOSE=false
 if [[ "$*" == *"--verbose"* ]]; then
-    VERBOSE=true
+	VERBOSE=true
 fi
 
 # Accept --verbose before check/fix
 if [[ "$1" == "--verbose" ]]; then
-    MODE="${2:-check}"
+	MODE="${2:-check}"
 else
-    MODE="${1:-check}"
+	MODE="${1:-check}"
 fi
 
 # Validate the mode
 if [[ "$MODE" != "check" && "$MODE" != "fix" ]]; then
-    echo "❌ Invalid mode: $MODE"
-    echo "Usage: $0 [check|fix] [--verbose]"
-    echo "  check: Run linters in check mode (default)"
-    echo "  fix:   Run linters in fix mode to auto-fix issues"
-    echo "  --verbose: Show detailed output from linters"
-    exit 1
+	echo "❌ Invalid mode: $MODE"
+	echo "Usage: $0 [check|fix] [--verbose]"
+	echo "  check: Run linters in check mode (default)"
+	echo "  fix:   Run linters in fix mode to auto-fix issues"
+	echo "  --verbose: Show detailed output from linters"
+	exit 1
 fi
 
 print_install_instructions() {
-    echo "🔧 FIX:"
-    echo "   Shopify employee? Run 'dev up'"
-    echo "   Not a Shopify employee? Install Mint and run 'mint bootstrap':"
-    echo "     brew install mint"
-    echo "     mint bootstrap"
-    echo "   See: https://github.com/yonaskolb/Mint"
+	echo "🔧 FIX:"
+	echo "   Shopify employee? Run 'dev up'"
+	echo "   Not a Shopify employee? Install Mint and run 'mint bootstrap':"
+	echo "     brew install mint"
+	echo "     mint bootstrap"
+	echo "   See: https://github.com/yonaskolb/Mint"
 }
 
 if ! command -v mint >/dev/null; then
-    echo "❌ Mint is not installed"
-    print_install_instructions
-    exit 1
+	echo "❌ Mint is not installed"
+	print_install_instructions
+	exit 1
 fi
 
 if [ ! -f "Mintfile" ]; then
-    echo "❌ Mintfile not found in the current directory"
-    exit 1
+	echo "❌ Mintfile not found in the current directory"
+	exit 1
 fi
 
-SWIFTLINT="mint run swiftlint"
-SWIFTFORMAT="mint run swiftformat"
+expected_swiftlint="$(sed -n 's#^realm/SwiftLint@##p' Mintfile)"
+expected_swiftformat="$(sed -n 's#^nicklockwood/SwiftFormat@##p' Mintfile)"
+
+if [ -z "$expected_swiftlint" ] || [ -z "$expected_swiftformat" ]; then
+	echo "❌ Could not read SwiftLint and SwiftFormat versions from Mintfile"
+	print_install_instructions
+	exit 1
+fi
+
+mint_package_has_version() {
+	local package_name=$1
+	local package_version=$2
+
+	mint list | awk -v package_name="$package_name" -v package_version="$package_version" '
+		$1 == package_name { in_package = 1; next }
+		in_package && $1 !~ /^-/ { exit 1 }
+		in_package && $1 == "-" && $2 == package_version { found = 1; exit 0 }
+		END { exit found ? 0 : 1 }
+	'
+}
+
+if ! mint_package_has_version "SwiftLint" "$expected_swiftlint"; then
+	echo "❌ SwiftLint $expected_swiftlint is not installed"
+	print_install_instructions
+	exit 1
+fi
+
+if ! mint_package_has_version "SwiftFormat" "$expected_swiftformat"; then
+	echo "❌ SwiftFormat $expected_swiftformat is not installed"
+	print_install_instructions
+	exit 1
+fi
+
+swiftlint_bin="$(mint which swiftlint)"
+swiftformat_bin="$(mint which swiftformat)"
+
+if [ "$("$swiftlint_bin" version)" != "$expected_swiftlint" ]; then
+	echo "❌ SwiftLint version mismatch. Expected $expected_swiftlint, found $("$swiftlint_bin" version)"
+	print_install_instructions
+	exit 1
+fi
+
+if [ "$("$swiftformat_bin" --version)" != "$expected_swiftformat" ]; then
+	echo "❌ SwiftFormat version mismatch. Expected $expected_swiftformat, found $("$swiftformat_bin" --version)"
+	print_install_instructions
+	exit 1
+fi
+
+SWIFTLINT="$swiftlint_bin"
+SWIFTFORMAT="$swiftformat_bin"
 
 QUIET_FLAG=""
 if [[ "$VERBOSE" == "false" ]]; then
-    QUIET_FLAG="--quiet"
+	QUIET_FLAG="--quiet"
 fi
 
 if [[ "$MODE" == "fix" ]]; then
-    $SWIFTLINT lint --fix $QUIET_FLAG
+	$SWIFTLINT lint --fix --no-cache $QUIET_FLAG
 fi
 
 # SwiftLint doesn't report errors when running in fix mode
 # Running again in strict mode to ensure no errors are missed.
 # Run from the directory containing .swiftlint.yml so its `included:` paths
-# resolve consistently — in the monorepo that's the repo root, not the
-# script's CWD (which is swift/, where Mintfile lives).
+# resolve consistently.
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-(cd "$PROJECT_ROOT" && $SWIFTLINT lint --strict $QUIET_FLAG)
+(cd "$PROJECT_ROOT" && $SWIFTLINT lint --strict --no-cache $QUIET_FLAG)
 LINT_STATUS=$?
 
 if [ $LINT_STATUS -eq 0 ]; then
-    echo "✅ SwiftLint exit status: $LINT_STATUS"
+	echo "✅ SwiftLint exit status: $LINT_STATUS"
 else
-    echo "❌ SwiftLint exit status: $LINT_STATUS"
+	echo "❌ SwiftLint exit status: $LINT_STATUS"
 fi
-
-echo ""
 
 # Run SwiftFormat
 if [[ "$MODE" == "fix" ]]; then
-    $SWIFTFORMAT . $QUIET_FLAG
-    FORMAT_STATUS=$?
+	$SWIFTFORMAT . $QUIET_FLAG
+	FORMAT_STATUS=$?
 else
-    $SWIFTFORMAT . $QUIET_FLAG --lint
-    FORMAT_STATUS=$?
+	$SWIFTFORMAT . $QUIET_FLAG --lint
+	FORMAT_STATUS=$?
 fi
 
 if [ $FORMAT_STATUS -eq 0 ]; then
-    echo "✅ SwiftFormat exit status: $FORMAT_STATUS"
+	echo "✅ SwiftFormat exit status: $FORMAT_STATUS"
 else
-    echo "❌ SwiftFormat exit status: $FORMAT_STATUS"
+	echo "❌ SwiftFormat exit status: $FORMAT_STATUS"
 fi
 
 # Function to print error messages for linting issues
 print_linting_error() {
-    local tool_name=$1
-    echo "❌ $tool_name detected issues that need to be fixed."
-    if [[ "$MODE" == "check" ]]; then
-        echo "🔧 How to fix:"
-        echo "   Shopify employee? Run 'dev fix' and resolve remaining issues"
-        echo "   Not a Shopify employee? Run './Scripts/lint fix' and resolve remaining issues"
-    else
-        echo "🔧 These files will need to be fixed manually"
-    fi
+	local tool_name=$1
+	echo "❌ $tool_name detected issues that need to be fixed."
+	if [[ "$MODE" == "check" ]]; then
+		echo "🔧 How to fix:"
+		echo "   Shopify employee? Run 'dev fix' and resolve remaining issues"
+		echo "   Not a Shopify employee? Run './Scripts/lint fix' and resolve remaining issues"
+	else
+		echo "🔧 These files will need to be fixed manually"
+	fi
 }
 
-# Handle exit codes for check mode
-echo ""
-
 if [ $LINT_STATUS -ne 0 ]; then
-    print_linting_error "SwiftLint"
-    exit 1
+	print_linting_error "SwiftLint"
+	exit 1
 fi
 
 if [ $FORMAT_STATUS -ne 0 ]; then
-    print_linting_error "SwiftFormat"
-    exit 1
+	print_linting_error "SwiftFormat"
+	exit 1
 fi
 
 # Run CocoaPods lint (check mode only, not applicable to fix)
 # Skip with --skip-pod (e.g. in CI where pod lint runs as a separate job)
 SKIP_POD=false
 if [[ "$*" == *"--skip-pod"* ]]; then
-    SKIP_POD=true
+	SKIP_POD=true
 fi
 
 if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
-    echo ""
-    echo "🔍 Running CocoaPods lint..."
-    bundle exec pod lib lint --allow-warnings
-    POD_STATUS=$?
+	echo "🔍 Running CocoaPods lint..."
 
-    if [ $POD_STATUS -eq 0 ]; then
-        echo "✅ CocoaPods lint exit status: $POD_STATUS"
-    else
-        echo "❌ CocoaPods lint exit status: $POD_STATUS"
-        echo "❌ CocoaPods detected issues that need to be fixed."
-        echo "🔧 Run 'bundle exec pod lib lint --allow-warnings --verbose' for details"
-        exit 1
-    fi
+	POD_LOG=""
+	if [[ "$VERBOSE" == "true" ]]; then
+		bundle exec pod lib lint --allow-warnings
+	else
+		POD_LOG="$(mktemp "${TMPDIR:-/tmp}/checkout-kit-pod-lint.XXXXXX")"
+		bundle exec pod lib lint --allow-warnings >"$POD_LOG" 2>&1
+	fi
+	POD_STATUS=$?
+
+	if [ $POD_STATUS -eq 0 ]; then
+		echo "✅ CocoaPods lint exit status: $POD_STATUS"
+	else
+		if [ -n "$POD_LOG" ]; then
+			cat "$POD_LOG"
+			rm -f "$POD_LOG"
+		fi
+
+		echo "❌ CocoaPods lint exit status: $POD_STATUS"
+		echo "❌ CocoaPods detected issues that need to be fixed."
+		echo "🔧 Run 'bundle exec pod lib lint --allow-warnings --verbose' for details"
+		exit 1
+	fi
+
+	if [ -n "$POD_LOG" ]; then
+		rm -f "$POD_LOG"
+	fi
 fi
