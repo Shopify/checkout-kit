@@ -18,14 +18,14 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
   resolver: {
     resolveRequest: (context, moduleName, platform) => {
       if (
-        moduleName === '@shopify/checkout-sheet-kit' ||
-        moduleName.startsWith('@shopify/checkout-sheet-kit/')
+        moduleName === '@shopify/checkout-kit-react-native' ||
+        moduleName.startsWith('@shopify/checkout-kit-react-native/')
       ) {
-        const sub = moduleName.replace('@shopify/checkout-sheet-kit', '');
+        const sub = moduleName.replace('@shopify/checkout-kit-react-native', '');
         const target = path.resolve(
           root,
           'modules',
-          '@shopify/checkout-sheet-kit',
+          '@shopify/checkout-kit-react-native',
           'src',
           sub ? sub.replace(/^\//, '') : 'index.ts',
         );
@@ -41,10 +41,10 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
         'node_modules',
         'react-native-gesture-handler',
       ),
-      '@shopify/checkout-sheet-kit': path.resolve(
+      '@shopify/checkout-kit-react-native': path.resolve(
         root,
         'modules',
-        '@shopify/checkout-sheet-kit',
+        '@shopify/checkout-kit-react-native',
       ),
     },
   },

@@ -77,9 +77,9 @@ updates:
           - "version-update:semver-major"
           - "version-update:semver-minor"
 
-  # React Native — Checkout Sheet Kit module
+  # React Native — Checkout Kit module
   - package-ecosystem: npm
-    directory: "/platforms/react-native/modules/@shopify/checkout-sheet-kit"
+    directory: "/platforms/react-native/modules/@shopify/checkout-kit-react-native"
     schedule:
       interval: daily
     cooldown:

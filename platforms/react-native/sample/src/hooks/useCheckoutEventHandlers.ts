@@ -8,7 +8,7 @@ import type {
   CheckoutException,
   PixelEvent,
   RenderStateChangeEvent,
-} from '@shopify/checkout-sheet-kit';
+} from '@shopify/checkout-kit-react-native';
 import {Linking} from 'react-native';
 
 interface EventHandlers {
