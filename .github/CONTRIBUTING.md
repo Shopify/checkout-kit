@@ -106,7 +106,7 @@ The library's public API is tracked via a committed baseline at `platforms/andro
 
 If your change intentionally modifies the public API:
 
-1. Run `dev api dump` (or `./gradlew :lib:apiDump`) from `platforms/android/` to regenerate the baseline.
+1. Run `dev android api dump` from the repo root (or `./gradlew :lib:apiDump` from `platforms/android/`) to regenerate the baseline.
 2. Review the diff in `platforms/android/lib/api/lib.api` alongside your code changes.
 3. Commit the updated `.api` file in the same PR.
 

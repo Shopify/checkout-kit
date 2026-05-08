@@ -52,7 +52,7 @@ The library's public API is captured in `lib/api/lib.api` (managed by the [binar
 
 If a change intentionally modifies public API (adding, removing, or changing any public class, method, field, or property):
 
-1. Run `./gradlew :lib:apiDump` (or `dev api dump`) to regenerate the baseline.
+1. Run `./gradlew :lib:apiDump` (or `dev android api dump`) to regenerate the baseline.
 2. Review the diff in `lib/api/lib.api` — it's the single best indicator of consumer impact, and reviewers will focus on it.
 3. Commit the updated `.api` file in the same PR as the code change.
 
@@ -60,10 +60,10 @@ If `apiCheck` fails and you did *not* intend to change public API, the diff tell
 
 ## Common commands
 
-- Tests: `./gradlew :lib:test` (or `dev test`)
-- API surface: `./gradlew :lib:apiCheck` / `./gradlew :lib:apiDump` (or `dev api check` / `dev api dump`)
-- Lint: `./gradlew detekt lintRelease` (or `dev style`)
-- Auto-fix lint: `./gradlew detekt --auto-correct` (or `dev fix`)
+- Tests: `./gradlew :lib:test` (or `dev android test`)
+- API surface: `./gradlew :lib:apiCheck` / `./gradlew :lib:apiDump` (or `dev android api check` / `dev android api dump`)
+- Lint: `./gradlew detekt lintRelease` (or `dev android lint`)
+- Auto-fix lint: `./gradlew detekt --auto-correct` (or `dev android fix`)
 - Full local verification: `./gradlew :lib:clean :lib:test :lib:detekt :lib:lintRelease :lib:assembleRelease`
 - Sample app build (from `samples/MobileBuyIntegration/`): `./gradlew assembleDebug`
 
