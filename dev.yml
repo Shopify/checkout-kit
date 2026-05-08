@@ -2,7 +2,12 @@ name: checkout-kit
 
 up:
   - packages:
-    - quicktype
+      - quicktype
+  - ruby
+  - custom:
+      name: Install bundle packages
+      met?: BUNDLE_GEMFILE=swift/Gemfile bundle check
+      meet: BUNDLE_GEMFILE=swift/Gemfile bundle install
 
 commands:
   codegen:
