@@ -136,7 +136,7 @@ struct ProductView: View {
                         .disabled(!variant.availableForSale || loading)
 
                         if variant.availableForSale {
-                            AcceleratedCheckoutButtons(variantID: variant.id.rawValue, quantity: 1)
+                            AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
                                 .wallets([.applePay])
                                 .onFail { error in
                                     print("[AcceleratedCheckout] Failed: \(error)")

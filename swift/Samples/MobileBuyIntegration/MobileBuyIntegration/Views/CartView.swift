@@ -60,7 +60,7 @@ struct CartView: View {
                 }
 
                 VStack(spacing: DesignSystem.buttonSpacing) {
-                    if let cartID = cartManager.cart?.id.rawValue {
+                    if let cartID = cartManager.cart?.id {
                         AcceleratedCheckoutButtons(cartID: cartID)
                             .onFail { error in
                                 print("[AcceleratedCheckout] Failed: \(error)")

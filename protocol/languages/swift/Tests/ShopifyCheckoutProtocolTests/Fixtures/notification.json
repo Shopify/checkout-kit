@@ -1,0 +1,45 @@
+{
+  "jsonrpc": "2.0",
+  "method": "ec.start",
+  "params": {
+    "checkout": {
+      "ucp": {
+        "version": "2026-01-11",
+        "payment_handlers": {}
+      },
+      "id": "checkout-123",
+      "status": "incomplete",
+      "currency": "USD",
+      "line_items": [
+        {
+          "id": "li-1",
+          "quantity": 1,
+          "item": {
+            "id": "product-1",
+            "title": "Test Product",
+            "price": 2999,
+            "image_url": "https://example.com/image.png"
+          },
+          "totals": [
+            {
+              "type": "subtotal",
+              "amount": 2999
+            }
+          ]
+        }
+      ],
+      "totals": [
+        {
+          "type": "total",
+          "amount": 2999
+        }
+      ],
+      "links": [
+        {
+          "type": "privacy_policy",
+          "url": "https://example.com/privacy"
+        }
+      ]
+    }
+  }
+}
