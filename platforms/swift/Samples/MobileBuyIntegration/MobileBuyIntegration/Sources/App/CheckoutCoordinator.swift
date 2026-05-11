@@ -26,7 +26,7 @@ import OSLog
 import ShopifyCheckoutProtocol
 import UIKit
 
-class CheckoutController: UIViewController {
+class CheckoutCoordinator: UIViewController {
     var window: UIWindow?
     var root: UIViewController?
 
@@ -49,7 +49,7 @@ class CheckoutController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    public static var shared: CheckoutController?
+    public static var shared: CheckoutCoordinator?
 
     public func present(checkout url: URL) {
         if let rootViewController = window?.topMostViewController() {
