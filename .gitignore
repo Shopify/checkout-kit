@@ -8,8 +8,6 @@
 
 # Claude / dev tooling
 .claude/
-CLAUDE.md
-!platforms/android/CLAUDE.md
 .dev/
 .mint
 

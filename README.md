@@ -1,47 +1,56 @@
 # Checkout Kit
 
-[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](LICENSE)
+<div align="center">
 
-<img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
+<p align="center">
+  <img width="3200" height="800" alt="Checkout Kit" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
+</p>
 
-Shopify's **Checkout Kit** lets native mobile apps embed Shopify's one-page checkout while preserving every store customization — Checkout UI extensions, Functions, Web Pixels, branding — and staying idiomatic to the host platform (light/dark mode, lifecycle hooks, native APIs to embed and customize the experience).
+[![MIT License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](LICENSE)
+
+[Getting Started](https://shopify.dev/docs/storefronts/mobile/checkout-kit)&nbsp;&nbsp;|&nbsp;&nbsp;[Docs](https://shopify.dev/docs/storefronts/mobile)&nbsp;&nbsp;|&nbsp;&nbsp;[Contributing](.github/CONTRIBUTING.md)&nbsp;&nbsp;|&nbsp;&nbsp;[Code of Conduct](.github/CODE_OF_CONDUCT.md)&nbsp;&nbsp;|&nbsp;&nbsp;[License](LICENSE)
+
+Shopify's **Checkout Kit** lets native mobile apps embed Shopify's one-page checkout while preserving store customizations like Checkout UI extensions, Shopify Functions, and branding. It also keeps the experience idiomatic to the host platform with light and dark mode support, lifecycle hooks, and native APIs to embed and customize checkout.
+
+</div>
 
 ## Documentation
 
-The [Checkout Kit dev docs](https://shopify.dev/docs/storefronts/mobile/checkout-kit) are the canonical reference — overview, platform install steps, and per-topic guides all live there.
+This respository houses the implementation of Checkout Kit, use it to check implementation or open issues if you find a bug.
+The [Shopify mobile storefront docs](https://shopify.dev/docs/storefronts/mobile) are where we maintain installation and step by step guides for common integration patterns.
 
 Feature guides:
 
-- [Preload checkout](https://shopify.dev/docs/storefronts/mobile/checkout-kit/preloading) — fetch checkout in the background so it's ready when buyers are.
-- [Monitor the checkout lifecycle](https://shopify.dev/docs/storefronts/mobile/checkout-kit/monitor-checkout-lifecycle) — handle completion, failure, and cancellation events.
-- [Authenticate checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/authenticate-checkouts) — sign buyers in to prefill saved addresses and payment methods.
-- [Privacy compliance](https://shopify.dev/docs/storefronts/mobile/checkout-kit/privacy-compliance) — pass GDPR, CCPA, and ATT consent through to Shopify.
-- [Accelerated checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/accelerated-checkouts-overview) — Shop Pay and Apple Pay buttons for one-tap purchase on product and cart pages.
+- [Preload checkout](https://shopify.dev/docs/storefronts/mobile/checkout-kit/preloading) - fetch checkout in the background so it's ready when buyers are.
+- [Monitor the checkout lifecycle](https://shopify.dev/docs/storefronts/mobile/checkout-kit/monitor-checkout-lifecycle) - handle completion, failure, and cancellation events.
+- [Authenticate checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/authenticate-checkouts) - sign buyers in to prefill saved addresses and payment methods.
+- [Privacy compliance](https://shopify.dev/docs/storefronts/mobile/checkout-kit/privacy-compliance) - pass GDPR, CCPA, and ATT consent through to Shopify.
+- [Accelerated checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/accelerated-checkouts?extension=react-native) - Shop Pay and Apple Pay buttons for one-tap purchase on product and cart pages.
 
-## Platforms
+## Packages in this repo
 
-Each platform ships from its own subdirectory with a dedicated README covering installation, configuration, and the full API. We expect overlap between these READMEs to migrate up here (and into the dev docs) over time — for now, treat the per-platform READMEs as the source of truth.
+Checkout Kit is a monorepo containing all the platforms Checkout Kit supports together.
 
-- **[Swift / iOS](platforms/swift/README.md)** — Swift Package and CocoaPods
-- **[Android](platforms/android/README.md)** — published to Maven Central as `com.shopify:checkout-kit`
-- **[React Native](platforms/react-native/README.md)** — placeholder; wrapper will be folded in soon
-- **[End-to-end tests](e2e/README.md)** — placeholder; cross-platform E2E suite incoming
+| Package                                                                | Latest version                                                                                                                                                                                                                                                             | Install channel                  | Description                                                     | Readme                                     |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | --------------------------------------------------------------- | ------------------------------------------ |
+| [`ShopifyCheckoutKit` `ShopifyAcceleratedCheckouts`](platforms/swift/) | [![GitHub tag](https://img.shields.io/github/v/tag/Shopify/checkout-kit?label=SPM)](https://github.com/Shopify/checkout-kit/tags) [![CocoaPods](https://img.shields.io/cocoapods/v/ShopifyCheckoutKit.svg?label=CocoaPods)](https://cocoapods.org/pods/ShopifyCheckoutKit) | Swift Package Manager, CocoaPods | iOS checkout presentation and accelerated checkout libraries.   | [Readme](platforms/swift/README.md)        |
+| [`com.shopify:checkout-kit`](platforms/android/)                       | [![Maven Central](https://img.shields.io/maven-central/v/com.shopify/checkout-kit.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/com.shopify/checkout-kit)                                                                                              | Maven Central                    | Android checkout presentation and accelerated checkout support. | [Readme](platforms/android/README.md)      |
+| [`@shopify/checkout-kit`](platforms/react-native/)                     | [![npm latest](https://img.shields.io/npm/v/@shopify/checkout-kit/latest.svg?label=npm)](https://www.npmjs.com/package/@shopify/checkout-kit)                                                                                                                              | npm                              | React Native wrapper for Checkout Kit.                          | [Readme](platforms/react-native/README.md) |
 
-## Repository layout
+## Versioning
 
-```
-platforms/
-  swift/         # iOS / Swift Package
-  android/       # Android library and sample apps
-  react-native/  # React Native wrapper (incoming)
-e2e/             # cross-platform end-to-end tests (incoming)
-.github/         # workflows, issue templates, CODEOWNERS
-```
+Checkout Kit is the new name for the Checkout Sheet Kit SDKs. It resets the version line to Checkout Kit v1, and all future development will be under Checkout Kit.
+
+### Legacy v3
+
+The legacy Checkout Sheet Kit lines are deprecated and remain available for apps maintaining older integrations.
+
+| Platform     | Status                                                                  | Package                             | Final release | Readme                                                                      |
+| ------------ | ----------------------------------------------------------------------- | ----------------------------------- | ------------- | --------------------------------------------------------------------------- |
+| iOS          | ![Deprecated](https://img.shields.io/badge/status-deprecated-lightgrey) | Checkout Sheet Kit for Swift        | `3.8.x`       | [Readme](https://github.com/Shopify/checkout-sheet-kit-swift#readme)        |
+| Android      | ![Deprecated](https://img.shields.io/badge/status-deprecated-lightgrey) | Checkout Sheet Kit for Android      | `3.5.x`       | [Readme](https://github.com/Shopify/checkout-sheet-kit-android#readme)      |
+| React Native | ![Deprecated](https://img.shields.io/badge/status-deprecated-lightgrey) | Checkout Sheet Kit for React Native | `4.0.x`       | [Readme](https://github.com/Shopify/checkout-sheet-kit-react-native#readme) |
 
 ## Contributing
 
 Issues and pull requests are welcome. See [CONTRIBUTING](.github/CONTRIBUTING.md) and our [Code of Conduct](.github/CODE_OF_CONDUCT.md).
-
-## License
-
-[MIT](LICENSE)
