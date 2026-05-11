@@ -296,7 +296,7 @@
 			mainGroup = 4EBBA75E2A5F0CE200193E19;
 			packageReferences = (
 				CB00000012345678 /* XCRemoteSwiftPackageReference "apollo-ios" */,
-				CBE9B3312F3DF82500E266EB /* XCLocalSwiftPackageReference "../../../protocol/languages/swift" */,
+				CBE9B3312F3DF82500E266EB /* XCLocalSwiftPackageReference "../../../../protocol/languages/swift" */,
 			);
 			productRefGroup = 4EBBA7682A5F0CE200193E19 /* Products */;
 			projectDirPath = "";
@@ -607,9 +607,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		CBE9B3312F3DF82500E266EB /* XCLocalSwiftPackageReference "../../../protocol/languages/swift" */ = {
+		CBE9B3312F3DF82500E266EB /* XCLocalSwiftPackageReference "../../../../protocol/languages/swift" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../../protocol/languages/swift";
+			relativePath = "../../../../protocol/languages/swift";
 		};
 /* End XCLocalSwiftPackageReference section */
 

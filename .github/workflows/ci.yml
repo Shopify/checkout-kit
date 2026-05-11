@@ -35,12 +35,12 @@ jobs:
         with:
           filters: |
             android:
-              - 'android/**'
+              - 'platforms/android/**'
               - '.github/workflows/android-test.yml'
               - '.github/workflows/android-license-headers.yml'
               - '.github/workflows/ci.yml'
             swift:
-              - 'swift/**'
+              - 'platforms/swift/**'
               - 'Package.swift'
               - 'Package.resolved'
               - '.github/workflows/swift-test-package.yml'
@@ -49,7 +49,7 @@ jobs:
               - '.github/workflows/swift-lint.yml'
               - '.github/workflows/ci.yml'
             reactNative:
-              - 'react-native/**'
+              - 'platforms/react-native/**'
               - '.github/workflows/ci.yml'
 
   android-test:

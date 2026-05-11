@@ -34,7 +34,7 @@ xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destina
 # contains it before invoking xcodebuild — xcodebuild discovers SwiftPM
 # packages from CWD and has no equivalent flag for pointing at them.
 if [[ "$SCHEME" == *"-Package" ]]; then
-    PACKAGE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    PACKAGE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
     if [[ -f "$PACKAGE_ROOT/Package.swift" ]]; then
         cd "$PACKAGE_ROOT"
     fi

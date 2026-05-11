@@ -21,8 +21,8 @@ jobs:
       - name: Read current versions from Mintfile
         id: current
         run: |
-          SWIFTLINT=$(grep 'realm/SwiftLint@' swift/Mintfile | sed 's/.*@//')
-          SWIFTFORMAT=$(grep 'nicklockwood/SwiftFormat@' swift/Mintfile | sed 's/.*@//')
+          SWIFTLINT=$(grep 'realm/SwiftLint@' platforms/swift/Mintfile | sed 's/.*@//')
+          SWIFTFORMAT=$(grep 'nicklockwood/SwiftFormat@' platforms/swift/Mintfile | sed 's/.*@//')
           echo "swiftlint=$SWIFTLINT" >> "$GITHUB_OUTPUT"
           echo "swiftformat=$SWIFTFORMAT" >> "$GITHUB_OUTPUT"
 
@@ -66,11 +66,11 @@ jobs:
           printf '%s\n' \
             "realm/SwiftLint@${{ steps.latest.outputs.swiftlint }}" \
             "nicklockwood/SwiftFormat@${{ steps.latest.outputs.swiftformat }}" \
-            > swift/Mintfile
+            > platforms/swift/Mintfile
 
       - name: Install Mint and bootstrap new versions
         if: steps.check.outputs.has_updates == 'true' && steps.existing_pr.outputs.exists != 'true'
-        working-directory: swift
+        working-directory: platforms/swift
         run: |
           brew install mint
           echo "${{ github.workspace }}/.mint/bin" >> "$GITHUB_PATH"
@@ -78,7 +78,7 @@ jobs:
 
       - name: Run lint fix
         if: steps.check.outputs.has_updates == 'true' && steps.existing_pr.outputs.exists != 'true'
-        working-directory: swift
+        working-directory: platforms/swift
         run: ./Scripts/lint fix --verbose
 
       - name: Commit and push

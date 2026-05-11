@@ -9,12 +9,12 @@ disabled_rules:
   - function_body_length
 
 included:
-  - swift/Sources
-  - swift/Tests
+  - platforms/swift/Sources
+  - platforms/swift/Tests
 
 excluded:
-  - swift/Samples
-  - swift/Sources/ShopifyCheckoutKit/Models.swift
+  - platforms/swift/Samples
+  - platforms/swift/Sources/ShopifyCheckoutKit/Models.swift
 
 opt_in_rules:
   - array_init

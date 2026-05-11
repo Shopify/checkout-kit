@@ -15,26 +15,26 @@
 > - [ ] I've added tests to support my implementation
 > - [ ] I have read and agree with the [Contribution Guidelines](./CONTRIBUTING.md)
 > - [ ] I have read and agree with the [Code of Conduct](./CODE_OF_CONDUCT.md)
-> - [ ] I've updated the relevant platform README (`swift/README.md` and/or `android/README.md`)
+> - [ ] I've updated the relevant platform README (`platforms/swift/README.md` and/or `platforms/android/README.md`)
 
 ---
 
 <details>
 <summary>Releasing a new Swift version?</summary>
 
-- [ ] I have bumped the version in `swift/ShopifyCheckoutKit.podspec`
-- [ ] I have bumped the version in `swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`
-- [ ] I have updated `swift/CHANGELOG.md`
-- [ ] I have updated the SwiftPM/CocoaPods version snippets in `swift/README.md` (major version only)
+- [ ] I have bumped the version in `platforms/swift/ShopifyCheckoutKit.podspec`
+- [ ] I have bumped the version in `platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`
+- [ ] I have updated `platforms/swift/CHANGELOG.md`
+- [ ] I have updated the SwiftPM/CocoaPods version snippets in `platforms/swift/README.md` (major version only)
 
 </details>
 
 <details>
 <summary>Releasing a new Android version?</summary>
 
-- [ ] I have bumped the `versionName` in `android/lib/build.gradle`
-- [ ] I have updated `android/CHANGELOG.md`
-- [ ] I have updated the Gradle/Maven version snippets in `android/README.md`
+- [ ] I have bumped the `versionName` in `platforms/android/lib/build.gradle`
+- [ ] I have updated `platforms/android/CHANGELOG.md`
+- [ ] I have updated the Gradle/Maven version snippets in `platforms/android/README.md`
 
 </details>
 

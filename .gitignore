@@ -9,6 +9,7 @@
 # Claude / dev tooling
 .claude/
 CLAUDE.md
+!platforms/android/CLAUDE.md
 .dev/
 .mint
 
@@ -23,6 +24,7 @@ xcuserdata/
 
 # Apollo / GraphQL
 *.graphqls
+!platforms/android/samples/MobileBuyIntegration/app/src/main/graphql/schema.graphqls
 apollo-ios-cli
 
 # Android / Gradle

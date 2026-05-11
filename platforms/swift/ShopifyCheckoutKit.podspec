@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.homepage  = "https://github.com/Shopify/checkout-kit"
   s.readme    = "https://github.com/Shopify/checkout-kit/blob/main/README.md"
   s.changelog = "https://github.com/Shopify/checkout-kit/releases"
-  s.license   = { :type => "MIT", :file => "../LICENSE" }
+  s.license   = { :type => "MIT", :file => "../../LICENSE" }
 
   s.source = {
     :git => "https://github.com/Shopify/checkout-kit.git", :tag => s.version.to_s
