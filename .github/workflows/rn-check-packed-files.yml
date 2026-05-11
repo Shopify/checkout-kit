@@ -1,0 +1,41 @@
+name: React Native — Check Packed Files
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  check-packed-files:
+    name: Check package files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TERM: xterm
+    defaults:
+      run:
+        working-directory: platforms/react-native
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js and pnpm
+        uses: shop/setup-javascript-action@main
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+
+      - name: Cache turbo build setup
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: platforms/react-native/.turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build module and compare snapshot
+        run: |
+          pnpm module clean
+          pnpm module build
+          pnpm compare-snapshot

@@ -1,6 +1,4 @@
 [
-  "LICENSE",
-  "RNShopifyCheckoutSheetKit.podspec",
   "android/build.gradle",
   "android/gradle.properties",
   "android/proguard-rules.pro",
@@ -62,7 +60,9 @@
   "lib/typescript/src/specs/NativeShopifyCheckoutSheetKit.d.ts.map",
   "lib/typescript/src/specs/RCTAcceleratedCheckoutButtonsNativeComponent.d.ts",
   "lib/typescript/src/specs/RCTAcceleratedCheckoutButtonsNativeComponent.d.ts.map",
+  "LICENSE",
   "package.json",
+  "RNShopifyCheckoutSheetKit.podspec",
   "src/components/AcceleratedCheckoutButtons.tsx",
   "src/context.tsx",
   "src/errors.d.ts",

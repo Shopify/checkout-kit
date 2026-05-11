@@ -50,6 +50,12 @@ jobs:
               - '.github/workflows/ci.yml'
             reactNative:
               - 'platforms/react-native/**'
+              - '.github/workflows/rn-test.yml'
+              - '.github/workflows/rn-test-android.yml'
+              - '.github/workflows/rn-test-ios.yml'
+              - '.github/workflows/rn-license-headers.yml'
+              - '.github/workflows/rn-check-packed-files.yml'
+              - '.github/workflows/rn-lint.yml'
               - '.github/workflows/ci.yml'
 
   android-test:
@@ -82,6 +88,45 @@ jobs:
     if: needs.changes.outputs.swift == 'true'
     uses: ./.github/workflows/swift-lint.yml
 
+  rn-test:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/rn-test.yml
+
+  rn-test-android:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-test-android.yml
+
+  rn-test-ios:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-test-ios.yml
+
+  rn-license-headers:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-license-headers.yml
+
+  rn-check-packed-files:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-check-packed-files.yml
+
+  rn-lint:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-lint.yml
+
   # Single required status check for branch protection.
   # Passes when every relevant platform job either succeeded or was skipped
   # because no files in that platform's tree changed.
@@ -95,6 +140,12 @@ jobs:
       - swift-test-package
       - swift-build-samples
       - swift-lint
+      - rn-test
+      - rn-test-android
+      - rn-test-ios
+      - rn-license-headers
+      - rn-check-packed-files
+      - rn-lint
     runs-on: ubuntu-latest
     steps:
       - name: Verify all upstream jobs succeeded or were skipped
