@@ -21,6 +21,10 @@ xcuserdata/
 # Sample app secrets (Swift)
 **/Storefront.xcconfig
 **/*.entitlements
+# Exception: the React Native sample's entitlements are source code (associated
+# domains + in-app payments merchant ID), not secrets — Xcode requires this file
+# at build time and CI fails without it.
+!platforms/react-native/sample/ios/ReactNative/ReactNative.entitlements
 
 # Apollo / GraphQL
 *.graphqls

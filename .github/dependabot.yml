@@ -63,3 +63,54 @@ updates:
       apollo:
         patterns:
           - "com.apollographql.apollo*"
+
+  # React Native — root pnpm workspace
+  - package-ecosystem: npm
+    directory: "/platforms/react-native"
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+
+  # React Native — Checkout Sheet Kit module
+  - package-ecosystem: npm
+    directory: "/platforms/react-native/modules/@shopify/checkout-sheet-kit"
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+
+  # React Native — sample app
+  - package-ecosystem: npm
+    directory: "/platforms/react-native/sample"
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  # React Native — sample iOS CocoaPods (via Bundler/Gemfile)
+  - package-ecosystem: bundler
+    directory: "/platforms/react-native/sample"
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"

@@ -1,0 +1,73 @@
+name: React Native — Run iOS Tests
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  test-ios:
+    name: Run iOS Tests
+    runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: platforms/react-native
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Display Xcode info
+        run: |
+          echo "Xcode Path: $(xcode-select -p)"
+          echo "Xcode Version: $(xcrun xcodebuild -version)"
+
+      - name: Setup iOS Simulator
+        run: |
+          xcrun simctl list runtimes
+          xcrun simctl list devicetypes | grep iPhone
+          xcrun simctl delete all
+          CURRENT_SIMULATOR_UUID=$(xcrun simctl create TestDevice "iPhone 16 Pro")
+          echo "CURRENT_SIMULATOR_UUID=$CURRENT_SIMULATOR_UUID" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js and pnpm
+        uses: shop/setup-javascript-action@main
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+
+      - name: Cache turbo build setup
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: platforms/react-native/.turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@c4e5b1316158f92e3d49443a9d58b31d25ac0f8f # v1.306.0
+        with:
+          ruby-version: 3.3.6
+          bundler-cache: true
+          working-directory: platforms/react-native/sample
+
+      - name: Cache cocoapods
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: platforms/react-native/sample/ios/Pods
+          key: ${{ runner.os }}-cocoapods-${{ hashFiles('platforms/react-native/sample/ios/Podfile.lock', 'platforms/react-native/sample/Gemfile.lock', 'platforms/react-native/sample/Gemfile', 'platforms/react-native/package.json', 'platforms/react-native/sample/package.json', 'platforms/react-native/modules/@shopify/checkout-sheet-kit/package.json', 'platforms/react-native/pnpm-lock.yaml') }}
+
+      - name: Install cocoapods
+        working-directory: platforms/react-native/sample
+        run: |
+          set -euo pipefail
+          bundle install
+          cd ios
+          bundle exec pod install --deployment --repo-update
+
+      - name: Build module
+        run: pnpm module build
+
+      - name: Run iOS tests
+        run: pnpm sample test:ios

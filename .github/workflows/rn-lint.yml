@@ -1,0 +1,51 @@
+name: React Native — Lint
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  swiftlint:
+    name: SwiftLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
+        with:
+          args: --strict
+
+  lint:
+    name: Lint module + sample
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: platforms/react-native
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js and pnpm
+        uses: shop/setup-javascript-action@main
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+
+      - name: Cache turbo build setup
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: platforms/react-native/.turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build module
+        run: pnpm module build
+
+      - name: Lint module
+        run: pnpm module lint
+
+      - name: Lint sample
+        run: pnpm sample lint

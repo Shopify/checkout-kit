@@ -1,0 +1,39 @@
+name: React Native — Run Jest Tests
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run jest tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: platforms/react-native
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js and pnpm
+        uses: shop/setup-javascript-action@main
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with coverage
+        run: pnpm test --coverage --testPathPatterns="modules/@shopify/checkout-sheet-kit/tests" --coverageReporters=json-summary
+
+      - name: Coverage comment
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/jest-coverage-comment@fb83bcbaeb5ca467936175796f862a2992938833 # main
+        with:
+          coverage-summary-path: platforms/react-native/coverage/coverage-summary.json
+          title: 'React Native — Coverage Report'
+          create-new-comment: false
