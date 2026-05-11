@@ -47,6 +47,16 @@ public struct EventHandlers {
     }
 }
 
+/// Keeps bridge client storage behind a reference so SwiftUI view values do not
+/// embed optional existential storage while they are repeatedly copied.
+final class CheckoutProtocolClientContainer: Sendable {
+    let client: (any CheckoutCommunicationProtocol)?
+
+    init(_ client: (any CheckoutCommunicationProtocol)? = nil) {
+        self.client = client
+    }
+}
+
 extension View {
     func walletButtonStyle(bg: Color = Color.black, cornerRadius: CGFloat? = nil) -> some View {
         let defaultCornerRadius: CGFloat = 8

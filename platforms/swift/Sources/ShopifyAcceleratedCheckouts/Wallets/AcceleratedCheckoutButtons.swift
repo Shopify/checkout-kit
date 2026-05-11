@@ -47,7 +47,7 @@ public struct AcceleratedCheckoutButtons: View {
     public var wallets: [Wallet] = [.shopPay, .applePay]
     var eventHandlers: EventHandlers = .init()
     var cornerRadius: CGFloat?
-    var client: (any CheckoutCommunicationProtocol)?
+    var clientContainer: CheckoutProtocolClientContainer = .init()
 
     /// The Apple Pay button label style
     private var applePayLabel: PayWithApplePayButtonLabel = .plain
@@ -97,7 +97,7 @@ public struct AcceleratedCheckoutButtons: View {
                                 eventHandlers: eventHandlers,
                                 cornerRadius: cornerRadius,
                                 style: applePayStyle,
-                                client: client
+                                client: clientContainer.client
                             )
                             .label(applePayLabel)
                         case .shopPay:
@@ -105,7 +105,7 @@ public struct AcceleratedCheckoutButtons: View {
                                 identifier: identifier,
                                 eventHandlers: eventHandlers,
                                 cornerRadius: cornerRadius,
-                                client: client
+                                client: clientContainer.client
                             )
                         }
                     }
@@ -249,7 +249,7 @@ extension AcceleratedCheckoutButtons {
 
     public func connect(_ client: (any CheckoutCommunicationProtocol)?) -> AcceleratedCheckoutButtons {
         var newView = self
-        newView.client = client
+        newView.clientContainer = CheckoutProtocolClientContainer(client)
         return newView
     }
 }
