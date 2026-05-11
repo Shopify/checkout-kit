@@ -23,8 +23,8 @@
 
 import ApolloAPI
 import Combine
-@preconcurrency import ShopifyAcceleratedCheckouts
 @preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import SwiftUI
 import UIKit
 
@@ -150,7 +150,15 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
     private var buttonContainerView: UIView!
     private var buttonStackView: UIStackView!
     private var checkoutButton: UIButton!
-    private var acceleratedCheckoutHostingController: UIHostingController<AnyView>?
+
+    private let client = CheckoutProtocol.Client()
+        .on(CheckoutProtocol.start) { checkout in
+            print("[UCP] Checkout started: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.complete) { checkout in
+            print("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
+            CartManager.shared.resetCart()
+        }
 
     // MARK: Initializers
 
@@ -262,8 +270,6 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
             buttonStackView.bottomAnchor.constraint(equalTo: buttonContainerView.bottomAnchor, constant: -16)
         ])
 
-        setupAcceleratedCheckoutButtons()
-
         updateButtonContainerSize()
     }
 
@@ -317,73 +323,15 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
         checkoutButton.setTitle("", for: .normal)
     }
 
-    private func setupAcceleratedCheckoutButtons() {
-        guard let cartId = CartManager.shared.cart?.id else { return }
-
-        let savedStyle = UserDefaults.standard.string(forKey: AppStorageKeys.applePayStyle.rawValue)
-            .flatMap(ApplePayStyleOption.init(rawValue:)) ?? .automatic
-
-        let acceleratedCheckoutButtonsView = AcceleratedCheckoutButtons(cartID: cartId)
-            .applePayStyle(savedStyle.style)
-            .wallets([.shopPay, .applePay])
-            .cornerRadius(10)
-            .onComplete { _ in
-                CartManager.shared.resetCart()
-            }
-            .onFail { error in
-                print("Accelerated checkout failed: \(error)")
-            }
-            .onCancel {
-                print("Accelerated checkout cancelled")
-            }
-            .environmentObject(appConfiguration.acceleratedCheckoutsStorefrontConfig)
-            .environmentObject(appConfiguration.acceleratedCheckoutsApplePayConfig)
-
-        let acceleratedCheckoutsController = UIHostingController(rootView: AnyView(acceleratedCheckoutButtonsView))
-        acceleratedCheckoutsController.view.translatesAutoresizingMaskIntoConstraints = false
-        acceleratedCheckoutsController.view.backgroundColor = UIColor.clear
-
-        let heightConstraint = acceleratedCheckoutsController.view.heightAnchor.constraint(equalToConstant: 96)
-        heightConstraint.priority = UILayoutPriority(999)
-        heightConstraint.isActive = true
-
-        addChild(acceleratedCheckoutsController)
-        buttonStackView.insertArrangedSubview(acceleratedCheckoutsController.view, at: 0)
-        acceleratedCheckoutsController.didMove(toParent: self)
-
-        acceleratedCheckoutHostingController = acceleratedCheckoutsController
-
-        updateButtonContainerSize()
-    }
-
     private func updateButtonContainerSize() {
         let checkoutButtonHeight: CGFloat = 48
-        let acceleratedButtonHeight: CGFloat = acceleratedCheckoutHostingController != nil ? 96 : 0
-        let spacing: CGFloat = acceleratedCheckoutHostingController != nil ? DesignSystem.buttonSpacing : 0
         let topPadding: CGFloat = 40
         let bottomPadding: CGFloat = 16
-        let totalPadding = topPadding + bottomPadding
-
-        let totalHeight = checkoutButtonHeight + acceleratedButtonHeight + spacing + totalPadding
+        let totalHeight = checkoutButtonHeight + topPadding + bottomPadding
 
         buttonContainerView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: totalHeight)
-
         buttonContainerView.layoutIfNeeded()
-
         tableView.tableFooterView = buttonContainerView
-    }
-
-    private func refreshAcceleratedCheckoutButtons() {
-        if let hostingController = acceleratedCheckoutHostingController {
-            buttonStackView.removeArrangedSubview(hostingController.view)
-            hostingController.view.removeFromSuperview()
-            hostingController.removeFromParent()
-            acceleratedCheckoutHostingController = nil
-        }
-
-        setupAcceleratedCheckoutButtons()
-
-        updateButtonContainerSize()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -392,7 +340,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
         tableView.reloadData()
 
         if let url = CartManager.shared.cart?.checkoutURL {
-            ShopifyCheckoutKit.preload(checkout: url)
+            ShopifyCheckoutKit.preload(checkout: url.appendingEcParams())
         }
     }
 
@@ -428,7 +376,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
                 cell.quantityLabel.text = "\(cart.lines.nodes[indexPath.item].quantity)"
 
                 if let checkoutUrl = cart.checkoutURL {
-                    ShopifyCheckoutKit.preload(checkout: checkoutUrl)
+                    ShopifyCheckoutKit.preload(checkout: checkoutUrl.appendingEcParams())
                 }
             }
         }
@@ -449,14 +397,6 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
             tableView.isHidden = totalQuantity <= 0
             checkoutButton.isHidden = totalQuantity <= 0
 
-            acceleratedCheckoutHostingController?.view.isHidden = totalQuantity <= 0
-
-            if totalQuantity > 0 {
-                refreshAcceleratedCheckoutButtons()
-            } else {
-                updateButtonContainerSize()
-            }
-
             setupCheckoutButtonContent()
         }
     }
@@ -464,7 +404,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
     @objc private func presentCheckout() {
         guard let url = CartManager.shared.cart?.checkoutURL else { return }
 
-        ShopifyCheckoutKit.present(checkout: url, from: self, delegate: self)
+        ShopifyCheckoutKit.present(checkout: url.appendingEcParams(), from: self, client: client)
     }
 
     @objc private func resetCart() {
@@ -487,80 +427,6 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
 }
 
-extension CartViewController: @preconcurrency CheckoutDelegate {
-    func checkoutDidComplete(event: ShopifyCheckoutKit.CheckoutCompletedEvent) {
-        resetCart()
-
-        ShopifyCheckoutKit.configuration.logger.log("Order created: \(event.orderDetails.id)")
-    }
-
-    func checkoutDidCancel() {
-        dismiss(animated: true)
-    }
-
-    func checkoutDidClickContactLink(url: URL) {
-        if UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
-        }
-    }
-
-    func checkoutDidFail(error: ShopifyCheckoutKit.CheckoutError) {
-        var errorMessage = ""
-
-        if case let .sdkError(underlying, _) = error {
-            errorMessage = "\(underlying.localizedDescription)"
-        }
-
-        if case let .checkoutUnavailable(message, code, _) = error {
-            errorMessage = message
-            handleCheckoutUnavailable(message, code)
-        }
-
-        if case let .configurationError(message, _, _) = error {
-            errorMessage = message
-        }
-
-        if case let .checkoutExpired(message, _, _) = error {
-            errorMessage = message
-        }
-
-        print(errorMessage, "Recoverable: \(error.isRecoverable)")
-
-        if !error.isRecoverable {
-            handleUnrecoverableError(errorMessage)
-        }
-    }
-
-    private func handleCheckoutUnavailable(_ message: String, _ code: CheckoutUnavailable) {
-        switch code {
-        case let .clientError(clientErrorCode):
-            print("[CheckoutUnavailable] (checkoutError)", message, clientErrorCode)
-        case let .httpError(statusCode):
-            print("[CheckoutUnavailable] (httpError)", statusCode)
-        }
-    }
-
-    func checkoutDidEmitWebPixelEvent(event: ShopifyCheckoutKit.PixelEvent) {
-        switch event {
-        case let .customEvent(customEvent):
-            print("[PIXEL - Custom]", customEvent.name!)
-            if let genericEvent = mapToGenericEvent(customEvent: customEvent) {
-                recordAnalyticsEvent(genericEvent)
-            }
-        case let .standardEvent(standardEvent):
-            print("[PIXEL - Standard]", standardEvent.name!)
-            recordAnalyticsEvent(mapToGenericEvent(standardEvent: standardEvent))
-        }
-    }
-
-    private func handleUnrecoverableError(_ message: String = "Checkout unavailable") {
-        DispatchQueue.main.async {
-            self.resetCart()
-            self.showAlert(message: message)
-        }
-    }
-}
-
 extension CartViewController {
     func showAlert(message: String) {
         let alert = UIAlertController(title: "Checkout Failed", message: message, preferredStyle: .alert)
@@ -568,56 +434,4 @@ extension CartViewController {
 
         present(alert, animated: true, completion: nil)
     }
-}
-
-extension CartViewController {
-    private func mapToGenericEvent(standardEvent: StandardEvent) -> AnalyticsEvent {
-        return AnalyticsEvent(
-            name: standardEvent.name!,
-            userId: getUserId(),
-            timestamp: standardEvent.timestamp!,
-            checkoutTotal: standardEvent.data?.checkout?.totalPrice?.amount ?? 0.0
-        )
-    }
-
-    private func mapToGenericEvent(customEvent: CustomEvent) -> AnalyticsEvent? {
-        guard customEvent.name != nil else {
-            print("Failed to parse custom event", customEvent)
-            return nil
-        }
-        return AnalyticsEvent(
-            name: customEvent.name!,
-            userId: getUserId(),
-            timestamp: customEvent.timestamp!,
-            checkoutTotal: nil
-        )
-    }
-
-    private func decodeAndMap(event: CustomEvent, decoder _: JSONDecoder = JSONDecoder()) throws -> AnalyticsEvent {
-        return AnalyticsEvent(
-            name: event.name!,
-            userId: getUserId(),
-            timestamp: event.timestamp!,
-            checkoutTotal: nil
-        )
-    }
-
-    private func getUserId() -> String {
-        return "123"
-    }
-
-    func recordAnalyticsEvent(_ event: AnalyticsEvent) {
-        appConfiguration.webPixelsLogger.log(event.name)
-    }
-}
-
-struct AnalyticsEvent: Codable {
-    var name = ""
-    var userId = ""
-    var timestamp = ""
-    var checkoutTotal: Double? = 0.0
-}
-
-struct CustomPixelEventData: Codable {
-    var customAttribute = 0.0
 }

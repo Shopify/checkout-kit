@@ -22,9 +22,9 @@
  */
 
 import ApolloAPI
-import PassKit
 import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import SwiftUI
 
 typealias CartLineNode = Storefront.CartFragment.Lines.Node
@@ -36,7 +36,15 @@ struct CartView: View {
     @State var showCheckoutSheet: Bool = false
 
     @ObservedObject var cartManager: CartManager = .shared
-    @ObservedObject var config: AppConfiguration = appConfiguration
+
+    private let client = CheckoutProtocol.Client()
+        .on(CheckoutProtocol.start) { checkout in
+            print("[UCP] Checkout started: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.complete) { checkout in
+            print("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
+            CartManager.shared.resetCart()
+        }
 
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
@@ -52,22 +60,27 @@ struct CartView: View {
                 }
 
                 VStack(spacing: DesignSystem.buttonSpacing) {
-                    if let cartId = cartManager.cart?.id {
-                        AcceleratedCheckoutButtons(cartID: cartId)
-                            .applePayStyle(applePayStyle.style)
-                            .wallets([.shopPay, .applePay])
-                            .cornerRadius(DesignSystem.cornerRadius)
-                            .onComplete { _ in
-                                CartManager.shared.resetCart()
-                            }
+                    if let cartID = cartManager.cart?.id {
+                        AcceleratedCheckoutButtons(cartID: cartID)
                             .onFail { error in
-                                print("Accelerated checkout failed: \(error)")
+                                print("[AcceleratedCheckout] Failed: \(error)")
                             }
                             .onCancel {
-                                print("Accelerated checkout cancelled")
+                                print("[AcceleratedCheckout] Cancelled")
                             }
-                            .environmentObject(appConfiguration.acceleratedCheckoutsStorefrontConfig)
-                            .environmentObject(appConfiguration.acceleratedCheckoutsApplePayConfig)
+                            .connect(client)
+                            .environmentObject(
+                                ShopifyAcceleratedCheckouts.Configuration(
+                                    storefrontDomain: InfoDictionary.shared.domain,
+                                    storefrontAccessToken: InfoDictionary.shared.accessToken
+                                )
+                            )
+                            .environmentObject(
+                                ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+                                    merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
+                                    contactFields: [.email, .phone]
+                                )
+                            )
                     }
 
                     Button(
@@ -102,7 +115,8 @@ struct CartView: View {
             }
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
-                    CheckoutSheet(checkout: url)
+                    CheckoutSheet(checkout: url.appendingEcParams())
+                        .connect(client)
                         .colorScheme(.automatic)
                         .onCancel {
                             print("[ShopifyCheckoutKit] CANCEL")
@@ -113,24 +127,9 @@ struct CartView: View {
                                 isCompleted = false
                             }
                         }
-                        .onComplete { event in
-                            print("[ShopifyCheckoutKit] COMPLETE - Checkout completed with order ID: \(event.orderDetails.id)")
-                            isCompleted = true
-                        }
                         .onFail { error in
                             showCheckoutSheet = false
                             print("[ShopifyCheckoutKit] FAIL - Checkout failed: \(error)")
-                        }
-                        .onLinkClick { url in
-                            print("[ShopifyCheckoutKit] LINK CLICK - \(url)")
-                        }
-                        .onPixelEvent { event in
-                            switch event {
-                            case let .customEvent(event):
-                                print("[ShopifyCheckoutKit] PIXEL - \(String(describing: event.name))")
-                            case let .standardEvent(event):
-                                print("[ShopifyCheckoutKit] PIXEL - \(String(describing: event.name))")
-                            }
                         }
                         .edgesIgnoringSafeArea(.all)
                 }
@@ -284,7 +283,7 @@ struct CartLines: View {
                                             updating = nil
 
                                             if let checkoutUrl = cart.checkoutURL {
-                                                ShopifyCheckoutKit.preload(checkout: checkoutUrl)
+                                                ShopifyCheckoutKit.preload(checkout: checkoutUrl.appendingEcParams())
                                             }
                                         }
                                     },

@@ -41,34 +41,13 @@ struct ButtonSet: View {
                     title: "AcceleratedCheckoutButtons(cartID:)",
                     renderState: $cartRenderState
                 ) {
-                    // Cart-based checkout example with event handlers
                     AcceleratedCheckoutButtons(cartID: cartID)
                         .applePayLabel(.plain)
-                        .onComplete { event in
-                            print(
-                                "✅ Checkout completed successfully. Order ID: \(event.orderDetails.id)"
-                            )
-                            onComplete()
-                        }
                         .onFail { error in
                             print("❌ Checkout failed: \(error)")
                         }
                         .onCancel {
                             print("🚫 Checkout cancelled")
-                        }
-                        .onClickLink { url in
-                            print("🔗 Link clicked: \(url)")
-                        }
-                        .onWebPixelEvent { event in
-                            let eventName: String = {
-                                switch event {
-                                case let .customEvent(customEvent):
-                                    return customEvent.name ?? "Unknown custom event"
-                                case let .standardEvent(standardEvent):
-                                    return standardEvent.name ?? "Unknown standard event"
-                                }
-                            }()
-                            print("📊 Web pixel event: \(eventName)")
                         }
                         .onRenderStateChange {
                             cartRenderState = $0
@@ -83,7 +62,6 @@ struct ButtonSet: View {
                     title: "AcceleratedCheckoutButtons(variantID: quantity:)",
                     renderState: $variantRenderState
                 ) {
-                    // Variant-based checkout with separate handlers and custom corner radius
                     AcceleratedCheckoutButtons(
                         variantID: productVariant.id,
                         quantity: firstVariantQuantity
@@ -92,33 +70,11 @@ struct ButtonSet: View {
                     .applePayLabel(.buy)
                     .cornerRadius(24)
                     .wallets([.applePay, .shopPay])
-                    .onComplete { event in
-                        print("✅ Variant checkout completed")
-                        print("   Order ID: \(event.orderDetails.id)")
-                    }
                     .onFail { error in
                         print("❌ Variant checkout failed: \(error)")
                     }
                     .onCancel {
                         print("🚫 Variant checkout cancelled")
-                    }
-                    .onShouldRecoverFromError { error in
-                        print("🔄 Variant - Should recover from error: \(error)")
-                        return false // Example: don't recover for variant checkout
-                    }
-                    .onClickLink { url in
-                        print("🔗 Variant - Link clicked: \(url)")
-                    }
-                    .onWebPixelEvent { event in
-                        let eventName: String = {
-                            switch event {
-                            case let .customEvent(customEvent):
-                                return customEvent.name ?? "Unknown custom event"
-                            case let .standardEvent(standardEvent):
-                                return standardEvent.name ?? "Unknown standard event"
-                            }
-                        }()
-                        print("📊 Variant - Web pixel event: \(eventName)")
                     }
                     .onRenderStateChange {
                         variantRenderState = $0

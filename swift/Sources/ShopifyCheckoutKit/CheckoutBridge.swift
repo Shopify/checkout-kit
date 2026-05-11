@@ -23,12 +23,6 @@
 
 import WebKit
 
-protocol ScriptMessageBody {
-    var body: Any { get }
-}
-
-extension WKScriptMessage: ScriptMessageBody {}
-
 enum BridgeError: Swift.Error {
     case invalidBridgeEvent(Swift.Error? = nil)
     case unencodableInstrumentation(Swift.Error? = nil)
@@ -40,7 +34,7 @@ protocol CheckoutBridgeProtocol {
 }
 
 enum CheckoutBridge: CheckoutBridgeProtocol {
-    static let messageHandler = "mobileCheckoutSdk"
+    static let messageHandler = "EmbeddedCheckoutProtocolConsumer"
 
     static var applicationName: String {
         return applicationName(entryPoint: nil)
@@ -99,15 +93,25 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
         webView.evaluateJavaScript(script)
     }
 
-    static func decode(_ message: ScriptMessageBody) throws -> WebEvent {
-        guard let body = message.body as? String, let data = body.data(using: .utf8) else {
-            throw BridgeError.invalidBridgeEvent()
-        }
+    static func sendResponse(_ webView: WKWebView, messageBody: String) {
+        DispatchQueue.main.async {
+            let script = """
+            (function() {
+                try {
+                    if (window.EmbeddedCheckoutProtocol && typeof window.EmbeddedCheckoutProtocol.postMessage === 'function') {
+                        window.EmbeddedCheckoutProtocol.postMessage(\(messageBody));
+                    } else if (window && window.console && window.console.error) {
+                        window.console.error('EmbeddedCheckoutProtocol.postMessage is not available.');
+                    }
+                } catch (error) {
+                    if (window && window.console && window.console.error) {
+                        window.console.error('Failed to post message to checkout', error);
+                    }
+                }
+            })();
+            """
 
-        do {
-            return try JSONDecoder().decode(WebEvent.self, from: data)
-        } catch {
-            throw BridgeError.invalidBridgeEvent(error)
+            webView.evaluateJavaScript(script)
         }
     }
 
@@ -121,68 +125,6 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
         	}, {passive: true, once: true});
         }
         """
-    }
-}
-
-extension CheckoutBridge {
-    enum WebEvent: Decodable {
-        /// Error types
-        case checkoutExpired(message: String?, code: CheckoutErrorCode)
-        case checkoutUnavailable(message: String?, code: CheckoutErrorCode)
-        case configurationError(message: String?, code: CheckoutErrorCode)
-
-        /// Success
-        case checkoutComplete(event: CheckoutCompletedEvent)
-
-        /// Presentational
-        case checkoutModalToggled(modalVisible: Bool)
-
-        /// Eventing
-        case webPixels(event: PixelEvent?)
-
-        /// Generic
-        case unsupported(String)
-
-        enum CodingKeys: String, CodingKey {
-            case name
-            case body
-        }
-
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-
-            let name = try container.decode(String.self, forKey: .name)
-
-            switch name {
-            case "completed":
-                let checkoutCompletedEvent = CheckoutCompletedEventDecoder().decode(from: container, using: decoder)
-                self = .checkoutComplete(event: checkoutCompletedEvent)
-            case "error":
-                let errorDecoder = CheckoutErrorEventDecoder()
-                let error = errorDecoder.decode(from: container, using: decoder)
-                let code = CheckoutErrorCode.from(error.code)
-
-                switch error.group {
-                case .configuration:
-                    self = .configurationError(message: error.reason, code: code)
-                case .unrecoverable:
-                    self = .checkoutUnavailable(message: error.reason, code: code)
-                case .expired:
-                    self = .checkoutExpired(message: error.reason, code: CheckoutErrorCode.from(error.code))
-                default:
-                    self = .unsupported(name)
-                }
-            case "checkoutBlockingEvent":
-                let modalVisible = try container.decode(String.self, forKey: .body)
-                self = .checkoutModalToggled(modalVisible: Bool(modalVisible)!)
-            case "webPixels":
-                let webPixelsDecoder = WebPixelsEventDecoder()
-                let event = try webPixelsDecoder.decode(from: container, using: decoder)
-                self = .webPixels(event: event)
-            default:
-                self = .unsupported(name)
-            }
-        }
     }
 }
 

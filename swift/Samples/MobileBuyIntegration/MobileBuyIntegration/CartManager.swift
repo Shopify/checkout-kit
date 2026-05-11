@@ -54,7 +54,7 @@ class CartManager: ObservableObject {
 
     public func preloadCheckout() {
         if let url = cart?.checkoutURL, isDirty {
-            ShopifyCheckoutKit.preload(checkout: url)
+            ShopifyCheckoutKit.preload(checkout: url.appendingEcParams())
             markCartAsReady()
         }
     }

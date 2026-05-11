@@ -25,42 +25,19 @@
 import XCTest
 
 class MockCheckoutWebViewDelegate: CheckoutWebViewDelegate {
-    var completedEventReceived: CheckoutCompletedEvent?
-
     var errorReceived: CheckoutError?
 
     var didStartNavigationExpectation: XCTestExpectation?
-
     var didFinishNavigationExpectation: XCTestExpectation?
-
-    var didCompleteCheckoutExpectation: XCTestExpectation?
-
-    var didClickContactLinkExpectation: XCTestExpectation?
-
     var didClickLinkExpectation: XCTestExpectation?
-
     var didFailWithErrorExpectation: XCTestExpectation?
-
-    var didToggleModalExpectation: XCTestExpectation?
-
-    var didEmitWebPixelsEventExpectation: XCTestExpectation?
-
-    var didEmitCheckoutCompletedEventExpectation: XCTestExpectation?
 
     func checkoutViewDidStartNavigation() {
         didStartNavigationExpectation?.fulfill()
     }
 
-    func checkoutViewDidCompleteCheckout() {
-        didCompleteCheckoutExpectation?.fulfill()
-    }
-
     func checkoutViewDidFinishNavigation() {
         didFinishNavigationExpectation?.fulfill()
-    }
-
-    func checkoutViewDidClickContactLink(url _: URL) {
-        didClickContactLinkExpectation?.fulfill()
     }
 
     func checkoutViewDidClickLink(url _: URL) {
@@ -70,18 +47,5 @@ class MockCheckoutWebViewDelegate: CheckoutWebViewDelegate {
     func checkoutViewDidFailWithError(error: CheckoutError) {
         errorReceived = error
         didFailWithErrorExpectation?.fulfill()
-    }
-
-    func checkoutViewDidToggleModal(modalVisible _: Bool) {
-        didToggleModalExpectation?.fulfill()
-    }
-
-    func checkoutViewDidEmitWebPixelEvent(event _: PixelEvent) {
-        didEmitWebPixelsEventExpectation?.fulfill()
-    }
-
-    func checkoutViewDidCompleteCheckout(event: ShopifyCheckoutKit.CheckoutCompletedEvent) {
-        completedEventReceived = event
-        didEmitCheckoutCompletedEventExpectation?.fulfill()
     }
 }

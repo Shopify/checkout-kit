@@ -23,11 +23,21 @@
 
 import OSLog
 @preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import UIKit
 
 class CheckoutController: UIViewController {
     var window: UIWindow?
     var root: UIViewController?
+
+    private let client = CheckoutProtocol.Client()
+        .on(CheckoutProtocol.start) { checkout in
+            OSLogger.shared.debug("[UCP] Checkout started: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.complete) { checkout in
+            OSLogger.shared.debug("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
+            CartManager.shared.resetCart()
+        }
 
     init(window: UIWindow?) {
         self.window = window
@@ -43,43 +53,12 @@ class CheckoutController: UIViewController {
 
     public func present(checkout url: URL) {
         if let rootViewController = window?.topMostViewController() {
-            ShopifyCheckoutKit.present(checkout: url, from: rootViewController, delegate: self)
+            ShopifyCheckoutKit.present(checkout: url.appendingEcParams(), from: rootViewController, client: client)
             root = rootViewController
         }
     }
 
     public func preload() {
         CartManager.shared.preloadCheckout()
-    }
-}
-
-extension CheckoutController: @preconcurrency CheckoutDelegate {
-    func checkoutDidComplete(event: CheckoutCompletedEvent) {
-        OSLogger.shared.debug(
-            "[CheckoutDelegate] Checkout completed. Order ID: \(event.orderDetails.id)"
-        )
-        CartManager.shared.resetCart()
-    }
-
-    func checkoutDidCancel() {
-        OSLogger.shared.debug("[CheckoutDelegate] Checkout cancelled.")
-        root?.dismiss(animated: true, completion: nil)
-    }
-
-    func checkoutDidFail(error: ShopifyCheckoutKit.CheckoutError) {
-        OSLogger.shared.debug("[CheckoutDelegate] Checkout failed: \(error.localizedDescription)")
-    }
-
-    func checkoutDidEmitWebPixelEvent(event: ShopifyCheckoutKit.PixelEvent) {
-        var eventName: String?
-
-        switch event {
-        case let .standardEvent(event):
-            eventName = event.name
-        case let .customEvent(event):
-            eventName = event.name
-        }
-
-        OSLogger.shared.debug("[CheckoutDelegate] Pixel event: \(eventName ?? "")")
     }
 }

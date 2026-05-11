@@ -21,7 +21,6 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-@preconcurrency import ShopifyAcceleratedCheckouts
 @preconcurrency import ShopifyCheckoutKit
 import UIKit
 
@@ -42,33 +41,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _: UIApplication,
         willFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        let acceleratedCheckoutsLogLevel: LogLevel = getLogLevel(
-            key: AppStorageKeys.acceleratedCheckoutsLogLevel.rawValue
-        )
         let checkoutKitLogLevel: LogLevel = getLogLevel(
             key: AppStorageKeys.checkoutKitLogLevel.rawValue
         )
 
-        ShopifyAcceleratedCheckouts.logLevel = acceleratedCheckoutsLogLevel
-
         ShopifyCheckoutKit.configure {
-            // Checkout color scheme setting
             $0.colorScheme = .automatic
-
-            // Customize progress bar color
             $0.tintColor = ColorPalette.primaryColor
-
-            // Enable preloading
             $0.preloading.enabled = true
-
-            // Optional logger used for internal purposes
             $0.logger = FileLogger("log.txt")
-
-            // Optional log level for Checkout Kit
             $0.logLevel = checkoutKitLogLevel
         }
 
-        print("[MobileBuyIntegration] AcceleratedCheckout Log level set to \(acceleratedCheckoutsLogLevel)")
         print("[MobileBuyIntegration] CheckoutKit Log level set to \(checkoutKitLogLevel)")
 
         UIBarButtonItem.appearance().tintColor = ColorPalette.primaryColor

@@ -24,14 +24,11 @@
 @testable import ShopifyCheckoutKit
 import XCTest
 
-class ExampleDelegate: CheckoutDelegate {
-    func checkoutDidComplete(event _: ShopifyCheckoutKit.CheckoutCompletedEvent) {}
+struct MockBridgeClient: CheckoutCommunicationProtocol {
+    var responseMessage: String?
+    var receivedMessages: [String] = []
 
-    func checkoutDidCancel() {}
-
-    func checkoutDidFail(error _: ShopifyCheckoutKit.CheckoutError) {}
-
-    func checkoutDidClickContactLink(url _: URL) {}
-
-    func checkoutDidEmitWebPixelEvent(event _: ShopifyCheckoutKit.PixelEvent) {}
+    func process(_: String) async -> String? {
+        return responseMessage
+    }
 }

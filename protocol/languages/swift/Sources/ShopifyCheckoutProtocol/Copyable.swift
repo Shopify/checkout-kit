@@ -21,21 +21,14 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Foundation
+protocol Copyable {
+    func copy(_ mutate: (inout Self) -> Void) -> Self
+}
 
-class CheckoutCompletedEventDecoder {
-    func decode(from container: KeyedDecodingContainer<CheckoutBridge.WebEvent.CodingKeys>, using _: Decoder) -> CheckoutCompletedEvent {
-        do {
-            let messageBody = try container.decode(String.self, forKey: .body)
-
-            guard let data = messageBody.data(using: .utf8) else {
-                return createEmptyCheckoutCompletedEvent()
-            }
-
-            return try JSONDecoder().decode(CheckoutCompletedEvent.self, from: data)
-        } catch {
-            OSLogger.shared.error("Error decoding \"completed\" event - \(error.localizedDescription)")
-            return createEmptyCheckoutCompletedEvent()
-        }
+extension Copyable {
+    func copy(_ mutate: (inout Self) -> Void) -> Self {
+        var copy = self
+        mutate(&copy)
+        return copy
     }
 }

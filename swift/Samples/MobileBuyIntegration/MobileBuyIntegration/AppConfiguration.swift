@@ -22,7 +22,6 @@
  */
 
 import Foundation
-import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
 
 public enum BuyerIdentityMode: String, CaseIterable {
@@ -59,10 +58,8 @@ public final class AppConfiguration: ObservableObject {
         }
     }
 
-    /// Logger to retain Web Pixel events
     let webPixelsLogger = FileLogger("analytics.txt")
 
-    /// Configure ShopifyAcceleratedCheckouts
     init() {
         if let savedMode = UserDefaults.standard.string(forKey: AppStorageKeys.buyerIdentityMode.rawValue),
            let mode = BuyerIdentityMode(rawValue: savedMode)
@@ -70,34 +67,6 @@ public final class AppConfiguration: ObservableObject {
             buyerIdentityMode = mode
         }
     }
-
-    var customer: ShopifyAcceleratedCheckouts.Customer? {
-        switch buyerIdentityMode {
-        case .hardcoded:
-            return .init(
-                email: InfoDictionary.shared.email,
-                phoneNumber: InfoDictionary.shared.phone
-            )
-        case .customerAccount:
-            guard let token = KeychainHelper.shared.getTokens()?.accessToken else { return nil }
-            return .init(customerAccessToken: token)
-        case .guest:
-            return nil
-        }
-    }
-
-    var acceleratedCheckoutsStorefrontConfig: ShopifyAcceleratedCheckouts.Configuration {
-        ShopifyAcceleratedCheckouts.Configuration(
-            storefrontDomain: InfoDictionary.shared.domain,
-            storefrontAccessToken: InfoDictionary.shared.accessToken,
-            customer: customer
-        )
-    }
-
-    let acceleratedCheckoutsApplePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-        merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
-        contactFields: [.email, .phone]
-    )
 }
 
 @MainActor
