@@ -80,7 +80,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = createWindow(windowScene: windowScene, rootViewController: tabBarController)
 
-        CheckoutController.shared = CheckoutController(window: window)
+        CheckoutCoordinator.shared = CheckoutCoordinator(window: window)
 
         self.window = window
     }
@@ -292,7 +292,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     public func presentCheckout(_ url: URL) {
-        CheckoutController.shared?.present(checkout: url)
+        CheckoutCoordinator.shared?.present(checkout: url)
     }
 
     func navigateTo(_ screen: Screen) {

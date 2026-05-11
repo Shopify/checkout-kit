@@ -159,7 +159,7 @@ final class ShopPayViewControllerTests: XCTestCase {
         XCTAssertTrue(viewController.presentCalls.isEmpty)
     }
 
-    func test_onPress_withInvalidZeroQuantityVariantIdentifier_shouldNotCreateCheckoutController()
+    func test_onPress_withInvalidZeroQuantityVariantIdentifier_shouldNotCreateCheckoutCoordinator()
         async
     {
         let mockCart = StorefrontAPI.Cart.testCart()

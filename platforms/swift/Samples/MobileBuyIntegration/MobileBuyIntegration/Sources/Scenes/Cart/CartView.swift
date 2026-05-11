@@ -150,13 +150,13 @@ struct CartView: View {
     }
 
     private func preloadCheckout() {
-        CheckoutController.shared?.preload()
+        CheckoutCoordinator.shared?.preload()
     }
 
     private func presentCheckout() {
         guard let url = CartManager.shared.cart?.checkoutURL else { return }
 
-        CheckoutController.shared?.present(checkout: url)
+        CheckoutCoordinator.shared?.present(checkout: url)
     }
 }
 
