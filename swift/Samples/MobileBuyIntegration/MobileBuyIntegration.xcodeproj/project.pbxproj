@@ -296,7 +296,6 @@
 			mainGroup = 4EBBA75E2A5F0CE200193E19;
 			packageReferences = (
 				CB00000012345678 /* XCRemoteSwiftPackageReference "apollo-ios" */,
-				CB001E382F3CDBD600286F69 /* XCLocalSwiftPackageReference "../../../checkout-sheet-kit-swift" */,
 				CBE9B3312F3DF82500E266EB /* XCLocalSwiftPackageReference "../../../protocol/languages/swift" */,
 			);
 			productRefGroup = 4EBBA7682A5F0CE200193E19 /* Products */;
@@ -608,10 +607,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		CB001E382F3CDBD600286F69 /* XCLocalSwiftPackageReference "../../../checkout-sheet-kit-swift" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../..;
-		};
 		CBE9B3312F3DF82500E266EB /* XCLocalSwiftPackageReference "../../../protocol/languages/swift" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../../../protocol/languages/swift";
