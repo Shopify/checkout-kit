@@ -41,13 +41,13 @@ When in doubt about whether we will be interested in including a new feature, pl
 
 ---
 
-## Swift (`swift/`)
+## Swift (`platforms/swift/`)
 
 ### Prerequisites
 
-This project uses [Mint](https://github.com/yonaskolb/Mint) to manage Swift linting tools (SwiftLint and SwiftFormat) at pinned versions via `swift/Mintfile`. This ensures consistent formatting across all contributors and CI.
+This project uses [Mint](https://github.com/yonaskolb/Mint) to manage Swift linting tools (SwiftLint and SwiftFormat) at pinned versions via `platforms/swift/Mintfile`. This ensures consistent formatting across all contributors and CI.
 
-**Shopify employees** (from `swift/`):
+**Shopify employees** (from `platforms/swift/`):
 
 ```bash
 dev up
@@ -57,22 +57,22 @@ dev up
 
 ```bash
 brew install mint
-cd swift && mint bootstrap
+cd platforms/swift && mint bootstrap
 ```
 
 ### Formatting
 
 ```bash
-cd swift && ./Scripts/lint fix
+cd platforms/swift && ./Scripts/lint fix
 ```
 
 ### Releasing a new Swift version
 
 Open a pull request with the following changes:
 
-1. Bump the package version in `swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`.
-2. Bump the podspec version in `swift/ShopifyCheckoutKit.podspec`.
-3. Add an entry to the top of `swift/CHANGELOG.md`.
+1. Bump the package version in `platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`.
+2. Bump the podspec version in `platforms/swift/ShopifyCheckoutKit.podspec`.
+3. Add an entry to the top of `platforms/swift/CHANGELOG.md`.
 
 Once merged, draft a release on GitHub:
 
@@ -84,11 +84,11 @@ Once merged, draft a release on GitHub:
 
 ---
 
-## Android (`android/`)
+## Android (`platforms/android/`)
 
 ### Formatting
 
-This project uses [detekt](https://detekt.dev/) for Kotlin linting and formatting. From `android/`:
+This project uses [detekt](https://detekt.dev/) for Kotlin linting and formatting. From `platforms/android/`:
 
 ```bash
 ./gradlew detekt --auto-correct
@@ -102,12 +102,12 @@ To check for lint issues without auto-correcting:
 
 ### Public API surface
 
-The library's public API is tracked via a committed baseline at `android/lib/api/lib.api`, managed by the [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator) Gradle plugin. CI runs `./gradlew :lib:apiCheck` on every PR and fails if the compiled public API diverges from the baseline.
+The library's public API is tracked via a committed baseline at `platforms/android/lib/api/lib.api`, managed by the [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator) Gradle plugin. CI runs `./gradlew :lib:apiCheck` on every PR and fails if the compiled public API diverges from the baseline.
 
 If your change intentionally modifies the public API:
 
-1. Run `dev api dump` (or `./gradlew :lib:apiDump`) from `android/` to regenerate the baseline.
-2. Review the diff in `android/lib/api/lib.api` alongside your code changes.
+1. Run `dev api dump` (or `./gradlew :lib:apiDump`) from `platforms/android/` to regenerate the baseline.
+2. Review the diff in `platforms/android/lib/api/lib.api` alongside your code changes.
 3. Commit the updated `.api` file in the same PR.
 
 If you did *not* intend to change public API and `apiCheck` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
@@ -116,8 +116,8 @@ If you did *not* intend to change public API and `apiCheck` is failing, the diff
 
 Open a pull request with the following changes:
 
-1. Bump the `versionName` in `android/lib/build.gradle`.
-2. Add an entry to the top of `android/CHANGELOG.md`.
+1. Bump the `versionName` in `platforms/android/lib/build.gradle`.
+2. Add an entry to the top of `platforms/android/CHANGELOG.md`.
 
 Once merged, draft a release on GitHub:
 

@@ -22,19 +22,20 @@ Feature guides:
 
 Each platform ships from its own subdirectory with a dedicated README covering installation, configuration, and the full API. We expect overlap between these READMEs to migrate up here (and into the dev docs) over time — for now, treat the per-platform READMEs as the source of truth.
 
-- **[Swift / iOS](swift/README.md)** — Swift Package and CocoaPods
-- **[Android](android/README.md)** — published to Maven Central as `com.shopify:checkout-kit`
-- **[React Native](react-native/README.md)** — placeholder; wrapper will be folded in soon
+- **[Swift / iOS](platforms/swift/README.md)** — Swift Package and CocoaPods
+- **[Android](platforms/android/README.md)** — published to Maven Central as `com.shopify:checkout-kit`
+- **[React Native](platforms/react-native/README.md)** — placeholder; wrapper will be folded in soon
 - **[End-to-end tests](e2e/README.md)** — placeholder; cross-platform E2E suite incoming
 
 ## Repository layout
 
 ```
-swift/         # iOS / Swift Package
-android/       # Android library and sample apps
-react-native/  # React Native wrapper (incoming)
-e2e/           # cross-platform end-to-end tests (incoming)
-.github/       # workflows, issue templates, CODEOWNERS
+platforms/
+  swift/         # iOS / Swift Package
+  android/       # Android library and sample apps
+  react-native/  # React Native wrapper (incoming)
+e2e/             # cross-platform end-to-end tests (incoming)
+.github/         # workflows, issue templates, CODEOWNERS
 ```
 
 ## Contributing

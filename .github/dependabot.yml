@@ -16,7 +16,7 @@ updates:
 
   # Android library
   - package-ecosystem: gradle
-    directory: "/android"
+    directory: "/platforms/android"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -38,7 +38,7 @@ updates:
 
   # Android sample app
   - package-ecosystem: gradle
-    directory: "/android/samples/MobileBuyIntegration"
+    directory: "/platforms/android/samples/MobileBuyIntegration"
     schedule:
       interval: daily
     open-pull-requests-limit: 5

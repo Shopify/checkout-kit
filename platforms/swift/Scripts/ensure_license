@@ -4,7 +4,7 @@ require 'find'
 
 # Read and normalize the license text by removing extra whitespace.
 # LICENSE lives at the repo root in the monorepo layout.
-license_path = File.expand_path('../../LICENSE', __dir__)
+license_path = File.expand_path('../../../LICENSE', __dir__)
 license_text = "/*\n" + File.read(license_path) + "*/\n"
 normalized_license = license_text.gsub(/\s+/, ' ').strip
 

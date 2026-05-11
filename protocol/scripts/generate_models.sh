@@ -83,7 +83,7 @@ extract_result_schema "ec.payment.credential_request" \
 
 case "$LANG" in
   kotlin)
-    OUTPUT="${REPO_ROOT}/android/lib/src/main/java/com/shopify/checkoutkit/Models.kt"
+    OUTPUT="${REPO_ROOT}/platforms/android/lib/src/main/java/com/shopify/checkoutkit/Models.kt"
     quicktype \
       --lang kotlin \
       --src-lang schema \
@@ -126,7 +126,7 @@ case "$LANG" in
     ;;
 
   swift)
-    OUTPUT="${REPO_ROOT}/swift/Sources/ShopifyCheckoutKit/Models.swift"
+    OUTPUT="${REPO_ROOT}/platforms/swift/Sources/ShopifyCheckoutKit/Models.swift"
     quicktype \
       --lang swift \
       --swift-5-support \

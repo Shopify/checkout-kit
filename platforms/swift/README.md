@@ -556,7 +556,7 @@ For detailed implementation instructions, see our [Customer Account API Authenti
 
 Certain payment providers finalize transactions by redirecting customers to external banking apps. To enhance the user experience for your buyers, you can set up your storefront to support Universal Links on iOS, allowing customers to be redirected back to your app once the payment is completed.
 
-See the [Universal Links guide](https://github.com/Shopify/checkout-kit/blob/main/documentation/universal_links.md) for information on how to get started with adding support for Offsite Payments in your app.
+See the [Universal Links guide](https://github.com/Shopify/checkout-kit/blob/main/platforms/swift/documentation/universal_links.md) for information on how to get started with adding support for Offsite Payments in your app.
 
 It is crucial for your app to be configured to handle URL clicks during the checkout process effectively. By default, the kit includes the following delegate method to manage these interactions. This code ensures that external links, such as HTTPS and deep links, are opened correctly by iOS.
 

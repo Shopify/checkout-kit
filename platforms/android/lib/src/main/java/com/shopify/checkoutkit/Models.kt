@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 // This file was generated from JSON Schema using quicktype, do not modify it directly.
-// To regenerate: android/scripts/generate_kotlin_models.sh
+// To regenerate: protocol/scripts/generate_models.sh --lang kotlin
 //
 // To parse the JSON, install kotlin's serialization plugin and do:
 //

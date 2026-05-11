@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: android
+        working-directory: platforms/android
 
     steps:
       - name: Checkout Repository
@@ -48,17 +48,17 @@ jobs:
 
       - name: Setup sample app environment
         run: cp .env.example .env
-        working-directory: android/samples/MobileBuyIntegration
+        working-directory: platforms/android/samples/MobileBuyIntegration
 
       - name: Build Sample App
         run: ./gradlew assembleDebug
-        working-directory: android/samples/MobileBuyIntegration
+        working-directory: platforms/android/samples/MobileBuyIntegration
 
   lint:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: android
+        working-directory: platforms/android
 
     steps:
       - name: Checkout Repository

@@ -30,19 +30,19 @@ let package = Package(
         .target(
             name: "ShopifyCheckoutKit",
             dependencies: [],
-            path: "swift/Sources/ShopifyCheckoutKit",
+            path: "platforms/swift/Sources/ShopifyCheckoutKit",
             resources: [.process("Assets.xcassets")]
         ),
         .target(
             name: "ShopifyAcceleratedCheckouts",
             dependencies: ["ShopifyCheckoutKit"],
-            path: "swift/Sources/ShopifyAcceleratedCheckouts",
+            path: "platforms/swift/Sources/ShopifyAcceleratedCheckouts",
             resources: [.process("Localizable.xcstrings"), .process("Media.xcassets")]
         ),
         .testTarget(
             name: "ShopifyCheckoutKitTests",
             dependencies: ["ShopifyCheckoutKit"],
-            path: "swift/Tests/ShopifyCheckoutKitTests"
+            path: "platforms/swift/Tests/ShopifyCheckoutKitTests"
         ),
         .testTarget(
             name: "ShopifyAcceleratedCheckoutsTests",
@@ -50,7 +50,7 @@ let package = Package(
                 "ShopifyAcceleratedCheckouts",
                 .product(name: "ViewInspector", package: "ViewInspector")
             ],
-            path: "swift/Tests/ShopifyAcceleratedCheckoutsTests"
+            path: "platforms/swift/Tests/ShopifyAcceleratedCheckoutsTests"
         )
     ]
 )
