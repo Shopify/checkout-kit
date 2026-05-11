@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$SCRIPT_DIR/android_sccache"
+
+cd android
+
+./gradlew clean generateAndroidManifestFromTemplate test --no-daemon --console=plain -Dorg.gradle.workers.max=1 -PreactNativeArchitectures=arm64-v8a
