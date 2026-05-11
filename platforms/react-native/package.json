@@ -1,0 +1,87 @@
+{
+  "name": "checkout-sheet-kit-react-native",
+  "description": "A React Native library for Shopify's Checkout Kit.",
+  "private": true,
+  "version": "0.0.1",
+  "repository": "https://github.com/Shopify/checkout-sheet-kit-react-native",
+  "author": "Shopify (https://github.com/Shopify/checkout-sheet-kit-react-native)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Shopify/checkout-sheet-kit-react-native/issues"
+  },
+  "homepage": "https://github.com/Shopify/checkout-sheet-kit-react-native",
+  "packageManager": "pnpm@10.33.1+sha512.05ba3c1d5d1c18f68df06470d74055e62d41fc110a0c660db1b2dfb2785327f04cf0f68345d4609bc52089e7fa0343c31593b2f9594e2c5d5da426230acc9820",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "unrs-resolver"
+    ]
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules; watchman watch-del . || true",
+    "sample": "pnpm --filter sample",
+    "module": "pnpm --filter @shopify/checkout-sheet-kit",
+    "pod-install": "(cd sample/ios && bundle install && bundle exec pod repo update && bundle exec pod cache clean --all && bundle exec pod install --repo-update)",
+    "snapshot": "./scripts/create_snapshot",
+    "compare-snapshot": "./scripts/compare_snapshot",
+    "turbo": "turbo",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "19.1.1",
+    "@react-native-community/cli-platform-android": "19.1.1",
+    "@react-native-community/cli-platform-ios": "19.1.1",
+    "@react-native/babel-preset": "0.80.2",
+    "@react-native/eslint-config": "0.80.2",
+    "@react-native/metro-config": "0.80.2",
+    "@react-native/typescript-config": "0.80.2",
+    "@testing-library/react-native": "^13.3.1",
+    "@tsconfig/react-native": "^3.0.6",
+    "@types/jest": "^29.5.13",
+    "@types/react": "^19.1.0",
+    "@types/react-native-dotenv": "^0.2.1",
+    "@types/react-test-renderer": "19.1.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-prettier": "^5.5.4",
+    "jest": "^30.0.5",
+    "prettier": "^3.2.5",
+    "react": "19.1.0",
+    "react-native": "0.80.2",
+    "react-native-dotenv": "^3.4.11",
+    "react-native-gesture-handler": "2.26.0",
+    "react-native-gradle-plugin": "^0.71.19",
+    "react-test-renderer": "19.1.0",
+    "ts-jest": "^29.4.1",
+    "turbo": "^1.13.4",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": "22.14.0"
+  },
+  "prettier": {
+    "arrowParens": "avoid",
+    "bracketSameLine": true,
+    "bracketSpacing": false,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "semi": true,
+    "useTabs": false,
+    "proseWrap": "always"
+  },
+  "keywords": [
+    "react-native",
+    "shopify",
+    "checkout"
+  ],
+  "eslintConfig": {
+    "root": true,
+    "extends": "@react-native",
+    "rules": {
+      "@typescript-eslint/no-shadow": "off",
+      "@typescript-eslint/consistent-type-imports": "error",
+      "no-console": "error"
+    }
+  }
+}

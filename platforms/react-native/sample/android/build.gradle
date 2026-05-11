@@ -1,0 +1,38 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    ext {
+        buildToolsVersion = "35.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 36
+        targetSdkVersion = 35
+        ndkVersion = "27.1.12297006"
+        kotlinVersion = "2.1.20"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+      classpath("com.android.tools.build:gradle:8.6.0")
+      classpath("com.facebook.react:react-native-gradle-plugin")
+      classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+    }
+}
+
+def loadProperties() {
+    def props = new Properties()
+    file('../.env').withInputStream {
+        props.load(it)
+    }
+    return props
+}
+
+apply plugin: "com.facebook.react.rootproject"
+
+// Configure memory for forked test JVMs to avoid OOMs in CI
+subprojects {
+    tasks.withType(Test).configureEach {
+        maxHeapSize = "1536m"
+        jvmArgs "-XX:MaxMetaspaceSize=512m"
+    }
+}
