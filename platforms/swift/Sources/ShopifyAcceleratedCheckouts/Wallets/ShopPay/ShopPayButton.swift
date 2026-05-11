@@ -31,7 +31,7 @@ internal struct ShopPayButton: View {
     let identifier: CheckoutIdentifier
     let eventHandlers: EventHandlers
     let cornerRadius: CGFloat?
-    let client: (any CheckoutCommunicationProtocol)?
+    let clientContainer: CheckoutProtocolClientContainer
 
     init(
         identifier: CheckoutIdentifier,
@@ -42,7 +42,7 @@ internal struct ShopPayButton: View {
         self.identifier = identifier.parse()
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
-        self.client = client
+        clientContainer = CheckoutProtocolClientContainer(client)
     }
 
     var body: some View {
@@ -55,7 +55,7 @@ internal struct ShopPayButton: View {
                 configuration: configuration,
                 eventHandlers: eventHandlers,
                 cornerRadius: cornerRadius,
-                client: client
+                client: clientContainer.client
             )
         }
     }
@@ -67,7 +67,6 @@ internal struct ShopPayButton: View {
 internal struct Internal_ShopPayButton: View {
     private var controller: ShopPayViewController
     private let cornerRadius: CGFloat?
-    private let client: (any CheckoutCommunicationProtocol)?
 
     init(
         identifier: CheckoutIdentifier,
@@ -82,7 +81,6 @@ internal struct Internal_ShopPayButton: View {
             eventHandlers: eventHandlers
         )
         self.cornerRadius = cornerRadius
-        self.client = client
         controller.client = client
     }
 

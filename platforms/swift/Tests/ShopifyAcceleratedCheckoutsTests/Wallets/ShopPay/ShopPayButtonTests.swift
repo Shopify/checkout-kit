@@ -38,10 +38,6 @@ class ShopPayButtonTests: XCTestCase {
         variantID: "gid://Shopify/ProductVariant/test-variant-id", quantity: 1
     )
 
-    override func setUpWithError() throws {
-        throw XCTSkip("Temporarily skipped: Xcode 26 crashes while ViewInspector copies ShopPayButton.")
-    }
-
     // MARK: - ShopPayButton Tests
 
     func test_shopPayButton_withValidCartIdentifier_shouldRenderLogo() throws {
