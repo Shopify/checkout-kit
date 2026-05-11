@@ -32,6 +32,10 @@ def customerAccountApiRedirectUri = properties.getProperty("CUSTOMER_ACCOUNT_API
 def customerAccountApiGraphQLBaseUrl = properties.getProperty("CUSTOMER_ACCOUNT_API_GRAPHQL_BASE_URL")
 def customerAccountApiAuthBaseUrl = properties.getProperty("CUSTOMER_ACCOUNT_API_AUTH_BASE_URL")
 
+// Demo buyer identity (prefill toggle in Settings)
+def prefillEmail = properties.getProperty("PREFILL_EMAIL", "test.buyer@example.com")
+def prefillPhone = properties.getProperty("PREFILL_PHONE", "+16135550123")
+
 if (!storefrontDomain || !accessToken) {
     println("**** Please add a .env file with STOREFRONT_DOMAIN and STOREFRONT_ACCESS_TOKEN set *****")
 }
@@ -58,6 +62,8 @@ android {
         buildConfigField "String", "customerAccountApiRedirectUri", "\"$customerAccountApiRedirectUri\""
         buildConfigField "String", "customerAccountApiAuthBaseUrl", "\"$customerAccountApiAuthBaseUrl\""
         buildConfigField "String", "customerAccountApiGraphQLBaseUrl", "\"$customerAccountApiGraphQLBaseUrl\""
+        buildConfigField "String", "prefillEmail", "\"$prefillEmail\""
+        buildConfigField "String", "prefillPhone", "\"$prefillPhone\""
     }
 
     buildTypes {

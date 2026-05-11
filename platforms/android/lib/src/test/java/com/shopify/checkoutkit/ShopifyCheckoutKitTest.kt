@@ -152,7 +152,7 @@ class ShopifyCheckoutKitTest {
                 assertThat(thirdEntry!!.key).isEqualTo("https://one.com")
                 assertThat(thirdEntry.isStale).isFalse()
 
-                assertThat(shadowOf(thirdEntry.view).lastLoadedUrl).isEqualTo("https://one.com")
+                assertThat(shadowOf(thirdEntry.view).lastLoadedUrl).startsWith("https://one.com")
             }
         }
     }
@@ -192,7 +192,7 @@ class ShopifyCheckoutKitTest {
                 assertThat(thirdEntry?.key).isEqualTo("https://one.com")
                 assertThat(thirdEntry?.isStale).isTrue()
 
-                assertThat(shadowOf(thirdEntry?.view).lastLoadedUrl).isEqualTo("https://two.com")
+                assertThat(shadowOf(thirdEntry?.view).lastLoadedUrl).startsWith("https://two.com")
             }
         }
     }

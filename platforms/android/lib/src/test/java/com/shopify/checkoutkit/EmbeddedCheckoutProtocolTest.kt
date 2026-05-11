@@ -330,18 +330,6 @@ class EmbeddedCheckoutProtocolTest {
         verify(client).process(rawMessage)
     }
 
-    @Test
-    fun `ec payment change is delegated to client`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"ec.payment.change","params":{"checkout":{}}}"""
-        val client = mock<CheckoutCommunicationClient>()
-        ecp.setClient(client)
-
-        ecp.postMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        verify(client).process(rawMessage)
-    }
-
     // endregion
 
     // region client delegation — requests

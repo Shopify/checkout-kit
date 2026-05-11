@@ -68,7 +68,7 @@ class FallbackWebViewTest {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val view = FallbackWebView(activityController.get())
             assertThat(view.settings.userAgentString).contains("ShopifyCheckoutKit/")
-            assertThat(view.settings.userAgentString).contains(" android")
+            assertThat(view.settings.userAgentString).contains("(Android;")
         }
     }
 

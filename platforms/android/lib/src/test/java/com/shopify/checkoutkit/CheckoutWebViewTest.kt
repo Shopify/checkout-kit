@@ -61,6 +61,15 @@ class CheckoutWebViewTest {
     @After
     fun tearDown() {
         ShopifyCheckoutKit.configuration.platform = null
+        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Automatic()
+    }
+
+    private fun loadedUrl(platform: Platform? = null): String {
+        ShopifyCheckoutKit.configuration.platform = platform
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        return shadowOf(view).lastLoadedUrl!!
     }
 
     @Test
@@ -84,16 +93,29 @@ class CheckoutWebViewTest {
         val view = CheckoutWebView.cacheableCheckoutView(URL, activity)
 
         assertThat(view.settings.userAgentString).contains("ShopifyCheckoutKit/")
-        assertThat(view.settings.userAgentString).contains(" android")
+        assertThat(view.settings.userAgentString).contains("(Android;")
     }
 
     @Test
-    fun `user agent suffix appends platform displayName when set`() {
-        ShopifyCheckoutKit.configuration.platform = Platform.REACT_NATIVE
+    fun `user agent suffix appends platform identifier and version when set`() {
+        ShopifyCheckoutKit.configuration.platform = Platform.ReactNative("0.80.0")
         val view = CheckoutWebView.cacheableCheckoutView(URL, activity)
 
+        val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
         assertThat(view.settings.userAgentString)
-            .endsWith("ShopifyCheckoutKit/${ShopifyCheckoutKit.version} android ReactNative")
+            .endsWith(
+                "ShopifyCheckoutKit/${ShopifyCheckoutKit.version} (Android; Kotlin $kotlinVersion) ReactNative/0.80.0"
+            )
+    }
+
+    @Test
+    fun `user agent suffix omits version when platform version is null`() {
+        ShopifyCheckoutKit.configuration.platform = Platform.ReactNative()
+        val view = CheckoutWebView.cacheableCheckoutView(URL, activity)
+
+        val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
+        assertThat(view.settings.userAgentString)
+            .endsWith("ShopifyCheckoutKit/${ShopifyCheckoutKit.version} (Android; Kotlin $kotlinVersion) ReactNative")
     }
 
     @Test
@@ -246,6 +268,118 @@ class CheckoutWebViewTest {
             }
         }
     }
+
+    // region buildEcpUrl (tested through loadCheckout)
+
+    @Test
+    fun `loadCheckout appends ec_version to URL when absent`() {
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_version=${CheckoutProtocol.specVersion}")
+    }
+
+    @Test
+    fun `loadCheckout preserves existing query params alongside ec_version`() {
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123?foo=bar", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val loadedUrl = shadowOf(view).lastLoadedUrl
+        assertThat(loadedUrl).contains("foo=bar")
+        assertThat(loadedUrl).contains("ec_version=${CheckoutProtocol.specVersion}")
+    }
+
+    @Test
+    fun `loadCheckout does not duplicate ec_version when already present`() {
+        val view = CheckoutWebView(activity)
+        val urlWithVersion = "https://checkout.shopify.com/cart/123?ec_version=2026-01-23"
+        view.loadCheckout(urlWithVersion, false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val loadedUrl = shadowOf(view).lastLoadedUrl!!
+        assertThat(loadedUrl).contains("ec_version=2026-01-23")
+        assertThat(loadedUrl.split("ec_version").size - 1).isEqualTo(1)
+    }
+
+    @Test
+    fun `loadCheckout appends ec_color_scheme even when ec_version already present`() {
+        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Light()
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123?ec_version=2026-01-23", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val loadedUrl = shadowOf(view).lastLoadedUrl!!
+        assertThat(loadedUrl).contains("ec_version=2026-01-23")
+        assertThat(loadedUrl).contains("ec_color_scheme=light")
+    }
+
+    @Test
+    fun `loadCheckout appends ec_color_scheme=light for Light color scheme`() {
+        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Light()
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_color_scheme=light")
+    }
+
+    @Test
+    fun `loadCheckout appends ec_color_scheme=dark for Dark color scheme`() {
+        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Dark()
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_color_scheme=dark")
+    }
+
+    @Test
+    fun `loadCheckout omits ec_color_scheme for Automatic color scheme`() {
+        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Automatic()
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(shadowOf(view).lastLoadedUrl).doesNotContain("ec_color_scheme")
+    }
+
+    @Test
+    fun `loadCheckout omits ec_color_scheme for Web color scheme`() {
+        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Web()
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(shadowOf(view).lastLoadedUrl).doesNotContain("ec_color_scheme")
+    }
+
+    // endregion
+
+    // region buildEcpUrl — ec_delegate
+
+    @Test
+    fun `loadCheckout appends ec_delegate=window_open to URL`() {
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_delegate=window.open")
+    }
+
+    @Test
+    fun `loadCheckout does not duplicate ec_delegate when already present`() {
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123?ec_delegate=window.open", false)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val loadedUrl = shadowOf(view).lastLoadedUrl!!
+        assertThat(loadedUrl).contains("ec_delegate=window.open")
+        assertThat(loadedUrl.split("ec_delegate").size - 1).isEqualTo(1)
+    }
+
+    // endregion
 
     companion object {
         private const val URL = "https://a.checkout.testurl"

@@ -61,13 +61,8 @@ class CheckoutProtocolTest {
     }
 
     @Test
-    fun `paymentChange descriptor has correct method`() {
-        assertThat(CheckoutProtocol.paymentChange.method).isEqualTo("ec.payment.change")
-    }
-
-    @Test
-    fun `ready descriptor has correct method`() {
-        assertThat(CheckoutProtocol.ready.method).isEqualTo("ec.ready")
+    fun `error descriptor has correct method`() {
+        assertThat(CheckoutProtocol.error.method).isEqualTo("ec.error")
     }
 
     // endregion
@@ -111,38 +106,6 @@ class CheckoutProtocolTest {
         assertThat(received).isEmpty()
     }
 
-    @Test
-    fun `process dispatches ready notification with correct delegations`() {
-        val received = mutableListOf<ReadyPayload>()
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.ready) { payload -> received.add(payload) }
-
-        val delegate = """["payment.instruments_change","fulfillment.address_change"]"""
-        val message = """{"jsonrpc":"2.0","method":"ec.ready","id":"1","params":{"delegate":$delegate}}"""
-        client.process(message)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(received).hasSize(1)
-        assertThat(received[0].delegations).containsExactly(
-            "payment.instruments_change",
-            "fulfillment.address_change"
-        )
-    }
-
-    @Test
-    fun `process dispatches ready with empty delegations when delegate is absent`() {
-        val received = mutableListOf<ReadyPayload>()
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.ready) { payload -> received.add(payload) }
-
-        val message = """{"jsonrpc":"2.0","method":"ec.ready","id":"1","params":{}}"""
-        client.process(message)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(received).hasSize(1)
-        assertThat(received[0].delegations).isEmpty()
-    }
-
     // endregion
 
     // region process — always returns null
@@ -170,6 +133,22 @@ class CheckoutProtocolTest {
     // endregion
 
     // region process — message without checkout in params
+
+    @Test
+    fun `process dispatches ec error to registered handler with decoded payload`() {
+        var received: CheckoutError? = null
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.error) { received = it }
+
+        val errorMsg = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
+            """{"messages":[{"code":"unknown_error","content":"fail","severity":"unrecoverable"}]}}"""
+        client.process(errorMsg)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(received?.code).isEqualTo("unknown_error")
+        assertThat(received?.content).isEqualTo("fail")
+        assertThat(received?.severity).isEqualTo("unrecoverable")
+    }
 
     @Test
     fun `process does not dispatch when params has no checkout field`() {

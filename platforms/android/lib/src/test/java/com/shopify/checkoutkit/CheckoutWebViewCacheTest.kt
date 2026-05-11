@@ -57,7 +57,7 @@ class CheckoutWebViewCacheTest {
             val view = CheckoutWebView.cacheableCheckoutView(URL, activity)
             assertThat(view).isNotNull
             shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-            assertThat(shadowOf(view).lastLoadedUrl).isEqualTo(URL)
+            assertThat(shadowOf(view).lastLoadedUrl).startsWith(URL)
         }
     }
 
@@ -69,8 +69,8 @@ class CheckoutWebViewCacheTest {
             shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
             assertThat(viewOne).isEqualTo(viewTwo)
-            assertThat(shadowOf(viewOne).lastLoadedUrl).isEqualTo(URL)
-            assertThat(shadowOf(viewTwo).lastLoadedUrl).isEqualTo(URL)
+            assertThat(shadowOf(viewOne).lastLoadedUrl).startsWith(URL)
+            assertThat(shadowOf(viewTwo).lastLoadedUrl).startsWith(URL)
         }
     }
 
@@ -103,8 +103,8 @@ class CheckoutWebViewCacheTest {
             shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
             assertThat(viewOne).isNotEqualTo(viewTwo)
-            assertThat(shadowOf(viewOne).lastLoadedUrl).isEqualTo(URL)
-            assertThat(shadowOf(viewTwo).lastLoadedUrl).isEqualTo(newUrl)
+            assertThat(shadowOf(viewOne).lastLoadedUrl).startsWith(URL)
+            assertThat(shadowOf(viewTwo).lastLoadedUrl).startsWith(newUrl)
             assertThat(shadowOf(viewOne).wasDestroyCalled()).isTrue
             assertThat(shadowOf(viewTwo).wasDestroyCalled()).isFalse
         }
@@ -117,8 +117,8 @@ class CheckoutWebViewCacheTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(viewOne).isNotEqualTo(viewTwo)
-        assertThat(shadowOf(viewOne).lastLoadedUrl).isEqualTo(URL)
-        assertThat(shadowOf(viewTwo).lastLoadedUrl).isEqualTo(URL)
+        assertThat(shadowOf(viewOne).lastLoadedUrl).startsWith(URL)
+        assertThat(shadowOf(viewTwo).lastLoadedUrl).startsWith(URL)
 
         assertThat(shadowOf(viewOne).wasDestroyCalled()).isTrue
         assertThat(shadowOf(viewTwo).wasDestroyCalled()).isFalse
@@ -161,8 +161,8 @@ class CheckoutWebViewCacheTest {
             shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
             assertThat(viewOne).isNotEqualTo(viewTwo)
-            assertThat(shadowOf(viewOne).lastLoadedUrl).isEqualTo(URL)
-            assertThat(shadowOf(viewTwo).lastLoadedUrl).isEqualTo(URL)
+            assertThat(shadowOf(viewOne).lastLoadedUrl).startsWith(URL)
+            assertThat(shadowOf(viewTwo).lastLoadedUrl).startsWith(URL)
         }
     }
 

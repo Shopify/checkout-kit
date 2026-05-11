@@ -21,58 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// To parse the JSON, install kotlin's serialization plugin and do:
-//
-// val json                       = Json { allowStructuredMapKeys = true }
-// val checkout                   = json.parse(Checkout.serializer(), jsonString)
-// val paymentAccountInfo         = json.parse(PaymentAccountInfo.serializer(), jsonString)
-// val adjustment                 = json.parse(Adjustment.serializer(), jsonString)
-// val amount                     = json.parse(Amount.serializer(), jsonString)
-// val availablePaymentInstrument = json.parse(AvailablePaymentInstrument.serializer(), jsonString)
-// val binding                    = json.parse(TokenBinding.serializer(), jsonString)
-// val businessFulfillmentConfig  = json.parse(BusinessFulfillmentConfig.serializer(), jsonString)
-// val buyer                      = json.parse(Buyer.serializer(), jsonString)
-// val cardCredential             = json.parse(CardCredential.serializer(), jsonString)
-// val cardPaymentInstrument      = json.parse(CardPaymentInstrument.serializer(), jsonString)
-// val context                    = json.parse(Context.serializer(), jsonString)
-// val errorCode                  = json.parse(ErrorCode.serializer(), jsonString)
-// val errorResponse              = json.parse(ErrorResponse.serializer(), jsonString)
-// val expectation                = json.parse(Expectation.serializer(), jsonString)
-// val fulfillmentAvailableMethod = json.parse(FulfillmentAvailableMethod.serializer(), jsonString)
-// val fulfillmentDestination     = json.parse(FulfillmentDestination.serializer(), jsonString)
-// val fulfillmentEvent           = json.parse(FulfillmentEvent.serializer(), jsonString)
-// val fulfillmentGroup           = json.parse(FulfillmentGroup.serializer(), jsonString)
-// val fulfillmentMethod          = json.parse(FulfillmentMethod.serializer(), jsonString)
-// val fulfillmentOption          = json.parse(FulfillmentOption.serializer(), jsonString)
-// val fulfillment                = json.parse(Fulfillment.serializer(), jsonString)
-// val item                       = json.parse(Item.serializer(), jsonString)
-// val lineItem                   = json.parse(LineItem.serializer(), jsonString)
-// val link                       = json.parse(Link.serializer(), jsonString)
-// val merchantFulfillmentConfig  = json.parse(MerchantFulfillmentConfig.serializer(), jsonString)
-// val messageError               = json.parse(MessageError.serializer(), jsonString)
-// val messageInfo                = json.parse(MessageInfo.serializer(), jsonString)
-// val messageWarning             = json.parse(MessageWarning.serializer(), jsonString)
-// val message                    = json.parse(Message.serializer(), jsonString)
-// val orderConfirmation          = json.parse(OrderConfirmation.serializer(), jsonString)
-// val orderLineItem              = json.parse(OrderLineItem.serializer(), jsonString)
-// val paymentCredential          = json.parse(PaymentCredential.serializer(), jsonString)
-// val paymentIdentity            = json.parse(PaymentIdentity.serializer(), jsonString)
-// val paymentInstrument          = json.parse(PaymentInstrument.serializer(), jsonString)
-// val platformFulfillmentConfig  = json.parse(PlatformFulfillmentConfig.serializer(), jsonString)
-// val postalAddress              = json.parse(PostalAddress.serializer(), jsonString)
-// val retailLocation             = json.parse(RetailLocation.serializer(), jsonString)
-// val reverseDomainName          = json.parse(ReverseDomainName.serializer(), jsonString)
-// val shippingDestination        = json.parse(ShippingDestination.serializer(), jsonString)
-// val signals                    = json.parse(Signals.serializer(), jsonString)
-// val signedAmount               = json.parse(SignedAmount.serializer(), jsonString)
-// val tokenCredential            = json.parse(TokenCredential.serializer(), jsonString)
-// val total                      = json.parse(Total.serializer(), jsonString)
-// val totals                     = json.parse(Totals.serializer(), jsonString)
-// val payment                    = json.parse(Payment.serializer(), jsonString)
-// val order                      = json.parse(Order.serializer(), jsonString)
-// val instrumentsChangeResult    = json.parse(InstrumentsChangeResult.serializer(), jsonString)
-// val credentialResult           = json.parse(CredentialResult.serializer(), jsonString)
-
 package com.shopify.checkoutkit
 
 import kotlinx.serialization.*
@@ -783,10 +731,40 @@ public data class CapabilityResponseSchema (
  * Parent capability(s) this extends. Present for extensions, absent for root capabilities.
  * Use array for multi-parent extensions.
  */
-@Serializable
+@Serializable(with = ExtendsSerializer::class)
 public sealed class Extends {
     public class StringArrayValue(public val value: List<String>) : Extends()
     public class StringValue(public val value: String)            : Extends()
+}
+
+internal object ExtendsSerializer : KSerializer<Extends> {
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("com.shopify.checkoutkit.Extends")
+
+    override fun deserialize(decoder: Decoder): Extends {
+        val input = decoder as? JsonDecoder
+            ?: throw SerializationException("Extends can only be deserialized from JSON")
+        return when (val element = input.decodeJsonElement()) {
+            is JsonPrimitive -> Extends.StringValue(element.content)
+            is JsonArray -> Extends.StringArrayValue(
+                element.map {
+                    (it as? JsonPrimitive)?.content
+                        ?: throw SerializationException("Extends array element not a primitive: $it")
+                }
+            )
+            else -> throw SerializationException("Unexpected Extends shape: $element")
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: Extends) {
+        val output = encoder as? JsonEncoder
+            ?: throw SerializationException("Extends can only be serialized to JSON")
+        val element: JsonElement = when (value) {
+            is Extends.StringValue -> JsonPrimitive(value.value)
+            is Extends.StringArrayValue -> JsonArray(value.value.map { JsonPrimitive(it) })
+        }
+        output.encodeJsonElement(element)
+    }
 }
 
 /**

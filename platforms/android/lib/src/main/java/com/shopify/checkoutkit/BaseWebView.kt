@@ -123,11 +123,11 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
     private fun isOnConfirmationPage(): Boolean = url?.let(Uri::parse).isConfirmationPage()
 
     internal fun userAgentSuffix(): String {
-        val platform = ShopifyCheckoutKit.configuration.platform
-        val suffix = buildString {
-            append("ShopifyCheckoutKit/${BuildConfig.SDK_VERSION} android")
-            if (platform != null) append(" ${platform.displayName}")
-        }
+        val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
+        val platformPart = ShopifyCheckoutKit.configuration.platform?.run {
+            " $identifier${version?.let { "/$it" } ?: ""}"
+        } ?: ""
+        val suffix = "ShopifyCheckoutKit/${BuildConfig.SDK_VERSION} (Android; Kotlin $kotlinVersion)$platformPart"
         log.d(LOG_TAG, "Setting User-Agent suffix $suffix")
         return suffix
     }
@@ -237,6 +237,7 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
 
     companion object {
         private const val LOG_TAG = "BaseWebView"
+        internal const val ECP_LOG_TAG = "CheckoutECP"
         private const val TOO_MANY_REQUESTS = 429
         private val CLIENT_ERROR = 400..499
     }

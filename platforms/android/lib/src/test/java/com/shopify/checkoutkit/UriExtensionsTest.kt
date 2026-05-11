@@ -82,4 +82,63 @@ class UriExtensionsTest {
         val uri: Uri? = null
         assertThat(uri.isConfirmationPage()).isFalse()
     }
+
+    @Test
+    fun `appendEcpParams adds ec_version, ec_color_scheme=light, and ec_delegate for Light scheme`() {
+        val result = BASE_URL.appendEcpParams(SPEC_VERSION, ColorScheme.Light()).toUri()
+        assertThat(result.getQueryParameter("ec_version")).isEqualTo(SPEC_VERSION)
+        assertThat(result.getQueryParameter("ec_color_scheme")).isEqualTo("light")
+        assertThat(result.getQueryParameter("ec_delegate")).isEqualTo("window.open")
+    }
+
+    @Test
+    fun `appendEcpParams emits ec_color_scheme=dark for Dark scheme`() {
+        val result = BASE_URL.appendEcpParams(SPEC_VERSION, ColorScheme.Dark()).toUri()
+        assertThat(result.getQueryParameter("ec_color_scheme")).isEqualTo("dark")
+    }
+
+    @Test
+    fun `appendEcpParams omits ec_color_scheme for Automatic scheme`() {
+        val result = BASE_URL.appendEcpParams(SPEC_VERSION, ColorScheme.Automatic()).toUri()
+        assertThat(result.getQueryParameter("ec_color_scheme")).isNull()
+        assertThat(result.getQueryParameter("ec_version")).isEqualTo(SPEC_VERSION)
+        assertThat(result.getQueryParameter("ec_delegate")).isEqualTo("window.open")
+    }
+
+    @Test
+    fun `appendEcpParams omits ec_color_scheme for Web scheme`() {
+        val result = BASE_URL.appendEcpParams(SPEC_VERSION, ColorScheme.Web()).toUri()
+        assertThat(result.getQueryParameter("ec_color_scheme")).isNull()
+    }
+
+    @Test
+    fun `appendEcpParams is idempotent on re-call`() {
+        val once = BASE_URL.appendEcpParams(SPEC_VERSION, ColorScheme.Light())
+        val twice = once.appendEcpParams(SPEC_VERSION, ColorScheme.Light()).toUri()
+        assertThat(twice.getQueryParameters("ec_version")).hasSize(1)
+        assertThat(twice.getQueryParameters("ec_color_scheme")).hasSize(1)
+        assertThat(twice.getQueryParameters("ec_delegate")).hasSize(1)
+    }
+
+    @Test
+    fun `appendEcpParams preserves existing query parameters`() {
+        val url = "$BASE_URL?key=cart_token&utm_source=email"
+        val result = url.appendEcpParams(SPEC_VERSION, ColorScheme.Light()).toUri()
+        assertThat(result.getQueryParameter("key")).isEqualTo("cart_token")
+        assertThat(result.getQueryParameter("utm_source")).isEqualTo("email")
+        assertThat(result.getQueryParameter("ec_version")).isEqualTo(SPEC_VERSION)
+    }
+
+    @Test
+    fun `appendEcpParams does not overwrite caller-supplied ECP params`() {
+        val url = "$BASE_URL?ec_version=override&ec_delegate=custom"
+        val result = url.appendEcpParams(SPEC_VERSION, ColorScheme.Light()).toUri()
+        assertThat(result.getQueryParameter("ec_version")).isEqualTo("override")
+        assertThat(result.getQueryParameter("ec_delegate")).isEqualTo("custom")
+    }
+
+    private companion object {
+        private const val BASE_URL = "https://shop.com/cart/c/abc"
+        private const val SPEC_VERSION = "2026-04-08"
+    }
 }
