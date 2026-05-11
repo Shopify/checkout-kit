@@ -64,7 +64,7 @@ print_linting_error() {
     local tool_name=$1
     echo "❌ $tool_name detected issues that need to be fixed."
     echo "🔧 How to fix:"
-    echo "   Shopify employee? Run 'dev fix' or 'dev check' to see detailed output"
+    echo "   Shopify employee? Run 'dev react-native format' or 'dev react-native lint' to see detailed output"
     echo "   Not a Shopify employee? Run './scripts/lint_swift fix' to auto-fix issues"
     if [[ "$tool_name" == "SwiftLint" ]]; then
         echo "   Then fix any remaining non-autofixable issues manually"
