@@ -10,3 +10,6 @@
 --swiftversion 5.7.1
 --extensionacl on-declarations
 --exclude Sources/ShopifyCheckoutKit/Models.swift
+--exclude Sources/ShopifyCheckoutProtocol/Generated
+--exclude Samples/MobileBuyIntegration/MobileBuyIntegration/Sources/Generated
+--exclude Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp/Generated
