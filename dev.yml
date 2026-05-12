@@ -8,6 +8,7 @@ up:
       - xcbeautify
       - jq
       - swiftlint
+      - swiftformat
       - sccache
   - ruby
   - custom:
@@ -81,14 +82,26 @@ check:
   android-detekt: cd platforms/android && ./gradlew detekt
   android-lint: cd platforms/android && ./gradlew lintRelease
   swift-lint: cd platforms/swift && ./Scripts/lint
+  swift-license-headers: cd platforms/swift && ./Scripts/ensure_license
   react-native-lint-swift: cd platforms/react-native && ./scripts/lint_swift
   react-native-lint-module: cd platforms/react-native && pnpm module lint
   react-native-lint-sample: cd platforms/react-native && pnpm sample lint
+  react-native-license-headers: cd platforms/react-native && ./scripts/copy_license --check
   web-lint: cd platforms/web && pnpm lint
   web-test: cd platforms/web && pnpm test
+  protocol-build: cd protocol/languages/swift && swift build
 
 commands:
   # Repo-wide
+  build:
+    desc: Build all supported workspaces
+    run: |
+      set -e
+      /opt/dev/bin/dev android build
+      /opt/dev/bin/dev swift build
+      /opt/dev/bin/dev protocol build
+      /opt/dev/bin/dev react-native build
+
   codegen:
     desc: "Generate UCP models. Usage: dev codegen <kotlin|swift|typescript>"
     syntax: "<kotlin|swift|typescript>"
@@ -97,6 +110,34 @@ commands:
         kotlin|swift|typescript|ts) ./protocol/scripts/generate_models.sh --lang "$1" ;;
         *) echo "Usage: dev codegen <kotlin|swift|typescript>"; exit 1 ;;
       esac
+
+  format:
+    desc: Auto-format and apply safe lint autocorrections across supported workspaces
+    aliases: [fix]
+    run: |
+      set -e
+      /opt/dev/bin/dev android format
+      /opt/dev/bin/dev swift format
+      /opt/dev/bin/dev react-native format
+
+  lint:
+    desc: Run lint checks across supported workspaces
+    aliases: [style]
+    run: |
+      set -e
+      /opt/dev/bin/dev android lint
+      /opt/dev/bin/dev swift lint
+      /opt/dev/bin/dev react-native lint
+
+  test:
+    desc: Run tests across all supported workspaces
+    run: |
+      set -e
+      /opt/dev/bin/dev android test
+      /opt/dev/bin/dev swift test
+      /opt/dev/bin/dev protocol test
+      /opt/dev/bin/dev react-native test
+
   apollo:
     subcommands:
       download_schema:
@@ -118,6 +159,23 @@ commands:
             *) echo "Usage: dev apollo codegen <android|swift> [accelerated|mobile-buy|all]"; exit 1 ;;
           esac
 
+  # Protocol
+  protocol:
+    desc: "Checkout protocol commands"
+    subcommands:
+      build:
+        desc: Build the Swift protocol package
+        run: cd protocol/languages/swift && swift build
+      test:
+        desc: Run Swift protocol package tests
+        run: cd protocol/languages/swift && swift test
+      check:
+        desc: Build and test the Swift protocol package
+        run: |
+          set -e
+          /opt/dev/bin/dev protocol build
+          /opt/dev/bin/dev protocol test
+
   # Android
   android:
     desc: "Android Checkout Kit commands"
@@ -129,6 +187,10 @@ commands:
           samples:
             desc: Build all sample applications
             run: cd platforms/android/samples/MobileBuyIntegration && ./gradlew build
+
+      clean:
+        desc: Clean Android Gradle build outputs
+        run: cd platforms/android && ./gradlew clean
 
       test:
         desc: Run all tests with clean build
@@ -144,8 +206,9 @@ commands:
         aliases: [style]
         run: cd platforms/android && ./gradlew detekt lintRelease
 
-      fix:
-        desc: Automatically fix format and lint issues where possible
+      format:
+        desc: Auto-format and apply safe lint autocorrections
+        aliases: [fix]
         run: cd platforms/android && ./gradlew detekt --auto-correct
 
       api:
@@ -155,6 +218,7 @@ commands:
           echo ""
           echo "  check  Verify public API matches the committed baseline"
           echo "  dump   Regenerate the baseline after intentional public API changes"
+          exit 1
         subcommands:
           check:
             desc: Verify public API matches the committed baseline
@@ -164,13 +228,11 @@ commands:
             run: cd platforms/android && ./gradlew :lib:apiDump
 
       check:
-        desc: Run all Android checks (license headers, detekt, android lint)
+        desc: Run all Android checks (license headers + lint)
         run: |
           set -e
-          cd platforms/android
-          ./scripts/check_license_headers.rb
-          ./gradlew detekt
-          ./gradlew lintRelease
+          /opt/dev/bin/dev android check license-headers
+          /opt/dev/bin/dev android lint
         subcommands:
           license-headers:
             desc: Check MIT license headers in source files
@@ -190,20 +252,17 @@ commands:
         desc: Check format and lint issues using SwiftLint and SwiftFormat
         aliases: [style]
         run: cd platforms/swift && ./Scripts/lint
-      fix:
-        desc: Automatically fix format and lint issues where possible
+      format:
+        desc: Auto-format and apply safe lint autocorrections
+        aliases: [fix]
         run: cd platforms/swift && ./Scripts/lint fix
+      clean:
+        desc: Clean Swift package build artifacts
+        run: cd platforms/swift && ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
       build:
-        desc: Build Swift packages or sample apps
-        run: |
-          echo "Usage: dev swift build {packages|samples}"
+        desc: Build the Swift package
+        run: cd platforms/swift && ./Scripts/xcode_run build ShopifyCheckoutKit-Package
         subcommands:
-          packages:
-            desc: Build both ShopifyCheckoutKit and ShopifyAcceleratedCheckouts packages
-            run: |
-              cd platforms/swift
-              ./Scripts/xcode_run build ShopifyCheckoutKit
-              ./Scripts/xcode_run build ShopifyAcceleratedCheckouts
           samples:
             desc: Build all sample applications to verify integration
             run: cd platforms/swift && ./Scripts/build_samples
@@ -213,12 +272,25 @@ commands:
           `dev swift test <test_class_name>` - Run only the specified test class.
         syntax: "[test_class_name]"
         run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
+      check:
+        desc: Run Swift lint and license header checks
+        run: |
+          set -e
+          /opt/dev/bin/dev swift lint
+          /opt/dev/bin/dev swift check license-headers
+        subcommands:
+          license-headers:
+            desc: Check MIT license headers in Swift source files
+            run: cd platforms/swift && ./Scripts/ensure_license
 
   # React Native
   react-native:
     desc: "React Native Checkout Kit commands"
     aliases: [rn]
     subcommands:
+      build:
+        desc: Build the @shopify/checkout-kit-react-native module
+        run: cd platforms/react-native && pnpm module build
       server:
         desc: Start Metro development server
         aliases: [s]
@@ -290,6 +362,19 @@ commands:
         desc: Auto-fix Swift lint and format issues
         aliases: [fix]
         run: cd platforms/react-native && ./scripts/lint_swift fix
+      test:
+        desc: Run React Native Jest tests
+        run: cd platforms/react-native && pnpm test --testPathPatterns="modules/@shopify/checkout-kit-react-native/tests"
+      check:
+        desc: Run React Native license header and lint checks
+        run: |
+          set -e
+          /opt/dev/bin/dev react-native check license-headers
+          /opt/dev/bin/dev react-native lint
+        subcommands:
+          license-headers:
+            desc: Check React Native module license headers
+            run: cd platforms/react-native && ./scripts/copy_license --check
 
   # Web
   web:

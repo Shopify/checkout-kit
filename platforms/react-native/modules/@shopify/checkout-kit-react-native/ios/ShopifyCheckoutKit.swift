@@ -285,7 +285,7 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
         return NSNumber(value: available)
     }
 
-    @objc func initiateGeolocationRequest(_ allow: Bool) {
+    @objc func initiateGeolocationRequest(_: Bool) {
         // No-op on iOS — geolocation permission is handled natively
     }
 

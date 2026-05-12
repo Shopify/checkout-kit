@@ -27,6 +27,17 @@ Feature guides:
 - [Privacy compliance](https://shopify.dev/docs/storefronts/mobile/checkout-kit/privacy-compliance) - pass GDPR, CCPA, and ATT consent through to Shopify.
 - [Accelerated checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/accelerated-checkouts?extension=react-native) - Shop Pay and Apple Pay buttons for one-tap purchase on product and cart pages.
 
+## Development
+
+Shopify employees can use the root `dev.yml` from the repo root:
+
+```bash
+dev up
+dev check
+```
+
+Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, `dev protocol <command>`, and `dev react-native <command>` or `dev rn <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
+
 ## Packages in this repo
 
 Checkout Kit is a monorepo containing all the platforms Checkout Kit supports together.

@@ -88,7 +88,7 @@ API_VERSION = 2025-10
 The schema defines what types and fields are available in the API. Run from the **repo root** (`checkout-kit/`):
 
 ```bash
-dev apollo download_schema mobile-buy
+dev apollo download_schema swift mobile-buy
 ```
 
 This introspects your store's Storefront API at the configured version and writes a `schema.<version>.graphqls` file into the sample app directory.
@@ -120,10 +120,10 @@ query GetProducts(...) {
 From the **repo root**:
 
 ```bash
-dev apollo codegen mobile-buy
+dev apollo codegen swift mobile-buy
 ```
 
-This reads the schema + your `.graphql` files and regenerates the Swift code in `Generated/`. The command also runs `dev swift fix` to auto-format the output.
+This reads the schema + your `.graphql` files and regenerates the Swift code in `Generated/`. The command also runs `dev swift format` to auto-format the output.
 
 ### 5. Build and fix any issues
 
@@ -135,11 +135,11 @@ All commands are run from the **repo root** (`checkout-kit/`):
 
 | Command | Description |
 |---------|-------------|
-| `dev apollo download_schema mobile-buy` | Download the Storefront API schema for this sample app |
-| `dev apollo codegen mobile-buy` | Regenerate Swift types from `.graphql` files |
-| `dev apollo codegen all` | Regenerate for all sample apps |
-| `dev swift style` | Run SwiftLint + SwiftFormat checks |
-| `dev swift fix` | Auto-fix lint/format issues |
+| `dev apollo download_schema swift mobile-buy` | Download the Storefront API schema for this sample app |
+| `dev apollo codegen swift mobile-buy` | Regenerate Swift types from `.graphql` files |
+| `dev apollo codegen swift all` | Regenerate for all sample apps |
+| `dev swift lint` | Run SwiftLint + SwiftFormat checks |
+| `dev swift format` | Auto-format and apply safe lint autocorrections |
 | `dev swift build samples` | Build all sample apps |
 
 ## Key files

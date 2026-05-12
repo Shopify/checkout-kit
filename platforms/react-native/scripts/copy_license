@@ -92,6 +92,7 @@ def copy_license(dir, license_block, normalized_license, check_only: false)
   supported_exts = %w[.swift .h .mm .java .js .ts .tsx]
 
   Find.find(dir) do |path|
+    next if path.include?('/build/generated/')
     next unless File.file?(path) && supported_exts.any? { |ext| path.end_with?(ext) }
 
     changed = process_file(path, license_block, normalized_license, write: !check_only)
