@@ -62,7 +62,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(recovery.isRecovery)
         XCTAssertFalse(recovery.isBridgeAttached)
         XCTAssertFalse(recovery.isPreloadingAvailable)
-        XCTAssertEqual(recovery.configuration.applicationNameForUserAgent, "ShopifyCheckoutSDK/\(ShopifyCheckoutKit.version) (noconnect;automatic;standard_recovery)")
+        XCTAssertEqual(recovery.configuration.applicationNameForUserAgent, "ShopifyCheckoutKit/\(ShopifyCheckoutKit.version) (noconnect;automatic;standard_recovery)")
         XCTAssertTrue(recovery.configuration.allowsInlineMediaPlayback)
         XCTAssertEqual(recovery.backgroundColor, backgroundColor)
         XCTAssertFalse(recovery.isOpaque)
