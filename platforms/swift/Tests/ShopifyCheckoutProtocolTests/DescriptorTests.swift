@@ -21,9 +21,8 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
-
 @testable import ShopifyCheckoutProtocol
+import Testing
 
 @Suite("Descriptor Tests")
 struct DescriptorTests {
@@ -64,5 +63,4 @@ struct DescriptorTests {
             #expect(CheckoutProtocol.error.method == "ec.error")
         }
     }
-
 }

@@ -23,12 +23,12 @@
 
 import Foundation
 
-public extension CheckoutProtocol {
+extension CheckoutProtocol {
     /// Returns an `ec.ready` response if the given message is an `ec.ready` request,
     /// otherwise `nil`. Lets the kit acknowledge the handshake without surfacing it
     /// to consumers.
-    static func acknowledgeReady(_ message: String) -> String? {
-        guard case .ready(let id, _) = decode(jsonRpc: message) else { return nil }
+    public static func acknowledgeReady(_ message: String) -> String? {
+        guard case let .ready(id, _) = decode(jsonRpc: message) else { return nil }
         return encodeReadyResponse(id: id)
     }
 }
@@ -63,7 +63,7 @@ extension CheckoutProtocol {
         return .notification(method: request.method, payload: checkout)
     }
 
-    static func encodeResponse<R: Encodable>(id: String, result: R) -> String {
+    static func encodeResponse(id: String, result: some Encodable) -> String {
         let wrapper = JSONRPCResponse(id: id, result: result)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]

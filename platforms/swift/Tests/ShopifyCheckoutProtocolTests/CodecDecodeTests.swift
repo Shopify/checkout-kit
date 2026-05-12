@@ -21,9 +21,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
 import Foundation
 @testable import ShopifyCheckoutProtocol
+import Testing
 
 @Suite("Codec Decode Tests")
 struct CodecDecodeTests {
@@ -31,7 +31,7 @@ struct CodecDecodeTests {
         let json = try fixtureString("notification")
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .notification(let method, let payload) = message else {
+        guard case let .notification(method, payload) = message else {
             Issue.record("Expected .notification, got \(message)")
             return
         }
@@ -50,7 +50,7 @@ struct CodecDecodeTests {
         """#
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .notification(let method, let payload) = message else {
+        guard case let .notification(method, payload) = message else {
             Issue.record("Expected .notification, got \(message)")
             return
         }
@@ -66,7 +66,7 @@ struct CodecDecodeTests {
         let json = try fixtureString("request")
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .request(let id, let method, let checkout) = message else {
+        guard case let .request(id, method, checkout) = message else {
             Issue.record("Expected .request, got \(message)")
             return
         }
@@ -83,7 +83,7 @@ struct CodecDecodeTests {
         """
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .unknown(let method, _) = message else {
+        guard case let .unknown(method, _) = message else {
             Issue.record("Expected .unknown, got \(message)")
             return
         }
@@ -95,7 +95,7 @@ struct CodecDecodeTests {
         let json = "not valid json at all"
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .unknown(let method, _) = message else {
+        guard case let .unknown(method, _) = message else {
             Issue.record("Expected .unknown for malformed JSON, got \(message)")
             return
         }

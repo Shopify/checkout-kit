@@ -21,9 +21,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
 import Foundation
 @testable import ShopifyCheckoutProtocol
+import Testing
 
 @Suite("Codec Encode Tests")
 struct CodecEncodeTests {
@@ -43,7 +43,7 @@ struct CodecEncodeTests {
             messages: nil
         )
         let json = CheckoutProtocol.encodeResponse(id: "req-456", result: result)
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as! [String: Any]
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
         #expect(parsed["jsonrpc"] as? String == "2.0")
         #expect(parsed["id"] as? String == "req-456")
@@ -52,7 +52,7 @@ struct CodecEncodeTests {
 
     @Test func encodesReadyResponseWithResultEnvelope() throws {
         let json = CheckoutProtocol.encodeReadyResponse(id: "ready-1")
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as! [String: Any]
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
         #expect(parsed["jsonrpc"] as? String == "2.0")
         #expect(parsed["id"] as? String == "ready-1")
@@ -71,7 +71,7 @@ struct CodecEncodeTests {
         """#
 
         let response = try #require(CheckoutProtocol.acknowledgeReady(message))
-        let parsed = try JSONSerialization.jsonObject(with: Data(response.utf8)) as! [String: Any]
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
 
         #expect(parsed["id"] as? String == "ready-1")
         let result = try #require(parsed["result"] as? [String: Any])
@@ -80,7 +80,7 @@ struct CodecEncodeTests {
         #expect(ucp["status"] as? String == "success")
     }
 
-    @Test func acknowledgeReadyReturnsNilForNonReadyMessage() throws {
+    @Test func acknowledgeReadyReturnsNilForNonReadyMessage() {
         let message = #"""
         {"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{"id":"c"}}}
         """#

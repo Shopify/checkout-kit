@@ -21,9 +21,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
 import Foundation
 @testable import ShopifyCheckoutProtocol
+import Testing
 
 @Suite("Client Tests")
 struct ClientTests {
@@ -44,7 +44,7 @@ struct ClientTests {
                 receivedCheckout = checkout
             }
 
-        let response = await client.process(try notificationFixture())
+        let response = try await client.process(notificationFixture())
 
         #expect(response == nil)
         #expect(receivedCheckout != nil)
@@ -58,7 +58,7 @@ struct ClientTests {
                 completeFired = true
             }
 
-        let response = await client.process(try notificationFixture())
+        let response = try await client.process(notificationFixture())
 
         #expect(response == nil)
         #expect(completeFired == false)
@@ -68,7 +68,7 @@ struct ClientTests {
         let client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.start) { (_: Checkout) in }
 
-        let response = await client.process(try notificationFixture())
+        let response = try await client.process(notificationFixture())
 
         #expect(response == nil)
     }
@@ -80,7 +80,7 @@ struct ClientTests {
             .on(CheckoutProtocol.start) { (_: Checkout) in startFired = true }
             .on(CheckoutProtocol.complete) { (_: Checkout) in completeFired = true }
 
-        _ = await client.process(try notificationFixture())
+        _ = try await client.process(notificationFixture())
 
         #expect(startFired == true)
         #expect(completeFired == false)
@@ -98,10 +98,10 @@ struct ClientTests {
     @Test @MainActor func readyReturnsResponse() async throws {
         let client = CheckoutProtocol.Client()
 
-        let response = await client.process(try readyFixture())
+        let response = try await client.process(readyFixture())
 
         let data = try #require(response?.data(using: .utf8))
-        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let parsed = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(parsed["id"] as? String == "ready-1")
         #expect(parsed["method"] == nil)
         #expect(parsed["params"] == nil)
@@ -110,5 +110,4 @@ struct ClientTests {
         #expect(ucp["version"] as? String == CheckoutProtocol.specVersion)
         #expect(ucp["status"] as? String == "success")
     }
-
 }

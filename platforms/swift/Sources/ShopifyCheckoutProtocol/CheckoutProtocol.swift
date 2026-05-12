@@ -21,9 +21,18 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-enum UCPMessage: Sendable {
-    case notification(method: String, payload: any EventPayload)
-    case request(id: String, method: String, checkout: Checkout)
-    case ready(id: String, delegations: [String])
-    case unknown(method: String, rawParams: String)
+public enum CheckoutProtocol {
+    public static let specVersion = "2026-04-08"
+
+    public static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
+    public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
+    public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")
+    public static let lineItemsChange = NotificationDescriptor<Checkout>(
+        method: "ec.line_items.change"
+    )
+    public static let messagesChange = NotificationDescriptor<Checkout>(
+        method: "ec.messages.change"
+    )
+    public static let start = NotificationDescriptor<Checkout>(method: "ec.start")
+    public static let totalsChange = NotificationDescriptor<Checkout>(method: "ec.totals.change")
 }

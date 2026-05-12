@@ -21,16 +21,20 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-public enum CheckoutProtocol {
-    public static let specVersion = "2026-04-08"
+import Foundation
 
-    public static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
-    public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
-    public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")
-    public static let lineItemsChange = NotificationDescriptor<Checkout>(
-        method: "ec.line_items.change")
-    public static let messagesChange = NotificationDescriptor<Checkout>(
-        method: "ec.messages.change")
-    public static let start = NotificationDescriptor<Checkout>(method: "ec.start")
-    public static let totalsChange = NotificationDescriptor<Checkout>(method: "ec.totals.change")
+extension CheckoutProtocol {
+    /// Returns the given checkout URL with the query parameters required to
+    /// initiate the Embedded Checkout Protocol handshake (`ec_version`,
+    /// `ec_color_scheme`).
+    public static func url(for url: URL, colorScheme: String) -> URL {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.append(URLQueryItem(name: "ec_version", value: specVersion))
+        queryItems.append(URLQueryItem(name: "ec_color_scheme", value: colorScheme))
+        components.queryItems = queryItems
+        return components.url ?? url
+    }
 }

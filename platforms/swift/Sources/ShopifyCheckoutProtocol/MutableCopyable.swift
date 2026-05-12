@@ -21,20 +21,14 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Foundation
+protocol MutableCopyable {
+    func copy(_ mutate: (inout Self) -> Void) -> Self
+}
 
-public extension CheckoutProtocol {
-    /// Returns the given checkout URL with the query parameters required to
-    /// initiate the Embedded Checkout Protocol handshake (`ec_version`,
-    /// `ec_color_scheme`).
-    static func url(for url: URL, colorScheme: String) -> URL {
-        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return url
-        }
-        var queryItems = components.queryItems ?? []
-        queryItems.append(URLQueryItem(name: "ec_version", value: specVersion))
-        queryItems.append(URLQueryItem(name: "ec_color_scheme", value: colorScheme))
-        components.queryItems = queryItems
-        return components.url ?? url
+extension MutableCopyable {
+    func copy(_ mutate: (inout Self) -> Void) -> Self {
+        var copy = self
+        mutate(&copy)
+        return copy
     }
 }

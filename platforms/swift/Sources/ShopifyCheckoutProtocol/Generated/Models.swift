@@ -77,6 +77,7 @@ import Foundation
 
 /// Base checkout schema. Extensions compose onto this using allOf.
 // MARK: - Checkout
+
 public struct Checkout: Codable, Sendable {
     /// Representation of the buyer.
     public let buyer: BuyerClass?
@@ -140,23 +141,23 @@ public struct Checkout: Codable, Sendable {
 
 // MARK: Checkout convenience initializers and mutators
 
-public extension Checkout {
-    init(data: Data) throws {
+extension Checkout {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Checkout.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         buyer: BuyerClass?? = nil,
         context: ContextClass?? = nil,
         continueURL: String?? = nil,
@@ -192,17 +193,18 @@ public extension Checkout {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Representation of the buyer.
 // MARK: - BuyerClass
+
 public struct BuyerClass: Codable, Sendable {
     /// Email of the buyer.
     public let email: String?
@@ -230,23 +232,23 @@ public struct BuyerClass: Codable, Sendable {
 
 // MARK: BuyerClass convenience initializers and mutators
 
-public extension BuyerClass {
-    init(data: Data) throws {
+extension BuyerClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(BuyerClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         email: String?? = nil,
         firstName: String?? = nil,
         lastName: String?? = nil,
@@ -260,12 +262,12 @@ public extension BuyerClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -278,6 +280,7 @@ public extension BuyerClass {
 /// early, finer resolution as the session progresses. Higher-resolution data (shipping
 /// address, billing address) supersedes context.
 // MARK: - ContextClass
+
 public struct ContextClass: Codable, Sendable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -335,23 +338,23 @@ public struct ContextClass: Codable, Sendable {
 
 // MARK: ContextClass convenience initializers and mutators
 
-public extension ContextClass {
-    init(data: Data) throws {
+extension ContextClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ContextClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         addressCountry: String?? = nil,
         addressRegion: String?? = nil,
         currency: String?? = nil,
@@ -371,17 +374,18 @@ public extension ContextClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Line item object. Expected to use the currency of the parent object.
 // MARK: - CheckoutLineItem
+
 public struct CheckoutLineItem: Codable, Sendable {
     public let id: String
     public let item: ItemClass
@@ -409,23 +413,23 @@ public struct CheckoutLineItem: Codable, Sendable {
 
 // MARK: CheckoutLineItem convenience initializers and mutators
 
-public extension CheckoutLineItem {
-    init(data: Data) throws {
+extension CheckoutLineItem {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CheckoutLineItem.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         item: ItemClass? = nil,
         parentID: String?? = nil,
@@ -441,17 +445,18 @@ public extension CheckoutLineItem {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Product data (id, title, price, image_url).
 // MARK: - ItemClass
+
 public struct ItemClass: Codable, Sendable {
     /// The product identifier, often the SKU, required to resolve the product details associated
     /// with this line item. Should be recognized by both the Platform, and the Business.
@@ -479,23 +484,23 @@ public struct ItemClass: Codable, Sendable {
 
 // MARK: ItemClass convenience initializers and mutators
 
-public extension ItemClass {
-    init(data: Data) throws {
+extension ItemClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ItemClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         imageURL: String?? = nil,
         price: Int? = nil,
@@ -509,17 +514,18 @@ public extension ItemClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A cost breakdown entry with a category, amount, and optional display text.
 // MARK: - LineItemTotal
+
 public struct LineItemTotal: Codable, Sendable {
     public let amount: Int
     /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
@@ -544,23 +550,23 @@ public struct LineItemTotal: Codable, Sendable {
 
 // MARK: LineItemTotal convenience initializers and mutators
 
-public extension LineItemTotal {
-    init(data: Data) throws {
+extension LineItemTotal {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(LineItemTotal.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         amount: Int? = nil,
         displayText: String?? = nil,
         type: String? = nil
@@ -572,16 +578,17 @@ public extension LineItemTotal {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - LinkElement
+
 public struct LinkElement: Codable, Sendable {
     /// Optional display text for the link. When provided, use this instead of generating from
     /// type.
@@ -602,23 +609,23 @@ public struct LinkElement: Codable, Sendable {
 
 // MARK: LinkElement convenience initializers and mutators
 
-public extension LinkElement {
-    init(data: Data) throws {
+extension LinkElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(LinkElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         title: String?? = nil,
         type: String? = nil,
         url: String? = nil
@@ -630,17 +637,18 @@ public extension LinkElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Container for error, warning, or info messages.
 // MARK: - MessageElement
+
 public struct MessageElement: Codable, Sendable {
     /// Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
     /// fulfillment_changed, age_restricted, etc.).
@@ -701,23 +709,23 @@ public struct MessageElement: Codable, Sendable {
 
 // MARK: MessageElement convenience initializers and mutators
 
-public extension MessageElement {
-    init(data: Data) throws {
+extension MessageElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(MessageElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         code: String?? = nil,
         content: String? = nil,
         contentType: ContentType?? = nil,
@@ -741,19 +749,19 @@ public extension MessageElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Content format, default = plain.
 public enum ContentType: String, Codable, Sendable {
-    case markdown = "markdown"
-    case plain = "plain"
+    case markdown
+    case plain
 }
 
 /// Reflects the resource state and recommended action. 'recoverable': platform can resolve
@@ -764,22 +772,23 @@ public enum ContentType: String, Codable, Sendable {
 /// retry with new resource or inputs. Errors with 'requires_*' severity contribute to
 /// 'status: requires_escalation'.
 public enum Severity: String, Codable, Sendable {
-    case recoverable = "recoverable"
+    case recoverable
     case requiresBuyerInput = "requires_buyer_input"
     case requiresBuyerReview = "requires_buyer_review"
-    case unrecoverable = "unrecoverable"
+    case unrecoverable
 }
 
 public enum MessageType: String, Codable, Sendable {
-    case error = "error"
-    case info = "info"
-    case warning = "warning"
+    case error
+    case info
+    case warning
 }
 
 /// Details about an order created for this checkout session.
 ///
 /// Order details available at the time of checkout completion.
 // MARK: - OrderClass
+
 public struct OrderClass: Codable, Sendable {
     /// Unique order identifier.
     public let id: String
@@ -802,23 +811,23 @@ public struct OrderClass: Codable, Sendable {
 
 // MARK: OrderClass convenience initializers and mutators
 
-public extension OrderClass {
-    init(data: Data) throws {
+extension OrderClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(OrderClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         label: String?? = nil,
         permalinkURL: String? = nil
@@ -830,17 +839,18 @@ public extension OrderClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Payment configuration containing handlers.
 // MARK: - PaymentClass
+
 public struct PaymentClass: Codable, Sendable {
     /// The payment instruments available for this payment. Each instrument is associated with a
     /// specific handler via the handler_id field. Handlers can extend the base
@@ -854,23 +864,23 @@ public struct PaymentClass: Codable, Sendable {
 
 // MARK: PaymentClass convenience initializers and mutators
 
-public extension PaymentClass {
-    init(data: Data) throws {
+extension PaymentClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         instruments: [PaymentSelectedPaymentInstrument]?? = nil
     ) -> PaymentClass {
         return PaymentClass(
@@ -878,12 +888,12 @@ public extension PaymentClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -892,6 +902,7 @@ public extension PaymentClass {
 /// The base definition for any payment instrument. It links the instrument to a specific
 /// payment handler.
 // MARK: - PaymentSelectedPaymentInstrument
+
 public struct PaymentSelectedPaymentInstrument: Codable, Sendable {
     /// The billing address associated with this payment method.
     public let billingAddress: BillingAddressClass?
@@ -930,23 +941,23 @@ public struct PaymentSelectedPaymentInstrument: Codable, Sendable {
 
 // MARK: PaymentSelectedPaymentInstrument convenience initializers and mutators
 
-public extension PaymentSelectedPaymentInstrument {
-    init(data: Data) throws {
+extension PaymentSelectedPaymentInstrument {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentSelectedPaymentInstrument.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         billingAddress: BillingAddressClass?? = nil,
         credential: CredentialClass?? = nil,
         display: [String: JSONAny]?? = nil,
@@ -966,12 +977,12 @@ public extension PaymentSelectedPaymentInstrument {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -981,6 +992,7 @@ public extension PaymentSelectedPaymentInstrument {
 ///
 /// Physical address of the location.
 // MARK: - BillingAddressClass
+
 public struct BillingAddressClass: Codable, Sendable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -1033,23 +1045,23 @@ public struct BillingAddressClass: Codable, Sendable {
 
 // MARK: BillingAddressClass convenience initializers and mutators
 
-public extension BillingAddressClass {
-    init(data: Data) throws {
+extension BillingAddressClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(BillingAddressClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         addressCountry: String?? = nil,
         addressLocality: String?? = nil,
         addressRegion: String?? = nil,
@@ -1073,17 +1085,18 @@ public extension BillingAddressClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// The base definition for any payment credential. Handlers define specific credential types.
 // MARK: - CredentialClass
+
 public struct CredentialClass: Codable, Sendable {
     /// The credential type discriminator. Specific schemas will constrain this to a constant
     /// value.
@@ -1096,23 +1109,23 @@ public struct CredentialClass: Codable, Sendable {
 
 // MARK: CredentialClass convenience initializers and mutators
 
-public extension CredentialClass {
-    init(data: Data) throws {
+extension CredentialClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CredentialClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         type: String? = nil
     ) -> CredentialClass {
         return CredentialClass(
@@ -1120,12 +1133,12 @@ public extension CredentialClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -1135,6 +1148,7 @@ public extension CredentialClass {
 /// use reverse-domain naming to ensure provenance and prevent collisions when multiple
 /// extensions contribute to the shared namespace.
 // MARK: - SignalsClass
+
 public struct SignalsClass: Codable, Sendable {
     /// Client's IP address (IPv4 or IPv6).
     public let devUcpBuyerIP: String?
@@ -1154,23 +1168,23 @@ public struct SignalsClass: Codable, Sendable {
 
 // MARK: SignalsClass convenience initializers and mutators
 
-public extension SignalsClass {
-    init(data: Data) throws {
+extension SignalsClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(SignalsClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         devUcpBuyerIP: String?? = nil,
         devUcpUserAgent: String?? = nil
     ) -> SignalsClass {
@@ -1180,22 +1194,22 @@ public extension SignalsClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Checkout state indicating the current phase and required action. See Checkout Status
 /// lifecycle documentation for state transition details.
 public enum CheckoutStatus: String, Codable, Sendable {
-    case canceled = "canceled"
+    case canceled
     case completeInProgress = "complete_in_progress"
-    case completed = "completed"
-    case incomplete = "incomplete"
+    case completed
+    case incomplete
     case readyForComplete = "ready_for_complete"
     case requiresEscalation = "requires_escalation"
 }
@@ -1208,6 +1222,7 @@ public enum CheckoutStatus: String, Codable, Sendable {
 ///
 /// A cost breakdown entry with a category, amount, and optional display text.
 // MARK: - CheckoutTotal
+
 public struct CheckoutTotal: Codable, Sendable {
     public let amount: Int
     /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
@@ -1236,23 +1251,23 @@ public struct CheckoutTotal: Codable, Sendable {
 
 // MARK: CheckoutTotal convenience initializers and mutators
 
-public extension CheckoutTotal {
-    init(data: Data) throws {
+extension CheckoutTotal {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CheckoutTotal.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         amount: Int? = nil,
         displayText: String?? = nil,
         type: String? = nil,
@@ -1266,17 +1281,18 @@ public extension CheckoutTotal {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Sub-line entry. Additional metadata MAY be included.
 // MARK: - TotalLine
+
 public struct TotalLine: Codable, Sendable {
     public let amount: Int
     /// Human-readable label for this sub-line.
@@ -1295,23 +1311,23 @@ public struct TotalLine: Codable, Sendable {
 
 // MARK: TotalLine convenience initializers and mutators
 
-public extension TotalLine {
-    init(data: Data) throws {
+extension TotalLine {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(TotalLine.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         amount: Int? = nil,
         displayText: String? = nil
     ) -> TotalLine {
@@ -1321,12 +1337,12 @@ public extension TotalLine {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -1334,6 +1350,7 @@ public extension TotalLine {
 ///
 /// Base UCP metadata with shared properties for all schema types.
 // MARK: - UCPCheckoutResponseSchema
+
 public struct UCPCheckoutResponseSchema: Codable, Sendable {
     /// Capability registry keyed by reverse-domain name.
     public let capabilities: [String: [CapabilityResponseSchema]]?
@@ -1362,23 +1379,23 @@ public struct UCPCheckoutResponseSchema: Codable, Sendable {
 
 // MARK: UCPCheckoutResponseSchema convenience initializers and mutators
 
-public extension UCPCheckoutResponseSchema {
-    init(data: Data) throws {
+extension UCPCheckoutResponseSchema {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(UCPCheckoutResponseSchema.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]? = nil,
         services: [String: [ServiceResponseSchema]]?? = nil,
@@ -1394,12 +1411,12 @@ public extension UCPCheckoutResponseSchema {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -1408,6 +1425,7 @@ public extension UCPCheckoutResponseSchema {
 ///
 /// Shared foundation for all UCP entities.
 // MARK: - CapabilityResponseSchema
+
 public struct CapabilityResponseSchema: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
@@ -1436,23 +1454,23 @@ public struct CapabilityResponseSchema: Codable, Sendable {
 
 // MARK: CapabilityResponseSchema convenience initializers and mutators
 
-public extension CapabilityResponseSchema {
-    init(data: Data) throws {
+extension CapabilityResponseSchema {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CapabilityResponseSchema.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         config: [String: JSONAny]?? = nil,
         id: String?? = nil,
         schema: String?? = nil,
@@ -1470,12 +1488,12 @@ public extension CapabilityResponseSchema {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -1501,9 +1519,9 @@ public enum Extends: Codable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
-        case .string(let x):
+        case let .string(x):
             try container.encode(x)
-        case .stringArray(let x):
+        case let .stringArray(x):
             try container.encode(x)
         }
     }
@@ -1514,6 +1532,7 @@ public enum Extends: Codable, Sendable {
 ///
 /// Shared foundation for all UCP entities.
 // MARK: - PaymentHandlerResponseSchema
+
 public struct PaymentHandlerResponseSchema: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
@@ -1547,23 +1566,23 @@ public struct PaymentHandlerResponseSchema: Codable, Sendable {
 
 // MARK: PaymentHandlerResponseSchema convenience initializers and mutators
 
-public extension PaymentHandlerResponseSchema {
-    init(data: Data) throws {
+extension PaymentHandlerResponseSchema {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentHandlerResponseSchema.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         config: [String: JSONAny]?? = nil,
         id: String? = nil,
         schema: String?? = nil,
@@ -1581,17 +1600,18 @@ public extension PaymentHandlerResponseSchema {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// An instrument type available from a payment handler with optional constraints.
 // MARK: - PaymentHandlerResponseSchemaAvailableInstrument
+
 public struct PaymentHandlerResponseSchemaAvailableInstrument: Codable, Sendable {
     /// Constraints on this instrument type. Structure depends on instrument type and active
     /// capabilities.
@@ -1608,23 +1628,23 @@ public struct PaymentHandlerResponseSchemaAvailableInstrument: Codable, Sendable
 
 // MARK: PaymentHandlerResponseSchemaAvailableInstrument convenience initializers and mutators
 
-public extension PaymentHandlerResponseSchemaAvailableInstrument {
-    init(data: Data) throws {
+extension PaymentHandlerResponseSchemaAvailableInstrument {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentHandlerResponseSchemaAvailableInstrument.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         constraints: [String: JSONAny]?? = nil,
         type: String? = nil
     ) -> PaymentHandlerResponseSchemaAvailableInstrument {
@@ -1634,12 +1654,12 @@ public extension PaymentHandlerResponseSchemaAvailableInstrument {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -1648,6 +1668,7 @@ public extension PaymentHandlerResponseSchemaAvailableInstrument {
 ///
 /// Shared foundation for all UCP entities.
 // MARK: - ServiceResponseSchema
+
 public struct ServiceResponseSchema: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: EmbeddedTransportConfig?
@@ -1678,23 +1699,23 @@ public struct ServiceResponseSchema: Codable, Sendable {
 
 // MARK: ServiceResponseSchema convenience initializers and mutators
 
-public extension ServiceResponseSchema {
-    init(data: Data) throws {
+extension ServiceResponseSchema {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ServiceResponseSchema.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         config: EmbeddedTransportConfig?? = nil,
         id: String?? = nil,
         schema: String?? = nil,
@@ -1714,12 +1735,12 @@ public extension ServiceResponseSchema {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -1728,6 +1749,7 @@ public extension ServiceResponseSchema {
 /// Per-session configuration for embedded transport binding. Allows businesses to vary EP
 /// availability and delegations based on cart contents, agent authorization, or policy.
 // MARK: - EmbeddedTransportConfig
+
 public struct EmbeddedTransportConfig: Codable, Sendable {
     /// Color schemes the business supports. Hosts use ec_color_scheme query parameter to request
     /// a scheme from this list.
@@ -1749,23 +1771,23 @@ public struct EmbeddedTransportConfig: Codable, Sendable {
 
 // MARK: EmbeddedTransportConfig convenience initializers and mutators
 
-public extension EmbeddedTransportConfig {
-    init(data: Data) throws {
+extension EmbeddedTransportConfig {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(EmbeddedTransportConfig.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         colorScheme: [EmbeddedColorScheme]?? = nil,
         delegate: [String]?? = nil
     ) -> EmbeddedTransportConfig {
@@ -1775,36 +1797,37 @@ public extension EmbeddedTransportConfig {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 public enum EmbeddedColorScheme: String, Codable, Sendable {
-    case dark = "dark"
-    case light = "light"
+    case dark
+    case light
 }
 
 /// Transport protocol for this service binding.
 public enum Transport: String, Codable, Sendable {
     case a2A = "a2a"
-    case embedded = "embedded"
-    case mcp = "mcp"
-    case rest = "rest"
+    case embedded
+    case mcp
+    case rest
 }
 
 /// Application-level status of the UCP operation.
 public enum UCPCheckoutResponseSchemaStatus: String, Codable, Sendable {
-    case error = "error"
-    case success = "success"
+    case error
+    case success
 }
 
 /// Non-sensitive backend identifiers for linking.
 // MARK: - PaymentAccountInfo
+
 public struct PaymentAccountInfo: Codable, Sendable {
     /// EMVCo PAR. A unique identifier linking a payment card to a specific account, enabling
     /// tracking across tokens (Apple Pay, physical card, etc).
@@ -1821,23 +1844,23 @@ public struct PaymentAccountInfo: Codable, Sendable {
 
 // MARK: PaymentAccountInfo convenience initializers and mutators
 
-public extension PaymentAccountInfo {
-    init(data: Data) throws {
+extension PaymentAccountInfo {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentAccountInfo.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         paymentAccountReference: String?? = nil
     ) -> PaymentAccountInfo {
         return PaymentAccountInfo(
@@ -1845,12 +1868,12 @@ public extension PaymentAccountInfo {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -1858,6 +1881,7 @@ public extension PaymentAccountInfo {
 /// movements but can be any post-order change. Polymorphic type that can optionally
 /// reference line items.
 // MARK: - Adjustment
+
 public struct Adjustment: Codable, Sendable {
     /// Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
     public let description: String?
@@ -1897,23 +1921,23 @@ public struct Adjustment: Codable, Sendable {
 
 // MARK: Adjustment convenience initializers and mutators
 
-public extension Adjustment {
-    init(data: Data) throws {
+extension Adjustment {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Adjustment.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         description: String?? = nil,
         id: String? = nil,
         lineItems: [AdjustmentLineItem]?? = nil,
@@ -1933,16 +1957,17 @@ public extension Adjustment {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - AdjustmentLineItem
+
 public struct AdjustmentLineItem: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
@@ -1958,23 +1983,23 @@ public struct AdjustmentLineItem: Codable, Sendable {
 
 // MARK: AdjustmentLineItem convenience initializers and mutators
 
-public extension AdjustmentLineItem {
-    init(data: Data) throws {
+extension AdjustmentLineItem {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(AdjustmentLineItem.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         quantity: Int? = nil
     ) -> AdjustmentLineItem {
@@ -1984,24 +2009,25 @@ public extension AdjustmentLineItem {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Adjustment status.
 public enum AdjustmentStatus: String, Codable, Sendable {
-    case completed = "completed"
-    case failed = "failed"
-    case pending = "pending"
+    case completed
+    case failed
+    case pending
 }
 
 /// An instrument type available from a payment handler with optional constraints.
 // MARK: - AvailablePaymentInstrument
+
 public struct AvailablePaymentInstrument: Codable, Sendable {
     /// Constraints on this instrument type. Structure depends on instrument type and active
     /// capabilities.
@@ -2018,23 +2044,23 @@ public struct AvailablePaymentInstrument: Codable, Sendable {
 
 // MARK: AvailablePaymentInstrument convenience initializers and mutators
 
-public extension AvailablePaymentInstrument {
-    init(data: Data) throws {
+extension AvailablePaymentInstrument {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(AvailablePaymentInstrument.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         constraints: [String: JSONAny]?? = nil,
         type: String? = nil
     ) -> AvailablePaymentInstrument {
@@ -2044,18 +2070,19 @@ public extension AvailablePaymentInstrument {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Binds a token to a specific checkout session and participant. Prevents token reuse across
 /// different checkouts or participants.
 // MARK: - TokenBinding
+
 public struct TokenBinding: Codable, Sendable {
     /// The checkout session identifier this token is bound to.
     public let checkoutID: String
@@ -2077,23 +2104,23 @@ public struct TokenBinding: Codable, Sendable {
 
 // MARK: TokenBinding convenience initializers and mutators
 
-public extension TokenBinding {
-    init(data: Data) throws {
+extension TokenBinding {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(TokenBinding.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         checkoutID: String? = nil,
         identity: IdentityClass?? = nil
     ) -> TokenBinding {
@@ -2103,12 +2130,12 @@ public extension TokenBinding {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -2119,6 +2146,7 @@ public extension TokenBinding {
 /// Identity of a participant for token binding. The access_token uniquely identifies the
 /// participant who tokens should be bound to.
 // MARK: - IdentityClass
+
 public struct IdentityClass: Codable, Sendable {
     /// Unique identifier for this participant, obtained during onboarding with the tokenizer.
     public let accessToken: String
@@ -2134,23 +2162,23 @@ public struct IdentityClass: Codable, Sendable {
 
 // MARK: IdentityClass convenience initializers and mutators
 
-public extension IdentityClass {
-    init(data: Data) throws {
+extension IdentityClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(IdentityClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         accessToken: String? = nil
     ) -> IdentityClass {
         return IdentityClass(
@@ -2158,17 +2186,18 @@ public extension IdentityClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Business's fulfillment configuration.
 // MARK: - BusinessFulfillmentConfig
+
 public struct BusinessFulfillmentConfig: Codable, Sendable {
     /// Allowed method type combinations.
     public let allowsMethodCombinations: [[TypeElement]]?
@@ -2188,23 +2217,23 @@ public struct BusinessFulfillmentConfig: Codable, Sendable {
 
 // MARK: BusinessFulfillmentConfig convenience initializers and mutators
 
-public extension BusinessFulfillmentConfig {
-    init(data: Data) throws {
+extension BusinessFulfillmentConfig {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(BusinessFulfillmentConfig.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         allowsMethodCombinations: [[TypeElement]]?? = nil,
         allowsMultiDestination: BusinessFulfillmentConfigAllowsMultiDestination?? = nil
     ) -> BusinessFulfillmentConfig {
@@ -2214,12 +2243,12 @@ public extension BusinessFulfillmentConfig {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -2227,12 +2256,13 @@ public extension BusinessFulfillmentConfig {
 ///
 /// Fulfillment method type.
 public enum TypeElement: String, Codable, Sendable {
-    case pickup = "pickup"
-    case shipping = "shipping"
+    case pickup
+    case shipping
 }
 
 /// Permits multiple destinations per method type.
 // MARK: - BusinessFulfillmentConfigAllowsMultiDestination
+
 public struct BusinessFulfillmentConfigAllowsMultiDestination: Codable, Sendable {
     /// Multiple pickup locations allowed.
     public let pickup: Bool?
@@ -2247,23 +2277,23 @@ public struct BusinessFulfillmentConfigAllowsMultiDestination: Codable, Sendable
 
 // MARK: BusinessFulfillmentConfigAllowsMultiDestination convenience initializers and mutators
 
-public extension BusinessFulfillmentConfigAllowsMultiDestination {
-    init(data: Data) throws {
+extension BusinessFulfillmentConfigAllowsMultiDestination {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(BusinessFulfillmentConfigAllowsMultiDestination.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         pickup: Bool?? = nil,
         shipping: Bool?? = nil
     ) -> BusinessFulfillmentConfigAllowsMultiDestination {
@@ -2273,16 +2303,17 @@ public extension BusinessFulfillmentConfigAllowsMultiDestination {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - Buyer
+
 public struct Buyer: Codable, Sendable {
     /// Email of the buyer.
     public let email: String?
@@ -2310,23 +2341,23 @@ public struct Buyer: Codable, Sendable {
 
 // MARK: Buyer convenience initializers and mutators
 
-public extension Buyer {
-    init(data: Data) throws {
+extension Buyer {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Buyer.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         email: String?? = nil,
         firstName: String?? = nil,
         lastName: String?? = nil,
@@ -2340,12 +2371,12 @@ public extension Buyer {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -2357,6 +2388,7 @@ public extension Buyer {
 ///
 /// The base definition for any payment credential. Handlers define specific credential types.
 // MARK: - CardCredential
+
 public struct CardCredential: Codable, Sendable {
     /// The credential type discriminator. Specific schemas will constrain this to a constant
     /// value.
@@ -2406,23 +2438,23 @@ public struct CardCredential: Codable, Sendable {
 
 // MARK: CardCredential convenience initializers and mutators
 
-public extension CardCredential {
-    init(data: Data) throws {
+extension CardCredential {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CardCredential.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         type: TypeEnum? = nil,
         cardNumberType: CardNumberType? = nil,
         cryptogram: String?? = nil,
@@ -2446,27 +2478,27 @@ public extension CardCredential {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// The type of card number. Network tokens are preferred with fallback to FPAN. See PCI
 /// Scope for more details.
 public enum CardNumberType: String, Codable, Sendable {
-    case dpan = "dpan"
-    case fpan = "fpan"
+    case dpan
+    case fpan
     case networkToken = "network_token"
 }
 
 /// Error code identifying the type of error. Standard errors are defined in specification
 /// (see examples), and have standardized semantics; freeform codes are permitted.
 public enum TypeEnum: String, Codable, Sendable {
-    case card = "card"
+    case card
 }
 
 /// A basic card payment instrument with visible card details. Can be inherited by a
@@ -2476,6 +2508,7 @@ public enum TypeEnum: String, Codable, Sendable {
 /// The base definition for any payment instrument. It links the instrument to a specific
 /// payment handler.
 // MARK: - CardPaymentInstrument
+
 public struct CardPaymentInstrument: Codable, Sendable {
     /// The billing address associated with this payment method.
     public let billingAddress: BillingAddressClass?
@@ -2515,23 +2548,23 @@ public struct CardPaymentInstrument: Codable, Sendable {
 
 // MARK: CardPaymentInstrument convenience initializers and mutators
 
-public extension CardPaymentInstrument {
-    init(data: Data) throws {
+extension CardPaymentInstrument {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CardPaymentInstrument.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         billingAddress: BillingAddressClass?? = nil,
         credential: CredentialClass?? = nil,
         display: Display?? = nil,
@@ -2549,12 +2582,12 @@ public extension CardPaymentInstrument {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -2563,6 +2596,7 @@ public extension CardPaymentInstrument {
 ///
 /// Display information for this card payment instrument.
 // MARK: - Display
+
 public struct Display: Codable, Sendable {
     /// The card brand/network (e.g., visa, mastercard, amex).
     public let brand: String?
@@ -2600,23 +2634,23 @@ public struct Display: Codable, Sendable {
 
 // MARK: Display convenience initializers and mutators
 
-public extension Display {
-    init(data: Data) throws {
+extension Display {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Display.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         brand: String?? = nil,
         cardArt: String?? = nil,
         description: String?? = nil,
@@ -2634,12 +2668,12 @@ public extension Display {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -2652,6 +2686,7 @@ public extension Display {
 /// early, finer resolution as the session progresses. Higher-resolution data (shipping
 /// address, billing address) supersedes context.
 // MARK: - Context
+
 public struct Context: Codable, Sendable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -2709,23 +2744,23 @@ public struct Context: Codable, Sendable {
 
 // MARK: Context convenience initializers and mutators
 
-public extension Context {
-    init(data: Data) throws {
+extension Context {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Context.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         addressCountry: String?? = nil,
         addressRegion: String?? = nil,
         currency: String?? = nil,
@@ -2745,18 +2780,19 @@ public extension Context {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - ErrorResponse
+
 public struct ErrorResponse: Codable, Sendable {
     /// URL for buyer handoff or session recovery.
     public let continueURL: String?
@@ -2779,23 +2815,23 @@ public struct ErrorResponse: Codable, Sendable {
 
 // MARK: ErrorResponse convenience initializers and mutators
 
-public extension ErrorResponse {
-    init(data: Data) throws {
+extension ErrorResponse {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ErrorResponse.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         continueURL: String?? = nil,
         messages: [MessageElement]? = nil,
         ucp: ErrorResponseUcp? = nil
@@ -2807,12 +2843,12 @@ public extension ErrorResponse {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -2823,6 +2859,7 @@ public extension ErrorResponse {
 ///
 /// Base UCP metadata with shared properties for all schema types.
 // MARK: - ErrorResponseUcp
+
 public struct ErrorResponseUcp: Codable, Sendable {
     /// Capability registry keyed by reverse-domain name.
     public let capabilities: [String: [CapabilityResponseSchema]]?
@@ -2851,23 +2888,23 @@ public struct ErrorResponseUcp: Codable, Sendable {
 
 // MARK: ErrorResponseUcp convenience initializers and mutators
 
-public extension ErrorResponseUcp {
-    init(data: Data) throws {
+extension ErrorResponseUcp {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ErrorResponseUcp.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
         services: [String: [UCPOrderResponseSchemaService]]?? = nil,
@@ -2883,17 +2920,18 @@ public extension ErrorResponseUcp {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Shared foundation for all UCP entities.
 // MARK: - UCPOrderResponseSchemaService
+
 public struct UCPOrderResponseSchemaService: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
@@ -2924,23 +2962,23 @@ public struct UCPOrderResponseSchemaService: Codable, Sendable {
 
 // MARK: UCPOrderResponseSchemaService convenience initializers and mutators
 
-public extension UCPOrderResponseSchemaService {
-    init(data: Data) throws {
+extension UCPOrderResponseSchemaService {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(UCPOrderResponseSchemaService.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         config: [String: JSONAny]?? = nil,
         id: String?? = nil,
         schema: String?? = nil,
@@ -2960,24 +2998,25 @@ public extension UCPOrderResponseSchemaService {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Application-level status of the UCP operation.
 public enum StatusEnum: String, Codable, Sendable {
-    case error = "error"
+    case error
 }
 
 /// Buyer-facing fulfillment expectation representing logical groupings of items (e.g.,
 /// 'package'). Can be split, merged, or adjusted post-order to set buyer expectations for
 /// when/how items arrive.
 // MARK: - Expectation
+
 public struct Expectation: Codable, Sendable {
     /// Human-readable delivery description (e.g., 'Arrives in 5-8 business days').
     public let description: String?
@@ -3013,23 +3052,23 @@ public struct Expectation: Codable, Sendable {
 
 // MARK: Expectation convenience initializers and mutators
 
-public extension Expectation {
-    init(data: Data) throws {
+extension Expectation {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Expectation.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         description: String?? = nil,
         destination: BillingAddressClass? = nil,
         fulfillableOn: String?? = nil,
@@ -3047,16 +3086,17 @@ public extension Expectation {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - ExpectationLineItem
+
 public struct ExpectationLineItem: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
@@ -3071,23 +3111,23 @@ public struct ExpectationLineItem: Codable, Sendable {
 
 // MARK: ExpectationLineItem convenience initializers and mutators
 
-public extension ExpectationLineItem {
-    init(data: Data) throws {
+extension ExpectationLineItem {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ExpectationLineItem.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         quantity: Int? = nil
     ) -> ExpectationLineItem {
@@ -3097,24 +3137,25 @@ public extension ExpectationLineItem {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Delivery method type (shipping, pickup, digital).
 public enum MethodType: String, Codable, Sendable {
-    case digital = "digital"
-    case pickup = "pickup"
-    case shipping = "shipping"
+    case digital
+    case pickup
+    case shipping
 }
 
 /// Inventory availability hint for a fulfillment method type.
 // MARK: - FulfillmentAvailableMethod
+
 public struct FulfillmentAvailableMethod: Codable, Sendable {
     /// Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
     public let description: String?
@@ -3142,23 +3183,23 @@ public struct FulfillmentAvailableMethod: Codable, Sendable {
 
 // MARK: FulfillmentAvailableMethod convenience initializers and mutators
 
-public extension FulfillmentAvailableMethod {
-    init(data: Data) throws {
+extension FulfillmentAvailableMethod {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentAvailableMethod.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         description: String?? = nil,
         fulfillableOn: String?? = nil,
         lineItemIDS: [String]? = nil,
@@ -3172,12 +3213,12 @@ public extension FulfillmentAvailableMethod {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -3193,6 +3234,7 @@ public extension FulfillmentAvailableMethod {
 ///
 /// A pickup location (retail store, locker, etc.).
 // MARK: - FulfillmentDestination
+
 public struct FulfillmentDestination: Codable, Sendable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -3257,23 +3299,23 @@ public struct FulfillmentDestination: Codable, Sendable {
 
 // MARK: FulfillmentDestination convenience initializers and mutators
 
-public extension FulfillmentDestination {
-    init(data: Data) throws {
+extension FulfillmentDestination {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentDestination.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         addressCountry: String?? = nil,
         addressLocality: String?? = nil,
         addressRegion: String?? = nil,
@@ -3303,18 +3345,19 @@ public extension FulfillmentDestination {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Append-only fulfillment event representing an actual shipment. References line items by
 /// ID.
 // MARK: - FulfillmentEvent
+
 public struct FulfillmentEvent: Codable, Sendable {
     /// Carrier name (e.g., 'FedEx', 'USPS').
     public let carrier: String?
@@ -3360,23 +3403,23 @@ public struct FulfillmentEvent: Codable, Sendable {
 
 // MARK: FulfillmentEvent convenience initializers and mutators
 
-public extension FulfillmentEvent {
-    init(data: Data) throws {
+extension FulfillmentEvent {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentEvent.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         carrier: String?? = nil,
         description: String?? = nil,
         id: String? = nil,
@@ -3398,16 +3441,17 @@ public extension FulfillmentEvent {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - FulfillmentEventLineItem
+
 public struct FulfillmentEventLineItem: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
@@ -3422,23 +3466,23 @@ public struct FulfillmentEventLineItem: Codable, Sendable {
 
 // MARK: FulfillmentEventLineItem convenience initializers and mutators
 
-public extension FulfillmentEventLineItem {
-    init(data: Data) throws {
+extension FulfillmentEventLineItem {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentEventLineItem.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         quantity: Int? = nil
     ) -> FulfillmentEventLineItem {
@@ -3448,17 +3492,18 @@ public extension FulfillmentEventLineItem {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A merchant-generated package/group of line items with fulfillment options.
 // MARK: - FulfillmentGroup
+
 public struct FulfillmentGroup: Codable, Sendable {
     /// Group identifier for referencing merchant-generated groups in updates.
     public let id: String
@@ -3486,23 +3531,23 @@ public struct FulfillmentGroup: Codable, Sendable {
 
 // MARK: FulfillmentGroup convenience initializers and mutators
 
-public extension FulfillmentGroup {
-    init(data: Data) throws {
+extension FulfillmentGroup {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentGroup.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         lineItemIDS: [String]? = nil,
         options: [OptionElement]?? = nil,
@@ -3516,17 +3561,18 @@ public extension FulfillmentGroup {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
 // MARK: - OptionElement
+
 public struct OptionElement: Codable, Sendable {
     /// Carrier name (for shipping).
     public let carrier: String?
@@ -3564,23 +3610,23 @@ public struct OptionElement: Codable, Sendable {
 
 // MARK: OptionElement convenience initializers and mutators
 
-public extension OptionElement {
-    init(data: Data) throws {
+extension OptionElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(OptionElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         carrier: String?? = nil,
         description: String?? = nil,
         earliestFulfillmentTime: Date?? = nil,
@@ -3600,17 +3646,18 @@ public extension OptionElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A fulfillment method (shipping or pickup) with destinations and groups.
 // MARK: - FulfillmentMethod
+
 public struct FulfillmentMethod: Codable, Sendable {
     /// Available destinations. For shipping: addresses. For pickup: retail locations.
     public let destinations: [FulfillmentDestinationElement]?
@@ -3645,23 +3692,23 @@ public struct FulfillmentMethod: Codable, Sendable {
 
 // MARK: FulfillmentMethod convenience initializers and mutators
 
-public extension FulfillmentMethod {
-    init(data: Data) throws {
+extension FulfillmentMethod {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentMethod.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         destinations: [FulfillmentDestinationElement]?? = nil,
         groups: [GroupElement]?? = nil,
         id: String? = nil,
@@ -3679,12 +3726,12 @@ public extension FulfillmentMethod {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -3700,6 +3747,7 @@ public extension FulfillmentMethod {
 ///
 /// A pickup location (retail store, locker, etc.).
 // MARK: - FulfillmentDestinationElement
+
 public struct FulfillmentDestinationElement: Codable, Sendable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -3764,23 +3812,23 @@ public struct FulfillmentDestinationElement: Codable, Sendable {
 
 // MARK: FulfillmentDestinationElement convenience initializers and mutators
 
-public extension FulfillmentDestinationElement {
-    init(data: Data) throws {
+extension FulfillmentDestinationElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentDestinationElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         addressCountry: String?? = nil,
         addressLocality: String?? = nil,
         addressRegion: String?? = nil,
@@ -3810,17 +3858,18 @@ public extension FulfillmentDestinationElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A merchant-generated package/group of line items with fulfillment options.
 // MARK: - GroupElement
+
 public struct GroupElement: Codable, Sendable {
     /// Group identifier for referencing merchant-generated groups in updates.
     public let id: String
@@ -3848,23 +3897,23 @@ public struct GroupElement: Codable, Sendable {
 
 // MARK: GroupElement convenience initializers and mutators
 
-public extension GroupElement {
-    init(data: Data) throws {
+extension GroupElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(GroupElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         lineItemIDS: [String]? = nil,
         options: [OptionElement]?? = nil,
@@ -3878,17 +3927,18 @@ public extension GroupElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
 // MARK: - FulfillmentOption
+
 public struct FulfillmentOption: Codable, Sendable {
     /// Carrier name (for shipping).
     public let carrier: String?
@@ -3926,23 +3976,23 @@ public struct FulfillmentOption: Codable, Sendable {
 
 // MARK: FulfillmentOption convenience initializers and mutators
 
-public extension FulfillmentOption {
-    init(data: Data) throws {
+extension FulfillmentOption {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentOption.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         carrier: String?? = nil,
         description: String?? = nil,
         earliestFulfillmentTime: Date?? = nil,
@@ -3962,17 +4012,18 @@ public extension FulfillmentOption {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Container for fulfillment methods and availability.
 // MARK: - Fulfillment
+
 public struct Fulfillment: Codable, Sendable {
     /// Inventory availability hints.
     public let availableMethods: [AvailableMethodElement]?
@@ -3992,23 +4043,23 @@ public struct Fulfillment: Codable, Sendable {
 
 // MARK: Fulfillment convenience initializers and mutators
 
-public extension Fulfillment {
-    init(data: Data) throws {
+extension Fulfillment {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Fulfillment.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         availableMethods: [AvailableMethodElement]?? = nil,
         methods: [MethodElement]?? = nil
     ) -> Fulfillment {
@@ -4018,17 +4069,18 @@ public extension Fulfillment {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Inventory availability hint for a fulfillment method type.
 // MARK: - AvailableMethodElement
+
 public struct AvailableMethodElement: Codable, Sendable {
     /// Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
     public let description: String?
@@ -4056,23 +4108,23 @@ public struct AvailableMethodElement: Codable, Sendable {
 
 // MARK: AvailableMethodElement convenience initializers and mutators
 
-public extension AvailableMethodElement {
-    init(data: Data) throws {
+extension AvailableMethodElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(AvailableMethodElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         description: String?? = nil,
         fulfillableOn: String?? = nil,
         lineItemIDS: [String]? = nil,
@@ -4086,17 +4138,18 @@ public extension AvailableMethodElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A fulfillment method (shipping or pickup) with destinations and groups.
 // MARK: - MethodElement
+
 public struct MethodElement: Codable, Sendable {
     /// Available destinations. For shipping: addresses. For pickup: retail locations.
     public let destinations: [FulfillmentDestinationElement]?
@@ -4131,23 +4184,23 @@ public struct MethodElement: Codable, Sendable {
 
 // MARK: MethodElement convenience initializers and mutators
 
-public extension MethodElement {
-    init(data: Data) throws {
+extension MethodElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(MethodElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         destinations: [FulfillmentDestinationElement]?? = nil,
         groups: [GroupElement]?? = nil,
         id: String? = nil,
@@ -4165,16 +4218,17 @@ public extension MethodElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - Item
+
 public struct Item: Codable, Sendable {
     /// The product identifier, often the SKU, required to resolve the product details associated
     /// with this line item. Should be recognized by both the Platform, and the Business.
@@ -4202,23 +4256,23 @@ public struct Item: Codable, Sendable {
 
 // MARK: Item convenience initializers and mutators
 
-public extension Item {
-    init(data: Data) throws {
+extension Item {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Item.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         imageURL: String?? = nil,
         price: Int? = nil,
@@ -4232,17 +4286,18 @@ public extension Item {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Line item object. Expected to use the currency of the parent object.
 // MARK: - LineItem
+
 public struct LineItem: Codable, Sendable {
     public let id: String
     public let item: ItemClass
@@ -4270,23 +4325,23 @@ public struct LineItem: Codable, Sendable {
 
 // MARK: LineItem convenience initializers and mutators
 
-public extension LineItem {
-    init(data: Data) throws {
+extension LineItem {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(LineItem.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         item: ItemClass? = nil,
         parentID: String?? = nil,
@@ -4302,16 +4357,17 @@ public extension LineItem {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - Link
+
 public struct Link: Codable, Sendable {
     /// Optional display text for the link. When provided, use this instead of generating from
     /// type.
@@ -4332,23 +4388,23 @@ public struct Link: Codable, Sendable {
 
 // MARK: Link convenience initializers and mutators
 
-public extension Link {
-    init(data: Data) throws {
+extension Link {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Link.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         title: String?? = nil,
         type: String? = nil,
         url: String? = nil
@@ -4360,17 +4416,18 @@ public extension Link {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Merchant's fulfillment configuration.
 // MARK: - MerchantFulfillmentConfig
+
 public struct MerchantFulfillmentConfig: Codable, Sendable {
     /// Allowed method type combinations.
     public let allowsMethodCombinations: [[TypeElement]]?
@@ -4390,23 +4447,23 @@ public struct MerchantFulfillmentConfig: Codable, Sendable {
 
 // MARK: MerchantFulfillmentConfig convenience initializers and mutators
 
-public extension MerchantFulfillmentConfig {
-    init(data: Data) throws {
+extension MerchantFulfillmentConfig {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(MerchantFulfillmentConfig.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         allowsMethodCombinations: [[TypeElement]]?? = nil,
         allowsMultiDestination: MerchantFulfillmentConfigAllowsMultiDestination?? = nil
     ) -> MerchantFulfillmentConfig {
@@ -4416,17 +4473,18 @@ public extension MerchantFulfillmentConfig {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Permits multiple destinations per method type.
 // MARK: - MerchantFulfillmentConfigAllowsMultiDestination
+
 public struct MerchantFulfillmentConfigAllowsMultiDestination: Codable, Sendable {
     /// Multiple pickup locations allowed.
     public let pickup: Bool?
@@ -4441,23 +4499,23 @@ public struct MerchantFulfillmentConfigAllowsMultiDestination: Codable, Sendable
 
 // MARK: MerchantFulfillmentConfigAllowsMultiDestination convenience initializers and mutators
 
-public extension MerchantFulfillmentConfigAllowsMultiDestination {
-    init(data: Data) throws {
+extension MerchantFulfillmentConfigAllowsMultiDestination {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(MerchantFulfillmentConfigAllowsMultiDestination.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         pickup: Bool?? = nil,
         shipping: Bool?? = nil
     ) -> MerchantFulfillmentConfigAllowsMultiDestination {
@@ -4467,16 +4525,17 @@ public extension MerchantFulfillmentConfigAllowsMultiDestination {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - MessageError
+
 public struct MessageError: Codable, Sendable {
     public let code: String
     /// Human-readable message.
@@ -4514,23 +4573,23 @@ public struct MessageError: Codable, Sendable {
 
 // MARK: MessageError convenience initializers and mutators
 
-public extension MessageError {
-    init(data: Data) throws {
+extension MessageError {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(MessageError.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         code: String? = nil,
         content: String? = nil,
         contentType: ContentType?? = nil,
@@ -4548,16 +4607,17 @@ public extension MessageError {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - MessageInfo
+
 public struct MessageInfo: Codable, Sendable {
     /// Info code for programmatic handling.
     public let code: String?
@@ -4587,23 +4647,23 @@ public struct MessageInfo: Codable, Sendable {
 
 // MARK: MessageInfo convenience initializers and mutators
 
-public extension MessageInfo {
-    init(data: Data) throws {
+extension MessageInfo {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(MessageInfo.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         code: String?? = nil,
         content: String? = nil,
         contentType: ContentType?? = nil,
@@ -4619,20 +4679,21 @@ public extension MessageInfo {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 public enum MessageInfoType: String, Codable, Sendable {
-    case info = "info"
+    case info
 }
 
 // MARK: - MessageWarning
+
 public struct MessageWarning: Codable, Sendable {
     /// Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
     /// fulfillment_changed, age_restricted, etc.).
@@ -4675,23 +4736,23 @@ public struct MessageWarning: Codable, Sendable {
 
 // MARK: MessageWarning convenience initializers and mutators
 
-public extension MessageWarning {
-    init(data: Data) throws {
+extension MessageWarning {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(MessageWarning.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         code: String? = nil,
         content: String? = nil,
         contentType: ContentType?? = nil,
@@ -4713,21 +4774,22 @@ public extension MessageWarning {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 public enum MessageWarningType: String, Codable, Sendable {
-    case warning = "warning"
+    case warning
 }
 
 /// Container for error, warning, or info messages.
 // MARK: - Message
+
 public struct Message: Codable, Sendable {
     /// Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
     /// fulfillment_changed, age_restricted, etc.).
@@ -4788,23 +4850,23 @@ public struct Message: Codable, Sendable {
 
 // MARK: Message convenience initializers and mutators
 
-public extension Message {
-    init(data: Data) throws {
+extension Message {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Message.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         code: String?? = nil,
         content: String? = nil,
         contentType: ContentType?? = nil,
@@ -4828,17 +4890,18 @@ public extension Message {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Order details available at the time of checkout completion.
 // MARK: - OrderConfirmation
+
 public struct OrderConfirmation: Codable, Sendable {
     /// Unique order identifier.
     public let id: String
@@ -4861,23 +4924,23 @@ public struct OrderConfirmation: Codable, Sendable {
 
 // MARK: OrderConfirmation convenience initializers and mutators
 
-public extension OrderConfirmation {
-    init(data: Data) throws {
+extension OrderConfirmation {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(OrderConfirmation.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         label: String?? = nil,
         permalinkURL: String? = nil
@@ -4889,16 +4952,17 @@ public extension OrderConfirmation {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - OrderLineItem
+
 public struct OrderLineItem: Codable, Sendable {
     /// Line item identifier.
     public let id: String
@@ -4933,23 +4997,23 @@ public struct OrderLineItem: Codable, Sendable {
 
 // MARK: OrderLineItem convenience initializers and mutators
 
-public extension OrderLineItem {
-    init(data: Data) throws {
+extension OrderLineItem {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(OrderLineItem.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         item: ItemClass? = nil,
         parentID: String?? = nil,
@@ -4967,17 +5031,18 @@ public extension OrderLineItem {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Quantity tracking for the line item.
 // MARK: - OrderLineItemQuantity
+
 public struct OrderLineItemQuantity: Codable, Sendable {
     /// Quantity fulfilled so far.
     public let fulfilled: Int
@@ -4996,23 +5061,23 @@ public struct OrderLineItemQuantity: Codable, Sendable {
 
 // MARK: OrderLineItemQuantity convenience initializers and mutators
 
-public extension OrderLineItemQuantity {
-    init(data: Data) throws {
+extension OrderLineItemQuantity {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(OrderLineItemQuantity.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         fulfilled: Int? = nil,
         original: Int?? = nil,
         total: Int? = nil
@@ -5024,12 +5089,12 @@ public extension OrderLineItemQuantity {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -5037,14 +5102,15 @@ public extension OrderLineItemQuantity {
 /// quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
 /// quantity.fulfilled > 0, otherwise processing.
 public enum OrderLineItemStatus: String, Codable, Sendable {
-    case fulfilled = "fulfilled"
-    case partial = "partial"
-    case processing = "processing"
-    case removed = "removed"
+    case fulfilled
+    case partial
+    case processing
+    case removed
 }
 
 /// The base definition for any payment credential. Handlers define specific credential types.
 // MARK: - PaymentCredential
+
 public struct PaymentCredential: Codable, Sendable {
     /// The credential type discriminator. Specific schemas will constrain this to a constant
     /// value.
@@ -5057,23 +5123,23 @@ public struct PaymentCredential: Codable, Sendable {
 
 // MARK: PaymentCredential convenience initializers and mutators
 
-public extension PaymentCredential {
-    init(data: Data) throws {
+extension PaymentCredential {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentCredential.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         type: String? = nil
     ) -> PaymentCredential {
         return PaymentCredential(
@@ -5081,18 +5147,19 @@ public extension PaymentCredential {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Identity of a participant for token binding. The access_token uniquely identifies the
 /// participant who tokens should be bound to.
 // MARK: - PaymentIdentity
+
 public struct PaymentIdentity: Codable, Sendable {
     /// Unique identifier for this participant, obtained during onboarding with the tokenizer.
     public let accessToken: String
@@ -5108,23 +5175,23 @@ public struct PaymentIdentity: Codable, Sendable {
 
 // MARK: PaymentIdentity convenience initializers and mutators
 
-public extension PaymentIdentity {
-    init(data: Data) throws {
+extension PaymentIdentity {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentIdentity.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         accessToken: String? = nil
     ) -> PaymentIdentity {
         return PaymentIdentity(
@@ -5132,18 +5199,19 @@ public extension PaymentIdentity {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// The base definition for any payment instrument. It links the instrument to a specific
 /// payment handler.
 // MARK: - PaymentInstrument
+
 public struct PaymentInstrument: Codable, Sendable {
     /// The billing address associated with this payment method.
     public let billingAddress: BillingAddressClass?
@@ -5179,23 +5247,23 @@ public struct PaymentInstrument: Codable, Sendable {
 
 // MARK: PaymentInstrument convenience initializers and mutators
 
-public extension PaymentInstrument {
-    init(data: Data) throws {
+extension PaymentInstrument {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentInstrument.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         billingAddress: BillingAddressClass?? = nil,
         credential: CredentialClass?? = nil,
         display: [String: JSONAny]?? = nil,
@@ -5213,17 +5281,18 @@ public extension PaymentInstrument {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Platform's fulfillment configuration.
 // MARK: - PlatformFulfillmentConfig
+
 public struct PlatformFulfillmentConfig: Codable, Sendable {
     /// Enables multiple groups per method.
     public let supportsMultiGroup: Bool?
@@ -5239,23 +5308,23 @@ public struct PlatformFulfillmentConfig: Codable, Sendable {
 
 // MARK: PlatformFulfillmentConfig convenience initializers and mutators
 
-public extension PlatformFulfillmentConfig {
-    init(data: Data) throws {
+extension PlatformFulfillmentConfig {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PlatformFulfillmentConfig.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         supportsMultiGroup: Bool?? = nil
     ) -> PlatformFulfillmentConfig {
         return PlatformFulfillmentConfig(
@@ -5263,16 +5332,17 @@ public extension PlatformFulfillmentConfig {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - PostalAddress
+
 public struct PostalAddress: Codable, Sendable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -5325,23 +5395,23 @@ public struct PostalAddress: Codable, Sendable {
 
 // MARK: PostalAddress convenience initializers and mutators
 
-public extension PostalAddress {
-    init(data: Data) throws {
+extension PostalAddress {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PostalAddress.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         addressCountry: String?? = nil,
         addressLocality: String?? = nil,
         addressRegion: String?? = nil,
@@ -5365,17 +5435,18 @@ public extension PostalAddress {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A pickup location (retail store, locker, etc.).
 // MARK: - RetailLocation
+
 public struct RetailLocation: Codable, Sendable {
     /// Physical address of the location.
     public let address: BillingAddressClass?
@@ -5393,23 +5464,23 @@ public struct RetailLocation: Codable, Sendable {
 
 // MARK: RetailLocation convenience initializers and mutators
 
-public extension RetailLocation {
-    init(data: Data) throws {
+extension RetailLocation {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(RetailLocation.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         address: BillingAddressClass?? = nil,
         id: String? = nil,
         name: String? = nil
@@ -5421,12 +5492,12 @@ public extension RetailLocation {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -5438,6 +5509,7 @@ public extension RetailLocation {
 ///
 /// Physical address of the location.
 // MARK: - ShippingDestination
+
 public struct ShippingDestination: Codable, Sendable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -5494,23 +5566,23 @@ public struct ShippingDestination: Codable, Sendable {
 
 // MARK: ShippingDestination convenience initializers and mutators
 
-public extension ShippingDestination {
-    init(data: Data) throws {
+extension ShippingDestination {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ShippingDestination.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         addressCountry: String?? = nil,
         addressLocality: String?? = nil,
         addressRegion: String?? = nil,
@@ -5536,12 +5608,12 @@ public extension ShippingDestination {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -5551,6 +5623,7 @@ public extension ShippingDestination {
 /// use reverse-domain naming to ensure provenance and prevent collisions when multiple
 /// extensions contribute to the shared namespace.
 // MARK: - Signals
+
 public struct Signals: Codable, Sendable {
     /// Client's IP address (IPv4 or IPv6).
     public let devUcpBuyerIP: String?
@@ -5570,23 +5643,23 @@ public struct Signals: Codable, Sendable {
 
 // MARK: Signals convenience initializers and mutators
 
-public extension Signals {
-    init(data: Data) throws {
+extension Signals {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Signals.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         devUcpBuyerIP: String?? = nil,
         devUcpUserAgent: String?? = nil
     ) -> Signals {
@@ -5596,12 +5669,12 @@ public extension Signals {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -5610,6 +5683,7 @@ public extension Signals {
 ///
 /// The base definition for any payment credential. Handlers define specific credential types.
 // MARK: - TokenCredential
+
 public struct TokenCredential: Codable, Sendable {
     /// The credential type discriminator. Specific schemas will constrain this to a constant
     /// value.
@@ -5627,23 +5701,23 @@ public struct TokenCredential: Codable, Sendable {
 
 // MARK: TokenCredential convenience initializers and mutators
 
-public extension TokenCredential {
-    init(data: Data) throws {
+extension TokenCredential {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(TokenCredential.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         type: String? = nil,
         token: String? = nil
     ) -> TokenCredential {
@@ -5653,17 +5727,18 @@ public extension TokenCredential {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// A cost breakdown entry with a category, amount, and optional display text.
 // MARK: - Total
+
 public struct Total: Codable, Sendable {
     public let amount: Int
     /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
@@ -5688,23 +5763,23 @@ public struct Total: Codable, Sendable {
 
 // MARK: Total convenience initializers and mutators
 
-public extension Total {
-    init(data: Data) throws {
+extension Total {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Total.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         amount: Int? = nil,
         displayText: String?? = nil,
         type: String? = nil
@@ -5716,12 +5791,12 @@ public extension Total {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -5731,6 +5806,7 @@ public extension Total {
 ///
 /// A cost breakdown entry with a category, amount, and optional display text.
 // MARK: - TotalElement
+
 public struct TotalElement: Codable, Sendable {
     public let amount: Int
     /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
@@ -5759,23 +5835,23 @@ public struct TotalElement: Codable, Sendable {
 
 // MARK: TotalElement convenience initializers and mutators
 
-public extension TotalElement {
-    init(data: Data) throws {
+extension TotalElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(TotalElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         amount: Int? = nil,
         displayText: String?? = nil,
         type: String? = nil,
@@ -5789,17 +5865,18 @@ public extension TotalElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Sub-line entry. Additional metadata MAY be included.
 // MARK: - TotalLineClass
+
 public struct TotalLineClass: Codable, Sendable {
     public let amount: Int
     /// Human-readable label for this sub-line.
@@ -5818,23 +5895,23 @@ public struct TotalLineClass: Codable, Sendable {
 
 // MARK: TotalLineClass convenience initializers and mutators
 
-public extension TotalLineClass {
-    init(data: Data) throws {
+extension TotalLineClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(TotalLineClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         amount: Int? = nil,
         displayText: String? = nil
     ) -> TotalLineClass {
@@ -5844,17 +5921,18 @@ public extension TotalLineClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Payment configuration containing handlers.
 // MARK: - Payment
+
 public struct Payment: Codable, Sendable {
     /// The payment instruments available for this payment. Each instrument is associated with a
     /// specific handler via the handler_id field. Handlers can extend the base
@@ -5868,23 +5946,23 @@ public struct Payment: Codable, Sendable {
 
 // MARK: Payment convenience initializers and mutators
 
-public extension Payment {
-    init(data: Data) throws {
+extension Payment {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Payment.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         instruments: [PaymentSelectedPaymentInstrument]?? = nil
     ) -> Payment {
         return Payment(
@@ -5892,17 +5970,18 @@ public extension Payment {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Order schema with line items, buyer-facing fulfillment expectations, and event logs.
 // MARK: - Order
+
 public struct Order: Codable, Sendable {
     /// Post-order events (refunds, returns, credits, disputes, cancellations, etc.) that exist
     /// independently of fulfillment.
@@ -5955,23 +6034,23 @@ public struct Order: Codable, Sendable {
 
 // MARK: Order convenience initializers and mutators
 
-public extension Order {
-    init(data: Data) throws {
+extension Order {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Order.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         adjustments: [AdjustmentElement]?? = nil,
         checkoutID: String? = nil,
         currency: String? = nil,
@@ -5999,12 +6078,12 @@ public extension Order {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -6012,6 +6091,7 @@ public extension Order {
 /// movements but can be any post-order change. Polymorphic type that can optionally
 /// reference line items.
 // MARK: - AdjustmentElement
+
 public struct AdjustmentElement: Codable, Sendable {
     /// Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
     public let description: String?
@@ -6051,23 +6131,23 @@ public struct AdjustmentElement: Codable, Sendable {
 
 // MARK: AdjustmentElement convenience initializers and mutators
 
-public extension AdjustmentElement {
-    init(data: Data) throws {
+extension AdjustmentElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(AdjustmentElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         description: String?? = nil,
         id: String? = nil,
         lineItems: [AdjustmentLineItemClass]?? = nil,
@@ -6087,16 +6167,17 @@ public extension AdjustmentElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - AdjustmentLineItemClass
+
 public struct AdjustmentLineItemClass: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
@@ -6112,23 +6193,23 @@ public struct AdjustmentLineItemClass: Codable, Sendable {
 
 // MARK: AdjustmentLineItemClass convenience initializers and mutators
 
-public extension AdjustmentLineItemClass {
-    init(data: Data) throws {
+extension AdjustmentLineItemClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(AdjustmentLineItemClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         quantity: Int? = nil
     ) -> AdjustmentLineItemClass {
@@ -6138,17 +6219,18 @@ public extension AdjustmentLineItemClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Fulfillment data: buyer expectations and what actually happened.
 // MARK: - FulfillmentClass
+
 public struct FulfillmentClass: Codable, Sendable {
     /// Append-only event log of actual shipments. Each event references line items by ID.
     public let events: [EventElement]?
@@ -6164,23 +6246,23 @@ public struct FulfillmentClass: Codable, Sendable {
 
 // MARK: FulfillmentClass convenience initializers and mutators
 
-public extension FulfillmentClass {
-    init(data: Data) throws {
+extension FulfillmentClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(FulfillmentClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         events: [EventElement]?? = nil,
         expectations: [ExpectationElement]?? = nil
     ) -> FulfillmentClass {
@@ -6190,18 +6272,19 @@ public extension FulfillmentClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Append-only fulfillment event representing an actual shipment. References line items by
 /// ID.
 // MARK: - EventElement
+
 public struct EventElement: Codable, Sendable {
     /// Carrier name (e.g., 'FedEx', 'USPS').
     public let carrier: String?
@@ -6247,23 +6330,23 @@ public struct EventElement: Codable, Sendable {
 
 // MARK: EventElement convenience initializers and mutators
 
-public extension EventElement {
-    init(data: Data) throws {
+extension EventElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(EventElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         carrier: String?? = nil,
         description: String?? = nil,
         id: String? = nil,
@@ -6285,16 +6368,17 @@ public extension EventElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - EventLineItem
+
 public struct EventLineItem: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
@@ -6309,23 +6393,23 @@ public struct EventLineItem: Codable, Sendable {
 
 // MARK: EventLineItem convenience initializers and mutators
 
-public extension EventLineItem {
-    init(data: Data) throws {
+extension EventLineItem {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(EventLineItem.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         quantity: Int? = nil
     ) -> EventLineItem {
@@ -6335,12 +6419,12 @@ public extension EventLineItem {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -6348,6 +6432,7 @@ public extension EventLineItem {
 /// 'package'). Can be split, merged, or adjusted post-order to set buyer expectations for
 /// when/how items arrive.
 // MARK: - ExpectationElement
+
 public struct ExpectationElement: Codable, Sendable {
     /// Human-readable delivery description (e.g., 'Arrives in 5-8 business days').
     public let description: String?
@@ -6383,23 +6468,23 @@ public struct ExpectationElement: Codable, Sendable {
 
 // MARK: ExpectationElement convenience initializers and mutators
 
-public extension ExpectationElement {
-    init(data: Data) throws {
+extension ExpectationElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ExpectationElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         description: String?? = nil,
         destination: BillingAddressClass? = nil,
         fulfillableOn: String?? = nil,
@@ -6417,16 +6502,17 @@ public extension ExpectationElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - ExpectationLineItemClass
+
 public struct ExpectationLineItemClass: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
@@ -6441,23 +6527,23 @@ public struct ExpectationLineItemClass: Codable, Sendable {
 
 // MARK: ExpectationLineItemClass convenience initializers and mutators
 
-public extension ExpectationLineItemClass {
-    init(data: Data) throws {
+extension ExpectationLineItemClass {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(ExpectationLineItemClass.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         quantity: Int? = nil
     ) -> ExpectationLineItemClass {
@@ -6467,16 +6553,17 @@ public extension ExpectationLineItemClass {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 // MARK: - LineItemElement
+
 public struct LineItemElement: Codable, Sendable {
     /// Line item identifier.
     public let id: String
@@ -6511,23 +6598,23 @@ public struct LineItemElement: Codable, Sendable {
 
 // MARK: LineItemElement convenience initializers and mutators
 
-public extension LineItemElement {
-    init(data: Data) throws {
+extension LineItemElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(LineItemElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         id: String? = nil,
         item: ItemClass? = nil,
         parentID: String?? = nil,
@@ -6545,17 +6632,18 @@ public extension LineItemElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Quantity tracking for the line item.
 // MARK: - LineItemQuantity
+
 public struct LineItemQuantity: Codable, Sendable {
     /// Quantity fulfilled so far.
     public let fulfilled: Int
@@ -6574,23 +6662,23 @@ public struct LineItemQuantity: Codable, Sendable {
 
 // MARK: LineItemQuantity convenience initializers and mutators
 
-public extension LineItemQuantity {
-    init(data: Data) throws {
+extension LineItemQuantity {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(LineItemQuantity.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         fulfilled: Int? = nil,
         original: Int?? = nil,
         total: Int? = nil
@@ -6602,12 +6690,12 @@ public extension LineItemQuantity {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -6615,6 +6703,7 @@ public extension LineItemQuantity {
 ///
 /// Base UCP metadata with shared properties for all schema types.
 // MARK: - UCPOrderResponseSchema
+
 public struct UCPOrderResponseSchema: Codable, Sendable {
     /// Capability registry keyed by reverse-domain name.
     public let capabilities: [String: [CapabilityResponseSchema]]?
@@ -6643,23 +6732,23 @@ public struct UCPOrderResponseSchema: Codable, Sendable {
 
 // MARK: UCPOrderResponseSchema convenience initializers and mutators
 
-public extension UCPOrderResponseSchema {
-    init(data: Data) throws {
+extension UCPOrderResponseSchema {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(UCPOrderResponseSchema.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
         services: [String: [UCPOrderResponseSchemaService]]?? = nil,
@@ -6675,12 +6764,12 @@ public extension UCPOrderResponseSchema {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -6689,6 +6778,7 @@ public extension UCPOrderResponseSchema {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - InstrumentsChangeResult
+
 public struct InstrumentsChangeResult: Codable, Sendable {
     /// Partial checkout update with payment instrument selection.
     public let checkout: InstrumentsChangeCheckout?
@@ -6715,23 +6805,23 @@ public struct InstrumentsChangeResult: Codable, Sendable {
 
 // MARK: InstrumentsChangeResult convenience initializers and mutators
 
-public extension InstrumentsChangeResult {
-    init(data: Data) throws {
+extension InstrumentsChangeResult {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(InstrumentsChangeResult.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         checkout: InstrumentsChangeCheckout?? = nil,
         ucp: InstrumentsChangeResultUcp? = nil,
         continueURL: String?? = nil,
@@ -6745,17 +6835,18 @@ public extension InstrumentsChangeResult {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Partial checkout update with payment instrument selection.
 // MARK: - InstrumentsChangeCheckout
+
 public struct InstrumentsChangeCheckout: Codable, Sendable {
     public let payment: InstrumentsChangePayment?
 
@@ -6766,23 +6857,23 @@ public struct InstrumentsChangeCheckout: Codable, Sendable {
 
 // MARK: InstrumentsChangeCheckout convenience initializers and mutators
 
-public extension InstrumentsChangeCheckout {
-    init(data: Data) throws {
+extension InstrumentsChangeCheckout {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(InstrumentsChangeCheckout.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         payment: InstrumentsChangePayment?? = nil
     ) -> InstrumentsChangeCheckout {
         return InstrumentsChangeCheckout(
@@ -6790,12 +6881,12 @@ public extension InstrumentsChangeCheckout {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -6803,6 +6894,7 @@ public extension InstrumentsChangeCheckout {
 ///
 /// Payment instruments from host.
 // MARK: - InstrumentsChangePayment
+
 public struct InstrumentsChangePayment: Codable, Sendable {
     /// Available payment instruments.
     public let instruments: [PurpleSelectedPaymentInstrument]?
@@ -6822,23 +6914,23 @@ public struct InstrumentsChangePayment: Codable, Sendable {
 
 // MARK: InstrumentsChangePayment convenience initializers and mutators
 
-public extension InstrumentsChangePayment {
-    init(data: Data) throws {
+extension InstrumentsChangePayment {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(InstrumentsChangePayment.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         instruments: [PurpleSelectedPaymentInstrument]?? = nil,
         selectedInstrumentID: String?? = nil
     ) -> InstrumentsChangePayment {
@@ -6848,12 +6940,12 @@ public extension InstrumentsChangePayment {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -6862,6 +6954,7 @@ public extension InstrumentsChangePayment {
 /// The base definition for any payment instrument. It links the instrument to a specific
 /// payment handler.
 // MARK: - PurpleSelectedPaymentInstrument
+
 public struct PurpleSelectedPaymentInstrument: Codable, Sendable {
     /// The billing address associated with this payment method.
     public let billingAddress: BillingAddressClass?
@@ -6900,23 +6993,23 @@ public struct PurpleSelectedPaymentInstrument: Codable, Sendable {
 
 // MARK: PurpleSelectedPaymentInstrument convenience initializers and mutators
 
-public extension PurpleSelectedPaymentInstrument {
-    init(data: Data) throws {
+extension PurpleSelectedPaymentInstrument {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PurpleSelectedPaymentInstrument.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         billingAddress: BillingAddressClass?? = nil,
         credential: CredentialClass?? = nil,
         display: [String: JSONAny]?? = nil,
@@ -6936,12 +7029,12 @@ public extension PurpleSelectedPaymentInstrument {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -6954,6 +7047,7 @@ public extension PurpleSelectedPaymentInstrument {
 ///
 /// UCP metadata with status 'error'. Use for response branches that carry error information.
 // MARK: - InstrumentsChangeResultUcp
+
 public struct InstrumentsChangeResultUcp: Codable, Sendable {
     /// Capability registry keyed by reverse-domain name.
     public let capabilities: [String: [CapabilityElement]]?
@@ -6982,23 +7076,23 @@ public struct InstrumentsChangeResultUcp: Codable, Sendable {
 
 // MARK: InstrumentsChangeResultUcp convenience initializers and mutators
 
-public extension InstrumentsChangeResultUcp {
-    init(data: Data) throws {
+extension InstrumentsChangeResultUcp {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(InstrumentsChangeResultUcp.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         capabilities: [String: [CapabilityElement]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerElement]]?? = nil,
         services: [String: [PurpleService]]?? = nil,
@@ -7014,12 +7108,12 @@ public extension InstrumentsChangeResultUcp {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -7028,6 +7122,7 @@ public extension InstrumentsChangeResultUcp {
 /// Capability reference in responses. Only name/version required to confirm active
 /// capabilities.
 // MARK: - CapabilityElement
+
 public struct CapabilityElement: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
@@ -7056,23 +7151,23 @@ public struct CapabilityElement: Codable, Sendable {
 
 // MARK: CapabilityElement convenience initializers and mutators
 
-public extension CapabilityElement {
-    init(data: Data) throws {
+extension CapabilityElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CapabilityElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         config: [String: JSONAny]?? = nil,
         id: String?? = nil,
         schema: String?? = nil,
@@ -7090,12 +7185,12 @@ public extension CapabilityElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -7104,6 +7199,7 @@ public extension CapabilityElement {
 /// Handler reference in responses. May include full config state for runtime usage of the
 /// handler.
 // MARK: - PaymentHandlerElement
+
 public struct PaymentHandlerElement: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
@@ -7137,23 +7233,23 @@ public struct PaymentHandlerElement: Codable, Sendable {
 
 // MARK: PaymentHandlerElement convenience initializers and mutators
 
-public extension PaymentHandlerElement {
-    init(data: Data) throws {
+extension PaymentHandlerElement {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentHandlerElement.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         config: [String: JSONAny]?? = nil,
         id: String? = nil,
         schema: String?? = nil,
@@ -7171,17 +7267,18 @@ public extension PaymentHandlerElement {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// An instrument type available from a payment handler with optional constraints.
 // MARK: - PaymentHandlerAvailableInstrument
+
 public struct PaymentHandlerAvailableInstrument: Codable, Sendable {
     /// Constraints on this instrument type. Structure depends on instrument type and active
     /// capabilities.
@@ -7198,23 +7295,23 @@ public struct PaymentHandlerAvailableInstrument: Codable, Sendable {
 
 // MARK: PaymentHandlerAvailableInstrument convenience initializers and mutators
 
-public extension PaymentHandlerAvailableInstrument {
-    init(data: Data) throws {
+extension PaymentHandlerAvailableInstrument {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PaymentHandlerAvailableInstrument.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         constraints: [String: JSONAny]?? = nil,
         type: String? = nil
     ) -> PaymentHandlerAvailableInstrument {
@@ -7224,17 +7321,18 @@ public extension PaymentHandlerAvailableInstrument {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Shared foundation for all UCP entities.
 // MARK: - PurpleService
+
 public struct PurpleService: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
@@ -7265,23 +7363,23 @@ public struct PurpleService: Codable, Sendable {
 
 // MARK: PurpleService convenience initializers and mutators
 
-public extension PurpleService {
-    init(data: Data) throws {
+extension PurpleService {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(PurpleService.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         config: [String: JSONAny]?? = nil,
         id: String?? = nil,
         schema: String?? = nil,
@@ -7301,12 +7399,12 @@ public extension PurpleService {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -7315,6 +7413,7 @@ public extension PurpleService {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - CredentialResult
+
 public struct CredentialResult: Codable, Sendable {
     /// Partial checkout update with payment credential.
     public let checkout: CredentialCheckout?
@@ -7341,23 +7440,23 @@ public struct CredentialResult: Codable, Sendable {
 
 // MARK: CredentialResult convenience initializers and mutators
 
-public extension CredentialResult {
-    init(data: Data) throws {
+extension CredentialResult {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CredentialResult.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         checkout: CredentialCheckout?? = nil,
         ucp: InstrumentsChangeResultUcp? = nil,
         continueURL: String?? = nil,
@@ -7371,17 +7470,18 @@ public extension CredentialResult {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Partial checkout update with payment credential.
 // MARK: - CredentialCheckout
+
 public struct CredentialCheckout: Codable, Sendable {
     public let payment: CredentialPayment?
 
@@ -7392,23 +7492,23 @@ public struct CredentialCheckout: Codable, Sendable {
 
 // MARK: CredentialCheckout convenience initializers and mutators
 
-public extension CredentialCheckout {
-    init(data: Data) throws {
+extension CredentialCheckout {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CredentialCheckout.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         payment: CredentialPayment?? = nil
     ) -> CredentialCheckout {
         return CredentialCheckout(
@@ -7416,17 +7516,18 @@ public extension CredentialCheckout {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
 /// Payment instruments from host.
 // MARK: - CredentialPayment
+
 public struct CredentialPayment: Codable, Sendable {
     /// Available payment instruments.
     public let instruments: [PurpleSelectedPaymentInstrument]?
@@ -7438,23 +7539,23 @@ public struct CredentialPayment: Codable, Sendable {
 
 // MARK: CredentialPayment convenience initializers and mutators
 
-public extension CredentialPayment {
-    init(data: Data) throws {
+extension CredentialPayment {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(CredentialPayment.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func with(
+    public func with(
         instruments: [PurpleSelectedPaymentInstrument]?? = nil
     ) -> CredentialPayment {
         return CredentialPayment(
@@ -7462,12 +7563,12 @@ public extension CredentialPayment {
         )
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -7477,28 +7578,28 @@ public typealias ReverseDomainName = String
 public typealias SignedAmount = Int
 public typealias Totals = [TotalElement]
 
-public extension Array where Element == Totals.Element {
-    init(data: Data) throws {
+extension [Totals.Element] {
+    public init(data: Data) throws {
         self = try newJSONDecoder().decode(Totals.self, from: data)
     }
 
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+    public init(_ json: String, using encoding: String.Encoding = .utf8) throws {
         guard let data = json.data(using: encoding) else {
             throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
         }
         try self.init(data: data)
     }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    public init(fromURL url: URL) throws {
+        try self.init(data: Data(contentsOf: url))
     }
 
-    func jsonData() throws -> Data {
+    public func jsonData() throws -> Data {
         return try newJSONEncoder().encode(self)
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    public func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return try String(data: jsonData(), encoding: encoding)
     }
 }
 
@@ -7523,245 +7624,243 @@ func newJSONEncoder() -> JSONEncoder {
 // MARK: - Encode/decode helpers
 
 public class JSONNull: Codable, Hashable {
-
-    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {
-            return true
+    public static func == (_: JSONNull, _: JSONNull) -> Bool {
+        return true
     }
 
     public var hashValue: Int {
-            return 0
+        return 0
     }
 
-    public func hash(into hasher: inout Hasher) {
-            // No-op
+    public func hash(into _: inout Hasher) {
+        // No-op
     }
 
     public init() {}
 
     public required init(from decoder: Decoder) throws {
-            let container = try decoder.singleValueContainer()
-            if !container.decodeNil() {
-                    throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for JSONNull"))
-            }
+        let container = try decoder.singleValueContainer()
+        if !container.decodeNil() {
+            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for JSONNull"))
+        }
     }
 
     public func encode(to encoder: Encoder) throws {
-            var container = encoder.singleValueContainer()
-            try container.encodeNil()
+        var container = encoder.singleValueContainer()
+        try container.encodeNil()
     }
 }
 
 class JSONCodingKey: CodingKey {
     let key: String
 
-    required init?(intValue: Int) {
-            return nil
+    required init?(intValue _: Int) {
+        return nil
     }
 
     required init?(stringValue: String) {
-            key = stringValue
+        key = stringValue
     }
 
     var intValue: Int? {
-            return nil
+        return nil
     }
 
     var stringValue: String {
-            return key
+        return key
     }
 }
 
 public class JSONAny: Codable {
-
     public let value: Any
 
     static func decodingError(forCodingPath codingPath: [CodingKey]) -> DecodingError {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Cannot decode JSONAny")
-            return DecodingError.typeMismatch(JSONAny.self, context)
+        let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Cannot decode JSONAny")
+        return DecodingError.typeMismatch(JSONAny.self, context)
     }
 
     static func encodingError(forValue value: Any, codingPath: [CodingKey]) -> EncodingError {
-            let context = EncodingError.Context(codingPath: codingPath, debugDescription: "Cannot encode JSONAny")
-            return EncodingError.invalidValue(value, context)
+        let context = EncodingError.Context(codingPath: codingPath, debugDescription: "Cannot encode JSONAny")
+        return EncodingError.invalidValue(value, context)
     }
 
     static func decode(from container: SingleValueDecodingContainer) throws -> Any {
-            if let value = try? container.decode(Bool.self) {
-                    return value
-            }
-            if let value = try? container.decode(Int64.self) {
-                    return value
-            }
-            if let value = try? container.decode(Double.self) {
-                    return value
-            }
-            if let value = try? container.decode(String.self) {
-                    return value
-            }
-            if container.decodeNil() {
-                    return JSONNull()
-            }
-            throw decodingError(forCodingPath: container.codingPath)
+        if let value = try? container.decode(Bool.self) {
+            return value
+        }
+        if let value = try? container.decode(Int64.self) {
+            return value
+        }
+        if let value = try? container.decode(Double.self) {
+            return value
+        }
+        if let value = try? container.decode(String.self) {
+            return value
+        }
+        if container.decodeNil() {
+            return JSONNull()
+        }
+        throw decodingError(forCodingPath: container.codingPath)
     }
 
     static func decode(from container: inout UnkeyedDecodingContainer) throws -> Any {
-            if let value = try? container.decode(Bool.self) {
-                    return value
+        if let value = try? container.decode(Bool.self) {
+            return value
+        }
+        if let value = try? container.decode(Int64.self) {
+            return value
+        }
+        if let value = try? container.decode(Double.self) {
+            return value
+        }
+        if let value = try? container.decode(String.self) {
+            return value
+        }
+        if let value = try? container.decodeNil() {
+            if value {
+                return JSONNull()
             }
-            if let value = try? container.decode(Int64.self) {
-                    return value
-            }
-            if let value = try? container.decode(Double.self) {
-                    return value
-            }
-            if let value = try? container.decode(String.self) {
-                    return value
-            }
-            if let value = try? container.decodeNil() {
-                    if value {
-                            return JSONNull()
-                    }
-            }
-            if var container = try? container.nestedUnkeyedContainer() {
-                    return try decodeArray(from: &container)
-            }
-            if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self) {
-                    return try decodeDictionary(from: &container)
-            }
-            throw decodingError(forCodingPath: container.codingPath)
+        }
+        if var container = try? container.nestedUnkeyedContainer() {
+            return try decodeArray(from: &container)
+        }
+        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self) {
+            return try decodeDictionary(from: &container)
+        }
+        throw decodingError(forCodingPath: container.codingPath)
     }
 
     static func decode(from container: inout KeyedDecodingContainer<JSONCodingKey>, forKey key: JSONCodingKey) throws -> Any {
-            if let value = try? container.decode(Bool.self, forKey: key) {
-                    return value
+        if let value = try? container.decode(Bool.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decode(Int64.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decode(Double.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decode(String.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decodeNil(forKey: key) {
+            if value {
+                return JSONNull()
             }
-            if let value = try? container.decode(Int64.self, forKey: key) {
-                    return value
-            }
-            if let value = try? container.decode(Double.self, forKey: key) {
-                    return value
-            }
-            if let value = try? container.decode(String.self, forKey: key) {
-                    return value
-            }
-            if let value = try? container.decodeNil(forKey: key) {
-                    if value {
-                            return JSONNull()
-                    }
-            }
-            if var container = try? container.nestedUnkeyedContainer(forKey: key) {
-                    return try decodeArray(from: &container)
-            }
-            if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key) {
-                    return try decodeDictionary(from: &container)
-            }
-            throw decodingError(forCodingPath: container.codingPath)
+        }
+        if var container = try? container.nestedUnkeyedContainer(forKey: key) {
+            return try decodeArray(from: &container)
+        }
+        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key) {
+            return try decodeDictionary(from: &container)
+        }
+        throw decodingError(forCodingPath: container.codingPath)
     }
 
     static func decodeArray(from container: inout UnkeyedDecodingContainer) throws -> [Any] {
-            var arr: [Any] = []
-            while !container.isAtEnd {
-                    let value = try decode(from: &container)
-                    arr.append(value)
-            }
-            return arr
+        var arr: [Any] = []
+        while !container.isAtEnd {
+            let value = try decode(from: &container)
+            arr.append(value)
+        }
+        return arr
     }
 
     static func decodeDictionary(from container: inout KeyedDecodingContainer<JSONCodingKey>) throws -> [String: Any] {
-            var dict = [String: Any]()
-            for key in container.allKeys {
-                    let value = try decode(from: &container, forKey: key)
-                    dict[key.stringValue] = value
-            }
-            return dict
+        var dict = [String: Any]()
+        for key in container.allKeys {
+            let value = try decode(from: &container, forKey: key)
+            dict[key.stringValue] = value
+        }
+        return dict
     }
 
     static func encode(to container: inout UnkeyedEncodingContainer, array: [Any]) throws {
-            for value in array {
-                    if let value = value as? Bool {
-                            try container.encode(value)
-                    } else if let value = value as? Int64 {
-                            try container.encode(value)
-                    } else if let value = value as? Double {
-                            try container.encode(value)
-                    } else if let value = value as? String {
-                            try container.encode(value)
-                    } else if value is JSONNull {
-                            try container.encodeNil()
-                    } else if let value = value as? [Any] {
-                            var container = container.nestedUnkeyedContainer()
-                            try encode(to: &container, array: value)
-                    } else if let value = value as? [String: Any] {
-                            var container = container.nestedContainer(keyedBy: JSONCodingKey.self)
-                            try encode(to: &container, dictionary: value)
-                    } else {
-                            throw encodingError(forValue: value, codingPath: container.codingPath)
-                    }
+        for value in array {
+            if let value = value as? Bool {
+                try container.encode(value)
+            } else if let value = value as? Int64 {
+                try container.encode(value)
+            } else if let value = value as? Double {
+                try container.encode(value)
+            } else if let value = value as? String {
+                try container.encode(value)
+            } else if value is JSONNull {
+                try container.encodeNil()
+            } else if let value = value as? [Any] {
+                var container = container.nestedUnkeyedContainer()
+                try encode(to: &container, array: value)
+            } else if let value = value as? [String: Any] {
+                var container = container.nestedContainer(keyedBy: JSONCodingKey.self)
+                try encode(to: &container, dictionary: value)
+            } else {
+                throw encodingError(forValue: value, codingPath: container.codingPath)
             }
+        }
     }
 
     static func encode(to container: inout KeyedEncodingContainer<JSONCodingKey>, dictionary: [String: Any]) throws {
-            for (key, value) in dictionary {
-                    let key = JSONCodingKey(stringValue: key)!
-                    if let value = value as? Bool {
-                            try container.encode(value, forKey: key)
-                    } else if let value = value as? Int64 {
-                            try container.encode(value, forKey: key)
-                    } else if let value = value as? Double {
-                            try container.encode(value, forKey: key)
-                    } else if let value = value as? String {
-                            try container.encode(value, forKey: key)
-                    } else if value is JSONNull {
-                            try container.encodeNil(forKey: key)
-                    } else if let value = value as? [Any] {
-                            var container = container.nestedUnkeyedContainer(forKey: key)
-                            try encode(to: &container, array: value)
-                    } else if let value = value as? [String: Any] {
-                            var container = container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key)
-                            try encode(to: &container, dictionary: value)
-                    } else {
-                            throw encodingError(forValue: value, codingPath: container.codingPath)
-                    }
+        for (key, value) in dictionary {
+            let key = JSONCodingKey(stringValue: key)!
+            if let value = value as? Bool {
+                try container.encode(value, forKey: key)
+            } else if let value = value as? Int64 {
+                try container.encode(value, forKey: key)
+            } else if let value = value as? Double {
+                try container.encode(value, forKey: key)
+            } else if let value = value as? String {
+                try container.encode(value, forKey: key)
+            } else if value is JSONNull {
+                try container.encodeNil(forKey: key)
+            } else if let value = value as? [Any] {
+                var container = container.nestedUnkeyedContainer(forKey: key)
+                try encode(to: &container, array: value)
+            } else if let value = value as? [String: Any] {
+                var container = container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key)
+                try encode(to: &container, dictionary: value)
+            } else {
+                throw encodingError(forValue: value, codingPath: container.codingPath)
             }
+        }
     }
 
     static func encode(to container: inout SingleValueEncodingContainer, value: Any) throws {
-            if let value = value as? Bool {
-                    try container.encode(value)
-            } else if let value = value as? Int64 {
-                    try container.encode(value)
-            } else if let value = value as? Double {
-                    try container.encode(value)
-            } else if let value = value as? String {
-                    try container.encode(value)
-            } else if value is JSONNull {
-                    try container.encodeNil()
-            } else {
-                    throw encodingError(forValue: value, codingPath: container.codingPath)
-            }
+        if let value = value as? Bool {
+            try container.encode(value)
+        } else if let value = value as? Int64 {
+            try container.encode(value)
+        } else if let value = value as? Double {
+            try container.encode(value)
+        } else if let value = value as? String {
+            try container.encode(value)
+        } else if value is JSONNull {
+            try container.encodeNil()
+        } else {
+            throw encodingError(forValue: value, codingPath: container.codingPath)
+        }
     }
 
     public required init(from decoder: Decoder) throws {
-            if var arrayContainer = try? decoder.unkeyedContainer() {
-                    self.value = try JSONAny.decodeArray(from: &arrayContainer)
-            } else if var container = try? decoder.container(keyedBy: JSONCodingKey.self) {
-                    self.value = try JSONAny.decodeDictionary(from: &container)
-            } else {
-                    let container = try decoder.singleValueContainer()
-                    self.value = try JSONAny.decode(from: container)
-            }
+        if var arrayContainer = try? decoder.unkeyedContainer() {
+            value = try JSONAny.decodeArray(from: &arrayContainer)
+        } else if var container = try? decoder.container(keyedBy: JSONCodingKey.self) {
+            value = try JSONAny.decodeDictionary(from: &container)
+        } else {
+            let container = try decoder.singleValueContainer()
+            value = try JSONAny.decode(from: container)
+        }
     }
 
     public func encode(to encoder: Encoder) throws {
-            if let arr = self.value as? [Any] {
-                    var container = encoder.unkeyedContainer()
-                    try JSONAny.encode(to: &container, array: arr)
-            } else if let dict = self.value as? [String: Any] {
-                    var container = encoder.container(keyedBy: JSONCodingKey.self)
-                    try JSONAny.encode(to: &container, dictionary: dict)
-            } else {
-                    var container = encoder.singleValueContainer()
-                    try JSONAny.encode(to: &container, value: self.value)
-            }
+        if let arr = value as? [Any] {
+            var container = encoder.unkeyedContainer()
+            try JSONAny.encode(to: &container, array: arr)
+        } else if let dict = value as? [String: Any] {
+            var container = encoder.container(keyedBy: JSONCodingKey.self)
+            try JSONAny.encode(to: &container, dictionary: dict)
+        } else {
+            var container = encoder.singleValueContainer()
+            try JSONAny.encode(to: &container, value: value)
+        }
     }
 }
