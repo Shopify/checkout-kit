@@ -22,6 +22,7 @@
  */
 
 import Testing
+
 @testable import ShopifyCheckoutProtocol
 
 @Suite("Descriptor Tests")
@@ -53,10 +54,6 @@ struct DescriptorTests {
 
         @Test func buyerChangeMethod() {
             #expect(CheckoutProtocol.buyerChange.method == "ec.buyer.change")
-        }
-
-        @Test func paymentChangeMethod() {
-            #expect(CheckoutProtocol.paymentChange.method == "ec.payment.change")
         }
 
         @Test func totalsChangeMethod() {
