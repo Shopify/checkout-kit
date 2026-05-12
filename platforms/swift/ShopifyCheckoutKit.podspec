@@ -27,7 +27,7 @@ Pod::Spec.new do |s|
   s.subspec 'Core' do |core|
     core.source_files = [
       'Sources/ShopifyCheckoutKit/**/*.swift',
-      '../../protocol/languages/swift/Sources/ShopifyCheckoutProtocol/**/*.swift',
+      'Sources/ShopifyCheckoutProtocol/**/*.swift',
     ]
     core.resource_bundles = {
       'ShopifyCheckoutKit' => ['Sources/ShopifyCheckoutKit/Assets.xcassets']

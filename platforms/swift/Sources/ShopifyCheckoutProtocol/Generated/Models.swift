@@ -29,7 +29,7 @@
 //   let adjustment = try Adjustment(json)
 //   let amount = try Amount(json)
 //   let availablePaymentInstrument = try AvailablePaymentInstrument(json)
-//   let binding = try Binding(json)
+//   let binding = try TokenBinding(json)
 //   let businessFulfillmentConfig = try BusinessFulfillmentConfig(json)
 //   let buyer = try Buyer(json)
 //   let cardCredential = try CardCredential(json)
@@ -2055,8 +2055,8 @@ public extension AvailablePaymentInstrument {
 
 /// Binds a token to a specific checkout session and participant. Prevents token reuse across
 /// different checkouts or participants.
-// MARK: - Binding
-public struct Binding: Codable, Sendable {
+// MARK: - TokenBinding
+public struct TokenBinding: Codable, Sendable {
     /// The checkout session identifier this token is bound to.
     public let checkoutID: String
     /// The participant this token is bound to. Required when acting on behalf of another
@@ -2075,11 +2075,11 @@ public struct Binding: Codable, Sendable {
     }
 }
 
-// MARK: Binding convenience initializers and mutators
+// MARK: TokenBinding convenience initializers and mutators
 
-public extension Binding {
+public extension TokenBinding {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(Binding.self, from: data)
+        self = try newJSONDecoder().decode(TokenBinding.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -2096,8 +2096,8 @@ public extension Binding {
     func with(
         checkoutID: String? = nil,
         identity: IdentityClass?? = nil
-    ) -> Binding {
-        return Binding(
+    ) -> TokenBinding {
+        return TokenBinding(
             checkoutID: checkoutID ?? self.checkoutID,
             identity: identity ?? self.identity
         )

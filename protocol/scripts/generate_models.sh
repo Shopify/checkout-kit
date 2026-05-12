@@ -210,7 +210,7 @@ case "$LANG" in
     ;;
 
   swift)
-    OUTPUT="${REPO_ROOT}/protocol/languages/swift/Sources/ShopifyCheckoutProtocol/Generated/Models.swift"
+    OUTPUT="${REPO_ROOT}/platforms/swift/Sources/ShopifyCheckoutProtocol/Generated/Models.swift"
     quicktype \
       --lang swift \
       --swift-5-support \
@@ -227,12 +227,12 @@ case "$LANG" in
 
     # Rename types that conflict with platform or Swift stdlib names.
     # Apply the same renames as in the Kotlin generator for consistency.
-    sed -i '' \
-      -e 's/class Binding /class TokenBinding /' \
-      -e 's/struct Binding /struct TokenBinding /' \
-      -e 's/: Binding$/: TokenBinding/' \
-      -e 's/enum ColorScheme:/enum EmbeddedColorScheme:/' \
-      -e 's/\[ColorScheme\]/[EmbeddedColorScheme]/g' \
+    # Use BSD word-boundary anchors so all identifier sites match — quicktype
+    # emits `struct Binding:` (no whitespace before `:`), which previous
+    # space-anchored patterns missed.
+    sed -i '' -E \
+      -e 's/[[:<:]]Binding[[:>:]]/TokenBinding/g' \
+      -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
       "${OUTPUT}"
 
     prepend_license "swift" "${OUTPUT}"
