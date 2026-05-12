@@ -28,11 +28,13 @@ jobs:
           CURRENT_SIMULATOR_UUID=$(xcrun simctl create TestDevice "iPhone 16 Pro")
           echo "CURRENT_SIMULATOR_UUID=$CURRENT_SIMULATOR_UUID" >> "$GITHUB_ENV"
 
-      - name: Setup Node.js and pnpm
-        uses: shop/setup-javascript-action@main
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
         with:
           node-version-file: platforms/react-native/package.json
           cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
 
       - name: Cache turbo build setup
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -41,9 +43,6 @@ jobs:
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-turbo-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@c4e5b1316158f92e3d49443a9d58b31d25ac0f8f # v1.306.0
