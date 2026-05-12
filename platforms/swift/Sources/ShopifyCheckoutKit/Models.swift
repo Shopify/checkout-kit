@@ -27,6 +27,8 @@
 //   let checkout = try Checkout(json)
 //   let paymentAccountInfo = try PaymentAccountInfo(json)
 //   let adjustment = try Adjustment(json)
+//   let amount = try Amount(json)
+//   let availablePaymentInstrument = try AvailablePaymentInstrument(json)
 //   let binding = try Binding(json)
 //   let businessFulfillmentConfig = try BusinessFulfillmentConfig(json)
 //   let buyer = try Buyer(json)
@@ -34,6 +36,7 @@
 //   let cardPaymentInstrument = try CardPaymentInstrument(json)
 //   let context = try Context(json)
 //   let errorCode = try ErrorCode(json)
+//   let errorResponse = try ErrorResponse(json)
 //   let expectation = try Expectation(json)
 //   let fulfillmentAvailableMethod = try FulfillmentAvailableMethod(json)
 //   let fulfillmentDestination = try FulfillmentDestination(json)
@@ -58,9 +61,13 @@
 //   let platformFulfillmentConfig = try PlatformFulfillmentConfig(json)
 //   let postalAddress = try PostalAddress(json)
 //   let retailLocation = try RetailLocation(json)
+//   let reverseDomainName = try ReverseDomainName(json)
 //   let shippingDestination = try ShippingDestination(json)
+//   let signals = try Signals(json)
+//   let signedAmount = try SignedAmount(json)
 //   let tokenCredential = try TokenCredential(json)
 //   let total = try Total(json)
+//   let totals = try Totals(json)
 //   let payment = try Payment(json)
 //   let order = try Order(json)
 //   let instrumentsChangeResult = try InstrumentsChangeResult(json)
@@ -94,11 +101,12 @@ struct Checkout: Codable {
     /// Details about an order created for this checkout session.
     let order: OrderClass?
     let payment: PaymentClass?
+    let signals: SignalsClass?
     /// Checkout state indicating the current phase and required action. See Checkout Status
     /// lifecycle documentation for state transition details.
     let status: CheckoutStatus
     /// Different cart totals.
-    let totals: [TotalElement]
+    let totals: [CheckoutTotal]
     let ucp: UCPCheckoutResponseSchema
 
     enum CodingKeys: String, CodingKey {
@@ -108,7 +116,7 @@ struct Checkout: Codable {
         case expiresAt = "expires_at"
         case id
         case lineItems = "line_items"
-        case links, messages, order, payment, status, totals, ucp
+        case links, messages, order, payment, signals, status, totals, ucp
     }
 }
 
@@ -142,8 +150,9 @@ extension Checkout {
         messages: [MessageElement]?? = nil,
         order: OrderClass?? = nil,
         payment: PaymentClass?? = nil,
+        signals: SignalsClass?? = nil,
         status: CheckoutStatus? = nil,
-        totals: [TotalElement]? = nil,
+        totals: [CheckoutTotal]? = nil,
         ucp: UCPCheckoutResponseSchema? = nil
     ) -> Checkout {
         return Checkout(
@@ -158,6 +167,7 @@ extension Checkout {
             messages: messages ?? self.messages,
             order: order ?? self.order,
             payment: payment ?? self.payment,
+            signals: signals ?? self.signals,
             status: status ?? self.status,
             totals: totals ?? self.totals,
             ucp: ucp ?? self.ucp
@@ -234,14 +244,14 @@ extension BuyerClass {
     }
 }
 
-/// Provisional buyer signals for relevance and localization: product availability, pricing,
-/// currency, tax, shipping, payment methods, and eligibility (e.g., student or affiliation
-/// discounts). Businesses SHOULD use these values when authoritative data (e.g., address) is
-/// absent, and MAY ignore unsupported values without returning errors. Context SHOULD be
-/// non-identifying and can be disclosed progressively—coarse signals early, finer resolution
-/// as the session progresses. Higher-resolution data (shipping address, billing address)
-/// supersedes context. Platforms SHOULD progressively enhance context throughout the buyer
-/// journey.
+/// Provisional buyer signals for relevance and localization—not authoritative data.
+/// Businesses SHOULD use these values when verified inputs (e.g., shipping address) are
+/// absent, and MAY ignore or down-rank them if inconsistent with higher-confidence signals
+/// (authenticated account, risk detection) or regulatory constraints (export controls).
+/// Eligibility and policy enforcement MUST occur at checkout time using binding transaction
+/// data. Context SHOULD be non-identifying and can be disclosed progressively—coarse signals
+/// early, finer resolution as the session progresses. Higher-resolution data (shipping
+/// address, billing address) supersedes context.
 // MARK: - ContextClass
 struct ContextClass: Codable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
@@ -254,10 +264,28 @@ struct ContextClass: Codable {
     /// or another appropriate first-level Administrative division. Optional hint for progressive
     /// localization—higher-resolution data (e.g., shipping address) supersedes this value.
     let addressRegion: String?
+    /// Preferred currency (ISO 4217, e.g., 'EUR', 'USD'). Businesses determine presentment
+    /// currency from context and authoritative signals; this hint MAY inform selection in
+    /// multi-currency markets. Also serves as the denomination for price filter values —
+    /// platforms SHOULD include this field when sending price filters. Response prices include
+    /// explicit currency confirming the resolution.
+    let currency: String?
+    /// Buyer claims about eligible benefits such as loyalty membership, payment instrument
+    /// perks, and similar. Recognized claims MAY inform the Business response (e.g., member-only
+    /// product availability, adjusted pricing in catalog, provisional discounts at cart or
+    /// checkout). Businesses MUST ignore unrecognized values without error. Values MUST use
+    /// reverse-domain naming (e.g., 'com.example.loyalty_gold', 'org.school.student') and MUST
+    /// be non-identifying.
+    let eligibility: [String]?
     /// Background context describing buyer's intent (e.g., 'looking for a gift under $50', 'need
     /// something durable for outdoor use'). Informs relevance, recommendations, and
     /// personalization.
     let intent: String?
+    /// Preferred language for content. Use IETF BCP 47 language tags (e.g., 'en', 'fr-CA',
+    /// 'zh-Hans'). For REST, equivalent to Accept-Language header—platforms SHOULD fall back to
+    /// Accept-Language when this field is absent; when provided, overrides Accept-Language.
+    /// Businesses MAY return content in a different language if unavailable.
+    let language: String?
     /// The postal code. For example, 94043. Optional hint for regional
     /// refinement—higher-resolution data (e.g., shipping address) supersedes this value.
     let postalCode: String?
@@ -265,7 +293,7 @@ struct ContextClass: Codable {
     enum CodingKeys: String, CodingKey {
         case addressCountry = "address_country"
         case addressRegion = "address_region"
-        case intent
+        case currency, eligibility, intent, language
         case postalCode = "postal_code"
     }
 }
@@ -291,13 +319,19 @@ extension ContextClass {
     func with(
         addressCountry: String?? = nil,
         addressRegion: String?? = nil,
+        currency: String?? = nil,
+        eligibility: [String]?? = nil,
         intent: String?? = nil,
+        language: String?? = nil,
         postalCode: String?? = nil
     ) -> ContextClass {
         return ContextClass(
             addressCountry: addressCountry ?? self.addressCountry,
             addressRegion: addressRegion ?? self.addressRegion,
+            currency: currency ?? self.currency,
+            eligibility: eligibility ?? self.eligibility,
             intent: intent ?? self.intent,
+            language: language ?? self.language,
             postalCode: postalCode ?? self.postalCode
         )
     }
@@ -321,7 +355,7 @@ struct CheckoutLineItem: Codable {
     /// Quantity of the item being purchased.
     let quantity: Int
     /// Line item totals breakdown.
-    let totals: [TotalElement]
+    let totals: [LineItemTotal]
 
     enum CodingKeys: String, CodingKey {
         case id, item
@@ -353,7 +387,7 @@ extension CheckoutLineItem {
         item: ItemClass? = nil,
         parentID: String?? = nil,
         quantity: Int? = nil,
-        totals: [TotalElement]? = nil
+        totals: [LineItemTotal]? = nil
     ) -> CheckoutLineItem {
         return CheckoutLineItem(
             id: id ?? self.id,
@@ -381,7 +415,7 @@ struct ItemClass: Codable {
     let id: String
     /// Product image URI.
     let imageURL: String?
-    /// Unit price in minor (cents) currency units.
+    /// Unit price in ISO 4217 minor units.
     let price: Int
     /// Product title.
     let title: String
@@ -434,16 +468,16 @@ extension ItemClass {
     }
 }
 
-// MARK: - TotalElement
-struct TotalElement: Codable {
-    /// If type == total, sums subtotal - discount + fulfillment + tax + fee. Should be >= 0.
-    /// Amount in minor (cents) currency units.
+/// A cost breakdown entry with a category, amount, and optional display text.
+// MARK: - LineItemTotal
+struct LineItemTotal: Codable {
     let amount: Int
     /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
     /// 'Delivery').
     let displayText: String?
-    /// Type of total categorization.
-    let type: TotalType
+    /// Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+    /// fee, total. Businesses MAY use additional values.
+    let type: String
 
     enum CodingKeys: String, CodingKey {
         case amount
@@ -452,11 +486,11 @@ struct TotalElement: Codable {
     }
 }
 
-// MARK: TotalElement convenience initializers and mutators
+// MARK: LineItemTotal convenience initializers and mutators
 
-extension TotalElement {
+extension LineItemTotal {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(TotalElement.self, from: data)
+        self = try newJSONDecoder().decode(LineItemTotal.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -473,9 +507,9 @@ extension TotalElement {
     func with(
         amount: Int? = nil,
         displayText: String?? = nil,
-        type: TotalType? = nil
-    ) -> TotalElement {
-        return TotalElement(
+        type: String? = nil
+    ) -> LineItemTotal {
+        return LineItemTotal(
             amount: amount ?? self.amount,
             displayText: displayText ?? self.displayText,
             type: type ?? self.type
@@ -489,17 +523,6 @@ extension TotalElement {
     func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
         return String(data: try self.jsonData(), encoding: encoding)
     }
-}
-
-/// Type of total categorization.
-enum TotalType: String, Codable {
-    case discount = "discount"
-    case fee = "fee"
-    case fulfillment = "fulfillment"
-    case itemsDiscount = "items_discount"
-    case subtotal = "subtotal"
-    case tax = "tax"
-    case total = "total"
 }
 
 // MARK: - LinkElement
@@ -574,20 +597,31 @@ struct MessageElement: Codable {
     ///
     /// RFC 9535 JSONPath to the component the message refers to.
     let path: String?
-    /// Declares who resolves this error. 'recoverable': agent can fix via API.
-    /// 'requires_buyer_input': merchant requires information their API doesn't support
-    /// collecting programmatically (checkout incomplete). 'requires_buyer_review': buyer must
-    /// authorize before order placement due to policy, regulatory, or entitlement rules
-    /// (checkout complete). Errors with 'requires_*' severity contribute to 'status:
-    /// requires_escalation'.
+    /// Reflects the resource state and recommended action. 'recoverable': platform can resolve
+    /// by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+    /// information their API doesn't support collecting programmatically (checkout incomplete).
+    /// 'requires_buyer_review': buyer must authorize before order placement due to policy,
+    /// regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
+    /// retry with new resource or inputs. Errors with 'requires_*' severity contribute to
+    /// 'status: requires_escalation'.
     let severity: Severity?
     /// Message type discriminator.
     let type: MessageType
+    /// URL to a required visual element (e.g., warning symbol, energy class label).
+    let imageURL: String?
+    /// Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
+    /// dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
+    /// component, MUST NOT hide or auto-dismiss. See specification for full contract.
+    let presentation: String?
+    /// Reference URL for more information (e.g., regulatory site, registry entry, policy page).
+    let url: String?
 
     enum CodingKeys: String, CodingKey {
         case code, content
         case contentType = "content_type"
         case path, severity, type
+        case imageURL = "image_url"
+        case presentation, url
     }
 }
 
@@ -615,7 +649,10 @@ extension MessageElement {
         contentType: ContentType?? = nil,
         path: String?? = nil,
         severity: Severity?? = nil,
-        type: MessageType? = nil
+        type: MessageType? = nil,
+        imageURL: String?? = nil,
+        presentation: String?? = nil,
+        url: String?? = nil
     ) -> MessageElement {
         return MessageElement(
             code: code ?? self.code,
@@ -623,7 +660,10 @@ extension MessageElement {
             contentType: contentType ?? self.contentType,
             path: path ?? self.path,
             severity: severity ?? self.severity,
-            type: type ?? self.type
+            type: type ?? self.type,
+            imageURL: imageURL ?? self.imageURL,
+            presentation: presentation ?? self.presentation,
+            url: url ?? self.url
         )
     }
 
@@ -642,16 +682,18 @@ enum ContentType: String, Codable {
     case plain = "plain"
 }
 
-/// Declares who resolves this error. 'recoverable': agent can fix via API.
-/// 'requires_buyer_input': merchant requires information their API doesn't support
-/// collecting programmatically (checkout incomplete). 'requires_buyer_review': buyer must
-/// authorize before order placement due to policy, regulatory, or entitlement rules
-/// (checkout complete). Errors with 'requires_*' severity contribute to 'status:
-/// requires_escalation'.
+/// Reflects the resource state and recommended action. 'recoverable': platform can resolve
+/// by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+/// information their API doesn't support collecting programmatically (checkout incomplete).
+/// 'requires_buyer_review': buyer must authorize before order placement due to policy,
+/// regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
+/// retry with new resource or inputs. Errors with 'requires_*' severity contribute to
+/// 'status: requires_escalation'.
 enum Severity: String, Codable {
     case recoverable = "recoverable"
     case requiresBuyerInput = "requires_buyer_input"
     case requiresBuyerReview = "requires_buyer_review"
+    case unrecoverable = "unrecoverable"
 }
 
 enum MessageType: String, Codable {
@@ -667,11 +709,13 @@ enum MessageType: String, Codable {
 struct OrderClass: Codable {
     /// Unique order identifier.
     let id: String
+    /// Human-readable label for identifying the order. MUST only be provided by the business.
+    let label: String?
     /// Permalink to access the order on merchant site.
     let permalinkURL: String
 
     enum CodingKeys: String, CodingKey {
-        case id
+        case id, label
         case permalinkURL = "permalink_url"
     }
 }
@@ -696,10 +740,12 @@ extension OrderClass {
 
     func with(
         id: String? = nil,
+        label: String?? = nil,
         permalinkURL: String? = nil
     ) -> OrderClass {
         return OrderClass(
             id: id ?? self.id,
+            label: label ?? self.label,
             permalinkURL: permalinkURL ?? self.permalinkURL
         )
     }
@@ -719,7 +765,7 @@ struct PaymentClass: Codable {
     /// The payment instruments available for this payment. Each instrument is associated with a
     /// specific handler via the handler_id field. Handlers can extend the base
     /// payment_instrument schema to add handler-specific fields.
-    let instruments: [SelectedPaymentInstrument]?
+    let instruments: [PaymentSelectedPaymentInstrument]?
 }
 
 // MARK: PaymentClass convenience initializers and mutators
@@ -741,7 +787,7 @@ extension PaymentClass {
     }
 
     func with(
-        instruments: [SelectedPaymentInstrument]?? = nil
+        instruments: [PaymentSelectedPaymentInstrument]?? = nil
     ) -> PaymentClass {
         return PaymentClass(
             instruments: instruments ?? self.instruments
@@ -761,8 +807,8 @@ extension PaymentClass {
 ///
 /// The base definition for any payment instrument. It links the instrument to a specific
 /// payment handler.
-// MARK: - SelectedPaymentInstrument
-struct SelectedPaymentInstrument: Codable {
+// MARK: - PaymentSelectedPaymentInstrument
+struct PaymentSelectedPaymentInstrument: Codable {
     /// The billing address associated with this payment method.
     let billingAddress: BillingAddressClass?
     let credential: CredentialClass?
@@ -788,11 +834,11 @@ struct SelectedPaymentInstrument: Codable {
     }
 }
 
-// MARK: SelectedPaymentInstrument convenience initializers and mutators
+// MARK: PaymentSelectedPaymentInstrument convenience initializers and mutators
 
-extension SelectedPaymentInstrument {
+extension PaymentSelectedPaymentInstrument {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(SelectedPaymentInstrument.self, from: data)
+        self = try newJSONDecoder().decode(PaymentSelectedPaymentInstrument.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -814,8 +860,8 @@ extension SelectedPaymentInstrument {
         id: String? = nil,
         type: String? = nil,
         selected: Bool?? = nil
-    ) -> SelectedPaymentInstrument {
-        return SelectedPaymentInstrument(
+    ) -> PaymentSelectedPaymentInstrument {
+        return PaymentSelectedPaymentInstrument(
             billingAddress: billingAddress ?? self.billingAddress,
             credential: credential ?? self.credential,
             display: display ?? self.display,
@@ -973,6 +1019,61 @@ extension CredentialClass {
     }
 }
 
+/// Environment data provided by the platform to support authorization and abuse prevention.
+/// Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
+/// observation or independently verifiable third-party attestations. All signal keys MUST
+/// use reverse-domain naming to ensure provenance and prevent collisions when multiple
+/// extensions contribute to the shared namespace.
+// MARK: - SignalsClass
+struct SignalsClass: Codable {
+    /// Client's IP address (IPv4 or IPv6).
+    let devUcpBuyerIP: String?
+    /// Client's HTTP User-Agent header or equivalent.
+    let devUcpUserAgent: String?
+
+    enum CodingKeys: String, CodingKey {
+        case devUcpBuyerIP = "dev.ucp.buyer_ip"
+        case devUcpUserAgent = "dev.ucp.user_agent"
+    }
+}
+
+// MARK: SignalsClass convenience initializers and mutators
+
+extension SignalsClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(SignalsClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        devUcpBuyerIP: String?? = nil,
+        devUcpUserAgent: String?? = nil
+    ) -> SignalsClass {
+        return SignalsClass(
+            devUcpBuyerIP: devUcpBuyerIP ?? self.devUcpBuyerIP,
+            devUcpUserAgent: devUcpUserAgent ?? self.devUcpUserAgent
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
 /// Checkout state indicating the current phase and required action. See Checkout Status
 /// lifecycle documentation for state transition details.
 enum CheckoutStatus: String, Codable {
@@ -982,6 +1083,124 @@ enum CheckoutStatus: String, Codable {
     case incomplete = "incomplete"
     case readyForComplete = "ready_for_complete"
     case requiresEscalation = "requires_escalation"
+}
+
+/// Different cart totals.
+///
+/// Pricing breakdown provided by the business. MUST contain exactly one subtotal and one
+/// total entry. Detail types (tax, fee, discount, fulfillment) may appear multiple times for
+/// itemization. Platforms MUST render all entries in order using display_text and amount.
+///
+/// A cost breakdown entry with a category, amount, and optional display text.
+// MARK: - CheckoutTotal
+struct CheckoutTotal: Codable {
+    let amount: Int
+    /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
+    /// 'Delivery').
+    let displayText: String?
+    /// Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+    /// fee, total. Businesses MAY use additional values.
+    let type: String
+    /// Optional itemized breakdown. The parent entry is always rendered; lines are
+    /// supplementary. Sum of line amounts MUST equal the parent entry amount.
+    let lines: [TotalLine]?
+
+    enum CodingKeys: String, CodingKey {
+        case amount
+        case displayText = "display_text"
+        case type, lines
+    }
+}
+
+// MARK: CheckoutTotal convenience initializers and mutators
+
+extension CheckoutTotal {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(CheckoutTotal.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        amount: Int? = nil,
+        displayText: String?? = nil,
+        type: String? = nil,
+        lines: [TotalLine]?? = nil
+    ) -> CheckoutTotal {
+        return CheckoutTotal(
+            amount: amount ?? self.amount,
+            displayText: displayText ?? self.displayText,
+            type: type ?? self.type,
+            lines: lines ?? self.lines
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Sub-line entry. Additional metadata MAY be included.
+// MARK: - TotalLine
+struct TotalLine: Codable {
+    let amount: Int
+    /// Human-readable label for this sub-line.
+    let displayText: String
+
+    enum CodingKeys: String, CodingKey {
+        case amount
+        case displayText = "display_text"
+    }
+}
+
+// MARK: TotalLine convenience initializers and mutators
+
+extension TotalLine {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(TotalLine.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        amount: Int? = nil,
+        displayText: String? = nil
+    ) -> TotalLine {
+        return TotalLine(
+            amount: amount ?? self.amount,
+            displayText: displayText ?? self.displayText
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
 }
 
 /// UCP metadata for checkout responses.
@@ -995,12 +1214,14 @@ struct UCPCheckoutResponseSchema: Codable {
     let paymentHandlers: [String: [PaymentHandlerResponseSchema]]
     /// Service registry keyed by reverse-domain name.
     let services: [String: [ServiceResponseSchema]]?
+    /// Application-level status of the UCP operation.
+    let status: UCPCheckoutResponseSchemaStatus?
     let version: String
 
     enum CodingKeys: String, CodingKey {
         case capabilities
         case paymentHandlers = "payment_handlers"
-        case services, version
+        case services, status, version
     }
 }
 
@@ -1026,12 +1247,14 @@ extension UCPCheckoutResponseSchema {
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]? = nil,
         services: [String: [ServiceResponseSchema]]?? = nil,
+        status: UCPCheckoutResponseSchemaStatus?? = nil,
         version: String? = nil
     ) -> UCPCheckoutResponseSchema {
         return UCPCheckoutResponseSchema(
             capabilities: capabilities ?? self.capabilities,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
+            status: status ?? self.status,
             version: version ?? self.version
         )
     }
@@ -1159,6 +1382,14 @@ struct PaymentHandlerResponseSchema: Codable {
     let spec: String?
     /// Entity version in YYYY-MM-DD format.
     let version: String
+    /// Instrument types this handler supports, with optional constraints. When absent, every
+    /// instrument should be considered available.
+    let availableInstruments: [PaymentHandlerResponseSchemaAvailableInstrument]?
+
+    enum CodingKeys: String, CodingKey {
+        case config, id, schema, spec, version
+        case availableInstruments = "available_instruments"
+    }
 }
 
 // MARK: PaymentHandlerResponseSchema convenience initializers and mutators
@@ -1184,14 +1415,64 @@ extension PaymentHandlerResponseSchema {
         id: String? = nil,
         schema: String?? = nil,
         spec: String?? = nil,
-        version: String? = nil
+        version: String? = nil,
+        availableInstruments: [PaymentHandlerResponseSchemaAvailableInstrument]?? = nil
     ) -> PaymentHandlerResponseSchema {
         return PaymentHandlerResponseSchema(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
             spec: spec ?? self.spec,
-            version: version ?? self.version
+            version: version ?? self.version,
+            availableInstruments: availableInstruments ?? self.availableInstruments
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// An instrument type available from a payment handler with optional constraints.
+// MARK: - PaymentHandlerResponseSchemaAvailableInstrument
+struct PaymentHandlerResponseSchemaAvailableInstrument: Codable {
+    /// Constraints on this instrument type. Structure depends on instrument type and active
+    /// capabilities.
+    let constraints: [String: JSONAny]?
+    /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
+    /// schema's type constant.
+    let type: String
+}
+
+// MARK: PaymentHandlerResponseSchemaAvailableInstrument convenience initializers and mutators
+
+extension PaymentHandlerResponseSchemaAvailableInstrument {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PaymentHandlerResponseSchemaAvailableInstrument.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        constraints: [String: JSONAny]?? = nil,
+        type: String? = nil
+    ) -> PaymentHandlerResponseSchemaAvailableInstrument {
+        return PaymentHandlerResponseSchemaAvailableInstrument(
+            constraints: constraints ?? self.constraints,
+            type: type ?? self.type
         )
     }
 
@@ -1276,13 +1557,21 @@ extension ServiceResponseSchema {
 
 /// Entity-specific configuration. Structure defined by each entity's schema.
 ///
-/// Per-checkout configuration for embedded transport binding. Allows businesses to vary ECP
+/// Per-session configuration for embedded transport binding. Allows businesses to vary EP
 /// availability and delegations based on cart contents, agent authorization, or policy.
 // MARK: - EmbeddedTransportConfig
 struct EmbeddedTransportConfig: Codable {
-    /// Delegations the business allows. At service-level, declares available delegations. In
-    /// checkout responses, confirms accepted delegations for this session.
+    /// Color schemes the business supports. Hosts use ec_color_scheme query parameter to request
+    /// a scheme from this list.
+    let colorScheme: [EmbeddedColorScheme]?
+    /// Delegations the business allows. At service-level, declares available delegations. In UCP
+    /// responses, confirms accepted delegations for this session.
     let delegate: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case colorScheme = "color_scheme"
+        case delegate
+    }
 }
 
 // MARK: EmbeddedTransportConfig convenience initializers and mutators
@@ -1304,9 +1593,11 @@ extension EmbeddedTransportConfig {
     }
 
     func with(
+        colorScheme: [EmbeddedColorScheme]?? = nil,
         delegate: [String]?? = nil
     ) -> EmbeddedTransportConfig {
         return EmbeddedTransportConfig(
+            colorScheme: colorScheme ?? self.colorScheme,
             delegate: delegate ?? self.delegate
         )
     }
@@ -1320,12 +1611,23 @@ extension EmbeddedTransportConfig {
     }
 }
 
+enum EmbeddedColorScheme: String, Codable {
+    case dark = "dark"
+    case light = "light"
+}
+
 /// Transport protocol for this service binding.
 enum Transport: String, Codable {
     case a2A = "a2a"
     case embedded = "embedded"
     case mcp = "mcp"
     case rest = "rest"
+}
+
+/// Application-level status of the UCP operation.
+enum UCPCheckoutResponseSchemaStatus: String, Codable {
+    case error = "error"
+    case success = "success"
 }
 
 /// Non-sensitive backend identifiers for linking.
@@ -1375,13 +1677,11 @@ extension PaymentAccountInfo {
     }
 }
 
-/// Append-only event that exists independently of fulfillment. Typically represents money
+/// Post-order event that exists independently of fulfillment. Typically represents money
 /// movements but can be any post-order change. Polymorphic type that can optionally
 /// reference line items.
 // MARK: - Adjustment
 struct Adjustment: Codable {
-    /// Amount in minor units (cents) for refunds, credits, price adjustments (optional).
-    let amount: Int?
     /// Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
     let description: String?
     /// Adjustment event identifier.
@@ -1392,16 +1692,19 @@ struct Adjustment: Codable {
     let occurredAt: Date
     /// Adjustment status.
     let status: AdjustmentStatus
+    /// Adjustment totals breakdown. Signed values - negative for money returned to buyer
+    /// (refunds, credits), positive for additional charges (exchanges).
+    let totals: [LineItemTotal]?
     /// Type of adjustment (open string). Typically money-related like: refund, return, credit,
     /// price_adjustment, dispute, cancellation. Can be any value that makes sense for the
     /// merchant's business.
     let type: String
 
     enum CodingKeys: String, CodingKey {
-        case amount, description, id
+        case description, id
         case lineItems = "line_items"
         case occurredAt = "occurred_at"
-        case status, type
+        case status, totals, type
     }
 }
 
@@ -1424,21 +1727,21 @@ extension Adjustment {
     }
 
     func with(
-        amount: Int?? = nil,
         description: String?? = nil,
         id: String? = nil,
         lineItems: [AdjustmentLineItem]?? = nil,
         occurredAt: Date? = nil,
         status: AdjustmentStatus? = nil,
+        totals: [LineItemTotal]?? = nil,
         type: String? = nil
     ) -> Adjustment {
         return Adjustment(
-            amount: amount ?? self.amount,
             description: description ?? self.description,
             id: id ?? self.id,
             lineItems: lineItems ?? self.lineItems,
             occurredAt: occurredAt ?? self.occurredAt,
             status: status ?? self.status,
+            totals: totals ?? self.totals,
             type: type ?? self.type
         )
     }
@@ -1456,7 +1759,8 @@ extension Adjustment {
 struct AdjustmentLineItem: Codable {
     /// Line item ID reference.
     let id: String
-    /// Quantity affected by this adjustment.
+    /// Signed quantity affected by this adjustment. Negative values represent reductions (e.g.
+    /// returns); positive values represent additions (e.g. exchanges).
     let quantity: Int
 }
 
@@ -1502,6 +1806,54 @@ enum AdjustmentStatus: String, Codable {
     case completed = "completed"
     case failed = "failed"
     case pending = "pending"
+}
+
+/// An instrument type available from a payment handler with optional constraints.
+// MARK: - AvailablePaymentInstrument
+struct AvailablePaymentInstrument: Codable {
+    /// Constraints on this instrument type. Structure depends on instrument type and active
+    /// capabilities.
+    let constraints: [String: JSONAny]?
+    /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
+    /// schema's type constant.
+    let type: String
+}
+
+// MARK: AvailablePaymentInstrument convenience initializers and mutators
+
+extension AvailablePaymentInstrument {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AvailablePaymentInstrument.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        constraints: [String: JSONAny]?? = nil,
+        type: String? = nil
+    ) -> AvailablePaymentInstrument {
+        return AvailablePaymentInstrument(
+            constraints: constraints ?? self.constraints,
+            type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
 }
 
 /// Binds a token to a specific checkout session and participant. Prevents token reuse across
@@ -2038,14 +2390,14 @@ extension Display {
     }
 }
 
-/// Provisional buyer signals for relevance and localization: product availability, pricing,
-/// currency, tax, shipping, payment methods, and eligibility (e.g., student or affiliation
-/// discounts). Businesses SHOULD use these values when authoritative data (e.g., address) is
-/// absent, and MAY ignore unsupported values without returning errors. Context SHOULD be
-/// non-identifying and can be disclosed progressively—coarse signals early, finer resolution
-/// as the session progresses. Higher-resolution data (shipping address, billing address)
-/// supersedes context. Platforms SHOULD progressively enhance context throughout the buyer
-/// journey.
+/// Provisional buyer signals for relevance and localization—not authoritative data.
+/// Businesses SHOULD use these values when verified inputs (e.g., shipping address) are
+/// absent, and MAY ignore or down-rank them if inconsistent with higher-confidence signals
+/// (authenticated account, risk detection) or regulatory constraints (export controls).
+/// Eligibility and policy enforcement MUST occur at checkout time using binding transaction
+/// data. Context SHOULD be non-identifying and can be disclosed progressively—coarse signals
+/// early, finer resolution as the session progresses. Higher-resolution data (shipping
+/// address, billing address) supersedes context.
 // MARK: - Context
 struct Context: Codable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
@@ -2058,10 +2410,28 @@ struct Context: Codable {
     /// or another appropriate first-level Administrative division. Optional hint for progressive
     /// localization—higher-resolution data (e.g., shipping address) supersedes this value.
     let addressRegion: String?
+    /// Preferred currency (ISO 4217, e.g., 'EUR', 'USD'). Businesses determine presentment
+    /// currency from context and authoritative signals; this hint MAY inform selection in
+    /// multi-currency markets. Also serves as the denomination for price filter values —
+    /// platforms SHOULD include this field when sending price filters. Response prices include
+    /// explicit currency confirming the resolution.
+    let currency: String?
+    /// Buyer claims about eligible benefits such as loyalty membership, payment instrument
+    /// perks, and similar. Recognized claims MAY inform the Business response (e.g., member-only
+    /// product availability, adjusted pricing in catalog, provisional discounts at cart or
+    /// checkout). Businesses MUST ignore unrecognized values without error. Values MUST use
+    /// reverse-domain naming (e.g., 'com.example.loyalty_gold', 'org.school.student') and MUST
+    /// be non-identifying.
+    let eligibility: [String]?
     /// Background context describing buyer's intent (e.g., 'looking for a gift under $50', 'need
     /// something durable for outdoor use'). Informs relevance, recommendations, and
     /// personalization.
     let intent: String?
+    /// Preferred language for content. Use IETF BCP 47 language tags (e.g., 'en', 'fr-CA',
+    /// 'zh-Hans'). For REST, equivalent to Accept-Language header—platforms SHOULD fall back to
+    /// Accept-Language when this field is absent; when provided, overrides Accept-Language.
+    /// Businesses MAY return content in a different language if unavailable.
+    let language: String?
     /// The postal code. For example, 94043. Optional hint for regional
     /// refinement—higher-resolution data (e.g., shipping address) supersedes this value.
     let postalCode: String?
@@ -2069,7 +2439,7 @@ struct Context: Codable {
     enum CodingKeys: String, CodingKey {
         case addressCountry = "address_country"
         case addressRegion = "address_region"
-        case intent
+        case currency, eligibility, intent, language
         case postalCode = "postal_code"
     }
 }
@@ -2095,13 +2465,19 @@ extension Context {
     func with(
         addressCountry: String?? = nil,
         addressRegion: String?? = nil,
+        currency: String?? = nil,
+        eligibility: [String]?? = nil,
         intent: String?? = nil,
+        language: String?? = nil,
         postalCode: String?? = nil
     ) -> Context {
         return Context(
             addressCountry: addressCountry ?? self.addressCountry,
             addressRegion: addressRegion ?? self.addressRegion,
+            currency: currency ?? self.currency,
+            eligibility: eligibility ?? self.eligibility,
             intent: intent ?? self.intent,
+            language: language ?? self.language,
             postalCode: postalCode ?? self.postalCode
         )
     }
@@ -2113,6 +2489,202 @@ extension Context {
     func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
         return String(data: try self.jsonData(), encoding: encoding)
     }
+}
+
+/// Generic error response when business logic prevents resource creation or failed to
+/// retrieve resource. Used when no valid resource can be established.
+// MARK: - ErrorResponse
+struct ErrorResponse: Codable {
+    /// URL for buyer handoff or session recovery.
+    let continueURL: String?
+    /// Array of messages describing why the operation failed.
+    let messages: [MessageElement]
+    /// UCP protocol metadata. Status MUST be 'error' for error response.
+    let ucp: ErrorResponseUcp
+
+    enum CodingKeys: String, CodingKey {
+        case continueURL = "continue_url"
+        case messages, ucp
+    }
+}
+
+// MARK: ErrorResponse convenience initializers and mutators
+
+extension ErrorResponse {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ErrorResponse.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        continueURL: String?? = nil,
+        messages: [MessageElement]? = nil,
+        ucp: ErrorResponseUcp? = nil
+    ) -> ErrorResponse {
+        return ErrorResponse(
+            continueURL: continueURL ?? self.continueURL,
+            messages: messages ?? self.messages,
+            ucp: ucp ?? self.ucp
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// UCP protocol metadata. Status MUST be 'error' for error response.
+///
+/// UCP metadata with status 'error'. Use for response branches that carry error
+/// information.
+///
+/// Base UCP metadata with shared properties for all schema types.
+// MARK: - ErrorResponseUcp
+struct ErrorResponseUcp: Codable {
+    /// Capability registry keyed by reverse-domain name.
+    let capabilities: [String: [CapabilityResponseSchema]]?
+    /// Payment handler registry keyed by reverse-domain name.
+    let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
+    /// Service registry keyed by reverse-domain name.
+    let services: [String: [UCPOrderResponseSchemaService]]?
+    /// Application-level status of the UCP operation.
+    let status: StatusEnum
+    let version: String
+
+    enum CodingKeys: String, CodingKey {
+        case capabilities
+        case paymentHandlers = "payment_handlers"
+        case services, status, version
+    }
+}
+
+// MARK: ErrorResponseUcp convenience initializers and mutators
+
+extension ErrorResponseUcp {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ErrorResponseUcp.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        capabilities: [String: [CapabilityResponseSchema]]?? = nil,
+        paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
+        services: [String: [UCPOrderResponseSchemaService]]?? = nil,
+        status: StatusEnum? = nil,
+        version: String? = nil
+    ) -> ErrorResponseUcp {
+        return ErrorResponseUcp(
+            capabilities: capabilities ?? self.capabilities,
+            paymentHandlers: paymentHandlers ?? self.paymentHandlers,
+            services: services ?? self.services,
+            status: status ?? self.status,
+            version: version ?? self.version
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Shared foundation for all UCP entities.
+// MARK: - UCPOrderResponseSchemaService
+struct UCPOrderResponseSchemaService: Codable {
+    /// Entity-specific configuration. Structure defined by each entity's schema.
+    let config: [String: JSONAny]?
+    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
+    /// exist.
+    let id: String?
+    /// URL to JSON Schema defining this entity's structure and payloads.
+    let schema: String?
+    /// URL to human-readable specification document.
+    let spec: String?
+    /// Entity version in YYYY-MM-DD format.
+    let version: String
+    /// Endpoint URL for this transport binding.
+    let endpoint: String?
+    /// Transport protocol for this service binding.
+    let transport: Transport
+}
+
+// MARK: UCPOrderResponseSchemaService convenience initializers and mutators
+
+extension UCPOrderResponseSchemaService {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(UCPOrderResponseSchemaService.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        config: [String: JSONAny]?? = nil,
+        id: String?? = nil,
+        schema: String?? = nil,
+        spec: String?? = nil,
+        version: String? = nil,
+        endpoint: String?? = nil,
+        transport: Transport? = nil
+    ) -> UCPOrderResponseSchemaService {
+        return UCPOrderResponseSchemaService(
+            config: config ?? self.config,
+            id: id ?? self.id,
+            schema: schema ?? self.schema,
+            spec: spec ?? self.spec,
+            version: version ?? self.version,
+            endpoint: endpoint ?? self.endpoint,
+            transport: transport ?? self.transport
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Application-level status of the UCP operation.
+enum StatusEnum: String, Codable {
+    case error = "error"
 }
 
 /// Buyer-facing fulfillment expectation representing logical groupings of items (e.g.,
@@ -2623,7 +3195,7 @@ struct OptionElement: Codable {
     /// Short label (e.g., 'Express Shipping', 'Curbside Pickup').
     let title: String
     /// Fulfillment option totals breakdown.
-    let totals: [TotalElement]
+    let totals: [LineItemTotal]
 
     enum CodingKeys: String, CodingKey {
         case carrier, description
@@ -2659,7 +3231,7 @@ extension OptionElement {
         id: String? = nil,
         latestFulfillmentTime: Date?? = nil,
         title: String? = nil,
-        totals: [TotalElement]? = nil
+        totals: [LineItemTotal]? = nil
     ) -> OptionElement {
         return OptionElement(
             carrier: carrier ?? self.carrier,
@@ -2944,7 +3516,7 @@ struct FulfillmentOption: Codable {
     /// Short label (e.g., 'Express Shipping', 'Curbside Pickup').
     let title: String
     /// Fulfillment option totals breakdown.
-    let totals: [TotalElement]
+    let totals: [LineItemTotal]
 
     enum CodingKeys: String, CodingKey {
         case carrier, description
@@ -2980,7 +3552,7 @@ extension FulfillmentOption {
         id: String? = nil,
         latestFulfillmentTime: Date?? = nil,
         title: String? = nil,
-        totals: [TotalElement]? = nil
+        totals: [LineItemTotal]? = nil
     ) -> FulfillmentOption {
         return FulfillmentOption(
             carrier: carrier ?? self.carrier,
@@ -3191,7 +3763,7 @@ struct Item: Codable {
     let id: String
     /// Product image URI.
     let imageURL: String?
-    /// Unit price in minor (cents) currency units.
+    /// Unit price in ISO 4217 minor units.
     let price: Int
     /// Product title.
     let title: String
@@ -3254,7 +3826,7 @@ struct LineItem: Codable {
     /// Quantity of the item being purchased.
     let quantity: Int
     /// Line item totals breakdown.
-    let totals: [TotalElement]
+    let totals: [LineItemTotal]
 
     enum CodingKeys: String, CodingKey {
         case id, item
@@ -3286,7 +3858,7 @@ extension LineItem {
         item: ItemClass? = nil,
         parentID: String?? = nil,
         quantity: Int? = nil,
-        totals: [TotalElement]? = nil
+        totals: [LineItemTotal]? = nil
     ) -> LineItem {
         return LineItem(
             id: id ?? self.id,
@@ -3464,15 +4036,16 @@ struct MessageError: Codable {
     let contentType: ContentType?
     /// RFC 9535 JSONPath to the component the message refers to (e.g., $.items[1]).
     let path: String?
-    /// Declares who resolves this error. 'recoverable': agent can fix via API.
-    /// 'requires_buyer_input': merchant requires information their API doesn't support
-    /// collecting programmatically (checkout incomplete). 'requires_buyer_review': buyer must
-    /// authorize before order placement due to policy, regulatory, or entitlement rules
-    /// (checkout complete). Errors with 'requires_*' severity contribute to 'status:
-    /// requires_escalation'.
+    /// Reflects the resource state and recommended action. 'recoverable': platform can resolve
+    /// by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+    /// information their API doesn't support collecting programmatically (checkout incomplete).
+    /// 'requires_buyer_review': buyer must authorize before order placement due to policy,
+    /// regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
+    /// retry with new resource or inputs. Errors with 'requires_*' severity contribute to
+    /// 'status: requires_escalation'.
     let severity: Severity
     /// Message type discriminator.
-    let type: MessageErrorType
+    let type: StatusEnum
 
     enum CodingKeys: String, CodingKey {
         case code, content
@@ -3505,7 +4078,7 @@ extension MessageError {
         contentType: ContentType?? = nil,
         path: String?? = nil,
         severity: Severity? = nil,
-        type: MessageErrorType? = nil
+        type: StatusEnum? = nil
     ) -> MessageError {
         return MessageError(
             code: code ?? self.code,
@@ -3524,10 +4097,6 @@ extension MessageError {
     func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
         return String(data: try self.jsonData(), encoding: encoding)
     }
-}
-
-enum MessageErrorType: String, Codable {
-    case error = "error"
 }
 
 // MARK: - MessageInfo
@@ -3606,15 +4175,24 @@ struct MessageWarning: Codable {
     let content: String
     /// Content format, default = plain.
     let contentType: ContentType?
+    /// URL to a required visual element (e.g., warning symbol, energy class label).
+    let imageURL: String?
     /// JSONPath (RFC 9535) to related field (e.g., $.line_items[0]).
     let path: String?
+    /// Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
+    /// dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
+    /// component, MUST NOT hide or auto-dismiss. See specification for full contract.
+    let presentation: String?
     /// Message type discriminator.
     let type: MessageWarningType
+    /// Reference URL for more information (e.g., regulatory site, registry entry, policy page).
+    let url: String?
 
     enum CodingKeys: String, CodingKey {
         case code, content
         case contentType = "content_type"
-        case path, type
+        case imageURL = "image_url"
+        case path, presentation, type, url
     }
 }
 
@@ -3640,15 +4218,21 @@ extension MessageWarning {
         code: String? = nil,
         content: String? = nil,
         contentType: ContentType?? = nil,
+        imageURL: String?? = nil,
         path: String?? = nil,
-        type: MessageWarningType? = nil
+        presentation: String?? = nil,
+        type: MessageWarningType? = nil,
+        url: String?? = nil
     ) -> MessageWarning {
         return MessageWarning(
             code: code ?? self.code,
             content: content ?? self.content,
             contentType: contentType ?? self.contentType,
+            imageURL: imageURL ?? self.imageURL,
             path: path ?? self.path,
-            type: type ?? self.type
+            presentation: presentation ?? self.presentation,
+            type: type ?? self.type,
+            url: url ?? self.url
         )
     }
 
@@ -3685,20 +4269,31 @@ struct Message: Codable {
     ///
     /// RFC 9535 JSONPath to the component the message refers to.
     let path: String?
-    /// Declares who resolves this error. 'recoverable': agent can fix via API.
-    /// 'requires_buyer_input': merchant requires information their API doesn't support
-    /// collecting programmatically (checkout incomplete). 'requires_buyer_review': buyer must
-    /// authorize before order placement due to policy, regulatory, or entitlement rules
-    /// (checkout complete). Errors with 'requires_*' severity contribute to 'status:
-    /// requires_escalation'.
+    /// Reflects the resource state and recommended action. 'recoverable': platform can resolve
+    /// by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+    /// information their API doesn't support collecting programmatically (checkout incomplete).
+    /// 'requires_buyer_review': buyer must authorize before order placement due to policy,
+    /// regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
+    /// retry with new resource or inputs. Errors with 'requires_*' severity contribute to
+    /// 'status: requires_escalation'.
     let severity: Severity?
     /// Message type discriminator.
     let type: MessageType
+    /// URL to a required visual element (e.g., warning symbol, energy class label).
+    let imageURL: String?
+    /// Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
+    /// dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
+    /// component, MUST NOT hide or auto-dismiss. See specification for full contract.
+    let presentation: String?
+    /// Reference URL for more information (e.g., regulatory site, registry entry, policy page).
+    let url: String?
 
     enum CodingKeys: String, CodingKey {
         case code, content
         case contentType = "content_type"
         case path, severity, type
+        case imageURL = "image_url"
+        case presentation, url
     }
 }
 
@@ -3726,7 +4321,10 @@ extension Message {
         contentType: ContentType?? = nil,
         path: String?? = nil,
         severity: Severity?? = nil,
-        type: MessageType? = nil
+        type: MessageType? = nil,
+        imageURL: String?? = nil,
+        presentation: String?? = nil,
+        url: String?? = nil
     ) -> Message {
         return Message(
             code: code ?? self.code,
@@ -3734,7 +4332,10 @@ extension Message {
             contentType: contentType ?? self.contentType,
             path: path ?? self.path,
             severity: severity ?? self.severity,
-            type: type ?? self.type
+            type: type ?? self.type,
+            imageURL: imageURL ?? self.imageURL,
+            presentation: presentation ?? self.presentation,
+            url: url ?? self.url
         )
     }
 
@@ -3752,11 +4353,13 @@ extension Message {
 struct OrderConfirmation: Codable {
     /// Unique order identifier.
     let id: String
+    /// Human-readable label for identifying the order. MUST only be provided by the business.
+    let label: String?
     /// Permalink to access the order on merchant site.
     let permalinkURL: String
 
     enum CodingKeys: String, CodingKey {
-        case id
+        case id, label
         case permalinkURL = "permalink_url"
     }
 }
@@ -3781,10 +4384,12 @@ extension OrderConfirmation {
 
     func with(
         id: String? = nil,
+        label: String?? = nil,
         permalinkURL: String? = nil
     ) -> OrderConfirmation {
         return OrderConfirmation(
             id: id ?? self.id,
+            label: label ?? self.label,
             permalinkURL: permalinkURL ?? self.permalinkURL
         )
     }
@@ -3806,13 +4411,14 @@ struct OrderLineItem: Codable {
     let item: ItemClass
     /// Parent line item identifier for any nested structures.
     let parentID: String?
-    /// Quantity tracking. Both total and fulfilled are derived from events.
+    /// Quantity tracking for the line item.
     let quantity: OrderLineItemQuantity
-    /// Derived status: fulfilled if quantity.fulfilled == quantity.total, partial if
+    /// Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
+    /// quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
     /// quantity.fulfilled > 0, otherwise processing.
     let status: OrderLineItemStatus
     /// Line item totals breakdown.
-    let totals: [TotalElement]
+    let totals: [LineItemTotal]
 
     enum CodingKeys: String, CodingKey {
         case id, item
@@ -3845,7 +4451,7 @@ extension OrderLineItem {
         parentID: String?? = nil,
         quantity: OrderLineItemQuantity? = nil,
         status: OrderLineItemStatus? = nil,
-        totals: [TotalElement]? = nil
+        totals: [LineItemTotal]? = nil
     ) -> OrderLineItem {
         return OrderLineItem(
             id: id ?? self.id,
@@ -3866,12 +4472,15 @@ extension OrderLineItem {
     }
 }
 
-/// Quantity tracking. Both total and fulfilled are derived from events.
+/// Quantity tracking for the line item.
 // MARK: - OrderLineItemQuantity
 struct OrderLineItemQuantity: Codable {
-    /// Quantity fulfilled (sum from fulfillment events).
+    /// Quantity fulfilled so far.
     let fulfilled: Int
-    /// Current total quantity.
+    /// Quantity from the original checkout.
+    let original: Int?
+    /// Current total active quantity. May differ from original due to post-order modifications
+    /// (e.g., returns or cancellations).
     let total: Int
 }
 
@@ -3895,10 +4504,12 @@ extension OrderLineItemQuantity {
 
     func with(
         fulfilled: Int? = nil,
+        original: Int?? = nil,
         total: Int? = nil
     ) -> OrderLineItemQuantity {
         return OrderLineItemQuantity(
             fulfilled: fulfilled ?? self.fulfilled,
+            original: original ?? self.original,
             total: total ?? self.total
         )
     }
@@ -3912,12 +4523,14 @@ extension OrderLineItemQuantity {
     }
 }
 
-/// Derived status: fulfilled if quantity.fulfilled == quantity.total, partial if
+/// Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
+/// quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
 /// quantity.fulfilled > 0, otherwise processing.
 enum OrderLineItemStatus: String, Codable {
     case fulfilled = "fulfilled"
     case partial = "partial"
     case processing = "processing"
+    case removed = "removed"
 }
 
 /// The base definition for any payment credential. Handlers define specific credential types.
@@ -4370,6 +4983,61 @@ extension ShippingDestination {
     }
 }
 
+/// Environment data provided by the platform to support authorization and abuse prevention.
+/// Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
+/// observation or independently verifiable third-party attestations. All signal keys MUST
+/// use reverse-domain naming to ensure provenance and prevent collisions when multiple
+/// extensions contribute to the shared namespace.
+// MARK: - Signals
+struct Signals: Codable {
+    /// Client's IP address (IPv4 or IPv6).
+    let devUcpBuyerIP: String?
+    /// Client's HTTP User-Agent header or equivalent.
+    let devUcpUserAgent: String?
+
+    enum CodingKeys: String, CodingKey {
+        case devUcpBuyerIP = "dev.ucp.buyer_ip"
+        case devUcpUserAgent = "dev.ucp.user_agent"
+    }
+}
+
+// MARK: Signals convenience initializers and mutators
+
+extension Signals {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Signals.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        devUcpBuyerIP: String?? = nil,
+        devUcpUserAgent: String?? = nil
+    ) -> Signals {
+        return Signals(
+            devUcpBuyerIP: devUcpBuyerIP ?? self.devUcpBuyerIP,
+            devUcpUserAgent: devUcpUserAgent ?? self.devUcpUserAgent
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
 /// Base token credential schema. Concrete payment handlers may extend this schema with
 /// additional fields and define their own constraints.
 ///
@@ -4422,16 +5090,16 @@ extension TokenCredential {
     }
 }
 
+/// A cost breakdown entry with a category, amount, and optional display text.
 // MARK: - Total
 struct Total: Codable {
-    /// If type == total, sums subtotal - discount + fulfillment + tax + fee. Should be >= 0.
-    /// Amount in minor (cents) currency units.
     let amount: Int
     /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
     /// 'Delivery').
     let displayText: String?
-    /// Type of total categorization.
-    let type: TotalType
+    /// Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+    /// fee, total. Businesses MAY use additional values.
+    let type: String
 
     enum CodingKeys: String, CodingKey {
         case amount
@@ -4461,12 +5129,128 @@ extension Total {
     func with(
         amount: Int? = nil,
         displayText: String?? = nil,
-        type: TotalType? = nil
+        type: String? = nil
     ) -> Total {
         return Total(
             amount: amount ?? self.amount,
             displayText: displayText ?? self.displayText,
             type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Pricing breakdown provided by the business. MUST contain exactly one subtotal and one
+/// total entry. Detail types (tax, fee, discount, fulfillment) may appear multiple times for
+/// itemization. Platforms MUST render all entries in order using display_text and amount.
+///
+/// A cost breakdown entry with a category, amount, and optional display text.
+// MARK: - TotalElement
+struct TotalElement: Codable {
+    let amount: Int
+    /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
+    /// 'Delivery').
+    let displayText: String?
+    /// Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+    /// fee, total. Businesses MAY use additional values.
+    let type: String
+    /// Optional itemized breakdown. The parent entry is always rendered; lines are
+    /// supplementary. Sum of line amounts MUST equal the parent entry amount.
+    let lines: [TotalLineClass]?
+
+    enum CodingKeys: String, CodingKey {
+        case amount
+        case displayText = "display_text"
+        case type, lines
+    }
+}
+
+// MARK: TotalElement convenience initializers and mutators
+
+extension TotalElement {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(TotalElement.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        amount: Int? = nil,
+        displayText: String?? = nil,
+        type: String? = nil,
+        lines: [TotalLineClass]?? = nil
+    ) -> TotalElement {
+        return TotalElement(
+            amount: amount ?? self.amount,
+            displayText: displayText ?? self.displayText,
+            type: type ?? self.type,
+            lines: lines ?? self.lines
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Sub-line entry. Additional metadata MAY be included.
+// MARK: - TotalLineClass
+struct TotalLineClass: Codable {
+    let amount: Int
+    /// Human-readable label for this sub-line.
+    let displayText: String
+
+    enum CodingKeys: String, CodingKey {
+        case amount
+        case displayText = "display_text"
+    }
+}
+
+// MARK: TotalLineClass convenience initializers and mutators
+
+extension TotalLineClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(TotalLineClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        amount: Int? = nil,
+        displayText: String? = nil
+    ) -> TotalLineClass {
+        return TotalLineClass(
+            amount: amount ?? self.amount,
+            displayText: displayText ?? self.displayText
         )
     }
 
@@ -4485,7 +5269,7 @@ struct Payment: Codable {
     /// The payment instruments available for this payment. Each instrument is associated with a
     /// specific handler via the handler_id field. Handlers can extend the base
     /// payment_instrument schema to add handler-specific fields.
-    let instruments: [SelectedPaymentInstrument]?
+    let instruments: [PaymentSelectedPaymentInstrument]?
 }
 
 // MARK: Payment convenience initializers and mutators
@@ -4507,7 +5291,7 @@ extension Payment {
     }
 
     func with(
-        instruments: [SelectedPaymentInstrument]?? = nil
+        instruments: [PaymentSelectedPaymentInstrument]?? = nil
     ) -> Payment {
         return Payment(
             instruments: instruments ?? self.instruments
@@ -4523,32 +5307,39 @@ extension Payment {
     }
 }
 
-/// Order schema with immutable line items, buyer-facing fulfillment expectations, and
-/// append-only event logs.
+/// Order schema with line items, buyer-facing fulfillment expectations, and event logs.
 // MARK: - Order
 struct Order: Codable {
-    /// Append-only event log of money movements (refunds, returns, credits, disputes,
-    /// cancellations, etc.) that exist independently of fulfillment.
+    /// Post-order events (refunds, returns, credits, disputes, cancellations, etc.) that exist
+    /// independently of fulfillment.
     let adjustments: [AdjustmentElement]?
     /// Associated checkout ID for reconciliation.
     let checkoutID: String
+    /// ISO 4217 currency code. MUST match the currency from the originating checkout session.
+    let currency: String
     /// Fulfillment data: buyer expectations and what actually happened.
     let fulfillment: FulfillmentClass
     /// Unique order identifier.
     let id: String
-    /// Immutable line items — source of truth for what was ordered.
+    /// Human-readable label for identifying the order. MUST only be provided by the business.
+    let label: String?
+    /// Line items representing what was purchased — can change post-order via edits or exchanges.
     let lineItems: [LineItemElement]
+    /// Business outcome messages (errors, warnings, informational). Present when the business
+    /// needs to communicate status or issues to the platform.
+    let messages: [MessageElement]?
     /// Permalink to access the order on merchant site.
     let permalinkURL: String
     /// Different totals for the order.
-    let totals: [TotalElement]
+    let totals: [CheckoutTotal]
     let ucp: UCPOrderResponseSchema
 
     enum CodingKeys: String, CodingKey {
         case adjustments
         case checkoutID = "checkout_id"
-        case fulfillment, id
+        case currency, fulfillment, id, label
         case lineItems = "line_items"
+        case messages
         case permalinkURL = "permalink_url"
         case totals, ucp
     }
@@ -4575,19 +5366,25 @@ extension Order {
     func with(
         adjustments: [AdjustmentElement]?? = nil,
         checkoutID: String? = nil,
+        currency: String? = nil,
         fulfillment: FulfillmentClass? = nil,
         id: String? = nil,
+        label: String?? = nil,
         lineItems: [LineItemElement]? = nil,
+        messages: [MessageElement]?? = nil,
         permalinkURL: String? = nil,
-        totals: [TotalElement]? = nil,
+        totals: [CheckoutTotal]? = nil,
         ucp: UCPOrderResponseSchema? = nil
     ) -> Order {
         return Order(
             adjustments: adjustments ?? self.adjustments,
             checkoutID: checkoutID ?? self.checkoutID,
+            currency: currency ?? self.currency,
             fulfillment: fulfillment ?? self.fulfillment,
             id: id ?? self.id,
+            label: label ?? self.label,
             lineItems: lineItems ?? self.lineItems,
+            messages: messages ?? self.messages,
             permalinkURL: permalinkURL ?? self.permalinkURL,
             totals: totals ?? self.totals,
             ucp: ucp ?? self.ucp
@@ -4603,13 +5400,11 @@ extension Order {
     }
 }
 
-/// Append-only event that exists independently of fulfillment. Typically represents money
+/// Post-order event that exists independently of fulfillment. Typically represents money
 /// movements but can be any post-order change. Polymorphic type that can optionally
 /// reference line items.
 // MARK: - AdjustmentElement
 struct AdjustmentElement: Codable {
-    /// Amount in minor units (cents) for refunds, credits, price adjustments (optional).
-    let amount: Int?
     /// Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
     let description: String?
     /// Adjustment event identifier.
@@ -4620,16 +5415,19 @@ struct AdjustmentElement: Codable {
     let occurredAt: Date
     /// Adjustment status.
     let status: AdjustmentStatus
+    /// Adjustment totals breakdown. Signed values - negative for money returned to buyer
+    /// (refunds, credits), positive for additional charges (exchanges).
+    let totals: [LineItemTotal]?
     /// Type of adjustment (open string). Typically money-related like: refund, return, credit,
     /// price_adjustment, dispute, cancellation. Can be any value that makes sense for the
     /// merchant's business.
     let type: String
 
     enum CodingKeys: String, CodingKey {
-        case amount, description, id
+        case description, id
         case lineItems = "line_items"
         case occurredAt = "occurred_at"
-        case status, type
+        case status, totals, type
     }
 }
 
@@ -4652,21 +5450,21 @@ extension AdjustmentElement {
     }
 
     func with(
-        amount: Int?? = nil,
         description: String?? = nil,
         id: String? = nil,
         lineItems: [AdjustmentLineItemClass]?? = nil,
         occurredAt: Date? = nil,
         status: AdjustmentStatus? = nil,
+        totals: [LineItemTotal]?? = nil,
         type: String? = nil
     ) -> AdjustmentElement {
         return AdjustmentElement(
-            amount: amount ?? self.amount,
             description: description ?? self.description,
             id: id ?? self.id,
             lineItems: lineItems ?? self.lineItems,
             occurredAt: occurredAt ?? self.occurredAt,
             status: status ?? self.status,
+            totals: totals ?? self.totals,
             type: type ?? self.type
         )
     }
@@ -4684,7 +5482,8 @@ extension AdjustmentElement {
 struct AdjustmentLineItemClass: Codable {
     /// Line item ID reference.
     let id: String
-    /// Quantity affected by this adjustment.
+    /// Signed quantity affected by this adjustment. Negative values represent reductions (e.g.
+    /// returns); positive values represent additions (e.g. exchanges).
     let quantity: Int
 }
 
@@ -5027,13 +5826,14 @@ struct LineItemElement: Codable {
     let item: ItemClass
     /// Parent line item identifier for any nested structures.
     let parentID: String?
-    /// Quantity tracking. Both total and fulfilled are derived from events.
+    /// Quantity tracking for the line item.
     let quantity: LineItemQuantity
-    /// Derived status: fulfilled if quantity.fulfilled == quantity.total, partial if
+    /// Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
+    /// quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
     /// quantity.fulfilled > 0, otherwise processing.
     let status: OrderLineItemStatus
     /// Line item totals breakdown.
-    let totals: [TotalElement]
+    let totals: [LineItemTotal]
 
     enum CodingKeys: String, CodingKey {
         case id, item
@@ -5066,7 +5866,7 @@ extension LineItemElement {
         parentID: String?? = nil,
         quantity: LineItemQuantity? = nil,
         status: OrderLineItemStatus? = nil,
-        totals: [TotalElement]? = nil
+        totals: [LineItemTotal]? = nil
     ) -> LineItemElement {
         return LineItemElement(
             id: id ?? self.id,
@@ -5087,12 +5887,15 @@ extension LineItemElement {
     }
 }
 
-/// Quantity tracking. Both total and fulfilled are derived from events.
+/// Quantity tracking for the line item.
 // MARK: - LineItemQuantity
 struct LineItemQuantity: Codable {
-    /// Quantity fulfilled (sum from fulfillment events).
+    /// Quantity fulfilled so far.
     let fulfilled: Int
-    /// Current total quantity.
+    /// Quantity from the original checkout.
+    let original: Int?
+    /// Current total active quantity. May differ from original due to post-order modifications
+    /// (e.g., returns or cancellations).
     let total: Int
 }
 
@@ -5116,10 +5919,12 @@ extension LineItemQuantity {
 
     func with(
         fulfilled: Int? = nil,
+        original: Int?? = nil,
         total: Int? = nil
     ) -> LineItemQuantity {
         return LineItemQuantity(
             fulfilled: fulfilled ?? self.fulfilled,
+            original: original ?? self.original,
             total: total ?? self.total
         )
     }
@@ -5143,13 +5948,15 @@ struct UCPOrderResponseSchema: Codable {
     /// Payment handler registry keyed by reverse-domain name.
     let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
     /// Service registry keyed by reverse-domain name.
-    let services: [String: [Service]]?
+    let services: [String: [UCPOrderResponseSchemaService]]?
+    /// Application-level status of the UCP operation.
+    let status: UCPCheckoutResponseSchemaStatus?
     let version: String
 
     enum CodingKeys: String, CodingKey {
         case capabilities
         case paymentHandlers = "payment_handlers"
-        case services, version
+        case services, status, version
     }
 }
 
@@ -5174,13 +5981,15 @@ extension UCPOrderResponseSchema {
     func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
-        services: [String: [Service]]?? = nil,
+        services: [String: [UCPOrderResponseSchemaService]]?? = nil,
+        status: UCPCheckoutResponseSchemaStatus?? = nil,
         version: String? = nil
     ) -> UCPOrderResponseSchema {
         return UCPOrderResponseSchema(
             capabilities: capabilities ?? self.capabilities,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
+            status: status ?? self.status,
             version: version ?? self.version
         )
     }
@@ -5194,78 +6003,26 @@ extension UCPOrderResponseSchema {
     }
 }
 
-/// Shared foundation for all UCP entities.
-// MARK: - Service
-struct Service: Codable {
-    /// Entity-specific configuration. Structure defined by each entity's schema.
-    let config: [String: JSONAny]?
-    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
-    /// exist.
-    let id: String?
-    /// URL to JSON Schema defining this entity's structure and payloads.
-    let schema: String?
-    /// URL to human-readable specification document.
-    let spec: String?
-    /// Entity version in YYYY-MM-DD format.
-    let version: String
-    /// Endpoint URL for this transport binding.
-    let endpoint: String?
-    /// Transport protocol for this service binding.
-    let transport: Transport
-}
-
-// MARK: Service convenience initializers and mutators
-
-extension Service {
-    init(data: Data) throws {
-        self = try newJSONDecoder().decode(Service.self, from: data)
-    }
-
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
-        }
-        try self.init(data: data)
-    }
-
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func with(
-        config: [String: JSONAny]?? = nil,
-        id: String?? = nil,
-        schema: String?? = nil,
-        spec: String?? = nil,
-        version: String? = nil,
-        endpoint: String?? = nil,
-        transport: Transport? = nil
-    ) -> Service {
-        return Service(
-            config: config ?? self.config,
-            id: id ?? self.id,
-            schema: schema ?? self.schema,
-            spec: spec ?? self.spec,
-            version: version ?? self.version,
-            endpoint: endpoint ?? self.endpoint,
-            transport: transport ?? self.transport
-        )
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
-
 /// Checkout state after instrument selection.
+///
+/// Generic error response when business logic prevents resource creation or failed to
+/// retrieve resource. Used when no valid resource can be established.
 // MARK: - InstrumentsChangeResult
 struct InstrumentsChangeResult: Codable {
     /// Partial checkout update with payment instrument selection.
-    let checkout: InstrumentsChangeCheckout
+    let checkout: InstrumentsChangeCheckout?
+    /// UCP protocol metadata. Status MUST be 'error' for error response.
+    let ucp: InstrumentsChangeResultUcp
+    /// URL for buyer handoff or session recovery.
+    let continueURL: String?
+    /// Array of messages describing why the operation failed.
+    let messages: [MessageElement]?
+
+    enum CodingKeys: String, CodingKey {
+        case checkout, ucp
+        case continueURL = "continue_url"
+        case messages
+    }
 }
 
 // MARK: InstrumentsChangeResult convenience initializers and mutators
@@ -5287,10 +6044,16 @@ extension InstrumentsChangeResult {
     }
 
     func with(
-        checkout: InstrumentsChangeCheckout? = nil
+        checkout: InstrumentsChangeCheckout?? = nil,
+        ucp: InstrumentsChangeResultUcp? = nil,
+        continueURL: String?? = nil,
+        messages: [MessageElement]?? = nil
     ) -> InstrumentsChangeResult {
         return InstrumentsChangeResult(
-            checkout: checkout ?? self.checkout
+            checkout: checkout ?? self.checkout,
+            ucp: ucp ?? self.ucp,
+            continueURL: continueURL ?? self.continueURL,
+            messages: messages ?? self.messages
         )
     }
 
@@ -5344,9 +6107,13 @@ extension InstrumentsChangeCheckout {
     }
 }
 
+/// Payment instruments with selected instrument ID.
+///
+/// Payment instruments from host.
 // MARK: - InstrumentsChangePayment
 struct InstrumentsChangePayment: Codable {
-    let instruments: [SelectedPaymentInstrument]?
+    /// Available payment instruments.
+    let instruments: [PurpleSelectedPaymentInstrument]?
     /// ID of the selected payment instrument.
     let selectedInstrumentID: String?
 
@@ -5375,7 +6142,7 @@ extension InstrumentsChangePayment {
     }
 
     func with(
-        instruments: [SelectedPaymentInstrument]?? = nil,
+        instruments: [PurpleSelectedPaymentInstrument]?? = nil,
         selectedInstrumentID: String?? = nil
     ) -> InstrumentsChangePayment {
         return InstrumentsChangePayment(
@@ -5393,11 +6160,428 @@ extension InstrumentsChangePayment {
     }
 }
 
+/// A payment instrument with selection state.
+///
+/// The base definition for any payment instrument. It links the instrument to a specific
+/// payment handler.
+// MARK: - PurpleSelectedPaymentInstrument
+struct PurpleSelectedPaymentInstrument: Codable {
+    /// The billing address associated with this payment method.
+    let billingAddress: BillingAddressClass?
+    let credential: CredentialClass?
+    /// Display information for this payment instrument. Each payment instrument schema defines
+    /// its specific display properties, as outlined by the payment handler.
+    let display: [String: JSONAny]?
+    /// The unique identifier for the handler instance that produced this instrument. This
+    /// corresponds to the 'id' field in the Payment Handler definition.
+    let handlerID: String
+    /// A unique identifier for this instrument instance, assigned by the platform.
+    let id: String
+    /// The broad category of the instrument (e.g., 'card', 'tokenized_card'). Specific schemas
+    /// will constrain this to a constant value.
+    let type: String
+    /// Whether this instrument is selected by the user.
+    let selected: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case billingAddress = "billing_address"
+        case credential, display
+        case handlerID = "handler_id"
+        case id, type, selected
+    }
+}
+
+// MARK: PurpleSelectedPaymentInstrument convenience initializers and mutators
+
+extension PurpleSelectedPaymentInstrument {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PurpleSelectedPaymentInstrument.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        billingAddress: BillingAddressClass?? = nil,
+        credential: CredentialClass?? = nil,
+        display: [String: JSONAny]?? = nil,
+        handlerID: String? = nil,
+        id: String? = nil,
+        type: String? = nil,
+        selected: Bool?? = nil
+    ) -> PurpleSelectedPaymentInstrument {
+        return PurpleSelectedPaymentInstrument(
+            billingAddress: billingAddress ?? self.billingAddress,
+            credential: credential ?? self.credential,
+            display: display ?? self.display,
+            handlerID: handlerID ?? self.handlerID,
+            id: id ?? self.id,
+            type: type ?? self.type,
+            selected: selected ?? self.selected
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// UCP metadata with status 'success'. Use for response branches that carry the expected
+/// payload.
+///
+/// Base UCP metadata with shared properties for all schema types.
+///
+/// UCP protocol metadata. Status MUST be 'error' for error response.
+///
+/// UCP metadata with status 'error'. Use for response branches that carry error information.
+// MARK: - InstrumentsChangeResultUcp
+struct InstrumentsChangeResultUcp: Codable {
+    /// Capability registry keyed by reverse-domain name.
+    let capabilities: [String: [CapabilityElement]]?
+    /// Payment handler registry keyed by reverse-domain name.
+    let paymentHandlers: [String: [PaymentHandlerElement]]?
+    /// Service registry keyed by reverse-domain name.
+    let services: [String: [PurpleService]]?
+    /// Application-level status of the UCP operation.
+    let status: UCPCheckoutResponseSchemaStatus
+    let version: String
+
+    enum CodingKeys: String, CodingKey {
+        case capabilities
+        case paymentHandlers = "payment_handlers"
+        case services, status, version
+    }
+}
+
+// MARK: InstrumentsChangeResultUcp convenience initializers and mutators
+
+extension InstrumentsChangeResultUcp {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(InstrumentsChangeResultUcp.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        capabilities: [String: [CapabilityElement]]?? = nil,
+        paymentHandlers: [String: [PaymentHandlerElement]]?? = nil,
+        services: [String: [PurpleService]]?? = nil,
+        status: UCPCheckoutResponseSchemaStatus? = nil,
+        version: String? = nil
+    ) -> InstrumentsChangeResultUcp {
+        return InstrumentsChangeResultUcp(
+            capabilities: capabilities ?? self.capabilities,
+            paymentHandlers: paymentHandlers ?? self.paymentHandlers,
+            services: services ?? self.services,
+            status: status ?? self.status,
+            version: version ?? self.version
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Shared foundation for all UCP entities.
+///
+/// Capability reference in responses. Only name/version required to confirm active
+/// capabilities.
+// MARK: - CapabilityElement
+struct CapabilityElement: Codable {
+    /// Entity-specific configuration. Structure defined by each entity's schema.
+    let config: [String: JSONAny]?
+    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
+    /// exist.
+    let id: String?
+    /// URL to JSON Schema defining this entity's structure and payloads.
+    let schema: String?
+    /// URL to human-readable specification document.
+    let spec: String?
+    /// Entity version in YYYY-MM-DD format.
+    let version: String
+    /// Parent capability(s) this extends. Present for extensions, absent for root capabilities.
+    /// Use array for multi-parent extensions.
+    let extends: Extends?
+}
+
+// MARK: CapabilityElement convenience initializers and mutators
+
+extension CapabilityElement {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(CapabilityElement.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        config: [String: JSONAny]?? = nil,
+        id: String?? = nil,
+        schema: String?? = nil,
+        spec: String?? = nil,
+        version: String? = nil,
+        extends: Extends?? = nil
+    ) -> CapabilityElement {
+        return CapabilityElement(
+            config: config ?? self.config,
+            id: id ?? self.id,
+            schema: schema ?? self.schema,
+            spec: spec ?? self.spec,
+            version: version ?? self.version,
+            extends: extends ?? self.extends
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Shared foundation for all UCP entities.
+///
+/// Handler reference in responses. May include full config state for runtime usage of the
+/// handler.
+// MARK: - PaymentHandlerElement
+struct PaymentHandlerElement: Codable {
+    /// Entity-specific configuration. Structure defined by each entity's schema.
+    let config: [String: JSONAny]?
+    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
+    /// exist.
+    let id: String
+    /// URL to JSON Schema defining this entity's structure and payloads.
+    let schema: String?
+    /// URL to human-readable specification document.
+    let spec: String?
+    /// Entity version in YYYY-MM-DD format.
+    let version: String
+    /// Instrument types this handler supports, with optional constraints. When absent, every
+    /// instrument should be considered available.
+    let availableInstruments: [PaymentHandlerAvailableInstrument]?
+
+    enum CodingKeys: String, CodingKey {
+        case config, id, schema, spec, version
+        case availableInstruments = "available_instruments"
+    }
+}
+
+// MARK: PaymentHandlerElement convenience initializers and mutators
+
+extension PaymentHandlerElement {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PaymentHandlerElement.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        config: [String: JSONAny]?? = nil,
+        id: String? = nil,
+        schema: String?? = nil,
+        spec: String?? = nil,
+        version: String? = nil,
+        availableInstruments: [PaymentHandlerAvailableInstrument]?? = nil
+    ) -> PaymentHandlerElement {
+        return PaymentHandlerElement(
+            config: config ?? self.config,
+            id: id ?? self.id,
+            schema: schema ?? self.schema,
+            spec: spec ?? self.spec,
+            version: version ?? self.version,
+            availableInstruments: availableInstruments ?? self.availableInstruments
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// An instrument type available from a payment handler with optional constraints.
+// MARK: - PaymentHandlerAvailableInstrument
+struct PaymentHandlerAvailableInstrument: Codable {
+    /// Constraints on this instrument type. Structure depends on instrument type and active
+    /// capabilities.
+    let constraints: [String: JSONAny]?
+    /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
+    /// schema's type constant.
+    let type: String
+}
+
+// MARK: PaymentHandlerAvailableInstrument convenience initializers and mutators
+
+extension PaymentHandlerAvailableInstrument {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PaymentHandlerAvailableInstrument.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        constraints: [String: JSONAny]?? = nil,
+        type: String? = nil
+    ) -> PaymentHandlerAvailableInstrument {
+        return PaymentHandlerAvailableInstrument(
+            constraints: constraints ?? self.constraints,
+            type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Shared foundation for all UCP entities.
+// MARK: - PurpleService
+struct PurpleService: Codable {
+    /// Entity-specific configuration. Structure defined by each entity's schema.
+    let config: [String: JSONAny]?
+    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
+    /// exist.
+    let id: String?
+    /// URL to JSON Schema defining this entity's structure and payloads.
+    let schema: String?
+    /// URL to human-readable specification document.
+    let spec: String?
+    /// Entity version in YYYY-MM-DD format.
+    let version: String
+    /// Endpoint URL for this transport binding.
+    let endpoint: String?
+    /// Transport protocol for this service binding.
+    let transport: Transport
+}
+
+// MARK: PurpleService convenience initializers and mutators
+
+extension PurpleService {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PurpleService.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        config: [String: JSONAny]?? = nil,
+        id: String?? = nil,
+        schema: String?? = nil,
+        spec: String?? = nil,
+        version: String? = nil,
+        endpoint: String?? = nil,
+        transport: Transport? = nil
+    ) -> PurpleService {
+        return PurpleService(
+            config: config ?? self.config,
+            id: id ?? self.id,
+            schema: schema ?? self.schema,
+            spec: spec ?? self.spec,
+            version: version ?? self.version,
+            endpoint: endpoint ?? self.endpoint,
+            transport: transport ?? self.transport
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
 /// Checkout state with payment credential ready for completion.
+///
+/// Generic error response when business logic prevents resource creation or failed to
+/// retrieve resource. Used when no valid resource can be established.
 // MARK: - CredentialResult
 struct CredentialResult: Codable {
     /// Partial checkout update with payment credential.
-    let checkout: CredentialCheckout
+    let checkout: CredentialCheckout?
+    /// UCP protocol metadata. Status MUST be 'error' for error response.
+    let ucp: InstrumentsChangeResultUcp
+    /// URL for buyer handoff or session recovery.
+    let continueURL: String?
+    /// Array of messages describing why the operation failed.
+    let messages: [MessageElement]?
+
+    enum CodingKeys: String, CodingKey {
+        case checkout, ucp
+        case continueURL = "continue_url"
+        case messages
+    }
 }
 
 // MARK: CredentialResult convenience initializers and mutators
@@ -5419,10 +6603,16 @@ extension CredentialResult {
     }
 
     func with(
-        checkout: CredentialCheckout? = nil
+        checkout: CredentialCheckout?? = nil,
+        ucp: InstrumentsChangeResultUcp? = nil,
+        continueURL: String?? = nil,
+        messages: [MessageElement]?? = nil
     ) -> CredentialResult {
         return CredentialResult(
-            checkout: checkout ?? self.checkout
+            checkout: checkout ?? self.checkout,
+            ucp: ucp ?? self.ucp,
+            continueURL: continueURL ?? self.continueURL,
+            messages: messages ?? self.messages
         )
     }
 
@@ -5476,9 +6666,11 @@ extension CredentialCheckout {
     }
 }
 
+/// Payment instruments from host.
 // MARK: - CredentialPayment
 struct CredentialPayment: Codable {
-    let instruments: [SelectedPaymentInstrument]?
+    /// Available payment instruments.
+    let instruments: [PurpleSelectedPaymentInstrument]?
 }
 
 // MARK: CredentialPayment convenience initializers and mutators
@@ -5500,7 +6692,7 @@ extension CredentialPayment {
     }
 
     func with(
-        instruments: [SelectedPaymentInstrument]?? = nil
+        instruments: [PurpleSelectedPaymentInstrument]?? = nil
     ) -> CredentialPayment {
         return CredentialPayment(
             instruments: instruments ?? self.instruments
@@ -5516,7 +6708,36 @@ extension CredentialPayment {
     }
 }
 
+typealias Amount = Int
 typealias ErrorCode = String
+typealias ReverseDomainName = String
+typealias SignedAmount = Int
+typealias Totals = [TotalElement]
+
+extension Array where Element == Totals.Element {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Totals.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
 
 // MARK: - Helper functions for creating encoders and decoders
 

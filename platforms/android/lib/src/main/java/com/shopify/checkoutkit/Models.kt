@@ -20,15 +20,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-// This file was generated from JSON Schema using quicktype, do not modify it directly.
-// To regenerate: protocol/scripts/generate_models.sh --lang kotlin
-//
+
 // To parse the JSON, install kotlin's serialization plugin and do:
 //
 // val json                       = Json { allowStructuredMapKeys = true }
 // val checkout                   = json.parse(Checkout.serializer(), jsonString)
 // val paymentAccountInfo         = json.parse(PaymentAccountInfo.serializer(), jsonString)
 // val adjustment                 = json.parse(Adjustment.serializer(), jsonString)
+// val amount                     = json.parse(Amount.serializer(), jsonString)
+// val availablePaymentInstrument = json.parse(AvailablePaymentInstrument.serializer(), jsonString)
 // val binding                    = json.parse(TokenBinding.serializer(), jsonString)
 // val businessFulfillmentConfig  = json.parse(BusinessFulfillmentConfig.serializer(), jsonString)
 // val buyer                      = json.parse(Buyer.serializer(), jsonString)
@@ -36,6 +36,7 @@
 // val cardPaymentInstrument      = json.parse(CardPaymentInstrument.serializer(), jsonString)
 // val context                    = json.parse(Context.serializer(), jsonString)
 // val errorCode                  = json.parse(ErrorCode.serializer(), jsonString)
+// val errorResponse              = json.parse(ErrorResponse.serializer(), jsonString)
 // val expectation                = json.parse(Expectation.serializer(), jsonString)
 // val fulfillmentAvailableMethod = json.parse(FulfillmentAvailableMethod.serializer(), jsonString)
 // val fulfillmentDestination     = json.parse(FulfillmentDestination.serializer(), jsonString)
@@ -60,9 +61,13 @@
 // val platformFulfillmentConfig  = json.parse(PlatformFulfillmentConfig.serializer(), jsonString)
 // val postalAddress              = json.parse(PostalAddress.serializer(), jsonString)
 // val retailLocation             = json.parse(RetailLocation.serializer(), jsonString)
+// val reverseDomainName          = json.parse(ReverseDomainName.serializer(), jsonString)
 // val shippingDestination        = json.parse(ShippingDestination.serializer(), jsonString)
+// val signals                    = json.parse(Signals.serializer(), jsonString)
+// val signedAmount               = json.parse(SignedAmount.serializer(), jsonString)
 // val tokenCredential            = json.parse(TokenCredential.serializer(), jsonString)
 // val total                      = json.parse(Total.serializer(), jsonString)
+// val totals                     = json.parse(Totals.serializer(), jsonString)
 // val payment                    = json.parse(Payment.serializer(), jsonString)
 // val order                      = json.parse(Order.serializer(), jsonString)
 // val instrumentsChangeResult    = json.parse(InstrumentsChangeResult.serializer(), jsonString)
@@ -75,7 +80,11 @@ import kotlinx.serialization.json.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 
+public typealias Amount = Long
 public typealias ErrorCode = String
+public typealias ReverseDomainName = String
+public typealias SignedAmount = Long
+public typealias Totals = List<TotalElement>
 
 /**
  * Base checkout schema. Extensions compose onto this using allOf.
@@ -136,6 +145,7 @@ public data class Checkout (
     public val order: OrderClass? = null,
 
     public val payment: PaymentClass? = null,
+    public val signals: SignalsClass? = null,
 
     /**
      * Checkout state indicating the current phase and required action. See Checkout Status
@@ -146,7 +156,7 @@ public data class Checkout (
     /**
      * Different cart totals.
      */
-    public val totals: List<TotalElement>,
+    public val totals: List<CheckoutTotal>,
 
     public val ucp: UCPCheckoutResponseSchema
 )
@@ -181,14 +191,14 @@ public data class BuyerClass (
 )
 
 /**
- * Provisional buyer signals for relevance and localization: product availability, pricing,
- * currency, tax, shipping, payment methods, and eligibility (e.g., student or affiliation
- * discounts). Businesses SHOULD use these values when authoritative data (e.g., address) is
- * absent, and MAY ignore unsupported values without returning errors. Context SHOULD be
- * non-identifying and can be disclosed progressively—coarse signals early, finer resolution
- * as the session progresses. Higher-resolution data (shipping address, billing address)
- * supersedes context. Platforms SHOULD progressively enhance context throughout the buyer
- * journey.
+ * Provisional buyer signals for relevance and localization—not authoritative data.
+ * Businesses SHOULD use these values when verified inputs (e.g., shipping address) are
+ * absent, and MAY ignore or down-rank them if inconsistent with higher-confidence signals
+ * (authenticated account, risk detection) or regulatory constraints (export controls).
+ * Eligibility and policy enforcement MUST occur at checkout time using binding transaction
+ * data. Context SHOULD be non-identifying and can be disclosed progressively—coarse signals
+ * early, finer resolution as the session progresses. Higher-resolution data (shipping
+ * address, billing address) supersedes context.
  */
 @Serializable
 public data class ContextClass (
@@ -211,11 +221,38 @@ public data class ContextClass (
     public val addressRegion: String? = null,
 
     /**
+     * Preferred currency (ISO 4217, e.g., 'EUR', 'USD'). Businesses determine presentment
+     * currency from context and authoritative signals; this hint MAY inform selection in
+     * multi-currency markets. Also serves as the denomination for price filter values —
+     * platforms SHOULD include this field when sending price filters. Response prices include
+     * explicit currency confirming the resolution.
+     */
+    public val currency: String? = null,
+
+    /**
+     * Buyer claims about eligible benefits such as loyalty membership, payment instrument
+     * perks, and similar. Recognized claims MAY inform the Business response (e.g., member-only
+     * product availability, adjusted pricing in catalog, provisional discounts at cart or
+     * checkout). Businesses MUST ignore unrecognized values without error. Values MUST use
+     * reverse-domain naming (e.g., 'com.example.loyalty_gold', 'org.school.student') and MUST
+     * be non-identifying.
+     */
+    public val eligibility: List<String>? = null,
+
+    /**
      * Background context describing buyer's intent (e.g., 'looking for a gift under $50', 'need
      * something durable for outdoor use'). Informs relevance, recommendations, and
      * personalization.
      */
     public val intent: String? = null,
+
+    /**
+     * Preferred language for content. Use IETF BCP 47 language tags (e.g., 'en', 'fr-CA',
+     * 'zh-Hans'). For REST, equivalent to Accept-Language header—platforms SHOULD fall back to
+     * Accept-Language when this field is absent; when provided, overrides Accept-Language.
+     * Businesses MAY return content in a different language if unavailable.
+     */
+    public val language: String? = null,
 
     /**
      * The postal code. For example, 94043. Optional hint for regional
@@ -247,7 +284,7 @@ public data class CheckoutLineItem (
     /**
      * Line item totals breakdown.
      */
-    public val totals: List<TotalElement>
+    public val totals: List<LineItemTotal>
 )
 
 /**
@@ -268,7 +305,7 @@ public data class ItemClass (
     public val imageURL: String? = null,
 
     /**
-     * Unit price in minor (cents) currency units.
+     * Unit price in ISO 4217 minor units.
      */
     public val price: Long,
 
@@ -278,12 +315,11 @@ public data class ItemClass (
     public val title: String
 )
 
+/**
+ * A cost breakdown entry with a category, amount, and optional display text.
+ */
 @Serializable
-public data class TotalElement (
-    /**
-     * If type == total, sums subtotal - discount + fulfillment + tax + fee. Should be >= 0.
-     * Amount in minor (cents) currency units.
-     */
+public data class LineItemTotal (
     public val amount: Long,
 
     /**
@@ -294,24 +330,11 @@ public data class TotalElement (
     public val displayText: String? = null,
 
     /**
-     * Type of total categorization.
+     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+     * fee, total. Businesses MAY use additional values.
      */
-    public val type: TotalType
+    public val type: String
 )
-
-/**
- * Type of total categorization.
- */
-@Serializable
-public enum class TotalType(public val value: String) {
-    @SerialName("discount") Discount("discount"),
-    @SerialName("fee") Fee("fee"),
-    @SerialName("fulfillment") Fulfillment("fulfillment"),
-    @SerialName("items_discount") ItemsDiscount("items_discount"),
-    @SerialName("subtotal") Subtotal("subtotal"),
-    @SerialName("tax") Tax("tax"),
-    @SerialName("total") Total("total");
-}
 
 @Serializable
 public data class LinkElement (
@@ -370,19 +393,38 @@ public data class MessageElement (
     public val path: String? = null,
 
     /**
-     * Declares who resolves this error. 'recoverable': agent can fix via API.
-     * 'requires_buyer_input': merchant requires information their API doesn't support
-     * collecting programmatically (checkout incomplete). 'requires_buyer_review': buyer must
-     * authorize before order placement due to policy, regulatory, or entitlement rules
-     * (checkout complete). Errors with 'requires_*' severity contribute to 'status:
-     * requires_escalation'.
+     * Reflects the resource state and recommended action. 'recoverable': platform can resolve
+     * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+     * information their API doesn't support collecting programmatically (checkout incomplete).
+     * 'requires_buyer_review': buyer must authorize before order placement due to policy,
+     * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
+     * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
+     * 'status: requires_escalation'.
      */
     public val severity: Severity? = null,
 
     /**
      * Message type discriminator.
      */
-    public val type: MessageType
+    public val type: MessageType,
+
+    /**
+     * URL to a required visual element (e.g., warning symbol, energy class label).
+     */
+    @SerialName("image_url")
+    public val imageURL: String? = null,
+
+    /**
+     * Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
+     * dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
+     * component, MUST NOT hide or auto-dismiss. See specification for full contract.
+     */
+    public val presentation: String? = null,
+
+    /**
+     * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
+     */
+    public val url: String? = null
 )
 
 /**
@@ -395,18 +437,20 @@ public enum class ContentType(public val value: String) {
 }
 
 /**
- * Declares who resolves this error. 'recoverable': agent can fix via API.
- * 'requires_buyer_input': merchant requires information their API doesn't support
- * collecting programmatically (checkout incomplete). 'requires_buyer_review': buyer must
- * authorize before order placement due to policy, regulatory, or entitlement rules
- * (checkout complete). Errors with 'requires_*' severity contribute to 'status:
- * requires_escalation'.
+ * Reflects the resource state and recommended action. 'recoverable': platform can resolve
+ * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+ * information their API doesn't support collecting programmatically (checkout incomplete).
+ * 'requires_buyer_review': buyer must authorize before order placement due to policy,
+ * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
+ * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
+ * 'status: requires_escalation'.
  */
 @Serializable
 public enum class Severity(public val value: String) {
     @SerialName("recoverable") Recoverable("recoverable"),
     @SerialName("requires_buyer_input") RequiresBuyerInput("requires_buyer_input"),
-    @SerialName("requires_buyer_review") RequiresBuyerReview("requires_buyer_review");
+    @SerialName("requires_buyer_review") RequiresBuyerReview("requires_buyer_review"),
+    @SerialName("unrecoverable") Unrecoverable("unrecoverable");
 }
 
 @Serializable
@@ -429,6 +473,11 @@ public data class OrderClass (
     public val id: String,
 
     /**
+     * Human-readable label for identifying the order. MUST only be provided by the business.
+     */
+    public val label: String? = null,
+
+    /**
      * Permalink to access the order on merchant site.
      */
     @SerialName("permalink_url")
@@ -445,7 +494,7 @@ public data class PaymentClass (
      * specific handler via the handler_id field. Handlers can extend the base
      * payment_instrument schema to add handler-specific fields.
      */
-    public val instruments: List<SelectedPaymentInstrument>? = null
+    public val instruments: List<PaymentSelectedPaymentInstrument>? = null
 )
 
 /**
@@ -455,7 +504,7 @@ public data class PaymentClass (
  * payment handler.
  */
 @Serializable
-public data class SelectedPaymentInstrument (
+public data class PaymentSelectedPaymentInstrument (
     /**
      * The billing address associated with this payment method.
      */
@@ -576,6 +625,28 @@ public data class CredentialClass (
 )
 
 /**
+ * Environment data provided by the platform to support authorization and abuse prevention.
+ * Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
+ * observation or independently verifiable third-party attestations. All signal keys MUST
+ * use reverse-domain naming to ensure provenance and prevent collisions when multiple
+ * extensions contribute to the shared namespace.
+ */
+@Serializable
+public data class SignalsClass (
+    /**
+     * Client's IP address (IPv4 or IPv6).
+     */
+    @SerialName("dev.ucp.buyer_ip")
+    public val devUcpBuyerIP: String? = null,
+
+    /**
+     * Client's HTTP User-Agent header or equivalent.
+     */
+    @SerialName("dev.ucp.user_agent")
+    public val devUcpUserAgent: String? = null
+)
+
+/**
  * Checkout state indicating the current phase and required action. See Checkout Status
  * lifecycle documentation for state transition details.
  */
@@ -588,6 +659,53 @@ public enum class CheckoutStatus(public val value: String) {
     @SerialName("ready_for_complete") ReadyForComplete("ready_for_complete"),
     @SerialName("requires_escalation") RequiresEscalation("requires_escalation");
 }
+
+/**
+ * Different cart totals.
+ *
+ * Pricing breakdown provided by the business. MUST contain exactly one subtotal and one
+ * total entry. Detail types (tax, fee, discount, fulfillment) may appear multiple times for
+ * itemization. Platforms MUST render all entries in order using display_text and amount.
+ *
+ * A cost breakdown entry with a category, amount, and optional display text.
+ */
+@Serializable
+public data class CheckoutTotal (
+    public val amount: Long,
+
+    /**
+     * Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
+     * 'Delivery').
+     */
+    @SerialName("display_text")
+    public val displayText: String? = null,
+
+    /**
+     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+     * fee, total. Businesses MAY use additional values.
+     */
+    public val type: String,
+
+    /**
+     * Optional itemized breakdown. The parent entry is always rendered; lines are
+     * supplementary. Sum of line amounts MUST equal the parent entry amount.
+     */
+    public val lines: List<TotalLine>? = null
+)
+
+/**
+ * Sub-line entry. Additional metadata MAY be included.
+ */
+@Serializable
+public data class TotalLine (
+    public val amount: Long,
+
+    /**
+     * Human-readable label for this sub-line.
+     */
+    @SerialName("display_text")
+    public val displayText: String
+)
 
 /**
  * UCP metadata for checkout responses.
@@ -611,6 +729,11 @@ public data class UCPCheckoutResponseSchema (
      * Service registry keyed by reverse-domain name.
      */
     public val services: Map<String, List<ServiceResponseSchema>>? = null,
+
+    /**
+     * Application-level status of the UCP operation.
+     */
+    public val status: UCPCheckoutResponseSchemaStatus? = null,
 
     public val version: String
 )
@@ -698,7 +821,32 @@ public data class PaymentHandlerResponseSchema (
     /**
      * Entity version in YYYY-MM-DD format.
      */
-    public val version: String
+    public val version: String,
+
+    /**
+     * Instrument types this handler supports, with optional constraints. When absent, every
+     * instrument should be considered available.
+     */
+    @SerialName("available_instruments")
+    public val availableInstruments: List<PaymentHandlerResponseSchemaAvailableInstrument>? = null
+)
+
+/**
+ * An instrument type available from a payment handler with optional constraints.
+ */
+@Serializable
+public data class PaymentHandlerResponseSchemaAvailableInstrument (
+    /**
+     * Constraints on this instrument type. Structure depends on instrument type and active
+     * capabilities.
+     */
+    public val constraints: JsonObject? = null,
+
+    /**
+     * The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
+     * schema's type constant.
+     */
+    public val type: String
 )
 
 /**
@@ -749,17 +897,30 @@ public data class ServiceResponseSchema (
 /**
  * Entity-specific configuration. Structure defined by each entity's schema.
  *
- * Per-checkout configuration for embedded transport binding. Allows businesses to vary ECP
+ * Per-session configuration for embedded transport binding. Allows businesses to vary EP
  * availability and delegations based on cart contents, agent authorization, or policy.
  */
 @Serializable
 public data class EmbeddedTransportConfig (
     /**
-     * Delegations the business allows. At service-level, declares available delegations. In
-     * checkout responses, confirms accepted delegations for this session.
+     * Color schemes the business supports. Hosts use ec_color_scheme query parameter to request
+     * a scheme from this list.
+     */
+    @SerialName("color_scheme")
+    public val colorScheme: List<EmbeddedColorScheme>? = null,
+
+    /**
+     * Delegations the business allows. At service-level, declares available delegations. In UCP
+     * responses, confirms accepted delegations for this session.
      */
     public val delegate: List<String>? = null
 )
+
+@Serializable
+public enum class EmbeddedColorScheme(public val value: String) {
+    @SerialName("dark") Dark("dark"),
+    @SerialName("light") Light("light");
+}
 
 /**
  * Transport protocol for this service binding.
@@ -770,6 +931,15 @@ public enum class Transport(public val value: String) {
     @SerialName("embedded") Embedded("embedded"),
     @SerialName("mcp") MCP("mcp"),
     @SerialName("rest") REST("rest");
+}
+
+/**
+ * Application-level status of the UCP operation.
+ */
+@Serializable
+public enum class UCPCheckoutResponseSchemaStatus(public val value: String) {
+    @SerialName("error") Error("error"),
+    @SerialName("success") Success("success");
 }
 
 /**
@@ -786,17 +956,12 @@ public data class PaymentAccountInfo (
 )
 
 /**
- * Append-only event that exists independently of fulfillment. Typically represents money
+ * Post-order event that exists independently of fulfillment. Typically represents money
  * movements but can be any post-order change. Polymorphic type that can optionally
  * reference line items.
  */
 @Serializable
 public data class Adjustment (
-    /**
-     * Amount in minor units (cents) for refunds, credits, price adjustments (optional).
-     */
-    public val amount: Long? = null,
-
     /**
      * Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
      */
@@ -825,6 +990,12 @@ public data class Adjustment (
     public val status: AdjustmentStatus,
 
     /**
+     * Adjustment totals breakdown. Signed values - negative for money returned to buyer
+     * (refunds, credits), positive for additional charges (exchanges).
+     */
+    public val totals: List<LineItemTotal>? = null,
+
+    /**
      * Type of adjustment (open string). Typically money-related like: refund, return, credit,
      * price_adjustment, dispute, cancellation. Can be any value that makes sense for the
      * merchant's business.
@@ -840,7 +1011,8 @@ public data class AdjustmentLineItem (
     public val id: String,
 
     /**
-     * Quantity affected by this adjustment.
+     * Signed quantity affected by this adjustment. Negative values represent reductions (e.g.
+     * returns); positive values represent additions (e.g. exchanges).
      */
     public val quantity: Long
 )
@@ -854,6 +1026,24 @@ public enum class AdjustmentStatus(public val value: String) {
     @SerialName("failed") Failed("failed"),
     @SerialName("pending") Pending("pending");
 }
+
+/**
+ * An instrument type available from a payment handler with optional constraints.
+ */
+@Serializable
+public data class AvailablePaymentInstrument (
+    /**
+     * Constraints on this instrument type. Structure depends on instrument type and active
+     * capabilities.
+     */
+    public val constraints: JsonObject? = null,
+
+    /**
+     * The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
+     * schema's type constant.
+     */
+    public val type: String
+)
 
 /**
  * Binds a token to a specific checkout session and participant. Prevents token reuse across
@@ -1141,14 +1331,14 @@ public data class Display (
 )
 
 /**
- * Provisional buyer signals for relevance and localization: product availability, pricing,
- * currency, tax, shipping, payment methods, and eligibility (e.g., student or affiliation
- * discounts). Businesses SHOULD use these values when authoritative data (e.g., address) is
- * absent, and MAY ignore unsupported values without returning errors. Context SHOULD be
- * non-identifying and can be disclosed progressively—coarse signals early, finer resolution
- * as the session progresses. Higher-resolution data (shipping address, billing address)
- * supersedes context. Platforms SHOULD progressively enhance context throughout the buyer
- * journey.
+ * Provisional buyer signals for relevance and localization—not authoritative data.
+ * Businesses SHOULD use these values when verified inputs (e.g., shipping address) are
+ * absent, and MAY ignore or down-rank them if inconsistent with higher-confidence signals
+ * (authenticated account, risk detection) or regulatory constraints (export controls).
+ * Eligibility and policy enforcement MUST occur at checkout time using binding transaction
+ * data. Context SHOULD be non-identifying and can be disclosed progressively—coarse signals
+ * early, finer resolution as the session progresses. Higher-resolution data (shipping
+ * address, billing address) supersedes context.
  */
 @Serializable
 public data class Context (
@@ -1171,11 +1361,38 @@ public data class Context (
     public val addressRegion: String? = null,
 
     /**
+     * Preferred currency (ISO 4217, e.g., 'EUR', 'USD'). Businesses determine presentment
+     * currency from context and authoritative signals; this hint MAY inform selection in
+     * multi-currency markets. Also serves as the denomination for price filter values —
+     * platforms SHOULD include this field when sending price filters. Response prices include
+     * explicit currency confirming the resolution.
+     */
+    public val currency: String? = null,
+
+    /**
+     * Buyer claims about eligible benefits such as loyalty membership, payment instrument
+     * perks, and similar. Recognized claims MAY inform the Business response (e.g., member-only
+     * product availability, adjusted pricing in catalog, provisional discounts at cart or
+     * checkout). Businesses MUST ignore unrecognized values without error. Values MUST use
+     * reverse-domain naming (e.g., 'com.example.loyalty_gold', 'org.school.student') and MUST
+     * be non-identifying.
+     */
+    public val eligibility: List<String>? = null,
+
+    /**
      * Background context describing buyer's intent (e.g., 'looking for a gift under $50', 'need
      * something durable for outdoor use'). Informs relevance, recommendations, and
      * personalization.
      */
     public val intent: String? = null,
+
+    /**
+     * Preferred language for content. Use IETF BCP 47 language tags (e.g., 'en', 'fr-CA',
+     * 'zh-Hans'). For REST, equivalent to Accept-Language header—platforms SHOULD fall back to
+     * Accept-Language when this field is absent; when provided, overrides Accept-Language.
+     * Businesses MAY return content in a different language if unavailable.
+     */
+    public val language: String? = null,
 
     /**
      * The postal code. For example, 94043. Optional hint for regional
@@ -1184,6 +1401,113 @@ public data class Context (
     @SerialName("postal_code")
     public val postalCode: String? = null
 )
+
+/**
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+@Serializable
+public data class ErrorResponse (
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    @SerialName("continue_url")
+    public val continueURL: String? = null,
+
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    public val messages: List<MessageElement>,
+
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    public val ucp: ErrorResponseUcp
+)
+
+/**
+ * UCP protocol metadata. Status MUST be 'error' for error response.
+ *
+ * UCP metadata with status 'error'. Use for response branches that carry error
+ * information.
+ *
+ * Base UCP metadata with shared properties for all schema types.
+ */
+@Serializable
+public data class ErrorResponseUcp (
+    /**
+     * Capability registry keyed by reverse-domain name.
+     */
+    public val capabilities: Map<String, List<CapabilityResponseSchema>>? = null,
+
+    /**
+     * Payment handler registry keyed by reverse-domain name.
+     */
+    @SerialName("payment_handlers")
+    public val paymentHandlers: Map<String, List<PaymentHandlerResponseSchema>>? = null,
+
+    /**
+     * Service registry keyed by reverse-domain name.
+     */
+    public val services: Map<String, List<UCPOrderResponseSchemaService>>? = null,
+
+    /**
+     * Application-level status of the UCP operation.
+     */
+    public val status: StatusEnum,
+
+    public val version: String
+)
+
+/**
+ * Shared foundation for all UCP entities.
+ */
+@Serializable
+public data class UCPOrderResponseSchemaService (
+    /**
+     * Entity-specific configuration. Structure defined by each entity's schema.
+     */
+    public val config: JsonObject? = null,
+
+    /**
+     * Unique identifier for this entity instance. Used to disambiguate when multiple instances
+     * exist.
+     */
+    public val id: String? = null,
+
+    /**
+     * URL to JSON Schema defining this entity's structure and payloads.
+     */
+    public val schema: String? = null,
+
+    /**
+     * URL to human-readable specification document.
+     */
+    public val spec: String? = null,
+
+    /**
+     * Entity version in YYYY-MM-DD format.
+     */
+    public val version: String,
+
+    /**
+     * Endpoint URL for this transport binding.
+     */
+    public val endpoint: String? = null,
+
+    /**
+     * Transport protocol for this service binding.
+     */
+    public val transport: Transport
+)
+
+/**
+ * Application-level status of the UCP operation.
+ */
+@Serializable
+public enum class StatusEnum(public val value: String) {
+    @SerialName("error") Error("error");
+}
 
 /**
  * Buyer-facing fulfillment expectation representing logical groupings of items (e.g.,
@@ -1506,7 +1830,7 @@ public data class OptionElement (
     /**
      * Fulfillment option totals breakdown.
      */
-    public val totals: List<TotalElement>
+    public val totals: List<LineItemTotal>
 )
 
 /**
@@ -1708,7 +2032,7 @@ public data class FulfillmentOption (
     /**
      * Fulfillment option totals breakdown.
      */
-    public val totals: List<TotalElement>
+    public val totals: List<LineItemTotal>
 )
 
 /**
@@ -1810,7 +2134,7 @@ public data class Item (
     public val imageURL: String? = null,
 
     /**
-     * Unit price in minor (cents) currency units.
+     * Unit price in ISO 4217 minor units.
      */
     public val price: Long,
 
@@ -1842,7 +2166,7 @@ public data class LineItem (
     /**
      * Line item totals breakdown.
      */
-    public val totals: List<TotalElement>
+    public val totals: List<LineItemTotal>
 )
 
 @Serializable
@@ -1921,25 +2245,21 @@ public data class MessageError (
     public val path: String? = null,
 
     /**
-     * Declares who resolves this error. 'recoverable': agent can fix via API.
-     * 'requires_buyer_input': merchant requires information their API doesn't support
-     * collecting programmatically (checkout incomplete). 'requires_buyer_review': buyer must
-     * authorize before order placement due to policy, regulatory, or entitlement rules
-     * (checkout complete). Errors with 'requires_*' severity contribute to 'status:
-     * requires_escalation'.
+     * Reflects the resource state and recommended action. 'recoverable': platform can resolve
+     * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+     * information their API doesn't support collecting programmatically (checkout incomplete).
+     * 'requires_buyer_review': buyer must authorize before order placement due to policy,
+     * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
+     * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
+     * 'status: requires_escalation'.
      */
     public val severity: Severity,
 
     /**
      * Message type discriminator.
      */
-    public val type: MessageErrorType
+    public val type: StatusEnum
 )
-
-@Serializable
-public enum class MessageErrorType(public val value: String) {
-    @SerialName("error") Error("error");
-}
 
 @Serializable
 public data class MessageInfo (
@@ -1995,14 +2315,32 @@ public data class MessageWarning (
     public val contentType: ContentType? = null,
 
     /**
+     * URL to a required visual element (e.g., warning symbol, energy class label).
+     */
+    @SerialName("image_url")
+    public val imageURL: String? = null,
+
+    /**
      * JSONPath (RFC 9535) to related field (e.g., $.line_items[0]).
      */
     public val path: String? = null,
 
     /**
+     * Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
+     * dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
+     * component, MUST NOT hide or auto-dismiss. See specification for full contract.
+     */
+    public val presentation: String? = null,
+
+    /**
      * Message type discriminator.
      */
-    public val type: MessageWarningType
+    public val type: MessageWarningType,
+
+    /**
+     * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
+     */
+    public val url: String? = null
 )
 
 @Serializable
@@ -2046,19 +2384,38 @@ public data class Message (
     public val path: String? = null,
 
     /**
-     * Declares who resolves this error. 'recoverable': agent can fix via API.
-     * 'requires_buyer_input': merchant requires information their API doesn't support
-     * collecting programmatically (checkout incomplete). 'requires_buyer_review': buyer must
-     * authorize before order placement due to policy, regulatory, or entitlement rules
-     * (checkout complete). Errors with 'requires_*' severity contribute to 'status:
-     * requires_escalation'.
+     * Reflects the resource state and recommended action. 'recoverable': platform can resolve
+     * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+     * information their API doesn't support collecting programmatically (checkout incomplete).
+     * 'requires_buyer_review': buyer must authorize before order placement due to policy,
+     * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
+     * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
+     * 'status: requires_escalation'.
      */
     public val severity: Severity? = null,
 
     /**
      * Message type discriminator.
      */
-    public val type: MessageType
+    public val type: MessageType,
+
+    /**
+     * URL to a required visual element (e.g., warning symbol, energy class label).
+     */
+    @SerialName("image_url")
+    public val imageURL: String? = null,
+
+    /**
+     * Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
+     * dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
+     * component, MUST NOT hide or auto-dismiss. See specification for full contract.
+     */
+    public val presentation: String? = null,
+
+    /**
+     * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
+     */
+    public val url: String? = null
 )
 
 /**
@@ -2070,6 +2427,11 @@ public data class OrderConfirmation (
      * Unique order identifier.
      */
     public val id: String,
+
+    /**
+     * Human-readable label for identifying the order. MUST only be provided by the business.
+     */
+    public val label: String? = null,
 
     /**
      * Permalink to access the order on merchant site.
@@ -2097,12 +2459,13 @@ public data class OrderLineItem (
     public val parentID: String? = null,
 
     /**
-     * Quantity tracking. Both total and fulfilled are derived from events.
+     * Quantity tracking for the line item.
      */
     public val quantity: OrderLineItemQuantity,
 
     /**
-     * Derived status: fulfilled if quantity.fulfilled == quantity.total, partial if
+     * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
+     * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
      * quantity.fulfilled > 0, otherwise processing.
      */
     public val status: OrderLineItemStatus,
@@ -2110,34 +2473,42 @@ public data class OrderLineItem (
     /**
      * Line item totals breakdown.
      */
-    public val totals: List<TotalElement>
+    public val totals: List<LineItemTotal>
 )
 
 /**
- * Quantity tracking. Both total and fulfilled are derived from events.
+ * Quantity tracking for the line item.
  */
 @Serializable
 public data class OrderLineItemQuantity (
     /**
-     * Quantity fulfilled (sum from fulfillment events).
+     * Quantity fulfilled so far.
      */
     public val fulfilled: Long,
 
     /**
-     * Current total quantity.
+     * Quantity from the original checkout.
+     */
+    public val original: Long? = null,
+
+    /**
+     * Current total active quantity. May differ from original due to post-order modifications
+     * (e.g., returns or cancellations).
      */
     public val total: Long
 )
 
 /**
- * Derived status: fulfilled if quantity.fulfilled == quantity.total, partial if
+ * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
+ * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
  * quantity.fulfilled > 0, otherwise processing.
  */
 @Serializable
 public enum class OrderLineItemStatus(public val value: String) {
     @SerialName("fulfilled") Fulfilled("fulfilled"),
     @SerialName("partial") Partial("partial"),
-    @SerialName("processing") Processing("processing");
+    @SerialName("processing") Processing("processing"),
+    @SerialName("removed") Removed("removed");
 }
 
 /**
@@ -2376,6 +2747,28 @@ public data class ShippingDestination (
 )
 
 /**
+ * Environment data provided by the platform to support authorization and abuse prevention.
+ * Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
+ * observation or independently verifiable third-party attestations. All signal keys MUST
+ * use reverse-domain naming to ensure provenance and prevent collisions when multiple
+ * extensions contribute to the shared namespace.
+ */
+@Serializable
+public data class Signals (
+    /**
+     * Client's IP address (IPv4 or IPv6).
+     */
+    @SerialName("dev.ucp.buyer_ip")
+    public val devUcpBuyerIP: String? = null,
+
+    /**
+     * Client's HTTP User-Agent header or equivalent.
+     */
+    @SerialName("dev.ucp.user_agent")
+    public val devUcpUserAgent: String? = null
+)
+
+/**
  * Base token credential schema. Concrete payment handlers may extend this schema with
  * additional fields and define their own constraints.
  *
@@ -2397,12 +2790,11 @@ public data class TokenCredential (
     public val token: String
 )
 
+/**
+ * A cost breakdown entry with a category, amount, and optional display text.
+ */
 @Serializable
 public data class Total (
-    /**
-     * If type == total, sums subtotal - discount + fulfillment + tax + fee. Should be >= 0.
-     * Amount in minor (cents) currency units.
-     */
     public val amount: Long,
 
     /**
@@ -2413,9 +2805,55 @@ public data class Total (
     public val displayText: String? = null,
 
     /**
-     * Type of total categorization.
+     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+     * fee, total. Businesses MAY use additional values.
      */
-    public val type: TotalType
+    public val type: String
+)
+
+/**
+ * Pricing breakdown provided by the business. MUST contain exactly one subtotal and one
+ * total entry. Detail types (tax, fee, discount, fulfillment) may appear multiple times for
+ * itemization. Platforms MUST render all entries in order using display_text and amount.
+ *
+ * A cost breakdown entry with a category, amount, and optional display text.
+ */
+@Serializable
+public data class TotalElement (
+    public val amount: Long,
+
+    /**
+     * Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
+     * 'Delivery').
+     */
+    @SerialName("display_text")
+    public val displayText: String? = null,
+
+    /**
+     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+     * fee, total. Businesses MAY use additional values.
+     */
+    public val type: String,
+
+    /**
+     * Optional itemized breakdown. The parent entry is always rendered; lines are
+     * supplementary. Sum of line amounts MUST equal the parent entry amount.
+     */
+    public val lines: List<TotalLineClass>? = null
+)
+
+/**
+ * Sub-line entry. Additional metadata MAY be included.
+ */
+@Serializable
+public data class TotalLineClass (
+    public val amount: Long,
+
+    /**
+     * Human-readable label for this sub-line.
+     */
+    @SerialName("display_text")
+    public val displayText: String
 )
 
 /**
@@ -2428,18 +2866,17 @@ public data class Payment (
      * specific handler via the handler_id field. Handlers can extend the base
      * payment_instrument schema to add handler-specific fields.
      */
-    public val instruments: List<SelectedPaymentInstrument>? = null
+    public val instruments: List<PaymentSelectedPaymentInstrument>? = null
 )
 
 /**
- * Order schema with immutable line items, buyer-facing fulfillment expectations, and
- * append-only event logs.
+ * Order schema with line items, buyer-facing fulfillment expectations, and event logs.
  */
 @Serializable
 public data class Order (
     /**
-     * Append-only event log of money movements (refunds, returns, credits, disputes,
-     * cancellations, etc.) that exist independently of fulfillment.
+     * Post-order events (refunds, returns, credits, disputes, cancellations, etc.) that exist
+     * independently of fulfillment.
      */
     public val adjustments: List<AdjustmentElement>? = null,
 
@@ -2448,6 +2885,11 @@ public data class Order (
      */
     @SerialName("checkout_id")
     public val checkoutID: String,
+
+    /**
+     * ISO 4217 currency code. MUST match the currency from the originating checkout session.
+     */
+    public val currency: String,
 
     /**
      * Fulfillment data: buyer expectations and what actually happened.
@@ -2460,10 +2902,21 @@ public data class Order (
     public val id: String,
 
     /**
-     * Immutable line items — source of truth for what was ordered.
+     * Human-readable label for identifying the order. MUST only be provided by the business.
+     */
+    public val label: String? = null,
+
+    /**
+     * Line items representing what was purchased — can change post-order via edits or exchanges.
      */
     @SerialName("line_items")
     public val lineItems: List<LineItemElement>,
+
+    /**
+     * Business outcome messages (errors, warnings, informational). Present when the business
+     * needs to communicate status or issues to the platform.
+     */
+    public val messages: List<MessageElement>? = null,
 
     /**
      * Permalink to access the order on merchant site.
@@ -2474,23 +2927,18 @@ public data class Order (
     /**
      * Different totals for the order.
      */
-    public val totals: List<TotalElement>,
+    public val totals: List<CheckoutTotal>,
 
     public val ucp: UCPOrderResponseSchema
 )
 
 /**
- * Append-only event that exists independently of fulfillment. Typically represents money
+ * Post-order event that exists independently of fulfillment. Typically represents money
  * movements but can be any post-order change. Polymorphic type that can optionally
  * reference line items.
  */
 @Serializable
 public data class AdjustmentElement (
-    /**
-     * Amount in minor units (cents) for refunds, credits, price adjustments (optional).
-     */
-    public val amount: Long? = null,
-
     /**
      * Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
      */
@@ -2519,6 +2967,12 @@ public data class AdjustmentElement (
     public val status: AdjustmentStatus,
 
     /**
+     * Adjustment totals breakdown. Signed values - negative for money returned to buyer
+     * (refunds, credits), positive for additional charges (exchanges).
+     */
+    public val totals: List<LineItemTotal>? = null,
+
+    /**
      * Type of adjustment (open string). Typically money-related like: refund, return, credit,
      * price_adjustment, dispute, cancellation. Can be any value that makes sense for the
      * merchant's business.
@@ -2534,7 +2988,8 @@ public data class AdjustmentLineItemClass (
     public val id: String,
 
     /**
-     * Quantity affected by this adjustment.
+     * Signed quantity affected by this adjustment. Negative values represent reductions (e.g.
+     * returns); positive values represent additions (e.g. exchanges).
      */
     public val quantity: Long
 )
@@ -2698,12 +3153,13 @@ public data class LineItemElement (
     public val parentID: String? = null,
 
     /**
-     * Quantity tracking. Both total and fulfilled are derived from events.
+     * Quantity tracking for the line item.
      */
     public val quantity: LineItemQuantity,
 
     /**
-     * Derived status: fulfilled if quantity.fulfilled == quantity.total, partial if
+     * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
+     * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
      * quantity.fulfilled > 0, otherwise processing.
      */
     public val status: OrderLineItemStatus,
@@ -2711,21 +3167,27 @@ public data class LineItemElement (
     /**
      * Line item totals breakdown.
      */
-    public val totals: List<TotalElement>
+    public val totals: List<LineItemTotal>
 )
 
 /**
- * Quantity tracking. Both total and fulfilled are derived from events.
+ * Quantity tracking for the line item.
  */
 @Serializable
 public data class LineItemQuantity (
     /**
-     * Quantity fulfilled (sum from fulfillment events).
+     * Quantity fulfilled so far.
      */
     public val fulfilled: Long,
 
     /**
-     * Current total quantity.
+     * Quantity from the original checkout.
+     */
+    public val original: Long? = null,
+
+    /**
+     * Current total active quantity. May differ from original due to post-order modifications
+     * (e.g., returns or cancellations).
      */
     public val total: Long
 )
@@ -2751,16 +3213,261 @@ public data class UCPOrderResponseSchema (
     /**
      * Service registry keyed by reverse-domain name.
      */
-    public val services: Map<String, List<Service>>? = null,
+    public val services: Map<String, List<UCPOrderResponseSchemaService>>? = null,
+
+    /**
+     * Application-level status of the UCP operation.
+     */
+    public val status: UCPCheckoutResponseSchemaStatus? = null,
+
+    public val version: String
+)
+
+/**
+ * Checkout state after instrument selection.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+@Serializable
+public data class InstrumentsChangeResult (
+    /**
+     * Partial checkout update with payment instrument selection.
+     */
+    public val checkout: InstrumentsChangeCheckout? = null,
+
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    public val ucp: InstrumentsChangeResultUcp,
+
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    @SerialName("continue_url")
+    public val continueURL: String? = null,
+
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    public val messages: List<MessageElement>? = null
+)
+
+/**
+ * Partial checkout update with payment instrument selection.
+ */
+@Serializable
+public data class InstrumentsChangeCheckout (
+    public val payment: InstrumentsChangePayment? = null
+)
+
+/**
+ * Payment instruments with selected instrument ID.
+ *
+ * Payment instruments from host.
+ */
+@Serializable
+public data class InstrumentsChangePayment (
+    /**
+     * Available payment instruments.
+     */
+    public val instruments: List<PurpleSelectedPaymentInstrument>? = null,
+
+    /**
+     * ID of the selected payment instrument.
+     */
+    @SerialName("selected_instrument_id")
+    public val selectedInstrumentID: String? = null
+)
+
+/**
+ * A payment instrument with selection state.
+ *
+ * The base definition for any payment instrument. It links the instrument to a specific
+ * payment handler.
+ */
+@Serializable
+public data class PurpleSelectedPaymentInstrument (
+    /**
+     * The billing address associated with this payment method.
+     */
+    @SerialName("billing_address")
+    public val billingAddress: BillingAddressClass? = null,
+
+    public val credential: CredentialClass? = null,
+
+    /**
+     * Display information for this payment instrument. Each payment instrument schema defines
+     * its specific display properties, as outlined by the payment handler.
+     */
+    public val display: JsonObject? = null,
+
+    /**
+     * The unique identifier for the handler instance that produced this instrument. This
+     * corresponds to the 'id' field in the Payment Handler definition.
+     */
+    @SerialName("handler_id")
+    public val handlerID: String,
+
+    /**
+     * A unique identifier for this instrument instance, assigned by the platform.
+     */
+    public val id: String,
+
+    /**
+     * The broad category of the instrument (e.g., 'card', 'tokenized_card'). Specific schemas
+     * will constrain this to a constant value.
+     */
+    public val type: String,
+
+    /**
+     * Whether this instrument is selected by the user.
+     */
+    public val selected: Boolean? = null
+)
+
+/**
+ * UCP metadata with status 'success'. Use for response branches that carry the expected
+ * payload.
+ *
+ * Base UCP metadata with shared properties for all schema types.
+ *
+ * UCP protocol metadata. Status MUST be 'error' for error response.
+ *
+ * UCP metadata with status 'error'. Use for response branches that carry error information.
+ */
+@Serializable
+public data class InstrumentsChangeResultUcp (
+    /**
+     * Capability registry keyed by reverse-domain name.
+     */
+    public val capabilities: Map<String, List<CapabilityElement>>? = null,
+
+    /**
+     * Payment handler registry keyed by reverse-domain name.
+     */
+    @SerialName("payment_handlers")
+    public val paymentHandlers: Map<String, List<PaymentHandlerElement>>? = null,
+
+    /**
+     * Service registry keyed by reverse-domain name.
+     */
+    public val services: Map<String, List<PurpleService>>? = null,
+
+    /**
+     * Application-level status of the UCP operation.
+     */
+    public val status: UCPCheckoutResponseSchemaStatus,
 
     public val version: String
 )
 
 /**
  * Shared foundation for all UCP entities.
+ *
+ * Capability reference in responses. Only name/version required to confirm active
+ * capabilities.
  */
 @Serializable
-public data class Service (
+public data class CapabilityElement (
+    /**
+     * Entity-specific configuration. Structure defined by each entity's schema.
+     */
+    public val config: JsonObject? = null,
+
+    /**
+     * Unique identifier for this entity instance. Used to disambiguate when multiple instances
+     * exist.
+     */
+    public val id: String? = null,
+
+    /**
+     * URL to JSON Schema defining this entity's structure and payloads.
+     */
+    public val schema: String? = null,
+
+    /**
+     * URL to human-readable specification document.
+     */
+    public val spec: String? = null,
+
+    /**
+     * Entity version in YYYY-MM-DD format.
+     */
+    public val version: String,
+
+    /**
+     * Parent capability(s) this extends. Present for extensions, absent for root capabilities.
+     * Use array for multi-parent extensions.
+     */
+    public val extends: Extends? = null
+)
+
+/**
+ * Shared foundation for all UCP entities.
+ *
+ * Handler reference in responses. May include full config state for runtime usage of the
+ * handler.
+ */
+@Serializable
+public data class PaymentHandlerElement (
+    /**
+     * Entity-specific configuration. Structure defined by each entity's schema.
+     */
+    public val config: JsonObject? = null,
+
+    /**
+     * Unique identifier for this entity instance. Used to disambiguate when multiple instances
+     * exist.
+     */
+    public val id: String,
+
+    /**
+     * URL to JSON Schema defining this entity's structure and payloads.
+     */
+    public val schema: String? = null,
+
+    /**
+     * URL to human-readable specification document.
+     */
+    public val spec: String? = null,
+
+    /**
+     * Entity version in YYYY-MM-DD format.
+     */
+    public val version: String,
+
+    /**
+     * Instrument types this handler supports, with optional constraints. When absent, every
+     * instrument should be considered available.
+     */
+    @SerialName("available_instruments")
+    public val availableInstruments: List<PaymentHandlerAvailableInstrument>? = null
+)
+
+/**
+ * An instrument type available from a payment handler with optional constraints.
+ */
+@Serializable
+public data class PaymentHandlerAvailableInstrument (
+    /**
+     * Constraints on this instrument type. Structure depends on instrument type and active
+     * capabilities.
+     */
+    public val constraints: JsonObject? = null,
+
+    /**
+     * The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
+     * schema's type constant.
+     */
+    public val type: String
+)
+
+/**
+ * Shared foundation for all UCP entities.
+ */
+@Serializable
+public data class PurpleService (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -2799,44 +3506,33 @@ public data class Service (
 )
 
 /**
- * Checkout state after instrument selection.
- */
-@Serializable
-public data class InstrumentsChangeResult (
-    /**
-     * Partial checkout update with payment instrument selection.
-     */
-    public val checkout: InstrumentsChangeCheckout
-)
-
-/**
- * Partial checkout update with payment instrument selection.
- */
-@Serializable
-public data class InstrumentsChangeCheckout (
-    public val payment: InstrumentsChangePayment? = null
-)
-
-@Serializable
-public data class InstrumentsChangePayment (
-    public val instruments: List<SelectedPaymentInstrument>? = null,
-
-    /**
-     * ID of the selected payment instrument.
-     */
-    @SerialName("selected_instrument_id")
-    public val selectedInstrumentID: String? = null
-)
-
-/**
  * Checkout state with payment credential ready for completion.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
  */
 @Serializable
 public data class CredentialResult (
     /**
      * Partial checkout update with payment credential.
      */
-    public val checkout: CredentialCheckout
+    public val checkout: CredentialCheckout? = null,
+
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    public val ucp: InstrumentsChangeResultUcp,
+
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    @SerialName("continue_url")
+    public val continueURL: String? = null,
+
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    public val messages: List<MessageElement>? = null
 )
 
 /**
@@ -2847,7 +3543,13 @@ public data class CredentialCheckout (
     public val payment: CredentialPayment? = null
 )
 
+/**
+ * Payment instruments from host.
+ */
 @Serializable
 public data class CredentialPayment (
-    public val instruments: List<SelectedPaymentInstrument>? = null
+    /**
+     * Available payment instruments.
+     */
+    public val instruments: List<PurpleSelectedPaymentInstrument>? = null
 )
