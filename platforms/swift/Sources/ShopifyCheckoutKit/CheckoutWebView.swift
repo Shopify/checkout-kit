@@ -246,30 +246,21 @@ class CheckoutWebView: WKWebView {
 extension CheckoutWebView: WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? String else {
-            OSLogger.shared.debug("Bridge message ignored — non-string body")
             return
         }
 
-        OSLogger.shared.debug("Bridge → kit: \(body)")
-
         if let response = CheckoutProtocol.acknowledgeReady(body) {
-            OSLogger.shared.debug("Kit → bridge (ec.ready ack): \(response)")
             checkoutBridge.sendResponse(self, messageBody: response)
             return
         }
 
         guard let client else {
-            OSLogger.shared.debug("Bridge → kit: no client attached, dropping message")
             return
         }
 
-        OSLogger.shared.debug("Bridge → kit: dispatching to client \(type(of: client))")
         Task {
             if let response = await client.process(body) {
-                OSLogger.shared.debug("Kit → bridge (client response): \(response)")
                 checkoutBridge.sendResponse(self, messageBody: response)
-            } else {
-                OSLogger.shared.debug("Client returned nil (notification or unknown)")
             }
         }
     }
