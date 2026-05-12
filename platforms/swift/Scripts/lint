@@ -138,7 +138,7 @@ print_linting_error() {
 	echo "❌ $tool_name detected issues that need to be fixed."
 	if [[ "$MODE" == "check" ]]; then
 		echo "🔧 How to fix:"
-		echo "   Shopify employee? Run 'dev swift fix' and resolve remaining issues"
+		echo "   Shopify employee? Run 'dev swift format' and resolve remaining issues"
 		echo "   Not a Shopify employee? Run './Scripts/lint fix' and resolve remaining issues"
 	else
 		echo "🔧 These files will need to be fixed manually"

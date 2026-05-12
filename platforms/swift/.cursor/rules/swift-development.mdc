@@ -25,7 +25,7 @@ alwaysApply: true
 
 Key commands for verification:
 - `dev swift lint` (alias: `dev swift style`) - Check format & lint issues
-- `dev swift fix` - Auto-fix formatting and linting issues
+- `dev swift format` - Auto-format and apply safe lint autocorrections
 - `dev swift build packages` - Build both packages
 - `dev swift test` - Run all tests
 
@@ -50,7 +50,7 @@ actor QueryCache {
 ✅ DO: Run the appropriate dev command to verify
 
 ### After making changes:
-- ALWAYS run `dev swift fix && dev swift lint` to check your code is formatted and written in our style.
+- ALWAYS run `dev swift format && dev swift lint` to check your code is formatted and written in our style.
 
 ## Example Workflow
 
@@ -58,7 +58,7 @@ actor QueryCache {
 # Make your Swift changes...
 
 # Fix any auto-fixable issues
-dev swift fix
+dev swift format
 
 # Check for any remaining lint issues
 dev swift lint

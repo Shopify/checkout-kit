@@ -36,6 +36,17 @@ This repository contains the Checkout Kit implementations, samples, and protocol
 
 Swift, Android, and React Native rows show the planned first Checkout Kit alpha releases. Web is already published as `4.0.0-alpha.2`.
 
+## Development
+
+Shopify employees can use the root `dev.yml` from the repo root:
+
+```bash
+dev up
+dev check
+```
+
+Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, `dev protocol <command>`, and `dev react-native <command>` or `dev rn <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
+
 ## Platform Support
 
 | Capability | Swift | Android | React Native | Web |

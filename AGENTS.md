@@ -10,6 +10,23 @@ e2e/             # cross-platform end-to-end tests
 .github/         # workflows, issue templates, CODEOWNERS
 ```
 
+## Dev workflow
+
+Run `dev` commands from the repo root. Use `dev up` before running commands when
+the environment may not be provisioned.
+
+For platform-scoped work, prefer the root `dev.yml` commands:
+
+- Android: `dev android <command>`
+- Swift: `dev swift <command>`
+- Protocol: `dev protocol <command>`
+- React Native: `dev react-native <command>` or `dev rn <command>`
+
+For cross-platform changes, use the repo-wide aggregates: `dev lint`,
+`dev test`, `dev check`, `dev format`, and `dev build`. Use
+`dev <platform> format` for formatting; `fix` remains an alias for existing
+workflows.
+
 ## React Native development with local native SDK changes
 
 Until the new native SDK libraries have stable released versions, assume React Native validation needs the local native SDK workflow. Use `--local` whenever running the React Native sample or native React Native tests that depend on the in-repo Swift/Kotlin SDKs.
