@@ -29,7 +29,7 @@ struct DescriptorTests {
     @Suite("Spec Version")
     struct SpecVersion {
         @Test func matchesOpenRPCInfoVersion() {
-            #expect(CheckoutProtocol.specVersion == "2026-01-23")
+            #expect(CheckoutProtocol.specVersion == "2026-04-08")
         }
     }
 

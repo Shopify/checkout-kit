@@ -5,7 +5,7 @@
   "params": {
     "checkout": {
       "ucp": {
-        "version": "2026-01-11",
+        "version": "2026-04-08",
         "payment_handlers": {}
       },
       "id": "checkout-789",

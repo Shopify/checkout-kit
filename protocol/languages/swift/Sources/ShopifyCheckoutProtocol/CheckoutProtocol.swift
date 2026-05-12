@@ -22,7 +22,7 @@
  */
 
 public enum CheckoutProtocol {
-    public static let specVersion = "2026-01-23"
+    public static let specVersion = "2026-04-08"
 
     public static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
     public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
