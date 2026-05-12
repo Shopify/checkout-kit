@@ -18,14 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Node.js and pnpm
-        uses: shop/setup-javascript-action@main
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
         with:
           node-version-file: platforms/react-native/package.json
           cache-dependency-path: platforms/react-native/pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
 
       - name: Run tests with coverage
         run: pnpm test --coverage --testPathPatterns="modules/@shopify/checkout-sheet-kit/tests" --coverageReporters=json-summary

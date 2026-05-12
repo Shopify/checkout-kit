@@ -1,0 +1,41 @@
+name: Setup
+description: Setup Node.js and pnpm, then install dependencies
+
+inputs:
+  node-version-file:
+    description: Path to the file containing the Node.js version (package.json with engines.node)
+    required: false
+    default: package.json
+  cache-dependency-path:
+    description: Path to the pnpm lockfile used for caching
+    required: false
+    default: pnpm-lock.yaml
+  package-json-file:
+    description: Path to the package.json containing the packageManager field
+    required: false
+    default: package.json
+  working-directory:
+    description: Working directory in which to run pnpm install
+    required: false
+    default: .
+
+runs:
+  using: composite
+  steps:
+    - name: Install pnpm
+      uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      with:
+        package_json_file: ${{ inputs.package-json-file }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+        registry-url: 'https://registry.npmjs.org'
+        cache: pnpm
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+    - name: Install dependencies
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: pnpm install --frozen-lockfile
