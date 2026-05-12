@@ -53,7 +53,7 @@ class CheckoutCoordinator: UIViewController {
 
     public func present(checkout url: URL) {
         if let rootViewController = window?.topMostViewController() {
-            ShopifyCheckoutKit.present(checkout: url.appendingEcParams(), from: rootViewController, client: client)
+            ShopifyCheckoutKit.present(checkout: url, from: rootViewController, client: client)
             root = rootViewController
         }
     }

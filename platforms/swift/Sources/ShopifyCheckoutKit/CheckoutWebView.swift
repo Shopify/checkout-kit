@@ -21,6 +21,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import ShopifyCheckoutProtocol
 import UIKit
 import WebKit
 
@@ -243,40 +244,18 @@ class CheckoutWebView: WKWebView {
 
 extension CheckoutWebView: WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let body = message.body as? String else {
-            print("[ECP-DEBUG] message body is not a string, type: \(type(of: message.body))")
+        guard let body = message.body as? String else { return }
+
+        if let response = CheckoutProtocol.acknowledgeReady(body) {
+            CheckoutBridge.sendResponse(self, messageBody: response)
             return
         }
 
-        print("[ECP-DEBUG] raw message: \(body)")
-
-        if let data = body.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        {
-            let method = json["method"] as? String ?? "nil"
-            let id = json["id"] as? String ?? "nil"
-            print("[ECP-DEBUG] method: \(method), id: \(id)")
-
-            if method == "ec.ready", let reqId = json["id"] as? String {
-                print("[ECP-DEBUG] responding to ec.ready with id: \(reqId)")
-                let response = "{\"jsonrpc\":\"2.0\",\"id\":\"\(reqId)\",\"result\":{}}"
-                CheckoutBridge.sendResponse(self, messageBody: response)
-            }
-        } else {
-            print("[ECP-DEBUG] failed to parse JSON from body")
-        }
-
-        guard let client else {
-            print("[ECP-DEBUG] no bridge client registered")
-            return
-        }
+        guard let client else { return }
 
         Task {
             if let response = await client.process(body) {
-                print("[ECP-DEBUG] client responded: \(response)")
                 CheckoutBridge.sendResponse(self, messageBody: response)
-            } else {
-                print("[ECP-DEBUG] client returned nil for method")
             }
         }
     }

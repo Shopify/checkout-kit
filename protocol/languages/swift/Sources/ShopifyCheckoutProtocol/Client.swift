@@ -74,7 +74,7 @@ extension CheckoutProtocol {
             case .ready(let id, let delegations):
                 let payload = ReadyPayload(delegations: delegations)
                 await notificationHandlers["ec.ready"]?(payload)
-                return CheckoutProtocol.encodeResponse(id: id, result: EmptyResult())
+                return CheckoutProtocol.encodeReadyResponse(id: id, delegations: self.delegations)
 
             case .notification(let method, let checkout):
                 await notificationHandlers[method]?(checkout)
@@ -96,6 +96,4 @@ extension CheckoutProtocol {
         let delegation: String
         let handler: @MainActor @Sendable (String, Checkout) async -> String?
     }
-
-    struct EmptyResult: ResponsePayload {}
 }

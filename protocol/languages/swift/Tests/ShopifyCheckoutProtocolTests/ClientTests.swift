@@ -165,10 +165,13 @@ struct ClientTests {
         let response = await client.process(try readyFixture())
 
         #expect(receivedPayload?.delegations == ["payment.instruments_change", "payment.credential"])
-        #expect(response != nil)
         let data = try #require(response?.data(using: .utf8))
         let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(parsed["jsonrpc"] as? String == "2.0")
         #expect(parsed["id"] as? String == "ready-1")
+        #expect(parsed["method"] as? String == "ec.ready")
+        let params = try #require(parsed["params"] as? [String: Any])
+        #expect(params["delegate"] as? [String] == [])
     }
 
     @Test @MainActor func readyWithNoHandlerStillReturnsResponse() async throws {
@@ -176,9 +179,37 @@ struct ClientTests {
 
         let response = await client.process(try readyFixture())
 
-        #expect(response != nil)
         let data = try #require(response?.data(using: .utf8))
         let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         #expect(parsed["id"] as? String == "ready-1")
+        #expect(parsed["method"] as? String == "ec.ready")
+        let params = try #require(parsed["params"] as? [String: Any])
+        #expect(params["delegate"] as? [String] == [])
+    }
+
+    @Test @MainActor func readyResponseAdvertisesRegisteredDelegations() async throws {
+        let client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.credentialRequest) { (_: Checkout) in
+                CredentialResult(
+                    checkout: CredentialCheckout(
+                        payment: CredentialPayment(instruments: nil)
+                    )
+                )
+            }
+            .on(CheckoutProtocol.instrumentsChangeRequest) { (_: Checkout) in
+                InstrumentsChangeResult(
+                    checkout: InstrumentsChangeCheckout(
+                        payment: InstrumentsChangePayment(instruments: nil, selectedInstrumentID: nil)
+                    )
+                )
+            }
+
+        let response = await client.process(try readyFixture())
+
+        let data = try #require(response?.data(using: .utf8))
+        let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let params = try #require(parsed["params"] as? [String: Any])
+        let delegate = try #require(params["delegate"] as? [String])
+        #expect(delegate.sorted() == ["payment.credential", "payment.instruments_change"])
     }
 }

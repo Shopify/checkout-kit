@@ -23,6 +23,16 @@
 
 import Foundation
 
+public extension CheckoutProtocol {
+    /// Returns an `ec.ready` response if the given message is an `ec.ready` request,
+    /// otherwise `nil`. Lets the kit acknowledge the handshake without surfacing it
+    /// to consumers.
+    static func acknowledgeReady(_ message: String, delegations: [String] = []) -> String? {
+        guard case .ready(let id, _) = decode(jsonRpc: message) else { return nil }
+        return encodeReadyResponse(id: id, delegations: delegations)
+    }
+}
+
 extension CheckoutProtocol {
     static func decode(jsonRpc: String) -> UCPMessage {
         guard let data = jsonRpc.data(using: .utf8) else {
@@ -57,8 +67,9 @@ extension CheckoutProtocol {
         return String(data: data, encoding: .utf8) ?? "{}"
     }
 
-    static func encodeReady(delegations: [String]) -> String {
-        let wrapper = JSONRPCReady(
+    static func encodeReadyResponse(id: String, delegations: [String]) -> String {
+        let wrapper = JSONRPCReadyResponse(
+            id: id,
             params: ReadyParams(delegate: delegations)
         )
         let encoder = JSONEncoder()
@@ -74,8 +85,9 @@ private struct JSONRPCResponse<R: Encodable>: Encodable {
     let result: R
 }
 
-private struct JSONRPCReady: Encodable {
+private struct JSONRPCReadyResponse: Encodable {
     let jsonrpc = "2.0"
+    let id: String
     let method = "ec.ready"
     let params: ReadyParams
 }

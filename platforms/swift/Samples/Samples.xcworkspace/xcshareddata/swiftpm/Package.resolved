@@ -1,4 +1,5 @@
 {
+  "originHash" : "e6d173bab775dd4a8f05d7bd3eaa05cd25a7015ee1610acc65c8fe09c9983e17",
   "pins" : [
     {
       "identity" : "apollo-ios",
@@ -8,16 +9,7 @@
         "revision" : "3b1203b721a81f7995ee73f393aa07b43d301720",
         "version" : "2.0.6"
       }
-    },
-    {
-      "identity" : "viewinspector",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nalexn/ViewInspector",
-      "state" : {
-        "revision" : "e9a06346499a3a889165647e3f23f8a7b2609a1c",
-        "version" : "0.10.3"
-      }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

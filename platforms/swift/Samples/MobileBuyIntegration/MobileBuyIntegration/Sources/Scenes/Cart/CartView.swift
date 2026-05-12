@@ -115,7 +115,7 @@ struct CartView: View {
             }
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
-                    CheckoutSheet(checkout: url.appendingEcParams())
+                    CheckoutSheet(checkout: url)
                         .connect(client)
                         .colorScheme(.automatic)
                         .onCancel {
@@ -283,7 +283,7 @@ struct CartLines: View {
                                             updating = nil
 
                                             if let checkoutUrl = cart.checkoutURL {
-                                                ShopifyCheckoutKit.preload(checkout: checkoutUrl.appendingEcParams())
+                                                ShopifyCheckoutKit.preload(checkout: checkoutUrl)
                                             }
                                         }
                                     },
