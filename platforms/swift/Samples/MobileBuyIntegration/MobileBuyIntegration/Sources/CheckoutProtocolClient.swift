@@ -21,43 +21,27 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
-@testable import ShopifyCheckoutProtocol
+import ShopifyCheckoutProtocol
 
-@Suite("Descriptor Tests")
-struct DescriptorTests {
-    @Suite("Spec Version")
-    struct SpecVersion {
-        @Test func matchesOpenRPCInfoVersion() {
-            #expect(CheckoutProtocol.specVersion == "2026-01-23")
+enum CheckoutProtocolClient {
+    static let shared = CheckoutProtocol.Client()
+        .on(CheckoutProtocol.start) { checkout in
+            print("[UCP] ec.start: \(checkout.id)")
         }
-    }
-
-    @Suite("Notifications")
-    struct Notifications {
-        @Test func startMethod() {
-            #expect(CheckoutProtocol.start.method == "ec.start")
+        .on(CheckoutProtocol.complete) { checkout in
+            print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
+            CartManager.shared.resetCart()
         }
-
-        @Test func completeMethod() {
-            #expect(CheckoutProtocol.complete.method == "ec.complete")
+        .on(CheckoutProtocol.buyerChange) { checkout in
+            print("[UCP] ec.buyer.change: \(checkout.id)")
         }
-
-        @Test func messagesChangeMethod() {
-            #expect(CheckoutProtocol.messagesChange.method == "ec.messages.change")
+        .on(CheckoutProtocol.lineItemsChange) { checkout in
+            print("[UCP] ec.line_items.change: \(checkout.id)")
         }
-
-        @Test func lineItemsChangeMethod() {
-            #expect(CheckoutProtocol.lineItemsChange.method == "ec.line_items.change")
+        .on(CheckoutProtocol.messagesChange) { checkout in
+            print("[UCP] ec.messages.change: \(checkout.id)")
         }
-
-        @Test func buyerChangeMethod() {
-            #expect(CheckoutProtocol.buyerChange.method == "ec.buyer.change")
+        .on(CheckoutProtocol.paymentChange) { checkout in
+            print("[UCP] ec.payment.change: \(checkout.id)")
         }
-
-        @Test func paymentChangeMethod() {
-            #expect(CheckoutProtocol.paymentChange.method == "ec.payment.change")
-        }
-    }
-
 }

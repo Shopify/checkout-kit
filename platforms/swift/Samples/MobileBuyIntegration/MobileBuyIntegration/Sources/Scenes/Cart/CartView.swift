@@ -37,14 +37,7 @@ struct CartView: View {
 
     @ObservedObject var cartManager: CartManager = .shared
 
-    private let client = CheckoutProtocol.Client()
-        .on(CheckoutProtocol.start) { checkout in
-            print("[UCP] Checkout started: \(checkout.id)")
-        }
-        .on(CheckoutProtocol.complete) { checkout in
-            print("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
-            CartManager.shared.resetCart()
-        }
+    private let client = CheckoutProtocolClient.shared
 
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic

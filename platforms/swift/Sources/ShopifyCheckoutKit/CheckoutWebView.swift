@@ -136,8 +136,7 @@ class CheckoutWebView: WKWebView {
             configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
             configuration.applicationNameForUserAgent = CheckoutBridge.recoveryAgent(entryPoint: entryPoint)
         } else {
-            // Sending this user agent makes checkout think we're subscribing to the old protocol
-//            configuration.applicationNameForUserAgent = CheckoutBridge.applicationName(entryPoint: entryPoint)
+            configuration.applicationNameForUserAgent = CheckoutBridge.applicationName(entryPoint: entryPoint)
         }
 
         isRecovery = recovery
@@ -384,8 +383,6 @@ extension CheckoutWebView: WKNavigationDelegate {
                 var info = {
                     hasECP: typeof window.EmbeddedCheckoutProtocol !== 'undefined',
                     ecpKeys: typeof window.EmbeddedCheckoutProtocol === 'object' ? Object.keys(window.EmbeddedCheckoutProtocol) : [],
-                    hasWebkit: typeof window.webkit !== 'undefined',
-                    hasMessageHandlers: typeof window.webkit?.messageHandlers !== 'undefined',
                     hasConsumer: typeof window.webkit?.messageHandlers?.EmbeddedCheckoutProtocolConsumer !== 'undefined',
                     hasMobileSDK: typeof window.MobileCheckoutSdk !== 'undefined',
                     url: window.location.href

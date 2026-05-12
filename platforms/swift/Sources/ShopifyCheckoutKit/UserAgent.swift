@@ -41,7 +41,7 @@ public enum UserAgent {
         case recovery
     }
 
-    private static let baseUserAgent = "ShopifyCheckoutSDK/\(MetaData.version)"
+    private static let baseUserAgent = "ShopifyCheckoutKit/\(MetaData.version)"
 
     /// Shared format for CheckoutKit and AcceleratedCheckouts
     package static func string(
