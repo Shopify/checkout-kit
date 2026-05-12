@@ -21,7 +21,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import ShopifyCheckoutProtocol
+#if !COCOAPODS
+    import ShopifyCheckoutProtocol
+#endif
 import UIKit
 
 /// The version of the `ShopifyCheckoutKit` library.
