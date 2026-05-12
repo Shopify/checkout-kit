@@ -1,4 +1,4 @@
-name: Swift — Deploy
+name: Swift — Publish
 
 on:
   release:
