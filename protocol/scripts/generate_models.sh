@@ -47,7 +47,9 @@ trap cleanup EXIT
 # extracted result schemas gives quicktype deterministic naming hints.
 #
 # We also rewrite $ref paths from "../../schemas/shopping/" to "" so that refs resolve
-# correctly when the temp file is placed alongside the main schemas in SPEC_DIR.
+# correctly when the temp file is placed alongside the main schemas in SPEC_DIR. The
+# openrpc doc's `components` section is copied into the temp file so internal
+# `#/components/schemas/X` refs in the extracted result schema resolve locally.
 extract_result_schema() {
   local method_name="$1"
   local output_file="$2"
@@ -59,7 +61,8 @@ extract_result_schema() {
     --arg checkout_title "$checkout_title" \
     --arg payment_title "$payment_title" \
     '
-      .methods[] | select(.name == $method) | .result.schema
+      . as $root
+      | .methods[] | select(.name == $method) | .result.schema
       | .title = $root_title
       | .properties.checkout.title = $checkout_title
       | .properties.checkout.properties.payment.title = $payment_title
@@ -68,6 +71,7 @@ extract_result_schema() {
         else . end)
       | .properties.checkout.properties.payment.properties.instruments =
           {"$ref": "payment.json#/properties/instruments"}
+      | . + { components: $root.components }
     ' \
     "${SERVICES_DIR}/embedded.openrpc.json" > "$output_file"
   TEMP_SCHEMAS+=("$output_file")
