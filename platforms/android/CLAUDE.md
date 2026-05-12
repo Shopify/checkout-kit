@@ -16,7 +16,7 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 ## Where to make changes
 
 - Library source: `lib/src/main/java/com/shopify/checkoutkit/`. Flat package at the top level with a few subpackages (`errorevents/`, `lifecycleevents/`, `pixelevents/`).
-- Library tests: `lib/src/test/java/com/shopify/checkoutkit/`. "No test, no merge" is a listed reject criterion in `.github/CONTRIBUTING.md`.
+- Library tests: `lib/src/test/java/com/shopify/checkoutkit/`. "No test, no merge" is a listed reject criterion in the repo-root `.github/CONTRIBUTING.md`.
 - Java interop is a first-class concern — the library is commonly consumed from Java code. `lib/src/test/java/com/shopify/checkoutkit/InteropTest.java` exercises the public API from Java specifically; treat breakage there as a consumer-facing issue.
 
 ## Key components
@@ -42,7 +42,7 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 - **`-Xexplicit-api=strict`** is on (`lib/build.gradle`). Every public class, method, field, and property must have an explicit visibility modifier. "Accidentally public" is not a thing here. This is a consumer-protection rule — if you see a public-by-default declaration, it was deliberate.
 - **Max line length: 140** (detekt-enforced). Detekt config: `lib/detekt.config.yml`.
-- **MIT license header required on every new source file.** Format: copy the top comment of any existing `.kt` or `.java` file in `lib/src/main` or `lib/src/test`. Enforced in CI via `scripts/check_license_headers.rb`.
+- **MIT license header required on every new source file.** Format: copy the top comment of any existing `.kt` or `.java` file in `lib/src/main` or `lib/src/test`. Enforced in CI via the repo-root `scripts/check_license_headers.rb`.
 - **Library JVM target: 1.8.** Intentional for consumer compatibility; don't raise without a major-version discussion.
 - **Library Kotlin version is pinned.** The `lib/build.gradle` plugin version and any `apiVersion` / `languageVersion` settings exist to keep consumer compatibility stable. A Kotlin major-version migration is a planned major-version event, not a casual dep bump.
 
@@ -82,10 +82,12 @@ Raising any of these is a consumer-facing breaking change and needs visible rele
 
 Versions are bumped via:
 
-1. The fallback value in `lib/build.gradle` for the `CHECKOUT_KIT_VERSION` env var.
+1. The `versionName` literal in `lib/build.gradle`.
 2. The install snippets in `README.md` (Gradle and Maven).
 
-Publishing goes through GitHub Releases → `.github/workflows/publish.yml` → manual approval gate before Maven Central deploy. Full procedure: `.github/CONTRIBUTING.md` "Releasing a new version".
+Android releases are tagged `android/X.Y.Z` (Swift releases use bare `X.Y.Z`). The publish workflow filters on the `android/` prefix — without it, nothing publishes on the Android side.
+
+Publishing goes through GitHub Releases → the repo-root `.github/workflows/android-publish.yml` → manual approval gate before Maven Central deploy. Full procedure: the repo-root `.github/CONTRIBUTING.md` "Releasing a new version".
 
 ## Things not to touch without discussion
 

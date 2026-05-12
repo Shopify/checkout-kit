@@ -80,7 +80,7 @@ Once merged, draft a release on GitHub:
 2. Use the same tag as the release name.
 3. Document the changes since the previous release in the description.
 4. Check "Set as the latest release".
-5. Click "Publish release". This kicks off the [Swift deploy workflow](../../actions/workflows/swift-deploy.yml) which publishes the new version to CocoaPods.
+5. Click "Publish release". This kicks off the [Swift publish workflow](../../actions/workflows/swift-publish.yml) which publishes the new version to CocoaPods.
 
 ---
 
@@ -125,4 +125,4 @@ Once merged, draft a release on GitHub:
 2. Use the same tag as the release name.
 3. Document the changes since the previous release in the description.
 4. Check "Set as the latest release".
-5. Click "Publish release". This kicks off the [Android deploy workflow](../../actions/workflows/android-deploy.yml). **A manual approval by a maintainer is required before publication to Maven Central.**
+5. Click "Publish release". This kicks off the [Android publish workflow](../../actions/workflows/android-publish.yml). **A manual approval by a maintainer is required before publication to Maven Central.**

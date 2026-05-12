@@ -11,12 +11,7 @@ plugins {
     id 'io.gitlab.arturbosch.detekt'
 }
 
-def resolveEnvVarValue(name, defaultValue) {
-    def rawValue = providers.environmentVariable(name).getOrElse("")
-    return rawValue ? rawValue : defaultValue
-}
-
-def versionName = resolveEnvVarValue("CHECKOUT_KIT_VERSION", "1.0.0")
+def versionName = "1.0.0"
 
 ext {
     app_compat_version = '1.7.1'
@@ -154,7 +149,7 @@ project.afterEvaluate {
                 pom {
                     name = "CheckoutKit"
                     description = "Shopify's Checkout Kit makes it simple to render checkouts inside your mobile app."
-                    url = "https://github.com/Shopify/checkout-kit-android"
+                    url = "https://github.com/Shopify/checkout-kit"
                     groupId = "com.shopify"
                     artifactId = "checkout-kit"
                     version = versionName
@@ -173,9 +168,9 @@ project.afterEvaluate {
                     }
 
                     scm {
-                        connection = "https://github.com/Shopify/checkout-kit-android.git"
-                        developerConnection = "https://github.com/Shopify/checkout-kit-android.git"
-                        url = "https://github.com/Shopify/checkout-kit-android.git"
+                        connection = "https://github.com/Shopify/checkout-kit.git"
+                        developerConnection = "https://github.com/Shopify/checkout-kit.git"
+                        url = "https://github.com/Shopify/checkout-kit.git"
                     }
                 }
 
