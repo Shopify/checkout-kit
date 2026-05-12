@@ -41,9 +41,11 @@ jobs:
               - '.github/workflows/ci.yml'
             swift:
               - 'platforms/swift/**'
+              - 'protocol/languages/swift/**'
               - 'Package.swift'
               - 'Package.resolved'
               - '.github/workflows/swift-test-package.yml'
+              - '.github/workflows/swift-test-protocol.yml'
               - '.github/workflows/swift-build-samples.yml'
               - '.github/workflows/swift-test-workflow.yml'
               - '.github/workflows/swift-lint.yml'
@@ -75,6 +77,12 @@ jobs:
     needs: changes
     if: needs.changes.outputs.swift == 'true'
     uses: ./.github/workflows/swift-test-package.yml
+
+  swift-test-protocol:
+    name: Swift
+    needs: changes
+    if: needs.changes.outputs.swift == 'true'
+    uses: ./.github/workflows/swift-test-protocol.yml
 
   swift-build-samples:
     name: Swift
@@ -138,6 +146,7 @@ jobs:
       - android-test
       - android-license-headers
       - swift-test-package
+      - swift-test-protocol
       - swift-build-samples
       - swift-lint
       - rn-test
