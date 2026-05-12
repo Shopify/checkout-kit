@@ -243,18 +243,31 @@ class CheckoutWebView: WKWebView {
 
 extension CheckoutWebView: WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let body = message.body as? String else { return }
-
-        if let response = CheckoutProtocol.acknowledgeReady(body) {
-            CheckoutBridge.sendResponse(self, messageBody: response)
+        guard let body = message.body as? String else {
+            OSLogger.shared.debug("Bridge message ignored — non-string body")
             return
         }
 
-        guard let client else { return }
+        OSLogger.shared.debug("Bridge → kit: \(body)")
 
+        if let response = CheckoutProtocol.acknowledgeReady(body) {
+            OSLogger.shared.debug("Kit → bridge (ec.ready ack): \(response)")
+            checkoutBridge.sendResponse(self, messageBody: response)
+            return
+        }
+
+        guard let client else {
+            OSLogger.shared.debug("Bridge → kit: no client attached, dropping message")
+            return
+        }
+
+        OSLogger.shared.debug("Bridge → kit: dispatching to client \(type(of: client))")
         Task {
             if let response = await client.process(body) {
-                CheckoutBridge.sendResponse(self, messageBody: response)
+                OSLogger.shared.debug("Kit → bridge (client response): \(response)")
+                checkoutBridge.sendResponse(self, messageBody: response)
+            } else {
+                OSLogger.shared.debug("Client returned nil (notification or unknown)")
             }
         }
     }
@@ -376,29 +389,6 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
         checkoutDidLoad = true
         timer = nil
-
-        #if DEBUG
-            let debugScript = """
-            (function() {
-                var info = {
-                    hasECP: typeof window.EmbeddedCheckoutProtocol !== 'undefined',
-                    ecpKeys: typeof window.EmbeddedCheckoutProtocol === 'object' ? Object.keys(window.EmbeddedCheckoutProtocol) : [],
-                    hasConsumer: typeof window.webkit?.messageHandlers?.EmbeddedCheckoutProtocolConsumer !== 'undefined',
-                    hasMobileSDK: typeof window.MobileCheckoutSdk !== 'undefined',
-                    url: window.location.href
-                };
-                return JSON.stringify(info);
-            })();
-            """
-            evaluateJavaScript(debugScript) { result, error in
-                if let error {
-                    print("[ECP-DEBUG] JS eval error: \(error.localizedDescription)")
-                }
-                if let result {
-                    print("[ECP-DEBUG] page state: \(result)")
-                }
-            }
-        #endif
     }
 
     func webView(_: WKWebView, didFail _: WKNavigation!, withError error: Error) {

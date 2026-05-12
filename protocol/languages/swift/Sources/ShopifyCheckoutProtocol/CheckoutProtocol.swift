@@ -26,8 +26,10 @@ public enum CheckoutProtocol {
 
     public static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
     public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
+    public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")
     public static let lineItemsChange = NotificationDescriptor<Checkout>(method: "ec.line_items.change")
     public static let messagesChange = NotificationDescriptor<Checkout>(method: "ec.messages.change")
     public static let paymentChange = NotificationDescriptor<Checkout>(method: "ec.payment.change")
     public static let start = NotificationDescriptor<Checkout>(method: "ec.start")
+    public static let totalsChange = NotificationDescriptor<Checkout>(method: "ec.totals.change")
 }

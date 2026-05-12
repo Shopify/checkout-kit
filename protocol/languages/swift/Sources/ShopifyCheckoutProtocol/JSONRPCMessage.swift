@@ -33,4 +33,5 @@ struct JSONRPCRequest: Decodable, Sendable {
 struct JSONRPCParams: Decodable, Sendable {
     let checkout: Checkout?
     let delegate: [String]?
+    let error: ErrorResponse?
 }

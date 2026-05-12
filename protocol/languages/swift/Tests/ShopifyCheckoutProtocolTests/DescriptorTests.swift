@@ -58,6 +58,14 @@ struct DescriptorTests {
         @Test func paymentChangeMethod() {
             #expect(CheckoutProtocol.paymentChange.method == "ec.payment.change")
         }
+
+        @Test func totalsChangeMethod() {
+            #expect(CheckoutProtocol.totalsChange.method == "ec.totals.change")
+        }
+
+        @Test func errorMethod() {
+            #expect(CheckoutProtocol.error.method == "ec.error")
+        }
     }
 
 }

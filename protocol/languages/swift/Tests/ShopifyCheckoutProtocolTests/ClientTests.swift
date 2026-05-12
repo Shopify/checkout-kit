@@ -103,9 +103,12 @@ struct ClientTests {
         let data = try #require(response?.data(using: .utf8))
         let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         #expect(parsed["id"] as? String == "ready-1")
-        #expect(parsed["method"] as? String == "ec.ready")
-        let params = try #require(parsed["params"] as? [String: Any])
-        #expect(params["delegate"] as? [String] == [])
+        #expect(parsed["method"] == nil)
+        #expect(parsed["params"] == nil)
+        let result = try #require(parsed["result"] as? [String: Any])
+        let ucp = try #require(result["ucp"] as? [String: Any])
+        #expect(ucp["version"] as? String == CheckoutProtocol.specVersion)
+        #expect(ucp["status"] as? String == "success")
     }
 
 }

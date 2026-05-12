@@ -44,4 +44,10 @@ enum CheckoutProtocolClient {
         .on(CheckoutProtocol.paymentChange) { checkout in
             print("[UCP] ec.payment.change: \(checkout.id)")
         }
+        .on(CheckoutProtocol.totalsChange) { checkout in
+            print("[UCP] ec.totals.change: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.error) { error in
+            print("[UCP] ec.error: \(error.messages.first?.content ?? "(no message)")")
+        }
 }

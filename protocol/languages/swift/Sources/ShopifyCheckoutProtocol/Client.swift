@@ -72,10 +72,10 @@ extension CheckoutProtocol {
 
             switch decoded {
             case .ready(let id, _):
-                return CheckoutProtocol.encodeReadyResponse(id: id, delegations: self.delegations)
+                return CheckoutProtocol.encodeReadyResponse(id: id)
 
-            case .notification(let method, let checkout):
-                await notificationHandlers[method]?(checkout)
+            case .notification(let method, let payload):
+                await notificationHandlers[method]?(payload)
                 return nil
 
             case .request(let id, let method, let checkout):

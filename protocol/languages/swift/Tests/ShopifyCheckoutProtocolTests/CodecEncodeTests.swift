@@ -31,7 +31,16 @@ struct CodecEncodeTests {
         let result = CredentialResult(
             checkout: CredentialCheckout(
                 payment: CredentialPayment(instruments: nil)
-            )
+            ),
+            ucp: InstrumentsChangeResultUcp(
+                capabilities: nil,
+                paymentHandlers: nil,
+                services: nil,
+                status: .success,
+                version: CheckoutProtocol.specVersion
+            ),
+            continueURL: nil,
+            messages: nil
         )
         let json = CheckoutProtocol.encodeResponse(id: "req-456", result: result)
         let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as! [String: Any]
@@ -41,28 +50,19 @@ struct CodecEncodeTests {
         #expect(parsed["result"] != nil)
     }
 
-    @Test func encodesReadyResponseWithEmptyDelegations() throws {
-        let json = CheckoutProtocol.encodeReadyResponse(id: "ready-1", delegations: [])
+    @Test func encodesReadyResponseWithResultEnvelope() throws {
+        let json = CheckoutProtocol.encodeReadyResponse(id: "ready-1")
         let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as! [String: Any]
 
         #expect(parsed["jsonrpc"] as? String == "2.0")
         #expect(parsed["id"] as? String == "ready-1")
-        #expect(parsed["method"] as? String == "ec.ready")
-        let params = try #require(parsed["params"] as? [String: Any])
-        #expect(params["delegate"] as? [String] == [])
-    }
+        #expect(parsed["method"] == nil, "JSON-RPC responses must not carry a method field")
+        #expect(parsed["params"] == nil, "JSON-RPC responses must not carry a params field")
 
-    @Test func encodesReadyResponseWithDelegations() throws {
-        let json = CheckoutProtocol.encodeReadyResponse(
-            id: "ready-1",
-            delegations: ["payment.credential", "payment.instruments_change"]
-        )
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as! [String: Any]
-
-        #expect(parsed["method"] as? String == "ec.ready")
-        let params = try #require(parsed["params"] as? [String: Any])
-        let delegate = try #require(params["delegate"] as? [String])
-        #expect(delegate.sorted() == ["payment.credential", "payment.instruments_change"])
+        let result = try #require(parsed["result"] as? [String: Any])
+        let ucp = try #require(result["ucp"] as? [String: Any])
+        #expect(ucp["version"] as? String == CheckoutProtocol.specVersion)
+        #expect(ucp["status"] as? String == "success")
     }
 
     @Test func acknowledgeReadyReturnsResponseForReadyMessage() throws {
@@ -74,20 +74,10 @@ struct CodecEncodeTests {
         let parsed = try JSONSerialization.jsonObject(with: Data(response.utf8)) as! [String: Any]
 
         #expect(parsed["id"] as? String == "ready-1")
-        #expect(parsed["method"] as? String == "ec.ready")
-        let params = try #require(parsed["params"] as? [String: Any])
-        #expect(params["delegate"] as? [String] == [])
-    }
-
-    @Test func acknowledgeReadyForwardsDelegations() throws {
-        let message = #"""
-        {"jsonrpc":"2.0","id":"ready-1","method":"ec.ready","params":{"delegate":[]}}
-        """#
-
-        let response = try #require(CheckoutProtocol.acknowledgeReady(message, delegations: ["payment.credential"]))
-        let parsed = try JSONSerialization.jsonObject(with: Data(response.utf8)) as! [String: Any]
-        let params = try #require(parsed["params"] as? [String: Any])
-        #expect(params["delegate"] as? [String] == ["payment.credential"])
+        let result = try #require(parsed["result"] as? [String: Any])
+        let ucp = try #require(result["ucp"] as? [String: Any])
+        #expect(ucp["version"] as? String == CheckoutProtocol.specVersion)
+        #expect(ucp["status"] as? String == "success")
     }
 
     @Test func acknowledgeReadyReturnsNilForNonReadyMessage() throws {

@@ -31,16 +31,35 @@ struct CodecDecodeTests {
         let json = try fixtureString("notification")
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .notification(let method, let checkout) = message else {
+        guard case .notification(let method, let payload) = message else {
             Issue.record("Expected .notification, got \(message)")
             return
         }
+        let checkout = try #require(payload as? Checkout)
 
         #expect(method == "ec.start")
         #expect(checkout.id == "checkout-123")
         #expect(checkout.currency == "USD")
         #expect(checkout.lineItems.count == 1)
         #expect(checkout.lineItems[0].item.title == "Test Product")
+    }
+
+    @Test func decodesErrorNotification() throws {
+        let json = #"""
+        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":[{"type":"error","code":"unrecoverable","content":"Boom.","severity":"recoverable"}]}}}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case .notification(let method, let payload) = message else {
+            Issue.record("Expected .notification, got \(message)")
+            return
+        }
+        let error = try #require(payload as? ErrorResponse)
+
+        #expect(method == "ec.error")
+        #expect(error.ucp.version == "2026-04-08")
+        #expect(error.ucp.status == .error)
+        #expect(error.messages.first?.content == "Boom.")
     }
 
     @Test func decodesRequest() throws {

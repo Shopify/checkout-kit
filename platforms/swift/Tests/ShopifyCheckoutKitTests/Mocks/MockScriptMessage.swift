@@ -21,9 +21,18 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-enum UCPMessage: Sendable {
-    case notification(method: String, payload: any EventPayload)
-    case request(id: String, method: String, checkout: Checkout)
-    case ready(id: String, delegations: [String])
-    case unknown(method: String, rawParams: String)
+import WebKit
+
+class MockScriptMessage: WKScriptMessage {
+    private let mockBody: Any
+    private let mockName: String
+
+    override var body: Any { mockBody }
+    override var name: String { mockName }
+
+    init(name: String = "EmbeddedCheckoutProtocolConsumer", body: Any) {
+        mockBody = body
+        mockName = name
+        super.init()
+    }
 }
