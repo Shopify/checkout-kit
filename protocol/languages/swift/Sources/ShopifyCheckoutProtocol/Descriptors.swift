@@ -34,9 +34,6 @@ public protocol ResponsePayload: Encodable, Sendable {}
 extension Checkout: EventPayload {}
 extension InstrumentsChangeResult: ResponsePayload {}
 extension CredentialResult: ResponsePayload {}
-public struct ReadyPayload: EventPayload {
-    public let delegations: [String]
-}
 
 public struct NotificationDescriptor<Payload: EventPayload>: Sendable {
     public let method: String

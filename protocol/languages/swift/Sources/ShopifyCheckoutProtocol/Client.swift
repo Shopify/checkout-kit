@@ -71,9 +71,7 @@ extension CheckoutProtocol {
             let decoded = CheckoutProtocol.decode(jsonRpc: message)
 
             switch decoded {
-            case .ready(let id, let delegations):
-                let payload = ReadyPayload(delegations: delegations)
-                await notificationHandlers["ec.ready"]?(payload)
+            case .ready(let id, _):
                 return CheckoutProtocol.encodeReadyResponse(id: id, delegations: self.delegations)
 
             case .notification(let method, let checkout):

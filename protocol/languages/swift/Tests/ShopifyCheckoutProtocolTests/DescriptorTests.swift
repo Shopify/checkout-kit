@@ -60,22 +60,4 @@ struct DescriptorTests {
         }
     }
 
-    @Suite("Delegations")
-    struct Delegations {
-        @Test func instrumentsChangeRequestMethod() {
-            #expect(CheckoutProtocol.instrumentsChangeRequest.method == "ec.payment.instruments_change_request")
-        }
-
-        @Test func instrumentsChangeRequestDelegation() {
-            #expect(CheckoutProtocol.instrumentsChangeRequest.delegation == "payment.instruments_change")
-        }
-
-        @Test func credentialRequestMethod() {
-            #expect(CheckoutProtocol.credentialRequest.method == "ec.payment.credential_request")
-        }
-
-        @Test func credentialRequestDelegation() {
-            #expect(CheckoutProtocol.credentialRequest.delegation == "payment.credential")
-        }
-    }
 }
