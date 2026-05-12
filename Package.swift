@@ -17,6 +17,10 @@ let package = Package(
         .library(
             name: "ShopifyAcceleratedCheckouts",
             targets: ["ShopifyAcceleratedCheckouts"]
+        ),
+        .library(
+            name: "ShopifyCheckoutProtocol",
+            targets: ["ShopifyCheckoutProtocol"]
         )
     ],
     dependencies: [
