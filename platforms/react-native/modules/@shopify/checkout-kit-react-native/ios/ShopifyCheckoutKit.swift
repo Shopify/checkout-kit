@@ -54,7 +54,7 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
     }
 
     override func supportedEvents() -> [String]! {
-        return ["close", "completed", "error", "pixel"]
+        return ["close", "completed", "error"]
     }
 
     override func startObserving() {
@@ -81,12 +81,6 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
         sendEvent(withName: "error", body: ShopifyEventSerialization.serialize(checkoutError: error))
     }
 
-    func checkoutDidEmitWebPixelEvent(event: ShopifyCheckoutSheetKit.PixelEvent) {
-        if hasListeners {
-            sendEvent(withName: "pixel", body: ShopifyEventSerialization.serialize(pixelEvent: event))
-        }
-    }
-
     func checkoutDidCancel() {
         DispatchQueue.main.async {
             if self.hasListeners {
@@ -96,6 +90,11 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
             self.checkoutSheet?.dismiss(animated: true)
         }
     }
+
+    // TODO: remove when wrapper migrates off ShopifyCheckoutSheetKit.
+    // Required by CSK's CheckoutDelegate; intentionally no-ops since pixel events
+    // are no longer forwarded to JS.
+    func checkoutDidEmitWebPixelEvent(event _: ShopifyCheckoutSheetKit.PixelEvent) {}
 
     @objc override func constantsToExport() -> [AnyHashable: Any]! {
         return [

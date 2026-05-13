@@ -57,8 +57,6 @@ fun LogDetailModal(
                 when (logLine?.type) {
                     LogType.STANDARD -> LogDetails("Checkout Lifecycle Event", logLine.message, Modifier.fillMaxWidth())
                     LogType.ERROR -> LogDetails("Checkout Error", "${logLine.errorDetails}", Modifier.fillMaxWidth())
-                    LogType.STANDARD_PIXEL -> PixelEventDetails(logLine.standardPixelEvent, prettyJson)
-                    LogType.CUSTOM_PIXEL -> PixelEventDetails(logLine.customPixelEvent, prettyJson)
                     LogType.CHECKOUT_COMPLETED -> CheckoutCompletedDetails(logLine.checkoutCompleted, prettyJson)
                     else -> Text("Unknown log type ${logLine?.type}")
                 }

@@ -1,18 +1,18 @@
 /*
  * MIT License
- * 
+ *
  * Copyright 2023-present, Shopify Inc.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,10 +28,6 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
 import com.shopify.checkoutkit.lifecycleevents.OrderDetails
-import com.shopify.checkoutkit.pixelevents.Context
-import com.shopify.checkoutkit.pixelevents.CustomPixelEvent
-import com.shopify.checkoutkit.pixelevents.StandardPixelEvent
-import com.shopify.checkoutkit.pixelevents.StandardPixelEventData
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.Date
@@ -43,14 +39,12 @@ data class LogLine(
     val createdAt: Long = Date().time,
     val message: String,
     val type: LogType,
-    @Embedded(prefix = "standard_pixel") val standardPixelEvent: StandardPixelEvent? = null,
-    @Embedded(prefix = "custom_pixel") val customPixelEvent: CustomPixelEvent? = null,
     @Embedded(prefix = "error_details") val errorDetails: ErrorDetails? = null,
     @Embedded(prefix = "checkout_completed") val checkoutCompleted: CheckoutCompletedEvent? = null,
 )
 
 enum class LogType {
-    STANDARD, ERROR, CUSTOM_PIXEL, STANDARD_PIXEL, CHECKOUT_COMPLETED
+    STANDARD, ERROR, CHECKOUT_COMPLETED
 }
 
 data class ErrorDetails(
@@ -59,26 +53,6 @@ data class ErrorDetails(
 )
 
 class Converters {
-    @TypeConverter
-    fun standardPixelEventDataToString(value: StandardPixelEventData): String {
-        return Json.encodeToString<StandardPixelEventData>(value)
-    }
-
-    @TypeConverter
-    fun stringToStandardPixelEventData(value: String): StandardPixelEventData {
-        return Json.decodeFromString<StandardPixelEventData>(value)
-    }
-
-    @TypeConverter
-    fun contextToString(value: Context): String {
-        return Json.encodeToString<Context>(value)
-    }
-
-    @TypeConverter
-    fun stringToContext(value: String): Context {
-        return Json.decodeFromString<Context>(value)
-    }
-
     @TypeConverter
     fun orderDetailsToString(value: OrderDetails): String {
         return Json.encodeToString<OrderDetails>(value)

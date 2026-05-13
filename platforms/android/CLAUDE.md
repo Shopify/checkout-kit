@@ -15,7 +15,7 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 ## Where to make changes
 
-- Library source: `lib/src/main/java/com/shopify/checkoutkit/`. Flat package at the top level with a few subpackages (`errorevents/`, `lifecycleevents/`, `pixelevents/`).
+- Library source: `lib/src/main/java/com/shopify/checkoutkit/`. Flat package at the top level with a few subpackages (`errorevents/`, `lifecycleevents/`).
 - Library tests: `lib/src/test/java/com/shopify/checkoutkit/`. "No test, no merge" is a listed reject criterion in the repo-root `.github/CONTRIBUTING.md`.
 - Java interop is a first-class concern — the library is commonly consumed from Java code. `lib/src/test/java/com/shopify/checkoutkit/InteropTest.java` exercises the public API from Java specifically; treat breakage there as a consumer-facing issue.
 
@@ -28,7 +28,7 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 - **`FallbackWebView.kt`** — minimal WebView swapped in during error recovery when the primary path fails.
 - **`CheckoutBridge.kt`** — the JS ↔ native bridge. `SCHEMA_VERSION` is a cross-boundary contract with the web checkout team; bumping it requires coordination with them.
 - **`Configuration.kt`** — runtime config container (color scheme, preload enable, log level, error recovery policy). Any config change clears the WebView cache.
-- **`CheckoutEventProcessor.kt`** + **`DefaultCheckoutEventProcessor`** — consumer-implemented lifecycle interface (completion, failure, pixel events, permission prompts, link clicks). Changes here are consumer API changes.
+- **`CheckoutEventProcessor.kt`** + **`DefaultCheckoutEventProcessor`** — consumer-implemented lifecycle interface (completion, failure, permission prompts, link clicks). Changes here are consumer API changes.
 
 ## Testing patterns
 
