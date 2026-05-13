@@ -16,18 +16,18 @@ alwaysApply: true
 ## Verification Commands
 
 ### Check your work systematically:
-1. **Lint & Format** → `dev lint` (or `dev style`) - Checks for linting and stylistic errors
-2. **Build Issues** → `dev build` - Checks for compilation issues
-3. **Test Issues** → `dev test` - Checks for failing tests 
+1. **Lint & Format** → `dev swift lint` (or `dev swift style`) - Checks for linting and stylistic errors
+2. **Build Issues** → `dev swift build` - Checks for compilation issues
+3. **Test Issues** → `dev swift test` - Checks for failing tests
 
 ### Available dev commands:
 **See `dev.yml` in project root for complete list of commands and descriptions.**
 
 Key commands for verification:
-- `dev lint` (alias: `dev style`) - Check format & lint issues
-- `dev fix` - Auto-fix formatting and linting issues  
-- `dev build packages` - Build both packages
-- `dev test packages` - Run all tests
+- `dev swift lint` (alias: `dev swift style`) - Check format & lint issues
+- `dev swift fix` - Auto-fix formatting and linting issues
+- `dev swift build packages` - Build both packages
+- `dev swift test` - Run all tests
 
 ## Concurrency Best Practices
 
@@ -50,7 +50,7 @@ actor QueryCache {
 ✅ DO: Run the appropriate dev command to verify
 
 ### After making changes:
-- ALWAYS run `dev fix && dev lint` to check your code is formatted and written in our style.
+- ALWAYS run `dev swift fix && dev swift lint` to check your code is formatted and written in our style.
 
 ## Example Workflow
 
@@ -58,14 +58,14 @@ actor QueryCache {
 # Make your Swift changes...
 
 # Fix any auto-fixable issues
-dev fix
+dev swift fix
 
 # Check for any remaining lint issues
-dev lint
+dev swift lint
 
 # Verify it compiles
-dev build
+dev swift build
 
 # Run tests if needed
-dev test packages
+dev swift test
 ```

@@ -4,6 +4,9 @@ up:
   - packages:
       - quicktype
       - rover
+      - mint
+      - xcbeautify
+      - jq
   - ruby
   - custom:
       name: Install bundle packages
@@ -16,6 +19,37 @@ up:
         ([ -f "./platforms/android/samples/MobileBuyIntegration/.env" ] || exit 1)
       meet: cd platforms/android && ./scripts/setup_env.sh
 
+  - custom:
+      name: Bootstrap Mint packages
+      met?: |
+        set -e
+        cd platforms/swift
+        expected_swiftlint="$(sed -n 's#^realm/SwiftLint@##p' Mintfile)"
+        expected_swiftformat="$(sed -n 's#^nicklockwood/SwiftFormat@##p' Mintfile)"
+        swiftlint_bin="$(mint which swiftlint)"
+        swiftformat_bin="$(mint which swiftformat)"
+        test -n "$expected_swiftlint"
+        test -n "$expected_swiftformat"
+        test "$("$swiftlint_bin" version)" = "$expected_swiftlint"
+        test "$("$swiftformat_bin" --version)" = "$expected_swiftformat"
+      meet: cd platforms/swift && mint bootstrap
+  - xcode:
+      version: "26.2"
+      runtimes:
+        ios:
+          - version: 23C54 # 26.2
+            architecture_variant: arm64
+  - custom:
+      name: Ensure Storefront.xcconfig file
+      met?: |
+        ([ -f "./platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" ] || exit 1)
+      meet: cd platforms/swift && ./Scripts/ensure_storefront_config
+  - custom:
+      name: Setup entitlements
+      met?: |
+        ([ -f "./platforms/swift/Samples/MobileBuyIntegration/MobileBuyIntegration/MobileBuyIntegration.entitlements" ] || exit 1;)
+      meet: cd platforms/swift && ./Scripts/setup_entitlements
+
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
   "Issues": "https://github.com/Shopify/checkout-kit/issues"
@@ -25,6 +59,7 @@ check:
   android-license-headers: cd platforms/android && ./scripts/check_license_headers.rb
   android-detekt: cd platforms/android && ./gradlew detekt
   android-lint: cd platforms/android && ./gradlew lintRelease
+  swift-lint: cd platforms/swift && ./Scripts/lint
 
 commands:
   # Repo-wide
@@ -120,3 +155,35 @@ commands:
           android-lint:
             desc: Run Android lint
             run: cd platforms/android && ./gradlew lintRelease
+
+  # Swift
+  swift:
+    desc: "Swift Checkout Kit commands"
+    subcommands:
+      lint:
+        desc: Check format and lint issues using SwiftLint and SwiftFormat
+        aliases: [style]
+        run: cd platforms/swift && ./Scripts/lint
+      fix:
+        desc: Automatically fix format and lint issues where possible
+        run: cd platforms/swift && ./Scripts/lint fix
+      build:
+        desc: Build Swift packages or sample apps
+        run: |
+          echo "Usage: dev swift build {packages|samples}"
+        subcommands:
+          packages:
+            desc: Build both ShopifyCheckoutKit and ShopifyAcceleratedCheckouts packages
+            run: |
+              cd platforms/swift
+              ./Scripts/xcode_run build ShopifyCheckoutKit
+              ./Scripts/xcode_run build ShopifyAcceleratedCheckouts
+          samples:
+            desc: Build all sample applications to verify integration
+            run: cd platforms/swift && ./Scripts/build_samples
+      test:
+        desc: |
+          `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package.
+          `dev swift test <test_class_name>` - Run only the specified test class.
+        syntax: "[test_class_name]"
+        run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
