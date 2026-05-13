@@ -28,7 +28,7 @@ import Testing
 @Suite("CheckoutProtocol URL Tests")
 struct CheckoutProtocolURLTests {
     @Test func appendsVersionAndColorScheme() throws {
-        let input = URL(string: "https://shop.example.com/checkout")!
+        let input = try #require(URL(string: "https://shop.example.com/checkout"))
         let result = CheckoutProtocol.url(for: input, colorScheme: "automatic")
 
         let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))
@@ -38,7 +38,7 @@ struct CheckoutProtocolURLTests {
     }
 
     @Test func appendsDefaultDelegate() throws {
-        let input = URL(string: "https://shop.example.com/checkout")!
+        let input = try #require(URL(string: "https://shop.example.com/checkout"))
         let result = CheckoutProtocol.url(for: input, colorScheme: "light")
 
         let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))
@@ -47,7 +47,7 @@ struct CheckoutProtocolURLTests {
     }
 
     @Test func joinsMultipleDelegationsWithComma() throws {
-        let input = URL(string: "https://shop.example.com/checkout")!
+        let input = try #require(URL(string: "https://shop.example.com/checkout"))
         let result = CheckoutProtocol.url(
             for: input,
             colorScheme: "light",
@@ -60,7 +60,7 @@ struct CheckoutProtocolURLTests {
     }
 
     @Test func omitsDelegateWhenEmpty() throws {
-        let input = URL(string: "https://shop.example.com/checkout")!
+        let input = try #require(URL(string: "https://shop.example.com/checkout"))
         let result = CheckoutProtocol.url(for: input, colorScheme: "light", delegations: [])
 
         let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))
@@ -69,7 +69,7 @@ struct CheckoutProtocolURLTests {
     }
 
     @Test func preservesExistingQueryItems() throws {
-        let input = URL(string: "https://shop.example.com/checkout?cart=abc")!
+        let input = try #require(URL(string: "https://shop.example.com/checkout?cart=abc"))
         let result = CheckoutProtocol.url(for: input, colorScheme: "light")
 
         let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))

@@ -74,8 +74,8 @@ extension CheckoutProtocol.Client {
     }
 }
 
-private extension UIApplication {
-    var foregroundActiveWindow: UIWindow? {
+extension UIApplication {
+    fileprivate var foregroundActiveWindow: UIWindow? {
         let activeScenes = connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .filter { $0.activationState == .foregroundActive }
