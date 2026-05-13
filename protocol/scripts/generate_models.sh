@@ -233,6 +233,7 @@ case "$LANG" in
     sed -i '' -E \
       -e 's/[[:<:]]Binding[[:>:]]/TokenBinding/g' \
       -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
+      -e 's/^class JSONCodingKey: CodingKey {/final class JSONCodingKey: CodingKey, Sendable {/' \
       "${OUTPUT}"
 
     prepend_license "swift" "${OUTPUT}"

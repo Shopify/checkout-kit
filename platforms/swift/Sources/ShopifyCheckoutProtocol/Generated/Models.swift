@@ -7651,7 +7651,7 @@ public class JSONNull: Codable, Hashable {
     }
 }
 
-class JSONCodingKey: CodingKey {
+final class JSONCodingKey: CodingKey, Sendable {
     let key: String
 
     required init?(intValue _: Int) {
