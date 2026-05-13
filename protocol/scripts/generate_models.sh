@@ -213,7 +213,6 @@ case "$LANG" in
     OUTPUT="${REPO_ROOT}/platforms/swift/Sources/ShopifyCheckoutProtocol/Generated/Models.swift"
     quicktype \
       --lang swift \
-      --swift-5-support \
       --access-level public \
       --sendable \
       --src-lang schema \
@@ -233,7 +232,11 @@ case "$LANG" in
     sed -i '' -E \
       -e 's/[[:<:]]Binding[[:>:]]/TokenBinding/g' \
       -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
+      -e 's/^public class JSONNull: Codable, Hashable {/public final class JSONNull: Codable, Hashable, Sendable {/' \
+      -e 's/^    public func hash\(into _: inout Hasher\) {/    public func hash(into hasher: inout Hasher) {/' \
+      -e 's/^        \/\/ No-op$/        hasher.combine(0)/' \
       -e 's/^class JSONCodingKey: CodingKey {/final class JSONCodingKey: CodingKey, Sendable {/' \
+      -e 's/^public class JSONAny: Codable {/public final class JSONAny: Codable, @unchecked Sendable {/' \
       "${OUTPUT}"
 
     prepend_license "swift" "${OUTPUT}"

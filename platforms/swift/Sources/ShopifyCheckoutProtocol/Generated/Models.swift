@@ -7623,17 +7623,13 @@ func newJSONEncoder() -> JSONEncoder {
 
 // MARK: - Encode/decode helpers
 
-public class JSONNull: Codable, Hashable {
+public final class JSONNull: Codable, Hashable, Sendable {
     public static func == (_: JSONNull, _: JSONNull) -> Bool {
         return true
     }
 
-    public var hashValue: Int {
-        return 0
-    }
-
-    public func hash(into _: inout Hasher) {
-        // No-op
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(0)
     }
 
     public init() {}
@@ -7671,7 +7667,7 @@ final class JSONCodingKey: CodingKey, Sendable {
     }
 }
 
-public class JSONAny: Codable {
+public final class JSONAny: Codable, @unchecked Sendable {
     public let value: Any
 
     static func decodingError(forCodingPath codingPath: [CodingKey]) -> DecodingError {
