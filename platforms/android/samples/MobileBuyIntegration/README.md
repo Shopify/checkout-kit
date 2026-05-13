@@ -73,10 +73,10 @@ API_VERSION=2025-10
 
 ### 2. Download the new schema
 
-The schema defines what types and fields are available in the API. Run from the **android module root** (`platforms/android/`):
+The schema defines what types and fields are available in the API. Run from the **repo root** (`checkout-kit/`):
 
 ```bash
-dev apollo download_schema
+dev apollo download_schema android
 ```
 
 This uses [`rover`](https://www.apollographql.com/docs/rover/) to introspect your store's Storefront API at the configured version and writes `schema.graphqls` into `app/src/main/graphql/`.
@@ -106,10 +106,10 @@ query FetchProducts(...) {
 From the **repo root**:
 
 ```bash
-dev apollo codegen
+dev apollo codegen android
 ```
 
-This reads the schema + your `.graphql` files and regenerates the Kotlin code in `app/build/generated/source/apollo/`. The command also runs `dev style` to check formatting.
+This reads the schema + your `.graphql` files and regenerates the Kotlin code in `app/build/generated/source/apollo/`. The command also runs `dev android lint` to check formatting.
 
 ### 5. Build and fix any issues
 
@@ -121,16 +121,16 @@ If the new schema removed or renamed fields, you'll get compile errors pointing 
 
 ## Dev commands reference
 
-All commands are run from the **android module root** (`platforms/android/`):
+All commands are run from the **repo root** (`checkout-kit/`):
 
 | Command | Description |
 |---------|-------------|
-| `dev apollo download_schema` | Download the Storefront API schema for this sample app |
-| `dev apollo codegen` | Regenerate Kotlin types from `.graphql` files |
-| `dev style` | Run detekt + Android lint checks |
-| `dev build` | Build the library |
-| `dev build samples` | Build all sample applications |
-| `dev test` | Run all tests |
+| `dev apollo download_schema android` | Download the Storefront API schema for this sample app |
+| `dev apollo codegen android` | Regenerate Kotlin types from `.graphql` files |
+| `dev android lint` | Run detekt + Android lint checks |
+| `dev android build` | Build the library |
+| `dev android build samples` | Build all sample applications |
+| `dev android test` | Run all tests |
 
 ## Key files
 

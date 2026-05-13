@@ -14,4 +14,4 @@ else
 fi
 
 cd ../..
-/opt/dev/bin/dev style
+/opt/dev/bin/dev android lint

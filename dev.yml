@@ -3,13 +3,31 @@ name: checkout-kit
 up:
   - packages:
       - quicktype
+      - rover
   - ruby
   - custom:
       name: Install bundle packages
       met?: BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check
       meet: BUNDLE_GEMFILE=platforms/swift/Gemfile bundle install
+  # Android
+  - custom:
+      name: Ensure Android sample app .env files exist
+      met?: |
+        ([ -f "./platforms/android/samples/MobileBuyIntegration/.env" ] || exit 1)
+      meet: cd platforms/android && ./scripts/setup_env.sh
+
+open:
+  "GitHub": "https://github.com/Shopify/checkout-kit"
+  "Issues": "https://github.com/Shopify/checkout-kit/issues"
+  "PRs": "https://github.com/Shopify/checkout-kit/pulls"
+
+check:
+  android-license-headers: cd platforms/android && ./scripts/check_license_headers.rb
+  android-detekt: cd platforms/android && ./gradlew detekt
+  android-lint: cd platforms/android && ./gradlew lintRelease
 
 commands:
+  # Repo-wide
   codegen:
     desc: "Generate UCP models. Usage: dev codegen <kotlin|swift>"
     syntax: "<kotlin|swift>"
@@ -38,3 +56,67 @@ commands:
             swift) shift; cd platforms/swift && ./Scripts/apollo_codegen "$@" ;;
             *) echo "Usage: dev apollo codegen <android|swift> [accelerated|mobile-buy|all]"; exit 1 ;;
           esac
+
+  # Android
+  android:
+    desc: "Android Checkout Kit commands"
+    subcommands:
+      build:
+        desc: Build the library
+        run: cd platforms/android && ./gradlew :lib:build
+        subcommands:
+          samples:
+            desc: Build all sample applications
+            run: cd platforms/android/samples/MobileBuyIntegration && ./gradlew build
+
+      test:
+        desc: Run all tests with clean build
+        run: cd platforms/android && ./gradlew clean test --console=plain
+        subcommands:
+          specific:
+            desc: Run specific test class
+            syntax: <TestClassName> (e.g. CheckoutBridgeTest)
+            run: cd platforms/android && ./gradlew :lib:testDebugUnitTest --tests "$1"
+
+      lint:
+        desc: Check code style and lint (detekt + Android lint)
+        aliases: [style]
+        run: cd platforms/android && ./gradlew detekt lintRelease
+
+      fix:
+        desc: Automatically fix format and lint issues where possible
+        run: cd platforms/android && ./gradlew detekt --auto-correct
+
+      api:
+        desc: Validate or update the public API baseline (lib/api/lib.api)
+        run: |
+          echo "Usage: dev android api {check|dump}"
+          echo ""
+          echo "  check  Verify public API matches the committed baseline"
+          echo "  dump   Regenerate the baseline after intentional public API changes"
+        subcommands:
+          check:
+            desc: Verify public API matches the committed baseline
+            run: cd platforms/android && ./gradlew :lib:apiCheck
+          dump:
+            desc: Regenerate the baseline after intentional public API changes
+            run: cd platforms/android && ./gradlew :lib:apiDump
+
+      check:
+        desc: Run all Android checks (license headers, detekt, android lint)
+        run: |
+          set -e
+          cd platforms/android
+          ./scripts/check_license_headers.rb
+          ./gradlew detekt
+          ./gradlew lintRelease
+        subcommands:
+          license-headers:
+            desc: Check MIT license headers in source files
+            run: cd platforms/android && ./scripts/check_license_headers.rb
+          detekt:
+            desc: Run detekt static analysis
+            run: cd platforms/android && ./gradlew detekt
+          android-lint:
+            desc: Run Android lint
+            run: cd platforms/android && ./gradlew lintRelease
