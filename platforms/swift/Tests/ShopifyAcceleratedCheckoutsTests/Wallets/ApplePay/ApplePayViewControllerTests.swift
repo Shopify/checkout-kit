@@ -4,6 +4,7 @@ import UIKit
 import XCTest
 
 @available(iOS 17.0, *)
+@MainActor
 class ApplePayViewControllerTests: XCTestCase {
     var viewController: MockApplePayViewController!
     var mockConfiguration: ApplePayConfigurationWrapper!

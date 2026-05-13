@@ -41,6 +41,7 @@ internal struct ShopPayButton: View {
 /// Internal_ wrapper component allows `ShopifyAcceleratedCheckouts.Configuration` to be
 /// DI into ShopPayViewController at init, avoiding optionality checks through ViewController
 @available(iOS 16.0, *)
+@MainActor
 internal struct Internal_ShopPayButton: View {
     private var controller: ShopPayViewController
     private let cornerRadius: CGFloat?
@@ -64,7 +65,7 @@ internal struct Internal_ShopPayButton: View {
     var body: some View {
         Button(
             action: {
-                Task { await controller.onPress() }
+                Task { @MainActor in await controller.onPress() }
             },
             label: {
                 HStack {

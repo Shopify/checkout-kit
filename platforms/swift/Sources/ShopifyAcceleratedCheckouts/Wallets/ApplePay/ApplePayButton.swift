@@ -86,6 +86,7 @@ struct ApplePayButton: View {
 /// This is an internal view to allow Environment injection of the shared configuration app wide
 @available(iOS 16.0, *)
 @available(macOS, unavailable)
+@MainActor
 struct Internal_ApplePayButton: View {
     private let label: PayWithApplePayButtonLabel
     private let style: PayWithApplePayButtonStyle
@@ -120,7 +121,7 @@ struct Internal_ApplePayButton: View {
                 buttonType: label.pkPaymentButtonType,
                 buttonStyle: style.pkPaymentButtonStyle,
                 cornerRadius: cornerRadius ?? 8,
-                action: { Task { await controller.onPress() } }
+                action: { Task { @MainActor in await controller.onPress() } }
             )
             .id("\(colorScheme)-\(style.pkPaymentButtonStyle.rawValue)")
             .frame(height: 48)
