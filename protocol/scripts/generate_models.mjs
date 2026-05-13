@@ -321,7 +321,6 @@ async function generateSwift(specDir, output) {
   await runQuicktype([
     "--lang",
     "swift",
-    "--swift-5-support",
     "--access-level",
     "public",
     "--sendable",
@@ -334,16 +333,47 @@ async function generateSwift(specDir, output) {
 
   await normalizeGeneratedFile(output, (source) => {
     // quicktype's --sendable option marks generated models as Sendable, but quicktype 23.2.6
-    // still emits the dynamic JSON coding key helper as a non-final, non-Sendable class.
-    // Removing --swift-5-support does not change this output, so normalize the helper here.
-    const result = source.replace(
+    // still emits dynamic JSON helper types that are not fully Swift 6 concurrency-safe.
+    // Removing --swift-5-support does not fix these helpers, so normalize them here.
+    const replaceRequired = (input, pattern, replacement, description) => {
+      const result = input.replace(pattern, replacement);
+      if (result === input) {
+        throw new Error(`${description} normalization failed; quicktype output may have changed`);
+      }
+      return result;
+    };
+
+    let result = source;
+    result = replaceRequired(
+      result,
+      /^public class JSONNull: Codable, Hashable \{/m,
+      "public final class JSONNull: Codable, Hashable, Sendable {",
+      "JSONNull Sendable",
+    );
+    result = replaceRequired(
+      result,
+      /\n    public var hashValue: Int \{\n            return 0\n    \}\n\n/,
+      "\n",
+      "JSONNull hashValue removal",
+    );
+    result = replaceRequired(
+      result,
+      /^    public func hash\(into (?:_:|hasher:) inout Hasher\) \{\n            \/\/ No-op\n    \}/m,
+      "    public func hash(into hasher: inout Hasher) {\n            hasher.combine(0)\n    }",
+      "JSONNull hash(into:) implementation",
+    );
+    result = replaceRequired(
+      result,
       /^class JSONCodingKey: CodingKey \{/m,
       "final class JSONCodingKey: CodingKey, Sendable {",
+      "JSONCodingKey Sendable",
     );
-
-    if (result === source) {
-      throw new Error("JSONCodingKey Sendable normalization failed; quicktype output may have changed");
-    }
+    result = replaceRequired(
+      result,
+      /^public class JSONAny: Codable \{/m,
+      "public final class JSONAny: Codable, @unchecked Sendable {",
+      "JSONAny Sendable",
+    );
 
     return result;
   });
