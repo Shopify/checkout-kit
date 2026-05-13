@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
     :git => "https://github.com/Shopify/checkout-kit.git", :tag => s.version.to_s
   }
 
-  s.swift_version = "5.0"
+  s.swift_version = "6.0"
 
   s.ios.deployment_target = "13.0"
 
