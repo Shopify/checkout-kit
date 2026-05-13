@@ -24,5 +24,6 @@
     "noEmit": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*", "vite.config.ts", "custom-elements-manifest.config.mjs"]
+  "include": ["src/**/*", "vite.config.ts", "custom-elements-manifest.config.mjs"],
+  "exclude": ["src/**/*.test.ts"]
 }
