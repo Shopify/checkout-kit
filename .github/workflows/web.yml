@@ -1,0 +1,53 @@
+name: Web
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: Lint, test, build, verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: platforms/web
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/web/package.json
+          cache-dependency-path: platforms/web/pnpm-lock.yaml
+          package-json-file: platforms/web/package.json
+          working-directory: platforms/web
+
+      - name: Lint (typecheck + oxlint + oxfmt --check)
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Coverage comment
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/jest-coverage-comment@fb83bcbaeb5ca467936175796f862a2992938833 # main
+        with:
+          coverage-summary-path: platforms/web/coverage/coverage-summary.json
+          title: 'Web — Coverage Report'
+          create-new-comment: false
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify package (publint)
+        run: pnpm verify
+
+      - name: Pack and inspect contents
+        run: |
+          pnpm pack --pack-destination /tmp/web-pack
+          echo "Packed tarball contents:"
+          tar -tzf /tmp/web-pack/*.tgz | sort
