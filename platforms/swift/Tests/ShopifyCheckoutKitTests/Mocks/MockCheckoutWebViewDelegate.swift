@@ -29,7 +29,6 @@ class MockCheckoutWebViewDelegate: CheckoutWebViewDelegate {
 
     var didStartNavigationExpectation: XCTestExpectation?
     var didFinishNavigationExpectation: XCTestExpectation?
-    var didClickLinkExpectation: XCTestExpectation?
     var didFailWithErrorExpectation: XCTestExpectation?
 
     func checkoutViewDidStartNavigation() {
@@ -38,10 +37,6 @@ class MockCheckoutWebViewDelegate: CheckoutWebViewDelegate {
 
     func checkoutViewDidFinishNavigation() {
         didFinishNavigationExpectation?.fulfill()
-    }
-
-    func checkoutViewDidClickLink(url _: URL) {
-        didClickLinkExpectation?.fulfill()
     }
 
     func checkoutViewDidFailWithError(error: CheckoutError) {

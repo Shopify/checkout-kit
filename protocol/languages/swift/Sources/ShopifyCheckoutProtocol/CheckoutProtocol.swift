@@ -24,6 +24,8 @@
 public enum CheckoutProtocol {
     public static let specVersion = "2026-04-08"
 
+    public static let defaultDelegations: [String] = ["window.open"]
+
     static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
     public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
     public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")

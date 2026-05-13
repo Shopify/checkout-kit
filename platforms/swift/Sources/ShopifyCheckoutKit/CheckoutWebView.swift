@@ -30,7 +30,6 @@ import WebKit
 protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidStartNavigation()
     func checkoutViewDidFinishNavigation()
-    func checkoutViewDidClickLink(url: URL)
     func checkoutViewDidFailWithError(error: CheckoutError)
 }
 
@@ -254,16 +253,29 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        guard let client else {
-            return
-        }
-
         Task {
-            if let response = await client.process(body) {
+            if let response = await client?.process(body) {
+                checkoutBridge.sendResponse(self, messageBody: response)
+                return
+            }
+
+            if let response = await CheckoutWebView.defaultsClient.process(body) {
                 checkoutBridge.sendResponse(self, messageBody: response)
             }
         }
     }
+
+    /// Kit-owned client that handles delegations the consumer did not register.
+    /// Today the only default is `window.open`, which falls back to
+    /// `UIApplication.shared.open(...)` after a `canOpenURL` check.
+    static let defaultsClient = CheckoutProtocol.Client()
+        .on(CheckoutProtocol.windowOpen) { request in
+            guard UIApplication.shared.canOpenURL(request.url) else {
+                return .rejected(reason: "canOpenURL returned false")
+            }
+            UIApplication.shared.open(request.url)
+            return .success
+        }
 }
 
 extension CheckoutWebView: WKNavigationDelegate {
@@ -275,12 +287,31 @@ extension CheckoutWebView: WKNavigationDelegate {
 
         if isExternalLink(action) || CheckoutURL(from: url).isDeepLink() {
             OSLogger.shared.debug("External or deep link clicked: \(url.absoluteString) - request intercepted")
-            viewDelegate?.checkoutViewDidClickLink(url: removeExternalParam(url))
+            dispatchWindowOpenRequest(url: removeExternalParam(url))
             decisionHandler(.cancel)
             return
         }
 
         decisionHandler(.allow)
+    }
+
+    private func dispatchWindowOpenRequest(url: URL) {
+        let envelope: [String: Any] = [
+            "jsonrpc": "2.0",
+            "id": UUID().uuidString,
+            "method": "ec.window.open_request",
+            "params": ["url": url.absoluteString]
+        ]
+
+        guard
+            let data = try? JSONSerialization.data(withJSONObject: envelope),
+            let message = String(data: data, encoding: .utf8)
+        else { return }
+
+        Task { @MainActor [client] in
+            if let consumer = client, await consumer.process(message) != nil { return }
+            _ = await CheckoutWebView.defaultsClient.process(message)
+        }
     }
 
     func webView(_: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {

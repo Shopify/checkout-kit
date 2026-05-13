@@ -21,6 +21,8 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import Foundation
+
 /// Marker protocol that constrains which types can be used as descriptor payloads.
 /// This must be a protocol (not a typealias for `Decodable & Sendable`) so that
 /// conformance is explicit — preventing arbitrary types like `[String]` or `Int`
@@ -43,4 +45,15 @@ public struct NotificationDescriptor<Payload: EventPayload>: Sendable {
 public struct DelegationDescriptor<Payload: EventPayload, Result: ResponsePayload>: Sendable {
     public let method: String
     public let delegation: String
+    let decode: @Sendable (Data) -> Payload?
+
+    public init(
+        method: String,
+        delegation: String,
+        decode: @escaping @Sendable (Data) -> Payload?
+    ) {
+        self.method = method
+        self.delegation = delegation
+        self.decode = decode
+    }
 }

@@ -1,0 +1,8 @@
+{
+  "jsonrpc": "2.0",
+  "method": "ec.window.open_request",
+  "id": "req-window-1",
+  "params": {
+    "url": "https://example.com/terms"
+  }
+}

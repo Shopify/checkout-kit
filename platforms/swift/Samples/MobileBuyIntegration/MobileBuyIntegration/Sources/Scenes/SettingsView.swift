@@ -31,6 +31,19 @@ enum AppStorageKeys: String {
     case checkoutKitLogLevel
     case buyerIdentityMode
     case applePayStyle
+    case windowOpenHandler
+}
+
+enum WindowOpenHandlerOption: String, CaseIterable {
+    case `default`
+    case safariViewController
+
+    var title: String {
+        switch self {
+        case .default: return "Default (UIApplication.open)"
+        case .safariViewController: return "SFSafariViewController"
+        }
+    }
 }
 
 struct SettingsView: View {
@@ -48,6 +61,9 @@ struct SettingsView: View {
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
 
+    @AppStorage(AppStorageKeys.windowOpenHandler.rawValue)
+    var windowOpenHandler: WindowOpenHandlerOption = .default
+
     @State private var preloadingEnabled = ShopifyCheckoutKit.configuration.preloading.enabled
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
     @State private var selectedColorScheme = ShopifyCheckoutKit.configuration.colorScheme
@@ -61,6 +77,13 @@ struct SettingsView: View {
                         .onChange(of: preloadingEnabled) { newValue in
                             ShopifyCheckoutKit.configuration.preloading.enabled = newValue
                         }
+
+                    Picker("Window open handler", selection: $windowOpenHandler) {
+                        ForEach(WindowOpenHandlerOption.allCases, id: \.self) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .pickerStyle(.menu)
                 }
 
                 Section(

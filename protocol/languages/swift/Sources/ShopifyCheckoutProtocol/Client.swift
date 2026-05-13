@@ -27,6 +27,7 @@ extension CheckoutProtocol {
     public struct Client: Sendable, MutableCopyable {
         private var notificationHandlers: [String: @MainActor @Sendable (any EventPayload) -> Void]
         private var delegationEntries: [String: DelegationEntry]
+
         var delegations: [String] {
             delegationEntries.values.map(\.delegation)
         }
@@ -52,13 +53,13 @@ extension CheckoutProtocol {
         @discardableResult
         public func on<P: EventPayload, R: ResponsePayload>(
             _ descriptor: DelegationDescriptor<P, R>,
-            perform: @escaping @MainActor (P) async -> R
+            perform: @escaping @MainActor @Sendable (P) async -> R
         ) -> Client {
             return copy {
                 $0.delegationEntries[descriptor.method] = DelegationEntry(
                     delegation: descriptor.delegation,
-                    handler: { id, checkout in
-                        guard let payload = checkout as? P else { return nil }
+                    handler: { id, params in
+                        guard let payload = descriptor.decode(params) else { return nil }
                         let result = await perform(payload)
                         return CheckoutProtocol.encodeResponse(id: id, result: result)
                     }
@@ -70,16 +71,17 @@ extension CheckoutProtocol {
             let decoded = CheckoutProtocol.decode(jsonRpc: message)
 
             switch decoded {
-            case let .ready(id, _):
-                return CheckoutProtocol.encodeReadyResponse(id: id)
+            case let .ready(id, requested):
+                let accepted = requested.filter(Set(delegations).contains)
+                return CheckoutProtocol.encodeReadyResponse(id: id, acceptedDelegations: accepted)
 
             case let .notification(method, payload):
                 await notificationHandlers[method]?(payload)
                 return nil
 
-            case let .request(id, method, checkout):
+            case let .request(id, method, params):
                 if let entry = delegationEntries[method] {
-                    return await entry.handler(id, checkout)
+                    return await entry.handler(id, params)
                 }
                 return nil
 
@@ -91,6 +93,6 @@ extension CheckoutProtocol {
 
     struct DelegationEntry {
         let delegation: String
-        let handler: @MainActor @Sendable (String, Checkout) async -> String?
+        let handler: @MainActor @Sendable (String, Data) async -> String?
     }
 }
