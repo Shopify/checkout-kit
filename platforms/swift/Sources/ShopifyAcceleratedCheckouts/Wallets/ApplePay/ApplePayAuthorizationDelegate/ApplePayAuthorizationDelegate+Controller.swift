@@ -201,7 +201,7 @@ extension ApplePayAuthorizationDelegate: PKPaymentAuthorizationControllerDelegat
 
             // Taxes may become pending again fail to resolve despite updating within the didUpdatePaymentMethod
             // So we retry one time to see if the error clears on retry
-            _ = try await Task.retrying(priority: nil, maxRetryCount: 1) {
+            _ = try await Task.retrying(priority: nil, maxRetryCount: 1) { @MainActor in
                 try await self.controller.storefront.cartPaymentUpdate(
                     id: cartID,
                     totalAmount: totalAmount,
@@ -227,7 +227,9 @@ extension ApplePayAuthorizationDelegate: PKPaymentAuthorizationControllerDelegat
         ShopifyAcceleratedCheckouts.logger.debug("paymentAuthorizationControllerDidFinish, state: \(state)")
 
         controller.dismiss {
-            Task { try? await self.transition(to: .completed) }
+            Task { @MainActor in
+                try? await self.transition(to: .completed)
+            }
         }
     }
 
