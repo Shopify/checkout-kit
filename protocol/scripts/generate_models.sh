@@ -210,7 +210,7 @@ case "$LANG" in
     ;;
 
   swift)
-    OUTPUT="${REPO_ROOT}/platforms/swift/Sources/ShopifyCheckoutProtocol/Generated/Models.swift"
+    OUTPUT="${REPO_ROOT}/protocol/languages/swift/Sources/ShopifyCheckoutProtocol/Generated/Models.swift"
     quicktype \
       --lang swift \
       --swift-5-support \

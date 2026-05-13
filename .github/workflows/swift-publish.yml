@@ -26,7 +26,18 @@ jobs:
           bundler-cache: true
           working-directory: platforms/swift
 
-      - name: Deploy to Cocoapods
+      - name: Deploy ShopifyCheckoutProtocol to Cocoapods
+        # Push the protocol pod first; the kit pod depends on it and will
+        # not validate against trunk until this version is available.
+        working-directory: protocol/languages/swift
+        run: |
+          set -eo pipefail
+          bundle exec pod lib lint ShopifyCheckoutProtocol.podspec --allow-warnings --verbose
+          bundle exec pod trunk push ShopifyCheckoutProtocol.podspec --allow-warnings --verbose
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+
+      - name: Deploy ShopifyCheckoutKit to Cocoapods
         run: |
           set -eo pipefail
           bundle exec pod lib lint --allow-warnings --verbose

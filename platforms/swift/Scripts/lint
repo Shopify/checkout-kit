@@ -165,12 +165,16 @@ fi
 if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 	echo "🔍 Running CocoaPods lint..."
 
+	# The kit pod depends on the ShopifyCheckoutProtocol pod which lives at
+	# protocol/languages/swift/. Until it is published to trunk, we have to
+	# point the kit lint at the local podspec via --include-podspecs.
+	PROTOCOL_PODSPEC="../../protocol/languages/swift/ShopifyCheckoutProtocol.podspec"
 	POD_LOG=""
 	if [[ "$VERBOSE" == "true" ]]; then
-		bundle exec pod lib lint --allow-warnings
+		bundle exec pod lib lint --allow-warnings --include-podspecs="$PROTOCOL_PODSPEC"
 	else
 		POD_LOG="$(mktemp "${TMPDIR:-/tmp}/checkout-kit-pod-lint.XXXXXX")"
-		bundle exec pod lib lint --allow-warnings >"$POD_LOG" 2>&1
+		bundle exec pod lib lint --allow-warnings --include-podspecs="$PROTOCOL_PODSPEC" >"$POD_LOG" 2>&1
 	fi
 	POD_STATUS=$?
 

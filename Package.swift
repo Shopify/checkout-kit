@@ -33,7 +33,7 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "ShopifyCheckoutProtocol",
-            path: "platforms/swift/Sources/ShopifyCheckoutProtocol"
+            path: "protocol/languages/swift/Sources/ShopifyCheckoutProtocol"
         ),
         .target(
             name: "ShopifyCheckoutKit",
@@ -50,7 +50,7 @@ let package = Package(
         .testTarget(
             name: "ShopifyCheckoutProtocolTests",
             dependencies: ["ShopifyCheckoutProtocol"],
-            path: "platforms/swift/Tests/ShopifyCheckoutProtocolTests",
+            path: "protocol/languages/swift/Tests/ShopifyCheckoutProtocolTests",
             resources: [.copy("Fixtures")]
         ),
         .testTarget(

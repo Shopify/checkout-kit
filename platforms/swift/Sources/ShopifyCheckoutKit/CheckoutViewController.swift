@@ -21,9 +21,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#if !COCOAPODS
-    import ShopifyCheckoutProtocol
-#endif
+import ShopifyCheckoutProtocol
 import SwiftUI
 import UIKit
 
