@@ -147,7 +147,7 @@ final class ApplePayIntegrationTests: XCTestCase {
         // The view should essentially be empty/minimal due to invariant case
     }
 
-    func testCallbackPersistenceAcrossViewUpdates() async {
+    func testCallbackPersistenceAcrossViewUpdates() {
         var failCount = 0
         let failHandler = { (_: CheckoutError) in
             failCount += 1

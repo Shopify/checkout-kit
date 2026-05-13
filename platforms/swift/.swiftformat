@@ -6,7 +6,7 @@
 --allman false
 --semicolons inline
 --trimwhitespace always
---disable redundantReturn,hoistAwait,preferKeyPath,redundantInternal,redundantPublic
+--disable redundantReturn,hoistAwait,preferKeyPath,redundantInternal,redundantPublic,duplicateImports
 --swiftversion 5.7.1
 --extensionacl on-declarations
 --exclude Sources/ShopifyCheckoutKit/Models.swift

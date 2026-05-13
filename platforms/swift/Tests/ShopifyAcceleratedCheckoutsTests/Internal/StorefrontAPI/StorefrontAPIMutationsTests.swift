@@ -372,11 +372,11 @@ final class StorefrontAPIMutationsTests: XCTestCase {
         """
         mockJSONResponse(json)
 
-        let customer = ShopifyAcceleratedCheckouts.CustomerIdentity(
+        let customer = try XCTUnwrap(ShopifyAcceleratedCheckouts.CustomerIdentity(
             email: "customer@example.com",
             phoneNumber: "+1234567890",
             customerAccessToken: "test-token-123"
-        )!
+        ))
 
         let variantId = GraphQLScalars.ID("gid://shopify/ProductVariant/1")
         let cart = try await storefrontAPI.cartCreate(with: [variantId], customer: customer)

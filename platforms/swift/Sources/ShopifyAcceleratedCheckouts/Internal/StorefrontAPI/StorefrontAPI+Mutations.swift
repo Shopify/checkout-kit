@@ -75,7 +75,7 @@ extension StorefrontAPI {
         return cart
     }
 
-    struct CartBuyerIdentityUpdateInput: Codable, Sendable {
+    struct CartBuyerIdentityUpdateInput: Codable {
         var email: String?
         var phoneNumber: String?
         var customerAccessToken: String?

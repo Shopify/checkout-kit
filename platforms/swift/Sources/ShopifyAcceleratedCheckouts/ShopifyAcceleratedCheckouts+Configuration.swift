@@ -26,7 +26,7 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 extension ShopifyAcceleratedCheckouts {
-    struct CustomerIdentity: Sendable {
+    struct CustomerIdentity {
         let email: String?
         let phoneNumber: String?
         let customerAccessToken: String?

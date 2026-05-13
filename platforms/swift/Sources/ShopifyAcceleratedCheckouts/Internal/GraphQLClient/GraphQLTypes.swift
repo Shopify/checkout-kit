@@ -24,7 +24,7 @@
 import Foundation
 
 /// GraphQL client errors
-enum GraphQLError: LocalizedError, Sendable {
+enum GraphQLError: LocalizedError {
     case networkError(String)
     case httpError(statusCode: Int, data: Data)
     case decodingError(Error)

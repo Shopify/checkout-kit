@@ -26,7 +26,7 @@ import Foundation
 /// The country and language context for the API requests
 /// see: https://shopify.dev/changelog/storefront-api-incontext-directive-supports-languages
 @available(iOS 16.0, *)
-struct InContextDirective: Sendable {
+struct InContextDirective {
     let countryCode: CountryCode
     let languageCode: ShopifyLanguageCode
 
