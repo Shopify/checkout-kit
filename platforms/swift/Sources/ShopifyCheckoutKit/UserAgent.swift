@@ -53,9 +53,9 @@ public enum UserAgent {
         var parameters: String
         switch type {
         case .standard:
-            parameters = "\(MetaData.schemaVersion);\(colorScheme.rawValue);standard"
+            parameters = "iOS;Swift \(SwiftVersion.current)"
         case .recovery:
-            parameters = "noconnect;\(colorScheme.rawValue);standard_recovery"
+            parameters = "standard_recovery"
         }
 
         var userAgentString = "\(baseUserAgent) (\(parameters))"
