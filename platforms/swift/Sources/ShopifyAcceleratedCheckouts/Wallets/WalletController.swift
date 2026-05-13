@@ -47,9 +47,10 @@ class WalletController: ObservableObject {
 
         case let .variant(id, quantity):
             let items = Array(repeating: GraphQLScalars.ID(id), count: quantity)
+            let customer = ShopifyAcceleratedCheckouts.CustomerIdentity(customer: configuration.customer)
             return try await storefront.cartCreate(
                 with: items,
-                customer: configuration.customer
+                customer: customer
             )
 
         case .invariant:

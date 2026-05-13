@@ -34,7 +34,7 @@ extension StorefrontAPI {
     /// - Returns: The created cart
     func cartCreate(
         with items: [GraphQLScalars.ID] = [],
-        customer: ShopifyAcceleratedCheckouts.Customer? = nil
+        customer: ShopifyAcceleratedCheckouts.CustomerIdentity? = nil
     ) async throws -> Cart {
         var input: [String: Any] = [
             "lines": items.map { ["merchandiseId": $0.rawValue] }
@@ -75,7 +75,7 @@ extension StorefrontAPI {
         return cart
     }
 
-    struct CartBuyerIdentityUpdateInput: Codable {
+    struct CartBuyerIdentityUpdateInput: Codable, Sendable {
         var email: String?
         var phoneNumber: String?
         var customerAccessToken: String?

@@ -22,7 +22,7 @@
  */
 
 /// GraphQL response structure
-struct GraphQLResponse<T: Decodable>: Decodable {
+struct GraphQLResponse<T: Decodable & Sendable>: Decodable, Sendable {
     let data: T?
     let errors: [GraphQLResponseError]?
     let extensions: [String: AnyCodable]?
@@ -34,18 +34,18 @@ struct GraphQLResponse<T: Decodable>: Decodable {
 }
 
 /// GraphQL error from response
-struct GraphQLResponseError: Decodable, Error {
+struct GraphQLResponseError: Decodable, Error, Sendable {
     let message: String
     let path: [String]?
     let locations: [Location]?
     let extensions: Extensions?
 
-    struct Location: Decodable {
+    struct Location: Decodable, Sendable {
         let line: Int
         let column: Int
     }
 
-    struct Extensions: Decodable {
+    struct Extensions: Decodable, Sendable {
         let code: String?
         let field: [String]?
         let cost: Int?

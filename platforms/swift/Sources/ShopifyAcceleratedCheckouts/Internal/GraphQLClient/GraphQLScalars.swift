@@ -26,7 +26,7 @@ import Foundation
 /// Custom scalar types for the Storefront API
 enum GraphQLScalars {
     /// Represents a globally unique identifier (GID) in the Storefront API
-    struct ID: Codable, Hashable, CustomStringConvertible {
+    struct ID: Codable, Sendable, Hashable, CustomStringConvertible {
         let rawValue: String
 
         init(_ rawValue: String) {
@@ -54,13 +54,13 @@ enum GraphQLScalars {
     }
 
     /// Represents a monetary value with a decimal amount and currency code
-    struct Money: Codable, Hashable {
+    struct Money: Codable, Sendable, Hashable {
         let amount: Decimal
         let currencyCode: String
     }
 
     /// Represents an ISO 8601 encoded date-time string
-    struct DateTime: Codable, Hashable {
+    struct DateTime: Codable, Sendable, Hashable {
         let date: Date
 
         init(_ date: Date) {
@@ -99,7 +99,7 @@ enum GraphQLScalars {
     }
 
     /// Represents an absolute URL
-    struct URL: Codable, Hashable {
+    struct URL: Codable, Sendable, Hashable {
         let url: Foundation.URL
 
         init(_ url: Foundation.URL) {
@@ -130,7 +130,7 @@ enum GraphQLScalars {
     }
 
     /// Represents HTML content
-    struct HTML: Codable, Hashable {
+    struct HTML: Codable, Sendable, Hashable {
         let rawValue: String
 
         init(_ rawValue: String) {
@@ -150,7 +150,7 @@ enum GraphQLScalars {
 }
 
 /// ISO 4217 currency codes
-enum CurrencyCode: String, Codable, CaseIterable {
+enum CurrencyCode: String, Codable, Sendable, CaseIterable {
     case aed = "AED"
     case afn = "AFN"
     case all = "ALL"
@@ -309,7 +309,7 @@ enum CurrencyCode: String, Codable, CaseIterable {
     case zmw = "ZMW"
 }
 
-enum LanguageCode: String, CaseIterable, Codable {
+enum LanguageCode: String, CaseIterable, Codable, Sendable {
     /// Afrikaans
     case AF
     /// Akan
@@ -604,7 +604,7 @@ enum LanguageCode: String, CaseIterable, Codable {
 /// If a territory doesn't have a country code value in the `CountryCode` enum, then it might be considered a subdivision
 /// of another country. For example, the territories associated with Spain are represented by the country code `ES`,
 /// and the territories associated with the United States of America are represented by the country code `US`.
-enum CountryCode: String, CaseIterable, Codable {
+enum CountryCode: String, CaseIterable, Codable, Sendable {
     /// Afghanistan
     case AF
     /// Åland Islands

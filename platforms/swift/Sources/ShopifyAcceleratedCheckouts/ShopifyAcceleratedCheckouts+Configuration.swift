@@ -26,6 +26,30 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 extension ShopifyAcceleratedCheckouts {
+    struct CustomerIdentity: Sendable {
+        let email: String?
+        let phoneNumber: String?
+        let customerAccessToken: String?
+
+        init?(customer: Customer?) {
+            guard let customer else { return nil }
+            self.init(
+                email: customer.email,
+                phoneNumber: customer.phoneNumber,
+                customerAccessToken: customer.customerAccessToken
+            )
+        }
+
+        init?(email: String? = nil, phoneNumber: String? = nil, customerAccessToken: String? = nil) {
+            guard email != nil || phoneNumber != nil || customerAccessToken != nil else {
+                return nil
+            }
+            self.email = email
+            self.phoneNumber = phoneNumber
+            self.customerAccessToken = customerAccessToken
+        }
+    }
+
     public class Configuration: ObservableObject, Copyable {
         /// The domain of the shop without the protocol.
         ///

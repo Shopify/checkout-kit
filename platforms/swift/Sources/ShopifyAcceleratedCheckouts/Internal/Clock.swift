@@ -24,7 +24,7 @@
 import Foundation
 
 /// Protocol for abstracting time-based operations to enable testing
-protocol Clock {
+protocol Clock: Sendable {
     /// Sleep for the specified number of nanoseconds
     func sleep(nanoseconds: UInt64) async throws
 }

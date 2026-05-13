@@ -41,7 +41,7 @@ func exponentialDelay(for attempt: Int = 1, with retryDelay: TimeInterval) -> UI
     return UInt64(delayInNanoseconds)
 }
 
-extension Task where Failure == Error {
+extension Task where Failure == Error, Success: Sendable {
     @discardableResult static func retrying(
         priority: TaskPriority? = nil,
         maxRetryCount: Int = 3,

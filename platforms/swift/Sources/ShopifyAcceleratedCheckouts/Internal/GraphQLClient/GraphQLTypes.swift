@@ -24,7 +24,7 @@
 import Foundation
 
 /// GraphQL client errors
-enum GraphQLError: LocalizedError {
+enum GraphQLError: LocalizedError, Sendable {
     case networkError(String)
     case httpError(statusCode: Int, data: Data)
     case decodingError(Error)
@@ -52,8 +52,8 @@ enum GraphQLError: LocalizedError {
 }
 
 /// Helper type for encoding/decoding Any values
-struct AnyCodable: Codable {
-    let value: Any
+struct AnyCodable: Codable, @unchecked Sendable {
+    nonisolated(unsafe) let value: Any
 
     init(_ value: Any) {
         self.value = value

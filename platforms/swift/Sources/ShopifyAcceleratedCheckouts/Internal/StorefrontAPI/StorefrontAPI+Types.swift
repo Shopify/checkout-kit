@@ -41,7 +41,7 @@ extension StorefrontAPI {
     }
 
     /// Represents a cart in the Storefront API
-    struct Cart: Codable {
+    struct Cart: Codable, Sendable {
         let id: Types.ID
         let checkoutUrl: GraphQLScalars.URL
         let totalQuantity: Int
@@ -55,31 +55,31 @@ extension StorefrontAPI {
     }
 
     /// Cart discount code
-    struct CartDiscountCode: Codable {
+    struct CartDiscountCode: Codable, Sendable {
         let code: String
         let applicable: Bool
     }
 
     /// Cart buyer identity
-    struct CartBuyerIdentity: Codable {
+    struct CartBuyerIdentity: Codable, Sendable {
         let email: String?
         let phone: String?
         let customer: CartCustomer?
     }
 
     /// Cart customer information
-    struct CartCustomer: Codable {
+    struct CartCustomer: Codable, Sendable {
         let email: String?
         let phone: String?
     }
 
     /// Cart delivery information
-    struct CartDelivery: Codable {
+    struct CartDelivery: Codable, Sendable {
         let addresses: [CartSelectableAddress]
     }
 
     /// Cart selectable address
-    struct CartSelectableAddress: Codable {
+    struct CartSelectableAddress: Codable, Sendable {
         let id: Types.ID
         let selected: Bool
         let address: CartDeliveryAddress?
@@ -88,7 +88,7 @@ extension StorefrontAPI {
     /// Cart delivery address
     /// Note: This is a GraphQL response type that uses countryCode/provinceCode
     /// instead of country/province like the input Address type
-    struct CartDeliveryAddress: Codable {
+    struct CartDeliveryAddress: Codable, Sendable {
         let address1: String?
         let address2: String?
         let city: String?
@@ -101,7 +101,7 @@ extension StorefrontAPI {
     }
 
     /// Cart cost breakdown
-    struct CartCost: Codable {
+    struct CartCost: Codable, Sendable {
         let totalAmount: MoneyV2
         let subtotalAmount: MoneyV2?
         let totalTaxAmount: MoneyV2?
@@ -109,7 +109,7 @@ extension StorefrontAPI {
     }
 
     /// Money representation
-    struct MoneyV2: Codable {
+    struct MoneyV2: Codable, Sendable {
         let amount: Decimal
         let currencyCode: String
 
@@ -155,12 +155,12 @@ extension StorefrontAPI {
     // MARK: - Cart Lines
 
     /// Connection type for cart lines
-    struct BaseCartLineConnection: Codable {
+    struct BaseCartLineConnection: Codable, Sendable {
         let nodes: [BaseCartLine]
     }
 
     /// Cart discount allocation
-    enum CartDiscountAllocation: Codable {
+    enum CartDiscountAllocation: Codable, Sendable {
         case automatic(CartAutomaticDiscountAllocation)
         case code(CartCodeDiscountAllocation)
         case custom(CartCustomDiscountAllocation)
@@ -169,7 +169,7 @@ extension StorefrontAPI {
             case __typename
         }
 
-        private enum TypeName: String, Codable {
+        private enum TypeName: String, Codable, Sendable {
             case cartAutomaticDiscountAllocation = "CartAutomaticDiscountAllocation"
             case cartCodeDiscountAllocation = "CartCodeDiscountAllocation"
             case cartCustomDiscountAllocation = "CartCustomDiscountAllocation"
@@ -205,14 +205,14 @@ extension StorefrontAPI {
     }
 
     /// Automatic discount allocation
-    struct CartAutomaticDiscountAllocation: Codable {
+    struct CartAutomaticDiscountAllocation: Codable, Sendable {
         let discountApplication: CartDiscountApplication
         let discountedAmount: MoneyV2
         let targetType: DiscountApplicationTargetType
     }
 
     /// Code discount allocation
-    struct CartCodeDiscountAllocation: Codable {
+    struct CartCodeDiscountAllocation: Codable, Sendable {
         let code: String
         let discountApplication: CartDiscountApplication
         let discountedAmount: MoneyV2
@@ -220,34 +220,34 @@ extension StorefrontAPI {
     }
 
     /// Custom discount allocation
-    struct CartCustomDiscountAllocation: Codable {
+    struct CartCustomDiscountAllocation: Codable, Sendable {
         let discountApplication: CartDiscountApplication
         let discountedAmount: MoneyV2
         let targetType: DiscountApplicationTargetType
     }
 
     /// Cart discount application
-    struct CartDiscountApplication: Codable {
+    struct CartDiscountApplication: Codable, Sendable {
         let targetSelection: DiscountApplicationTargetSelection
         let targetType: DiscountApplicationTargetType
         let value: PricingValue
     }
 
     /// Discount application target selection
-    enum DiscountApplicationTargetSelection: String, Codable {
+    enum DiscountApplicationTargetSelection: String, Codable, Sendable {
         case all = "ALL"
         case entitled = "ENTITLED"
         case explicit = "EXPLICIT"
     }
 
     /// Discount application target type
-    enum DiscountApplicationTargetType: String, Codable {
+    enum DiscountApplicationTargetType: String, Codable, Sendable {
         case lineItem = "LINE_ITEM"
         case shippingLine = "SHIPPING_LINE"
     }
 
     /// Pricing value (union type for percentage or fixed amount)
-    enum PricingValue: Codable {
+    enum PricingValue: Codable, Sendable {
         case percentage(PricingPercentageValue)
         case fixedAmount(MoneyV2)
 
@@ -255,7 +255,7 @@ extension StorefrontAPI {
             case __typename
         }
 
-        private enum TypeName: String, Codable {
+        private enum TypeName: String, Codable, Sendable {
             case pricingPercentageValue = "PricingPercentageValue"
             case moneyV2 = "MoneyV2"
         }
@@ -285,12 +285,12 @@ extension StorefrontAPI {
     }
 
     /// Pricing percentage value
-    struct PricingPercentageValue: Codable {
+    struct PricingPercentageValue: Codable, Sendable {
         let percentage: Double
     }
 
     /// Base cart line
-    struct BaseCartLine: Codable {
+    struct BaseCartLine: Codable, Sendable {
         let id: Types.ID
         let quantity: Int
         let merchandise: ProductVariant?
@@ -299,7 +299,7 @@ extension StorefrontAPI {
     }
 
     /// Cart line cost
-    struct CartLineCost: Codable {
+    struct CartLineCost: Codable, Sendable {
         let totalAmount: MoneyV2
         let subtotalAmount: MoneyV2
     }
@@ -307,7 +307,7 @@ extension StorefrontAPI {
     // MARK: - Product Models
 
     /// Product variant
-    struct ProductVariant: Codable {
+    struct ProductVariant: Codable, Sendable {
         let id: Types.ID
         let title: String
         let price: MoneyV2
@@ -316,7 +316,7 @@ extension StorefrontAPI {
     }
 
     /// Product
-    struct Product: Codable {
+    struct Product: Codable, Sendable {
         let id: Types.ID?
         let title: String
         let vendor: String?
@@ -325,24 +325,24 @@ extension StorefrontAPI {
     }
 
     /// Product variant connection
-    struct ProductVariantConnection: Codable {
+    struct ProductVariantConnection: Codable, Sendable {
         let nodes: [ProductVariant]
     }
 
     /// Product connection
-    struct ProductConnection: Codable {
+    struct ProductConnection: Codable, Sendable {
         let nodes: [Product]
     }
 
     /// Image
-    struct Image: Codable {
+    struct Image: Codable, Sendable {
         let url: GraphQLScalars.URL
     }
 
     // MARK: - Shop
 
     /// Shop information
-    struct Shop: Codable {
+    struct Shop: Codable, Sendable {
         let name: String
         let description: String?
         let primaryDomain: ShopDomain
@@ -352,21 +352,21 @@ extension StorefrontAPI {
     }
 
     /// Shop domain
-    struct ShopDomain: Codable {
+    struct ShopDomain: Codable, Sendable {
         let host: String
         let sslEnabled: Bool
         let url: GraphQLScalars.URL
     }
 
     /// Shop payment settings
-    struct ShopPaymentSettings: Codable {
+    struct ShopPaymentSettings: Codable, Sendable {
         let supportedDigitalWallets: [String]
         let acceptedCardBrands: [CardBrand]
         let countryCode: String
     }
 
     /// Card brands supported by Shopify's payment system
-    enum CardBrand: String, Codable, CaseIterable {
+    enum CardBrand: String, Codable, Sendable, CaseIterable {
         case americanExpress = "AMERICAN_EXPRESS"
         case dinersClub = "DINERS_CLUB"
         case discover = "DISCOVER"
@@ -378,12 +378,12 @@ extension StorefrontAPI {
     // MARK: - Delivery Groups
 
     /// Connection type for delivery groups
-    struct CartDeliveryGroupConnection: Codable {
+    struct CartDeliveryGroupConnection: Codable, Sendable {
         let nodes: [CartDeliveryGroup]
     }
 
     /// Cart delivery group
-    struct CartDeliveryGroup: Codable {
+    struct CartDeliveryGroup: Codable, Sendable {
         let id: Types.ID
         let groupType: CartDeliveryGroupType
         let deliveryOptions: [CartDeliveryOption]
@@ -391,13 +391,13 @@ extension StorefrontAPI {
     }
 
     /// Cart delivery group type
-    enum CartDeliveryGroupType: String, Codable {
+    enum CartDeliveryGroupType: String, Codable, Sendable {
         case oneTimePurchase = "ONE_TIME_PURCHASE"
         case subscription = "SUBSCRIPTION"
     }
 
     /// Cart delivery option
-    struct CartDeliveryOption: Codable {
+    struct CartDeliveryOption: Codable, Sendable {
         let handle: String
         let title: String
         let code: String?
@@ -407,7 +407,7 @@ extension StorefrontAPI {
     }
 
     /// Delivery method type
-    enum DeliveryMethodType: String, Codable {
+    enum DeliveryMethodType: String, Codable, Sendable {
         case local = "LOCAL"
         case none = "NONE"
         case pickupPoint = "PICKUP_POINT"
@@ -419,14 +419,14 @@ extension StorefrontAPI {
     // MARK: - User Errors
 
     /// Cart user error
-    struct CartUserError: Codable, Error {
+    struct CartUserError: Codable, Sendable, Error {
         let code: CartErrorCode?
         let message: String
         let field: [String]?
     }
 
     /// Cart error codes
-    enum CartErrorCode: String, Codable {
+    enum CartErrorCode: String, Codable, Sendable {
         case addressFieldContainsEmojis = "ADDRESS_FIELD_CONTAINS_EMOJIS"
         case addressFieldContainsHtmlTags = "ADDRESS_FIELD_CONTAINS_HTML_TAGS"
         case addressFieldContainsUrl = "ADDRESS_FIELD_CONTAINS_URL"
@@ -499,7 +499,7 @@ extension StorefrontAPI {
 
     // MARK: - Mutation Payloads
 
-    struct CartPayload: Codable {
+    struct CartPayload: Codable, Sendable {
         let cart: Cart?
         let userErrors: [CartUserError]
     }
@@ -526,13 +526,13 @@ extension StorefrontAPI {
     typealias CartRemovePersonalDataPayload = CartPayload
 
     /// Cart prepare for completion payload
-    struct CartPrepareForCompletionPayload: Codable {
+    struct CartPrepareForCompletionPayload: Codable, Sendable {
         let result: CartPrepareForCompletionResult?
         let userErrors: [CartUserError]
     }
 
     /// Cart prepare for completion result (union type)
-    enum CartPrepareForCompletionResult: Codable {
+    enum CartPrepareForCompletionResult: Codable, Sendable {
         case ready(CartStatusReady)
         case throttled(CartThrottled)
         case notReady(CartStatusNotReady)
@@ -541,7 +541,7 @@ extension StorefrontAPI {
             case __typename
         }
 
-        private enum TypeName: String, Codable {
+        private enum TypeName: String, Codable, Sendable {
             case cartStatusReady = "CartStatusReady"
             case cartThrottled = "CartThrottled"
             case cartStatusNotReady = "CartStatusNotReady"
@@ -577,30 +577,30 @@ extension StorefrontAPI {
     }
 
     /// Cart status ready
-    struct CartStatusReady: Codable {
+    struct CartStatusReady: Codable, Sendable {
         let cart: Cart?
         let checkoutURL: GraphQLScalars.URL?
     }
 
     /// Cart throttled
-    struct CartThrottled: Codable {
+    struct CartThrottled: Codable, Sendable {
         let pollAfter: GraphQLScalars.DateTime
     }
 
     /// Cart status not ready
-    struct CartStatusNotReady: Codable {
+    struct CartStatusNotReady: Codable, Sendable {
         let cart: Cart?
         let errors: [CartCompletionError]
     }
 
     /// Cart submit for completion payload
-    struct CartSubmitForCompletionPayload: Codable {
+    struct CartSubmitForCompletionPayload: Codable, Sendable {
         let result: CartSubmitForCompletionResult?
         let userErrors: [CartUserError]
     }
 
     /// Cart submit for completion result (union type)
-    enum CartSubmitForCompletionResult: Codable {
+    enum CartSubmitForCompletionResult: Codable, Sendable {
         case success(SubmitSuccess)
         case failed(SubmitFailed)
         case alreadyAccepted(SubmitAlreadyAccepted)
@@ -610,7 +610,7 @@ extension StorefrontAPI {
             case __typename
         }
 
-        private enum TypeName: String, Codable {
+        private enum TypeName: String, Codable, Sendable {
             case submitSuccess = "SubmitSuccess"
             case submitFailed = "SubmitFailed"
             case submitAlreadyAccepted = "SubmitAlreadyAccepted"
@@ -652,28 +652,28 @@ extension StorefrontAPI {
     }
 
     /// Submit success
-    struct SubmitSuccess: Codable {
+    struct SubmitSuccess: Codable, Sendable {
         let redirectUrl: GraphQLScalars.URL
     }
 
     /// Submit failed
-    struct SubmitFailed: Codable {
+    struct SubmitFailed: Codable, Sendable {
         let checkoutUrl: GraphQLScalars.URL?
         let errors: [CartCompletionError]
     }
 
     /// Submit already accepted
-    struct SubmitAlreadyAccepted: Codable {
+    struct SubmitAlreadyAccepted: Codable, Sendable {
         let attemptId: String
     }
 
     /// Submit throttled
-    struct SubmitThrottled: Codable {
+    struct SubmitThrottled: Codable, Sendable {
         let pollAfter: GraphQLScalars.DateTime
     }
 
     /// Cart completion error (used by both cartPrepareForCompletion and cartSubmitForCompletion)
-    struct CartCompletionError: Codable {
+    struct CartCompletionError: Codable, Sendable {
         let code: CartCompletionErrorCode
         let rawCode: String
         let message: String
@@ -697,7 +697,7 @@ extension StorefrontAPI {
     }
 
     /// Error codes for cart completion (shared by prepare and submit stages)
-    enum CartCompletionErrorCode: String, Codable {
+    enum CartCompletionErrorCode: String, Codable, Sendable {
         // Buyer identity errors
         case buyerIdentityEmailIsInvalid = "BUYER_IDENTITY_EMAIL_IS_INVALID"
         case buyerIdentityEmailRequired = "BUYER_IDENTITY_EMAIL_REQUIRED"
@@ -826,24 +826,24 @@ extension StorefrontAPI {
     // MARK: - Query Response Wrappers
 
     /// Response wrapper for cart query
-    struct CartQueryResponse: Codable {
+    struct CartQueryResponse: Codable, Sendable {
         let cart: Cart?
     }
 
     /// Response wrapper for products query
-    struct ProductsQueryResponse: Codable {
+    struct ProductsQueryResponse: Codable, Sendable {
         let products: ProductConnection
     }
 
     /// Response wrapper for shop query
-    struct ShopQueryResponse: Codable {
+    struct ShopQueryResponse: Codable, Sendable {
         let shop: Shop
     }
 
     // MARK: - Input Types
 
     /// Unified address structure for input operations
-    struct Address {
+    struct Address: Sendable {
         let address1: String?
         let address2: String?
         let city: String?
@@ -914,7 +914,7 @@ extension StorefrontAPI {
     typealias DeliveryAddress = Address
 
     /// Apple Pay payment data
-    struct ApplePayPayment {
+    struct ApplePayPayment: Sendable {
         let billingAddress: ApplePayBillingAddress
         let ephemeralPublicKey: String
         let publicKeyHash: String

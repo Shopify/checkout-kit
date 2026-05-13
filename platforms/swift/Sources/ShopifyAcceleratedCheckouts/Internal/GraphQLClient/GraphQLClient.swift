@@ -26,7 +26,7 @@ import ShopifyCheckoutKit
 
 /// A lightweight GraphQL client for the Storefront API without external dependencies
 @available(iOS 16.0, *)
-class GraphQLClient {
+final class GraphQLClient: Sendable {
     let url: URL
     private let headers: [String: String]
     private let session: URLSession
@@ -53,19 +53,19 @@ class GraphQLClient {
     /// Execute a GraphQL query
     /// - Parameter operation: The GraphQL query operation
     /// - Returns: The decoded response
-    func query<T: Decodable>(_ operation: GraphQLRequest<T>) async throws -> GraphQLResponse<T> {
+    func query<T: Decodable & Sendable>(_ operation: GraphQLRequest<T>) async throws -> GraphQLResponse<T> {
         return try await execute(operation: operation)
     }
 
     /// Execute a GraphQL mutation
     /// - Parameter operation: The GraphQL mutation operation
     /// - Returns: The decoded response
-    func mutate<T: Decodable>(_ operation: GraphQLRequest<T>) async throws -> GraphQLResponse<T> {
+    func mutate<T: Decodable & Sendable>(_ operation: GraphQLRequest<T>) async throws -> GraphQLResponse<T> {
         return try await execute(operation: operation)
     }
 
     /// Execute a raw GraphQL request
-    private func execute<T: Decodable>(
+    private func execute<T: Decodable & Sendable>(
         operation: GraphQLRequest<T>
     ) async throws -> GraphQLResponse<T> {
         let urlRequest = try getURLRequest(

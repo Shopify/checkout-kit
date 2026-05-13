@@ -307,7 +307,7 @@ class MockStorefrontAPI: StorefrontAPIProtocol {
         fatalError("shop() not implemented in test. Override this method in your test class.")
     }
 
-    func cartCreate(with _: [GraphQLScalars.ID], customer _: ShopifyAcceleratedCheckouts.Customer?)
+    func cartCreate(with _: [GraphQLScalars.ID], customer _: ShopifyAcceleratedCheckouts.CustomerIdentity?)
         async throws -> StorefrontAPI.Cart
     {
         fatalError(
@@ -394,7 +394,7 @@ class TestStorefrontAPI: MockStorefrontAPI {
     }
 
     var cartCreateResult: Result<StorefrontAPI.Cart, Error>?
-    override func cartCreate(with _: [GraphQLScalars.ID], customer _: ShopifyAcceleratedCheckouts.Customer?) async throws -> StorefrontAPI.Cart {
+    override func cartCreate(with _: [GraphQLScalars.ID], customer _: ShopifyAcceleratedCheckouts.CustomerIdentity?) async throws -> StorefrontAPI.Cart {
         guard let result = cartCreateResult else {
             fatalError("cartCreateResult not configured for TestStorefrontAPI")
         }
