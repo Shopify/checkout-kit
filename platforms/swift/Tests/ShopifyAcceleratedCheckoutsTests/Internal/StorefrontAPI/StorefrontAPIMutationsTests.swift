@@ -66,11 +66,11 @@ final class StorefrontAPIMutationsTests: XCTestCase {
     // MARK: - Mock URLProtocol for Network Mocking
 
     class MockURLProtocol: URLProtocol {
-        static var mockResponseData: Data?
-        static var mockError: Error?
-        static var mockStatusCode: Int = 200
-        static var capturedRequest: URLRequest?
-        static var capturedRequestBody: Data?
+        nonisolated(unsafe) static var mockResponseData: Data?
+        nonisolated(unsafe) static var mockError: Error?
+        nonisolated(unsafe) static var mockStatusCode: Int = 200
+        nonisolated(unsafe) static var capturedRequest: URLRequest?
+        nonisolated(unsafe) static var capturedRequestBody: Data?
 
         override class func canInit(with _: URLRequest) -> Bool {
             return true

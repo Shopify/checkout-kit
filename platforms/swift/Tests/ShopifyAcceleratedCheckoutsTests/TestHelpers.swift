@@ -29,6 +29,7 @@ import XCTest
 
 // MARK: - Configuration Helpers
 
+@MainActor
 func XCTAssertThrowsErrorAsync(
     _ expression: @autoclosure () async throws -> some Any,
     _ errorHandler: (Error) -> Void,
@@ -298,7 +299,7 @@ extension StorefrontAPI.Cart {
 /// This class conforms to StorefrontAPIProtocol with not implemented errors
 /// Extend this class and override only the methods you need, per test file
 @available(iOS 16.0, *)
-class MockStorefrontAPI: StorefrontAPIProtocol {
+class MockStorefrontAPI: @unchecked Sendable, StorefrontAPIProtocol {
     func cart(by _: GraphQLScalars.ID) async throws -> StorefrontAPI.Cart? {
         fatalError("cart(by:) not implemented in test. Override this method in your test class.")
     }
@@ -383,7 +384,7 @@ class MockStorefrontAPI: StorefrontAPIProtocol {
 // MARK: - Test StorefrontAPI
 
 @available(iOS 16.0, *)
-class TestStorefrontAPI: MockStorefrontAPI {
+class TestStorefrontAPI: MockStorefrontAPI, @unchecked Sendable {
     var cartResult: Result<StorefrontAPI.Cart?, Error>?
 
     override func cart(by _: GraphQLScalars.ID) async throws -> StorefrontAPI.Cart? {

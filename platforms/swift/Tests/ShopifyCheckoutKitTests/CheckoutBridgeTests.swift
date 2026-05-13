@@ -25,6 +25,7 @@
 import WebKit
 import XCTest
 
+@MainActor
 class CheckoutBridgeTests: XCTestCase {
     func testReturnsStandardUserAgent() {
         let version = ShopifyCheckoutKit.version

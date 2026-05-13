@@ -27,18 +27,19 @@ import UIKit
 import XCTest
 
 @available(iOS 16.0, *)
+@MainActor
 final class WalletControllerTests: XCTestCase {
     var mockStorefront: TestStorefrontAPI!
     var controller: MockWalletController!
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         mockStorefront = TestStorefrontAPI()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         mockStorefront = nil
         controller = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     class MockWalletController: WalletController {

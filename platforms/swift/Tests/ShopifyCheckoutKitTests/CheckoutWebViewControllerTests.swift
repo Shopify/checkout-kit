@@ -43,6 +43,7 @@ class TestableCheckoutWebViewController: CheckoutWebViewController {
     }
 }
 
+@MainActor
 class CheckoutWebViewControllerTests: XCTestCase {
     private let url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
     private let multipassURL = URL(string: "http://shopify1.shopify.com/checkouts/cn/123?multipass=token")!

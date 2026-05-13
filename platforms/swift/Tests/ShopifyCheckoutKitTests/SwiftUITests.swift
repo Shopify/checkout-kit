@@ -24,12 +24,13 @@
 @testable import ShopifyCheckoutKit
 import XCTest
 
+@MainActor
 class CheckoutViewControllerTests: XCTestCase {
     var checkoutURL: URL!
     var checkoutViewController: CheckoutViewController!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         checkoutURL = URL(string: "https://www.shopify.com")
         checkoutViewController = CheckoutViewController(checkout: checkoutURL)
     }
@@ -39,12 +40,13 @@ class CheckoutViewControllerTests: XCTestCase {
     }
 }
 
+@MainActor
 class CheckoutSheetTests: XCTestCase {
     var checkoutURL: URL!
     var checkoutSheet: CheckoutSheet!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         checkoutURL = URL(string: "https://www.shopify.com")
         checkoutSheet = CheckoutSheet(checkout: checkoutURL)
     }
@@ -81,12 +83,13 @@ class CheckoutSheetTests: XCTestCase {
     }
 }
 
+@MainActor
 class CheckoutConfigurableTests: XCTestCase {
     var checkoutURL: URL!
     var checkoutSheet: CheckoutSheet!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         checkoutURL = URL(string: "https://www.shopify.com")
         checkoutSheet = CheckoutSheet(checkout: checkoutURL)
     }

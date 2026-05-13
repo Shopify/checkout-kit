@@ -26,13 +26,15 @@ import ShopifyCheckoutProtocol
 import WebKit
 import XCTest
 
+@MainActor
 class CheckoutWebViewTests: XCTestCase {
     private var view: CheckoutWebView!
     private var recovery: CheckoutWebView!
     private var mockDelegate: MockCheckoutWebViewDelegate!
     private var url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
 
-    override func setUp() {
+    override func setUp() async throws {
+        try await super.setUp()
         ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         view = CheckoutWebView.for(checkout: url)
         mockDelegate = MockCheckoutWebViewDelegate()
@@ -365,7 +367,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testDoesNotInstrumentPreloadingTagIfDisabled() throws {
         let webView = LoadedRequestObservableWebView()
-        ShopifyCheckoutKit.configuration.preloading.enabled = false
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
 
         try webView.load(
             checkout: XCTUnwrap(URL(string: "https://checkout-sdk.myshopify.io")),
@@ -379,7 +381,7 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     func testDetachBridgeCalledOnInit() throws {
-        ShopifyCheckoutKit.configuration.preloading.enabled = false
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
         let url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")
         let view = try CheckoutWebView.for(checkout: XCTUnwrap(url))
         XCTAssertTrue(view.isBridgeAttached)
@@ -389,7 +391,7 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     func testCacheIsClearedOnInvalidate() throws {
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         let url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")
         let view = try CheckoutWebView.for(checkout: XCTUnwrap(url))
         XCTAssertTrue(view.isBridgeAttached)

@@ -635,12 +635,12 @@ final class ApplePayAuthorizationDelegateControllerTests: XCTestCase {
             "\"cost\":{\"totalAmount\":{\"amount\":\"0.00\",\"currencyCode\":\"USD\"}}," +
             "\"discountCodes\":[],\"discountAllocations\":[]}"
 
-        static var failReplace = false
-        static var failDeliveryUpdate = false
-        static var failPrepareForCompletion = false
-        static var returnMappableCartUserError = false
-        static var returnInvalidCart = false
-        static var lastOperation: String?
+        nonisolated(unsafe) static var failReplace = false
+        nonisolated(unsafe) static var failDeliveryUpdate = false
+        nonisolated(unsafe) static var failPrepareForCompletion = false
+        nonisolated(unsafe) static var returnMappableCartUserError = false
+        nonisolated(unsafe) static var returnInvalidCart = false
+        nonisolated(unsafe) static var lastOperation: String?
 
         static func response(for op: String) -> Data {
             if op == "cartPrepareForCompletion" {

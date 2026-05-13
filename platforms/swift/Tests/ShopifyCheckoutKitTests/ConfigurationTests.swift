@@ -25,15 +25,16 @@
 import UIKit
 import XCTest
 
+@MainActor
 class ConfigurationTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         resetConfigurationState()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         resetConfigurationState()
-        super.tearDown()
+        try await super.tearDown()
     }
 
     private func resetConfigurationState() {

@@ -27,6 +27,7 @@ import ViewInspector
 import XCTest
 
 @available(iOS 17.0, *)
+@MainActor
 class ShopPayButtonTests: XCTestCase {
     // MARK: - Test Setup
 

@@ -27,14 +27,15 @@ import UIKit
 import XCTest
 
 @available(iOS 17.0, *)
+@MainActor
 class ApplePayViewControllerTests: XCTestCase {
     var viewController: MockApplePayViewController!
     var mockConfiguration: ApplePayConfigurationWrapper!
     var mockStorefront: TestStorefrontAPI!
     var mockAuthorizationDelegate: MockApplePayAuthorizationDelegate!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         // Create mock shop settings
         let paymentSettings = PaymentSettings(
@@ -91,12 +92,12 @@ class ApplePayViewControllerTests: XCTestCase {
         viewController.setMockAuthorizationDelegate(mockAuthorizationDelegate)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         viewController = nil
         mockConfiguration = nil
         mockStorefront = nil
         mockAuthorizationDelegate = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     class MockApplePayAuthorizationDelegate: ApplePayAuthorizationDelegate {

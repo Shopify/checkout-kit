@@ -26,6 +26,7 @@ import SwiftUI
 import XCTest
 
 @available(iOS 17.0, *)
+@MainActor
 final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
     // MARK: - Render State Change Callback Tests
 

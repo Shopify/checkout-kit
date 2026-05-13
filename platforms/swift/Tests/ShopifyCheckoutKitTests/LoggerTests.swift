@@ -25,7 +25,7 @@ import os.log
 @testable import ShopifyCheckoutKit
 import XCTest
 
-class TestableOSLogger: OSLogger {
+class TestableOSLogger: OSLogger, @unchecked Sendable {
     private(set) var capturedMessages: [(message: String, type: OSLogType)] = []
     private let testPrefix: String
     override init() {
@@ -43,17 +43,18 @@ class TestableOSLogger: OSLogger {
     }
 }
 
+@MainActor
 final class OSLoggerTests: XCTestCase {
     var originalConfiguration: Configuration!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         originalConfiguration = ShopifyCheckoutKit.configuration
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         ShopifyCheckoutKit.setConfiguration(originalConfiguration)
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func test_sharedLogger_whenAccessed_shouldExist() {
