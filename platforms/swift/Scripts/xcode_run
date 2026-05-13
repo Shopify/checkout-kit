@@ -50,12 +50,18 @@ if [[ "$ACTION" == *"test"* && -n "$TEST_FILTER" ]]; then
         # Find which test target contains this test class (search all test targets automatically)
         project_root="$(cd "$SCRIPT_DIR/.." && pwd)"
         test_target=""
+        target_filter_added=""
         
         # Discover all test targets by looking for *Tests directories
         test_file=""
         for test_dir in "$project_root/Tests"/*Tests; do
             if [[ -d "$test_dir" ]]; then
                 target_name=$(basename "$test_dir")
+                if [[ "$TEST_FILTER" == "$target_name" ]]; then
+                    xcodebuild_cmd="$xcodebuild_cmd -only-testing:$target_name"
+                    target_filter_added="1"
+                    break
+                fi
                 # Check if TEST_FILTER matches a .swift filename
                 if find "$test_dir" -name "$TEST_FILTER.swift" -type f | grep -q .; then
                     test_target="$target_name"
@@ -65,7 +71,9 @@ if [[ "$ACTION" == *"test"* && -n "$TEST_FILTER" ]]; then
             fi
         done
         
-        if [[ -n "$test_target" && -n "$test_file" ]]; then
+        if [[ -n "$target_filter_added" ]]; then
+            :
+        elif [[ -n "$test_target" && -n "$test_file" ]]; then
             # Extract all test class names from the file
             test_classes=$(grep "class.*XCTestCase" "$test_file" | sed 's/.*class \([^:]*\):.*/\1/')
             

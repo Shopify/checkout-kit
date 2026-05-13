@@ -86,7 +86,6 @@ check:
   react-native-lint-sample: cd platforms/react-native && pnpm sample lint
   web-lint: cd platforms/web && pnpm lint
   web-test: cd platforms/web && pnpm test
-  protocol-build: cd protocol/languages/swift && swift build
 
 commands:
   # Repo-wide
@@ -96,8 +95,8 @@ commands:
       set -e
       /opt/dev/bin/dev android build
       /opt/dev/bin/dev swift build
-      /opt/dev/bin/dev protocol build
       /opt/dev/bin/dev react-native build
+      /opt/dev/bin/dev web build
 
   codegen:
     desc: "Generate UCP models. Usage: dev codegen <kotlin|swift|typescript>"
@@ -116,6 +115,7 @@ commands:
       /opt/dev/bin/dev android format
       /opt/dev/bin/dev swift format
       /opt/dev/bin/dev react-native format
+      /opt/dev/bin/dev web format
 
   lint:
     desc: Run lint checks across supported workspaces
@@ -125,6 +125,7 @@ commands:
       /opt/dev/bin/dev android lint
       /opt/dev/bin/dev swift lint
       /opt/dev/bin/dev react-native lint
+      /opt/dev/bin/dev web lint
 
   test:
     desc: Run tests across all supported workspaces
@@ -132,8 +133,8 @@ commands:
       set -e
       /opt/dev/bin/dev android test
       /opt/dev/bin/dev swift test
-      /opt/dev/bin/dev protocol test
       /opt/dev/bin/dev react-native test
+      /opt/dev/bin/dev web test
 
   apollo:
     subcommands:
@@ -161,13 +162,13 @@ commands:
     desc: "Checkout protocol commands"
     subcommands:
       build:
-        desc: Build the Swift protocol package
+        desc: Build the Swift protocol target
         run: cd protocol/languages/swift && swift build
       test:
-        desc: Run Swift protocol package tests
-        run: cd protocol/languages/swift && swift test
+        desc: Build the Swift protocol test target
+        run: cd protocol/languages/swift && swift build --build-tests
       check:
-        desc: Build and test the Swift protocol package
+        desc: Build the Swift protocol target and test target
         run: |
           set -e
           /opt/dev/bin/dev protocol build
@@ -257,12 +258,34 @@ commands:
         aliases: [fix]
         run: cd platforms/swift && ./Scripts/lint fix
       clean:
-        desc: Clean Swift package build artifacts
-        run: cd platforms/swift && ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
+        desc: Clean Swift packages and sample app build artifacts
+        run: |
+          set -e
+          cd platforms/swift
+          # ShopifyCheckoutKit-Package is the SPM-wide scheme: it cleans all
+          # library targets in Package.swift (ShopifyCheckoutKit,
+          # ShopifyAcceleratedCheckouts, ShopifyCheckoutProtocol) in one pass.
+          ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
+          cd Samples
+          # Sample apps have a "Run Script" build phase that runs during clean
+          # and exits non-zero when there is nothing to delete. Tolerate it so
+          # the second sample still gets cleaned.
+          ../Scripts/xcode_run clean MobileBuyIntegration || true
+          ../Scripts/xcode_run clean ShopifyAcceleratedCheckoutsApp || true
       build:
-        desc: Build the Swift package
-        run: cd platforms/swift && ./Scripts/xcode_run build ShopifyCheckoutKit-Package
+        desc: Build all Swift packages and sample apps
+        run: |
+          set -e
+          cd platforms/swift
+          # ShopifyCheckoutKit-Package builds every library target in
+          # Package.swift in one xcodebuild invocation. The sample apps act as
+          # integration compilation checks against the built libraries.
+          ./Scripts/xcode_run build ShopifyCheckoutKit-Package
+          ./Scripts/build_samples
         subcommands:
+          packages:
+            desc: Build Swift package targets
+            run: cd platforms/swift && ./Scripts/xcode_run build ShopifyCheckoutKit-Package
           samples:
             desc: Build all sample applications to verify integration
             run: cd platforms/swift && ./Scripts/build_samples
@@ -279,6 +302,7 @@ commands:
           echo ""
           echo "  check  Verify public Swift API matches the committed baselines"
           echo "  dump   Regenerate the Swift API baselines after intentional public API changes"
+          exit 1
         subcommands:
           check:
             desc: Verify public Swift API matches the committed baselines
@@ -391,13 +415,13 @@ commands:
             desc: Lint Swift code via SwiftLint
             run: cd platforms/react-native && ./scripts/lint_swift
           module:
-            desc: Lint the @shopify/checkout-sheet-kit module
+            desc: Lint the @shopify/checkout-kit-react-native module
             run: cd platforms/react-native && pnpm module lint
           sample:
             desc: Lint the sample app
             run: cd platforms/react-native && pnpm sample lint
       format:
-        desc: Auto-fix Swift lint and format issues
+        desc: Auto-format and apply safe lint autocorrections (Swift bridge only)
         aliases: [fix]
         run: cd platforms/react-native && ./scripts/lint_swift fix
       api:
@@ -407,6 +431,7 @@ commands:
           echo ""
           echo "  check  Verify public RN API matches the committed report"
           echo "  dump   Regenerate the RN API report after intentional public API changes"
+          exit 1
         subcommands:
           check:
             desc: Verify public RN API matches the committed report
@@ -417,6 +442,15 @@ commands:
       check:
         desc: Run React Native lint checks
         run: /opt/dev/bin/dev react-native lint
+
+  rn:
+    desc: "Alias for React Native Checkout Kit commands"
+    long_desc: |
+      Alias for `dev react-native ...`. Use `dev help react-native` for the
+      full subcommand list.
+    syntax:
+      optional: "[command] [args]"
+    run: /opt/dev/bin/dev react-native "$@"
 
   # Web
   web:
