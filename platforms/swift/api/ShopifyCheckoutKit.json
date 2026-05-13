@@ -1212,7 +1212,6 @@
             "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6clientAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgtcfc",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
-              "Preconcurrency",
               "Custom"
             ],
             "init_kind": "Designated"
@@ -1286,7 +1285,6 @@
             "moduleName": "ShopifyCheckoutKit",
             "isInternal": true,
             "declAttributes": [
-              "Preconcurrency",
               "Custom"
             ],
             "init_kind": "Designated"
@@ -1396,7 +1394,6 @@
             "declAttributes": [
               "Dynamic",
               "ObjC",
-              "Preconcurrency",
               "Available",
               "Override",
               "Custom"
@@ -1431,7 +1428,6 @@
             "declAttributes": [
               "Dynamic",
               "ObjC",
-              "Preconcurrency",
               "Override",
               "Custom"
             ],
@@ -1487,7 +1483,6 @@
             "declAttributes": [
               "Dynamic",
               "ObjC",
-              "Preconcurrency",
               "Override",
               "Custom"
             ],
@@ -1499,7 +1494,6 @@
         "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC",
         "moduleName": "ShopifyCheckoutKit",
         "declAttributes": [
-          "Preconcurrency",
           "Custom",
           "ObjC"
         ],
@@ -2094,6 +2088,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -2120,6 +2117,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -2146,6 +2146,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -2172,6 +2175,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -2206,6 +2212,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -2232,7 +2241,8 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "declAttributes": [
-              "DiscardableResult"
+              "DiscardableResult",
+              "Custom"
             ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
@@ -2260,7 +2270,8 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "declAttributes": [
-              "DiscardableResult"
+              "DiscardableResult",
+              "Custom"
             ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
@@ -2288,7 +2299,8 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "declAttributes": [
-              "DiscardableResult"
+              "DiscardableResult",
+              "Custom"
             ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
@@ -2316,7 +2328,8 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "declAttributes": [
-              "DiscardableResult"
+              "DiscardableResult",
+              "Custom"
             ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
@@ -2352,7 +2365,8 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "declAttributes": [
-              "DiscardableResult"
+              "DiscardableResult",
+              "Custom"
             ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
@@ -5499,7 +5513,8 @@
         "mangledName": "$s18ShopifyCheckoutKit7present8checkout4from8delegate6clientAA0B14ViewControllerC10Foundation3URLV_So06UIViewJ0CAA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgtF",
         "moduleName": "ShopifyCheckoutKit",
         "declAttributes": [
-          "DiscardableResult"
+          "DiscardableResult",
+          "Custom"
         ],
         "funcSelfKind": "NonMutating"
       },
@@ -5569,7 +5584,8 @@
         "moduleName": "ShopifyCheckoutKit",
         "isInternal": true,
         "declAttributes": [
-          "DiscardableResult"
+          "DiscardableResult",
+          "Custom"
         ],
         "funcSelfKind": "NonMutating"
       },
