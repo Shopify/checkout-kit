@@ -10,21 +10,48 @@ public enum LogLevel: String, CaseIterable, Sendable {
     case none
 }
 
-public class OSLogger {
+public final class OSLogger: Sendable {
     private let logger = OSLog(subsystem: subsystem, category: OSLog.Category.pointsOfInterest)
-    private var prefix: String
-    package var logLevel: LogLevel
+    private let prefix: String
+    private let lockedLogLevel: LockedValue<LogLevel>
+    private let sendToOSLogHandler: (@Sendable (String, OSLogType) -> Void)?
 
-    public static var shared = OSLogger()
-
-    public init() {
-        prefix = "ShopifyCheckoutKit"
-        logLevel = ShopifyCheckoutKit.configuration.logLevel
+    package var logLevel: LogLevel {
+        get {
+            lockedLogLevel.get()
+        }
+        set {
+            lockedLogLevel.set(newValue)
+        }
     }
 
-    public init(prefix: String, logLevel: LogLevel) {
+    private static let lockedSharedLogger = LockedValue(OSLogger())
+
+    public static var shared: OSLogger {
+        get {
+            lockedSharedLogger.get()
+        }
+        set {
+            lockedSharedLogger.set(newValue)
+        }
+    }
+
+    public convenience init() {
+        self.init(prefix: "ShopifyCheckoutKit", logLevel: ShopifyCheckoutKit.configuration.logLevel)
+    }
+
+    public convenience init(prefix: String, logLevel: LogLevel) {
+        self.init(prefix: prefix, logLevel: logLevel, sendToOSLogHandler: nil)
+    }
+
+    init(
+        prefix: String,
+        logLevel: LogLevel,
+        sendToOSLogHandler: (@Sendable (String, OSLogType) -> Void)?
+    ) {
         self.prefix = prefix
-        self.logLevel = logLevel
+        lockedLogLevel = LockedValue(logLevel)
+        self.sendToOSLogHandler = sendToOSLogHandler
     }
 
     public func debug(_ message: String) {
@@ -54,15 +81,21 @@ public class OSLogger {
     /// Capturing `os_log` output is not possible
     /// This indirection lets us capture messages in `LoggerTests.swift`
     internal func sendToOSLog(_ message: String, type: OSLogType) {
-        os_log("%@", log: logger, type: type, message)
+        if let sendToOSLogHandler {
+            sendToOSLogHandler(message, type)
+        } else {
+            os_log("%@", log: logger, type: type, message)
+        }
     }
 
     private func shouldEmit(_ choice: LogLevel) -> Bool {
-        if logLevel == .none {
+        let currentLogLevel = logLevel
+
+        if currentLogLevel == .none {
             return false
         }
 
-        return logLevel == .all || logLevel == choice
+        return currentLogLevel == .all || currentLogLevel == choice
     }
 }
 

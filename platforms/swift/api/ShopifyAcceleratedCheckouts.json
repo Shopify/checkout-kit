@@ -131,11 +131,6 @@
             "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8logLevel0A11CheckoutKit03LogE0OvpZ",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "static": true,
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "hasStorage": true,
             "accessors": [
               {
                 "kind": "Accessor",
@@ -154,7 +149,6 @@
                 "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8logLevel0A11CheckoutKit03LogE0OvgZ",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "static": true,
-                "implicit": true,
                 "accessorKind": "get"
               },
               {
@@ -179,7 +173,6 @@
                 "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8logLevel0A11CheckoutKit03LogE0OvsZ",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "static": true,
-                "implicit": true,
                 "accessorKind": "set"
               }
             ]
