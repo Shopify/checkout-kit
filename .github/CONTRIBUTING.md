@@ -39,6 +39,17 @@ When in doubt about whether we will be interested in including a new feature, pl
 7. Ensure all checks (tests, lint) are passing in GitHub.
 8. Open a pull request with a detailed description of what is changing and why.
 
+### Dev tooling
+
+Shopify employees can use the root `dev.yml` from the repo root:
+
+```bash
+dev up
+dev check
+```
+
+Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, and `dev react-native <command>` (or `dev rn`). Protocol schema/model commands are available as `dev protocol <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
+
 ---
 
 ## Swift (`platforms/swift/`)

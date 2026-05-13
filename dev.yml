@@ -89,7 +89,6 @@ check:
   react-native-license-headers: cd platforms/react-native && ./scripts/copy_license --check
   web-lint: cd platforms/web && pnpm lint
   web-test: cd platforms/web && pnpm test
-  protocol-build: cd protocol/languages/swift && swift build
 
 commands:
   # Repo-wide
@@ -99,7 +98,6 @@ commands:
       set -e
       /opt/dev/bin/dev android build
       /opt/dev/bin/dev swift build
-      /opt/dev/bin/dev protocol build
       /opt/dev/bin/dev react-native build
 
   codegen:
@@ -135,7 +133,6 @@ commands:
       set -e
       /opt/dev/bin/dev android test
       /opt/dev/bin/dev swift test
-      /opt/dev/bin/dev protocol test
       /opt/dev/bin/dev react-native test
 
   apollo:
@@ -164,13 +161,13 @@ commands:
     desc: "Checkout protocol commands"
     subcommands:
       build:
-        desc: Build the Swift protocol package
-        run: cd protocol/languages/swift && swift build
+        desc: Build the Swift protocol target
+        run: swift build --target ShopifyCheckoutProtocol
       test:
-        desc: Run Swift protocol package tests
-        run: cd protocol/languages/swift && swift test
+        desc: Run Swift protocol target tests
+        run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package ShopifyCheckoutProtocolTests
       check:
-        desc: Build and test the Swift protocol package
+        desc: Build and test the Swift protocol target
         run: |
           set -e
           /opt/dev/bin/dev protocol build
@@ -257,12 +254,34 @@ commands:
         aliases: [fix]
         run: cd platforms/swift && ./Scripts/lint fix
       clean:
-        desc: Clean Swift package build artifacts
-        run: cd platforms/swift && ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
+        desc: Clean Swift packages and sample app build artifacts
+        run: |
+          set -e
+          cd platforms/swift
+          # ShopifyCheckoutKit-Package is the SPM-wide scheme: it cleans all
+          # library targets in Package.swift (ShopifyCheckoutKit,
+          # ShopifyAcceleratedCheckouts, ShopifyCheckoutProtocol) in one pass.
+          ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
+          cd Samples
+          # Sample apps have a "Run Script" build phase that runs during clean
+          # and exits non-zero when there is nothing to delete. Tolerate it so
+          # the second sample still gets cleaned.
+          ../Scripts/xcode_run clean MobileBuyIntegration || true
+          ../Scripts/xcode_run clean ShopifyAcceleratedCheckoutsApp || true
       build:
-        desc: Build the Swift package
-        run: cd platforms/swift && ./Scripts/xcode_run build ShopifyCheckoutKit-Package
+        desc: Build all Swift packages and sample apps
+        run: |
+          set -e
+          cd platforms/swift
+          # ShopifyCheckoutKit-Package builds every library target in
+          # Package.swift in one xcodebuild invocation. The sample apps act as
+          # integration compilation checks against the built libraries.
+          ./Scripts/xcode_run build ShopifyCheckoutKit-Package
+          ./Scripts/build_samples
         subcommands:
+          packages:
+            desc: Build Swift package targets
+            run: cd platforms/swift && ./Scripts/xcode_run build ShopifyCheckoutKit-Package
           samples:
             desc: Build all sample applications to verify integration
             run: cd platforms/swift && ./Scripts/build_samples
@@ -336,9 +355,6 @@ commands:
             sccache --stop-server 2>/dev/null || true
           fi
           echo "Cleaned root, module and sample workspaces"
-      build:
-        desc: Build the @shopify/checkout-kit-react-native module
-        run: cd platforms/react-native && pnpm module build
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)
         aliases: [style]
@@ -353,13 +369,13 @@ commands:
             desc: Lint Swift code via SwiftLint
             run: cd platforms/react-native && ./scripts/lint_swift
           module:
-            desc: Lint the @shopify/checkout-sheet-kit module
+            desc: Lint the @shopify/checkout-kit-react-native module
             run: cd platforms/react-native && pnpm module lint
           sample:
             desc: Lint the sample app
             run: cd platforms/react-native && pnpm sample lint
       format:
-        desc: Auto-fix Swift lint and format issues
+        desc: Auto-format and apply safe lint autocorrections (Swift bridge only)
         aliases: [fix]
         run: cd platforms/react-native && ./scripts/lint_swift fix
       test:
