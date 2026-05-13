@@ -23,7 +23,6 @@
 
 import SwiftUI
 
-@available(iOS 15.0, *)
 struct WebPixelsEventsView: View {
     @State private var logs: [String?] = WebPixelsLogReader.shared.readLogs() ?? []
 

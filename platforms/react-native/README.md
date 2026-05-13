@@ -63,7 +63,7 @@ experiences.
 ## Platform Requirements
 
 - **React Native** - Minimum version `0.76` (v4+) / `0.70` (v3 and earlier)
-- **iOS** - Minimum version iOS 13
+- **iOS** - Minimum version iOS 15
 - **Android** - Minimum Java 11 & Android SDK version `23`
 
 ## Version Compatibility
@@ -123,12 +123,12 @@ buildscript {
 ### 3. Minimum iOS requirements
 
 Check the `platform :ios` property of your `ios/Podfile` to ensure that the
-minimum version number is at least `13`.
+minimum version number is at least `15`.
 
 ```diff
 # ios/Podfile
 - platform :ios, min_ios_version_supported
-+ platform :ios, 13
++ platform :ios, 15
 ```
 
 ## Basic Usage

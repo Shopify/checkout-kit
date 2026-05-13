@@ -54,7 +54,7 @@
 ## Requirements
 
 - Swift 5.7+
-- iOS 13.0+ for Checkout Kit, iOS 16+ for Accelerated Checkouts
+- iOS 15.0+ for Checkout Kit, iOS 16+ for Accelerated Checkouts
 
 ## Getting Started
 
