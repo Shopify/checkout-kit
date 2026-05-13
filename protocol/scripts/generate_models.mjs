@@ -332,7 +332,21 @@ async function generateSwift(specDir, output) {
     output,
   ]);
 
-  await normalizeGeneratedFile(output);
+  await normalizeGeneratedFile(output, (source) => {
+    // quicktype's --sendable option marks generated models as Sendable, but quicktype 23.2.6
+    // still emits the dynamic JSON coding key helper as a non-final, non-Sendable class.
+    // Removing --swift-5-support does not change this output, so normalize the helper here.
+    const result = source.replace(
+      /^class JSONCodingKey: CodingKey \{/m,
+      "final class JSONCodingKey: CodingKey, Sendable {",
+    );
+
+    if (result === source) {
+      throw new Error("JSONCodingKey Sendable normalization failed; quicktype output may have changed");
+    }
+
+    return result;
+  });
 }
 
 async function generateTypescript(specDir, output) {
