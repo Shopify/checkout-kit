@@ -25,47 +25,34 @@ import Foundation
 import UIKit
 
 public enum UserAgent {
-    public enum ColorScheme: String, CaseIterable {
-        /// Uses a light, idiomatic color scheme.
-        case light
-        /// Uses a dark, idiomatic color scheme.
-        case dark
-        /// Infers either `.light` or `.dark` based on the current `UIUserInterfaceStyle`.
-        case automatic
-        /// The color scheme presented to buyers using a desktop or mobile browser.
-        case web = "web_default"
-    }
-
-    package enum CheckoutType {
-        case standard
-        case recovery
-    }
-
     private static let baseUserAgent = "ShopifyCheckoutKit/\(MetaData.version)"
 
     /// Shared format for CheckoutKit and AcceleratedCheckouts
     package static func string(
-        type: CheckoutType,
-        colorScheme: ColorScheme,
-        platform: MetaData.Platform? = nil,
-        entryPoint: MetaData.EntryPoint? = nil
+        platform: Platform? = nil,
+        entryPoint: MetaData.EntryPoint? = nil,
+        recovery: Bool = false
     ) -> String {
-        var parameters: String
-        switch type {
-        case .standard:
-            parameters = "\(MetaData.schemaVersion);\(colorScheme.rawValue);standard"
-        case .recovery:
-            parameters = "noconnect;\(colorScheme.rawValue);standard_recovery"
+        var parameters = "iOS;Swift"
+        if let swiftVersion = SwiftVersion.current {
+            parameters.append(" \(swiftVersion)")
         }
 
         var userAgentString = "\(baseUserAgent) (\(parameters))"
 
         if let platform {
-            userAgentString.append(" \(platform.rawValue)")
+            userAgentString.append(" \(platform.identifier)")
+            if let version = platform.version {
+                userAgentString.append("/\(version)")
+            }
         }
 
         if let entryPoint {
             userAgentString.append(" \(entryPoint.rawValue)")
+        }
+
+        if recovery {
+            userAgentString.append(" recovery")
         }
 
         return userAgentString

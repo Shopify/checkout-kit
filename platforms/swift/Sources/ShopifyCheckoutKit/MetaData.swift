@@ -36,9 +36,4 @@ package enum MetaData {
     package enum EntryPoint: String {
         case acceleratedCheckouts = "AcceleratedCheckouts"
     }
-
-    package enum Platform: String {
-        case iOS
-        case reactNative = "ReactNative"
-    }
 }

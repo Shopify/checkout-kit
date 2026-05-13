@@ -48,8 +48,7 @@ class CheckoutWebViewTests: XCTestCase {
         return recovery
     }
 
-    func testCorrectlyConfiguresWebview() throws {
-        try XCTSkipIf(true, "User agent is intentionally not set on non-recovery webviews while on the new CheckoutCommunicationProtocol; re-enable once the UA contract is finalized.")
+    func testCorrectlyConfiguresWebview() {
         XCTAssertEqual(view.configuration.applicationNameForUserAgent, CheckoutBridge.applicationName)
         XCTAssertTrue(view.configuration.allowsInlineMediaPlayback)
     }
@@ -63,7 +62,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(recovery.isRecovery)
         XCTAssertFalse(recovery.isBridgeAttached)
         XCTAssertFalse(recovery.isPreloadingAvailable)
-        XCTAssertEqual(recovery.configuration.applicationNameForUserAgent, "ShopifyCheckoutKit/\(ShopifyCheckoutKit.version) (noconnect;automatic;standard_recovery)")
+        XCTAssertEqual(recovery.configuration.applicationNameForUserAgent, "ShopifyCheckoutKit/\(ShopifyCheckoutKit.version) (iOS;Swift \(SwiftVersion.current!)) recovery")
         XCTAssertTrue(recovery.configuration.allowsInlineMediaPlayback)
         XCTAssertEqual(recovery.backgroundColor, backgroundColor)
         XCTAssertFalse(recovery.isOpaque)

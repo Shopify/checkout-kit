@@ -42,13 +42,8 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
     }
 
     static func applicationName(entryPoint: MetaData.EntryPoint?) -> String {
-        let colorScheme = ShopifyCheckoutKit.configuration.colorScheme
-        let platform = mapPlatform(ShopifyCheckoutKit.configuration.platform)
-
         return UserAgent.string(
-            type: .standard,
-            colorScheme: colorScheme,
-            platform: platform,
+            platform: ShopifyCheckoutKit.configuration.platform,
             entryPoint: entryPoint
         )
     }
@@ -58,23 +53,11 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
     }
 
     static func recoveryAgent(entryPoint: MetaData.EntryPoint?) -> String {
-        let colorScheme = ShopifyCheckoutKit.configuration.colorScheme
-        let platform = mapPlatform(ShopifyCheckoutKit.configuration.platform)
-
         return UserAgent.string(
-            type: .recovery,
-            colorScheme: colorScheme,
-            platform: platform,
-            entryPoint: entryPoint
+            platform: ShopifyCheckoutKit.configuration.platform,
+            entryPoint: entryPoint,
+            recovery: true
         )
-    }
-
-    private static func mapPlatform(_ platform: Platform?) -> MetaData.Platform? {
-        guard let platform else { return nil }
-        switch platform {
-        case .reactNative:
-            return .reactNative
-        }
     }
 
     static func instrument(_ webView: WKWebView, _ instrumentation: InstrumentationPayload) {

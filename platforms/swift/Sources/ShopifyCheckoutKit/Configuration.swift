@@ -23,8 +23,15 @@
 
 import UIKit
 
-public enum Platform: String {
-    case reactNative = "ReactNative"
+public struct Platform: Equatable {
+    public let identifier: String
+    public let version: String?
+
+    public static let reactNative = Platform(identifier: "ReactNative", version: nil)
+
+    public static func reactNative(version: String) -> Platform {
+        Platform(identifier: "ReactNative", version: version)
+    }
 }
 
 public struct Configuration {
@@ -66,7 +73,16 @@ public struct Configuration {
 }
 
 extension Configuration {
-    public typealias ColorScheme = UserAgent.ColorScheme
+    public enum ColorScheme: String, CaseIterable {
+        /// Uses a light, idiomatic color scheme.
+        case light
+        /// Uses a dark, idiomatic color scheme.
+        case dark
+        /// Infers either `.light` or `.dark` based on the current `UIUserInterfaceStyle`.
+        case automatic
+        /// The color scheme presented to buyers using a desktop or mobile browser.
+        case web = "web_default"
+    }
 }
 
 extension Configuration {
