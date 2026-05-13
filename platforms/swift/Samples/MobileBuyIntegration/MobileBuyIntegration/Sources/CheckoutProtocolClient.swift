@@ -32,9 +32,6 @@ enum CheckoutProtocolClient {
             print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
             CartManager.shared.resetCart()
         }
-        .on(CheckoutProtocol.buyerChange) { checkout in
-            print("[UCP] ec.buyer.change: \(checkout.id)")
-        }
         .on(CheckoutProtocol.lineItemsChange) { checkout in
             print("[UCP] ec.line_items.change: \(checkout.id)")
         }
