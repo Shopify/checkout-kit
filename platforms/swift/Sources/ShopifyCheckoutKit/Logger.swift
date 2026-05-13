@@ -33,21 +33,31 @@ public enum LogLevel: String, CaseIterable {
     case none
 }
 
-public class OSLogger {
+public class OSLogger: @unchecked Sendable {
     private let logger = OSLog(subsystem: subsystem, category: OSLog.Category.pointsOfInterest)
-    private var prefix: String
-    package var logLevel: LogLevel
+    private let prefix: String
+    private let lock = NSLock()
+    private var _logLevel: LogLevel
 
-    public static var shared = OSLogger()
+    package var logLevel: LogLevel {
+        get {
+            lock.withLock { _logLevel }
+        }
+        set {
+            lock.withLock { _logLevel = newValue }
+        }
+    }
+
+    public static let shared = OSLogger()
 
     public init() {
         prefix = "ShopifyCheckoutKit"
-        logLevel = ShopifyCheckoutKit.configuration.logLevel
+        _logLevel = .error
     }
 
     public init(prefix: String, logLevel: LogLevel) {
         self.prefix = prefix
-        self.logLevel = logLevel
+        _logLevel = logLevel
     }
 
     public func debug(_ message: String) {
