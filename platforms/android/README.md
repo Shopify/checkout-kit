@@ -14,22 +14,19 @@
 - [Getting Started](#getting-started)
   - [Gradle](#gradle)
   - [Maven](#maven)
-- [Basic Usage](#basic-usage)
+- [Integration Guide](#integration-guide)
+  - [Retrieve a checkout URL](#retrieve-a-checkout-url)
+  - [Create an event processor](#create-an-event-processor)
+  - [Listen for UCP messages](#listen-for-ucp-messages)
+  - [Present checkout](#present-checkout)
+  - [Refresh the checkout URL after cart changes](#refresh-the-checkout-url-after-cart-changes)
 - [Configuration](#configuration)
   - [Color Scheme](#color-scheme)
   - [Log Level](#log-level)
   - [Checkout Dialog Title](#checkout-dialog-title)
-- [Preloading](#preloading)
-  - [Important considerations](#important-considerations)
-  - [Flash Sales](#flash-sales)
-  - [When to preload](#when-to-preload)
-  - [Cache invalidation](#cache-invalidation)
-  - [Lifecycle management for preloaded checkout](#lifecycle-management-for-preloaded-checkout)
-    - [Additional considerations for preloaded checkout](#additional-considerations-for-preloaded-checkout)
 - [Monitoring the lifecycle of a checkout session](#monitoring-the-lifecycle-of-a-checkout-session)
   - [Error handling](#error-handling)
     - [`CheckoutException`](#checkoutexception)
-    - [Exception Hierarchy](#exception-hierarchy)
 - [Integrating identity \& customer accounts](#integrating-identity--customer-accounts)
   - [Cart: buyer bag, identity, and preferences](#cart-buyer-bag-identity-and-preferences)
   - [Multipass](#multipass)
@@ -68,24 +65,26 @@ implementation "com.shopify:checkout-kit:1.0.0"
 </dependency>
 ```
 
-## Basic Usage
+## Integration Guide
 
-Once the SDK has been added as a dependency, you can import the library:
+Once the SDK has been added as a dependency, the Android integration is a short sequence:
+create or fetch a cart, persist the `checkoutUrl`, register lifecycle callbacks, optionally
+listen for typed UCP notifications, and present checkout from a `ComponentActivity`.
 
-```kotlin
-import com.shopify.checkoutkit.ShopifyCheckoutKit
-```
+### Retrieve a checkout URL
 
-To present a checkout to the buyer, your application must first obtain a checkout URL.
+The examples below assume the corresponding Checkout Kit and Storefront API types are imported in
+the Android module that presents checkout.
+
+To present checkout to the buyer, your application must first obtain a checkout URL.
 The most common way is to use the [Storefront GraphQL API](https://shopify.dev/docs/api/storefront)
-to assemble a cart (via `cartCreate` and related update mutations) and load the
-[`checkoutUrl`](https://shopify.dev/docs/api/storefront/latest/objects/Cart#field-cart-checkouturl). Alternatively, a [cart permalink](https://help.shopify.com/en/manual/products/details/cart-permalink) can be provided.
-You can use any GraphQL client to obtain a checkout URL and we recommend
-Shopify's [Mobile Buy SDK for Android](https://github.com/Shopify/mobile-buy-sdk-android) to
-simplify the development workflow:
+to assemble a cart with `cartCreate` and related mutations, and then read the
+[`checkoutUrl`](https://shopify.dev/docs/api/storefront/latest/objects/Cart#field-cart-checkouturl).
+Alternatively, you can provide a [cart permalink](https://help.shopify.com/en/manual/products/details/cart-permalink).
+You can use any GraphQL client to obtain a checkout URL. Shopify's
+[Mobile Buy SDK for Android](https://github.com/Shopify/mobile-buy-sdk-android) is one option:
 
 ```kotlin
-
 val client = GraphClient.build(
     context = applicationContext,
     shopDomain = "yourshop.myshopify.com",
@@ -105,21 +104,107 @@ client.queryGraph(cartQuery).enqueue {
 }
 ```
 
-The `checkoutUrl` object is a standard web checkout URL that can be opened in any browser.
-To present a native checkout dialog in your Android application, provide
-the `checkoutUrl` alongside optional runtime configuration settings to the `present(checkoutUrl)`
-function provided by the SDK:
+> [!NOTE]
+> Pass the standard `checkoutUrl` returned by Storefront API or a cart permalink.
+> Checkout Kit adds the required UCP query parameters automatically when it loads checkout,
+> so you do not need to rewrite the URL yourself.
+
+### Create an event processor
+
+Extend `DefaultCheckoutEventProcessor` to observe the checkout lifecycle and integrate it with your app state:
 
 ```kotlin
-fun presentCheckout() {
-    val checkoutUrl = cart.checkoutUrl
-    ShopifyCheckoutKit.present(checkoutUrl, context, checkoutEventProcessor)
+val checkoutEventProcessor = object : DefaultCheckoutEventProcessor(activity) {
+    override fun onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent) {
+        // Reset cart state, update analytics, or navigate to confirmation UI.
+    }
+
+    override fun onCheckoutCanceled() {
+        // Dismiss any app-level loading state or pending UI.
+    }
+
+    override fun onCheckoutFailed(error: CheckoutException) {
+        // Report the error and decide whether to recreate the cart or retry.
+    }
 }
 ```
 
+### Listen for UCP messages
+
+Checkout Kit handles the low-level UCP handshake automatically. If you want typed callbacks for
+checkout state changes exposed through the Universal Commerce Protocol (UCP), create a
+`CheckoutProtocol.Client` and register only the notifications you need:
+
+```kotlin
+val checkoutProtocolClient = CheckoutProtocol.Client()
+    .on(CheckoutProtocol.start) { checkout ->
+        // Checkout is ready and interactive.
+    }
+    .on(CheckoutProtocol.complete) { checkout ->
+        // Typed checkout payload emitted when checkout completes.
+    }
+    .on(CheckoutProtocol.error) { error ->
+        // Typed UCP error payload emitted by checkout.
+    }
+    .on(CheckoutProtocol.totalsChange) { checkout ->
+        // Totals, duties, or taxes changed in checkout.
+    }
+    .onOpenExternalUrl { uri ->
+        startActivity(Intent(Intent.ACTION_VIEW, uri))
+        true
+    }
+```
+
+`communicationClient` is optional. Omit it if you only need the standard checkout lifecycle
+callbacks from `DefaultCheckoutEventProcessor`. Use `onOpenExternalUrl` when you want to control
+browser or app handoff for offsite flows; otherwise Checkout Kit falls back to standard link
+handling through your event processor.
+
 > [!TIP]
-> To help optimize and deliver the best experience the SDK also provides a
-> [preloading API](#preloading) that can be used to initialize the checkout session ahead of time.
+> While integrating UCP handlers, filter Logcat with `adb logcat -s CheckoutECP:D`
+> to inspect protocol traffic.
+
+### Present checkout
+
+Present checkout from a `ComponentActivity` once you have a valid `checkoutUrl`:
+
+```kotlin
+fun presentCheckout(
+    checkoutUrl: String,
+    activity: ComponentActivity,
+) {
+    ShopifyCheckoutKit.present(
+        checkoutUrl = checkoutUrl,
+        context = activity,
+        checkoutEventProcessor = checkoutEventProcessor,
+        communicationClient = checkoutProtocolClient,
+    )
+}
+```
+
+### Refresh the checkout URL after cart changes
+
+If the buyer updates the cart after you stored a `checkoutUrl`, fetch the latest cart state and use
+the new `checkoutUrl` returned by Storefront API before presenting checkout:
+
+```kotlin
+fun onCartUpdated(
+    cartId: ID,
+) {
+    val cartQuery = Storefront.query { query ->
+        query.cart(cartId) {
+            it.checkoutUrl()
+        }
+    }
+
+    client.queryGraph(cartQuery).enqueue {
+        if (it is GraphCallResult.Success) {
+            val latestCheckoutUrl = it.response.data?.cart?.checkoutUrl
+            // Store the updated checkout URL and present it when the buyer taps Checkout.
+        }
+    }
+}
+```
 
 ## Configuration
 
@@ -240,96 +325,6 @@ To customize the title of the Dialog that the checkout WebView is displayed with
 <string name="checkout_web_view_title">Buy Now!</string>
 ```
 
-## Preloading
-
-Initializing a checkout session requires communicating with Shopify servers, thus depending
-on the network quality and bandwidth available to the buyer can result in undesirable waiting
-time for the buyer. To help optimize and deliver the best experience, the SDK provides a
-`preloading` "hint" that allows developers to signal that the checkout session should be
-initialized in the background, ahead of time.
-
-Preloading is an advanced feature that can be disabled via a runtime flag:
-
-```kotlin
-ShopifyCheckoutKit.configure {
-    it.preloading = Preloading(enabled = false) // defaults to true
-}
-```
-
-Once enabled, preloading a checkout is as simple as calling
-`preload(checkoutUrl)` with a valid `checkoutUrl`.
-
-```kotlin
-ShopifyCheckoutKit.preload(checkoutUrl)
-```
-
-Setting enabled to `false` will cause all calls to the `preload` function to be ignored. This allows the application to selectively toggle preloading behavior as a remote feature flag or dynamically in response to client conditions - e.g. when data saver functionality is enabled by the user.
-
-```kotlin
-ShopifyCheckoutKit.configure {
-    it.preloading = Preloading(enabled = false)
-}
-ShopifyCheckoutKit.preload(checkoutUrl) // no-op
-```
-
-### Important considerations
-
-1. Initiating preload results in background network requests and additional
-   CPU/memory utilization for the client, and should be used when there is a
-   high likelihood that the buyer will soon request to checkout—e.g. when the
-   buyer navigates to the cart overview or a similar app-specific experience.
-2. A preloaded checkout session reflects the cart contents at the time when
-   `preload` is called. If the cart is updated after `preload` is called, the
-   application needs to call `preload` again to reflect the updated checkout
-   session.
-3. Calling `preload(checkoutUrl)` is a hint, **not a guarantee**: the library
-   may debounce or ignore calls to this API depending on various conditions; the
-   preload may not complete before `present(checkoutUrl)` is called, in which
-   case the buyer may still see a spinner while the checkout session is
-   finalized.
-
-### Flash Sales
-
-It is important to note that during Flash Sales or periods of high amounts of traffic, buyers may be entered into a queue system.
-
-**Calls to preload which result in a buyer being enqueued will be rejected.** This means that a buyer will never enter the queue without their knowledge.
-
-### When to preload
-
-Calling `preload()` each time an item is added to a buyer's cart can put significant strain on Shopify systems, which in return can result in rejected requests. Rejected requests will not result in a visual error shown to users, but will degrade the experience since they will need to load checkout from scratch.
-
-Instead, a better approach is to call `preload()` when you have a strong enough signal that the buyer intends to check out. In some cases this might mean a buyer has navigated to a "cart" screen.
-
-### Cache invalidation
-
-Should you wish to manually clear the preload cache, there is a `ShopifyCheckoutKit.invalidate()` helper function to do so. This function will be a no-op if no checkout is preloaded.
-
-You may wish to do this if the buyer changes shortly before entering checkout, e.g. by changing cart quantity on a cart view.
-
-### Lifecycle management for preloaded checkout
-
-Preloading renders a checkout in a background webview, which is brought to foreground when `ShopifyCheckoutKit.present()` is called. The content of preloaded checkout reflects the state of the cart when `preload()` was initially called. If the cart is mutated after `preload()` is called, the application is responsible for invalidating the preloaded checkout to ensure that up-to-date checkout content is displayed to the buyer:
-
-1. To update preloaded contents: call `preload()` once again
-2. To disable preloaded content: toggle the preload configuration setting
-
-The library will automatically invalidate/abort preload under the following conditions:
-
-- Request results in network error or non 2XX server response code
-- The checkout has successfully completed, as indicated by the server response
-- When `ShopifyCheckoutSheet.configure` is called (e.g. with theming changes).
-
-A preloaded checkout _is not_ automatically invalidated when checkout is closed. For example, if a buyer loads the checkout then exists, the preloaded checkout is retained and should be updated when cart contents change.
-
-#### Additional considerations for preloaded checkout
-
-1. Preloading is a hint, not a guarantee. The library may debounce or ignore
-   calls depending on various conditions; the preload may not complete before
-   `present(checkoutUrl)` is called, in which case the buyer may still see a progress/loading indicator while the checkout session is finalized.
-2. Preloading results in background network requests and additional CPU/memory utilization
-   for the client, and should be used responsibly. For example, conditionally based on the state of the client and when there is a high likelihood that the buyer will soon
-   request to checkout.
-
 ## Monitoring the lifecycle of a checkout session
 
 Extend the `DefaultCheckoutEventProcessor` abstract class to register callbacks for key lifecycle events during the checkout session:
@@ -399,37 +394,10 @@ val processor = object : DefaultCheckoutEventProcessor(activity) {
 
 ### Error handling
 
-In the event of a checkout error occurring, the Checkout Kit _may_ attempt to retry to recover from the error. Recovery will happen in the background by discarding the failed WebView and creating a new "recovery" instance. Recovery will be attempted in the following scenarios:
-
-- The WebView receives a 5XX status code
-- An internal SDK error is emitted
-
-There are some caveats to note when this scenario occurs:
-
-1. The checkout experience may look different to buyers. Though the sheet kit will attempt to load any checkoput customizations for the storefront, there is no guarantee they will show in recovery mode.
-2. The `onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent)` will be emitted with partial data. Invocations will only received the order ID via `checkoutCompletedEvent.orderDetails.id`.
-
-Should you wish to opt-out of this fallback experience entirely, you can do so by overriding `shouldRecoverFromError`. Errors given to the `onCheckoutFailed(error: CheckoutException)` lifecycle method will contain an `isRecoverable` property by default indicating whether the request should be retried or not.
-
-`preRecoveryActions()` can also be overridden to execute code before a fallback takes place, for example to add logging, or clear up any potentially problematic state such as in cookies. By default this function is a no-op.
-
-```kotlin
-ShopifyCheckoutKit.configure {
-    it.errorRecovery = object: ErrorRecovery {
-        override fun shouldRecoverFromError(checkoutException: CheckoutException): Boolean {
-            // To disable recovery (default = checkoutException.isRecoverable)
-            return false
-        }
-
-        override fun preRecoveryActions(exception: CheckoutException, checkoutUrl: String) {
-            // Perform actions prior to recovery, e.g. logging, clearing up cookies:
-            if (exception is HttpException) {
-                CookiePurger.purge(checkoutUrl)
-            }
-        }
-    }
-}
-```
+Checkout errors are delivered through `onCheckoutFailed(error: CheckoutException)`. Treat these as
+terminal for the currently presented checkout: dismiss any related UI, surface an appropriate
+message, and decide whether the buyer should return to cart, retry with a fresh `checkoutUrl`, or
+restart checkout entirely.
 
 #### `CheckoutException`
 
@@ -440,53 +408,13 @@ ShopifyCheckoutKit.configure {
 | `CheckoutExpiredException`     | 'cart_expired'                 | The cart or checkout is no longer available.                                 | Create a new cart and open a new checkout URL.                                              |
 | `CheckoutExpiredException`     | 'cart_completed'               | The cart associated with the checkout has completed checkout.                | Create new cart and open a new checkout URL.                                                |
 | `CheckoutExpiredException`     | 'invalid_cart'                 | The cart associated with the checkout is invalid (e.g. empty).               | Create a new cart and open a new checkout URL.                                              |
-| `CheckoutKitException`    | 'error_receiving_message'      | Checkout Kit failed to receive a message from checkout.                      | Show checkout in a fallback WebView.                                                        |
-| `CheckoutKitException`    | 'error_sending_message'        | Checkout Kit failed to send a message to checkout.                           | Show checkout in a fallback WebView.                                                        |
-| `CheckoutKitException`    | 'render_process_gone'          | The render process for the checkout WebView is gone.                         | Show checkout in a fallback WebView.                                                        |
-| `CheckoutKitException`    | 'unknown'                      | An error in Checkout Kit has occurred, see error details for more info.      | Show checkout in a fallback WebView.                                                        |
-| `HttpException`                | 'http_error'                   | An unexpected server error has been encountered.                             | Show checkout in a fallback WebView.                                                        |
-| `ClientException`              | 'client_error'                 | An unhandled client error was encountered.                                   | Show checkout in a fallback WebView.                                                        |
-| `CheckoutUnavailableException` | 'unknown'                      | Checkout is unavailable for another reason, see error details for more info. | Show checkout in a fallback WebView.                                                        |
-
-#### Exception Hierarchy
-
-```mermaid
----
-title: Checkout Kit Exception Hierarchy
----
-classDiagram
-    CheckoutException <|-- ConfigurationException
-    CheckoutException <|-- CheckoutExpiredException
-    CheckoutException <|-- CheckoutKitException
-    CheckoutException <|-- CheckoutUnavailableException
-    CheckoutUnavailableException <|-- HttpException
-    CheckoutUnavailableException <|-- ClientException
-
-    <<Abstract>> CheckoutException
-    CheckoutException : +String errorDescription
-    CheckoutException : +String errorCode
-    CheckoutException : +bool isRecoverable
-
-    class ConfigurationException{
-        note: "Store or checkout configuration issues."
-    }
-    class CheckoutExpiredException{
-        note: "Expired or invalid carts/checkouts."
-    }
-    class CheckoutUnavailableException{
-        note: "Unexpected errors."
-    }
-    class HttpException{
-        note: "Unexpected Http response"
-        +int statusCode
-    }
-    class ClientException{
-        note: "Unexpected client/web error"
-    }
-    class CheckoutKitException{
-        note: "Error in Checkout Kit code"
-    }
-```
+| `CheckoutKitException`         | 'error_receiving_message'      | Checkout Kit failed to receive a message from checkout.                      | Dismiss checkout and let the buyer retry from your app.                                    |
+| `CheckoutKitException`         | 'error_sending_message'        | Checkout Kit failed to send a message to checkout.                           | Dismiss checkout and let the buyer retry from your app.                                    |
+| `CheckoutKitException`         | 'render_process_gone'          | The render process for the checkout WebView is gone.                         | Dismiss checkout and let the buyer retry from your app.                                    |
+| `CheckoutKitException`         | 'unknown'                      | An error in Checkout Kit has occurred, see error details for more info.      | Dismiss checkout and let the buyer retry from your app.                                    |
+| `HttpException`                | 'http_error'                   | An unexpected server error has been encountered.                             | Show an error and retry from your cart or fetch a fresh checkout URL.                      |
+| `ClientException`              | 'client_error'                 | An unhandled client error was encountered.                                   | Show an error and retry from your cart or fetch a fresh checkout URL.                      |
+| `CheckoutUnavailableException` | 'unknown'                      | Checkout is unavailable for another reason, see error details for more info. | Show an error and retry from your cart or fetch a fresh checkout URL.                      |
 
 ## Integrating identity & customer accounts
 
@@ -531,8 +459,8 @@ and initialize a buyer-aware checkout session.
 > encryption and signing should be done server-side to ensure Multipass keys are kept secret.
 
 > [!NOTE]
-> Multipass errors are not "recoverable" (See [Error Handling](#error-handling)) due to their one-time nature. Failed requests containing multipass URLs
-> will require re-generating new tokens.
+> Multipass URLs are single-use. If a checkout attempt with a Multipass URL fails, generate a new
+> token before presenting checkout again.
 
 ### Shop Pay
 
