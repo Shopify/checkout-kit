@@ -21,14 +21,23 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-protocol Copyable {
-    func copy(_ mutate: (inout Self) -> Void) -> Self
-}
+import WebKit
 
-extension Copyable {
-    func copy(_ mutate: (inout Self) -> Void) -> Self {
-        var copy = self
-        mutate(&copy)
-        return copy
+class MockScriptMessage: WKScriptMessage {
+    private let mockBody: Any
+    private let mockName: String
+
+    override var body: Any {
+        mockBody
+    }
+
+    override var name: String {
+        mockName
+    }
+
+    init(name: String = "EmbeddedCheckoutProtocolConsumer", body: Any) {
+        mockBody = body
+        mockName = name
+        super.init()
     }
 }

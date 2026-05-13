@@ -23,9 +23,8 @@
 
 import Foundation
 
-
 extension CheckoutProtocol {
-    public struct Client: Sendable, Copyable {
+    public struct Client: Sendable, MutableCopyable {
         private var notificationHandlers: [String: @MainActor @Sendable (any EventPayload) -> Void]
         private var delegationEntries: [String: DelegationEntry]
         var delegations: [String] {
@@ -71,16 +70,14 @@ extension CheckoutProtocol {
             let decoded = CheckoutProtocol.decode(jsonRpc: message)
 
             switch decoded {
-            case .ready(let id, let delegations):
-                let payload = ReadyPayload(delegations: delegations)
-                await notificationHandlers["ec.ready"]?(payload)
-                return CheckoutProtocol.encodeResponse(id: id, result: EmptyResult())
+            case let .ready(id, _):
+                return CheckoutProtocol.encodeReadyResponse(id: id)
 
-            case .notification(let method, let checkout):
-                await notificationHandlers[method]?(checkout)
+            case let .notification(method, payload):
+                await notificationHandlers[method]?(payload)
                 return nil
 
-            case .request(let id, let method, let checkout):
+            case let .request(id, method, checkout):
                 if let entry = delegationEntries[method] {
                     return await entry.handler(id, checkout)
                 }
@@ -92,10 +89,8 @@ extension CheckoutProtocol {
         }
     }
 
-    struct DelegationEntry: Sendable {
+    struct DelegationEntry {
         let delegation: String
         let handler: @MainActor @Sendable (String, Checkout) async -> String?
     }
-
-    struct EmptyResult: ResponsePayload {}
 }

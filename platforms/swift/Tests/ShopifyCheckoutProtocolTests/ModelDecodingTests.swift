@@ -21,9 +21,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
 import Foundation
 @testable import ShopifyCheckoutProtocol
+import Testing
 
 @Suite("Model Decoding Tests")
 struct ModelDecodingTests {
@@ -54,7 +54,7 @@ struct ModelDecodingTests {
         let data = Data(json.utf8)
 
         let envelope = try JSONDecoder().decode(JSONRPCRequest.self, from: data)
-        let lineItem = envelope.params!.checkout!.lineItems[0]
+        let lineItem = try #require(envelope.params?.checkout?.lineItems[0])
 
         #expect(lineItem.id == "li-1")
         #expect(lineItem.quantity == 1)

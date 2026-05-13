@@ -37,14 +37,7 @@ struct CartView: View {
 
     @ObservedObject var cartManager: CartManager = .shared
 
-    private let client = CheckoutProtocol.Client()
-        .on(CheckoutProtocol.start) { checkout in
-            print("[UCP] Checkout started: \(checkout.id)")
-        }
-        .on(CheckoutProtocol.complete) { checkout in
-            print("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
-            CartManager.shared.resetCart()
-        }
+    private let client = CheckoutProtocolClient.shared
 
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
@@ -115,7 +108,7 @@ struct CartView: View {
             }
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
-                    CheckoutSheet(checkout: url.appendingEcParams())
+                    CheckoutSheet(checkout: url)
                         .connect(client)
                         .colorScheme(.automatic)
                         .onCancel {
@@ -283,7 +276,7 @@ struct CartLines: View {
                                             updating = nil
 
                                             if let checkoutUrl = cart.checkoutURL {
-                                                ShopifyCheckoutKit.preload(checkout: checkoutUrl.appendingEcParams())
+                                                ShopifyCheckoutKit.preload(checkout: checkoutUrl)
                                             }
                                         }
                                     },

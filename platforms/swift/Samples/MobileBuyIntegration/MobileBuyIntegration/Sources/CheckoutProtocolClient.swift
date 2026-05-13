@@ -21,23 +21,30 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
-import Foundation
-@testable import ShopifyCheckoutProtocol
+import ShopifyCheckoutProtocol
 
-@Suite("Codec Encode Tests")
-struct CodecEncodeTests {
-    @Test func encodesResponse() throws {
-        let result = CredentialResult(
-            checkout: CredentialCheckout(
-                payment: CredentialPayment(instruments: nil)
-            )
-        )
-        let json = CheckoutProtocol.encodeResponse(id: "req-456", result: result)
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8)) as! [String: Any]
-
-        #expect(parsed["jsonrpc"] as? String == "2.0")
-        #expect(parsed["id"] as? String == "req-456")
-        #expect(parsed["result"] != nil)
-    }
+enum CheckoutProtocolClient {
+    static let shared = CheckoutProtocol.Client()
+        .on(CheckoutProtocol.start) { checkout in
+            print("[UCP] ec.start: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.complete) { checkout in
+            print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
+            CartManager.shared.resetCart()
+        }
+        .on(CheckoutProtocol.buyerChange) { checkout in
+            print("[UCP] ec.buyer.change: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.lineItemsChange) { checkout in
+            print("[UCP] ec.line_items.change: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.messagesChange) { checkout in
+            print("[UCP] ec.messages.change: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.totalsChange) { checkout in
+            print("[UCP] ec.totals.change: \(checkout.id)")
+        }
+        .on(CheckoutProtocol.error) { error in
+            print("[UCP] ec.error: \(error.messages.first?.content ?? "(no message)")")
+        }
 }

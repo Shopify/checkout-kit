@@ -21,9 +21,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
 import Foundation
 @testable import ShopifyCheckoutProtocol
+import Testing
 
 @Suite("Codec Decode Tests")
 struct CodecDecodeTests {
@@ -31,10 +31,11 @@ struct CodecDecodeTests {
         let json = try fixtureString("notification")
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .notification(let method, let checkout) = message else {
+        guard case let .notification(method, payload) = message else {
             Issue.record("Expected .notification, got \(message)")
             return
         }
+        let checkout = try #require(payload as? Checkout)
 
         #expect(method == "ec.start")
         #expect(checkout.id == "checkout-123")
@@ -43,11 +44,29 @@ struct CodecDecodeTests {
         #expect(checkout.lineItems[0].item.title == "Test Product")
     }
 
+    @Test func decodesErrorNotification() throws {
+        let json = #"""
+        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":[{"type":"error","code":"unrecoverable","content":"Boom.","severity":"recoverable"}]}}}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .notification(method, payload) = message else {
+            Issue.record("Expected .notification, got \(message)")
+            return
+        }
+        let error = try #require(payload as? ErrorResponse)
+
+        #expect(method == "ec.error")
+        #expect(error.ucp.version == "2026-04-08")
+        #expect(error.ucp.status == .error)
+        #expect(error.messages.first?.content == "Boom.")
+    }
+
     @Test func decodesRequest() throws {
         let json = try fixtureString("request")
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .request(let id, let method, let checkout) = message else {
+        guard case let .request(id, method, checkout) = message else {
             Issue.record("Expected .request, got \(message)")
             return
         }
@@ -64,7 +83,7 @@ struct CodecDecodeTests {
         """
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .unknown(let method, _) = message else {
+        guard case let .unknown(method, _) = message else {
             Issue.record("Expected .unknown, got \(message)")
             return
         }
@@ -76,7 +95,7 @@ struct CodecDecodeTests {
         let json = "not valid json at all"
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case .unknown(let method, _) = message else {
+        guard case let .unknown(method, _) = message else {
             Issue.record("Expected .unknown for malformed JSON, got \(message)")
             return
         }

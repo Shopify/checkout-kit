@@ -22,6 +22,7 @@
  */
 
 @testable import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import WebKit
 import XCTest
 
@@ -37,6 +38,7 @@ class CheckoutWebViewTests: XCTestCase {
         mockDelegate = MockCheckoutWebViewDelegate()
         view.viewDelegate = mockDelegate
         view.checkoutBridge = MockCheckoutBridge.self
+        MockCheckoutBridge.reset()
     }
 
     private func createRecoveryAgent() -> CheckoutWebView {
@@ -61,7 +63,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(recovery.isRecovery)
         XCTAssertFalse(recovery.isBridgeAttached)
         XCTAssertFalse(recovery.isPreloadingAvailable)
-        XCTAssertEqual(recovery.configuration.applicationNameForUserAgent, "ShopifyCheckoutSDK/\(ShopifyCheckoutKit.version) (noconnect;automatic;standard_recovery)")
+        XCTAssertEqual(recovery.configuration.applicationNameForUserAgent, "ShopifyCheckoutKit/\(ShopifyCheckoutKit.version) (noconnect;automatic;standard_recovery)")
         XCTAssertTrue(recovery.configuration.allowsInlineMediaPlayback)
         XCTAssertEqual(recovery.backgroundColor, backgroundColor)
         XCTAssertFalse(recovery.isOpaque)
@@ -437,6 +439,66 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = client
         XCTAssertNotNil(view.client)
     }
+
+    // MARK: - ec.ready handshake
+
+    func testAcknowledgeReadyRespondsToReadyRequest() throws {
+        let id = "req-ready-1"
+        let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"\#(id)","params":{"delegate":[]}}"#
+        let message = MockScriptMessage(body: body)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+        let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["jsonrpc"] as? String, "2.0")
+        XCTAssertEqual(parsed["id"] as? String, id)
+        XCTAssertNil(parsed["method"], "JSON-RPC responses must not carry a method field")
+        XCTAssertNil(parsed["params"], "JSON-RPC responses must not carry a params field")
+        let result = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "success")
+        XCTAssertEqual(ucp["version"] as? String, CheckoutProtocol.specVersion)
+    }
+
+    func testAcknowledgeReadyDoesNotInvokeClient() {
+        view.client = MockBridgeClient(responseMessage: "client-response")
+        let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
+        let message = MockScriptMessage(body: body)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        let response = try? XCTUnwrap(MockCheckoutBridge.lastResponseBody)
+        XCTAssertNotEqual(response, "client-response")
+    }
+
+    func testNonReadyMessageDoesNotTriggerReadyAck() {
+        let body = #"{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{"id":"c-1"}}}"#
+        let message = MockScriptMessage(body: body)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled, "ec.ready ack must not fire for non-ready methods")
+    }
+
+    func testNonStringMessageBodyIsIgnored() {
+        let message = MockScriptMessage(body: 42)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    func testReadyAckFiresWhenNoClientIsAttached() {
+        view.client = nil
+        let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
+        let message = MockScriptMessage(body: body)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
 }
 
 class LoadedRequestObservableWebView: CheckoutWebView {
@@ -456,6 +518,15 @@ class LoadedRequestObservableWebView: CheckoutWebView {
 class MockCheckoutBridge: CheckoutBridgeProtocol {
     static var instrumentCalled = false
     static var sendMessageCalled = false
+    static var sendResponseCalled = false
+    static var lastResponseBody: String?
+
+    static func reset() {
+        instrumentCalled = false
+        sendMessageCalled = false
+        sendResponseCalled = false
+        lastResponseBody = nil
+    }
 
     static func instrument(_: WKWebView, _: InstrumentationPayload) {
         instrumentCalled = true
@@ -463,5 +534,10 @@ class MockCheckoutBridge: CheckoutBridgeProtocol {
 
     static func sendMessage(_: WKWebView, messageName _: String, messageBody _: String?) {
         sendMessageCalled = true
+    }
+
+    static func sendResponse(_: WKWebView, messageBody: String) {
+        sendResponseCalled = true
+        lastResponseBody = messageBody
     }
 }

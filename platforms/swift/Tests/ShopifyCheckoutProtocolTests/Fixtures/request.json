@@ -1,29 +1,29 @@
 {
   "jsonrpc": "2.0",
-  "method": "ec.start",
+  "method": "ec.payment.credential_request",
+  "id": "req-456",
   "params": {
     "checkout": {
       "ucp": {
-        "version": "2026-01-11",
+        "version": "2026-04-08",
         "payment_handlers": {}
       },
-      "id": "checkout-123",
+      "id": "checkout-789",
       "status": "incomplete",
-      "currency": "USD",
+      "currency": "CAD",
       "line_items": [
         {
-          "id": "li-1",
-          "quantity": 1,
+          "id": "li-2",
+          "quantity": 2,
           "item": {
-            "id": "product-1",
-            "title": "Test Product",
-            "price": 2999,
-            "image_url": "https://example.com/image.png"
+            "id": "product-2",
+            "title": "Another Product",
+            "price": 4999
           },
           "totals": [
             {
               "type": "subtotal",
-              "amount": 2999
+              "amount": 9998
             }
           ]
         }
@@ -31,13 +31,13 @@
       "totals": [
         {
           "type": "total",
-          "amount": 2999
+          "amount": 9998
         }
       ],
       "links": [
         {
-          "type": "privacy_policy",
-          "url": "https://example.com/privacy"
+          "type": "terms_of_service",
+          "url": "https://example.com/tos"
         }
       ]
     }

@@ -31,6 +31,7 @@ enum BridgeError: Swift.Error {
 protocol CheckoutBridgeProtocol {
     static func instrument(_ webView: WKWebView, _ instrumentation: InstrumentationPayload)
     static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?)
+    static func sendResponse(_ webView: WKWebView, messageBody: String)
 }
 
 enum CheckoutBridge: CheckoutBridgeProtocol {

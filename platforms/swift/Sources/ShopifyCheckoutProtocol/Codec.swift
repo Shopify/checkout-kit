@@ -24,6 +24,16 @@
 import Foundation
 
 extension CheckoutProtocol {
+    /// Returns an `ec.ready` response if the given message is an `ec.ready` request,
+    /// otherwise `nil`. Lets the kit acknowledge the handshake without surfacing it
+    /// to consumers.
+    public static func acknowledgeReady(_ message: String) -> String? {
+        guard case let .ready(id, _) = decode(jsonRpc: message) else { return nil }
+        return encodeReadyResponse(id: id)
+    }
+}
+
+extension CheckoutProtocol {
     static func decode(jsonRpc: String) -> UCPMessage {
         guard let data = jsonRpc.data(using: .utf8) else {
             return .unknown(method: "", rawParams: jsonRpc)
@@ -38,6 +48,10 @@ extension CheckoutProtocol {
             return .ready(id: id, delegations: request.params?.delegate ?? [])
         }
 
+        if request.method == "ec.error", let error = request.params?.error {
+            return .notification(method: request.method, payload: error)
+        }
+
         guard let checkout = request.params?.checkout else {
             return .unknown(method: request.method, rawParams: jsonRpc)
         }
@@ -46,10 +60,10 @@ extension CheckoutProtocol {
             return .request(id: id, method: request.method, checkout: checkout)
         }
 
-        return .notification(method: request.method, checkout: checkout)
+        return .notification(method: request.method, payload: checkout)
     }
 
-    static func encodeResponse<R: Encodable>(id: String, result: R) -> String {
+    static func encodeResponse(id: String, result: some Encodable) -> String {
         let wrapper = JSONRPCResponse(id: id, result: result)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
@@ -57,14 +71,9 @@ extension CheckoutProtocol {
         return String(data: data, encoding: .utf8) ?? "{}"
     }
 
-    static func encodeReady(delegations: [String]) -> String {
-        let wrapper = JSONRPCReady(
-            params: ReadyParams(delegate: delegations)
-        )
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        guard let data = try? encoder.encode(wrapper) else { return "{}" }
-        return String(data: data, encoding: .utf8) ?? "{}"
+    static func encodeReadyResponse(id: String) -> String {
+        let result = ReadyResult(ucp: UCPSuccess(version: specVersion))
+        return encodeResponse(id: id, result: result)
     }
 }
 
@@ -74,12 +83,11 @@ private struct JSONRPCResponse<R: Encodable>: Encodable {
     let result: R
 }
 
-private struct JSONRPCReady: Encodable {
-    let jsonrpc = "2.0"
-    let method = "ec.ready"
-    let params: ReadyParams
+private struct ReadyResult: Encodable {
+    let ucp: UCPSuccess
 }
 
-private struct ReadyParams: Encodable {
-    let delegate: [String]
+private struct UCPSuccess: Encodable {
+    let version: String
+    let status = "success"
 }

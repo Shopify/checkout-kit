@@ -21,6 +21,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#if !COCOAPODS
+    import ShopifyCheckoutProtocol
+#endif
 import SwiftUI
 import UIKit
 
@@ -54,7 +57,7 @@ public struct CheckoutSheet: UIViewControllerRepresentable, CheckoutConfigurable
     var onFailAction: ((CheckoutError) -> Void)?
 
     public init(checkout url: URL) {
-        checkoutURL = url
+        checkoutURL = CheckoutProtocol.url(for: url, colorScheme: ShopifyCheckoutKit.configuration.colorScheme.rawValue)
 
         ShopifyCheckoutKit.invalidateOnConfigurationChange = false
     }

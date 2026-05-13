@@ -21,6 +21,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#if !COCOAPODS
+    import ShopifyCheckoutProtocol
+#endif
 import UIKit
 
 /// The version of the `ShopifyCheckoutKit` library.
@@ -49,6 +52,7 @@ public func preload(checkout url: URL) {
         return
     }
 
+    let url = CheckoutProtocol.url(for: url, colorScheme: configuration.colorScheme.rawValue)
     CheckoutWebView.preloadingActivatedByClient = true
     CheckoutWebView.for(checkout: url).load(checkout: url, isPreload: true)
 }
@@ -60,14 +64,16 @@ public func invalidate() {
 
 @discardableResult
 public func present(checkout url: URL, from: UIViewController, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
-    let viewController = CheckoutViewController(checkout: url, client: client)
+    let decorated = CheckoutProtocol.url(for: url, colorScheme: configuration.colorScheme.rawValue)
+    let viewController = CheckoutViewController(checkout: decorated, client: client)
     from.present(viewController, animated: true)
     return viewController
 }
 
 @discardableResult
 package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
-    let viewController = CheckoutViewController(checkout: url, client: client, entryPoint: entryPoint)
+    let decorated = CheckoutProtocol.url(for: url, colorScheme: configuration.colorScheme.rawValue)
+    let viewController = CheckoutViewController(checkout: decorated, client: client, entryPoint: entryPoint)
     from.present(viewController, animated: true)
     return viewController
 }

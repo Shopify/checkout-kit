@@ -21,15 +21,15 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Testing
 @testable import ShopifyCheckoutProtocol
+import Testing
 
 @Suite("Descriptor Tests")
 struct DescriptorTests {
     @Suite("Spec Version")
     struct SpecVersion {
         @Test func matchesOpenRPCInfoVersion() {
-            #expect(CheckoutProtocol.specVersion == "2026.01.23")
+            #expect(CheckoutProtocol.specVersion == "2026-04-08")
         }
     }
 
@@ -55,27 +55,12 @@ struct DescriptorTests {
             #expect(CheckoutProtocol.buyerChange.method == "ec.buyer.change")
         }
 
-        @Test func paymentChangeMethod() {
-            #expect(CheckoutProtocol.paymentChange.method == "ec.payment.change")
-        }
-    }
-
-    @Suite("Delegations")
-    struct Delegations {
-        @Test func instrumentsChangeRequestMethod() {
-            #expect(CheckoutProtocol.instrumentsChangeRequest.method == "ec.payment.instruments_change_request")
+        @Test func totalsChangeMethod() {
+            #expect(CheckoutProtocol.totalsChange.method == "ec.totals.change")
         }
 
-        @Test func instrumentsChangeRequestDelegation() {
-            #expect(CheckoutProtocol.instrumentsChangeRequest.delegation == "payment.instruments_change")
-        }
-
-        @Test func credentialRequestMethod() {
-            #expect(CheckoutProtocol.credentialRequest.method == "ec.payment.credential_request")
-        }
-
-        @Test func credentialRequestDelegation() {
-            #expect(CheckoutProtocol.credentialRequest.delegation == "payment.credential")
+        @Test func errorMethod() {
+            #expect(CheckoutProtocol.error.method == "ec.error")
         }
     }
 }

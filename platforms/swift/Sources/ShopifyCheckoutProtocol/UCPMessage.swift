@@ -21,8 +21,8 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-enum UCPMessage: Sendable {
-    case notification(method: String, checkout: Checkout)
+enum UCPMessage {
+    case notification(method: String, payload: any EventPayload & Sendable)
     case request(id: String, method: String, checkout: Checkout)
     case ready(id: String, delegations: [String])
     case unknown(method: String, rawParams: String)
