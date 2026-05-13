@@ -41,6 +41,7 @@ extension PKPaymentAuthorizationController: PaymentAuthorizationController {}
 typealias PKAuthorizationControllerFactory = (PKPaymentRequest) -> PaymentAuthorizationController
 
 @available(iOS 16.0, *)
+@MainActor
 class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
     let configuration: ApplePayConfigurationWrapper
     let abortError = ShopifyAcceleratedCheckouts.Error.invariant(expected: "cart")
@@ -173,7 +174,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
             break
         default:
             let cartID = try pkEncoder.cartID.get()
-            try? await _Concurrency.Task.retrying(clock: clock) {
+            try? await _Concurrency.Task.retrying(clock: clock) { @MainActor in
                 try await self.controller.storefront.cartRemovePersonalData(id: cartID)
             }.value
 

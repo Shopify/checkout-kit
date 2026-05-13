@@ -25,6 +25,7 @@ import ShopifyCheckoutKit
 import SwiftUI
 
 @available(iOS 16.0, *)
+@MainActor
 class ShopPayViewController: WalletController {
     var eventHandlers: EventHandlers
     var client: (any CheckoutCommunicationProtocol)?

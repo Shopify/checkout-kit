@@ -26,6 +26,7 @@ import ShopifyCheckoutKit
 import SwiftUI
 
 @available(iOS 16.0, *)
+@MainActor
 protocol PayController: AnyObject {
     var cart: StorefrontAPI.Types.Cart? { get set }
     var storefront: StorefrontAPIProtocol { get set }
@@ -35,6 +36,7 @@ protocol PayController: AnyObject {
 }
 
 @available(iOS 16.0, *)
+@MainActor
 class ApplePayViewController: WalletController, PayController {
     @Published var paymentController: PKPaymentAuthorizationController?
 
@@ -96,7 +98,7 @@ class ApplePayViewController: WalletController, PayController {
 
         self.client = LifecycleObservingClient(base: client, onComplete: { [weak self] in
             guard let self else { return }
-            Task {
+            Task { @MainActor in
                 try? await self.authorizationDelegate.transition(to: .completed)
             }
         })
@@ -113,9 +115,7 @@ class ApplePayViewController: WalletController, PayController {
             ShopifyAcceleratedCheckouts.logger.error(
                 "[startPayment] Failed to setup cart: \(error)"
             )
-            Task { @MainActor in
-                self.onCheckoutFail?(.sdkError(underlying: error, recoverable: false))
-            }
+            self.onCheckoutFail?(.sdkError(underlying: error, recoverable: false))
         }
 
         do {
