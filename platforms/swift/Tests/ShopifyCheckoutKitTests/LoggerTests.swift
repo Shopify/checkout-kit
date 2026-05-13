@@ -37,9 +37,23 @@ final class OSLoggerTests: XCTestCase {
         XCTAssertNotNil(OSLogger.shared)
     }
 
-    func test_defaultInitializer_withNoParameters_shouldMaintainBackwardsCompatibility() {
+    func test_defaultInitializer_withNoParameters_shouldUseConfigurationLogLevel() {
+        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
+
         let logger = OSLogger()
-        XCTAssertNotNil(logger)
+
+        XCTAssertEqual(logger.logLevel, .debug)
+    }
+
+    func test_sharedLogger_canBeReplaced() {
+        let originalLogger = OSLogger.shared
+        defer { OSLogger.shared = originalLogger }
+
+        let replacementLogger = OSLogger(prefix: "Replacement", logLevel: .debug)
+
+        OSLogger.shared = replacementLogger
+
+        XCTAssertTrue(OSLogger.shared === replacementLogger)
     }
 
     func test_logLevelNone_withAllLogCalls_shouldBlockAllLogging() {

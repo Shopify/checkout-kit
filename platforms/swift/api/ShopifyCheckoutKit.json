@@ -4521,10 +4521,6 @@
             "mangledName": "$s18ShopifyCheckoutKit8OSLoggerC8logLevelAA03LogF0Ovp",
             "moduleName": "ShopifyCheckoutKit",
             "isInternal": true,
-            "declAttributes": [
-              "HasStorage"
-            ],
-            "hasStorage": true,
             "accessors": [
               {
                 "kind": "Accessor",
@@ -4542,11 +4538,7 @@
                 "usr": "s:18ShopifyCheckoutKit8OSLoggerC8logLevelAA03LogF0Ovg",
                 "mangledName": "$s18ShopifyCheckoutKit8OSLoggerC8logLevelAA03LogF0Ovg",
                 "moduleName": "ShopifyCheckoutKit",
-                "implicit": true,
                 "isInternal": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
                 "accessorKind": "get"
               },
               {
@@ -4570,11 +4562,7 @@
                 "usr": "s:18ShopifyCheckoutKit8OSLoggerC8logLevelAA03LogF0Ovs",
                 "mangledName": "$s18ShopifyCheckoutKit8OSLoggerC8logLevelAA03LogF0Ovs",
                 "moduleName": "ShopifyCheckoutKit",
-                "implicit": true,
                 "isInternal": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
                 "accessorKind": "set"
               }
             ]
@@ -4597,11 +4585,8 @@
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
-              "HasInitialValue",
-              "Final",
-              "HasStorage"
+              "Final"
             ],
-            "hasStorage": true,
             "accessors": [
               {
                 "kind": "Accessor",
@@ -4620,10 +4605,8 @@
                 "mangledName": "$s18ShopifyCheckoutKit8OSLoggerC6sharedACvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
-                "implicit": true,
                 "declAttributes": [
-                  "Final",
-                  "Transparent"
+                  "Final"
                 ],
                 "accessorKind": "get"
               },
@@ -4649,10 +4632,8 @@
                 "mangledName": "$s18ShopifyCheckoutKit8OSLoggerC6sharedACvsZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
-                "implicit": true,
                 "declAttributes": [
-                  "Final",
-                  "Transparent"
+                  "Final"
                 ],
                 "accessorKind": "set"
               }
@@ -4804,6 +4785,20 @@
         "mangledName": "$s18ShopifyCheckoutKit8OSLoggerC",
         "moduleName": "ShopifyCheckoutKit",
         "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
           {
             "kind": "Conformance",
             "name": "Copyable",

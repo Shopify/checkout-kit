@@ -10,21 +10,39 @@ public enum LogLevel: String, CaseIterable {
     case none
 }
 
-public class OSLogger {
+public class OSLogger: @unchecked Sendable {
     private let logger = OSLog(subsystem: subsystem, category: OSLog.Category.pointsOfInterest)
-    private var prefix: String
-    package var logLevel: LogLevel
+    private let prefix: String
+    private let lockedLogLevel: LockedValue<LogLevel>
 
-    public static var shared = OSLogger()
+    package var logLevel: LogLevel {
+        get {
+            lockedLogLevel.get()
+        }
+        set {
+            lockedLogLevel.set(newValue)
+        }
+    }
+
+    private static let lockedSharedLogger = LockedValue(OSLogger())
+
+    public static var shared: OSLogger {
+        get {
+            lockedSharedLogger.get()
+        }
+        set {
+            lockedSharedLogger.set(newValue)
+        }
+    }
 
     public init() {
         prefix = "ShopifyCheckoutKit"
-        logLevel = ShopifyCheckoutKit.configuration.logLevel
+        lockedLogLevel = LockedValue(ShopifyCheckoutKit.configuration.logLevel)
     }
 
     public init(prefix: String, logLevel: LogLevel) {
         self.prefix = prefix
-        self.logLevel = logLevel
+        lockedLogLevel = LockedValue(logLevel)
     }
 
     public func debug(_ message: String) {
@@ -58,11 +76,13 @@ public class OSLogger {
     }
 
     private func shouldEmit(_ choice: LogLevel) -> Bool {
-        if logLevel == .none {
+        let currentLogLevel = logLevel
+
+        if currentLogLevel == .none {
             return false
         }
 
-        return logLevel == .all || logLevel == choice
+        return currentLogLevel == .all || currentLogLevel == choice
     }
 }
 
