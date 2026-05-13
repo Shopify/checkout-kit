@@ -18,7 +18,8 @@ typealias ProductVariants = Storefront.GetProductsQuery.Data.Products.Node.Varia
 typealias ProductVariant = Storefront.GetProductsQuery.Data.Products.Node.Variants.Node
 typealias ProductPrice = Storefront.GetProductsQuery.Data.Products.Node.Variants.Node.Price
 
-class Network {
+@MainActor
+final class Network {
     static let shared = Network()
 
     /// Get the device's language code mapped to Shopify's LanguageCode enum
