@@ -1,7 +1,7 @@
 # Contributing
 
 We welcome code contributions, feature requests, and reporting of issues. Please
-see [guidelines and instructions](.github/CONTRIBUTING.md).
+see [guidelines and instructions](../../.github/CONTRIBUTING.md).
 
 ---
 
@@ -16,7 +16,10 @@ specific to each workspace.
 
 ## Getting started
 
-If you've cloned the repo and want to run the sample app, you will first need to:
+If you've cloned the repo and want to run the sample app, Shopify employees can
+run `dev up` and `dev react-native <command>` from the repo root (`dev rn` is
+an alias). The underlying `pnpm` commands below are run from
+`platforms/react-native`:
 
 1. Install the NPM dependencies
 
@@ -130,8 +133,8 @@ pnpm sample test:android
 
 ## Running the sample app
 
-To run the sample app in this repo, first clone the repo and run the following
-commands at the root of the project directory.
+To run the sample app in this repo with `pnpm`, first run the following commands
+from `platforms/react-native`.
 
 ### Install NPM dependencies
 

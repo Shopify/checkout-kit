@@ -7,6 +7,8 @@ up:
       - mint
       - xcbeautify
       - jq
+      - swiftlint
+      - sccache
   - ruby
   - custom:
       name: Install bundle packages
@@ -50,6 +52,24 @@ up:
         ([ -f "./platforms/swift/Samples/MobileBuyIntegration/MobileBuyIntegration/MobileBuyIntegration.entitlements" ] || exit 1;)
       meet: cd platforms/swift && ./Scripts/setup_entitlements
 
+  - node:
+      version: v22.14.0
+      package_manager: pnpm@10.33.1
+      packages:
+        - platforms/react-native
+  - custom:
+      name: Install NPM dependencies (React Native)
+      met?: ls -l platforms/react-native | grep node_modules
+      meet: cd platforms/react-native && pnpm install
+  - custom:
+      name: Install gems (React Native sample)
+      met?: (cd platforms/react-native/sample/ios && bundle check)
+      meet: cd platforms/react-native/sample/ios && bundle install
+  - custom:
+      name: Install pods (React Native sample)
+      met?: (cd platforms/react-native/sample/ios && bundle exec pod check --ignore-dev-pods)
+      meet: cd platforms/react-native && pnpm run pod-install
+
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
   "Issues": "https://github.com/Shopify/checkout-kit/issues"
@@ -60,6 +80,9 @@ check:
   android-detekt: cd platforms/android && ./gradlew detekt
   android-lint: cd platforms/android && ./gradlew lintRelease
   swift-lint: cd platforms/swift && ./Scripts/lint
+  react-native-lint-swift: cd platforms/react-native && ./scripts/lint_swift
+  react-native-lint-module: cd platforms/react-native && pnpm module lint
+  react-native-lint-sample: cd platforms/react-native && pnpm sample lint
 
 commands:
   # Repo-wide
@@ -187,3 +210,56 @@ commands:
           `dev swift test <test_class_name>` - Run only the specified test class.
         syntax: "[test_class_name]"
         run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
+
+  # React Native
+  react-native:
+    desc: "React Native Checkout Kit commands"
+    aliases: [rn]
+    subcommands:
+      server:
+        desc: Start Metro development server
+        aliases: [s]
+        run: cd platforms/react-native && pnpm sample start --reset-cache
+      ios:
+        desc: Run the iOS sample app in the simulator
+        run: cd platforms/react-native && pnpm sample ios
+      android:
+        desc: Run the Android sample app in the emulator
+        run: cd platforms/react-native && pnpm sample android
+      clean:
+        desc: Remove generated directories and stop sccache
+        run: |
+          cd platforms/react-native
+          pnpm module clean
+          pnpm sample clean
+          pnpm clean
+          if command -v sccache >/dev/null 2>&1; then
+            sccache --stop-server 2>/dev/null || true
+          fi
+          echo "Cleaned root, module and sample workspaces"
+      build:
+        desc: Build the @shopify/checkout-kit-react-native module
+        run: cd platforms/react-native && pnpm module build
+      lint:
+        desc: Run all React Native lint checks (Swift, module, sample)
+        aliases: [style]
+        run: |
+          set -e
+          cd platforms/react-native
+          ./scripts/lint_swift
+          pnpm module lint
+          pnpm sample lint
+        subcommands:
+          swift:
+            desc: Lint Swift code via SwiftLint
+            run: cd platforms/react-native && ./scripts/lint_swift
+          module:
+            desc: Lint the @shopify/checkout-sheet-kit module
+            run: cd platforms/react-native && pnpm module lint
+          sample:
+            desc: Lint the sample app
+            run: cd platforms/react-native && pnpm sample lint
+      format:
+        desc: Auto-fix Swift lint and format issues
+        aliases: [fix]
+        run: cd platforms/react-native && ./scripts/lint_swift fix
