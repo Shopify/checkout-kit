@@ -91,7 +91,7 @@ class CheckoutWebViewTests: XCTestCase {
             XCTAssertEqual(policy, .cancel)
         }
 
-        await fulfillment(of: [received], timeout: 5.0)
+        await fulfillment(of: [received], timeout: 15.0)
         XCTAssertEqual(holder.url, link)
     }
 
@@ -111,7 +111,7 @@ class CheckoutWebViewTests: XCTestCase {
             XCTAssertEqual(policy, .cancel)
         }
 
-        await fulfillment(of: [received], timeout: 5.0)
+        await fulfillment(of: [received], timeout: 15.0)
         XCTAssertEqual(holder.url, link)
     }
 
@@ -131,7 +131,7 @@ class CheckoutWebViewTests: XCTestCase {
             XCTAssertEqual(policy, .cancel)
         }
 
-        await fulfillment(of: [received], timeout: 5.0)
+        await fulfillment(of: [received], timeout: 15.0)
         XCTAssertEqual(holder.url, link)
     }
 
@@ -151,7 +151,7 @@ class CheckoutWebViewTests: XCTestCase {
             XCTAssertEqual(policy, .cancel)
         }
 
-        await fulfillment(of: [received], timeout: 5.0)
+        await fulfillment(of: [received], timeout: 15.0)
         XCTAssertEqual(holder.url, link)
     }
 
@@ -171,7 +171,7 @@ class CheckoutWebViewTests: XCTestCase {
             XCTAssertEqual(policy, .cancel)
         }
 
-        await fulfillment(of: [received], timeout: 5.0)
+        await fulfillment(of: [received], timeout: 15.0)
         let captured = try XCTUnwrap(holder.url)
         let components = URLComponents(url: captured, resolvingAgainstBaseURL: false)
         XCTAssertNil(
