@@ -43,11 +43,40 @@ final class StorefrontAPIMutationsTests: XCTestCase {
     // MARK: - Mock URLProtocol for Network Mocking
 
     class MockURLProtocol: URLProtocol {
-        static var mockResponseData: Data?
-        static var mockError: Error?
-        static var mockStatusCode: Int = 200
-        static var capturedRequest: URLRequest?
-        static var capturedRequestBody: Data?
+        private struct State {
+            var mockResponseData: Data?
+            var mockError: Error?
+            var mockStatusCode = 200
+            var capturedRequest: URLRequest?
+            var capturedRequestBody: Data?
+        }
+
+        private static let state = LockedTestValue(State())
+
+        static var mockResponseData: Data? {
+            get { state.get().mockResponseData }
+            set { state.update { $0.mockResponseData = newValue } }
+        }
+
+        static var mockError: Error? {
+            get { state.get().mockError }
+            set { state.update { $0.mockError = newValue } }
+        }
+
+        static var mockStatusCode: Int {
+            get { state.get().mockStatusCode }
+            set { state.update { $0.mockStatusCode = newValue } }
+        }
+
+        static var capturedRequest: URLRequest? {
+            get { state.get().capturedRequest }
+            set { state.update { $0.capturedRequest = newValue } }
+        }
+
+        static var capturedRequestBody: Data? {
+            get { state.get().capturedRequestBody }
+            set { state.update { $0.capturedRequestBody = newValue } }
+        }
 
         override class func canInit(with _: URLRequest) -> Bool {
             return true

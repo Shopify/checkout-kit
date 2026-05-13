@@ -4,6 +4,7 @@ import SwiftUI
 import XCTest
 
 @available(iOS 17.0, *)
+@MainActor
 final class ApplePayIntegrationTests: XCTestCase {
     // MARK: - Properties
 
@@ -14,8 +15,8 @@ final class ApplePayIntegrationTests: XCTestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         mockCommonConfiguration = ShopifyAcceleratedCheckouts.Configuration(
             storefrontDomain: "test-shop.myshopify.com",
@@ -46,12 +47,12 @@ final class ApplePayIntegrationTests: XCTestCase {
         )
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         mockConfiguration = nil
         mockCommonConfiguration = nil
         mockApplePayConfiguration = nil
         mockShopSettings = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Integration Tests
@@ -123,13 +124,13 @@ final class ApplePayIntegrationTests: XCTestCase {
         // The view should essentially be empty/minimal due to invariant case
     }
 
-    func testCallbackPersistenceAcrossViewUpdates() async {
+    func testCallbackPersistenceAcrossViewUpdates() {
         var failCount = 0
         let failHandler = { (_: CheckoutError) in
             failCount += 1
         }
 
-        let button = await ApplePayButton(
+        let button = ApplePayButton(
             identifier: .cart(cartID: "gid://Shopify/Cart/test-cart"),
             eventHandlers: EventHandlers(checkoutDidFail: failHandler),
             cornerRadius: nil

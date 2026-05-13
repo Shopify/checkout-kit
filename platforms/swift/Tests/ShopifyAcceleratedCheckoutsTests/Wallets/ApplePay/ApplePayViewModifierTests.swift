@@ -4,6 +4,7 @@ import SwiftUI
 import XCTest
 
 @available(iOS 17.0, *)
+@MainActor
 final class ApplePayViewModifierTests: XCTestCase {
     // MARK: - Properties
 
@@ -13,8 +14,8 @@ final class ApplePayViewModifierTests: XCTestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         mockConfiguration = ShopifyAcceleratedCheckouts.Configuration(
             storefrontDomain: "test-shop.myshopify.com",
@@ -36,11 +37,11 @@ final class ApplePayViewModifierTests: XCTestCase {
         )
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         mockConfiguration = nil
         mockApplePayConfiguration = nil
         mockShopSettings = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - onCancel Modifier Tests

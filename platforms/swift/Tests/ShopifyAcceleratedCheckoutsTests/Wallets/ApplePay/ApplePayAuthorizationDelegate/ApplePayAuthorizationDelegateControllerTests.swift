@@ -612,12 +612,46 @@ final class ApplePayAuthorizationDelegateControllerTests: XCTestCase {
             "\"cost\":{\"totalAmount\":{\"amount\":\"0.00\",\"currencyCode\":\"USD\"}}," +
             "\"discountCodes\":[],\"discountAllocations\":[]}"
 
-        static var failReplace = false
-        static var failDeliveryUpdate = false
-        static var failPrepareForCompletion = false
-        static var returnMappableCartUserError = false
-        static var returnInvalidCart = false
-        static var lastOperation: String?
+        private struct State {
+            var failReplace = false
+            var failDeliveryUpdate = false
+            var failPrepareForCompletion = false
+            var returnMappableCartUserError = false
+            var returnInvalidCart = false
+            var lastOperation: String?
+        }
+
+        private static let state = LockedTestValue(State())
+
+        static var failReplace: Bool {
+            get { state.get().failReplace }
+            set { state.update { $0.failReplace = newValue } }
+        }
+
+        static var failDeliveryUpdate: Bool {
+            get { state.get().failDeliveryUpdate }
+            set { state.update { $0.failDeliveryUpdate = newValue } }
+        }
+
+        static var failPrepareForCompletion: Bool {
+            get { state.get().failPrepareForCompletion }
+            set { state.update { $0.failPrepareForCompletion = newValue } }
+        }
+
+        static var returnMappableCartUserError: Bool {
+            get { state.get().returnMappableCartUserError }
+            set { state.update { $0.returnMappableCartUserError = newValue } }
+        }
+
+        static var returnInvalidCart: Bool {
+            get { state.get().returnInvalidCart }
+            set { state.update { $0.returnInvalidCart = newValue } }
+        }
+
+        static var lastOperation: String? {
+            get { state.get().lastOperation }
+            set { state.update { $0.lastOperation = newValue } }
+        }
 
         static func response(for op: String) -> Data {
             if op == "cartPrepareForCompletion" {
