@@ -5,6 +5,7 @@ package com.shopify.checkoutkit
  *
  * Allows specifying the colorScheme that should be used for checkout.
  */
+@ConsistentCopyVisibility
 public data class Configuration internal constructor(
     var colorScheme: ColorScheme = ColorScheme.Automatic(),
     var platform: Platform? = null,
