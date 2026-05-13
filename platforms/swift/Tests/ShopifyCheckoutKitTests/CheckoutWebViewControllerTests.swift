@@ -50,8 +50,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
     private let recoverableError = CheckoutError.checkoutUnavailable(message: "Test recoverable", code: .httpError(statusCode: 500), recoverable: true)
     private let nonRecoverableError = CheckoutError.checkoutExpired(message: "Test non-recoverable", code: .cartExpired, recoverable: false)
 
-    func test_init_withNilEntryPoint_shouldSetCorrectUserAgent() throws {
-        try XCTSkipIf(true, "User agent is intentionally not set on non-recovery webviews while on the new CheckoutCommunicationProtocol; re-enable once the UA contract is finalized.")
+    func test_init_withNilEntryPoint_shouldSetCorrectUserAgent() {
         let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
 
         let expectedUserAgent = CheckoutBridge.applicationName(entryPoint: nil)
@@ -59,8 +58,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertEqual(viewController.checkoutView.configuration.applicationNameForUserAgent, expectedUserAgent)
     }
 
-    func test_init_withAcceleratedCheckoutsEntryPoint_shouldSetCorrectUserAgent() throws {
-        try XCTSkipIf(true, "User agent is intentionally not set on non-recovery webviews while on the new CheckoutCommunicationProtocol; re-enable once the UA contract is finalized.")
+    func test_init_withAcceleratedCheckoutsEntryPoint_shouldSetCorrectUserAgent() {
         let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: .acceleratedCheckouts)
 
         let expectedUserAgent = CheckoutBridge.applicationName(entryPoint: .acceleratedCheckouts)

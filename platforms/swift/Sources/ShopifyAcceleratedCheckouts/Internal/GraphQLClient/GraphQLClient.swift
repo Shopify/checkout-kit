@@ -104,8 +104,7 @@ class GraphQLClient {
 
         // Set User-Agent header
         let userAgent = UserAgent.string(
-            type: .standard,
-            colorScheme: .automatic,
+            platform: ShopifyCheckoutKit.configuration.platform,
             entryPoint: .acceleratedCheckouts
         )
         urlRequest.setValue(userAgent, forHTTPHeaderField: "User-Agent")
