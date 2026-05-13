@@ -52,7 +52,7 @@ public func preload(checkout url: URL) {
         return
     }
 
-    let url = CheckoutProtocol.url(for: url, colorScheme: configuration.colorScheme.rawValue)
+    let url = CheckoutProtocol.url(for: url)
     CheckoutWebView.preloadingActivatedByClient = true
     CheckoutWebView.for(checkout: url).load(checkout: url, isPreload: true)
 }
@@ -64,7 +64,7 @@ public func invalidate() {
 
 @discardableResult
 public func present(checkout url: URL, from: UIViewController, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
-    let decorated = CheckoutProtocol.url(for: url, colorScheme: configuration.colorScheme.rawValue)
+    let decorated = CheckoutProtocol.url(for: url)
     let viewController = CheckoutViewController(checkout: decorated, client: client)
     from.present(viewController, animated: true)
     return viewController
@@ -72,7 +72,7 @@ public func present(checkout url: URL, from: UIViewController, client: (any Chec
 
 @discardableResult
 package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
-    let decorated = CheckoutProtocol.url(for: url, colorScheme: configuration.colorScheme.rawValue)
+    let decorated = CheckoutProtocol.url(for: url)
     let viewController = CheckoutViewController(checkout: decorated, client: client, entryPoint: entryPoint)
     from.present(viewController, animated: true)
     return viewController

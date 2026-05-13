@@ -57,7 +57,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     var onFailAction: ((CheckoutError) -> Void)?
 
     public init(checkout url: URL) {
-        checkoutURL = CheckoutProtocol.url(for: url, colorScheme: ShopifyCheckoutKit.configuration.colorScheme.rawValue)
+        checkoutURL = CheckoutProtocol.url(for: url)
 
         ShopifyCheckoutKit.invalidateOnConfigurationChange = false
     }
