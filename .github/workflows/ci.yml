@@ -27,6 +27,7 @@ jobs:
       android: ${{ steps.filter.outputs.android }}
       swift: ${{ steps.filter.outputs.swift }}
       reactNative: ${{ steps.filter.outputs.reactNative }}
+      web: ${{ steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -56,6 +57,12 @@ jobs:
               - '.github/workflows/rn-license-headers.yml'
               - '.github/workflows/rn-check-packed-files.yml'
               - '.github/workflows/rn-lint.yml'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'platforms/web/**'
+              - '.github/workflows/web.yml'
+              - '.github/workflows/web-license-headers.yml'
+              - '.github/actions/setup/**'
               - '.github/workflows/ci.yml'
 
   android-test:
@@ -127,6 +134,21 @@ jobs:
     if: needs.changes.outputs.reactNative == 'true'
     uses: ./.github/workflows/rn-lint.yml
 
+  web:
+    name: Web
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/web.yml
+
+  web-license-headers:
+    name: Web
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    uses: ./.github/workflows/web-license-headers.yml
+
   # Single required status check for branch protection.
   # Passes when every relevant platform job either succeeded or was skipped
   # because no files in that platform's tree changed.
@@ -146,6 +168,8 @@ jobs:
       - rn-license-headers
       - rn-check-packed-files
       - rn-lint
+      - web
+      - web-license-headers
     runs-on: ubuntu-latest
     steps:
       - name: Verify all upstream jobs succeeded or were skipped
