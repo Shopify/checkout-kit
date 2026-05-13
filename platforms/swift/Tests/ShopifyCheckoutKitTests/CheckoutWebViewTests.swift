@@ -22,6 +22,7 @@
  */
 
 @testable import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import WebKit
 import XCTest
 
@@ -458,7 +459,7 @@ class CheckoutWebViewTests: XCTestCase {
         let result = try XCTUnwrap(parsed["result"] as? [String: Any])
         let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
         XCTAssertEqual(ucp["status"] as? String, "success")
-        XCTAssertNotNil(ucp["version"] as? String)
+        XCTAssertEqual(ucp["version"] as? String, CheckoutProtocol.specVersion)
     }
 
     func testAcknowledgeReadyDoesNotInvokeClient() {
