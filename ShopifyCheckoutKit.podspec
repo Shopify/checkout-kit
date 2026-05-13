@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.homepage  = "https://github.com/Shopify/checkout-kit"
   s.readme    = "https://github.com/Shopify/checkout-kit/blob/main/README.md"
   s.changelog = "https://github.com/Shopify/checkout-kit/releases"
-  s.license   = { :type => "MIT", :file => "../../LICENSE" }
+  s.license   = { :type => "MIT", :file => "LICENSE" }
 
   s.source = {
     :git => "https://github.com/Shopify/checkout-kit.git", :tag => s.version.to_s
@@ -26,19 +26,22 @@ Pod::Spec.new do |s|
 
   s.subspec 'Core' do |core|
     core.source_files = [
-      'Sources/ShopifyCheckoutKit/**/*.swift',
-      'Sources/ShopifyCheckoutProtocol/**/*.swift',
+      'platforms/swift/Sources/ShopifyCheckoutKit/**/*.swift',
+      'protocol/languages/swift/Sources/ShopifyCheckoutProtocol/**/*.swift',
     ]
     core.resource_bundles = {
-      'ShopifyCheckoutKit' => ['Sources/ShopifyCheckoutKit/Assets.xcassets']
+      'ShopifyCheckoutKit' => ['platforms/swift/Sources/ShopifyCheckoutKit/Assets.xcassets']
     }
   end
 
   s.subspec 'AcceleratedCheckouts' do |accelerated|
-    accelerated.source_files = 'Sources/ShopifyAcceleratedCheckouts/**/*.swift'
+    accelerated.source_files = 'platforms/swift/Sources/ShopifyAcceleratedCheckouts/**/*.swift'
     accelerated.dependency 'ShopifyCheckoutKit/Core'
     accelerated.resource_bundles = {
-      'ShopifyAcceleratedCheckouts' => ['Sources/ShopifyAcceleratedCheckouts/Localizable.xcstrings', 'Sources/ShopifyAcceleratedCheckouts/Media.xcassets']
+      'ShopifyAcceleratedCheckouts' => [
+        'platforms/swift/Sources/ShopifyAcceleratedCheckouts/Localizable.xcstrings',
+        'platforms/swift/Sources/ShopifyAcceleratedCheckouts/Media.xcassets',
+      ]
     }
   end
 end
