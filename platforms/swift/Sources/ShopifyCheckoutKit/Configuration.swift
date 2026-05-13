@@ -79,10 +79,6 @@ extension Configuration {
 
 extension Configuration {
     public struct Preloading {
-        public var enabled: Bool = true {
-            didSet {
-                CheckoutWebView.preloadingActivatedByClient = false
-            }
-        }
+        public var enabled: Bool = true
     }
 }

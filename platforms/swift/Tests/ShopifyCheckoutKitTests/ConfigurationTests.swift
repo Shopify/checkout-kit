@@ -28,8 +28,18 @@ import XCTest
 class ConfigurationTests: XCTestCase {
     override func setUp() {
         super.setUp()
-        // Reset configuration to defaults
-        ShopifyCheckoutKit.configuration = Configuration()
+        resetConfigurationState()
+    }
+
+    override func tearDown() {
+        resetConfigurationState()
+        super.tearDown()
+    }
+
+    private func resetConfigurationState() {
+        ShopifyCheckoutKit.invalidateOnConfigurationChange = true
+        CheckoutWebView.invalidate()
+        ShopifyCheckoutKit.setConfiguration(Configuration())
     }
 
     func testCloseButtonTintColorDefaultsToNil() {
@@ -49,5 +59,48 @@ class ConfigurationTests: XCTestCase {
 
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
         XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+    }
+
+    func testColorSchemeCanBeSetDirectly() {
+        ShopifyCheckoutKit.configuration.colorScheme = .light
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .light)
+    }
+
+    func testConfigureCanBatchConfigurationChanges() {
+        ShopifyCheckoutKit.configure {
+            $0.colorScheme = .dark
+            $0.closeButtonTintColor = .blue
+        }
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .dark)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, .blue)
+    }
+
+    func testDirectConfigurationMutationUpdatesLogger() {
+        ShopifyCheckoutKit.configuration.logLevel = .all
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, .all)
+        XCTAssertEqual(OSLogger.shared.logLevel, .all)
+    }
+
+    func testDirectConfigurationMutationInvalidatesCheckoutCache() throws {
+        ShopifyCheckoutKit.invalidateOnConfigurationChange = true
+
+        let url = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
+        _ = CheckoutWebView.for(checkout: url)
+        XCTAssertTrue(CheckoutWebView.hasCacheEntry())
+
+        ShopifyCheckoutKit.configuration.title = "Updated title"
+
+        XCTAssertFalse(CheckoutWebView.hasCacheEntry())
+    }
+
+    func testDirectConfigurationMutationDisablesPreloadingActivatedByClient() {
+        CheckoutWebView.preloadingActivatedByClient = true
+
+        ShopifyCheckoutKit.configuration.preloading.enabled = false
+
+        XCTAssertFalse(CheckoutWebView.preloadingActivatedByClient)
     }
 }

@@ -30,22 +30,42 @@ import UIKit
 public let version = "3.8.0"
 
 @MainActor var invalidateOnConfigurationChange = true
+@MainActor private var currentConfiguration = Configuration()
 
 /// The configuration options for the `ShopifyCheckoutKit` library.
 @MainActor
-public var configuration = Configuration() {
-    didSet {
-        if invalidateOnConfigurationChange {
-            CheckoutWebView.invalidate()
-        }
-        OSLogger.shared.logLevel = configuration.logLevel
+public var configuration: Configuration {
+    get {
+        currentConfiguration
+    }
+    set {
+        currentConfiguration = newValue
+        applyConfigurationChange()
     }
 }
 
 /// A convienence function for configuring the `ShopifyCheckoutKit` library.
 @MainActor
 public func configure(_ block: (inout Configuration) -> Void) {
-    block(&configuration)
+    block(&currentConfiguration)
+    applyConfigurationChange()
+}
+
+@MainActor
+package func setConfiguration(_ configuration: Configuration) {
+    currentConfiguration = configuration
+    applyConfigurationChange()
+}
+
+@MainActor
+private func applyConfigurationChange() {
+    if invalidateOnConfigurationChange {
+        CheckoutWebView.invalidate()
+    }
+    if !currentConfiguration.preloading.enabled {
+        CheckoutWebView.preloadingActivatedByClient = false
+    }
+    OSLogger.shared.logLevel = currentConfiguration.logLevel
 }
 
 /// Preloads the checkout for faster presentation.

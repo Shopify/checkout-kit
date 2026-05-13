@@ -33,7 +33,7 @@ class CheckoutWebViewTests: XCTestCase {
     private var url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
 
     override func setUp() {
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         view = CheckoutWebView.for(checkout: url)
         mockDelegate = MockCheckoutWebViewDelegate()
         view.viewDelegate = mockDelegate
@@ -56,8 +56,10 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testUsesRecoveryAgent() {
         let backgroundColor: UIColor = .systemRed
-        ShopifyCheckoutKit.configuration.backgroundColor = backgroundColor
-        ShopifyCheckoutKit.configuration.colorScheme = .automatic
+        ShopifyCheckoutKit.configure {
+            $0.backgroundColor = backgroundColor
+            $0.colorScheme = .automatic
+        }
         recovery = createRecoveryAgent()
 
         XCTAssertTrue(recovery.isRecovery)

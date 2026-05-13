@@ -177,7 +177,7 @@ class CheckoutViewDelegateTests: XCTestCase {
     }
 
     func testCloseButtonUsesSystemDefaultWhenTintColorIsNil() {
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
+        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = nil }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
         let closeButton = controller.navigationItem.rightBarButtonItem
@@ -188,7 +188,7 @@ class CheckoutViewDelegateTests: XCTestCase {
 
     func testCloseButtonUsesCustomImageAndTintWhenColorIsSet() {
         let customColor = UIColor.red
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = customColor
+        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = customColor }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
         let closeButton = controller.navigationItem.rightBarButtonItem
@@ -199,7 +199,7 @@ class CheckoutViewDelegateTests: XCTestCase {
     }
 
     func testCloseButtonImageIsXMarkCircleFill() {
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = .blue
+        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = .blue }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
         let closeButton = controller.navigationItem.rightBarButtonItem

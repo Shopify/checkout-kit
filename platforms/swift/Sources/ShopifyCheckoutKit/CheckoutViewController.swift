@@ -119,31 +119,31 @@ public protocol CheckoutConfigurable {
 extension CheckoutConfigurable {
     @MainActor
     @discardableResult public func backgroundColor(_ color: UIColor) -> Self {
-        ShopifyCheckoutKit.configuration.backgroundColor = color
+        ShopifyCheckoutKit.configure { $0.backgroundColor = color }
         return self
     }
 
     @MainActor
     @discardableResult public func colorScheme(_ colorScheme: ShopifyCheckoutKit.Configuration.ColorScheme) -> Self {
-        ShopifyCheckoutKit.configuration.colorScheme = colorScheme
+        ShopifyCheckoutKit.configure { $0.colorScheme = colorScheme }
         return self
     }
 
     @MainActor
     @discardableResult public func tintColor(_ color: UIColor) -> Self {
-        ShopifyCheckoutKit.configuration.tintColor = color
+        ShopifyCheckoutKit.configure { $0.tintColor = color }
         return self
     }
 
     @MainActor
     @discardableResult public func title(_ title: String) -> Self {
-        ShopifyCheckoutKit.configuration.title = title
+        ShopifyCheckoutKit.configure { $0.title = title }
         return self
     }
 
     @MainActor
     @discardableResult public func closeButtonTintColor(_ color: UIColor?) -> Self {
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = color
+        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = color }
         return self
     }
 }

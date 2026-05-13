@@ -52,7 +52,7 @@ final class OSLoggerTests: XCTestCase {
     }
 
     override func tearDown() {
-        ShopifyCheckoutKit.configuration = originalConfiguration
+        ShopifyCheckoutKit.setConfiguration(originalConfiguration)
         super.tearDown()
     }
 
@@ -138,7 +138,7 @@ final class OSLoggerTests: XCTestCase {
     }
 
     func test_sharedLogger_withConfigurationLogLevel_shouldMaintainBackwardsCompatibility() {
-        ShopifyCheckoutKit.configuration.logLevel = .all
+        ShopifyCheckoutKit.configure { $0.logLevel = .all }
         OSLogger.shared.info("test message")
     }
 
