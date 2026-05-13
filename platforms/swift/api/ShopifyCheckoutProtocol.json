@@ -662,8 +662,8 @@
                   }
                 ],
                 "declKind": "Func",
-                "usr": "s:23ShopifyCheckoutProtocol0bC0O6ClientV2on_7performAeA22NotificationDescriptorVyxG_yxScMYcctAA12EventPayloadRzlF",
-                "mangledName": "$s23ShopifyCheckoutProtocol0bC0O6ClientV2on_7performAeA22NotificationDescriptorVyxG_yxScMYcctAA12EventPayloadRzlF",
+                "usr": "s:23ShopifyCheckoutProtocol0bC0O6ClientV2on_7performAeA22NotificationDescriptorVyxG_yxYbScMYcctAA12EventPayloadRzlF",
+                "mangledName": "$s23ShopifyCheckoutProtocol0bC0O6ClientV2on_7performAeA22NotificationDescriptorVyxG_yxYbScMYcctAA12EventPayloadRzlF",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "genericSig": "<P where P : ShopifyCheckoutProtocol.EventPayload>",
                 "declAttributes": [
