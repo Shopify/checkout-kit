@@ -10,12 +10,9 @@
 		4EBBA7742A5F0CE200193E19 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4EBBA7732A5F0CE200193E19 /* Assets.xcassets */; };
 		4EBBA7772A5F0CE200193E19 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4EBBA7752A5F0CE200193E19 /* LaunchScreen.storyboard */; };
 		CB0000001234567A /* Apollo in Frameworks */ = {isa = PBXBuildFile; productRef = CB00000012345679 /* Apollo */; };
+		CB0000001234567B /* ApolloAPI in Frameworks */ = {isa = PBXBuildFile; productRef = CB00000012345680 /* ApolloAPI */; };
 		CB001E312F3CDA0300286F69 /* ShopifyCheckoutProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = CB001E302F3CDA0300286F69 /* ShopifyCheckoutProtocol */; };
-		CB001E3A2F3CDBD600286F69 /* ShopifyCheckoutKit in Frameworks */ = {isa = PBXBuildFile; productRef = CB001E392F3CDBD600286F69 /* ShopifyCheckoutKit */; };
 		CB1B10B52E4CDDB0001713F8 /* ShopifyCheckoutKit in Frameworks */ = {isa = PBXBuildFile; productRef = CB1B10B42E4CDDB0001713F8 /* ShopifyCheckoutKit */; };
-		CB236DEA2FB2186C00F0D914 /* ShopifyCheckoutKit in Frameworks */ = {isa = PBXBuildFile; productRef = CBED2D502F3F5D1B00EC866A /* ShopifyCheckoutKit */; };
-		CB2370022FB21BF100F0D914 /* ShopifyAcceleratedCheckouts in Frameworks */ = {isa = PBXBuildFile; productRef = CB2370012FB21BF100F0D914 /* ShopifyAcceleratedCheckouts */; };
-		CB2370042FB21BF100F0D914 /* ShopifyCheckoutKit in Frameworks */ = {isa = PBXBuildFile; productRef = CB2370032FB21BF100F0D914 /* ShopifyCheckoutKit */; };
 		CBED2D4F2F3F5D1B00EC866A /* ShopifyAcceleratedCheckouts in Frameworks */ = {isa = PBXBuildFile; productRef = CBED2D4E2F3F5D1B00EC866A /* ShopifyAcceleratedCheckouts */; };
 /* End PBXBuildFile section */
 
@@ -38,14 +35,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CB236DEA2FB2186C00F0D914 /* ShopifyCheckoutKit in Frameworks */,
 				CB0000001234567A /* Apollo in Frameworks */,
-				CB2370042FB21BF100F0D914 /* ShopifyCheckoutKit in Frameworks */,
-				CBED2D4F2F3F5D1B00EC866A /* ShopifyAcceleratedCheckouts in Frameworks */,
+				CB0000001234567B /* ApolloAPI in Frameworks */,
 				CB001E312F3CDA0300286F69 /* ShopifyCheckoutProtocol in Frameworks */,
 				CB1B10B52E4CDDB0001713F8 /* ShopifyCheckoutKit in Frameworks */,
-				CB001E3A2F3CDBD600286F69 /* ShopifyCheckoutKit in Frameworks */,
-				CB2370022FB21BF100F0D914 /* ShopifyAcceleratedCheckouts in Frameworks */,
+				CBED2D4F2F3F5D1B00EC866A /* ShopifyAcceleratedCheckouts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,13 +122,10 @@
 			name = MobileBuyIntegration;
 			packageProductDependencies = (
 				CB00000012345679 /* Apollo */,
-				CB1B10B42E4CDDB0001713F8 /* ShopifyCheckoutKit */,
+				CB00000012345680 /* ApolloAPI */,
 				CB001E302F3CDA0300286F69 /* ShopifyCheckoutProtocol */,
-				CB001E392F3CDBD600286F69 /* ShopifyCheckoutKit */,
+				CB1B10B42E4CDDB0001713F8 /* ShopifyCheckoutKit */,
 				CBED2D4E2F3F5D1B00EC866A /* ShopifyAcceleratedCheckouts */,
-				CBED2D502F3F5D1B00EC866A /* ShopifyCheckoutKit */,
-				CB2370012FB21BF100F0D914 /* ShopifyAcceleratedCheckouts */,
-				CB2370032FB21BF100F0D914 /* ShopifyCheckoutKit */,
 			);
 			productName = MobileBuyIntegration;
 			productReference = 4EBBA7672A5F0CE200193E19 /* MobileBuyIntegration.app */;
@@ -475,33 +466,25 @@
 			package = CB00000012345678 /* XCRemoteSwiftPackageReference "apollo-ios" */;
 			productName = Apollo;
 		};
+		CB00000012345680 /* ApolloAPI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CB00000012345678 /* XCRemoteSwiftPackageReference "apollo-ios" */;
+			productName = ApolloAPI;
+		};
 		CB001E302F3CDA0300286F69 /* ShopifyCheckoutProtocol */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../../../checkout-kit" */;
 			productName = ShopifyCheckoutProtocol;
-		};
-		CB001E392F3CDBD600286F69 /* ShopifyCheckoutKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ShopifyCheckoutKit;
 		};
 		CB1B10B42E4CDDB0001713F8 /* ShopifyCheckoutKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = ShopifyCheckoutKit;
-		};
-		CB2370012FB21BF100F0D914 /* ShopifyAcceleratedCheckouts */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ShopifyAcceleratedCheckouts;
-		};
-		CB2370032FB21BF100F0D914 /* ShopifyCheckoutKit */ = {
-			isa = XCSwiftPackageProductDependency;
+			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../../../checkout-kit" */;
 			productName = ShopifyCheckoutKit;
 		};
 		CBED2D4E2F3F5D1B00EC866A /* ShopifyAcceleratedCheckouts */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../../../checkout-kit" */;
 			productName = ShopifyAcceleratedCheckouts;
-		};
-		CBED2D502F3F5D1B00EC866A /* ShopifyCheckoutKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ShopifyCheckoutKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
