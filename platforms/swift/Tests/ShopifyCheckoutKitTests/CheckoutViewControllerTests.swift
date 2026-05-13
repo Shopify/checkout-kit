@@ -71,7 +71,8 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertTrue(viewController.dismissCalled)
     }
 
-    func testInstantiatesRecoveryWebviewOnRecoverableError() {
+    func testInstantiatesRecoveryWebviewOnRecoverableError() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         let view = CheckoutWebView.for(checkout: checkoutURL)
 
         viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500), recoverable: true))
@@ -86,7 +87,8 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertEqual(viewController.checkoutView.scrollView.contentInsetAdjustmentBehavior, .never)
     }
 
-    func testDoesNotInstantiateRecoveryWebviewOnNonRecoverableError() {
+    func testDoesNotInstantiateRecoveryWebviewOnNonRecoverableError() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         _ = CheckoutWebView.for(checkout: checkoutURL)
 
         viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500), recoverable: false))
@@ -95,6 +97,7 @@ class CheckoutViewDelegateTests: XCTestCase {
     }
 
     func testDoesNotInstantiateRecoveryForMultipassURL() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         let controller = try MockCheckoutWebViewController(
             checkoutURL: XCTUnwrap(URL(string: "https://checkout-sdk.myshopify.com/account/login/multipass/token"))
         )

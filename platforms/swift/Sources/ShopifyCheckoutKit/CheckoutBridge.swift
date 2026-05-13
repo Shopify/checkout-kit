@@ -53,21 +53,24 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
         )
     }
 
-    static var recoveryAgent: String {
-        return recoveryAgent(entryPoint: nil)
-    }
+    // Recovery mode disabled — not supported under UCP.
+    /*
+     static var recoveryAgent: String {
+         return recoveryAgent(entryPoint: nil)
+     }
 
-    static func recoveryAgent(entryPoint: MetaData.EntryPoint?) -> String {
-        let colorScheme = ShopifyCheckoutKit.configuration.colorScheme
-        let platform = mapPlatform(ShopifyCheckoutKit.configuration.platform)
+     static func recoveryAgent(entryPoint: MetaData.EntryPoint?) -> String {
+         let colorScheme = ShopifyCheckoutKit.configuration.colorScheme
+         let platform = mapPlatform(ShopifyCheckoutKit.configuration.platform)
 
-        return UserAgent.string(
-            type: .recovery,
-            colorScheme: colorScheme,
-            platform: platform,
-            entryPoint: entryPoint
-        )
-    }
+         return UserAgent.string(
+             type: .recovery,
+             colorScheme: colorScheme,
+             platform: platform,
+             entryPoint: entryPoint
+         )
+     }
+     */
 
     private static func mapPlatform(_ platform: Platform?) -> MetaData.Platform? {
         guard let platform else { return nil }

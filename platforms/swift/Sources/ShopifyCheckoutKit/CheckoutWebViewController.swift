@@ -184,38 +184,41 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         onCancel?()
     }
 
-    package func presentFallbackViewController(url: URL) {
-        progressObserver?.invalidate()
-        checkoutView.removeFromSuperview()
+    package func presentFallbackViewController(url _: URL) {
+        // Recovery mode disabled — not supported under UCP.
+        /*
+         progressObserver?.invalidate()
+         checkoutView.removeFromSuperview()
 
-        checkoutView = CheckoutWebView.for(checkout: url, recovery: true)
-        checkoutView.translatesAutoresizingMaskIntoConstraints = false
-        checkoutView.scrollView.contentInsetAdjustmentBehavior = .never
-        checkoutView.viewDelegate = self
-        checkoutView.alpha = 1
+         checkoutView = CheckoutWebView.for(checkout: url, recovery: true)
+         checkoutView.translatesAutoresizingMaskIntoConstraints = false
+         checkoutView.scrollView.contentInsetAdjustmentBehavior = .never
+         checkoutView.viewDelegate = self
+         checkoutView.alpha = 1
 
-        view.addSubview(checkoutView)
-        NSLayoutConstraint.activate([
-            checkoutView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            checkoutView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            checkoutView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            checkoutView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+         view.addSubview(checkoutView)
+         NSLayoutConstraint.activate([
+             checkoutView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+             checkoutView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+             checkoutView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+             checkoutView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+         ])
 
-        view.addSubview(progressBar)
-        progressBar.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            progressBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            progressBar.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            progressBar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            progressBar.heightAnchor.constraint(equalToConstant: 1)
-        ])
-        view.bringSubviewToFront(checkoutView)
-        view.bringSubviewToFront(progressBar)
+         view.addSubview(progressBar)
+         progressBar.translatesAutoresizingMaskIntoConstraints = false
+         NSLayoutConstraint.activate([
+             progressBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+             progressBar.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+             progressBar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+             progressBar.heightAnchor.constraint(equalToConstant: 1)
+         ])
+         view.bringSubviewToFront(checkoutView)
+         view.bringSubviewToFront(progressBar)
 
-        observeProgressChanges(checkoutView)
-        checkoutView.load(checkout: url)
-        progressBar.startAnimating()
+         observeProgressChanges(checkoutView)
+         checkoutView.load(checkout: url)
+         progressBar.startAnimating()
+         */
     }
 }
 
@@ -235,16 +238,19 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
         CheckoutWebView.invalidate()
         onFail?(error)
 
-        if shouldAttemptRecovery(for: error) {
-            presentFallbackViewController(url: checkoutURL)
-        } else {
-            dismiss(animated: true)
-        }
+        // Recovery mode disabled — not supported under UCP.
+        // if shouldAttemptRecovery(for: error) {
+        //     presentFallbackViewController(url: checkoutURL)
+        // } else {
+        dismiss(animated: true)
+        // }
     }
 
-    func shouldAttemptRecovery(for error: CheckoutError) -> Bool {
-        let isWithinRetryLimit = checkoutViewDidFailWithErrorCount < 2
-        return isRecoverableError() && isWithinRetryLimit && error.isRecoverable
+    func shouldAttemptRecovery(for _: CheckoutError) -> Bool {
+        // Recovery mode disabled — not supported under UCP.
+        return false
+        // let isWithinRetryLimit = checkoutViewDidFailWithErrorCount < 2
+        // return isRecoverableError() && isWithinRetryLimit && error.isRecoverable
     }
 
     func checkoutViewDidClickLink(url: URL) {
@@ -253,7 +259,8 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
         }
     }
 
-    private func isRecoverableError() -> Bool {
-        return !CheckoutURL(from: checkoutURL).isMultipassURL()
-    }
+    // Recovery mode disabled — not supported under UCP.
+    // private func isRecoverableError() -> Bool {
+    //     return !CheckoutURL(from: checkoutURL).isMultipassURL()
+    // }
 }

@@ -81,7 +81,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertTrue(failCalled)
     }
 
-    func test_checkoutViewDidFailWithError_attemptsRecoveryWhenRecoverable() {
+    func test_checkoutViewDidFailWithError_attemptsRecoveryWhenRecoverable() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
 
         viewController.checkoutViewDidFailWithError(error: recoverableError)
@@ -92,7 +93,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertFalse(viewController.dismissCalled)
     }
 
-    func test_checkoutViewDidFailWithError_doesNotAttemptRecoveryWhenCountReachesTwo() {
+    func test_checkoutViewDidFailWithError_doesNotAttemptRecoveryWhenCountReachesTwo() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
 
         viewController.checkoutViewDidFailWithError(error: recoverableError)
@@ -107,7 +109,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertTrue(viewController.dismissAnimated)
     }
 
-    func test_checkoutViewDidFailWithError_doesNotAttemptRecoveryWhenErrorIsNotRecoverable() {
+    func test_checkoutViewDidFailWithError_doesNotAttemptRecoveryWhenErrorIsNotRecoverable() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
 
         viewController.checkoutViewDidFailWithError(error: nonRecoverableError)
@@ -118,7 +121,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertFalse(viewController.presentFallbackViewControllerCalled)
     }
 
-    func test_checkoutViewDidFailWithError_doesNotAttemptRecoveryForMultipassURL() {
+    func test_checkoutViewDidFailWithError_doesNotAttemptRecoveryForMultipassURL() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         let viewController = TestableCheckoutWebViewController(checkoutURL: multipassURL, entryPoint: nil)
 
         viewController.checkoutViewDidFailWithError(error: recoverableError)
@@ -129,7 +133,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertFalse(viewController.presentFallbackViewControllerCalled)
     }
 
-    func test_checkoutViewDidFailWithError_attemptsRecoveryForFirstFailureThenDismisses() {
+    func test_checkoutViewDidFailWithError_attemptsRecoveryForFirstFailureThenDismisses() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
 
         viewController.checkoutViewDidFailWithError(error: recoverableError)
@@ -146,7 +151,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertTrue(viewController.dismissAnimated)
     }
 
-    func test_checkoutViewDidFailWithError_respectsErrorRecoverableProperty() {
+    func test_checkoutViewDidFailWithError_respectsErrorRecoverableProperty() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         struct TestCase {
             let name: String
             let error: CheckoutError

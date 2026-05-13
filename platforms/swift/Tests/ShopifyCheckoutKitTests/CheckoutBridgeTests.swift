@@ -32,9 +32,10 @@ class CheckoutBridgeTests: XCTestCase {
         XCTAssertEqual(CheckoutBridge.applicationName, "ShopifyCheckoutKit/\(version) (\(schemaVersion);automatic;standard)")
     }
 
-    func testReturnsRecoveryUserAgent() {
-        let version = ShopifyCheckoutKit.version
-        XCTAssertEqual(CheckoutBridge.recoveryAgent, "ShopifyCheckoutKit/\(version) (noconnect;automatic;standard_recovery)")
+    func testReturnsRecoveryUserAgent() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
+        // let version = ShopifyCheckoutKit.version
+        // XCTAssertEqual(CheckoutBridge.recoveryAgent, "ShopifyCheckoutKit/\(version) (noconnect;automatic;standard_recovery)")
     }
 
     func testReturnsUserAgentWithCustomPlatformSuffix() {
@@ -42,7 +43,8 @@ class CheckoutBridgeTests: XCTestCase {
         let schemaVersion = MetaData.schemaVersion
         ShopifyCheckoutKit.configuration.platform = Platform.reactNative
         XCTAssertEqual(CheckoutBridge.applicationName, "ShopifyCheckoutKit/\(version) (\(schemaVersion);automatic;standard) ReactNative")
-        XCTAssertEqual(CheckoutBridge.recoveryAgent, "ShopifyCheckoutKit/\(version) (noconnect;automatic;standard_recovery) ReactNative")
+        // Recovery mode disabled — not supported under UCP.
+        // XCTAssertEqual(CheckoutBridge.recoveryAgent, "ShopifyCheckoutKit/\(version) (noconnect;automatic;standard_recovery) ReactNative")
         ShopifyCheckoutKit.configuration.platform = nil
     }
 
@@ -50,10 +52,11 @@ class CheckoutBridgeTests: XCTestCase {
         let version = ShopifyCheckoutKit.version
         let schemaVersion = MetaData.schemaVersion
         let applicationNameWithEntryPoint = CheckoutBridge.applicationName(entryPoint: .acceleratedCheckouts)
-        let recoveryAgentWithEntryPoint = CheckoutBridge.recoveryAgent(entryPoint: .acceleratedCheckouts)
+        // Recovery mode disabled — not supported under UCP.
+        // let recoveryAgentWithEntryPoint = CheckoutBridge.recoveryAgent(entryPoint: .acceleratedCheckouts)
 
         XCTAssertEqual(applicationNameWithEntryPoint, "ShopifyCheckoutKit/\(version) (\(schemaVersion);automatic;standard) AcceleratedCheckouts")
-        XCTAssertEqual(recoveryAgentWithEntryPoint, "ShopifyCheckoutKit/\(version) (noconnect;automatic;standard_recovery) AcceleratedCheckouts")
+        // XCTAssertEqual(recoveryAgentWithEntryPoint, "ShopifyCheckoutKit/\(version) (noconnect;automatic;standard_recovery) AcceleratedCheckouts")
     }
 
     func testReturnsUserAgentWithEntryPointAndPlatform() {
@@ -62,10 +65,11 @@ class CheckoutBridgeTests: XCTestCase {
         ShopifyCheckoutKit.configuration.platform = Platform.reactNative
 
         let applicationNameWithEntryPoint = CheckoutBridge.applicationName(entryPoint: .acceleratedCheckouts)
-        let recoveryAgentWithEntryPoint = CheckoutBridge.recoveryAgent(entryPoint: .acceleratedCheckouts)
+        // Recovery mode disabled — not supported under UCP.
+        // let recoveryAgentWithEntryPoint = CheckoutBridge.recoveryAgent(entryPoint: .acceleratedCheckouts)
 
         XCTAssertEqual(applicationNameWithEntryPoint, "ShopifyCheckoutKit/\(version) (\(schemaVersion);automatic;standard) ReactNative AcceleratedCheckouts")
-        XCTAssertEqual(recoveryAgentWithEntryPoint, "ShopifyCheckoutKit/\(version) (noconnect;automatic;standard_recovery) ReactNative AcceleratedCheckouts")
+        // XCTAssertEqual(recoveryAgentWithEntryPoint, "ShopifyCheckoutKit/\(version) (noconnect;automatic;standard_recovery) ReactNative AcceleratedCheckouts")
 
         ShopifyCheckoutKit.configuration.platform = nil
     }

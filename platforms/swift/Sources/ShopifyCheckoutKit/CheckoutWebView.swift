@@ -63,10 +63,11 @@ class CheckoutWebView: WKWebView {
     static func `for`(checkout url: URL, recovery: Bool = false, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
         OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString), recovery: \(recovery)")
 
-        if recovery {
-            CheckoutWebView.invalidate()
-            return CheckoutWebView(recovery: true, entryPoint: entryPoint)
-        }
+        // Recovery mode disabled — not supported under UCP.
+        // if recovery {
+        //     CheckoutWebView.invalidate()
+        //     return CheckoutWebView(recovery: true, entryPoint: entryPoint)
+        // }
 
         let cacheKey = "\(url.absoluteString)_\(entryPoint?.rawValue ?? "nil")"
 
@@ -134,14 +135,15 @@ class CheckoutWebView: WKWebView {
         configuration.allowsInlineMediaPlayback = true
         self.entryPoint = entryPoint
 
-        if recovery {
-            configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
-            configuration.applicationNameForUserAgent = CheckoutBridge.recoveryAgent(entryPoint: entryPoint)
-        } else {
-            configuration.applicationNameForUserAgent = CheckoutBridge.applicationName(entryPoint: entryPoint)
-        }
+        // Recovery mode disabled — not supported under UCP.
+        // if recovery {
+        //     configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
+        //     configuration.applicationNameForUserAgent = CheckoutBridge.recoveryAgent(entryPoint: entryPoint)
+        // } else {
+        configuration.applicationNameForUserAgent = CheckoutBridge.applicationName(entryPoint: entryPoint)
+        // }
 
-        isRecovery = recovery
+        // isRecovery = recovery
         super.init(frame: frame, configuration: configuration)
 
         #if DEBUG
@@ -156,21 +158,23 @@ class CheckoutWebView: WKWebView {
 
         setBackgroundColor()
 
-        if recovery {
-            observeNavigationChanges()
-        } else {
-            connectBridge()
-        }
+        // Recovery mode disabled — not supported under UCP.
+        // if recovery {
+        //     observeNavigationChanges()
+        // } else {
+        connectBridge()
+        // }
     }
 
     deinit {
         OSLogger.shared.debug("De-allocating webview")
 
-        if isRecovery {
-            navigationObserver?.invalidate()
-        } else {
-            detachBridge()
-        }
+        // Recovery mode disabled — not supported under UCP.
+        // if isRecovery {
+        //     navigationObserver?.invalidate()
+        // } else {
+        detachBridge()
+        // }
     }
 
     @available(*, unavailable)

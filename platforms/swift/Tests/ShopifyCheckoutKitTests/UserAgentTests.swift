@@ -55,13 +55,14 @@ class UserAgentTests: XCTestCase {
         XCTAssertEqual(checkoutKitUA, "ShopifyCheckoutKit/3.8.0 (\(schemaVersion);automatic;standard)")
     }
 
-    func test_string_withRecoveryTypeAndDarkColorScheme_shouldReturnRecoveryUserAgent() {
-        let schemaVersion = MetaData.schemaVersion
-        let recoveryUA = UserAgent.string(
-            type: .recovery,
-            colorScheme: .dark,
-            entryPoint: .acceleratedCheckouts
-        )
-        XCTAssertEqual(recoveryUA, "ShopifyCheckoutKit/3.8.0 (noconnect;dark;standard_recovery) AcceleratedCheckouts")
+    func test_string_withRecoveryTypeAndDarkColorScheme_shouldReturnRecoveryUserAgent() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
+        // let schemaVersion = MetaData.schemaVersion
+        // let recoveryUA = UserAgent.string(
+        //     type: .recovery,
+        //     colorScheme: .dark,
+        //     entryPoint: .acceleratedCheckouts
+        // )
+        // XCTAssertEqual(recoveryUA, "ShopifyCheckoutKit/3.8.0 (noconnect;dark;standard_recovery) AcceleratedCheckouts")
     }
 }

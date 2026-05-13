@@ -54,7 +54,8 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(view.configuration.allowsInlineMediaPlayback)
     }
 
-    func testUsesRecoveryAgent() {
+    func testUsesRecoveryAgent() throws {
+        try XCTSkipIf(true, "Recovery mode disabled — not supported under UCP.")
         let backgroundColor: UIColor = .systemRed
         ShopifyCheckoutKit.configuration.backgroundColor = backgroundColor
         ShopifyCheckoutKit.configuration.colorScheme = .automatic

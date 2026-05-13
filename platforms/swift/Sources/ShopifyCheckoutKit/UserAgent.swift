@@ -38,7 +38,8 @@ public enum UserAgent {
 
     package enum CheckoutType {
         case standard
-        case recovery
+        // Recovery mode disabled — not supported under UCP.
+        // case recovery
     }
 
     private static let baseUserAgent = "ShopifyCheckoutKit/\(MetaData.version)"
@@ -54,8 +55,9 @@ public enum UserAgent {
         switch type {
         case .standard:
             parameters = "\(MetaData.schemaVersion);\(colorScheme.rawValue);standard"
-        case .recovery:
-            parameters = "noconnect;\(colorScheme.rawValue);standard_recovery"
+        // Recovery mode disabled — not supported under UCP.
+        // case .recovery:
+        //     parameters = "noconnect;\(colorScheme.rawValue);standard_recovery"
         }
 
         var userAgentString = "\(baseUserAgent) (\(parameters))"
