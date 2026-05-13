@@ -54,10 +54,10 @@ internal class EmbeddedCheckoutProtocol(
     @JavascriptInterface
     fun postMessage(message: String) {
         try {
-            log.d(LOG_TAG, "Received ECP message.")
             val request = decoder.decodeFromString<EcpRequest>(message)
+            log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
             when {
-                request.method == METHOD_READY -> handleReady(request, message)
+                request.method == METHOD_READY -> handleReady(request)
                 // Respond with explicit "not supported" so web-side promises don't hang
                 request.method in UNSUPPORTED_METHODS ->
                     sendError(request.id, CODE_METHOD_NOT_SUPPORTED, "Method not supported by this SDK")
@@ -66,19 +66,17 @@ internal class EmbeddedCheckoutProtocol(
                     log.d(LOG_TAG, "Ignoring out-of-scope ep method: ${request.method}.")
                 request.method == METHOD_WINDOW_OPEN_REQUEST -> handleWindowOpenRequest(request)
                 request.method == METHOD_START -> handleStart(message)
-                else -> handleClientMessage(message)
+                else -> handleClientMessage(request.method, message)
             }
         } catch (e: Exception) {
-            log.d(LOG_TAG, "Failed to decode ECP message: $e")
+            log.d(LOG_TAG, "Failed to decode ECP message: $e  raw=$message")
             sendError(null, CODE_PARSE_ERROR, "Parse error")
         }
     }
 
-    private fun handleReady(request: EcpRequest, rawMessage: String) {
+    private fun handleReady(request: EcpRequest) {
         log.d(LOG_TAG, "Handling $METHOD_READY, sending ACK.")
         sendResult(request.id, UCP_SUCCESS)
-        // Also notify the typed client so handlers registered on CheckoutProtocol.ready fire.
-        onMainThread { client?.process(rawMessage) }
     }
 
     private fun handleStart(message: String) {
@@ -90,8 +88,8 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     private fun handleWindowOpenRequest(request: EcpRequest) {
-        log.d(LOG_TAG, "Handling $METHOD_WINDOW_OPEN_REQUEST.")
         val urlString = request.params?.jsonObject?.get("url")?.jsonPrimitive?.contentOrNull
+        log.d(LOG_TAG, "Handling $METHOD_WINDOW_OPEN_REQUEST: url=$urlString")
         if (urlString == null) {
             sendError(request.id, CODE_INVALID_PARAMS, "Missing url parameter")
             return
@@ -124,9 +122,13 @@ internal class EmbeddedCheckoutProtocol(
         return handled
     }
 
-    private fun handleClientMessage(message: String) {
-        log.d(LOG_TAG, "Delegating ECP message to client.")
-        onMainThread { client?.process(message)?.let { sendRaw(it) } }
+    private fun handleClientMessage(method: String, message: String) {
+        log.d(LOG_TAG, "Delegating $method to client.")
+        onMainThread {
+            val response = client?.process(message)
+            log.d(LOG_TAG, "  client response: $response")
+            response?.let { sendRaw(it) }
+        }
     }
 
     private fun sendResult(id: JsonElement?, result: String) {
@@ -138,6 +140,7 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     private fun sendRaw(responseJson: String) {
+        log.d(LOG_TAG, "Sending bridge response: $responseJson")
         val escaped = responseJson
             .replace("\\", "\\\\")
             .replace("'", "\\'")
@@ -145,7 +148,7 @@ internal class EmbeddedCheckoutProtocol(
             .replace("\r", "\\r")
         val script = """
             |if (window.$ECP_RESPONSE_GLOBAL && window.$ECP_RESPONSE_GLOBAL.postMessage) {
-            |    window.$ECP_RESPONSE_GLOBAL.postMessage('$escaped');
+            |    window.$ECP_RESPONSE_GLOBAL.postMessage(JSON.parse('$escaped'));
             |}
         """.trimMargin()
         onMainThread {
@@ -154,7 +157,7 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     companion object {
-        private const val LOG_TAG = "EmbeddedCheckoutProtocol"
+        private val LOG_TAG = BaseWebView.ECP_LOG_TAG
 
         /** Name under which this handler is registered as a JS interface on the WebView. */
         internal const val INTERFACE_NAME = "EmbeddedCheckoutProtocolConsumer"

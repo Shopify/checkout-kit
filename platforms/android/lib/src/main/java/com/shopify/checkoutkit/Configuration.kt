@@ -60,6 +60,11 @@ public interface ErrorRecovery {
     }
 }
 
-public enum class Platform(public val displayName: String) {
-    REACT_NATIVE("ReactNative")
+public sealed class Platform(
+    public val identifier: String,
+    public val version: String? = null,
+) {
+    public class ReactNative @JvmOverloads constructor(
+        version: String? = null
+    ) : Platform("ReactNative", version)
 }

@@ -35,6 +35,7 @@ import com.shopify.checkout_kit_mobile_buy_integration_sample.common.SnackbarEve
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.navigation.Screen
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.PreferencesManager
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.authentication.data.CustomerRepository
+import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.DefaultCheckoutEventProcessor
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -112,7 +113,15 @@ class CartViewModel(
         eventProcessor: T
     ) {
         Timber.i("Presenting checkout with $url")
-        ShopifyCheckoutKit.present(url, activity, eventProcessor)
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.start) { Timber.i("ECP ec.start: $it") }
+            .on(CheckoutProtocol.complete) { Timber.i("ECP ec.complete: $it") }
+            .on(CheckoutProtocol.error) { Timber.i("ECP ec.error: $it") }
+            .on(CheckoutProtocol.buyerChange) { Timber.i("ECP ec.buyer.change: $it") }
+            .on(CheckoutProtocol.totalsChange) { Timber.i("ECP ec.totals.change: $it") }
+            .on(CheckoutProtocol.lineItemsChange) { Timber.i("ECP ec.line_items.change: $it") }
+            .on(CheckoutProtocol.messagesChange) { Timber.i("ECP ec.messages.change: $it") }
+        ShopifyCheckoutKit.present(url, activity, eventProcessor, client)
     }
 
     fun preloadCheckout(

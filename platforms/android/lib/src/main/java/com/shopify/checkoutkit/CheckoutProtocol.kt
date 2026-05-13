@@ -24,6 +24,7 @@ package com.shopify.checkoutkit
 
 import android.net.Uri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -47,7 +48,7 @@ import kotlinx.serialization.json.jsonObject
  */
 public object CheckoutProtocol {
 
-    public const val specVersion: String = "2026-01-11"
+    public const val specVersion: String = "2026-04-08"
 
     // Notifications — checkout carries the full current state
     public val start: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.start")
@@ -55,17 +56,18 @@ public object CheckoutProtocol {
     public val messagesChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.messages.change")
     public val lineItemsChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.line_items.change")
     public val buyerChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.buyer.change")
-    public val paymentChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.payment.change")
-
-    /** Fires on the initial handshake; payload carries the delegations the page has requested. */
-    public val ready: NotificationDescriptor<ReadyPayload> = NotificationDescriptor(
-        method = "ec.ready",
+    public val totalsChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.totals.change")
+    public val error: NotificationDescriptor<CheckoutError> = NotificationDescriptor(
+        method = "ec.error",
         decode = { params ->
-            val delegate = params?.jsonObject?.get("delegate")
-            val delegations = delegate?.let {
-                try { json.decodeFromJsonElement<List<String>>(it) } catch (_: Exception) { emptyList() }
-            } ?: emptyList()
-            ReadyPayload(delegations)
+            params?.jsonObject?.get("messages")?.let {
+                try {
+                    json.decodeFromJsonElement<List<CheckoutError>>(it).firstOrNull()
+                } catch (e: Exception) {
+                    log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ec.error messages: $e  raw=$it")
+                    null
+                }
+            }
         }
     )
 
@@ -74,7 +76,12 @@ public object CheckoutProtocol {
             method = method,
             decode = { params ->
                 params?.jsonObject?.get("checkout")?.let {
-                    try { json.decodeFromJsonElement<Checkout>(it) } catch (_: Exception) { null }
+                    try {
+                        json.decodeFromJsonElement<Checkout>(it)
+                    } catch (e: Exception) {
+                        log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode $method checkout payload: $e  raw=$it")
+                        null
+                    }
                 }
             }
         )
@@ -88,7 +95,7 @@ public object CheckoutProtocol {
      * making it safe to share a base configuration across multiple presents.
      */
     public class Client private constructor(
-        private val handlers: Map<String, HandlerEntry>,
+        private val handlers: Map<String, Handler>,
         private val urlHandler: ((Uri) -> Boolean)?,
     ) : CheckoutCommunicationClient {
 
@@ -106,7 +113,7 @@ public object CheckoutProtocol {
             handler: (P) -> Unit,
         ): Client {
             @Suppress("UNCHECKED_CAST")
-            val entry = HandlerEntry(
+            val entry = Handler(
                 decode = descriptor.decode,
                 invoke = { payload -> (payload as? P)?.let { handler(it) } },
             )
@@ -127,10 +134,13 @@ public object CheckoutProtocol {
         override fun process(message: String): String? {
             try {
                 val request = json.decodeFromString<EcpRequest>(message)
-                handlers[request.method]?.let { entry ->
-                    entry.decode(request.params)?.let { payload ->
-                        onMainThread { entry.invoke(payload) }
-                    }
+                val handler = handlers[request.method]
+                if (handler == null) {
+                    log.d(LOG_TAG, "No handler registered for method=${request.method}")
+                } else {
+                    val payload = handler.decode(request.params)
+                    log.d(LOG_TAG, "Decoded payload for method=${request.method}: ${payload ?: "null, skipping"}")
+                    payload?.let { onMainThread { handler.invoke(it) } }
                 }
             } catch (e: Exception) {
                 log.d(LOG_TAG, "Error processing ECP message in typed client: $e")
@@ -142,11 +152,11 @@ public object CheckoutProtocol {
         override fun openExternalUrl(url: Uri): Boolean = urlHandler?.invoke(url) ?: false
 
         private companion object {
-            private const val LOG_TAG = "CheckoutProtocol.Client"
+            private const val LOG_TAG = BaseWebView.ECP_LOG_TAG
         }
     }
 
-    private class HandlerEntry(
+    private class Handler(
         val decode: (JsonElement?) -> Any?,
         val invoke: (Any) -> Unit,
     )
@@ -157,10 +167,15 @@ public object CheckoutProtocol {
  *
  * Create instances via [CheckoutProtocol] static properties; do not instantiate directly.
  */
-public class NotificationDescriptor<P : Any> @PublishedApi internal constructor(
+public class NotificationDescriptor<P : Any> internal constructor(
     public val method: String,
     internal val decode: (JsonElement?) -> P?,
 )
 
-/** Payload delivered with the [CheckoutProtocol.ready] notification. */
-public data class ReadyPayload(public val delegations: List<String>)
+/** Payload delivered with the [CheckoutProtocol.error] notification. */
+@Serializable
+public data class CheckoutError internal constructor(
+    public val code: String? = null,
+    public val content: String? = null,
+    public val severity: String? = null,
+)
