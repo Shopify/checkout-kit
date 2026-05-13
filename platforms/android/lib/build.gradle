@@ -15,6 +15,7 @@ def versionName = "4.0.0-alpha.1"
 
 ext {
     app_compat_version = '1.7.1'
+    kotlin_stdlib_version = '2.0.21'
     kotlin_serialization_version = '1.6.3'
 
     androidx_test_version = '1.7.0'
@@ -89,10 +90,13 @@ android {
 tasks.withType(KotlinJvmCompile).configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_1_8)
-        // Pin language/API version so bytecode stays consumable by Kotlin 1.9.20+ consumers
-        // even when the compiler later moves to 2.x.
-        apiVersion.set(KotlinVersion.KOTLIN_1_9)
-        languageVersion.set(KotlinVersion.KOTLIN_1_9)
+        // Pin language/API version so bytecode stays consumable by Kotlin 2.0+ consumers
+        // even though the compiler is on a newer 2.x. Kotlin 1.9 is deprecated by the 2.x
+        // compiler, so 2.0 is the lowest pin we can hold without taking deprecation warnings;
+        // keeping the compiler ahead of the pin leaves room to bump kotlinc without re-breaking
+        // consumers.
+        apiVersion.set(KotlinVersion.KOTLIN_2_0)
+        languageVersion.set(KotlinVersion.KOTLIN_2_0)
         if (!name.contains("Test")) {
             freeCompilerArgs.add("-Xexplicit-api=strict")
         }
@@ -115,6 +119,10 @@ dependencies {
 
     androidTestImplementation "androidx.test:core-ktx:$androidx_test_version"
     androidTestImplementation "androidx.test.ext:junit-ktx:$androidx_junit_ext_version"
+
+    // Keep the published stdlib dependency aligned with the Kotlin API/language
+    // consumer floor, not the newer compiler used to build the AAR.
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_stdlib_version"
 
     //Implementation
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlin_serialization_version"
