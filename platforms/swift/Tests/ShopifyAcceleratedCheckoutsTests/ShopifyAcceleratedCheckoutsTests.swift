@@ -4,6 +4,7 @@ import os.log
 import XCTest
 
 @available(iOS 17.0, *)
+@MainActor
 class ShopifyAcceleratedCheckoutsTests: XCTestCase {
     var originalLogLevel: LogLevel!
 

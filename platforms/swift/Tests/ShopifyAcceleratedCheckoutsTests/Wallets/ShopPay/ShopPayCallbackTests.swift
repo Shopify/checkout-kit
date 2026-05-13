@@ -15,8 +15,8 @@ final class ShopPayCallbackTests: XCTestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         mockConfiguration = ShopifyAcceleratedCheckouts.Configuration(
             storefrontDomain: "test-shop.myshopify.com",
@@ -31,13 +31,13 @@ final class ShopPayCallbackTests: XCTestCase {
         )
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         viewController = nil
         mockConfiguration = nil
         mockIdentifier = nil
         errorExpectation = nil
         cancelExpectation = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Error Callback Tests

@@ -6,8 +6,8 @@ class CheckoutViewControllerTests: XCTestCase {
     var checkoutURL: URL!
     var checkoutViewController: CheckoutViewController!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         checkoutURL = URL(string: "https://www.shopify.com")
         checkoutViewController = CheckoutViewController(checkout: checkoutURL)
     }
@@ -22,8 +22,8 @@ class ShopifyCheckoutTests: XCTestCase {
     var checkoutURL: URL!
     var shopifyCheckout: ShopifyCheckout!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         checkoutURL = URL(string: "https://www.shopify.com")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
@@ -65,8 +65,8 @@ class CheckoutConfigurableTests: XCTestCase {
     var checkoutURL: URL!
     var shopifyCheckout: ShopifyCheckout!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         checkoutURL = URL(string: "https://www.shopify.com")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
