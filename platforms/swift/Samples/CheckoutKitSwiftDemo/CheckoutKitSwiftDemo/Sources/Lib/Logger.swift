@@ -1,10 +1,10 @@
 import Foundation
 import ShopifyCheckoutKit
 
-class FileLogger: Logger {
-    private var fileHandle: FileHandle?
+final class FileLogger: Logger {
+    private let fileHandle: FileHandle?
 
-    var logFileUrl: URL
+    let logFileUrl: URL
 
     public init(_ filename: String) {
         let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
@@ -18,6 +18,7 @@ class FileLogger: Logger {
         do {
             fileHandle = try FileHandle(forWritingTo: logFileUrl)
         } catch let error as NSError {
+            fileHandle = nil
             print("Couldn't open the log file. Error: \(error)")
         }
     }

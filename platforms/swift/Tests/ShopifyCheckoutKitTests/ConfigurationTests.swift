@@ -5,7 +5,15 @@ import XCTest
 class ConfigurationTests: XCTestCase {
     override func setUp() {
         super.setUp()
-        // Reset configuration to defaults
+        resetConfigurationState()
+    }
+
+    override func tearDown() {
+        resetConfigurationState()
+        super.tearDown()
+    }
+
+    private func resetConfigurationState() {
         ShopifyCheckoutKit.configuration = Configuration()
     }
 
@@ -26,5 +34,28 @@ class ConfigurationTests: XCTestCase {
 
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
         XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+    }
+
+    func testColorSchemeCanBeSetDirectly() {
+        ShopifyCheckoutKit.configuration.colorScheme = .light
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .light)
+    }
+
+    func testConfigureCanBatchConfigurationChanges() {
+        ShopifyCheckoutKit.configure {
+            $0.colorScheme = .dark
+            $0.closeButtonTintColor = .blue
+        }
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .dark)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, .blue)
+    }
+
+    func testDirectConfigurationMutationUpdatesLogger() {
+        ShopifyCheckoutKit.configuration.logLevel = .all
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, .all)
+        XCTAssertEqual(OSLogger.shared.logLevel, .all)
     }
 }
