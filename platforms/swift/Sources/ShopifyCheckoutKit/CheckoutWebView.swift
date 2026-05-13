@@ -27,6 +27,7 @@
 import UIKit
 import WebKit
 
+@MainActor
 protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidStartNavigation()
     func checkoutViewDidFinishNavigation()
@@ -34,6 +35,7 @@ protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidFailWithError(error: CheckoutError)
 }
 
+@MainActor
 class CheckoutWebView: WKWebView {
     private static var cache: CacheEntry?
     var timer: Date?
@@ -166,10 +168,12 @@ class CheckoutWebView: WKWebView {
     deinit {
         OSLogger.shared.debug("De-allocating webview")
 
-        if isRecovery {
-            navigationObserver?.invalidate()
-        } else {
-            detachBridge()
+        MainActor.assumeIsolated {
+            if isRecovery {
+                navigationObserver?.invalidate()
+            } else {
+                detachBridge()
+            }
         }
     }
 
@@ -243,7 +247,7 @@ class CheckoutWebView: WKWebView {
     }
 }
 
-extension CheckoutWebView: WKScriptMessageHandler {
+extension CheckoutWebView: @preconcurrency WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? String else {
             return
@@ -258,7 +262,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        Task {
+        Task { @MainActor in
             if let response = await client.process(body) {
                 checkoutBridge.sendResponse(self, messageBody: response)
             }
@@ -266,7 +270,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
     }
 }
 
-extension CheckoutWebView: WKNavigationDelegate {
+extension CheckoutWebView: @preconcurrency WKNavigationDelegate {
     func webView(_: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else {
             decisionHandler(.allow)

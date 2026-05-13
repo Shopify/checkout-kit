@@ -27,6 +27,7 @@
 import SwiftUI
 import UIKit
 
+@MainActor
 public class CheckoutViewController: UINavigationController {
     public init(checkout url: URL, client: (any CheckoutCommunicationProtocol)? = nil) {
         let rootViewController = CheckoutWebViewController(checkoutURL: url, client: client, entryPoint: nil)
@@ -108,34 +109,39 @@ public struct CheckoutSheet: UIViewControllerRepresentable, CheckoutConfigurable
 }
 
 public protocol CheckoutConfigurable {
-    func backgroundColor(_ color: UIColor) -> Self
-    func colorScheme(_ colorScheme: ShopifyCheckoutKit.Configuration.ColorScheme) -> Self
-    func tintColor(_ color: UIColor) -> Self
-    func title(_ title: String) -> Self
-    func closeButtonTintColor(_ color: UIColor?) -> Self
+    @MainActor func backgroundColor(_ color: UIColor) -> Self
+    @MainActor func colorScheme(_ colorScheme: ShopifyCheckoutKit.Configuration.ColorScheme) -> Self
+    @MainActor func tintColor(_ color: UIColor) -> Self
+    @MainActor func title(_ title: String) -> Self
+    @MainActor func closeButtonTintColor(_ color: UIColor?) -> Self
 }
 
 extension CheckoutConfigurable {
+    @MainActor
     @discardableResult public func backgroundColor(_ color: UIColor) -> Self {
         ShopifyCheckoutKit.configuration.backgroundColor = color
         return self
     }
 
+    @MainActor
     @discardableResult public func colorScheme(_ colorScheme: ShopifyCheckoutKit.Configuration.ColorScheme) -> Self {
         ShopifyCheckoutKit.configuration.colorScheme = colorScheme
         return self
     }
 
+    @MainActor
     @discardableResult public func tintColor(_ color: UIColor) -> Self {
         ShopifyCheckoutKit.configuration.tintColor = color
         return self
     }
 
+    @MainActor
     @discardableResult public func title(_ title: String) -> Self {
         ShopifyCheckoutKit.configuration.title = title
         return self
     }
 
+    @MainActor
     @discardableResult public func closeButtonTintColor(_ color: UIColor?) -> Self {
         ShopifyCheckoutKit.configuration.closeButtonTintColor = color
         return self

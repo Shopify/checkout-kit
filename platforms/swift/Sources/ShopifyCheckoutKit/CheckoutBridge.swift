@@ -28,6 +28,7 @@ enum BridgeError: Swift.Error {
     case unencodableInstrumentation(Swift.Error? = nil)
 }
 
+@MainActor
 protocol CheckoutBridgeProtocol {
     static func instrument(_ webView: WKWebView, _ instrumentation: InstrumentationPayload)
     static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?)
@@ -95,25 +96,23 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
     }
 
     static func sendResponse(_ webView: WKWebView, messageBody: String) {
-        DispatchQueue.main.async {
-            let script = """
-            (function() {
-                try {
-                    if (window.EmbeddedCheckoutProtocol && typeof window.EmbeddedCheckoutProtocol.postMessage === 'function') {
-                        window.EmbeddedCheckoutProtocol.postMessage(\(messageBody));
-                    } else if (window && window.console && window.console.error) {
-                        window.console.error('EmbeddedCheckoutProtocol.postMessage is not available.');
-                    }
-                } catch (error) {
-                    if (window && window.console && window.console.error) {
-                        window.console.error('Failed to post message to checkout', error);
-                    }
+        let script = """
+        (function() {
+            try {
+                if (window.EmbeddedCheckoutProtocol && typeof window.EmbeddedCheckoutProtocol.postMessage === 'function') {
+                    window.EmbeddedCheckoutProtocol.postMessage(\(messageBody));
+                } else if (window && window.console && window.console.error) {
+                    window.console.error('EmbeddedCheckoutProtocol.postMessage is not available.');
                 }
-            })();
-            """
+            } catch (error) {
+                if (window && window.console && window.console.error) {
+                    window.console.error('Failed to post message to checkout', error);
+                }
+            }
+        })();
+        """
 
-            webView.evaluateJavaScript(script)
-        }
+        webView.evaluateJavaScript(script)
     }
 
     static func dispatchMessageTemplate(body: String) -> String {

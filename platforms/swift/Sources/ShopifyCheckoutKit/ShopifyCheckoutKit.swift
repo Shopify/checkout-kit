@@ -29,9 +29,10 @@ import UIKit
 /// The version of the `ShopifyCheckoutKit` library.
 public let version = "3.8.0"
 
-var invalidateOnConfigurationChange = true
+@MainActor var invalidateOnConfigurationChange = true
 
 /// The configuration options for the `ShopifyCheckoutKit` library.
+@MainActor
 public var configuration = Configuration() {
     didSet {
         if invalidateOnConfigurationChange {
@@ -42,11 +43,13 @@ public var configuration = Configuration() {
 }
 
 /// A convienence function for configuring the `ShopifyCheckoutKit` library.
+@MainActor
 public func configure(_ block: (inout Configuration) -> Void) {
     block(&configuration)
 }
 
 /// Preloads the checkout for faster presentation.
+@MainActor
 public func preload(checkout url: URL) {
     guard configuration.preloading.enabled else {
         return
@@ -58,10 +61,12 @@ public func preload(checkout url: URL) {
 }
 
 /// Invalidate the checkout cache from preload calls
+@MainActor
 public func invalidate() {
     CheckoutWebView.invalidate(disconnect: true)
 }
 
+@MainActor
 @discardableResult
 public func present(checkout url: URL, from: UIViewController, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
     let decorated = CheckoutProtocol.url(for: url, colorScheme: configuration.colorScheme.rawValue)
@@ -70,6 +75,7 @@ public func present(checkout url: URL, from: UIViewController, client: (any Chec
     return viewController
 }
 
+@MainActor
 @discardableResult
 package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
     let decorated = CheckoutProtocol.url(for: url, colorScheme: configuration.colorScheme.rawValue)
