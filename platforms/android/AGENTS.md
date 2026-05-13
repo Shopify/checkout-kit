@@ -34,15 +34,15 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 - Tests use **Robolectric** (`@RunWith(RobolectricTestRunner::class)`) to exercise Android framework code without a device.
 - Main-thread tasks are drained with `shadowOf(Looper.getMainLooper()).runToEndOfTasks()`. If a test involves posted work and seems flaky, check whether this is being called.
-- Assertion library is **AssertJ**; mocking is **Mockito** + **Mockito-Kotlin**. Don't introduce new assertion/mocking libraries without discussion.
-- Mockito is pinned at **4.x** intentionally — Mockito 5.x requires JVM target 11, and the library is on 1.8. Noted in `lib/build.gradle` with `// noinspection NewerVersionAvailable` comments.
+- Assertion library is **AssertJ**; mocking is **Mockito** + **Mockito-Kotlin**. Mockito is on 5.x because the library targets JVM 11. Don't introduce new assertion/mocking libraries without discussion.
 - Tests live in the same package as the class under test (file name: `ClassNameTest.kt`).
 
 ## Conventions
 
 - **`-Xexplicit-api=strict`** is on (`lib/build.gradle`). Every public class, method, field, and property must have an explicit visibility modifier. "Accidentally public" is not a thing here. This is a consumer-protection rule — if you see a public-by-default declaration, it was deliberate.
 - **Max line length: 140** (detekt-enforced). Detekt config: `lib/detekt.config.yml`.
-- **Library JVM target: 1.8.** Intentional for consumer compatibility; don't raise without a major-version discussion.
+- **MIT license header required on every new source file.** Format: copy the top comment of any existing `.kt` or `.java` file in `lib/src/main` or `lib/src/test`. Enforced in CI via the repo-root `scripts/check_license_headers.rb`.
+- **Library JVM target: 11.** Consumers must build with JDK 11+ to consume the AAR. Raising further is a major-version discussion.
 - **Library Kotlin `apiVersion` / `languageVersion` are pinned at 2.0.** Set in `lib/build.gradle` so the AAR's bytecode stays consumable by Kotlin 2.0+ projects even though the compiler itself is on a newer 2.x. Bumping this pin is the consumer-facing breaking change, not bumping the compiler - treat it as a planned major-version event.
 - **Prefer generated protocol models.** Before adding hand-written protocol DTOs, check the generated models in `lib/src/main/java/com/shopify/checkoutkit/Models.kt` and the OpenRPC schema. Use generated UCP/ECP types for wire payloads; reserve local DTOs for Android-internal transport helpers that are not represented in the schema.
 
