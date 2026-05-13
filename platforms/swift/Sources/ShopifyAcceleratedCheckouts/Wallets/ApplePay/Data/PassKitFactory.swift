@@ -24,7 +24,7 @@
 import PassKit
 
 @available(iOS 16.0, *)
-class PassKitFactory {
+final class PassKitFactory: Sendable {
     static let shared = PassKitFactory()
 
     private struct DeliveryOptionWithGroupType {

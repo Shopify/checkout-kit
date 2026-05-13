@@ -21,11 +21,11 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import PassKit
+@preconcurrency import PassKit
 import ShopifyCheckoutKit
 
 @available(iOS 16.0, *)
-extension ApplePayAuthorizationDelegate: PKPaymentAuthorizationControllerDelegate {
+extension ApplePayAuthorizationDelegate: @preconcurrency PKPaymentAuthorizationControllerDelegate {
     /// Triggers on payment sheet presentation, and if user changes shipping address
     ///
     /// Only triggered if the PKPaymentRequest has `requiredShippingContactFields` set
