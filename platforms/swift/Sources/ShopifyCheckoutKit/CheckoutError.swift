@@ -1,6 +1,6 @@
 import Foundation
 
-public enum CheckoutErrorCode: String, Codable {
+public enum CheckoutErrorCode: String, Codable, Sendable {
     case storefrontPasswordRequired = "storefront_password_required"
     case cartExpired = "cart_expired"
     case cartCompleted = "cart_completed"
@@ -18,7 +18,7 @@ public enum CheckoutErrorCode: String, Codable {
     }
 }
 
-public enum CheckoutUnavailable {
+public enum CheckoutUnavailable: Sendable {
     case clientError(code: CheckoutErrorCode)
     case httpError(statusCode: Int)
 }

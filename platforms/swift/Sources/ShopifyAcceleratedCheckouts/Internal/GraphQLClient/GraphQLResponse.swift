@@ -1,5 +1,5 @@
 /// GraphQL response structure
-struct GraphQLResponse<T: Decodable>: Decodable {
+struct GraphQLResponse<T: Decodable & Sendable>: Decodable {
     let data: T?
     let errors: [GraphQLResponseError]?
     let extensions: [String: AnyCodable]?
