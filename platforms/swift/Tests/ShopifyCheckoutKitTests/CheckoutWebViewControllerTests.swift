@@ -2,6 +2,7 @@
 import WebKit
 import XCTest
 
+@MainActor
 class TestableCheckoutWebViewController: CheckoutWebViewController {
     var dismissCalled = false
     var dismissAnimated: Bool = false
@@ -13,6 +14,7 @@ class TestableCheckoutWebViewController: CheckoutWebViewController {
     }
 }
 
+@MainActor
 class CheckoutWebViewControllerTests: XCTestCase {
     private let url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
 

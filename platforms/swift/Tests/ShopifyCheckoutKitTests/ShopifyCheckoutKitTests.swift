@@ -1,6 +1,7 @@
 @testable import ShopifyCheckoutKit
 import XCTest
 
+@MainActor
 class ShopifyCheckoutKitTests: XCTestCase {
     func test_version_whenAccessed_shouldExist() {
         XCTAssertFalse(ShopifyCheckoutKit.version.isEmpty)

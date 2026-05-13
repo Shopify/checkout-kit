@@ -1,5 +1,6 @@
 import UIKit
 
+@MainActor
 class ProgressBarView: UIView {
     lazy var progressBar: UIProgressView = {
         let progressBar = UIProgressView(progressViewStyle: .bar)

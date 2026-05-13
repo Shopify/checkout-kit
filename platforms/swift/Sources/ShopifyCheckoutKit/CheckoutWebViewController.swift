@@ -1,6 +1,7 @@
 import UIKit
 import WebKit
 
+@MainActor
 class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControllerDelegate {
     var onCancel: (() -> Void)?
     var onFail: ((CheckoutError) -> Void)?

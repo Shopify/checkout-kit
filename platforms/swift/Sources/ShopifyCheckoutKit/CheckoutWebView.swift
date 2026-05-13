@@ -4,18 +4,21 @@
 import UIKit
 import WebKit
 
+@MainActor
 protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidStartNavigation()
     func checkoutViewDidFinishNavigation()
     func checkoutViewDidFailWithError(error: CheckoutError)
 }
 
+@MainActor
 class CheckoutWebView: WKWebView {
     var timer: Date?
 
     var checkoutBridge: CheckoutBridgeProtocol.Type = CheckoutBridge.self
 
     var isBridgeAttached = false
+    private var bridgeRegistration: ScriptMessageHandlerRegistration?
 
     var client: (any CheckoutCommunicationProtocol)?
 
@@ -94,7 +97,6 @@ class CheckoutWebView: WKWebView {
 
     deinit {
         OSLogger.shared.debug("De-allocating webview")
-        detachBridge()
     }
 
     @available(*, unavailable)
@@ -104,16 +106,20 @@ class CheckoutWebView: WKWebView {
 
     private func connectBridge() {
         OSLogger.shared.debug("Bridging communication to checkout")
-        configuration.userContentController
-            .add(MessageHandler(delegate: self), name: CheckoutBridge.messageHandler)
-
+        bridgeRegistration = ScriptMessageHandlerRegistration(
+            userContentController: configuration.userContentController,
+            name: CheckoutBridge.messageHandler,
+            handler: MessageHandler(delegate: self)
+        )
         isBridgeAttached = true
     }
 
     public func detachBridge() {
+        guard isBridgeAttached else { return }
+
         OSLogger.shared.debug("Detaching bridge")
-        configuration.userContentController
-            .removeScriptMessageHandler(forName: CheckoutBridge.messageHandler)
+        bridgeRegistration?.detach()
+        bridgeRegistration = nil
         isBridgeAttached = false
     }
 
@@ -132,6 +138,43 @@ class CheckoutWebView: WKWebView {
     }
 }
 
+/// Holds a WebKit script-message registration outside CheckoutWebView deinit.
+///
+/// Swift 6.0 does not support isolated deinit, so this token captures the
+/// WebKit registration while on the main actor and schedules fallback teardown
+/// back onto the main actor from deinit. Replace this with an isolated deinit
+/// on CheckoutWebView once Swift 6.2+ is the minimum supported compiler.
+private final class ScriptMessageHandlerRegistration {
+    private let userContentController: WKUserContentController
+    private let name: String
+    private var isAttached = true
+
+    @MainActor
+    init(userContentController: WKUserContentController, name: String, handler: WKScriptMessageHandler) {
+        self.userContentController = userContentController
+        self.name = name
+        userContentController.add(handler, name: name)
+    }
+
+    @MainActor
+    func detach() {
+        guard isAttached else { return }
+
+        userContentController.removeScriptMessageHandler(forName: name)
+        isAttached = false
+    }
+
+    deinit {
+        guard isAttached else { return }
+
+        let userContentController = userContentController
+        let name = name
+        Task { @MainActor in
+            userContentController.removeScriptMessageHandler(forName: name)
+        }
+    }
+}
+
 extension CheckoutWebView: WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? String else {
@@ -139,13 +182,13 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         if let response = CheckoutProtocol.acknowledgeReady(body) {
-            Task {
+            Task { @MainActor in
                 await checkoutBridge.sendResponse(self, messageBody: response)
             }
             return
         }
 
-        Task {
+        Task { @MainActor in
             let composedClient = ComposedCheckoutCommunicationClient(
                 merchant: client,
                 defaults: defaultClientBindings

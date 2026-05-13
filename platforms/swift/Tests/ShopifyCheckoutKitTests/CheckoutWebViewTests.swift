@@ -3,12 +3,14 @@ import ShopifyCheckoutProtocol
 import WebKit
 import XCTest
 
+@MainActor
 class CheckoutWebViewTests: XCTestCase {
     private var view: CheckoutWebView!
     private var mockDelegate: MockCheckoutWebViewDelegate!
     private var url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
 
-    override func setUp() {
+    override func setUp() async throws {
+        try await super.setUp()
         view = CheckoutWebView.for(checkout: url)
         mockDelegate = MockCheckoutWebViewDelegate()
         view.viewDelegate = mockDelegate
@@ -16,14 +18,23 @@ class CheckoutWebViewTests: XCTestCase {
         MockCheckoutBridge.reset()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         view.viewDelegate = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testCorrectlyConfiguresWebview() {
         XCTAssertEqual(view.configuration.applicationNameForUserAgent, CheckoutBridge.applicationName)
         XCTAssertTrue(view.configuration.allowsInlineMediaPlayback)
+    }
+
+    func testDetachBridgeIsIdempotent() {
+        XCTAssertTrue(view.isBridgeAttached)
+
+        view.detachBridge()
+        view.detachBridge()
+
+        XCTAssertFalse(view.isBridgeAttached)
     }
 
     func testHTTPSLinkIsAllowed() throws {
@@ -503,6 +514,7 @@ class CheckoutWebViewTests: XCTestCase {
     }
 }
 
+@MainActor
 class MockCheckoutBridge: CheckoutBridgeProtocol {
     static var sendResponseCalled = false
     static var sendResponseCount = 0

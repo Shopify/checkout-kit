@@ -4,6 +4,7 @@
 import SwiftUI
 import UIKit
 
+@MainActor
 public class CheckoutViewController: UINavigationController {
     public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) {
         let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: nil)
@@ -80,6 +81,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     }
 }
 
+@MainActor
 public protocol CheckoutConfigurable {
     func backgroundColor(_ color: UIColor) -> Self
     func colorScheme(_ colorScheme: ShopifyCheckoutKit.Configuration.ColorScheme) -> Self
