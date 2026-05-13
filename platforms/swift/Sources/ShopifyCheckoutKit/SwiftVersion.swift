@@ -25,7 +25,23 @@ import Foundation
 
 package enum SwiftVersion {
     package static let current: String? = {
-        #if swift(>=6.2)
+        #if swift(>=7.0)
+            return "7.0"
+        #elseif swift(>=6.9)
+            return "6.9"
+        #elseif swift(>=6.8)
+            return "6.8"
+        #elseif swift(>=6.7)
+            return "6.7"
+        #elseif swift(>=6.6)
+            return "6.6"
+        #elseif swift(>=6.5)
+            return "6.5"
+        #elseif swift(>=6.4)
+            return "6.4"
+        #elseif swift(>=6.3)
+            return "6.3"
+        #elseif swift(>=6.2)
             return "6.2"
         #elseif swift(>=6.1)
             return "6.1"
