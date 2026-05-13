@@ -29,7 +29,7 @@ enum GraphQLError: LocalizedError {
 }
 
 /// Helper type for encoding/decoding Any values
-struct AnyCodable: Codable {
+struct AnyCodable: Codable, @unchecked Sendable {
     let value: Any
 
     init(_ value: Any) {

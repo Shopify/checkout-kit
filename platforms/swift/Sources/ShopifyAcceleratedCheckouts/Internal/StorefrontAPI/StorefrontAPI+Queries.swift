@@ -22,11 +22,12 @@ extension StorefrontAPI {
     /// Get shop information
     /// - Returns: Shop details
     func shop() async throws -> Shop {
-        try await QueryCache.shared.load(
+        let client = client
+        return try await QueryCache.shared.load(
             cacheKey: "shop",
             url: client.url,
             query: {
-                let response = try await self.client.query(Operations.getShop())
+                let response = try await client.query(Operations.getShop())
                 guard let shop = response.data?.shop else {
                     throw StorefrontAPI.Errors.payload(propertyName: "shop")
                 }
@@ -41,16 +42,16 @@ extension StorefrontAPI {
 actor QueryCache {
     static let shared = QueryCache()
 
-    private var cache: [String: Any] = [:]
-    private var inflightRequests: [String: Any] = [:]
+    private var cache: [String: any Sendable] = [:]
+    private var inflightRequests: [String: any Sendable] = [:]
 
     private init() {}
 
     /// Loads data with deduplication - multiple simultaneous calls will share the same request
-    func load<T>(
+    func load<T: Sendable>(
         cacheKey: String,
         url: URL,
-        query: @escaping () async throws -> T
+        query: @Sendable @escaping () async throws -> T
     ) async throws -> T {
         let key = buildCacheKey(queryKey: cacheKey, url: url)
 
@@ -80,7 +81,7 @@ actor QueryCache {
         }
     }
 
-    private func cache(_ result: some Any, for key: String) {
+    private func cache(_ result: some Sendable, for key: String) {
         cache[key] = result
     }
 

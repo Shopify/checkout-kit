@@ -36,57 +36,30 @@ extension ShopifyAcceleratedCheckouts {
         package required init(copy: Configuration) {
             storefrontDomain = copy.storefrontDomain
             storefrontAccessToken = copy.storefrontAccessToken
-            customer = copy.customer?.copy()
+            customer = copy.customer
         }
     }
 
-    public class Customer: ObservableObject, Copyable {
+    public struct Customer: Sendable, Equatable {
         /// The email to attribute an order to on `buyerIdentity`
-        @Published public var email: String?
+        public let email: String?
 
         /// The phoneNumber to attribute an order to on `buyerIdentity`
-        @Published public var phoneNumber: String?
+        public let phoneNumber: String?
 
         /// The customer access token to attribute an order to on `buyerIdentity`
-        @Published public var customerAccessToken: String?
+        public let customerAccessToken: String?
 
-        /// Creates a customer for authenticated Shopify users.
-        ///
-        /// Use this initializer when you have a customer access token from Shopify authentication.
-        /// The customer's email and phone will be fetched from their Shopify account.
-        ///
-        /// - Parameter customerAccessToken: The access token from Shopify customer authentication
-        public init(customerAccessToken: String) {
-            self.customerAccessToken = customerAccessToken
-            email = nil
-            phoneNumber = nil
-        }
-
-        /// Creates a customer for guest checkout or explicit contact override.
-        ///
-        /// Use this initializer when you want to pre-fill customer contact information
-        /// without Shopify authentication.
+        /// Creates customer identity data to attach to checkout buyer identity.
         ///
         /// - Parameters:
-        ///   - email: The customer's email address
-        ///   - phoneNumber: The customer's phone number
-        public init(email: String?, phoneNumber: String?) {
-            self.email = email
-            self.phoneNumber = phoneNumber
-            customerAccessToken = nil
-        }
-
-        @available(*, deprecated, message: "Use init(customerAccessToken:) for customer accounts or init(email:phoneNumber:) for other users.")
-        public init(email: String?, phoneNumber: String?, customerAccessToken: String? = nil) {
+        ///   - email: The customer's email address.
+        ///   - phoneNumber: The customer's phone number.
+        ///   - customerAccessToken: The access token from Shopify customer authentication.
+        public init(email: String? = nil, phoneNumber: String? = nil, customerAccessToken: String? = nil) {
             self.email = email
             self.phoneNumber = phoneNumber
             self.customerAccessToken = customerAccessToken
-        }
-
-        package required init(copy: Customer) {
-            email = copy.email
-            phoneNumber = copy.phoneNumber
-            customerAccessToken = copy.customerAccessToken
         }
     }
 }

@@ -494,15 +494,15 @@
                         "kind": "TypeNominal",
                         "name": "Customer",
                         "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                        "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
+                        "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
                       }
                     ],
                     "usr": "s:Sq"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerCSgvp",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerCSgvp",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerVSgvp",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerVSgvp",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "declAttributes": [
                   "ProjectedValueProperty",
@@ -523,15 +523,15 @@
                             "kind": "TypeNominal",
                             "name": "Customer",
                             "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                            "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
+                            "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
                           }
                         ],
                         "usr": "s:Sq"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerCSgvg",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerCSgvg",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerVSgvg",
+                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerVSgvg",
                     "moduleName": "ShopifyAcceleratedCheckouts",
                     "implicit": true,
                     "accessorKind": "get"
@@ -555,15 +555,15 @@
                             "kind": "TypeNominal",
                             "name": "Customer",
                             "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                            "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
+                            "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
                           }
                         ],
                         "usr": "s:Sq"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerCSgvs",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerCSgvs",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerVSgvs",
+                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC8customerAB8CustomerVSgvs",
                     "moduleName": "ShopifyAcceleratedCheckouts",
                     "implicit": true,
                     "intro_Macosx": "10.15",
@@ -593,8 +593,8 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerCSg_Gvp",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerCSg_Gvp",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerVSg_Gvp",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerVSg_Gvp",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "implicit": true,
                 "accessors": [
@@ -611,8 +611,8 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerCSg_Gvg",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerCSg_Gvg",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerVSg_Gvg",
+                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerVSg_Gvg",
                     "moduleName": "ShopifyAcceleratedCheckouts",
                     "implicit": true,
                     "accessorKind": "get"
@@ -635,8 +635,8 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerCSg_Gvs",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerCSg_Gvs",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerVSg_Gvs",
+                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC9$customer7Combine9PublishedV9PublisherVyAB8CustomerVSg_Gvs",
                     "moduleName": "ShopifyAcceleratedCheckouts",
                     "implicit": true,
                     "intro_Macosx": "11.0",
@@ -685,7 +685,7 @@
                         "kind": "TypeNominal",
                         "name": "Customer",
                         "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                        "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
+                        "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
                       }
                     ],
                     "hasDefaultArg": true,
@@ -693,8 +693,8 @@
                   }
                 ],
                 "declKind": "Constructor",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC16storefrontDomain0E11AccessToken8customerADSS_SSAB8CustomerCSgtcfc",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC16storefrontDomain0E11AccessToken8customerADSS_SSAB8CustomerCSgtcfc",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationC16storefrontDomain0E11AccessToken8customerADSS_SSAB8CustomerVSgtcfc",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO13ConfigurationC16storefrontDomain0E11AccessToken8customerADSS_SSAB8CustomerVSgtcfc",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "init_kind": "Designated"
               },
@@ -820,13 +820,14 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC5emailSSSgvp",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC5emailSSSgvp",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV5emailSSSgvp",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV5emailSSSgvp",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "declAttributes": [
-                  "ProjectedValueProperty",
-                  "Custom"
+                  "HasStorage"
                 ],
+                "isLet": true,
+                "hasStorage": true,
                 "accessors": [
                   {
                     "kind": "Accessor",
@@ -849,126 +850,14 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC5emailSSSgvg",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC5emailSSSgvg",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV5emailSSSgvg",
+                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV5emailSSSgvg",
                     "moduleName": "ShopifyAcceleratedCheckouts",
                     "implicit": true,
-                    "accessorKind": "get"
-                  },
-                  {
-                    "kind": "Accessor",
-                    "name": "Set",
-                    "printedName": "Set()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Void",
-                        "printedName": "()"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Optional",
-                        "printedName": "Swift.String?",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "String",
-                            "printedName": "Swift.String",
-                            "usr": "s:SS"
-                          }
-                        ],
-                        "usr": "s:Sq"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC5emailSSSgvs",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC5emailSSSgvs",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
-                    "intro_Macosx": "10.15",
-                    "intro_iOS": "16.0",
-                    "intro_tvOS": "13.0",
-                    "intro_watchOS": "6.0",
                     "declAttributes": [
-                      "Available",
-                      "Available",
-                      "Available",
-                      "Available"
+                      "Transparent"
                     ],
-                    "accessorKind": "set"
-                  }
-                ]
-              },
-              {
-                "kind": "Var",
-                "name": "$email",
-                "printedName": "$email",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Publisher",
-                    "printedName": "Combine.Published<Swift.String?>.Publisher",
-                    "usr": "s:7Combine9PublishedV9PublisherV"
-                  }
-                ],
-                "declKind": "Var",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC6$email7Combine9PublishedV9PublisherVySSSg_Gvp",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC6$email7Combine9PublishedV9PublisherVySSSg_Gvp",
-                "moduleName": "ShopifyAcceleratedCheckouts",
-                "implicit": true,
-                "accessors": [
-                  {
-                    "kind": "Accessor",
-                    "name": "Get",
-                    "printedName": "Get()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Publisher",
-                        "printedName": "Combine.Published<Swift.String?>.Publisher",
-                        "usr": "s:7Combine9PublishedV9PublisherV"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC6$email7Combine9PublishedV9PublisherVySSSg_Gvg",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC6$email7Combine9PublishedV9PublisherVySSSg_Gvg",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
                     "accessorKind": "get"
-                  },
-                  {
-                    "kind": "Accessor",
-                    "name": "Set",
-                    "printedName": "Set()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Void",
-                        "printedName": "()"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Publisher",
-                        "printedName": "Combine.Published<Swift.String?>.Publisher",
-                        "usr": "s:7Combine9PublishedV9PublisherV"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC6$email7Combine9PublishedV9PublisherVySSSg_Gvs",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC6$email7Combine9PublishedV9PublisherVySSSg_Gvs",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
-                    "intro_Macosx": "11.0",
-                    "intro_iOS": "16.0",
-                    "intro_tvOS": "14.0",
-                    "intro_watchOS": "7.0",
-                    "declAttributes": [
-                      "Available",
-                      "Available",
-                      "Available",
-                      "Available"
-                    ],
-                    "accessorKind": "set"
                   }
                 ]
               },
@@ -993,13 +882,14 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC11phoneNumberSSSgvp",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC11phoneNumberSSSgvp",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV11phoneNumberSSSgvp",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV11phoneNumberSSSgvp",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "declAttributes": [
-                  "ProjectedValueProperty",
-                  "Custom"
+                  "HasStorage"
                 ],
+                "isLet": true,
+                "hasStorage": true,
                 "accessors": [
                   {
                     "kind": "Accessor",
@@ -1022,126 +912,14 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC11phoneNumberSSSgvg",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC11phoneNumberSSSgvg",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV11phoneNumberSSSgvg",
+                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV11phoneNumberSSSgvg",
                     "moduleName": "ShopifyAcceleratedCheckouts",
                     "implicit": true,
-                    "accessorKind": "get"
-                  },
-                  {
-                    "kind": "Accessor",
-                    "name": "Set",
-                    "printedName": "Set()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Void",
-                        "printedName": "()"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Optional",
-                        "printedName": "Swift.String?",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "String",
-                            "printedName": "Swift.String",
-                            "usr": "s:SS"
-                          }
-                        ],
-                        "usr": "s:Sq"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC11phoneNumberSSSgvs",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC11phoneNumberSSSgvs",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
-                    "intro_Macosx": "10.15",
-                    "intro_iOS": "16.0",
-                    "intro_tvOS": "13.0",
-                    "intro_watchOS": "6.0",
                     "declAttributes": [
-                      "Available",
-                      "Available",
-                      "Available",
-                      "Available"
+                      "Transparent"
                     ],
-                    "accessorKind": "set"
-                  }
-                ]
-              },
-              {
-                "kind": "Var",
-                "name": "$phoneNumber",
-                "printedName": "$phoneNumber",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Publisher",
-                    "printedName": "Combine.Published<Swift.String?>.Publisher",
-                    "usr": "s:7Combine9PublishedV9PublisherV"
-                  }
-                ],
-                "declKind": "Var",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC12$phoneNumber7Combine9PublishedV9PublisherVySSSg_Gvp",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC12$phoneNumber7Combine9PublishedV9PublisherVySSSg_Gvp",
-                "moduleName": "ShopifyAcceleratedCheckouts",
-                "implicit": true,
-                "accessors": [
-                  {
-                    "kind": "Accessor",
-                    "name": "Get",
-                    "printedName": "Get()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Publisher",
-                        "printedName": "Combine.Published<Swift.String?>.Publisher",
-                        "usr": "s:7Combine9PublishedV9PublisherV"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC12$phoneNumber7Combine9PublishedV9PublisherVySSSg_Gvg",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC12$phoneNumber7Combine9PublishedV9PublisherVySSSg_Gvg",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
                     "accessorKind": "get"
-                  },
-                  {
-                    "kind": "Accessor",
-                    "name": "Set",
-                    "printedName": "Set()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Void",
-                        "printedName": "()"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Publisher",
-                        "printedName": "Combine.Published<Swift.String?>.Publisher",
-                        "usr": "s:7Combine9PublishedV9PublisherV"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC12$phoneNumber7Combine9PublishedV9PublisherVySSSg_Gvs",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC12$phoneNumber7Combine9PublishedV9PublisherVySSSg_Gvs",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
-                    "intro_Macosx": "11.0",
-                    "intro_iOS": "16.0",
-                    "intro_tvOS": "14.0",
-                    "intro_watchOS": "7.0",
-                    "declAttributes": [
-                      "Available",
-                      "Available",
-                      "Available",
-                      "Available"
-                    ],
-                    "accessorKind": "set"
                   }
                 ]
               },
@@ -1166,13 +944,14 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC19customerAccessTokenSSSgvp",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC19customerAccessTokenSSSgvp",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV19customerAccessTokenSSSgvp",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV19customerAccessTokenSSSgvp",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "declAttributes": [
-                  "ProjectedValueProperty",
-                  "Custom"
+                  "HasStorage"
                 ],
+                "isLet": true,
+                "hasStorage": true,
                 "accessors": [
                   {
                     "kind": "Accessor",
@@ -1195,198 +974,16 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC19customerAccessTokenSSSgvg",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC19customerAccessTokenSSSgvg",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV19customerAccessTokenSSSgvg",
+                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV19customerAccessTokenSSSgvg",
                     "moduleName": "ShopifyAcceleratedCheckouts",
                     "implicit": true,
-                    "accessorKind": "get"
-                  },
-                  {
-                    "kind": "Accessor",
-                    "name": "Set",
-                    "printedName": "Set()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Void",
-                        "printedName": "()"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Optional",
-                        "printedName": "Swift.String?",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "String",
-                            "printedName": "Swift.String",
-                            "usr": "s:SS"
-                          }
-                        ],
-                        "usr": "s:Sq"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC19customerAccessTokenSSSgvs",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC19customerAccessTokenSSSgvs",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
-                    "intro_Macosx": "10.15",
-                    "intro_iOS": "16.0",
-                    "intro_tvOS": "13.0",
-                    "intro_watchOS": "6.0",
                     "declAttributes": [
-                      "Available",
-                      "Available",
-                      "Available",
-                      "Available"
+                      "Transparent"
                     ],
-                    "accessorKind": "set"
+                    "accessorKind": "get"
                   }
                 ]
-              },
-              {
-                "kind": "Var",
-                "name": "$customerAccessToken",
-                "printedName": "$customerAccessToken",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Publisher",
-                    "printedName": "Combine.Published<Swift.String?>.Publisher",
-                    "usr": "s:7Combine9PublishedV9PublisherV"
-                  }
-                ],
-                "declKind": "Var",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC20$customerAccessToken7Combine9PublishedV9PublisherVySSSg_Gvp",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC20$customerAccessToken7Combine9PublishedV9PublisherVySSSg_Gvp",
-                "moduleName": "ShopifyAcceleratedCheckouts",
-                "implicit": true,
-                "accessors": [
-                  {
-                    "kind": "Accessor",
-                    "name": "Get",
-                    "printedName": "Get()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Publisher",
-                        "printedName": "Combine.Published<Swift.String?>.Publisher",
-                        "usr": "s:7Combine9PublishedV9PublisherV"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC20$customerAccessToken7Combine9PublishedV9PublisherVySSSg_Gvg",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC20$customerAccessToken7Combine9PublishedV9PublisherVySSSg_Gvg",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
-                    "accessorKind": "get"
-                  },
-                  {
-                    "kind": "Accessor",
-                    "name": "Set",
-                    "printedName": "Set()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Void",
-                        "printedName": "()"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Publisher",
-                        "printedName": "Combine.Published<Swift.String?>.Publisher",
-                        "usr": "s:7Combine9PublishedV9PublisherV"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC20$customerAccessToken7Combine9PublishedV9PublisherVySSSg_Gvs",
-                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC20$customerAccessToken7Combine9PublishedV9PublisherVySSSg_Gvs",
-                    "moduleName": "ShopifyAcceleratedCheckouts",
-                    "implicit": true,
-                    "intro_Macosx": "11.0",
-                    "intro_iOS": "16.0",
-                    "intro_tvOS": "14.0",
-                    "intro_watchOS": "7.0",
-                    "declAttributes": [
-                      "Available",
-                      "Available",
-                      "Available",
-                      "Available"
-                    ],
-                    "accessorKind": "set"
-                  }
-                ]
-              },
-              {
-                "kind": "Constructor",
-                "name": "init",
-                "printedName": "init(customerAccessToken:)",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Customer",
-                    "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Constructor",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC19customerAccessTokenADSS_tcfc",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC19customerAccessTokenADSS_tcfc",
-                "moduleName": "ShopifyAcceleratedCheckouts",
-                "init_kind": "Designated"
-              },
-              {
-                "kind": "Constructor",
-                "name": "init",
-                "printedName": "init(email:phoneNumber:)",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Customer",
-                    "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Swift.String?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Swift.String?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  }
-                ],
-                "declKind": "Constructor",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC5email11phoneNumberADSSSg_AGtcfc",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC5email11phoneNumberADSSSg_AGtcfc",
-                "moduleName": "ShopifyAcceleratedCheckouts",
-                "init_kind": "Designated"
               },
               {
                 "kind": "Constructor",
@@ -1397,7 +994,7 @@
                     "kind": "TypeNominal",
                     "name": "Customer",
                     "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
                   },
                   {
                     "kind": "TypeNominal",
@@ -1411,6 +1008,7 @@
                         "usr": "s:SS"
                       }
                     ],
+                    "hasDefaultArg": true,
                     "usr": "s:Sq"
                   },
                   {
@@ -1425,6 +1023,7 @@
                         "usr": "s:SS"
                       }
                     ],
+                    "hasDefaultArg": true,
                     "usr": "s:Sq"
                   },
                   {
@@ -1444,94 +1043,73 @@
                   }
                 ],
                 "declKind": "Constructor",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC5email11phoneNumber19customerAccessTokenADSSSg_A2Htcfc",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC5email11phoneNumber19customerAccessTokenADSSSg_A2Htcfc",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV5email11phoneNumber19customerAccessTokenADSSSg_A2Htcfc",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV5email11phoneNumber19customerAccessTokenADSSSg_A2Htcfc",
                 "moduleName": "ShopifyAcceleratedCheckouts",
-                "deprecated": true,
-                "declAttributes": [
-                  "Available"
-                ],
                 "init_kind": "Designated"
               },
               {
-                "kind": "Constructor",
-                "name": "init",
-                "printedName": "init(copy:)",
+                "kind": "Function",
+                "name": "__derived_struct_equals",
+                "printedName": "__derived_struct_equals(_:_:)",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "Customer",
-                    "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
                   },
                   {
                     "kind": "TypeNominal",
                     "name": "Customer",
                     "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
-                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC"
-                  }
-                ],
-                "declKind": "Constructor",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC4copyA2D_tcfc",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC4copyA2D_tcfc",
-                "moduleName": "ShopifyAcceleratedCheckouts",
-                "isInternal": true,
-                "declAttributes": [
-                  "Required"
-                ],
-                "init_kind": "Designated"
-              },
-              {
-                "kind": "TypeAlias",
-                "name": "ObjectWillChangePublisher",
-                "printedName": "ObjectWillChangePublisher",
-                "children": [
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
+                  },
                   {
                     "kind": "TypeNominal",
-                    "name": "ObservableObjectPublisher",
-                    "printedName": "Combine.ObservableObjectPublisher",
-                    "usr": "s:7Combine25ObservableObjectPublisherC"
+                    "name": "Customer",
+                    "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
                   }
                 ],
-                "declKind": "TypeAlias",
-                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC25ObjectWillChangePublishera",
-                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC25ObjectWillChangePublishera",
+                "declKind": "Func",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV23__derived_struct_equalsySbAD_ADtFZ",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV23__derived_struct_equalsySbAD_ADtFZ",
                 "moduleName": "ShopifyAcceleratedCheckouts",
+                "static": true,
                 "implicit": true,
-                "intro_iOS": "16.0",
                 "declAttributes": [
-                  "Available"
-                ]
+                  "Implements"
+                ],
+                "funcSelfKind": "NonMutating"
               }
             ],
-            "declKind": "Class",
-            "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerC",
-            "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerC",
+            "declKind": "Struct",
+            "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV",
+            "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "isFromExtension": true,
-            "hasMissingDesignatedInitializers": true,
             "conformances": [
               {
                 "kind": "Conformance",
-                "name": "ObservableObject",
-                "printedName": "ObservableObject",
-                "children": [
-                  {
-                    "kind": "TypeWitness",
-                    "name": "ObjectWillChangePublisher",
-                    "printedName": "ObjectWillChangePublisher",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "ObservableObjectPublisher",
-                        "printedName": "Combine.ObservableObjectPublisher",
-                        "usr": "s:7Combine25ObservableObjectPublisherC"
-                      }
-                    ]
-                  }
-                ],
-                "usr": "s:7Combine16ObservableObjectP",
-                "mangledName": "$s7Combine16ObservableObjectP"
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
               },
               {
                 "kind": "Conformance",

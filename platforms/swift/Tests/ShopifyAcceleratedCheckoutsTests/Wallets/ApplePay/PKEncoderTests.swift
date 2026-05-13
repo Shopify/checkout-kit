@@ -96,7 +96,7 @@ class PKEncoderTests: XCTestCase {
 
     func test_email_withoutContactEmailButWithCustomerEmail_shouldReturnCustomerEmail() {
         let configWithCustomer = ApplePayConfigurationWrapper.testConfiguration.copy()
-        configWithCustomer.common.customer?.email = "customer@example.com"
+        configWithCustomer.common.customer = ShopifyAcceleratedCheckouts.Customer(email: "customer@example.com")
 
         let encoderWithCustomer = PKEncoder(configuration: configWithCustomer, cart: cart)
 
@@ -110,7 +110,7 @@ class PKEncoderTests: XCTestCase {
 
     func test_email_withEmptyContactEmail_shouldFallbackToCustomerEmail() {
         let configWithCustomer = ApplePayConfigurationWrapper.testConfiguration.copy()
-        configWithCustomer.common.customer?.email = "customer@example.com"
+        configWithCustomer.common.customer = ShopifyAcceleratedCheckouts.Customer(email: "customer@example.com")
 
         let encoderWithCustomer = PKEncoder(configuration: configWithCustomer, cart: cart)
 
@@ -164,8 +164,7 @@ class PKEncoderTests: XCTestCase {
 
     func test_phone_withoutContactPhoneButWithCustomerPhone_shouldReturnCustomerPhone() {
         let configWithCustomer = ApplePayConfigurationWrapper.testConfiguration.copy()
-        configWithCustomer.common.customer?.email = nil
-        configWithCustomer.common.customer?.phoneNumber = "+0987654321"
+        configWithCustomer.common.customer = ShopifyAcceleratedCheckouts.Customer(phoneNumber: "+0987654321")
 
         let encoderWithCustomer = PKEncoder(configuration: configWithCustomer, cart: cart)
 
@@ -179,8 +178,7 @@ class PKEncoderTests: XCTestCase {
 
     func test_phone_withEmptyContactPhone_shouldFallbackToCustomerPhone() {
         let configWithCustomer = ApplePayConfigurationWrapper.testConfiguration.copy()
-        configWithCustomer.common.customer?.email = nil
-        configWithCustomer.common.customer?.phoneNumber = "+0987654321"
+        configWithCustomer.common.customer = ShopifyAcceleratedCheckouts.Customer(phoneNumber: "+0987654321")
 
         let encoderWithCustomer = PKEncoder(configuration: configWithCustomer, cart: cart)
 
@@ -217,8 +215,7 @@ class PKEncoderTests: XCTestCase {
 
     func test_email_configCustomerTakesPrecedenceOverContact() {
         let configWithCustomer = ApplePayConfigurationWrapper.testConfiguration.copy()
-        configWithCustomer.common.customer?.email = "customer@example.com"
-        configWithCustomer.common.customer?.phoneNumber = nil
+        configWithCustomer.common.customer = ShopifyAcceleratedCheckouts.Customer(email: "customer@example.com")
 
         let encoderWithCustomer = PKEncoder(configuration: configWithCustomer, cart: cart)
 
@@ -237,8 +234,7 @@ class PKEncoderTests: XCTestCase {
 
     func test_phone_configCustomerTakesPrecedenceOverContact() {
         let configWithCustomer = ApplePayConfigurationWrapper.testConfiguration.copy()
-        configWithCustomer.common.customer?.email = nil
-        configWithCustomer.common.customer?.phoneNumber = "+0987654321"
+        configWithCustomer.common.customer = ShopifyAcceleratedCheckouts.Customer(phoneNumber: "+0987654321")
 
         let encoderWithCustomer = PKEncoder(configuration: configWithCustomer, cart: cart)
 
