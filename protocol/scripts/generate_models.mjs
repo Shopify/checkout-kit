@@ -22,6 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -37,6 +38,16 @@ import {
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
+const SWIFT_JSON_HELPER_MARKER = "// MARK: - Encode/decode helpers";
+const SWIFT_JSON_HELPER_REPLACEMENT = `// MARK: - Encode/decode helpers
+// quicktype's JSONAny/JSONNull helper suffix is intentionally replaced here.
+// See ../JSONAny.swift for the maintained Swift implementation.
+`;
+// quicktype 23.2.6's Swift helper suffix for:
+// --lang swift --swift-5-support --access-level public --sendable
+// Guarding the whole suffix keeps this normalization fail-fast if quicktype fixes
+// or changes the helper block instead of silently clobbering future output.
+const QUICKTYPE_23_2_6_SWIFT_JSON_HELPER_SHA256 = "02b7721a424fdb5a586a773116130f0b273551f9bfd5d9111a1c700581ec5e7e";
 
 function usage() {
   console.error("Usage: generate_models.sh --lang <kotlin|swift|typescript> [--output <path>]");
@@ -176,9 +187,10 @@ async function prepareCodegenSchemas(tempDir) {
   // Message discriminators are defined across the message variant schemas. Give
   // each variant the same local title so quicktype emits a single MessageType symbol.
   for (const messageSchema of ["message_error", "message_warning", "message_info"]) {
-    const schema = await readJson(path.join(specDir, "types", `${messageSchema}.json`));
+    const schemaPath = path.join(schemaDir, "common", "types", `${messageSchema}.json`);
+    const schema = await readJson(schemaPath);
     schema.properties.type.title = "MessageType";
-    await writeJson(path.join(specDir, "types", `${messageSchema}.json`), schema);
+    await writeJson(schemaPath, schema);
   }
 
   // Extension schemas bring in repeated generic property names like `type` and
@@ -268,7 +280,7 @@ function commonSchemaSources(specDir) {
     "--src",
     path.join(specDir, "order.json"),
     "--src",
-    path.join(specDir, "types", "error_response.json"),
+    path.join(specDir, "..", "common", "types", "error_response.json"),
     "--src",
     path.join(specDir, "instruments_change_result.json"),
     "--src",
@@ -332,7 +344,25 @@ async function generateSwift(specDir, output) {
     output,
   ]);
 
-  await normalizeGeneratedFile(output);
+  await normalizeGeneratedFile(output, (source) => {
+    // quicktype's --sendable option marks generated models as Sendable, but quicktype 23.2.6
+    // still emits dynamic JSON helper types that are not fully Swift 6 concurrency-safe.
+    // Drop only the exact helper suffix quicktype 23.2.6 emits. Maintained helper
+    // implementations live in ShopifyCheckoutProtocol/JSONAny.swift so Swift tooling can
+    // lint, format, and type-check them normally.
+    const helperStart = source.indexOf(SWIFT_JSON_HELPER_MARKER);
+    if (helperStart === -1) {
+      throw new Error("Swift JSON helper normalization failed; quicktype output may have changed");
+    }
+
+    const generatedHelper = source.slice(helperStart);
+    const generatedHelperHash = crypto.createHash("sha256").update(generatedHelper).digest("hex");
+    if (generatedHelperHash !== QUICKTYPE_23_2_6_SWIFT_JSON_HELPER_SHA256) {
+      throw new Error(`Swift JSON helper normalization failed; quicktype helper output changed (sha256: ${generatedHelperHash})`);
+    }
+
+    return `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
+  });
 }
 
 async function generateTypescript(specDir, output) {
