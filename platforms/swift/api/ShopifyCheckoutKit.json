@@ -5358,11 +5358,6 @@
         "usr": "s:18ShopifyCheckoutKit13configurationAA13ConfigurationVvp",
         "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvp",
         "moduleName": "ShopifyCheckoutKit",
-        "declAttributes": [
-          "HasInitialValue",
-          "HasStorage"
-        ],
-        "hasStorage": true,
         "accessors": [
           {
             "kind": "Accessor",
@@ -5380,7 +5375,6 @@
             "usr": "s:18ShopifyCheckoutKit13configurationAA13ConfigurationVvg",
             "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvg",
             "moduleName": "ShopifyCheckoutKit",
-            "implicit": true,
             "accessorKind": "get"
           },
           {
@@ -5404,7 +5398,6 @@
             "usr": "s:18ShopifyCheckoutKit13configurationAA13ConfigurationVvs",
             "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvs",
             "moduleName": "ShopifyCheckoutKit",
-            "implicit": true,
             "accessorKind": "set"
           }
         ]

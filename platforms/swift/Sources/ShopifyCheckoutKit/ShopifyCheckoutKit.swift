@@ -6,16 +6,26 @@ import UIKit
 /// The version of the `ShopifyCheckoutKit` library.
 public let version = "4.0.0-alpha.1"
 
+private let lockedCheckoutKitConfiguration = LockedValue(Configuration())
+
 /// The configuration options for the `ShopifyCheckoutKit` library.
-public var configuration = Configuration() {
-    didSet {
-        OSLogger.shared.logLevel = configuration.logLevel
+public var configuration: Configuration {
+    get { lockedCheckoutKitConfiguration.get() }
+    set {
+        lockedCheckoutKitConfiguration.set(newValue)
+        applyConfigurationChange()
     }
 }
 
 /// A convienence function for configuring the `ShopifyCheckoutKit` library.
 public func configure(_ block: (inout Configuration) -> Void) {
-    block(&configuration)
+    lockedCheckoutKitConfiguration.update(block)
+    applyConfigurationChange()
+}
+
+private func applyConfigurationChange() {
+    let configuration = lockedCheckoutKitConfiguration.get()
+    OSLogger.shared.logLevel = configuration.logLevel
 }
 
 @MainActor
