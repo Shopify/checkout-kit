@@ -8,18 +8,11 @@ public enum EnvironmentVariables {
     }
 
     private static func getKey(for key: String) -> String {
-        guard let value = EnvironmentVariables.infoDictionary[key] as? String else {
+        guard let value = Bundle.main.infoDictionary?[key] as? String else {
             fatalError("Environment variable \(key) must be set in the Storefront.xcconfig file")
         }
         return value
     }
-
-    private static let infoDictionary: [String: Any] = {
-        guard let dict = Bundle.main.infoDictionary else {
-            fatalError("Plist file not found")
-        }
-        return dict
-    }()
 
     public static let storefrontAccessToken: String = getKey(for: Keys.storefrontAccessToken)
 

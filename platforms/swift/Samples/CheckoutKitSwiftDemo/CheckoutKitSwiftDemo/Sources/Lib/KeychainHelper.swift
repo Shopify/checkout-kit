@@ -28,7 +28,8 @@ struct OAuthTokenResult: Codable {
     }
 }
 
-final class KeychainHelper: Sendable {
+@MainActor
+final class KeychainHelper {
     static let shared = KeychainHelper()
 
     private let logger = OSLogger(prefix: "Keychain", logLevel: ShopifyCheckoutKit.configuration.logLevel)

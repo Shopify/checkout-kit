@@ -3,6 +3,7 @@ import ShopifyCheckoutKit
 
 final class FileLogger: Logger {
     private let fileHandle: FileHandle?
+    private let lock = NSLock()
 
     let logFileUrl: URL
 
@@ -24,6 +25,9 @@ final class FileLogger: Logger {
     }
 
     public func log(_ message: String) {
+        lock.lock()
+        defer { lock.unlock() }
+
         guard let fileHandle else {
             print("File handle is nil")
             return
@@ -43,6 +47,9 @@ final class FileLogger: Logger {
     }
 
     public func clearLogs() {
+        lock.lock()
+        defer { lock.unlock() }
+
         do {
             try "".write(toFile: logFileUrl.path, atomically: false, encoding: .utf8)
         } catch let error as NSError {
