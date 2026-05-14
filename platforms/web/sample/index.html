@@ -13,8 +13,9 @@
         <p class="subtitle">Web Component Playground</p>
       </div>
       <p class="status" role="status">
-        Component not yet implemented in <code>../src</code> — clicking
-        <strong>Buy&nbsp;now</strong> is a no-op until the element is registered.
+        Loads the real <code>&lt;shopify-checkout&gt;</code> from
+        <code>@shopify/checkout-kit</code> (dev alias). Use a valid checkout URL to try
+        <strong>Buy&nbsp;now</strong>.
       </p>
     </header>
 
@@ -36,9 +37,14 @@
           <label>
             <span>target</span>
             <select name="target">
+              <option value="popup" selected>popup (window)</option>
               <option value="auto">auto (new tab)</option>
-              <option value="popup">popup (window)</option>
             </select>
+          </label>
+
+          <label class="checkbox">
+            <input type="checkbox" name="debug" />
+            <span>debug</span>
           </label>
 
           <fieldset>
@@ -108,16 +114,14 @@
         <details id="component-state">
           <summary>Component state</summary>
           <dl>
-            <dt>cart</dt>
-            <dd id="state-cart">—</dd>
-            <dt>locale</dt>
-            <dd id="state-locale">—</dd>
-            <dt>orderConfirmation</dt>
-            <dd id="state-order-confirmation">—</dd>
+            <dt>checkout</dt>
+            <dd id="state-checkout">—</dd>
             <dt>error</dt>
             <dd id="state-error">—</dd>
-            <dt>sessionId</dt>
-            <dd id="state-session-id">—</dd>
+            <dt>target</dt>
+            <dd id="state-target">—</dd>
+            <dt>debug</dt>
+            <dd id="state-debug">—</dd>
           </dl>
         </details>
       </section>
@@ -130,8 +134,8 @@
         </div>
         <ul id="event-log"></ul>
         <p id="event-empty" class="muted">
-          Click <strong>Buy now</strong> to open checkout. Events the component dispatches will
-          appear here.
+          Open checkout and interact; <code>ec:*</code> and <code>checkout:close</code> events from
+          the component appear here.
         </p>
       </section>
     </main>

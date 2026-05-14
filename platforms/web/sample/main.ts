@@ -1,8 +1,6 @@
-// Importing the package registers the <shopify-checkout> custom element
-// as a side effect — once the component implementation lands. Today the
-// package only exports `VERSION`, so the element below renders as an
-// unknown HTML element and the playground produces no events at runtime.
-import "../src";
+// Registers `<shopify-checkout>` (same entry as published `@shopify/checkout-kit`).
+import "@shopify/checkout-kit";
+import type { ShopifyCheckout } from "@shopify/checkout-kit";
 
 import "./styles.css";
 
@@ -40,11 +38,10 @@ const buyNowButton = $<HTMLButtonElement>("#buy-now");
 const buyHint = $<HTMLParagraphElement>("#buy-hint");
 
 const stateNodes = {
-  cart: $<HTMLElement>("#state-cart"),
-  locale: $<HTMLElement>("#state-locale"),
-  orderConfirmation: $<HTMLElement>("#state-order-confirmation"),
+  checkout: $<HTMLElement>("#state-checkout"),
   error: $<HTMLElement>("#state-error"),
-  sessionId: $<HTMLElement>("#state-session-id"),
+  target: $<HTMLElement>("#state-target"),
+  debug: $<HTMLElement>("#state-debug"),
 };
 
 // ───── Mount the component (off-layout) ───────────────────────────────────
@@ -55,8 +52,10 @@ const stateNodes = {
 // called, so we attach it to <body> and leave the storefront panel free for
 // the merchant's product UI.
 
-const checkout = document.createElement("shopify-checkout");
+const checkout = document.createElement("shopify-checkout") as ShopifyCheckout;
 document.body.append(checkout);
+
+const checkoutEl: HTMLElement = checkout;
 
 // ───── Form ↔ attributes ──────────────────────────────────────────────────
 
@@ -72,6 +71,11 @@ function syncAttributes(): void {
   const data = new FormData(form);
   setStringAttribute(checkout, "src", data.get("src"));
   setStringAttribute(checkout, "target", data.get("target"));
+  if (data.has("debug")) {
+    checkout.setAttribute("debug", "");
+  } else {
+    checkout.removeAttribute("debug");
+  }
 
   refreshBuyButton(data.get("src"));
 }
@@ -123,24 +127,22 @@ for (const swatch of swatches) {
 
 // ───── Event log ──────────────────────────────────────────────────────────
 
+/** Dispatched by `ShopifyCheckout` (see `src/checkout.ts`). */
 const EVENT_TYPES = [
-  "checkout:start",
-  "checkout:complete",
+  "ec:start",
+  "ec:complete",
   "checkout:close",
-  "checkout:error",
-  "checkout:addressChangeStart",
-  "checkout:paymentMethodChangeStart",
-  "checkout:submitStart",
+  "ec:error",
+  "ec:lineItemsChange",
+  "ec:buyerChange",
+  "ec:totalsChange",
+  "ec:messagesChange",
 ] as const;
 
-const RESPONDABLE_EVENTS = new Set<string>([
-  "checkout:addressChangeStart",
-  "checkout:paymentMethodChangeStart",
-  "checkout:submitStart",
-]);
+const RESPONDABLE_EVENTS = new Set<string>([]);
 
 for (const type of EVENT_TYPES) {
-  checkout.addEventListener(type, () => {
+  checkoutEl.addEventListener(type, () => {
     appendLog(type);
     refreshState();
   });
@@ -152,20 +154,18 @@ clearLogButton.addEventListener("click", () => {
 
 function snapshotState(): Record<string, unknown> {
   return {
-    cart: checkout.cart,
-    locale: checkout.locale,
-    orderConfirmation: checkout.orderConfirmation,
+    checkout: checkout.checkout,
     error: checkout.error,
-    sessionId: checkout.sessionId,
+    target: checkout.target,
+    debug: checkout.debug,
   };
 }
 
 function refreshState(): void {
-  stateNodes.cart.textContent = formatValue(checkout.cart);
-  stateNodes.locale.textContent = formatValue(checkout.locale);
-  stateNodes.orderConfirmation.textContent = formatValue(checkout.orderConfirmation);
+  stateNodes.checkout.textContent = formatValue(checkout.checkout);
   stateNodes.error.textContent = formatValue(checkout.error);
-  stateNodes.sessionId.textContent = formatValue(checkout.sessionId);
+  stateNodes.target.textContent = formatValue(checkout.target);
+  stateNodes.debug.textContent = formatValue(checkout.debug);
 }
 
 function appendLog(type: string): void {
