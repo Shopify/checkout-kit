@@ -117,7 +117,6 @@ class CartViewModel(
             .on(CheckoutProtocol.start) { Timber.i("ECP ec.start: $it") }
             .on(CheckoutProtocol.complete) { Timber.i("ECP ec.complete: $it") }
             .on(CheckoutProtocol.error) { Timber.i("ECP ec.error: $it") }
-            .on(CheckoutProtocol.buyerChange) { Timber.i("ECP ec.buyer.change: $it") }
             .on(CheckoutProtocol.totalsChange) { Timber.i("ECP ec.totals.change: $it") }
             .on(CheckoutProtocol.lineItemsChange) { Timber.i("ECP ec.line_items.change: $it") }
             .on(CheckoutProtocol.messagesChange) { Timber.i("ECP ec.messages.change: $it") }
