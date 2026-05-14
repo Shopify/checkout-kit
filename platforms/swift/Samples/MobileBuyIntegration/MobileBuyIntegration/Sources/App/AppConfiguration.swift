@@ -58,8 +58,6 @@ public final class AppConfiguration: ObservableObject {
         }
     }
 
-    let webPixelsLogger = FileLogger("analytics.txt")
-
     init() {
         if let savedMode = UserDefaults.standard.string(forKey: AppStorageKeys.buyerIdentityMode.rawValue),
            let mode = BuyerIdentityMode(rawValue: savedMode)

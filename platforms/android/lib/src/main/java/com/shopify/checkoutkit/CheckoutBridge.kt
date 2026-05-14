@@ -26,18 +26,15 @@ import android.webkit.JavascriptInterface
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.COMPLETED
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.ERROR
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.MODAL
-import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.WEB_PIXELS
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import com.shopify.checkoutkit.errorevents.CheckoutErrorDecoder
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEventDecoder
-import com.shopify.checkoutkit.pixelevents.PixelEventDecoder
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 internal class CheckoutBridge(
     private var eventProcessor: CheckoutWebViewEventProcessor,
     private val decoder: Json = Json { ignoreUnknownKeys = true },
-    private val pixelEventDecoder: PixelEventDecoder = PixelEventDecoder(decoder, log),
     private val checkoutCompletedEventDecoder: CheckoutCompletedEventDecoder = CheckoutCompletedEventDecoder(
         decoder,
         log
@@ -54,7 +51,6 @@ internal class CheckoutBridge(
     enum class CheckoutWebOperation(val key: String) {
         COMPLETED("completed"),
         MODAL("checkoutBlockingEvent"),
-        WEB_PIXELS("webPixels"),
         ERROR("error");
 
         companion object {
@@ -90,16 +86,6 @@ internal class CheckoutBridge(
                         log.d(LOG_TAG, "Modal visible $it")
                         onMainThread {
                             eventProcessor.onCheckoutViewModalToggled(modalVisible)
-                        }
-                    }
-                }
-
-                WEB_PIXELS -> {
-                    log.d(LOG_TAG, "Received WebPixel message. Attempting to decode.")
-                    pixelEventDecoder.decode(decodedMsg)?.let { event ->
-                        log.d(LOG_TAG, "Decoded message $event.")
-                        onMainThread {
-                            eventProcessor.onWebPixelEvent(event)
                         }
                     }
                 }
