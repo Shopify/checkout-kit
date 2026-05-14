@@ -23,7 +23,6 @@
 package com.shopify.checkout_kit_mobile_buy_integration_sample.common.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -31,8 +30,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.shopify.checkout_kit_mobile_buy_integration_sample.cart.CartView
 import com.shopify.checkout_kit_mobile_buy_integration_sample.cart.CartViewModel
-import com.shopify.checkout_kit_mobile_buy_integration_sample.common.MobileBuyEventProcessor
-import com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs.Logger
 import com.shopify.checkout_kit_mobile_buy_integration_sample.home.HomeView
 import com.shopify.checkout_kit_mobile_buy_integration_sample.logs.LogsView
 import com.shopify.checkout_kit_mobile_buy_integration_sample.logs.LogsViewModel
@@ -43,7 +40,6 @@ import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.SettingsV
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.SettingsViewModel
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.account.AccountView
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.authentication.LoginView
-import org.koin.compose.koinInject
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -101,7 +97,6 @@ fun CheckoutKitNavHost(
     cartViewModel: CartViewModel,
     settingsViewModel: SettingsViewModel,
     logsViewModel: LogsViewModel,
-    logger: Logger = koinInject<Logger>(),
 ) {
     NavHost(
         navController = navController,
@@ -125,16 +120,9 @@ fun CheckoutKitNavHost(
         }
 
         composable(Screen.Cart.route) {
-            val activity = LocalContext.current
             CartView(
                 cartViewModel = cartViewModel,
                 navController = navController,
-                checkoutEventProcessor = MobileBuyEventProcessor(
-                    cartViewModel,
-                    navController,
-                    logger,
-                    activity,
-                )
             )
         }
 

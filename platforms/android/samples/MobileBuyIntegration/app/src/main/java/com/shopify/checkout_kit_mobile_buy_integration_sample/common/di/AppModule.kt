@@ -146,6 +146,6 @@ val appModules = module {
     viewModelOf(::AccountViewModel)
     single {
         // singleton instance of shared cart view model
-        CartViewModel(get(), get(), get())
+        CartViewModel(get(), get(), get(), get())
     }
 }

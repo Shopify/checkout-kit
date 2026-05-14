@@ -22,10 +22,12 @@
  */
 package com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs
 
+import com.shopify.checkoutkit.Checkout
 import com.shopify.checkoutkit.CheckoutException
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.Date
 import java.util.UUID
 
@@ -42,12 +44,12 @@ class Logger(
         )
     }
 
-    fun log(checkoutCompletedEvent: CheckoutCompletedEvent) {
+    fun log(checkout: Checkout) {
         insert(
             LogLine(
                 type = LogType.CHECKOUT_COMPLETED,
-                message = "Checkout completed",
-                checkoutCompleted = checkoutCompletedEvent,
+                message = "Checkout completed: ${checkout.order?.id ?: "unknown"}",
+                checkoutCompletedPayload = Json.encodeToString(checkout),
             )
         )
     }

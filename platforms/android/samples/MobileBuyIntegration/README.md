@@ -2,6 +2,13 @@
 
 A sample Android app demonstrating how to integrate [Checkout Kit](../../README.md) with the Shopify Storefront API using [Apollo Kotlin](https://github.com/apollographql/apollo-kotlin).
 
+## Checkout flow
+
+The sample's cart flow demonstrates the Kotlin-first `ShopifyCheckoutKit.present(checkoutUrl, activity) { ... }`
+API. It connects a typed `CheckoutProtocol.Client` to observe checkout state changes, including
+completion, and uses the presentation builder for fail/cancel plus the sample's file chooser and
+geolocation host callbacks so browser and system hooks stay on the Kotlin-first path.
+
 ## Architecture
 
 The app uses **Apollo GraphQL** for all Storefront API communication. GraphQL operations are defined as `.graphql` files, and Apollo Kotlin's code generation tool produces type-safe Kotlin data classes from them.

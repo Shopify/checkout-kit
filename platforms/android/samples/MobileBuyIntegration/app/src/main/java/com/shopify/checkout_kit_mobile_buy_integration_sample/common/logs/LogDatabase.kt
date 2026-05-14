@@ -24,7 +24,6 @@ package com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
@@ -33,7 +32,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
      version = 3,
      exportSchema = false,
 )
-@TypeConverters(Converters::class)
 abstract class LogDatabase : RoomDatabase() {
      abstract fun logDao(): LogDao
 }

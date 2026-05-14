@@ -27,25 +27,29 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.Json
 
 @Composable
 fun CheckoutCompletedDetails(
-    event: CheckoutCompletedEvent?,
+    payload: String?,
     prettyJson: Json,
 ) {
     LogDetails(
         header = "Details",
-        message = prettyJson.encodeDataToString(event),
+        message = prettyJson.prettyPrintedPayload(payload),
         modifier = Modifier
             .fillMaxWidth()
             .background(color = MaterialTheme.colorScheme.surface)
     )
 }
 
-private inline fun <reified T> Json.encodeDataToString(el: T?, default: String = "n/a"): String {
-    if (el == null) return default
-    return encodeToString(el)
+private fun Json.prettyPrintedPayload(payload: String?, default: String = "n/a"): String {
+    if (payload == null) return default
+    return runCatching {
+        val jsonElement: JsonElement = decodeFromString(payload)
+        encodeToString(JsonElement.serializer(), jsonElement)
+    }.getOrDefault(payload)
 }
