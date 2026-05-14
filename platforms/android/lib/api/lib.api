@@ -761,7 +761,6 @@ public final class com/shopify/checkoutkit/CheckoutLineItem$Companion {
 public final class com/shopify/checkoutkit/CheckoutProtocol {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutProtocol;
 	public static final field specVersion Ljava/lang/String;
-	public final fun getBuyerChange ()Lcom/shopify/checkoutkit/NotificationDescriptor;
 	public final fun getComplete ()Lcom/shopify/checkoutkit/NotificationDescriptor;
 	public final fun getError ()Lcom/shopify/checkoutkit/NotificationDescriptor;
 	public final fun getLineItemsChange ()Lcom/shopify/checkoutkit/NotificationDescriptor;
