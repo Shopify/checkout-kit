@@ -1,8 +1,9 @@
 # Web Component Playground
 
-A development harness for the `<shopify-checkout>` web component. Renders the
-component with adjustable options and logs all dispatched `checkout:*` events
-in real time.
+A development harness for the `<shopify-checkout>` web component. It imports
+the same entry as published consumers (`@shopify/checkout-kit`, aliased to
+`../src/index.ts` in dev), registers the custom element, and logs `ec:*` and
+`checkout:close` events.
 
 ## Run locally
 
@@ -13,34 +14,16 @@ pnpm sample
 
 Vite serves at `http://localhost:5173`. The page has three panels:
 
-- **Options** — form for setting the component's attributes (`src`,
-  `target`) plus a small panel of manual method
-  buttons (`open()`, `close()`, `focus()`) for ad-hoc debugging.
-- **Demo Storefront** — a mocked merchant product card with a **Buy now**
-  button that calls `checkout.open()`. The button is disabled until you
-  enter a checkout URL in the Options panel. Below the card, a collapsible
-  readout shows the component's read-only state (`cart`, `locale`,
-  `orderConfirmation`, `error`, `sessionId`).
-- **Events** — a chronological log of every `checkout:*` event the component
-  dispatches, with a snapshot of component state at the moment the event
-  fired. Respondable events are tagged with a badge.
+- **Options** — form for `src`, `target` (`auto` | `popup`), and `debug`,
+  plus buttons for `open()`, `close()`, and `focus()`.
+- **Demo Storefront** — a mocked product card with **Buy now** calling
+  `checkout.open()`. The button stays disabled until a checkout URL is set.
+  The collapsible readout shows `checkout`, `error`, `target`, and `debug`.
+- **Events** — log of dispatched events with a JSON snapshot of state at fire
+  time.
 
-The `<shopify-checkout>` element is appended to `<body>` rather than placed
-inside the storefront panel — for `popup` and `auto` targets, the element
-has no visible footprint of its own; only its internal dialog scrim appears
-when `open()` is called. `target="inline"` is intentionally not supported
-in the v1 of the component.
-
-## Status
-
-The `<shopify-checkout>` component implementation has not yet landed in
-`../src`. Until it does, the element renders as an unknown HTML element and
-dispatches no events — the playground is wired up against the component's
-eventual API surface but is **non-functional at runtime**.
-
-The forward-looking API surface is declared in [`./types.d.ts`](./types.d.ts).
-Delete that file once `@shopify/checkout-kit` exports the real `ShopifyCheckout`
-types from `../src`.
+The element is mounted on `<body>`. For `popup` / `auto`, the visible UI is
+mostly the overlay scrim while checkout is open in a separate window or tab.
 
 ## Build
 
@@ -48,8 +31,5 @@ types from `../src`.
 pnpm sample:build      # outputs to sample/dist/
 ```
 
-CI runs this on every PR (see `.github/workflows/web.yml`) so the sample stays
-buildable as the package evolves.
-
-The sample is **not** published to npm — it's excluded by the `files`
-allowlist in `platforms/web/package.json`.
+CI runs this on every PR (see `.github/workflows/web.yml`). The sample is not
+published to npm (`files` allowlist in `platforms/web/package.json`).

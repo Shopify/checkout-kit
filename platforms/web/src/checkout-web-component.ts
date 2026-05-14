@@ -21,10 +21,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-// Registers `<shopify-checkout>` (side effect).
-import "./checkout-web-component";
+/* eslint ssr-friendly/no-dom-globals-in-module-scope: off */
 
-// Public API for `@shopify/checkout-kit`.
-export const VERSION = "0.0.1";
+import { ShopifyCheckout } from "./checkout";
 
-export { ShopifyCheckout } from "./checkout";
+declare global {
+  interface HTMLElementTagNameMap {
+    "shopify-checkout": ShopifyCheckout;
+  }
+}
+
+customElements.define("shopify-checkout", ShopifyCheckout);
