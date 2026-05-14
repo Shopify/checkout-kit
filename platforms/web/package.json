@@ -32,7 +32,10 @@
     "./custom-elements.json": "./dist/custom-elements.json",
     "./package.json": "./package.json"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/index.ts",
+    "./src/checkout-web-component.ts"
+  ],
   "files": [
     "LICENSE",
     "README.md",
