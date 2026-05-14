@@ -52,6 +52,7 @@
     "react-native": "*"
   },
   "devDependencies": {
+    "@shopify/checkout-kit-protocol": "workspace:*",
     "react-native-builder-bob": "^0.23.2",
     "typescript": "^5.9.2"
   },

@@ -87,12 +87,12 @@ check:
 commands:
   # Repo-wide
   codegen:
-    desc: "Generate UCP models. Usage: dev codegen <kotlin|swift>"
-    syntax: "<kotlin|swift>"
+    desc: "Generate UCP models. Usage: dev codegen <kotlin|swift|typescript>"
+    syntax: "<kotlin|swift|typescript>"
     run: |
       case "$1" in
-        kotlin|swift) ./protocol/scripts/generate_models.sh --lang "$1" ;;
-        *) echo "Usage: dev codegen <kotlin|swift>"; exit 1 ;;
+        kotlin|swift|typescript|ts) ./protocol/scripts/generate_models.sh --lang "$1" ;;
+        *) echo "Usage: dev codegen <kotlin|swift|typescript>"; exit 1 ;;
       esac
   apollo:
     subcommands:
