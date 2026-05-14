@@ -4,6 +4,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   # swiftlint is a separate/duplicate effort here, as it will also report to Annotations
   swiftlint:
