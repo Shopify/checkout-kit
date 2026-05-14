@@ -4,6 +4,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   package-tests:
     uses: ./.github/workflows/swift-test-workflow.yml

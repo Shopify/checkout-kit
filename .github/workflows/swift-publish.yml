@@ -6,6 +6,9 @@ on:
       - published
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   cocoapods:
     # Only run for Swift releases. Android releases are tagged `android/X.Y.Z`;

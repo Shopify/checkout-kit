@@ -9,6 +9,9 @@ on:
         type: string
         default: Run
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: ${{ inputs.job-name }}
