@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // Playwright tests run in node via the @playwright/test runner — they
+    // don't need our library-grade isolatedDeclarations rule, and they need
+    // node + playwright globals instead of vitest globals.
+    "isolatedDeclarations": false,
+    "declaration": false,
+    "noEmit": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": ["./**/*.ts", "../playwright.config.ts"]
+}

@@ -36,6 +36,13 @@ pnpm test:watch
 pnpm lint               # typecheck + oxlint + oxfmt --check
 pnpm format             # oxfmt (writes in place)
 pnpm verify             # publint
+
+pnpm sample             # serve the playground at http://localhost:5173
+pnpm sample:build       # build the playground (sample/dist/)
+
+pnpm e2e:install        # one-time: download playwright's chromium binary
+pnpm e2e                # run playwright e2e tests against the playground
+pnpm e2e:ui             # interactive playwright UI mode
 ```
 
 ## Tooling

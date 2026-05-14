@@ -46,6 +46,45 @@ jobs:
       - name: Verify package (publint)
         run: pnpm verify
 
+      - name: Build sample app
+        run: pnpm sample:build
+
+      # Cache Playwright's browser binaries (~92MB compressed) keyed on the
+      # installed @playwright/test version. On cache hit we skip the binary
+      # download and only install the apt system deps (which live outside the
+      # cache). On miss we install both via `--with-deps`.
+      - name: Get Playwright version
+        id: playwright-version
+        run: |
+          VERSION=$(node -e "console.log(require('@playwright/test/package.json').version)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers + system deps (cache miss)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps only (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      - name: E2E tests (playwright → sample app)
+        run: pnpm e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: platforms/web/playwright-report/
+          retention-days: 7
+
       - name: Pack and inspect contents
         run: |
           pnpm pack --pack-destination /tmp/web-pack

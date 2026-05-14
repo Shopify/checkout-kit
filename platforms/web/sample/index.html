@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Checkout Kit — Web Component Playground</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Checkout Kit</h1>
+        <p class="subtitle">Web Component Playground</p>
+      </div>
+      <p class="status" role="status">
+        Component not yet implemented in <code>../src</code> — clicking
+        <strong>Buy&nbsp;now</strong> is a no-op until the element is registered.
+      </p>
+    </header>
+
+    <main>
+      <!-- ────── Options ─────────────────────────────────────── -->
+      <section class="panel" aria-labelledby="options-heading">
+        <h2 id="options-heading">Options</h2>
+
+        <form id="options-form" autocomplete="off">
+          <label>
+            <span>src</span>
+            <input
+              type="url"
+              name="src"
+              placeholder="https://your-store.myshopify.com/checkouts/..."
+            />
+          </label>
+
+          <label>
+            <span>target</span>
+            <select name="target">
+              <option value="auto">auto (new tab)</option>
+              <option value="popup">popup (window)</option>
+            </select>
+          </label>
+
+          <label>
+            <span>color-scheme</span>
+            <select name="color-scheme">
+              <option value="auto">auto</option>
+              <option value="light">light</option>
+              <option value="dark">dark</option>
+            </select>
+          </label>
+
+          <label class="checkbox">
+            <input type="checkbox" name="preload" />
+            <span>preload</span>
+          </label>
+
+          <fieldset>
+            <legend>Methods</legend>
+            <div class="button-row">
+              <button type="button" data-method="open">open()</button>
+              <button type="button" data-method="close">close()</button>
+              <button type="button" data-method="focus">focus()</button>
+            </div>
+          </fieldset>
+        </form>
+      </section>
+
+      <!-- ────── Demo Storefront ────────────────────────────── -->
+      <section class="panel storefront" aria-labelledby="storefront-heading">
+        <h2 id="storefront-heading">Demo Storefront</h2>
+
+        <article class="product-card">
+          <div class="product-image" aria-hidden="true">
+            <span class="product-emoji">🪴</span>
+          </div>
+
+          <div class="product-info">
+            <p class="product-vendor">Acme Goods</p>
+            <h3 class="product-title">Studio Plant Pot</h3>
+            <p class="product-price">$29.00 USD</p>
+
+            <p class="product-description">
+              A hand-thrown ceramic pot for your favorite green friend. Glazed inside, raw outside.
+              Fits a 4″ nursery pot.
+            </p>
+
+            <div class="product-variants" role="group" aria-label="Color">
+              <button
+                type="button"
+                class="swatch swatch--clay"
+                aria-label="Clay"
+                aria-pressed="true"
+              ></button>
+              <button
+                type="button"
+                class="swatch swatch--moss"
+                aria-label="Moss"
+                aria-pressed="false"
+              ></button>
+              <button
+                type="button"
+                class="swatch swatch--sand"
+                aria-label="Sand"
+                aria-pressed="false"
+              ></button>
+            </div>
+
+            <div class="product-actions">
+              <button type="button" id="buy-now" class="primary" disabled data-method="open">
+                Buy now
+              </button>
+              <button type="button" class="secondary" disabled>Add to cart</button>
+            </div>
+
+            <p id="buy-hint" class="muted">
+              Set a checkout URL in the Options panel to enable Buy now.
+            </p>
+          </div>
+        </article>
+
+        <details id="component-state">
+          <summary>Component state</summary>
+          <dl>
+            <dt>cart</dt>
+            <dd id="state-cart">—</dd>
+            <dt>locale</dt>
+            <dd id="state-locale">—</dd>
+            <dt>orderConfirmation</dt>
+            <dd id="state-order-confirmation">—</dd>
+            <dt>error</dt>
+            <dd id="state-error">—</dd>
+            <dt>sessionId</dt>
+            <dd id="state-session-id">—</dd>
+          </dl>
+        </details>
+      </section>
+
+      <!-- ────── Events ─────────────────────────────────────── -->
+      <section class="panel" aria-labelledby="events-heading">
+        <div class="panel-header">
+          <h2 id="events-heading">Events</h2>
+          <button type="button" id="clear-log">Clear</button>
+        </div>
+        <ul id="event-log"></ul>
+        <p id="event-empty" class="muted">
+          Click <strong>Buy now</strong> to open checkout. Events the component dispatches will
+          appear here.
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
