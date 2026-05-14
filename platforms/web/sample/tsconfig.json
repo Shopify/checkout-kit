@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // The sample uses vanilla DOM patterns and a forward-looking shim
+    // (types.d.ts) for the not-yet-implemented component. Don't enforce the
+    // library-grade isolatedDeclarations rule here.
+    "isolatedDeclarations": false,
+    "declaration": false,
+    "noEmit": true,
+    // vite/client provides the `*.css` module declaration so `import "./styles.css"` typechecks.
+    "types": ["vite/client"]
+  },
+  "include": ["./**/*.ts", "./**/*.d.ts"]
+}
