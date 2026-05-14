@@ -41,9 +41,7 @@ SOFTWARE.
 RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration)
 
 RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
-                  onClose:(RCTResponseSenderBlock)onClose
-                  onFail:(RCTResponseSenderBlock)onFail
-                  onGeolocationRequest:(RCTResponseSenderBlock)onGeolocationRequest)
+                  dispatch:(RCTResponseSenderBlock)dispatch)
 
 @end
 

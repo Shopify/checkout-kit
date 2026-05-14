@@ -21,8 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import {NativeEventEmitter, PermissionsAndroid, Platform} from 'react-native';
-import type {EventSubscription, PermissionStatus} from 'react-native';
+import {PermissionsAndroid, Platform} from 'react-native';
+import type {PermissionStatus} from 'react-native';
 import RNShopifyCheckoutKit from './specs/NativeShopifyCheckoutKit';
 import {ShopifyCheckoutProvider, useShopifyCheckout} from './context';
 import {ApplePayContactField, ColorScheme, LogLevel} from './index.d';
@@ -31,7 +31,6 @@ import type {
   Configuration,
   Features,
   GeolocationRequestEvent,
-  Maybe,
   PresentCallbacks,
   ShopifyCheckoutKit,
 } from './index.d';
@@ -70,12 +69,7 @@ const colorSchemeValues: ReadonlySet<string> = new Set(
 const logLevelValues: ReadonlySet<string> = new Set(Object.values(LogLevel));
 
 class ShopifyCheckout implements ShopifyCheckoutKit {
-  private static eventEmitter: NativeEventEmitter = new NativeEventEmitter(
-    RNShopifyCheckoutKit,
-  );
-
   private features: Features;
-  private geolocationCallback: Maybe<EventSubscription>;
 
   private _acceleratedCheckoutsReady = false;
 
@@ -106,13 +100,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     if (configuration != null) {
       this.setConfig(configuration);
     }
-
-    if (
-      Platform.OS === 'android' &&
-      this.featureEnabled('handleGeolocationRequests')
-    ) {
-      this.subscribeToGeolocationRequestPrompts();
-    }
   }
 
   /**
@@ -132,14 +119,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * @param callbacks Optional per-call SDK callbacks
    */
   public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
-    RNShopifyCheckoutKit.present(
-      checkoutUrl,
-      callbacks?.onClose ?? null,
-      callbacks?.onFail ? this.wrapFailCallback(callbacks.onFail) : null,
-      callbacks?.onGeolocationRequest
-        ? this.wrapGeolocationCallback(callbacks.onGeolocationRequest)
-        : null,
-    );
+    RNShopifyCheckoutKit.present(checkoutUrl, this.buildDispatcher(callbacks));
   }
 
   /**
@@ -164,11 +144,11 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Cleans up resources and event listeners used by the checkout sheet
+   * Cleans up resources and event listeners used by the checkout sheet.
+   * Currently a no-op — retained as part of the public API for forward
+   * compatibility with future protocol-client subscriptions.
    */
-  public teardown() {
-    this.geolocationCallback?.remove();
-  }
+  public teardown() {}
 
   /**
    * Configure AcceleratedCheckouts for Shop Pay and Apple Pay buttons
@@ -307,19 +287,69 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Sets up geolocation request handling for Android devices.
-   * Uses the internal NativeEventEmitter directly because the public
-   * listener API has been removed.
+   * Builds the single per-call dispatcher passed to the native bridge.
+   * Returns null when there is nothing for the bridge to deliver back —
+   * no user callbacks and no default-handler responsibilities — so the
+   * native side can skip serializing envelopes.
    */
-  private subscribeToGeolocationRequestPrompts() {
-    this.geolocationCallback = ShopifyCheckout.eventEmitter.addListener(
-      'geolocationRequest',
-      async () => {
-        const coarseOrFineGrainAccessGranted = await this.requestGeolocation();
+  private buildDispatcher(
+    callbacks: PresentCallbacks | undefined,
+  ): ((envelopeJson: string) => void) | null {
+    const needsDefaultGeolocation =
+      Platform.OS === 'android' &&
+      this.featureEnabled('handleGeolocationRequests');
 
-        this.initiateGeolocationRequest(coarseOrFineGrainAccessGranted);
-      },
-    );
+    if (!callbacks && !needsDefaultGeolocation) {
+      return null;
+    }
+
+    return (envelopeJson: string) => {
+      let envelope: {type?: string; payload?: unknown};
+      try {
+        envelope = JSON.parse(envelopeJson);
+      } catch {
+        const parseError = new LifecycleEventParseError(
+          'Failed to parse present() dispatcher envelope: Invalid JSON',
+          {cause: 'Invalid JSON'},
+        );
+        // eslint-disable-next-line no-console
+        console.error(parseError, envelopeJson);
+        return;
+      }
+
+      switch (envelope.type) {
+        case 'close':
+          callbacks?.onClose?.();
+          return;
+        case 'fail':
+          if (callbacks?.onFail) {
+            callbacks.onFail(
+              this.parseCheckoutError(envelope.payload as CheckoutNativeError),
+            );
+          }
+          return;
+        case 'geolocationRequest':
+          if (callbacks?.onGeolocationRequest) {
+            callbacks.onGeolocationRequest(
+              envelope.payload as GeolocationRequestEvent,
+            );
+          } else if (needsDefaultGeolocation) {
+            this.handleDefaultGeolocationRequest();
+          }
+          return;
+        default:
+          return;
+      }
+    };
+  }
+
+  /**
+   * Default Android geolocation handler — requests platform permissions
+   * and forwards the resolved grant state back to the native SDK.
+   */
+  private async handleDefaultGeolocationRequest() {
+    const allowed = await this.requestGeolocation();
+    this.initiateGeolocationRequest(allowed);
   }
 
   /**
@@ -406,6 +436,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     }
   }
 
+<<<<<<< HEAD
   /**
    * Wraps a consumer-provided `onFail` callback so the native bridge can
    * hand it the raw JSON error payload it serializes today. Invalid JSON
@@ -453,6 +484,58 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
       }
     };
   }
+||||||| parent of 2b6a1474 (feat: explore dynamic dispatch for checkout delegate)
+  /**
+   * Wraps a consumer-provided `onFail` callback so the native bridge can
+   * hand it the raw JSON error payload it serializes today. Invalid JSON
+   * is reported via `LifecycleEventParseError`; the user callback only
+   * fires on a successful parse.
+   */
+  private wrapFailCallback(
+    onFail: NonNullable<PresentCallbacks['onFail']>,
+  ): (raw: string) => void {
+    return (raw: string) => {
+      try {
+        const parsed = JSON.parse(raw);
+        onFail(this.parseCheckoutError(parsed));
+      } catch {
+        const parseError = new LifecycleEventParseError(
+          'Failed to parse "onFail" callback payload: Invalid JSON',
+          {cause: 'Invalid JSON'},
+        );
+        // eslint-disable-next-line no-console
+        console.error(parseError, raw);
+      }
+    };
+  }
+
+  /**
+   * Wraps a consumer-provided `onGeolocationRequest` callback so the
+   * native bridge can hand it the raw JSON origin payload. Invalid JSON
+   * is reported via `LifecycleEventParseError`; the user callback only
+   * fires on a successful parse.
+   */
+  private wrapGeolocationCallback(
+    onGeolocationRequest: NonNullable<
+      PresentCallbacks['onGeolocationRequest']
+    >,
+  ): (raw: string) => void {
+    return (raw: string) => {
+      try {
+        const parsed = JSON.parse(raw);
+        onGeolocationRequest(parsed);
+      } catch {
+        const parseError = new LifecycleEventParseError(
+          'Failed to parse "onGeolocationRequest" callback payload: Invalid JSON',
+          {cause: 'Invalid JSON'},
+        );
+        // eslint-disable-next-line no-console
+        console.error(parseError, raw);
+      }
+    };
+  }
+=======
+>>>>>>> 2b6a1474 (feat: explore dynamic dispatch for checkout delegate)
 }
 
 export class LifecycleEventParseError extends Error {

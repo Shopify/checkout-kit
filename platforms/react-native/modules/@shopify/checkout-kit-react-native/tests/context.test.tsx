@@ -154,7 +154,7 @@ describe('useShopifyCheckout', () => {
     jest.clearAllMocks();
   });
 
-  it('provides present function and calls it with checkoutUrl and null callbacks when none are passed', () => {
+  it('provides present function and calls it with checkoutUrl and a null dispatcher when no callbacks are passed', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -173,12 +173,10 @@ describe('useShopifyCheckout', () => {
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
       null,
-      null,
-      null,
     );
   });
 
-  it('forwards onClose, onFail, and onGeolocationRequest callbacks through present', () => {
+  it('forwards a dispatcher to native when callbacks are supplied', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -200,8 +198,6 @@ describe('useShopifyCheckout', () => {
 
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
-      expect.any(Function),
-      expect.any(Function),
       expect.any(Function),
     );
   });
