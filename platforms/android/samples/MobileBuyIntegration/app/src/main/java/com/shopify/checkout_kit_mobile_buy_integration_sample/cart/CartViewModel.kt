@@ -127,13 +127,13 @@ class CartViewModel(
     fun preloadCheckout(
         activity: ComponentActivity,
     ) {
-        val state = _cartState.value
-        if (state is CartState.Cart) {
-            Timber.i("Preloading checkout with url ${state.checkoutUrl}")
-            ShopifyCheckoutKit.preload(state.checkoutUrl, activity)
-        } else {
-            Timber.i("Skipping checkout preload, cart is empty")
-        }
+        // val state = _cartState.value
+        // if (state is CartState.Cart) {
+        //     Timber.i("Preloading checkout with url ${state.checkoutUrl}")
+        //     ShopifyCheckoutKit.preload(state.checkoutUrl, activity)
+        // } else {
+        //     Timber.i("Skipping checkout preload, cart is empty")
+        // }
     }
 
     fun continueShopping(navController: NavController) {

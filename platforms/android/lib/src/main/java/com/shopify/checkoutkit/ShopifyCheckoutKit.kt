@@ -89,9 +89,11 @@ public object ShopifyCheckoutKit {
      *
      * @param checkoutUrl The URL of the checkout to be loaded, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
+     *
+     * Public preload support is coming soon.
      */
     @JvmStatic
-    public fun preload(checkoutUrl: String, context: ComponentActivity) {
+    internal fun preload(checkoutUrl: String, context: ComponentActivity) {
         log.d("ShopifyCheckoutKit", "Preload called. Preloading enabled ${configuration.preloading.enabled}.")
         if (!configuration.preloading.enabled) return
 
