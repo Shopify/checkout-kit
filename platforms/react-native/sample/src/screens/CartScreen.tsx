@@ -57,7 +57,12 @@ function CartScreen(): React.JSX.Element {
     useCart();
   const {queries} = useShopify();
   const {appConfig} = useConfig();
-  const eventHandlers = useShopifyEventHandlers(
+  // Separate handler instances so debug logs are labelled with the actual
+  // surface that emitted the event. Otherwise an `onClose` from the
+  // `ShopifyCheckout.present()` sheet would log under the
+  // `AcceleratedCheckoutButtons` namespace and confuse anyone debugging.
+  const sheetEventHandlers = useShopifyEventHandlers('Cart - CheckoutSheet');
+  const acceleratedCheckoutEventHandlers = useShopifyEventHandlers(
     'Cart - AcceleratedCheckoutButtons',
   );
 
@@ -87,7 +92,10 @@ function CartScreen(): React.JSX.Element {
 
   const presentCheckout = async () => {
     if (checkoutURL) {
-      ShopifyCheckout.present(checkoutURL);
+      ShopifyCheckout.present(checkoutURL, {
+        onClose: () => sheetEventHandlers.onCancel?.(),
+        onFail: error => sheetEventHandlers.onFail?.(error),
+      });
     }
   };
 
@@ -167,7 +175,7 @@ function CartScreen(): React.JSX.Element {
           <View>
             <View style={styles.checkoutContainer}>
               <AcceleratedCheckoutButtons
-                {...eventHandlers}
+                {...acceleratedCheckoutEventHandlers}
                 applePayLabel={ApplePayLabel.checkout}
                 applePayStyle={appConfig.applePayStyle}
                 cartId={cartId}
@@ -191,7 +199,7 @@ function CartScreen(): React.JSX.Element {
 
               {/* Empty wallets, should not render anything */}
               <AcceleratedCheckoutButtons
-                {...eventHandlers}
+                {...acceleratedCheckoutEventHandlers}
                 applePayLabel={ApplePayLabel.checkout}
                 cartId={cartId}
                 wallets={[]}

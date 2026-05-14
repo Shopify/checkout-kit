@@ -70,7 +70,12 @@ type ConfigurationResultSpec = {
 };
 
 export interface Spec extends TurboModule {
-  present(checkoutUrl: string): void;
+  present(
+    checkoutUrl: string,
+    onClose: (() => void) | null,
+    onFail: ((errorJson: string) => void) | null,
+    onGeolocationRequest: ((originJson: string) => void) | null,
+  ): void;
   dismiss(): void;
   setConfig(configuration: ConfigurationSpec): void;
   getConfig(): ConfigurationResultSpec;
@@ -92,6 +97,4 @@ export interface Spec extends TurboModule {
   getConstants(): {version: string};
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>(
-  'ShopifyCheckoutKit',
-);
+export default TurboModuleRegistry.getEnforcing<Spec>('ShopifyCheckoutKit');

@@ -75,16 +75,12 @@ describe('ShopifyCheckoutKit', () => {
   describe('instantiation', () => {
     it('calls `setConfig` with the specified config on instantiation', () => {
       new ShopifyCheckout(config);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(config);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
     });
 
     it('does not call `setConfig` if no config was specified on instantiation', () => {
       new ShopifyCheckout();
-      expect(
-        NativeModule.setConfig,
-      ).not.toHaveBeenCalled();
+      expect(NativeModule.setConfig).not.toHaveBeenCalled();
     });
   });
 
@@ -92,12 +88,8 @@ describe('ShopifyCheckoutKit', () => {
     it('calls the `setConfig` on the Native Module', () => {
       const instance = new ShopifyCheckout();
       instance.setConfig(config);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(config);
+      expect(NativeModule.setConfig).toHaveBeenCalledTimes(1);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
     });
 
     it('calls `setConfig` with logLevel configuration', () => {
@@ -107,22 +99,190 @@ describe('ShopifyCheckoutKit', () => {
         logLevel: LogLevel.debug,
       };
       instance.setConfig(configWithLogLevel);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(configWithLogLevel);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithLogLevel);
     });
   });
 
   describe('present', () => {
-    it('calls `present` with a checkout URL', () => {
+    it('calls `present` with the checkout URL and null callbacks when none are provided', () => {
       const instance = new ShopifyCheckout();
       instance.present(checkoutUrl);
-      expect(
-        NativeModule.present,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        NativeModule.present,
-      ).toHaveBeenCalledWith(checkoutUrl);
+      expect(NativeModule.present).toHaveBeenCalledTimes(1);
+      expect(NativeModule.present).toHaveBeenCalledWith(
+        checkoutUrl,
+        null,
+        null,
+        null,
+      );
+    });
+
+    it('forwards the `onClose` callback to native and invokes the user handler when fired', () => {
+      const instance = new ShopifyCheckout();
+      const onClose = jest.fn();
+      instance.present(checkoutUrl, {onClose});
+      expect(NativeModule.present).toHaveBeenCalledWith(
+        checkoutUrl,
+        expect.any(Function),
+        null,
+        null,
+      );
+      const nativeOnClose = NativeModule.present.mock.calls[0][1] as () => void;
+      nativeOnClose();
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('forwards an `onFail` JSON wrapper to native when `onFail` is provided', () => {
+      const instance = new ShopifyCheckout();
+      const onFail = jest.fn();
+      instance.present(checkoutUrl, {onFail});
+      expect(NativeModule.present).toHaveBeenCalledWith(
+        checkoutUrl,
+        null,
+        expect.any(Function),
+        null,
+      );
+    });
+
+    it('forwards an `onGeolocationRequest` JSON wrapper to native when `onGeolocationRequest` is provided', () => {
+      const instance = new ShopifyCheckout();
+      const onGeolocationRequest = jest.fn();
+      instance.present(checkoutUrl, {onGeolocationRequest});
+      expect(NativeModule.present).toHaveBeenCalledWith(
+        checkoutUrl,
+        null,
+        null,
+        expect.any(Function),
+      );
+    });
+
+    describe('onGeolocationRequest callback', () => {
+      it('parses the native JSON payload and surfaces the typed event to the consumer', () => {
+        const instance = new ShopifyCheckout();
+        const onGeolocationRequest = jest.fn();
+        instance.present(checkoutUrl, {onGeolocationRequest});
+        const nativeOnGeolocationRequest = NativeModule.present.mock
+          .calls[0][3] as (raw: string) => void;
+        nativeOnGeolocationRequest(
+          JSON.stringify({origin: 'https://shopify.com'}),
+        );
+        expect(onGeolocationRequest).toHaveBeenCalledWith({
+          origin: 'https://shopify.com',
+        });
+      });
+
+      it('logs a LifecycleEventParseError and does not invoke `onGeolocationRequest` when payload is invalid JSON', () => {
+        const instance = new ShopifyCheckout();
+        const onGeolocationRequest = jest.fn();
+        instance.present(checkoutUrl, {onGeolocationRequest});
+        const nativeOnGeolocationRequest = NativeModule.present.mock
+          .calls[0][3] as (raw: string) => void;
+        nativeOnGeolocationRequest('not-json');
+        expect(onGeolocationRequest).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+          expect.any(LifecycleEventParseError),
+          'not-json',
+        );
+      });
+    });
+
+    describe('onFail callback', () => {
+      const internalError = {
+        __typename: CheckoutNativeErrorType.InternalError,
+        message: 'Something went wrong',
+        code: CheckoutErrorCode.unknown,
+        recoverable: true,
+      };
+
+      const configError = {
+        __typename: CheckoutNativeErrorType.ConfigurationError,
+        message: 'Storefront Password Required',
+        code: CheckoutErrorCode.storefrontPasswordRequired,
+        recoverable: false,
+      };
+
+      const clientError = {
+        __typename: CheckoutNativeErrorType.CheckoutClientError,
+        message: 'Storefront Password Required',
+        code: CheckoutErrorCode.storefrontPasswordRequired,
+        recoverable: false,
+      };
+
+      const networkError = {
+        __typename: CheckoutNativeErrorType.CheckoutHTTPError,
+        message: 'Checkout not found',
+        code: CheckoutErrorCode.httpError,
+        statusCode: 400,
+        recoverable: false,
+      };
+
+      const expiredError = {
+        __typename: CheckoutNativeErrorType.CheckoutExpiredError,
+        message: 'Customer Account Required',
+        code: CheckoutErrorCode.cartExpired,
+        recoverable: false,
+      };
+
+      it.each([
+        {error: internalError, constructor: InternalError},
+        {error: configError, constructor: ConfigurationError},
+        {error: clientError, constructor: CheckoutClientError},
+        {error: networkError, constructor: CheckoutHTTPError},
+        {error: expiredError, constructor: CheckoutExpiredError},
+      ])(
+        `parses the native JSON payload into a typed CheckoutException ($error.__typename)`,
+        ({
+          error,
+          constructor,
+        }: {
+          error: any;
+          constructor: new (...args: any[]) => any;
+        }) => {
+          const instance = new ShopifyCheckout();
+          const onFail = jest.fn();
+          instance.present(checkoutUrl, {onFail});
+          const nativeOnFail = NativeModule.present.mock.calls[0][2] as (
+            raw: string,
+          ) => void;
+          nativeOnFail(JSON.stringify(error));
+          const calledWith = onFail.mock.calls[0][0];
+          expect(calledWith).toBeInstanceOf(constructor);
+          expect(calledWith).not.toHaveProperty('__typename');
+          expect(calledWith).toHaveProperty('code');
+          expect(calledWith).toHaveProperty('message');
+          expect(calledWith).toHaveProperty('recoverable');
+        },
+      );
+
+      it('falls back to GenericError when the payload has no recognised __typename', () => {
+        const instance = new ShopifyCheckout();
+        const onFail = jest.fn();
+        instance.present(checkoutUrl, {onFail});
+        const error = {
+          __typename: 'UnknownError',
+          message: 'Something went wrong',
+        };
+        const nativeOnFail = NativeModule.present.mock.calls[0][2] as (
+          raw: string,
+        ) => void;
+        nativeOnFail(JSON.stringify(error));
+        const calledWith = onFail.mock.calls[0][0];
+        expect(calledWith).toBeInstanceOf(GenericError);
+      });
+
+      it('logs a LifecycleEventParseError and does not invoke `onFail` when payload is invalid JSON', () => {
+        const instance = new ShopifyCheckout();
+        const onFail = jest.fn();
+        instance.present(checkoutUrl, {onFail});
+        const nativeOnFail = NativeModule.present.mock.calls[0][2] as (
+          raw: string,
+        ) => void;
+        nativeOnFail('not-json');
+        expect(onFail).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+          expect.any(LifecycleEventParseError),
+          'not-json',
+        );
+      });
     });
   });
 
@@ -130,9 +290,7 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `dismiss`', () => {
       const instance = new ShopifyCheckout();
       instance.dismiss();
-      expect(
-        NativeModule.dismiss,
-      ).toHaveBeenCalledTimes(1);
+      expect(NativeModule.dismiss).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -143,124 +301,7 @@ describe('ShopifyCheckoutKit', () => {
         colorScheme: ColorScheme.automatic,
         logLevel: LogLevel.error,
       });
-      expect(
-        NativeModule.getConfig,
-      ).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('addEventListener', () => {
-    it('creates a new event listener for a specific event', () => {
-      const instance = new ShopifyCheckout();
-      const eventName = 'close';
-      const callback = jest.fn();
-      instance.addEventListener(eventName, callback);
-      expect(eventEmitter.addListener).toHaveBeenCalledWith(
-        eventName,
-        callback,
-      );
-    });
-
-    describe('Error Event', () => {
-      const internalError = {
-        __typename: CheckoutNativeErrorType.InternalError,
-        message: 'Something went wrong',
-        code: CheckoutErrorCode.unknown,
-      };
-
-      const configError = {
-        __typename: CheckoutNativeErrorType.ConfigurationError,
-        message: 'Storefront Password Required',
-        code: CheckoutErrorCode.storefrontPasswordRequired,
-      };
-
-      const clientError = {
-        __typename: CheckoutNativeErrorType.CheckoutClientError,
-        message: 'Storefront Password Required',
-        code: CheckoutErrorCode.storefrontPasswordRequired,
-      };
-
-      const networkError = {
-        __typename: CheckoutNativeErrorType.CheckoutHTTPError,
-        message: 'Checkout not found',
-        code: CheckoutErrorCode.httpError,
-        statusCode: 400,
-      };
-
-      const expiredError = {
-        __typename: CheckoutNativeErrorType.CheckoutExpiredError,
-        message: 'Customer Account Required',
-        code: CheckoutErrorCode.cartExpired,
-      };
-
-      it.each([
-        {error: internalError, constructor: InternalError},
-        {error: configError, constructor: ConfigurationError},
-        {error: clientError, constructor: CheckoutClientError},
-        {error: networkError, constructor: CheckoutHTTPError},
-        {error: expiredError, constructor: CheckoutExpiredError},
-      ])(
-        `correctly parses error $error`,
-        ({
-          error,
-          constructor,
-        }: {
-          error: any;
-          constructor: new (...args: any[]) => any;
-        }) => {
-          const instance = new ShopifyCheckout();
-          const eventName = 'error';
-          const callback = jest.fn();
-          instance.addEventListener(eventName, callback);
-          NativeModule.addEventListener(
-            eventName,
-            callback,
-          );
-          expect(eventEmitter.addListener).toHaveBeenCalledWith(
-            'error',
-            expect.any(Function),
-          );
-          eventEmitter.emit('error', error);
-          const calledWith = callback.mock.calls[0][0];
-          expect(calledWith).toBeInstanceOf(constructor);
-          expect(calledWith).not.toHaveProperty('__typename');
-          expect(calledWith).toHaveProperty('code');
-          expect(calledWith).toHaveProperty('message');
-        },
-      );
-
-      it('returns an unknown generic error if the error cannot be parsed', () => {
-        const instance = new ShopifyCheckout();
-        const eventName = 'error';
-        const callback = jest.fn();
-        instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
-        const error = {
-          __typename: 'UnknownError',
-          message: 'Something went wrong',
-        };
-        expect(eventEmitter.addListener).toHaveBeenCalledWith(
-          'error',
-          expect.any(Function),
-        );
-        eventEmitter.emit('error', error);
-        const calledWith = callback.mock.calls[0][0];
-        expect(calledWith).toBeInstanceOf(GenericError);
-        expect(callback).toHaveBeenCalledWith(new GenericError(error as any));
-      });
-    });
-  });
-
-  describe('removeEventListeners', () => {
-    it('Removes all listeners for a specific event', () => {
-      const instance = new ShopifyCheckout();
-      instance.addEventListener('close', () => {});
-      instance.addEventListener('close', () => {});
-      instance.removeEventListeners('close');
-      expect(eventEmitter.removeAllListeners).toHaveBeenCalledWith('close');
+      expect(NativeModule.getConfig).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -327,9 +368,9 @@ describe('ShopifyCheckoutKit', () => {
           'android.permission.ACCESS_COARSE_LOCATION',
           'android.permission.ACCESS_FINE_LOCATION',
         ]);
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).toHaveBeenCalledWith(true);
+        expect(NativeModule.initiateGeolocationRequest).toHaveBeenCalledWith(
+          true,
+        );
       });
 
       it('handles geolocation permission denial correctly', async () => {
@@ -352,9 +393,9 @@ describe('ShopifyCheckoutKit', () => {
           'android.permission.ACCESS_COARSE_LOCATION',
           'android.permission.ACCESS_FINE_LOCATION',
         ]);
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).toHaveBeenCalledWith(false);
+        expect(NativeModule.initiateGeolocationRequest).toHaveBeenCalledWith(
+          false,
+        );
       });
 
       it('cleans up geolocation callback on teardown', () => {
@@ -397,9 +438,7 @@ describe('ShopifyCheckoutKit', () => {
 
         await emitGeolocationRequest();
 
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).not.toHaveBeenCalled();
+        expect(NativeModule.initiateGeolocationRequest).not.toHaveBeenCalled();
       });
 
       it('tears down gracefully', () => {
@@ -510,9 +549,7 @@ describe('ShopifyCheckoutKit', () => {
           instance.configureAcceleratedCheckouts(acceleratedConfig);
 
         expect(result).toBe(true);
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',
@@ -534,9 +571,7 @@ describe('ShopifyCheckoutKit', () => {
 
         instance.configureAcceleratedCheckouts(minimalConfig);
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           null,
@@ -569,9 +604,9 @@ describe('ShopifyCheckoutKit', () => {
         };
         const expectedError = new Error('`storefrontDomain` is required');
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -587,9 +622,9 @@ describe('ShopifyCheckoutKit', () => {
 
         const expectedError = new Error('`storefrontAccessToken` is required');
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -612,9 +647,9 @@ describe('ShopifyCheckoutKit', () => {
           '`wallets.applePay.merchantIdentifier` is required',
         );
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -698,9 +733,7 @@ describe('ShopifyCheckoutKit', () => {
           },
         });
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',
@@ -726,9 +759,7 @@ describe('ShopifyCheckoutKit', () => {
           },
         });
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',

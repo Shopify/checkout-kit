@@ -25,6 +25,8 @@ package com.shopify.reactnative.checkoutkit;
 
 import android.app.Activity;
 import androidx.activity.ComponentActivity;
+import androidx.annotation.Nullable;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Arguments;
@@ -77,10 +79,12 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL) {
+  public void present(String checkoutURL, @Nullable Callback onClose, @Nullable Callback onFail,
+      @Nullable Callback onGeolocationRequest) {
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      checkoutListener = new CustomCheckoutListener(currentActivity, this.reactContext);
+      checkoutListener = new CustomCheckoutListener(currentActivity, this.reactContext, onClose,
+          onFail, onGeolocationRequest);
       currentActivity.runOnUiThread(() -> {
         checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
             checkoutListener);
