@@ -65,7 +65,7 @@ class CheckoutDialogTest {
             it.preloading = Preloading(enabled = false)
         }
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
-        processor = noopDefaultCheckoutEventProcessor(activity)
+        processor = noopDefaultCheckoutEventProcessor()
     }
 
     @After

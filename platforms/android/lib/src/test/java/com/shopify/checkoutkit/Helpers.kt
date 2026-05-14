@@ -22,7 +22,6 @@
  */
 package com.shopify.checkoutkit
 
-import android.app.Activity
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
 import org.assertj.core.api.AbstractAssert
 
@@ -103,18 +102,10 @@ class CheckoutExceptionAssert(actual: CheckoutException) :
     }
 }
 
-fun noopDefaultCheckoutEventProcessor(activity: Activity, log: LogWrapper = LogWrapper()): DefaultCheckoutEventProcessor {
-    return object : DefaultCheckoutEventProcessor(activity, log) {
-        override fun onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent) {
-            // no-op
-        }
-
-        override fun onCheckoutFailed(error: CheckoutException) {
-            // no-op
-        }
-
-        override fun onCheckoutCanceled() {
-            // no-op
-        }
+fun noopDefaultCheckoutEventProcessor(): DefaultCheckoutEventProcessor {
+    return object : DefaultCheckoutEventProcessor() {
+        override fun onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent) = Unit
+        override fun onCheckoutFailed(error: CheckoutException) = Unit
+        override fun onCheckoutCanceled() = Unit
     }
 }

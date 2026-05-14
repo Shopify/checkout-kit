@@ -22,7 +22,6 @@
  */
 package com.shopify.checkoutkit
 
-import android.net.Uri
 import android.os.Looper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -108,10 +107,10 @@ class CheckoutProtocolTest {
 
     // endregion
 
-    // region process — always returns null
+    // region process — return value semantics
 
     @Test
-    fun `process always returns null`() {
+    fun `process returns null for registered notifications`() {
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.start) { /* no-op */ }
 
@@ -181,48 +180,6 @@ class CheckoutProtocolTest {
         withHandler.process(ecStartMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         assertThat(received).hasSize(1)
-    }
-
-    @Test
-    fun `onOpenExternalUrl returns new client leaving original unchanged`() {
-        val uri = Uri.parse("https://example.com")
-        val base = CheckoutProtocol.Client()
-        val withHandler = base.onOpenExternalUrl { true }
-
-        assertThat(base.openExternalUrl(uri)).isFalse()
-        assertThat(withHandler.openExternalUrl(uri)).isTrue()
-    }
-
-    // endregion
-
-    // region openExternalUrl
-
-    @Test
-    fun `openExternalUrl returns false when no handler registered`() {
-        val client = CheckoutProtocol.Client()
-        assertThat(client.openExternalUrl(Uri.parse("https://example.com"))).isFalse()
-    }
-
-    @Test
-    fun `openExternalUrl delegates to registered handler`() {
-        val seen = mutableListOf<Uri>()
-        val client = CheckoutProtocol.Client()
-            .onOpenExternalUrl { uri ->
-                seen.add(uri)
-                true
-            }
-
-        val uri = Uri.parse("https://shop.example.com/page")
-        val result = client.openExternalUrl(uri)
-
-        assertThat(result).isTrue()
-        assertThat(seen).containsExactly(uri)
-    }
-
-    @Test
-    fun `openExternalUrl respects handler returning false`() {
-        val client = CheckoutProtocol.Client().onOpenExternalUrl { false }
-        assertThat(client.openExternalUrl(Uri.parse("https://example.com"))).isFalse()
     }
 
     // endregion

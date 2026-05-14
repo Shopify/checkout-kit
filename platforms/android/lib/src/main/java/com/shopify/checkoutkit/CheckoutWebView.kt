@@ -24,7 +24,6 @@ package com.shopify.checkoutkit
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -115,51 +114,21 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
             view: WebView?,
             request: WebResourceRequest?
         ): Boolean {
-            if (
-                request?.hasExternalAnnotation() == true ||
-                request?.url?.isContactLink() == true ||
-                request?.url?.isDeepLink() == true
-            ) {
-                log.d(LOG_TAG, "Overriding URL loading to invoke onCheckoutLinkClicked for request: $request.")
-                checkoutBridge.getEventProcessor().onCheckoutViewLinkClicked(request.trimmedUri())
-                return true
+            val uri = request?.url
+            if (uri == null || (!uri.isContactLink() && !uri.isDeepLink())) return false
+
+            when (val result = ExternalUriLauncher.launch(context, uri)) {
+                is ExternalUriLauncher.Result.Launched ->
+                    log.d(LOG_TAG, "Deep link intercepted: $uri — allowed")
+                is ExternalUriLauncher.Result.Rejected ->
+                    log.d(LOG_TAG, "Deep link intercepted: $uri — rejected (${result.reason})")
             }
-            return false
-        }
-
-        private fun WebResourceRequest.hasExternalAnnotation(): Boolean {
-            if (!this.url.isWebLink()) {
-                return false
-            }
-            val openExternallyParam = this.url.getQueryParameter(OPEN_EXTERNALLY_PARAM)
-            val hasOpenExternallyParam = setOf("true", "1").contains(openExternallyParam?.lowercase()?.trim())
-            log.d(LOG_TAG, "open_externally param found on request URL.")
-            return hasOpenExternallyParam
-        }
-
-        private fun WebResourceRequest.trimmedUri(): Uri {
-            if (!setOf(Scheme.HTTP, Scheme.HTTPS).contains(this.url.scheme)) {
-                return this.url
-            }
-
-            val trimmedUri = Uri.Builder()
-                .scheme(this.url.scheme)
-                .authority(this.url.authority)
-                .path(this.url.path)
-
-            this.url.queryParameterNames.forEach {
-                if (it != OPEN_EXTERNALLY_PARAM) {
-                    trimmedUri.appendQueryParameter(it, this.url.getQueryParameter(it))
-                }
-            }
-
-            return trimmedUri.build()
+            return true
         }
     }
 
     companion object {
         private const val LOG_TAG = "CheckoutWebView"
-        private const val OPEN_EXTERNALLY_PARAM = "open_externally"
         private const val JAVASCRIPT_INTERFACE_NAME = "android"
 
         internal var cacheEntry: CheckoutWebViewCacheEntry? = null

@@ -22,9 +22,6 @@
  */
 package com.shopify.checkoutkit
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
@@ -56,12 +53,6 @@ public interface CheckoutEventProcessor {
      * Event representing the cancellation/closing of checkout by the buyer
      */
     public fun onCheckoutCanceled()
-
-    /**
-     * Event indicating that a link has been clicked within checkout that should be opened outside
-     * of the WebView, e.g. in a system browser or email client. Protocols can be http/https/mailto/tel
-     */
-    public fun onCheckoutLinkClicked(uri: Uri)
 
     /**
      * A permission has been requested by the web chrome client, e.g. to access the camera
@@ -103,10 +94,6 @@ internal class NoopEventProcessor : CheckoutEventProcessor {
         /* noop */
     }
 
-    override fun onCheckoutLinkClicked(uri: Uri) {
-        /* noop */
-    }
-
     override fun onShowFileChooser(
         webView: WebView,
         filePathCallback: ValueCallback<Array<Uri>>,
@@ -130,22 +117,9 @@ internal class NoopEventProcessor : CheckoutEventProcessor {
 
 /**
  * An abstract class that provides a default implementation of the CheckoutEventProcessor interface
- * for handling checkout events and interacting with the Android operating system.
- * @param context from which we will launch intents.
+ * for the optional permission and file-chooser callbacks. Override in subclasses as needed.
  */
-public abstract class DefaultCheckoutEventProcessor @JvmOverloads constructor(
-    private val context: Context,
-    private val log: LogWrapper = LogWrapper(),
-) : CheckoutEventProcessor {
-
-    override fun onCheckoutLinkClicked(uri: Uri) {
-        when (uri.scheme) {
-            "tel" -> context.launchPhoneApp(uri.schemeSpecificPart)
-            "mailto" -> context.launchEmailApp(uri.schemeSpecificPart)
-            "https", "http" -> context.launchBrowser(uri)
-            else -> context.tryLaunchDeepLink(uri)
-        }
-    }
+public abstract class DefaultCheckoutEventProcessor : CheckoutEventProcessor {
 
     override fun onPermissionRequest(permissionRequest: PermissionRequest) {
         // no-op override to implement
@@ -165,43 +139,5 @@ public abstract class DefaultCheckoutEventProcessor @JvmOverloads constructor(
 
     override fun onGeolocationPermissionsHidePrompt() {
         // no-op override to implement
-    }
-
-    private fun Context.launchEmailApp(to: String) {
-        log.d(LOG_TAG, "Attempting to launch email app.")
-        val intent = Intent(Intent.ACTION_SEND)
-        intent.type = "vnd.android.cursor.item/email"
-        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(to))
-        startActivity(intent)
-    }
-
-    private fun Context.launchBrowser(uri: Uri) {
-        log.d(LOG_TAG, "Attempting to launch browser for $uri.")
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = uri
-        startActivity(intent)
-    }
-
-    private fun Context.launchPhoneApp(phone: String) {
-        log.d(LOG_TAG, "Attempting to launch phone app.")
-        val intent = Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", phone, null))
-        startActivity(intent)
-    }
-
-    @SuppressLint("QueryPermissionsNeeded")
-    private fun Context.tryLaunchDeepLink(uri: Uri) {
-        log.d(LOG_TAG, "Attempting to launch deep link for uri $uri.")
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = uri
-        if (context.packageManager.queryIntentActivities(intent, 0).isNotEmpty()) {
-            startActivity(intent)
-        } else {
-            log.w(TAG, "Unrecognized scheme for link clicked in checkout '$uri'")
-        }
-    }
-
-    private companion object {
-        private const val LOG_TAG = "DefaultCheckoutEventProcessor"
-        private const val TAG = "DefaultCheckoutEventProcessor"
     }
 }

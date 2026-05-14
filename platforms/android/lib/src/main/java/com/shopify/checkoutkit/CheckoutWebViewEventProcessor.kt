@@ -58,11 +58,6 @@ internal class CheckoutWebViewEventProcessor(
         }
     }
 
-    fun onCheckoutViewLinkClicked(uri: Uri) {
-        log.d(LOG_TAG, "Calling onCheckoutLinkClicked.")
-        eventProcessor.onCheckoutLinkClicked(uri)
-    }
-
     fun onCheckoutViewFailedWithError(error: CheckoutException) {
         onMainThread {
             closeCheckoutDialogWithError(error)

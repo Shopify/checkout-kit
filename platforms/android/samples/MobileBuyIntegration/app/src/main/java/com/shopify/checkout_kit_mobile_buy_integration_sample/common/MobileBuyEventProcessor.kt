@@ -49,7 +49,7 @@ class MobileBuyEventProcessor(
     private val navController: NavController,
     private val logger: Logger,
     private val context: Context
-) : DefaultCheckoutEventProcessor(context) {
+) : DefaultCheckoutEventProcessor() {
     override fun onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent) {
         logger.log(checkoutCompletedEvent)
 

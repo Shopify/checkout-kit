@@ -22,6 +22,9 @@
  */
 package com.shopify.checkoutkit
 
+import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.ResolveInfo
 import android.net.Uri
 import android.os.Looper
 import androidx.activity.ComponentActivity
@@ -55,6 +58,10 @@ class EmbeddedCheckoutProtocolTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        // Mirror real-Android behavior: startActivity throws ActivityNotFoundException when
+        // no activity resolves the intent. Robolectric defaults to silently recording the
+        // intent instead — turning on checkActivities aligns the shadow with production.
+        shadowOf(activity.application).checkActivities(true)
         viewSpy = Mockito.spy(CheckoutWebView(activity))
         mockEventProcessor = mock()
         whenever(viewSpy.getEventProcessor()).thenReturn(mockEventProcessor)
@@ -97,6 +104,57 @@ class EmbeddedCheckoutProtocolTest {
         }
         assertThat(js).contains("window.EmbeddedCheckoutProtocol")
         assertThat(js).contains(".postMessage(")
+    }
+
+    @Test
+    fun `ec ready echoes window open delegation when requested`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage(
+                """{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":["window.open"]}}"""
+            )
+        }
+        assertThat(js).contains("\"delegate\":[\"window.open\"]")
+        assertThat(js).contains("\"status\":\"success\"")
+    }
+
+    @Test
+    fun `ec ready filters unsupported delegations down to intersection`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage(
+                """{"jsonrpc":"2.0","method":"ec.ready","id":"r2","params":{"delegate":["window.open","payment.credential"]}}"""
+            )
+        }
+        assertThat(js).contains("\"delegate\":[\"window.open\"]")
+        assertThat(js).doesNotContain("payment.credential")
+    }
+
+    @Test
+    fun `ec ready omits delegate field when no supported delegations requested`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage(
+                """{"jsonrpc":"2.0","method":"ec.ready","id":"r3","params":{"delegate":["fulfillment.address_change"]}}"""
+            )
+        }
+        assertThat(js).doesNotContain("\"delegate\"")
+        assertThat(js).contains("\"status\":\"success\"")
+    }
+
+    @Test
+    fun `ec ready omits delegate field when delegate array is empty`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"r4","params":{"delegate":[]}}""")
+        }
+        assertThat(js).doesNotContain("\"delegate\"")
+        assertThat(js).contains("\"status\":\"success\"")
+    }
+
+    @Test
+    fun `ec ready omits delegate field when params has no delegate key`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"r5","params":{}}""")
+        }
+        assertThat(js).doesNotContain("\"delegate\"")
+        assertThat(js).contains("\"status\":\"success\"")
     }
 
     // endregion
@@ -167,104 +225,76 @@ class EmbeddedCheckoutProtocolTest {
 
     // endregion
 
-    // region ec.window.open_request
+    // region ec.window.open_request — handled by kit-owned default delegation client
 
     @Test
-    fun `ec window open request calls openExternalUrl on client with parsed uri`() {
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.openExternalUrl(any())).thenReturn(true)
-        ecp.setClient(client)
-
-        ecp.postMessage(
-            """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"5","params":{"url":"https://example.com/page"}}"""
-        )
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        val captor = argumentCaptor<Uri>()
-        verify(client).openExternalUrl(captor.capture())
-        assertThat(captor.firstValue.toString()).isEqualTo("https://example.com/page")
-    }
-
-    @Test
-    fun `ec window open request sends UCP success result when client returns true`() {
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.openExternalUrl(any())).thenReturn(true)
-        ecp.setClient(client)
+    fun `window open launches intent when activity resolves the uri`() {
+        registerFakeBrowserFor("https://example.com")
 
         val js = captureEvaluatedJs {
-            ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"5","params":{"url":"https://example.com"}}"""
-            )
-        }
-        assertThat(js).contains("\"result\"")
-        assertThat(js).contains("\"ucp\"")
-        assertThat(js).contains("\"status\":\"success\"")
-        assertThat(js).doesNotContain("\"error\"")
-    }
-
-    @Test
-    fun `ec window open request falls back to event processor when client returns false`() {
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.openExternalUrl(any())).thenReturn(false)
-        ecp.setClient(client)
-
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"6","params":{"url":"https://example.com"}}"""
-            )
+            ecp.postMessage(windowOpenRequest(id = "\"7\"", url = "https://example.com"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"result\"")
-        assertThat(js).contains("\"ucp\"")
         assertThat(js).contains("\"status\":\"success\"")
-        assertThat(js).doesNotContain("\"error\"")
-        verify(mockEventProcessor).onCheckoutViewLinkClicked(Uri.parse("https://example.com"))
+        val launched = shadowOf(activity).nextStartedActivity
+        assertThat(launched).isNotNull()
+        assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)
+        assertThat(launched.data.toString()).isEqualTo("https://example.com")
     }
 
     @Test
-    fun `ec window open request falls back to event processor when no client is set`() {
+    fun `window open emits UCP rejection when no activity resolves the uri`() {
         val js = captureEvaluatedJs {
-            ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"7","params":{"url":"https://example.com"}}"""
-            )
+            ecp.postMessage(windowOpenRequest(id = "\"42\"", url = "https://nothing-resolves.invalid"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"result\"")
-        assertThat(js).contains("\"ucp\"")
-        assertThat(js).contains("\"status\":\"success\"")
-        assertThat(js).doesNotContain("\"error\"")
-        verify(mockEventProcessor).onCheckoutViewLinkClicked(Uri.parse("https://example.com"))
+        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(js).contains("\"severity\":\"unrecoverable\"")
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
 
     @Test
-    fun `ec window open request does not call event processor when client handles it`() {
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.openExternalUrl(any())).thenReturn(true)
-        ecp.setClient(client)
+    fun `window open ignores consumer client — kit default always handles it`() {
+        registerFakeBrowserFor("https://example.com")
+        val consumerClient = mock<CheckoutCommunicationClient>()
+        ecp.setClient(consumerClient)
 
-        ecp.postMessage(
-            """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"8","params":{"url":"https://example.com"}}"""
-        )
+        ecp.postMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockEventProcessor, never()).onCheckoutViewLinkClicked(any())
+        verify(consumerClient, never()).process(any())
+        assertThat(shadowOf(activity).nextStartedActivity).isNotNull()
     }
 
     @Test
-    fun `ec window open request rejects non-http schemes`() {
-        val client = mock<CheckoutCommunicationClient>()
-        ecp.setClient(client)
+    fun `window open emits invalid params when params url is missing`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"9","params":{}}""")
+        }
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32602")
+    }
 
+    @Test
+    fun `window open emits invalid params when params url is not a string`() {
         val js = captureEvaluatedJs {
             ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"8","params":{"url":"intent://evil"}}"""
+                """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"10","params":{"url":{}}}"""
             )
         }
         assertThat(js).contains("\"error\"")
         assertThat(js).contains("-32602")
-        verify(client, never()).openExternalUrl(any())
+    }
+
+    @Test
+    fun `window open emits invalid params when params is not an object`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"11","params":[]}""")
+        }
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32602")
     }
 
     // endregion
@@ -414,6 +444,9 @@ class EmbeddedCheckoutProtocolTest {
         return """{"jsonrpc":"2.0","method":"ec.ready","id":$id,"params":$params}"""
     }
 
+    private fun windowOpenRequest(id: String, url: String): String =
+        """{"jsonrpc":"2.0","method":"ec.window.open_request","id":$id,"params":{"url":"$url"}}"""
+
     /**
      * Runs [block], drains the main-thread queue, captures the first JS string
      * passed to [CheckoutWebView.evaluateJavascript].
@@ -424,6 +457,22 @@ class EmbeddedCheckoutProtocolTest {
         val captor = argumentCaptor<String>()
         verify(viewSpy).evaluateJavascript(captor.capture(), isNull())
         return captor.firstValue
+    }
+
+    /**
+     * Makes [uri] resolvable through Robolectric's shadow package manager so that
+     * `queryIntentActivities(Intent.ACTION_VIEW, uri)` returns a non-empty list.
+     * Mirrors the behavior of a real device with a browser installed.
+     */
+    private fun registerFakeBrowserFor(uri: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+        val resolveInfo = ResolveInfo().apply {
+            activityInfo = ActivityInfo().apply {
+                packageName = "com.fake.browser"
+                name = "FakeBrowserActivity"
+            }
+        }
+        shadowOf(activity.packageManager).addResolveInfoForIntent(intent, resolveInfo)
     }
 
     // endregion
