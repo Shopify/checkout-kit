@@ -32,7 +32,6 @@ import android.webkit.WebChromeClient.FileChooserParams
 import android.webkit.WebView
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
-import com.shopify.checkoutkit.pixelevents.PixelEvent
 
 /**
  * Event processor that can handle events internally, delegate to the CheckoutEventProcessor
@@ -108,11 +107,6 @@ internal class CheckoutWebViewEventProcessor(
         onMainThread {
             setProgressBarVisibility(VISIBLE)
         }
-    }
-
-    fun onWebPixelEvent(event: PixelEvent) {
-        log.d(LOG_TAG, "Calling onWebPixelEvent for $event.")
-        eventProcessor.onWebPixelEvent(event)
     }
 
     companion object {

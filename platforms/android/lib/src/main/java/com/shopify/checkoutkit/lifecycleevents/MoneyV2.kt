@@ -20,29 +20,24 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.shopify.checkoutkit.pixelevents
+package com.shopify.checkoutkit.lifecycleevents
 
-import com.shopify.checkoutkit.LogWrapper
-import com.shopify.checkoutkit.WebToSdkEvent
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.Serializable
 
-internal class PixelEventDecoder @JvmOverloads constructor(
-    private val decoder: Json,
-    private val log: LogWrapper = LogWrapper()
-) {
-    fun decode(decodedMsg: WebToSdkEvent): PixelEvent? {
-        return try {
-            val eventWrapper = decoder.decodeFromString<PixelEventWrapper>(decodedMsg.body)
-            when (EventType.fromTypeName(eventWrapper.event["type"]?.jsonPrimitive?.content)) {
-                EventType.STANDARD -> decoder.decodeFromJsonElement<StandardPixelEvent>(eventWrapper.event)
-                EventType.CUSTOM -> decoder.decodeFromJsonElement<CustomPixelEvent>(eventWrapper.event)
-                else -> return null
-            }
-        } catch (e: Exception) {
-            log.e("CheckoutBridge", "Failed to decode pixel event", e)
-            null
-        }
-    }
-}
+/**
+ * A monetary value with currency.
+ */
+@Serializable
+public data class MoneyV2(
+    /**
+     * The decimal money amount.
+     */
+    public val amount: Double? = null,
+
+    /**
+     * The three-letter code that represents the currency, for example, USD.
+     * Supported codes include standard ISO 4217 codes, legacy codes, and non-
+     * standard codes.
+     */
+    public val currencyCode: String? = null,
+)

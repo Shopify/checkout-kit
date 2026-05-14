@@ -26,8 +26,6 @@
   "lib/commonjs/index.d.js.map",
   "lib/commonjs/index.js",
   "lib/commonjs/index.js.map",
-  "lib/commonjs/pixels.d.js",
-  "lib/commonjs/pixels.d.js.map",
   "lib/commonjs/specs/NativeShopifyCheckoutKit.js",
   "lib/commonjs/specs/NativeShopifyCheckoutKit.js.map",
   "lib/commonjs/specs/RCTAcceleratedCheckoutButtonsNativeComponent.js",
@@ -44,8 +42,6 @@
   "lib/module/index.d.js.map",
   "lib/module/index.js",
   "lib/module/index.js.map",
-  "lib/module/pixels.d.js",
-  "lib/module/pixels.d.js.map",
   "lib/module/specs/NativeShopifyCheckoutKit.js",
   "lib/module/specs/NativeShopifyCheckoutKit.js.map",
   "lib/module/specs/RCTAcceleratedCheckoutButtonsNativeComponent.js",
@@ -69,7 +65,6 @@
   "src/events.d.ts",
   "src/index.d.ts",
   "src/index.ts",
-  "src/pixels.d.ts",
   "src/specs/NativeShopifyCheckoutKit.ts",
   "src/specs/RCTAcceleratedCheckoutButtonsNativeComponent.ts"
 ]

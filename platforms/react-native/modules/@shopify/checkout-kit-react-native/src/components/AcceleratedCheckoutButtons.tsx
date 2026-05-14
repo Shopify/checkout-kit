@@ -27,7 +27,6 @@ import type {
   AcceleratedCheckoutWallet,
   CheckoutCompletedEvent,
   CheckoutException,
-  PixelEvent,
 } from '..';
 import RCTAcceleratedCheckoutButtons from '../specs/RCTAcceleratedCheckoutButtonsNativeComponent';
 
@@ -122,11 +121,6 @@ interface CommonAcceleratedCheckoutButtonsProps {
   onRenderStateChange?: (event: RenderStateChangeEvent) => void;
 
   /**
-   * Called when a web pixel event is triggered
-   */
-  onWebPixelEvent?: (event: PixelEvent) => void;
-
-  /**
    * Called when a link is clicked within the checkout
    */
   onClickLink?: (url: string) => void;
@@ -191,7 +185,6 @@ export const AcceleratedCheckoutButtons: React.FC<
   onComplete,
   onCancel,
   onRenderStateChange,
-  onWebPixelEvent,
   onClickLink,
   ...props
 }) => {
@@ -235,13 +228,6 @@ export const AcceleratedCheckoutButtons: React.FC<
       }
     },
     [onRenderStateChange],
-  );
-
-  const handleWebPixelEvent = useCallback(
-    (event: {nativeEvent: unknown}) => {
-      onWebPixelEvent?.(event.nativeEvent as PixelEvent);
-    },
-    [onWebPixelEvent],
   );
 
   const handleClickLink = useCallback(
@@ -314,7 +300,6 @@ export const AcceleratedCheckoutButtons: React.FC<
       onComplete={handleComplete}
       onCancel={handleCancel}
       onRenderStateChange={handleRenderStateChange}
-      onWebPixelEvent={handleWebPixelEvent}
       onClickLink={handleClickLink}
       onSizeChange={handleSizeChange}
     />

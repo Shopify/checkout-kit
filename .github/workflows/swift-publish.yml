@@ -14,9 +14,6 @@ jobs:
     runs-on: ${{ vars.MACOS_RUNNER }}
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/platforms/swift/Gemfile
-    defaults:
-      run:
-        working-directory: platforms/swift
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -27,9 +24,10 @@ jobs:
           working-directory: platforms/swift
 
       - name: Deploy to Cocoapods
+        # Podspec lives at the repo root; lint and trunk push run from there.
         run: |
           set -eo pipefail
-          bundle exec pod lib lint --allow-warnings --verbose
-          bundle exec pod trunk push --allow-warnings --verbose
+          bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings --verbose
+          bundle exec pod trunk push ShopifyCheckoutKit.podspec --allow-warnings --verbose
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}

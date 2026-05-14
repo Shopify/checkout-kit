@@ -50,7 +50,6 @@ import {
 import type {
   CheckoutCompletedEvent,
   CheckoutException,
-  PixelEvent,
 } from '@shopify/checkout-kit-react-native';
 import {ConfigProvider, useConfig} from './context/Config';
 import {BuyerIdentityMode} from './auth/types';
@@ -217,10 +216,6 @@ function AppWithContext({children}: PropsWithChildren) {
       eventHandlers.onCancel?.();
     });
 
-    const pixel = shopify.addEventListener('pixel', (event: PixelEvent) => {
-      eventHandlers.onWebPixelEvent?.(event);
-    });
-
     const completed = shopify.addEventListener(
       'completed',
       (event: CheckoutCompletedEvent) => {
@@ -236,7 +231,6 @@ function AppWithContext({children}: PropsWithChildren) {
     );
 
     return () => {
-      pixel?.remove();
       completed?.remove();
       close?.remove();
       error?.remove();

@@ -18,10 +18,6 @@ import com.shopify.checkoutsheetkit.ShopifyCheckoutSheetKit;
 import com.shopify.checkoutsheetkit.Preloading;
 import com.shopify.checkoutsheetkit.ColorScheme;
 import com.shopify.checkoutsheetkit.LogLevel;
-import com.shopify.checkoutsheetkit.pixelevents.PixelEvent;
-import com.shopify.checkoutsheetkit.pixelevents.StandardPixelEvent;
-import com.shopify.checkoutsheetkit.pixelevents.CustomPixelEvent;
-import com.shopify.checkoutsheetkit.pixelevents.EventType;
 import com.shopify.checkoutsheetkit.lifecycleevents.CheckoutCompletedEvent;
 import com.shopify.checkoutsheetkit.lifecycleevents.OrderDetails;
 import com.shopify.checkoutsheetkit.lifecycleevents.CartInfo;
@@ -479,46 +475,6 @@ public class ShopifyCheckoutKitModuleTest {
    */
 
   @Test
-  public void testCanProcessStandardPixelEvents() {
-    CustomCheckoutEventProcessor processor = new CustomCheckoutEventProcessor(mockContext, mockReactContext);
-
-    PixelEvent standardEvent = new StandardPixelEvent(
-        "test-id",
-        "page_viewed",
-        "2023-01-01T00:00:00Z",
-        EventType.STANDARD,
-        null,
-        null);
-
-    processor.onWebPixelEvent(standardEvent);
-
-    verify(mockEventEmitter).emit(eq("pixel"), stringCaptor.capture());
-
-    assertThat(stringCaptor.getValue())
-        .contains("test-id", "page_viewed", "STANDARD");
-  }
-
-  @Test
-  public void testCanProcessCustomPixelEvents() {
-    CustomCheckoutEventProcessor processor = new CustomCheckoutEventProcessor(mockContext, mockReactContext);
-
-    PixelEvent customEvent = new CustomPixelEvent(
-        "custom-id",
-        "custom_event",
-        "2023-01-01T00:00:00Z",
-        EventType.CUSTOM,
-        null,
-        "{\"customAttribute\":\"value\"}");
-
-    processor.onWebPixelEvent(customEvent);
-
-    verify(mockEventEmitter).emit(eq("pixel"), stringCaptor.capture());
-
-    assertThat(stringCaptor.getValue())
-        .contains("custom-id", "custom_event", "CUSTOM", "customAttribute");
-  }
-
-  @Test
   public void testCanProcessCheckoutCompletedEvents() {
     CustomCheckoutEventProcessor processor = new CustomCheckoutEventProcessor(mockContext, mockReactContext);
 
@@ -619,14 +575,6 @@ public class ShopifyCheckoutKitModuleTest {
         .isTrue();
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
         .isEqualTo("dark");
-
-    // Test event processing with the configured module
-    CustomCheckoutEventProcessor processor = new CustomCheckoutEventProcessor(mockContext, mockReactContext);
-
-    PixelEvent event = new StandardPixelEvent("test", "page_viewed", "timestamp", EventType.STANDARD, null, null);
-    processor.onWebPixelEvent(event);
-
-    verify(mockEventEmitter).emit(eq("pixel"), any(String.class));
   }
 
   /**

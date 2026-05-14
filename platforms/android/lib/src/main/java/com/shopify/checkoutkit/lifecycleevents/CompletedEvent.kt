@@ -22,7 +22,6 @@
  */
 package com.shopify.checkoutkit.lifecycleevents
 
-import com.shopify.checkoutkit.pixelevents.MoneyV2
 import kotlinx.serialization.Serializable
 
 @Serializable
