@@ -48,7 +48,7 @@ public class CheckoutViewController: UINavigationController {
     }
 }
 
-public struct CheckoutSheet: UIViewControllerRepresentable, CheckoutConfigurable {
+public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurable {
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL

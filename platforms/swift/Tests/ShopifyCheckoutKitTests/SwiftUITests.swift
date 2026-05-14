@@ -39,20 +39,20 @@ class CheckoutViewControllerTests: XCTestCase {
     }
 }
 
-class CheckoutSheetTests: XCTestCase {
+class ShopifyCheckoutTests: XCTestCase {
     var checkoutURL: URL!
-    var checkoutSheet: CheckoutSheet!
+    var shopifyCheckout: ShopifyCheckout!
 
     override func setUp() {
         super.setUp()
         checkoutURL = URL(string: "https://www.shopify.com")
-        checkoutSheet = CheckoutSheet(checkout: checkoutURL)
+        shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
 
     func testOnCancel() {
         var cancelActionCalled = false
 
-        let sheet = checkoutSheet.onCancel {
+        let sheet = shopifyCheckout.onCancel {
             cancelActionCalled = true
         }
         sheet.onCancelAction?()
@@ -64,7 +64,7 @@ class CheckoutSheetTests: XCTestCase {
         var actionData: CheckoutError?
         let error: CheckoutError = .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500), recoverable: false)
 
-        let sheet = checkoutSheet.onFail { failure in
+        let sheet = shopifyCheckout.onFail { failure in
             actionCalled = true
             actionData = failure
         }
@@ -76,53 +76,53 @@ class CheckoutSheetTests: XCTestCase {
 
     func testConnect() {
         let client = MockBridgeClient()
-        let sheet = checkoutSheet.connect(client)
+        let sheet = shopifyCheckout.connect(client)
         XCTAssertNotNil(sheet.client)
     }
 }
 
 class CheckoutConfigurableTests: XCTestCase {
     var checkoutURL: URL!
-    var checkoutSheet: CheckoutSheet!
+    var shopifyCheckout: ShopifyCheckout!
 
     override func setUp() {
         super.setUp()
         checkoutURL = URL(string: "https://www.shopify.com")
-        checkoutSheet = CheckoutSheet(checkout: checkoutURL)
+        shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
 
     func testBackgroundColor() {
         let color = UIColor.red
-        checkoutSheet.backgroundColor(color)
+        shopifyCheckout.backgroundColor(color)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, color)
     }
 
     func testColorScheme() {
         let colorScheme = ShopifyCheckoutKit.Configuration.ColorScheme.light
-        checkoutSheet.colorScheme(colorScheme)
+        shopifyCheckout.colorScheme(colorScheme)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, colorScheme)
     }
 
     func testTintColor() {
         let color = UIColor.blue
-        checkoutSheet.tintColor(color)
+        shopifyCheckout.tintColor(color)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, color)
     }
 
     func testTitle() {
         let title = "Test Title"
-        checkoutSheet.title(title)
+        shopifyCheckout.title(title)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.title, title)
     }
 
     func testCloseButtonTintColor() {
         let color = UIColor.green
-        checkoutSheet.closeButtonTintColor(color)
+        shopifyCheckout.closeButtonTintColor(color)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, color)
     }
 
     func testCloseButtonTintColorNil() {
-        checkoutSheet.closeButtonTintColor(nil)
+        shopifyCheckout.closeButtonTintColor(nil)
         XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
     }
 }
