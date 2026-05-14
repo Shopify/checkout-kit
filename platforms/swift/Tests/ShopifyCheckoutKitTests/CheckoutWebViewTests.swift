@@ -529,8 +529,6 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
     }
 
-    // MARK: - ec.window.open_request
-
     @MainActor
     func testWindowOpenRequestUsesConsumerOverride() async throws {
         let id = "req-window-1"
