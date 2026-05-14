@@ -29,9 +29,9 @@ import com.shopify.checkoutkit.lifecycleevents.CartLineImage
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEventDecoder
 import com.shopify.checkoutkit.lifecycleevents.DeliveryDetails
 import com.shopify.checkoutkit.lifecycleevents.DeliveryInfo
+import com.shopify.checkoutkit.lifecycleevents.MoneyV2
 import com.shopify.checkoutkit.lifecycleevents.PaymentMethod
 import com.shopify.checkoutkit.lifecycleevents.Price
-import com.shopify.checkoutkit.pixelevents.MoneyV2
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test

@@ -8,10 +8,6 @@ import androidx.annotation.NonNull;
 import com.shopify.checkoutkit.errorevents.CheckoutErrorDecoder;
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent;
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEventDecoder;
-import com.shopify.checkoutkit.pixelevents.PixelEvent;
-import com.shopify.checkoutkit.pixelevents.PixelEventDecoder;
-import com.shopify.checkoutkit.pixelevents.StandardPixelEvent;
-import com.shopify.checkoutkit.pixelevents.StandardPixelEventData;
 
 import org.junit.After;
 import org.junit.Before;
@@ -152,11 +148,6 @@ public class InteropTest {
         try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
             DefaultCheckoutEventProcessor processor = new DefaultCheckoutEventProcessor(controller.get()) {
                 @Override
-                public void onWebPixelEvent(@NonNull PixelEvent event) {
-
-                }
-
-                @Override
                 public void onCheckoutCompleted(@NonNull CheckoutCompletedEvent checkoutCompletedEvent) {
 
                 }
@@ -174,43 +165,6 @@ public class InteropTest {
 
             assertThat(processor).isNotNull();
         }
-    }
-
-    // java tests lack access to internal kotlin classes in the project
-    @SuppressWarnings("all")
-    @Test
-    public void canAccessFieldsOnPixelEvents() {
-        String orderId = "123";
-        String eventString = "{" +
-                "\"name\": \"checkout_started\"," +
-                "\"event\": {" +
-                "\"type\": \"standard\"," +
-                "\"id\": \"sh-88153c5a-8F2D-4CCA-3231-EF5C032A4C3B\"," +
-                "\"name\": \"checkout_started\"," +
-                "\"timestamp\": \"2023-12-20T16:39:23+0000\"," +
-                "\"data\": {" +
-                "\"checkout\": {" +
-                "\"order\": {" +
-                "\"id\": \"" + orderId + "\"" +
-                "}" +
-                "}" +
-                "}" +
-                "}" +
-                "}";
-
-        WebToSdkEvent webEvent = new WebToSdkEvent("webPixels", eventString);
-        Json json = Json.Default;
-
-        PixelEventDecoder decoder = new PixelEventDecoder(json);
-
-        PixelEvent event = decoder.decode(webEvent);
-
-        assertThat(event).isInstanceOf(StandardPixelEvent.class);
-        StandardPixelEvent checkoutStartedEvent = (StandardPixelEvent) event;
-        StandardPixelEventData checkoutStartedData = checkoutStartedEvent.getData();
-        String checkoutStartedOrderId = checkoutStartedData.getCheckout().getOrder().getId();
-
-        assertThat(checkoutStartedOrderId).isEqualTo(orderId);
     }
 
     @SuppressWarnings("all")

@@ -32,7 +32,6 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
-import com.shopify.checkoutkit.pixelevents.PixelEvent
 
 /**
  * Interface to implement to allow responding to lifecycle events in checkout.
@@ -70,12 +69,6 @@ public interface CheckoutEventProcessor {
     public fun onPermissionRequest(permissionRequest: PermissionRequest)
 
     /**
-     * Web Pixel event emitted from checkout, that can be optionally transformed, enhanced (e.g. with user and session identifiers),
-     * and processed
-     */
-    public fun onWebPixelEvent(event: PixelEvent)
-
-    /**
      * Called when the client should show a file chooser. This is called to handle HTML forms with 'file' input type, in response to the
      * user pressing the "Select File" button. To cancel the request, call filePathCallback.onReceiveValue(null) and return true.
      */
@@ -111,10 +104,6 @@ internal class NoopEventProcessor : CheckoutEventProcessor {
     }
 
     override fun onCheckoutLinkClicked(uri: Uri) {
-        /* noop */
-    }
-
-    override fun onWebPixelEvent(event: PixelEvent) {
         /* noop */
     }
 
@@ -156,10 +145,6 @@ public abstract class DefaultCheckoutEventProcessor @JvmOverloads constructor(
             "https", "http" -> context.launchBrowser(uri)
             else -> context.tryLaunchDeepLink(uri)
         }
-    }
-
-    override fun onWebPixelEvent(event: PixelEvent) {
-        // no-op, override to implement
     }
 
     override fun onPermissionRequest(permissionRequest: PermissionRequest) {

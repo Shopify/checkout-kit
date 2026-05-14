@@ -120,11 +120,6 @@ RCT_EXPORT_VIEW_PROPERTY(onRenderStateChange, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onShouldRecoverFromError, RCTDirectEventBlock)
 
 /**
- * Emitted when a web pixel event occurs during checkout.
- */
-RCT_EXPORT_VIEW_PROPERTY(onWebPixelEvent, RCTBubblingEventBlock)
-
-/**
  * Emitted when a link is clicked within the checkout experience. Payload contains the URL.
  */
 RCT_EXPORT_VIEW_PROPERTY(onClickLink, RCTBubblingEventBlock)

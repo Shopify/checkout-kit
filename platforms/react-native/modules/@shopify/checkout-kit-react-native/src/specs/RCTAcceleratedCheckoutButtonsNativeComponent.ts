@@ -53,16 +53,6 @@ type RenderStateChangeEvent = Readonly<{
   reason?: string;
 }>;
 
-type WebPixelEvent = Readonly<{
-  context?: UnsafeMixed;
-  customData?: UnsafeMixed;
-  data?: UnsafeMixed;
-  id?: string;
-  name?: string;
-  timestamp?: string;
-  type?: string;
-}>;
-
 type ClickLinkEvent = Readonly<{url: string}>;
 type SizeChangeEvent = Readonly<{height: Double}>;
 
@@ -82,7 +72,6 @@ interface NativeProps extends ViewProps {
   onComplete?: BubblingEventHandler<CompleteEvent>;
   onCancel?: BubblingEventHandler<null>;
   onRenderStateChange?: BubblingEventHandler<RenderStateChangeEvent>;
-  onWebPixelEvent?: BubblingEventHandler<WebPixelEvent>;
   onClickLink?: BubblingEventHandler<ClickLinkEvent>;
   onSizeChange?: DirectEventHandler<SizeChangeEvent>;
   onShouldRecoverFromError?: DirectEventHandler<

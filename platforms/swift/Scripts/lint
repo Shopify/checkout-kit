@@ -165,12 +165,16 @@ fi
 if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 	echo "🔍 Running CocoaPods lint..."
 
+	# Podspec lives at the repo root so it can glob source files in both
+	# platforms/swift/ and protocol/languages/swift/. Run lint from the
+	# repo root.
+	REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 	POD_LOG=""
 	if [[ "$VERBOSE" == "true" ]]; then
-		bundle exec pod lib lint --allow-warnings
+		(cd "$REPO_ROOT" && bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings)
 	else
 		POD_LOG="$(mktemp "${TMPDIR:-/tmp}/checkout-kit-pod-lint.XXXXXX")"
-		bundle exec pod lib lint --allow-warnings >"$POD_LOG" 2>&1
+		(cd "$REPO_ROOT" && bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings) >"$POD_LOG" 2>&1
 	fi
 	POD_STATUS=$?
 
@@ -184,7 +188,7 @@ if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 
 		echo "❌ CocoaPods lint exit status: $POD_STATUS"
 		echo "❌ CocoaPods detected issues that need to be fixed."
-		echo "🔧 Run 'bundle exec pod lib lint --allow-warnings --verbose' for details"
+		echo "🔧 Run 'bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings --verbose' from the repo root for details"
 		exit 1
 	fi
 
