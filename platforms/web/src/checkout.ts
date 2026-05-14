@@ -72,14 +72,13 @@ const SHADOW_TEMPLATE = createTemplate(html`
 `);
 
 /**
- * An element that renders a Shopify Checkout. Checkout can be displayed either as a popup window (default)
- * or embedded as an iframe by setting the `mode` attribute. To use, create a `shopify-checkout` element,
- * set the `src` attribute to the checkout URL (typically retrieved from the `cart.checkoutUrl` field),
- * and then call `open()`.
+ * An element that renders a Shopify Checkout. Checkout opens in a popup or browser tab/window
+ * (see `target`). To use, create a `shopify-checkout` element, set the `src` attribute to the
+ * checkout URL (typically retrieved from the `cart.checkoutUrl` field), and then call `open()`.
  *
  * @attribute src - The URL of the checkout to load.
  * @attribute preload - Whether to preload critical assets and data
- * @attribute target - Where the checkout is presented (auto, popup, new tab, or inline).
+ * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
  *
  * @event ec:start - Dispatched when the checkout has started
  * @event ec:complete - Dispatched when the checkout was successfully completed
@@ -98,12 +97,6 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * checkout.setAttribute("src", cart.checkoutUrl);
  * document.body.append(checkout);
  * checkout.open();
- *
- * // Inline target
- * const checkout = document.createElement("shopify-checkout");
- * checkout.setAttribute("src", cart.checkoutUrl);
- * checkout.setAttribute("target", "inline");
- * document.body.append(checkout);
  * ```
  */
 export class ShopifyCheckout
@@ -262,10 +255,6 @@ export class ShopifyCheckout
     return this.#error;
   }
 
-  get #iframeElement(): HTMLIFrameElement | undefined {
-    return this.shadowRoot?.querySelector("#checkout-iframe") ?? undefined;
-  }
-
   get #dialogElement(): HTMLDialogElement | undefined {
     return this.shadowRoot?.querySelector("#overlay") ?? undefined;
   }
@@ -297,11 +286,6 @@ export class ShopifyCheckout
   open(): void {
     const { target } = this;
     const src = this.#srcAsURL()?.href;
-
-    // Inline targets render an iframe directly in the DOM when the element connects or target changes,
-    // so no explicit open() call is needed. The close() method also has no effect on
-    // inline targets since iframes don't respond to iframe.contentWindow.close().
-    if (target === "inline") return;
 
     if (!src) {
       // eslint-disable-next-line no-console
@@ -433,15 +417,6 @@ export class ShopifyCheckout
     this.#checkoutWindow?.focus();
   }
 
-  #updateIframeSrc() {
-    const src = this.#srcAsURL()?.href;
-    const iframeElement = this.#iframeElement;
-
-    if (src && iframeElement && iframeElement.src !== src) {
-      iframeElement.src = src;
-    }
-  }
-
   /**
    * Sets the overlay link href to the validated, parametrised checkout
    * URL (matching what the popup would open)
@@ -541,30 +516,13 @@ export class ShopifyCheckout
     return features;
   }
 
-  #addIframe() {
-    const iframeEl = document.createElement("iframe");
-    iframeEl.id = "checkout-iframe";
-    iframeEl.title = "Checkout";
-    iframeEl.setAttribute(
-      "allow",
-      "publickey-credentials-get https://pay.shopify.com https://shop.app; geolocation",
-    );
-    iframeEl.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups");
-    iframeEl.src = this.#srcAsURL()?.href ?? "";
-
-    this.#targetElement?.appendChild(iframeEl);
-    this.#checkoutWindow = iframeEl.contentWindow ?? null;
-  }
-
   /* ------------------------------------------------------------
    * Events
    * ------------------------------------------------------------
    */
 
   /**
-   * Determines if a protocol message should dispatch a respondable event.
-   * Only inline targets can respond to messages, and the message must have
-   * an ID (requests) rather than being a notification.
+   * JSON-RPC request messages carry an `id`; notifications do not.
    */
   #isRespondableRequest(
     message: CheckoutProtocolMessage,
@@ -699,14 +657,6 @@ export class ShopifyCheckout
     this.#applyTargetClass();
     this.#updateOverlayLink();
 
-    if (this.target === "inline") {
-      if (this.#iframeElement) {
-        this.#checkoutWindow = this.#iframeElement.contentWindow ?? null;
-      } else {
-        this.#addIframe();
-      }
-    }
-
     this.#initCheckoutProtocol();
   }
 
@@ -728,18 +678,10 @@ export class ShopifyCheckout
         this.#updatePreloadLink();
         break;
       case "src":
-        this.#updateIframeSrc();
         this.#updatePreloadLink();
         this.#updateOverlayLink();
         break;
       case "target": {
-        if (oldValue === "inline" && newValue !== "inline") {
-          this.#iframeElement?.remove();
-          this.#checkoutWindow = null;
-        } else if (newValue === "inline") {
-          this.#addIframe();
-        }
-
         if (oldValue !== newValue && this.#currentOpen) {
           this.close();
         }

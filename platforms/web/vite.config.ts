@@ -42,7 +42,7 @@ export default defineConfig({
     passWithNoTests: true,
     environmentOptions: {
       happyDOM: {
-        // Prevent iframes from actually fetching their src in unit tests.
+        // Prevent checkout URLs from being fetched in unit tests.
         settings: {
           disableIframePageLoading: true,
           disableErrorCapturing: true,

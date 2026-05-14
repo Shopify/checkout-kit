@@ -28,26 +28,11 @@ export const STYLES: SafeMarkup = css`
     box-sizing: border-box;
   }
 
-  #checkout-iframe,
   #shopify-element-wrapper,
   .Shopify-target {
     inline-size: 100%;
     block-size: 100%;
     border: none;
-  }
-
-  #checkout-iframe {
-    display: none;
-  }
-
-  .Shopify-target--inline {
-    #checkout-iframe {
-      display: block;
-    }
-
-    .overlay {
-      display: none;
-    }
   }
 
   :host {

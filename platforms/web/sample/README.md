@@ -14,7 +14,7 @@ pnpm sample
 
 Vite serves at `http://localhost:5173`. The page has three panels:
 
-- **Options** — form for `src`, `target` (`auto` | `popup` | `inline`),
+- **Options** — form for `src`, `target` (`auto` | `popup`),
   `preload`, and `debug`, plus buttons for `open()`, `close()`, and `focus()`.
 - **Demo Storefront** — a mocked product card with **Buy now** calling
   `checkout.open()`. The button stays disabled until a checkout URL is set.
@@ -24,8 +24,7 @@ Vite serves at `http://localhost:5173`. The page has three panels:
   time.
 
 The element is mounted on `<body>`. For `popup` / `auto`, the visible UI is
-mostly the overlay scrim when checkout is open; for **inline**, checkout renders
-in an iframe inside the component shadow tree.
+mostly the overlay scrim while checkout is open in a separate window or tab.
 
 ## Build
 

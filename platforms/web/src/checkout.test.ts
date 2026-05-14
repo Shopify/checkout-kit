@@ -97,19 +97,6 @@ describe("<shopify-checkout>", () => {
         checkout.target = newTarget;
         expect(checkout.getAttribute("target")).toBe(newTarget);
       });
-
-      describe('when target is "inline"', () => {
-        it("renders an iframe on mount without needing open()", () => {
-          const checkout = renderCheckout({ target: "inline" });
-
-          const iframe = checkout.shadowRoot!.querySelector("iframe");
-          expect(iframe).not.toBeNull();
-
-          const url = new URL(iframe!.src);
-          expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
-          expect(url.searchParams.get("ec_delegate")).toBe("window.open");
-        });
-      });
     });
 
     describe("preload", () => {
@@ -143,7 +130,7 @@ describe("<shopify-checkout>", () => {
         expect(checkout.getAttribute("preload")).toBeNull();
       });
 
-      it("adds a preload link to the iframe src when set to true", () => {
+      it("adds a preload link when set to true", () => {
         const checkout = renderCheckout();
 
         checkout.preload = true;
@@ -246,13 +233,10 @@ describe("<shopify-checkout>", () => {
       "blob:https://shop.example.com/abc",
       "file:///etc/passwd",
       "not a url",
-    ])("renders empty iframe src and no overlay href when src is %s", (badSrc) => {
-      const checkout = renderCheckout({ src: badSrc, target: "inline" });
+    ])("leaves overlay link without href when src is %s", (badSrc) => {
+      const checkout = renderCheckout({ src: badSrc });
 
-      const iframe = checkout.shadowRoot!.querySelector<HTMLIFrameElement>("#checkout-iframe");
-      // #srcAsURL returns undefined for non-https values, so the iframe
-      // src is set to '' rather than the raw input.
-      expect(iframe!.getAttribute("src")).toBe("");
+      expect(checkout.shadowRoot!.querySelector("iframe")).toBeNull();
 
       const overlayLink = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link");
       expect(overlayLink!.hasAttribute("href")).toBe(false);
@@ -263,7 +247,7 @@ describe("<shopify-checkout>", () => {
       // The URL constructor accepts this (the `"` becomes part of the
       // pathname); the value is rendered via DOM APIs rather than string
       // interpolation, so no markup is parsed into the shadow root.
-      const checkout = renderCheckout({ src, target: "inline" });
+      const checkout = renderCheckout({ src });
 
       expect(checkout.shadowRoot!.querySelector("script")).toBeNull();
       expect((window as unknown as { __xssed?: boolean }).__xssed).toBeUndefined();
@@ -477,40 +461,6 @@ describe("<shopify-checkout>", () => {
         });
       });
 
-      describe('when target="inline"', () => {
-        it("shows the checkout in an iframe", () => {
-          const checkout = renderCheckout({ target: "inline" });
-
-          const iframe = checkout.shadowRoot!.querySelector("iframe");
-          expect(iframe).not.toBeNull();
-          expect(iframe!.getAttribute("allow")).toBe(
-            "publickey-credentials-get https://pay.shopify.com https://shop.app; geolocation",
-          );
-
-          const url = new URL(iframe!.src);
-          expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
-          expect(url.searchParams.get("ec_delegate")).toBe("window.open");
-        });
-
-        it("sets the correct iframe security attributes", () => {
-          const checkout = renderCheckout({ target: "inline" });
-
-          const iframe = checkout.shadowRoot!.querySelector("iframe");
-          expect(iframe).not.toBeNull();
-
-          expect(iframe!.id).toBe("checkout-iframe");
-          expect(iframe!.title).toBe("Checkout");
-
-          expect(iframe!.getAttribute("allow")).toBe(
-            "publickey-credentials-get https://pay.shopify.com https://shop.app; geolocation",
-          );
-
-          expect(iframe!.getAttribute("sandbox")).toBe(
-            "allow-scripts allow-same-origin allow-forms allow-popups",
-          );
-        });
-      });
-
       describe('when target="_blank", "auto", or undefined', () => {
         NEW_TAB_TARGETS.forEach((target) => {
           it("opens in a new window", () => {
@@ -544,8 +494,6 @@ describe("<shopify-checkout>", () => {
 
     describe("focus", () => {
       it("focuses the checkout window", () => {
-        // Note: 'inline' target is excluded because the open() method returns early
-        // for inline targets, so #checkoutWindow is never set and focus() has no effect
         [...POPUP_TARGETS, "_blank"].forEach((target) => {
           const checkout = renderCheckout({ target });
           const mockPopup = {
@@ -563,16 +511,6 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("close", () => {
-      describe('when target="inline"', () => {
-        it("does not dispatch a close event", () => {
-          const checkout = renderCheckout({ target: "inline" });
-          const closeEventSpy = vi.fn();
-          checkout.addEventListener("checkout:close", closeEventSpy);
-          checkout.close();
-          expect(closeEventSpy).not.toHaveBeenCalled();
-        });
-      });
-
       describe('when target="popup", "auto", or undefined', () => {
         it("dispatches close event when popup is closed", () => {
           POPUP_TARGETS.forEach((target) => {
@@ -623,10 +561,6 @@ describe("<shopify-checkout>", () => {
   describe("it subscribes to checkout-protocol events", () => {
     describe("ec.ready handshake", () => {
       it("auto-responds with an empty result and does not dispatch a DOM event", async () => {
-        // Use popup target so #checkoutWindow is a controllable mock
-        // window we can use as the message source and spy on for the
-        // wire-level response. (Inline iframes inside shadow DOM have a
-        // null contentWindow in jsdom.)
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onReadySpy = vi.fn();
         // ec:ready is no longer a public event; cast through `never` to verify
@@ -664,12 +598,12 @@ describe("<shopify-checkout>", () => {
 
     describe("ec:start", () => {
       it("updates the checkout property and dispatches an ec:start event", async () => {
-        const checkout = renderCheckout({ target: "inline" });
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "ec:start", onStartSpy);
 
         const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.start", payload);
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, { source: mockCheckoutWindow });
         await listenForEvent;
 
         expect(checkout.checkout).toBe(payload.checkout);
@@ -679,12 +613,14 @@ describe("<shopify-checkout>", () => {
 
     describe("ec:complete", () => {
       it("updates the checkout property and dispatches an ec:complete event", async () => {
-        const checkout = renderCheckout({ target: "inline" });
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onCompleteSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "ec:complete", onCompleteSpy);
 
         const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.complete", payload);
+        simulateProtocolMessageEvent(checkout, "ec.complete", payload, {
+          source: mockCheckoutWindow,
+        });
         await listenForEvent;
 
         expect(checkout.checkout).toBe(payload.checkout);
@@ -694,12 +630,14 @@ describe("<shopify-checkout>", () => {
 
     describe("ec:error", () => {
       it("updates the error property and dispatches an ec:error event", async () => {
-        const checkout = renderCheckout({ target: "inline" });
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onErrorSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "ec:error", onErrorSpy);
 
         const errorPayload = makeErrorPayload();
-        simulateProtocolMessageEvent(checkout, "ec.error", errorPayload);
+        simulateProtocolMessageEvent(checkout, "ec.error", errorPayload, {
+          source: mockCheckoutWindow,
+        });
         await listenForEvent;
 
         expect(checkout.error).toStrictEqual(errorPayload);
@@ -709,12 +647,14 @@ describe("<shopify-checkout>", () => {
 
     describe("ec:lineItemsChange", () => {
       it("updates the checkout property and dispatches an ec:lineItemsChange event", async () => {
-        const checkout = renderCheckout({ target: "inline" });
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onLineItemsChangeSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "ec:lineItemsChange", onLineItemsChangeSpy);
 
         const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.line_items.change", payload);
+        simulateProtocolMessageEvent(checkout, "ec.line_items.change", payload, {
+          source: mockCheckoutWindow,
+        });
         await listenForEvent;
 
         expect(checkout.checkout).toBe(payload.checkout);
@@ -724,12 +664,14 @@ describe("<shopify-checkout>", () => {
 
     describe("ec:buyerChange", () => {
       it("updates the checkout property and dispatches an ec:buyerChange event", async () => {
-        const checkout = renderCheckout({ target: "inline" });
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onBuyerChangeSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "ec:buyerChange", onBuyerChangeSpy);
 
         const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.buyer.change", payload);
+        simulateProtocolMessageEvent(checkout, "ec.buyer.change", payload, {
+          source: mockCheckoutWindow,
+        });
         await listenForEvent;
 
         expect(checkout.checkout).toBe(payload.checkout);
@@ -739,12 +681,14 @@ describe("<shopify-checkout>", () => {
 
     describe("ec:totalsChange", () => {
       it("updates the checkout property and dispatches an ec:totalsChange event", async () => {
-        const checkout = renderCheckout({ target: "inline" });
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onTotalsChangeSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "ec:totalsChange", onTotalsChangeSpy);
 
         const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.totals.change", payload);
+        simulateProtocolMessageEvent(checkout, "ec.totals.change", payload, {
+          source: mockCheckoutWindow,
+        });
         await listenForEvent;
 
         expect(checkout.checkout).toBe(payload.checkout);
@@ -754,12 +698,14 @@ describe("<shopify-checkout>", () => {
 
     describe("ec:messagesChange", () => {
       it("updates the checkout property and dispatches an ec:messagesChange event", async () => {
-        const checkout = renderCheckout({ target: "inline" });
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onMessagesChangeSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "ec:messagesChange", onMessagesChangeSpy);
 
         const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.messages.change", payload);
+        simulateProtocolMessageEvent(checkout, "ec.messages.change", payload, {
+          source: mockCheckoutWindow,
+        });
         await listenForEvent;
 
         expect(checkout.checkout).toBe(payload.checkout);
@@ -976,14 +922,6 @@ describe("<shopify-checkout>", () => {
       const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
       expect(url.searchParams.get("ec_delegate")).toBe("window.open");
     });
-
-    it("declares window.open delegation in inline iframe URL", () => {
-      const checkout = renderCheckout({ target: "inline" });
-
-      const iframe = checkout.shadowRoot!.querySelector("#checkout-iframe") as HTMLIFrameElement;
-      const url = new URL(iframe.src);
-      expect(url.searchParams.get("ec_delegate")).toBe("window.open");
-    });
   });
 
   describe("debug attribute", () => {
@@ -1039,27 +977,15 @@ describe("<shopify-checkout>", () => {
 
   describe("lifecycle", () => {
     it("preserves the shadow tree across element moves", () => {
-      const checkout = renderCheckout({ target: "inline" });
+      const checkout = renderCheckout();
       const wrapper = checkout.shadowRoot!.querySelector("#shopify-element-wrapper");
-      const iframe = checkout.shadowRoot!.querySelector<HTMLIFrameElement>("#checkout-iframe");
 
       const newParent = document.createElement("div");
       document.body.appendChild(newParent);
       newParent.appendChild(checkout);
 
       expect(checkout.shadowRoot!.querySelector("#shopify-element-wrapper")).toBe(wrapper);
-      expect(checkout.shadowRoot!.querySelector("#checkout-iframe")).toBe(iframe);
-    });
-
-    it("does not add a duplicate iframe on reconnect of an inline element", () => {
-      const checkout = renderCheckout({ target: "inline" });
-      expect(checkout.shadowRoot!.querySelectorAll("#checkout-iframe")).toHaveLength(1);
-
-      const newParent = document.createElement("div");
-      document.body.appendChild(newParent);
-      newParent.appendChild(checkout);
-
-      expect(checkout.shadowRoot!.querySelectorAll("#checkout-iframe")).toHaveLength(1);
+      expect(checkout.shadowRoot!.querySelector("iframe")).toBeNull();
     });
 
     it("drops protocol messages while the element is disconnected", async () => {
@@ -1143,10 +1069,9 @@ describe("<shopify-checkout>", () => {
  * `origin` are derived from `checkout` so that the component's strict
  * source-and-origin validation passes:
  *
- * - `source`: the inline iframe's `contentWindow` if one exists,
- *   otherwise `null`. Tests that exercise popup/new-tab targets must
- *   pass `source` explicitly (typically the same mock window returned
- *   from `window.open`).
+ * - `source`: pass the checkout browsing context (the mock window returned
+ *   from `window.open` after `open()`, or another `MessageEventSource` to
+ *   test drops). When omitted, defaults to `null` (messages are dropped).
  * - `origin`: the origin of `checkout.src`. Override `origin` to test
  *   that messages from foreign origins are dropped.
  */
@@ -1160,8 +1085,7 @@ function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMess
     origin?: string;
   },
 ) {
-  const iframe = checkout.shadowRoot?.querySelector<HTMLIFrameElement>("#checkout-iframe");
-  const source = options?.source === undefined ? (iframe?.contentWindow ?? null) : options.source;
+  const source = options?.source !== undefined ? options.source : null;
 
   let origin = options?.origin;
   if (origin === undefined) {
@@ -1243,9 +1167,8 @@ function createMockWindow() {
 /**
  * Sets up a popup-target checkout whose `#checkoutWindow` is a controllable
  * mock window. Tests that exercise the strict source-and-origin validation
- * in `#handleMessage` should use this rather than inline target, because
- * jsdom does not create a browsing context for iframes inside shadow DOM
- * (so an inline iframe's `contentWindow` is always `null`).
+ * in `#handleMessage` should use this helper and pass `mockCheckoutWindow`
+ * as `source` in `simulateProtocolMessageEvent`.
  *
  * Callers receive the checkout, the mock window (use as both `source` for
  * `simulateProtocolMessageEvent` and the spy target for response

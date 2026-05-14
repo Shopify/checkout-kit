@@ -44,7 +44,7 @@ import type { Checkout, EcReadyParams, ShopCash, UcpErrorResponse } from "./ucp-
 
 // Documentation-safe types:
 
-export type CheckoutTarget = "auto" | "popup" | "inline" | "_blank";
+export type CheckoutTarget = "auto" | "popup" | "_blank";
 
 export interface CheckoutAttributes {
   src?: string;
@@ -89,7 +89,6 @@ export interface CheckoutProperties {
   /**
    * The mode in which to display the checkout when opened. Defaults to `'auto'`.
    * - `'popup'`: Opens checkout in a popup window
-   * - `'inline'`: Embeds checkout in an iframe within the component
    * - `'_blank' | `'auto'`: Opens checkout in a new tab (default)
    * - `string`: Opens checkout in a new named window
    *
