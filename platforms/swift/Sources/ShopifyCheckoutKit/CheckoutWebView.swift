@@ -280,38 +280,30 @@ extension CheckoutWebView: WKScriptMessageHandler {
 
 extension CheckoutWebView: WKNavigationDelegate {
     func webView(_: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        // Handle rare cases where the url is nil
         guard let url = action.request.url else {
             decisionHandler(.allow)
             return
         }
 
-        if isExternalLink(action) || CheckoutURL(from: url).isDeepLink() {
-            OSLogger.shared.debug("External or deep link clicked: \(url.absoluteString) - request intercepted")
-            dispatchWindowOpenRequest(url: removeExternalParam(url))
-            decisionHandler(.cancel)
+        // Handle non-HTTP links triggered on external surfaces by opening them with UIApplication
+        // Scenarios include:
+        // 	- mailto:, tel: etc
+        // 	- Deep links on offsite payment sites
+        //
+        if CheckoutURL(from: url).isDeepLink() {
+            if UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url)
+                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - allowed")
+                return decisionHandler(.allow)
+            } else {
+                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - rejected")
+                return decisionHandler(.cancel)
+            }
             return
         }
 
         decisionHandler(.allow)
-    }
-
-    private func dispatchWindowOpenRequest(url: URL) {
-        let envelope: [String: Any] = [
-            "jsonrpc": "2.0",
-            "id": UUID().uuidString,
-            "method": "ec.window.open_request",
-            "params": ["url": url.absoluteString]
-        ]
-
-        guard
-            let data = try? JSONSerialization.data(withJSONObject: envelope),
-            let message = String(data: data, encoding: .utf8)
-        else { return }
-
-        Task { @MainActor [client] in
-            if let consumer = client, await consumer.process(message) != nil { return }
-            _ = await CheckoutWebView.defaultsClient.process(message)
-        }
     }
 
     func webView(_: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
@@ -430,27 +422,6 @@ extension CheckoutWebView: WKNavigationDelegate {
         viewDelegate?.checkoutViewDidFailWithError(
             error: .sdkError(underlying: error, recoverable: !isRecovery)
         )
-    }
-
-    private func isExternalLink(_ action: WKNavigationAction) -> Bool {
-        if action.navigationType == .linkActivated && action.targetFrame == nil {
-            return true
-        }
-
-        guard let url = action.request.url else { return false }
-        guard let url = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
-
-        guard let openExternally = url.queryItems?.first(where: { $0.name == "open_externally" })?.value else { return false }
-
-        return openExternally.lowercased() == "true" || openExternally == "1"
-    }
-
-    private func removeExternalParam(_ url: URL) -> URL {
-        guard var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return url
-        }
-        urlComponents.queryItems = urlComponents.queryItems?.filter { !($0.name == "open_externally") }
-        return urlComponents.url ?? url
     }
 
     private func isCheckout(url: URL?) -> Bool {
