@@ -82,12 +82,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL, @Nullable Callback onClose, @Nullable Callback onFail,
-      @Nullable Callback onGeolocationRequest) {
+  public void present(String checkoutURL, @Nullable Callback dispatch) {
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      checkoutListener = new CustomCheckoutListener(currentActivity, this.reactContext, onClose,
-          onFail, onGeolocationRequest);
+      checkoutListener = new CustomCheckoutListener(currentActivity, this.reactContext, dispatch);
       currentActivity.runOnUiThread(() -> {
         checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
             checkoutListener);

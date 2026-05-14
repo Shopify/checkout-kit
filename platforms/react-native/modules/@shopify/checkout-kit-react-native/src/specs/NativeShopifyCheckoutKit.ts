@@ -74,9 +74,7 @@ type ConfigurationResultSpec = {
 export interface Spec extends TurboModule {
   present(
     checkoutUrl: string,
-    onClose: (() => void) | null,
-    onFail: ((errorJson: string) => void) | null,
-    onGeolocationRequest: ((originJson: string) => void) | null,
+    dispatch: ((envelopeJson: string) => void) | null,
   ): void;
   preload(checkoutUrl: string): void;
   dismiss(): void;

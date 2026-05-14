@@ -35,6 +35,7 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,11 +45,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Nullable
-  private Callback onCloseCallback;
-  @Nullable
-  private Callback onFailCallback;
-  @Nullable
-  private Callback onGeolocationRequestCallback;
+  private Callback dispatchCallback;
 
   // Geolocation-specific variables
 
@@ -56,12 +53,9 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private GeolocationPermissions.Callback geolocationCallback;
 
   public CustomCheckoutListener(Context context, ReactApplicationContext reactContext,
-      @Nullable Callback onClose, @Nullable Callback onFail,
-      @Nullable Callback onGeolocationRequest) {
+      @Nullable Callback dispatch) {
     this.reactContext = reactContext;
-    this.onCloseCallback = onClose;
-    this.onFailCallback = onFail;
-    this.onGeolocationRequestCallback = onGeolocationRequest;
+    this.dispatchCallback = dispatch;
   }
 
   // Public methods
@@ -77,35 +71,29 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   // Lifecycle events
 
   /**
-   * This method is called when the checkout sheet webpage requests geolocation
-   * permissions.
+   * Called when the checkout sheet's webpage requests geolocation
+   * permissions. The platform callback is stored in memory; the dispatcher
+   * is invoked with a `geolocationRequest` envelope so JS can either route
+   * to a per-call handler or run the default permission flow.
    *
-   * Since the app needs to request permissions first before granting, we store
-   * the callback and origin in memory and emit a "geolocationRequest" event to
-   * the app. The app will then request the necessary geolocation permissions
-   * and invoke the native callback with the result.
-   *
-   * @param origin   - The origin of the request
-   * @param callback - The callback to invoke when the app requests permissions
+   * Multi-shot — the same checkout sheet may request geolocation multiple
+   * times during a single `present()` call, so the dispatcher is not
+   * nulled after invocation.
    */
   @Override
   public void onGeolocationPermissionsShowPrompt(@NonNull String origin,
       @NonNull GeolocationPermissions.Callback callback) {
 
-    // Store the callback and origin in memory. The kit will wait for the app to
-    // request permissions first before granting.
     this.geolocationCallback = callback;
     this.geolocationOrigin = origin;
 
+    if (dispatchCallback == null) {
+      return;
+    }
     try {
-      Map<String, Object> event = new HashMap<>();
-      event.put("origin", origin);
-      String payload = mapper.writeValueAsString(event);
-      if (onGeolocationRequestCallback != null) {
-        onGeolocationRequestCallback.invoke(payload);
-      } else {
-        sendEventWithStringData("geolocationRequest", payload);
-      }
+      Map<String, Object> payload = new HashMap<>();
+      payload.put("origin", origin);
+      dispatchCallback.invoke(buildEnvelope("geolocationRequest", payload));
     } catch (IOException e) {
       Log.e("ShopifyCheckoutKit", "Error emitting \"geolocationRequest\" event", e);
     }
@@ -115,36 +103,48 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   public void onGeolocationPermissionsHidePrompt() {
     super.onGeolocationPermissionsHidePrompt();
 
-    // Reset the geolocation callback and origin when the prompt is hidden.
     this.geolocationCallback = null;
     this.geolocationOrigin = null;
   }
 
   @Override
   public void onCheckoutFailed(CheckoutException checkoutError) {
-    if (onFailCallback == null) {
+    if (dispatchCallback == null) {
       return;
     }
     try {
-      String data = mapper.writeValueAsString(populateErrorDetails(checkoutError));
-      onFailCallback.invoke(data);
+      dispatchCallback.invoke(buildEnvelope("fail", populateErrorDetails(checkoutError)));
     } catch (IOException e) {
       Log.e("ShopifyCheckoutKit", "Error processing checkout failed event", e);
     } finally {
-      onFailCallback = null;
+      dispatchCallback = null;
     }
   }
 
   @Override
   public void onCheckoutCanceled() {
-    if (onCloseCallback == null) {
+    if (dispatchCallback == null) {
       return;
     }
-    onCloseCallback.invoke();
-    onCloseCallback = null;
+    try {
+      dispatchCallback.invoke(buildEnvelope("close", null));
+    } catch (IOException e) {
+      Log.e("ShopifyCheckoutKit", "Error processing checkout canceled event", e);
+    } finally {
+      dispatchCallback = null;
+    }
   }
 
   // Private
+
+  private String buildEnvelope(String type, @Nullable Object payload) throws IOException {
+    ObjectNode envelope = mapper.createObjectNode();
+    envelope.put("type", type);
+    if (payload != null) {
+      envelope.set("payload", mapper.valueToTree(payload));
+    }
+    return mapper.writeValueAsString(envelope);
+  }
 
   private Map<String, Object> populateErrorDetails(CheckoutException checkoutError) {
     Map<String, Object> errorMap = new HashMap();

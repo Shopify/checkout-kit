@@ -35,14 +35,10 @@ class RCTShopifyCheckoutKit: NSObject {
     private var acceleratedCheckoutsApplePayConfiguration: Any?
     private var defaultLogLevel: LogLevel = .error
 
-    // TODO: invoke these once the iOS CheckoutDelegate (or equivalent) lands upstream — until then,
-    // onClose/onFail callbacks are stored but never fire (Android is the only platform delivering them).
-    // `pendingGeolocationRequestCallback` is intentionally a no-op on iOS — geolocation permission
-    // is handled natively, so the callback is stored only to keep the bridge signature symmetric
-    // with Android.
-    private var pendingCloseCallback: RCTResponseSenderBlock?
-    private var pendingFailCallback: RCTResponseSenderBlock?
-    private var pendingGeolocationRequestCallback: RCTResponseSenderBlock?
+    // TODO: invoke once the iOS CheckoutDelegate (or equivalent) lands upstream — until then,
+    // the dispatcher is stored but never fired (Android is the only platform delivering events).
+    // When wired, dispatch envelope JSON strings of the shape `{"type":"close"|"fail","payload":...}`.
+    private var pendingDispatchCallback: RCTResponseSenderBlock?
 
     @objc var methodQueue: DispatchQueue {
         return DispatchQueue.main
@@ -106,11 +102,8 @@ class RCTShopifyCheckoutKit: NSObject {
         invalidate()
     }
 
-    @objc func present(_ checkoutURL: String, onClose: RCTResponseSenderBlock?, onFail: RCTResponseSenderBlock?,
-                       onGeolocationRequest: RCTResponseSenderBlock?) {
-        pendingCloseCallback = onClose
-        pendingFailCallback = onFail
-        pendingGeolocationRequestCallback = onGeolocationRequest
+    @objc func present(_ checkoutURL: String, dispatch: RCTResponseSenderBlock?) {
+        pendingDispatchCallback = dispatch
 
         DispatchQueue.main.async {
             if let url = URL(string: checkoutURL), let viewController = self.getCurrentViewController() {
