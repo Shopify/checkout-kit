@@ -92,14 +92,6 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
   }, [appConfig.buyerIdentityMode, clearCart]);
 
   useEffect(() => {
-    const subscription = shopify.addEventListener('completed', () => {
-      clearCart();
-    });
-
-    return subscription?.remove;
-  }, [shopify, clearCart, setCartId, setCheckoutURL, setTotalQuantity]);
-
-  useEffect(() => {
     async function getCart() {
       try {
         const {data} = await fetchCart({

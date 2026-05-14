@@ -24,7 +24,7 @@
 import Foundation
 import PassKit
 import React
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
 
@@ -127,7 +127,6 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     }
 
     @objc var onFail: RCTBubblingEventBlock?
-    @objc var onComplete: RCTBubblingEventBlock?
     @objc var onCancel: RCTBubblingEventBlock?
     @objc var onRenderStateChange: RCTBubblingEventBlock?
     @objc var onShouldRecoverFromError: RCTDirectEventBlock?
@@ -253,9 +252,6 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
 
     private func attachEventListeners(to buttons: AcceleratedCheckoutButtons) -> AcceleratedCheckoutButtons {
         return buttons
-            .onComplete { [weak self] event in
-                self?.handleCheckoutCompleted(event)
-            }
             .onFail { [weak self] error in
                 self?.handleCheckoutFailed(error)
             }
@@ -264,9 +260,6 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
             }
             .onRenderStateChange { [weak self] state in
                 self?.handleRenderStateChange(state)
-            }
-            .onClickLink { [weak self] url in
-                self?.handleClickLink(url)
             }
     }
 
@@ -346,10 +339,6 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     }
 
     // MARK: - Event Handlers
-
-    private func handleCheckoutCompleted(_ event: CheckoutCompletedEvent) {
-        onComplete?(ShopifyEventSerialization.serialize(checkoutCompletedEvent: event))
-    }
 
     private func handleCheckoutFailed(_ error: CheckoutError) {
         onFail?(ShopifyEventSerialization.serialize(checkoutError: error))

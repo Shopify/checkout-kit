@@ -100,11 +100,6 @@ RCT_EXPORT_VIEW_PROPERTY(applePayStyle, NSString*)
 RCT_EXPORT_VIEW_PROPERTY(onFail, RCTBubblingEventBlock)
 
 /**
- * Emitted when checkout completes successfully. Payload contains order details.
- */
-RCT_EXPORT_VIEW_PROPERTY(onComplete, RCTBubblingEventBlock)
-
-/**
  * Emitted when checkout is cancelled by the buyer.
  */
 RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock)

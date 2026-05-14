@@ -1,2 +1,2 @@
-# Keep Checkout Sheet Kit classes
--keep class com.shopify.checkoutsheetkit.** { *; }
+# Keep Checkout Kit classes
+-keep class com.shopify.checkoutkit.** { *; }

@@ -190,21 +190,6 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(onFail).toHaveBeenCalledWith(error);
     });
 
-    it('forwards native complete event to onComplete prop', () => {
-      const onComplete = jest.fn();
-      const {getByTestId} = render(
-        <AcceleratedCheckoutButtons
-          cartId="gid://shopify/Cart/123"
-          onComplete={onComplete}
-        />,
-      );
-
-      const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      const details = {orderDetails: {id: '1'}} as any;
-      nativeComponent.props.onComplete({nativeEvent: details});
-      expect(onComplete).toHaveBeenCalledWith(details);
-    });
-
     it('calls onCancel when native cancel is invoked', () => {
       const onCancel = jest.fn();
       const {getByTestId} = render(
@@ -313,7 +298,6 @@ describe('AcceleratedCheckoutButtons', () => {
     it('handles callbacks without throwing', () => {
       const mockCallbacks = {
         onFail: jest.fn(),
-        onComplete: jest.fn(),
         onCancel: jest.fn(),
         onRenderStateChange: jest.fn(),
         onClickLink: jest.fn(),

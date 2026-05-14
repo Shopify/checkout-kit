@@ -23,11 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 import React, {useCallback, useMemo, useState} from 'react';
 import {Platform} from 'react-native';
-import type {
-  AcceleratedCheckoutWallet,
-  CheckoutCompletedEvent,
-  CheckoutException,
-} from '..';
+import type {AcceleratedCheckoutWallet, CheckoutException} from '..';
 import RCTAcceleratedCheckoutButtons from '../specs/RCTAcceleratedCheckoutButtonsNativeComponent';
 
 export enum RenderState {
@@ -105,11 +101,6 @@ interface CommonAcceleratedCheckoutButtonsProps {
   onFail?: (error: CheckoutException) => void;
 
   /**
-   * Called when checkout is completed successfully
-   */
-  onComplete?: (event: CheckoutCompletedEvent) => void;
-
-  /**
    * Called when checkout is cancelled
    */
   onCancel?: () => void;
@@ -160,7 +151,6 @@ export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) &
  * @example Cart-based checkout
  * <AcceleratedCheckoutButtons
  *   cartId="gid://shopify/Cart/123"
- *   onComplete={(event) => console.log('Checkout completed!', event.orderDetails)}
  *   onFail={(error) => console.error('Checkout failed:', error.message)}
  * />
  *
@@ -168,7 +158,6 @@ export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) &
  * <AcceleratedCheckoutButtons
  *   variantId="gid://shopify/ProductVariant/456"
  *   quantity={1}
- *   onComplete={(event) => console.log('Checkout completed!', event.orderDetails)}
  * />
  */
 
@@ -182,7 +171,6 @@ export const AcceleratedCheckoutButtons: React.FC<
   cornerRadius,
   wallets,
   onFail,
-  onComplete,
   onCancel,
   onRenderStateChange,
   onClickLink,
@@ -199,13 +187,6 @@ export const AcceleratedCheckoutButtons: React.FC<
       onFail?.(event.nativeEvent as CheckoutException);
     },
     [onFail],
-  );
-
-  const handleComplete = useCallback(
-    (event: {nativeEvent: unknown}) => {
-      onComplete?.(event.nativeEvent as CheckoutCompletedEvent);
-    },
-    [onComplete],
   );
 
   const handleCancel = useCallback(() => {
@@ -297,7 +278,6 @@ export const AcceleratedCheckoutButtons: React.FC<
       cornerRadius={cornerRadius}
       wallets={wallets}
       onFail={handleFail}
-      onComplete={handleComplete}
       onCancel={handleCancel}
       onRenderStateChange={handleRenderStateChange}
       onClickLink={handleClickLink}

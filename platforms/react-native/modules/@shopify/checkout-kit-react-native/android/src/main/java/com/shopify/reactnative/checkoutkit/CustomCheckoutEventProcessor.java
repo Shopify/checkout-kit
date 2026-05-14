@@ -30,11 +30,11 @@ import android.webkit.GeolocationPermissions;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.shopify.checkoutsheetkit.*;
+import com.shopify.checkoutkit.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.shopify.checkoutsheetkit.lifecycleevents.CheckoutCompletedEvent;
+import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
@@ -50,7 +50,6 @@ public class CustomCheckoutEventProcessor extends DefaultCheckoutEventProcessor 
   private GeolocationPermissions.Callback geolocationCallback;
 
   public CustomCheckoutEventProcessor(Context context, ReactApplicationContext reactContext) {
-    super(context);
     this.reactContext = reactContext;
   }
 
@@ -93,7 +92,7 @@ public class CustomCheckoutEventProcessor extends DefaultCheckoutEventProcessor 
       event.put("origin", origin);
       sendEventWithStringData("geolocationRequest", mapper.writeValueAsString(event));
     } catch (IOException e) {
-      Log.e("ShopifyCheckoutSheetKit", "Error emitting \"geolocationRequest\" event", e);
+      Log.e("ShopifyCheckoutKit", "Error emitting \"geolocationRequest\" event", e);
     }
   }
 
@@ -112,7 +111,7 @@ public class CustomCheckoutEventProcessor extends DefaultCheckoutEventProcessor 
       String data = mapper.writeValueAsString(populateErrorDetails(checkoutError));
       sendEventWithStringData("error", data);
     } catch (IOException e) {
-      Log.e("ShopifyCheckoutSheetKit", "Error processing checkout failed event", e);
+      Log.e("ShopifyCheckoutKit", "Error processing checkout failed event", e);
     }
   }
 
@@ -127,7 +126,7 @@ public class CustomCheckoutEventProcessor extends DefaultCheckoutEventProcessor 
       String data = mapper.writeValueAsString(event);
       sendEventWithStringData("completed", data);
     } catch (IOException e) {
-      Log.e("ShopifyCheckoutSheetKit", "Error processing completed event", e);
+      Log.e("ShopifyCheckoutKit", "Error processing completed event", e);
     }
   }
 
@@ -156,7 +155,7 @@ public class CustomCheckoutEventProcessor extends DefaultCheckoutEventProcessor 
       return "CheckoutHTTPError";
     } else if (error instanceof ConfigurationException) {
       return "ConfigurationError";
-    } else if (error instanceof CheckoutSheetKitException) {
+    } else if (error instanceof CheckoutKitException) {
       return "InternalError";
     } else {
       return "UnknownError";
