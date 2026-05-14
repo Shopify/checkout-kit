@@ -61,7 +61,6 @@ class CheckoutWebViewTest {
     @After
     fun tearDown() {
         ShopifyCheckoutKit.configuration.platform = null
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Automatic()
     }
 
     private fun loadedUrl(platform: Platform? = null): String {
@@ -301,58 +300,6 @@ class CheckoutWebViewTest {
         val loadedUrl = shadowOf(view).lastLoadedUrl!!
         assertThat(loadedUrl).contains("ec_version=2026-01-23")
         assertThat(loadedUrl.split("ec_version").size - 1).isEqualTo(1)
-    }
-
-    @Test
-    fun `loadCheckout appends ec_color_scheme even when ec_version already present`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Light()
-        val view = CheckoutWebView(activity)
-        view.loadCheckout("https://checkout.shopify.com/cart/123?ec_version=2026-01-23", false)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-        val loadedUrl = shadowOf(view).lastLoadedUrl!!
-        assertThat(loadedUrl).contains("ec_version=2026-01-23")
-        assertThat(loadedUrl).contains("ec_color_scheme=light")
-    }
-
-    @Test
-    fun `loadCheckout appends ec_color_scheme=light for Light color scheme`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Light()
-        val view = CheckoutWebView(activity)
-        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_color_scheme=light")
-    }
-
-    @Test
-    fun `loadCheckout appends ec_color_scheme=dark for Dark color scheme`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Dark()
-        val view = CheckoutWebView(activity)
-        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_color_scheme=dark")
-    }
-
-    @Test
-    fun `loadCheckout omits ec_color_scheme for Automatic color scheme`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Automatic()
-        val view = CheckoutWebView(activity)
-        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-        assertThat(shadowOf(view).lastLoadedUrl).doesNotContain("ec_color_scheme")
-    }
-
-    @Test
-    fun `loadCheckout omits ec_color_scheme for Web color scheme`() {
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Web()
-        val view = CheckoutWebView(activity)
-        view.loadCheckout("https://checkout.shopify.com/cart/123", false)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-        assertThat(shadowOf(view).lastLoadedUrl).doesNotContain("ec_color_scheme")
     }
 
     // endregion
