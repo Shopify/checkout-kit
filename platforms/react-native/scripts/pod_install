@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+for arg in "$@"; do
+  if [ "$arg" = "--local" ]; then
+    export USE_LOCAL_SDK=1
+  fi
+done
+
+cd sample/ios
+bundle install
+bundle exec pod repo update
+bundle exec pod cache clean --all
+bundle exec pod install --repo-update

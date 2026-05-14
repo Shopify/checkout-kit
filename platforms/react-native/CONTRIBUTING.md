@@ -53,6 +53,40 @@ an alias). The underlying `pnpm` commands below are run from
    pnpm sample android
    ```
 
+## Local SDK development (`--local`)
+
+The RN module wraps the Shopify Swift and Android SDKs, which live in this same monorepo at `platforms/swift/` and `platforms/android/`. By default the sample app builds against the **published** artifacts on CocoaPods / Maven Central — the same path CI takes. To build against the in-repo SDK sources instead, pass `--local` to any sample command:
+
+```sh
+dev rn android --local        # publishes lib to ~/.m2/ then builds the sample against it
+dev rn ios --local            # builds the sample against the local Swift SDK
+dev rn pod-install --local    # re-resolve iOS pods against the local Swift SDK
+```
+
+The flag is opt-in because the in-repo SDKs change as we develop. Default published mode is always safe; `--local` activates the in-progress API surface.
+
+### How it works
+
+- **Android**: every `--local` invocation runs `scripts/publish_android_snapshot`, which publishes `com.shopify:checkout-kit:1.0.0` to `~/.m2/` via the lib's own Gradle wrapper. The sample's `build.gradle` declares `mavenLocal()` first in the repository order, so the freshly-published AAR is picked up before falling through to Maven Central.
+- **iOS**: with `--local`, the Podfile injects `pod "ShopifyCheckoutKit", :path => "../../../../"` (the repo root, where `ShopifyCheckoutKit.podspec` lives). CocoaPods reads Swift sources from `platforms/swift/` directly.
+
+Internally `--local` exports `USE_LOCAL_SDK=1` before invoking the underlying tool. Setting the env var directly works too:
+
+```sh
+USE_LOCAL_SDK=1 dev rn android
+```
+
+### CI
+
+CI uses the default (published) path naturally — no special flag handling. As defense-in-depth, the build wiring still ignores `USE_LOCAL_SDK=1` when the `CI` env var is set (GitHub Actions sets `CI=true` automatically).
+
+### Gotchas
+
+- **iOS**: re-run `dev rn pod-install --local` (or drop the flag) after switching modes — CocoaPods caches resolution.
+- **Android (CLI)**: covered automatically by the publish script — every `--local` run re-publishes the AAR before building.
+- **Android (Android Studio)**: when running the sample via Android Studio's Run button after editing `platforms/android/lib/src/**`, run `platforms/react-native/scripts/publish_android_snapshot` once manually (with `USE_LOCAL_SDK=1`) or run `dev rn android --local` from a terminal to refresh `~/.m2/`.
+- The flag affects **only the RN build**. The standalone Swift and Android SDK builds (`dev android build`, `swift build`, etc.) are unaffected.
+
 ## Optional: Speed up builds with sccache
 
 For faster native compilation (especially on incremental builds), you can install [sccache](https://github.com/mozilla/sccache), a shared compilation cache:
