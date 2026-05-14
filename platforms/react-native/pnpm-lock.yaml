@@ -96,6 +96,12 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
 
+  ../../protocol/languages/typescript:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+
   modules/@shopify/checkout-kit-react-native:
     dependencies:
       react:
@@ -105,6 +111,9 @@ importers:
         specifier: '*'
         version: 0.80.2(@babel/core@7.28.3)(@react-native-community/cli@19.1.1(typescript@5.9.2))(@types/react@19.1.12)(react@19.1.0)
     devDependencies:
+      '@shopify/checkout-kit-protocol':
+        specifier: workspace:*
+        version: link:../../../../../protocol/languages/typescript
       react-native-builder-bob:
         specifier: ^0.23.2
         version: 0.23.2
