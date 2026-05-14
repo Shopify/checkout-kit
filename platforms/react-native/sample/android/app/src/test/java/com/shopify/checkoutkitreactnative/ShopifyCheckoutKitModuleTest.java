@@ -8,20 +8,20 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.shopify.checkoutsheetkit.CheckoutException;
-import com.shopify.checkoutsheetkit.CheckoutExpiredException;
-import com.shopify.checkoutsheetkit.CheckoutSheetKitException;
-import com.shopify.checkoutsheetkit.ClientException;
-import com.shopify.checkoutsheetkit.ConfigurationException;
-import com.shopify.checkoutsheetkit.HttpException;
-import com.shopify.checkoutsheetkit.ShopifyCheckoutSheetKit;
-import com.shopify.checkoutsheetkit.Preloading;
-import com.shopify.checkoutsheetkit.ColorScheme;
-import com.shopify.checkoutsheetkit.LogLevel;
-import com.shopify.checkoutsheetkit.lifecycleevents.CheckoutCompletedEvent;
-import com.shopify.checkoutsheetkit.lifecycleevents.OrderDetails;
-import com.shopify.checkoutsheetkit.lifecycleevents.CartInfo;
-import com.shopify.checkoutsheetkit.lifecycleevents.Price;
+import com.shopify.checkoutkit.CheckoutException;
+import com.shopify.checkoutkit.CheckoutExpiredException;
+import com.shopify.checkoutkit.CheckoutKitException;
+import com.shopify.checkoutkit.ClientException;
+import com.shopify.checkoutkit.ConfigurationException;
+import com.shopify.checkoutkit.HttpException;
+import com.shopify.checkoutkit.ShopifyCheckoutKit;
+import com.shopify.checkoutkit.Preloading;
+import com.shopify.checkoutkit.ColorScheme;
+import com.shopify.checkoutkit.LogLevel;
+import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent;
+import com.shopify.checkoutkit.lifecycleevents.OrderDetails;
+import com.shopify.checkoutkit.lifecycleevents.CartInfo;
+import com.shopify.checkoutkit.lifecycleevents.Price;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
 import com.shopify.reactnative.checkoutkit.CustomCheckoutEventProcessor;
 
@@ -106,7 +106,7 @@ public class ShopifyCheckoutKitModuleTest {
     }
 
     // Reset configuration to initial state after each test
-    ShopifyCheckoutSheetKit.configure(configuration -> {
+    ShopifyCheckoutKit.configure(configuration -> {
       configuration.setPreloading(initialPreloading);
       configuration.setColorScheme(initialColorScheme);
       configuration.setLogLevel(initialLogLevel);
@@ -120,8 +120,8 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testCanPresentCheckout() {
-    try (MockedStatic<ShopifyCheckoutSheetKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutSheetKit.class)) {
+    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckoutKit.class)) {
       String checkoutUrl = "https://shopify.com";
       shopifyCheckoutKitModule.present(checkoutUrl);
 
@@ -129,20 +129,20 @@ public class ShopifyCheckoutKitModuleTest {
       runnableCaptor.getValue().run();
 
       mockedShopifyCheckoutKit.verify(() -> {
-        ShopifyCheckoutSheetKit.present(eq(checkoutUrl), any(), any());
+        ShopifyCheckoutKit.present(eq(checkoutUrl), any(), any());
       });
     }
   }
 
   @Test
   public void testCanPreloadCheckout() {
-    try (MockedStatic<ShopifyCheckoutSheetKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutSheetKit.class)) {
+    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckoutKit.class)) {
       String checkoutUrl = "https://shopify.com";
       shopifyCheckoutKitModule.preload(checkoutUrl);
 
       mockedShopifyCheckoutKit.verify(() -> {
-        ShopifyCheckoutSheetKit.preload(eq(checkoutUrl), any());
+        ShopifyCheckoutKit.preload(eq(checkoutUrl), any());
       });
     }
   }

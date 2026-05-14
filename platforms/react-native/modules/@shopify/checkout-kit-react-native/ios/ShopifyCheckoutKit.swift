@@ -24,12 +24,12 @@
 import Foundation
 import PassKit
 import React
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
 
 @objc(RCTShopifyCheckoutKit)
-class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
+class RCTShopifyCheckoutKit: RCTEventEmitter {
     private var hasListeners = false
 
     internal var checkoutSheet: UIViewController?
@@ -46,15 +46,15 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
     }
 
     override init() {
-        ShopifyCheckoutSheetKit.configure {
-            $0.platform = ShopifyCheckoutSheetKit.Platform.reactNative
+        configure {
+            $0.platform = Platform.reactNative
         }
 
         super.init()
     }
 
     override func supportedEvents() -> [String]! {
-        return ["close", "completed", "error"]
+        return ["close", "error"]
     }
 
     override func startObserving() {
@@ -65,17 +65,17 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
         hasListeners = false
     }
 
-    func checkoutDidComplete(event: CheckoutCompletedEvent) {
-        if hasListeners {
-            sendEvent(withName: "completed", body: ShopifyEventSerialization.serialize(checkoutCompletedEvent: event))
-        }
-    }
+    // TODO: re-enable when iOS CheckoutDelegate (or equivalent) lands upstream —
+    // parallels Android's DefaultCheckoutEventProcessor.onCheckoutCanceled / onCheckoutFailed.
+    // Until then, the JS "error" and "close" events stay declared in supportedEvents()
+    // but native never emits them.
+    /*
 
     func shouldRecoverFromError(error: CheckoutError) -> Bool {
         return error.isRecoverable
     }
 
-    func checkoutDidFail(error: ShopifyCheckoutSheetKit.CheckoutError) {
+    func checkoutDidFail(error: CheckoutError) {
         guard hasListeners else { return }
 
         sendEvent(withName: "error", body: ShopifyEventSerialization.serialize(checkoutError: error))
@@ -91,14 +91,12 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
         }
     }
 
-    // TODO: remove when wrapper migrates off ShopifyCheckoutSheetKit.
-    // Required by CSK's CheckoutDelegate; intentionally no-ops since pixel events
-    // are no longer forwarded to JS.
-    func checkoutDidEmitWebPixelEvent(event _: ShopifyCheckoutSheetKit.PixelEvent) {}
+    func checkoutDidEmitWebPixelEvent(event _: PixelEvent) {}
+    */
 
     @objc override func constantsToExport() -> [AnyHashable: Any]! {
         return [
-            "version": ShopifyCheckoutSheetKit.version
+            "version": ShopifyCheckoutKit.version
         ]
     }
 
@@ -139,13 +137,13 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
     }
 
     @objc func invalidateCache() {
-        ShopifyCheckoutSheetKit.invalidate()
+        invalidate()
     }
 
     @objc func present(_ checkoutURL: String) {
         DispatchQueue.main.async {
             if let url = URL(string: checkoutURL), let viewController = self.getCurrentViewController() {
-                let view = CheckoutViewController(checkout: url, delegate: self)
+                let view = CheckoutViewController(checkout: url)
                 viewController.present(view, animated: true)
                 self.checkoutSheet = view
             }
@@ -155,23 +153,23 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
     @objc func preload(_ checkoutURL: String) {
         DispatchQueue.main.async {
             if let url = URL(string: checkoutURL) {
-                ShopifyCheckoutSheetKit.preload(checkout: url)
+                ShopifyCheckoutKit.preload(checkout: url)
             }
         }
     }
 
-    private func getColorScheme(_ colorScheme: String) -> ShopifyCheckoutSheetKit.Configuration.ColorScheme {
+    private func getColorScheme(_ colorScheme: String) -> Configuration.ColorScheme {
         switch colorScheme {
         case "web_default":
-            return ShopifyCheckoutSheetKit.Configuration.ColorScheme.web
+            return Configuration.ColorScheme.web
         case "automatic":
-            return ShopifyCheckoutSheetKit.Configuration.ColorScheme.automatic
+            return Configuration.ColorScheme.automatic
         case "light":
-            return ShopifyCheckoutSheetKit.Configuration.ColorScheme.light
+            return Configuration.ColorScheme.light
         case "dark":
-            return ShopifyCheckoutSheetKit.Configuration.ColorScheme.dark
+            return Configuration.ColorScheme.dark
         default:
-            return ShopifyCheckoutSheetKit.Configuration.ColorScheme.automatic
+            return Configuration.ColorScheme.automatic
         }
     }
 
@@ -180,33 +178,33 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
         let iosConfig = colorConfig?["ios"] as? [String: String]
 
         if let title = configuration["title"] as? String {
-            ShopifyCheckoutSheetKit.configuration.title = title
+            ShopifyCheckoutKit.configuration.title = title
         }
 
         if let preloading = configuration["preloading"] as? Bool {
-            ShopifyCheckoutSheetKit.configuration.preloading.enabled = preloading
+            ShopifyCheckoutKit.configuration.preloading.enabled = preloading
         }
 
         if let colorScheme = configuration["colorScheme"] as? String {
-            ShopifyCheckoutSheetKit.configuration.colorScheme = getColorScheme(colorScheme)
+            ShopifyCheckoutKit.configuration.colorScheme = getColorScheme(colorScheme)
         }
 
         if let tintColorHex = iosConfig?["tintColor"] as? String {
-            ShopifyCheckoutSheetKit.configuration.tintColor = UIColor(hex: tintColorHex)
+            ShopifyCheckoutKit.configuration.tintColor = UIColor(hex: tintColorHex)
         }
 
         if let backgroundColorHex = iosConfig?["backgroundColor"] as? String {
-            ShopifyCheckoutSheetKit.configuration.backgroundColor = UIColor(hex: backgroundColorHex)
+            ShopifyCheckoutKit.configuration.backgroundColor = UIColor(hex: backgroundColorHex)
         }
 
         if let closeButtonColorHex = iosConfig?["closeButtonColor"] as? String {
-            ShopifyCheckoutSheetKit.configuration.closeButtonTintColor = UIColor(hex: closeButtonColorHex)
+            ShopifyCheckoutKit.configuration.closeButtonTintColor = UIColor(hex: closeButtonColorHex)
         }
 
         if let logLevel = configuration["logLevel"] as? String {
-            ShopifyCheckoutSheetKit.configuration.logLevel = ShopifyCheckoutSheetKit.LogLevel(rawValue: logLevel.lowercased()) ?? defaultLogLevel
+            ShopifyCheckoutKit.configuration.logLevel = LogLevel(rawValue: logLevel.lowercased()) ?? defaultLogLevel
         } else {
-            ShopifyCheckoutSheetKit.configuration.logLevel = defaultLogLevel
+            ShopifyCheckoutKit.configuration.logLevel = defaultLogLevel
         }
 
         NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
@@ -214,13 +212,13 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
 
     @objc func getConfig() -> NSDictionary {
         return [
-            "title": ShopifyCheckoutSheetKit.configuration.title,
-            "preloading": ShopifyCheckoutSheetKit.configuration.preloading.enabled,
-            "colorScheme": ShopifyCheckoutSheetKit.configuration.colorScheme.rawValue,
-            "tintColor": ShopifyCheckoutSheetKit.configuration.tintColor,
-            "backgroundColor": ShopifyCheckoutSheetKit.configuration.backgroundColor,
-            "closeButtonColor": ShopifyCheckoutSheetKit.configuration.closeButtonTintColor,
-            "logLevel": logLevelToString(ShopifyCheckoutSheetKit.configuration.logLevel)
+            "title": ShopifyCheckoutKit.configuration.title,
+            "preloading": ShopifyCheckoutKit.configuration.preloading.enabled,
+            "colorScheme": ShopifyCheckoutKit.configuration.colorScheme.rawValue,
+            "tintColor": ShopifyCheckoutKit.configuration.tintColor,
+            "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
+            "closeButtonColor": ShopifyCheckoutKit.configuration.closeButtonTintColor,
+            "logLevel": logLevelToString(ShopifyCheckoutKit.configuration.logLevel)
         ]
     }
 

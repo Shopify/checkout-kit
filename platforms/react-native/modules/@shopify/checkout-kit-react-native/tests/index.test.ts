@@ -185,67 +185,6 @@ describe('ShopifyCheckoutKit', () => {
       );
     });
 
-    describe('Completed Event', () => {
-      it('parses completed event string data as JSON', () => {
-        const instance = new ShopifyCheckout();
-        const eventName = 'completed';
-        const callback = jest.fn();
-        instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
-        expect(eventEmitter.addListener).toHaveBeenCalledWith(
-          'completed',
-          expect.any(Function),
-        );
-        eventEmitter.emit(
-          'completed',
-          JSON.stringify({orderDetails: {id: 'test-id'}}),
-        );
-        expect(callback).toHaveBeenCalledWith({orderDetails: {id: 'test-id'}});
-      });
-
-      it('parses completed event JSON data', () => {
-        const instance = new ShopifyCheckout();
-        const eventName = 'completed';
-        const callback = jest.fn();
-        instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
-        expect(eventEmitter.addListener).toHaveBeenCalledWith(
-          'completed',
-          expect.any(Function),
-        );
-        eventEmitter.emit('completed', {orderDetails: {id: 'test-id'}});
-        expect(callback).toHaveBeenCalledWith({orderDetails: {id: 'test-id'}});
-      });
-
-      it('prints an error if the completed event data cannot be parsed', () => {
-        const mock = jest.spyOn(global.console, 'error');
-        const instance = new ShopifyCheckout();
-        const eventName = 'completed';
-        const callback = jest.fn();
-        instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
-        expect(eventEmitter.addListener).toHaveBeenCalledWith(
-          'completed',
-          expect.any(Function),
-        );
-        const invalidData = 'INVALID JSON';
-        eventEmitter.emit('completed', invalidData);
-        expect(mock).toHaveBeenCalledWith(
-          expect.any(LifecycleEventParseError),
-          invalidData,
-        );
-      });
-    });
-
     describe('Error Event', () => {
       const internalError = {
         __typename: CheckoutNativeErrorType.InternalError,

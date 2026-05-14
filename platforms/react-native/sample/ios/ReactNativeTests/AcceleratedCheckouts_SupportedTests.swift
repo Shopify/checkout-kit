@@ -25,7 +25,7 @@ import Foundation
 import PassKit
 import SwiftUI
 @testable import RNShopifyCheckoutKit
-@testable import ShopifyCheckoutSheetKit
+@testable import ShopifyCheckoutKit
 import XCTest
 
 struct WalletButtons {
@@ -57,9 +57,9 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
     }
 
     private func resetCheckoutKitDefaults() {
-        ShopifyCheckoutSheetKit.configuration.preloading = Configuration.Preloading(enabled: true)
-        ShopifyCheckoutSheetKit.configuration.colorScheme = .automatic
-        ShopifyCheckoutSheetKit.configuration.closeButtonTintColor = nil
+        ShopifyCheckoutKit.configuration.preloading = Configuration.Preloading(enabled: true)
+        ShopifyCheckoutKit.configuration.colorScheme = .automatic
+        ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
     }
 
     @discardableResult

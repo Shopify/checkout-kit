@@ -27,7 +27,6 @@ import type {
   DirectEventHandler,
   Double,
   Float,
-  UnsafeMixed,
   // eslint-disable-next-line @react-native/no-deep-imports -- codegen parser requires these type names to be imported directly (not via aliases) so it can match them statically during AST traversal
 } from 'react-native/Libraries/Types/CodegenTypes';
 
@@ -36,16 +35,6 @@ type FailEvent = Readonly<{
   message: string;
   code?: string;
   recoverable?: boolean;
-}>;
-
-type CompleteEvent = Readonly<{
-  orderDetails: Readonly<{
-    id: string;
-    cart?: UnsafeMixed;
-    email?: string;
-    paymentMethods?: UnsafeMixed;
-    phone?: string;
-  }>;
 }>;
 
 type RenderStateChangeEvent = Readonly<{
@@ -69,7 +58,6 @@ interface NativeProps extends ViewProps {
   applePayLabel?: string;
   applePayStyle?: string;
   onFail?: BubblingEventHandler<FailEvent>;
-  onComplete?: BubblingEventHandler<CompleteEvent>;
   onCancel?: BubblingEventHandler<null>;
   onRenderStateChange?: BubblingEventHandler<RenderStateChangeEvent>;
   onClickLink?: BubblingEventHandler<ClickLinkEvent>;

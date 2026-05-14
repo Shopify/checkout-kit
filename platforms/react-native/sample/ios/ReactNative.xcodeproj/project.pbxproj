@@ -51,7 +51,7 @@
 		6AF1E0022C00010100E5EE1B /* EventSerializationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventSerializationTests.swift; sourceTree = "<group>"; };
 		6AF2B3762B0BCA6600C6CE4F /* ReactNative-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ReactNative-Bridging-Header.h"; sourceTree = "<group>"; };
 		6AFAD2D12BA9DEF8001F9644 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Localizable.xcstrings; path = ReactNative/Localizable.xcstrings; sourceTree = "<group>"; };
-		6AFC2CB62B0D5814003B5A63 /* libShopifyCheckoutSheetKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libShopifyCheckoutSheetKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		6AFC2CB62B0D5814003B5A63 /* libShopifyCheckoutKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libShopifyCheckoutKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7959053DABE1E06BE5CF1255 /* Pods-ReactNative-ReactNativeTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ReactNative-ReactNativeTests.release.xcconfig"; path = "Target Support Files/Pods-ReactNative-ReactNativeTests/Pods-ReactNative-ReactNativeTests.release.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ReactNative/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9E0AC43398437CA0E3D05DDF /* libPods-ReactNative.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ReactNative.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -120,7 +120,7 @@
 			isa = PBXGroup;
 			children = (
 				6AABC1942B17417E008240EB /* OpenSSL.xcframework */,
-				6AFC2CB62B0D5814003B5A63 /* libShopifyCheckoutSheetKit.a */,
+				6AFC2CB62B0D5814003B5A63 /* libShopifyCheckoutKit.a */,
 				9E0AC43398437CA0E3D05DDF /* libPods-ReactNative.a */,
 				591887D86C91BE07EFFC9303 /* libPods-ReactNativeTests.a */,
 			);
@@ -520,7 +520,7 @@
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimescheduler\"",
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-utils\"",
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutSheetKit\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutKit\"",
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/SocketRocket\"",
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/Yoga\"",
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/YogaKit\"",
@@ -539,7 +539,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.shopify.example.CheckoutKitReactNative;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_INCLUDE_PATHS = "$(inherited) \"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutSheetKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/YogaKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/RNShopifyCheckoutKit\"/**";
+				SWIFT_INCLUDE_PATHS = "$(inherited) \"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/YogaKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/RNShopifyCheckoutKit\"/**";
 				SWIFT_OBJC_BRIDGING_HEADER = "ReactNativeTests-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -625,7 +625,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.shopify.example.CheckoutKitReactNative;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_INCLUDE_PATHS = "$(inherited) \"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutSheetKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/YogaKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/RNShopifyCheckoutKit\"/**";
+				SWIFT_INCLUDE_PATHS = "$(inherited) \"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/YogaKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/RNShopifyCheckoutKit\"/**";
 				SWIFT_OBJC_BRIDGING_HEADER = "ReactNativeTests-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReactNative.app/ReactNative";
@@ -660,7 +660,7 @@
 					"\"${PODS_ROOT}/Headers/Public/React-Core\"",
 					"\"${PODS_ROOT}/Headers/Public/React-NativeModulesApple\"",
 					"\"${PODS_ROOT}/Headers/Public/React-RCTAnimation\"",
-					"\"$(SRCROOT)/Pods/ShopifyCheckoutSheetKit\"/**",
+					"\"$(SRCROOT)/Pods/ShopifyCheckoutKit\"/**",
 					"\"${PODS_ROOT}/Headers/Public/React-RCTAppDelegate\"",
 					"\"${PODS_ROOT}/Headers/Public/React-RCTBlob\"",
 					"\"${PODS_ROOT}/Headers/Public/React-RCTText\"",
@@ -750,7 +750,7 @@
 					"\"${PODS_ROOT}/Headers/Public/React-Core\"",
 					"\"${PODS_ROOT}/Headers/Public/React-NativeModulesApple\"",
 					"\"${PODS_ROOT}/Headers/Public/React-RCTAnimation\"",
-					"\"$(SRCROOT)/Pods/ShopifyCheckoutSheetKit\"/**",
+					"\"$(SRCROOT)/Pods/ShopifyCheckoutKit\"/**",
 					"\"${PODS_ROOT}/Headers/Public/React-RCTAppDelegate\"",
 					"\"${PODS_ROOT}/Headers/Public/React-RCTBlob\"",
 					"\"${PODS_ROOT}/Headers/Public/React-RCTText\"",

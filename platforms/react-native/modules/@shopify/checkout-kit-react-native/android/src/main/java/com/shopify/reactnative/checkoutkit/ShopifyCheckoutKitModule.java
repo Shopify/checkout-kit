@@ -35,7 +35,7 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.shopify.checkoutkit.NativeShopifyCheckoutKitSpec;
-import com.shopify.checkoutsheetkit.*;
+import com.shopify.checkoutkit.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +47,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   private final ReactApplicationContext reactContext;
 
-  private CheckoutSheetKitDialog checkoutSheet;
+  private CheckoutKitDialog checkoutSheet;
 
   private CustomCheckoutEventProcessor checkoutEventProcessor;
 
@@ -56,8 +56,8 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
     this.reactContext = reactContext;
 
-    ShopifyCheckoutSheetKit.configure(configuration -> {
-      configuration.setPlatform(Platform.REACT_NATIVE);
+    ShopifyCheckoutKit.configure(configuration -> {
+      configuration.setPlatform(new Platform.ReactNative());
       checkoutConfig = configuration;
     });
   }
@@ -65,7 +65,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   @Override
   protected Map<String, Object> getTypedExportedConstants() {
     final Map<String, Object> constants = new HashMap<>();
-    constants.put("version", ShopifyCheckoutSheetKit.version);
+    constants.put("version", ShopifyCheckoutKit.version);
     return constants;
   }
 
@@ -85,7 +85,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     if (currentActivity instanceof ComponentActivity) {
       checkoutEventProcessor = new CustomCheckoutEventProcessor(currentActivity, this.reactContext);
       currentActivity.runOnUiThread(() -> {
-        checkoutSheet = ShopifyCheckoutSheetKit.present(checkoutURL, (ComponentActivity) currentActivity,
+        checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
             checkoutEventProcessor);
       });
     }
@@ -104,13 +104,13 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     Activity currentActivity = getCurrentActivity();
 
     if (currentActivity instanceof ComponentActivity) {
-      ShopifyCheckoutSheetKit.preload(checkoutURL, (ComponentActivity) currentActivity);
+      ShopifyCheckoutKit.preload(checkoutURL, (ComponentActivity) currentActivity);
     }
   }
 
   @ReactMethod
   public void invalidateCache() {
-    ShopifyCheckoutSheetKit.invalidate();
+    ShopifyCheckoutKit.invalidate();
   }
 
   @ReactMethod(isBlockingSynchronousMethod = true)
@@ -128,7 +128,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   public void setConfig(ReadableMap config) {
     Context context = getReactApplicationContext();
 
-    ShopifyCheckoutSheetKit.configure(configuration -> {
+    ShopifyCheckoutKit.configure(configuration -> {
       if (config.hasKey("preloading")) {
         configuration.setPreloading(new Preloading(config.getBoolean("preloading")));
       }
