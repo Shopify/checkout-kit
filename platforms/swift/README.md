@@ -144,7 +144,7 @@ struct ContentView: View {
     }
     .sheet(isPresented: $isPresented) {
       if let url = checkoutURL {
-        CheckoutSheet(url: url)
+        ShopifyCheckout(url: url)
            /// Configuration
            .title("Checkout")
            .colorScheme(.automatic)
@@ -280,7 +280,7 @@ ShopifyCheckoutKit.configuration.closeButtonTintColor = .systemRed
 Similarly, configuration modifiers are available to set the configuration of your checkout when using SwiftUI:
 
 ```swift
-CheckoutSheet(checkout: checkoutURL)
+ShopifyCheckout(checkout: checkoutURL)
   .title("Checkout")
   .colorScheme(.automatic)
   .tintColor(.blue)

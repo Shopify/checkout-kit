@@ -108,7 +108,7 @@ struct CartView: View {
             }
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
-                    CheckoutSheet(checkout: url)
+                    ShopifyCheckout(checkout: url)
                         .connect(client)
                         .colorScheme(.automatic)
                         .onCancel {
