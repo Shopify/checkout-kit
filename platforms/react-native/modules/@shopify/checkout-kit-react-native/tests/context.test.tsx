@@ -154,42 +154,7 @@ describe('useShopifyCheckout', () => {
     jest.clearAllMocks();
   });
 
-  it('provides addEventListener function', () => {
-    let hookValue: any;
-    const onHookValue = (value: any) => {
-      hookValue = value;
-    };
-
-    render(
-      <Wrapper>
-        <HookTestComponent onHookValue={onHookValue} />
-      </Wrapper>,
-    );
-
-    expect(hookValue.addEventListener).toBeDefined();
-    expect(typeof hookValue.addEventListener).toBe('function');
-  });
-
-  it('provides removeEventListeners function', () => {
-    let hookValue: any;
-    const onHookValue = (value: any) => {
-      hookValue = value;
-    };
-
-    render(
-      <Wrapper>
-        <HookTestComponent onHookValue={onHookValue} />
-      </Wrapper>,
-    );
-
-    act(() => {
-      hookValue.removeEventListeners('close');
-    });
-
-    expect(hookValue.removeEventListeners).toBeDefined();
-  });
-
-  it('provides present function and calls it with checkoutUrl', () => {
+  it('provides present function and calls it with checkoutUrl and null callbacks when none are passed', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -207,6 +172,37 @@ describe('useShopifyCheckout', () => {
 
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
+      null,
+      null,
+      null,
+    );
+  });
+
+  it('forwards onClose, onFail, and onGeolocationRequest callbacks through present', () => {
+    let hookValue: any;
+    const onHookValue = (value: any) => {
+      hookValue = value;
+    };
+
+    render(
+      <Wrapper>
+        <HookTestComponent onHookValue={onHookValue} />
+      </Wrapper>,
+    );
+
+    const onClose = jest.fn();
+    const onFail = jest.fn();
+    const onGeolocationRequest = jest.fn();
+
+    act(() => {
+      hookValue.present(checkoutUrl, {onClose, onFail, onGeolocationRequest});
+    });
+
+    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+      checkoutUrl,
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(Function),
     );
   });
 
@@ -373,22 +369,6 @@ describe('useShopifyCheckout', () => {
     expect(hookValue.version).toBe('0.7.0');
   });
 
-  it('addEventListener returns subscription object', () => {
-    let hookValue: any;
-    const onHookValue = (value: any) => {
-      hookValue = value;
-    };
-
-    render(
-      <Wrapper>
-        <HookTestComponent onHookValue={onHookValue} />
-      </Wrapper>,
-    );
-
-    const subscription = hookValue.addEventListener('close', jest.fn());
-    expect(subscription).toBeDefined();
-    expect(subscription.remove).toBeDefined();
-  });
 });
 
 describe('ShopifyCheckoutContext without provider', () => {

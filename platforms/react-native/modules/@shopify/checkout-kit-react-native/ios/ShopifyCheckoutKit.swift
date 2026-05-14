@@ -29,19 +29,26 @@ import SwiftUI
 import UIKit
 
 @objc(RCTShopifyCheckoutKit)
-class RCTShopifyCheckoutKit: RCTEventEmitter {
-    private var hasListeners = false
-
+class RCTShopifyCheckoutKit: NSObject {
     internal var checkoutSheet: UIViewController?
     private var acceleratedCheckoutsConfiguration: Any?
     private var acceleratedCheckoutsApplePayConfiguration: Any?
     private var defaultLogLevel: LogLevel = .error
 
-    override var methodQueue: DispatchQueue! {
+    // TODO: invoke these once the iOS CheckoutDelegate (or equivalent) lands upstream — until then,
+    // onClose/onFail callbacks are stored but never fire (Android is the only platform delivering them).
+    // `pendingGeolocationRequestCallback` is intentionally a no-op on iOS — geolocation permission
+    // is handled natively, so the callback is stored only to keep the bridge signature symmetric
+    // with Android.
+    private var pendingCloseCallback: RCTResponseSenderBlock?
+    private var pendingFailCallback: RCTResponseSenderBlock?
+    private var pendingGeolocationRequestCallback: RCTResponseSenderBlock?
+
+    @objc var methodQueue: DispatchQueue {
         return DispatchQueue.main
     }
 
-    @objc override static func requiresMainQueueSetup() -> Bool {
+    @objc static func requiresMainQueueSetup() -> Bool {
         return true
     }
 
@@ -53,48 +60,7 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
         super.init()
     }
 
-    override func supportedEvents() -> [String]! {
-        return ["close", "error"]
-    }
-
-    override func startObserving() {
-        hasListeners = true
-    }
-
-    override func stopObserving() {
-        hasListeners = false
-    }
-
-    // TODO: re-enable when iOS CheckoutDelegate (or equivalent) lands upstream —
-    // parallels Android's DefaultCheckoutListener.onCheckoutCanceled / onCheckoutFailed.
-    // Until then, the JS "error" and "close" events stay declared in supportedEvents()
-    // but native never emits them.
-    /*
-
-    func shouldRecoverFromError(error: CheckoutError) -> Bool {
-        return error.isRecoverable
-    }
-
-    func checkoutDidFail(error: CheckoutError) {
-        guard hasListeners else { return }
-
-        sendEvent(withName: "error", body: ShopifyEventSerialization.serialize(checkoutError: error))
-    }
-
-    func checkoutDidCancel() {
-        DispatchQueue.main.async {
-            if self.hasListeners {
-                self.sendEvent(withName: "close", body: nil)
-            }
-
-            self.checkoutSheet?.dismiss(animated: true)
-        }
-    }
-
-    func checkoutDidEmitWebPixelEvent(event _: PixelEvent) {}
-    */
-
-    @objc override func constantsToExport() -> [AnyHashable: Any]! {
+    @objc func constantsToExport() -> [AnyHashable: Any]! {
         return [
             "version": ShopifyCheckoutKit.version
         ]
@@ -140,7 +106,12 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
         invalidate()
     }
 
-    @objc func present(_ checkoutURL: String) {
+    @objc func present(_ checkoutURL: String, onClose: RCTResponseSenderBlock?, onFail: RCTResponseSenderBlock?,
+                       onGeolocationRequest: RCTResponseSenderBlock?) {
+        pendingCloseCallback = onClose
+        pendingFailCallback = onFail
+        pendingGeolocationRequestCallback = onGeolocationRequest
+
         DispatchQueue.main.async {
             if let url = URL(string: checkoutURL), let viewController = self.getCurrentViewController() {
                 let view = CheckoutViewController(checkout: url)

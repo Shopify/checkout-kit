@@ -47,7 +47,6 @@ import {
   ShopifyCheckoutProvider,
   useShopifyCheckout,
 } from '@shopify/checkout-kit-react-native';
-import type {CheckoutException} from '@shopify/checkout-kit-react-native';
 import {ConfigProvider, useConfig} from './context/Config';
 import {BuyerIdentityMode} from './auth/types';
 import {
@@ -205,27 +204,6 @@ const checkoutKitConfigDefaults: Configuration = {
 };
 
 function AppWithContext({children}: PropsWithChildren) {
-  const shopify = useShopifyCheckout();
-  const eventHandlers = useShopifyEventHandlers();
-
-  useEffect(() => {
-    const close = shopify.addEventListener('close', () => {
-      eventHandlers.onCancel?.();
-    });
-
-    const error = shopify.addEventListener(
-      'error',
-      (error: CheckoutException) => {
-        eventHandlers.onFail?.(error);
-      },
-    );
-
-    return () => {
-      close?.remove();
-      error?.remove();
-    };
-  }, [shopify, eventHandlers]);
-
   return (
     <ApolloProvider client={client}>
       <CartProvider>
@@ -459,6 +437,7 @@ function Routes() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const {url: initialUrl} = useInitialURL();
   const shopify = useShopifyCheckout();
+  const eventHandlers = useShopifyEventHandlers('UniversalLink');
 
   useEffect(() => {
     async function handleUniversalLink(url: string) {
@@ -467,7 +446,10 @@ function Routes() {
       switch (true) {
         // Checkout URLs
         case storefrontUrl.isCheckout() && !storefrontUrl.isThankYouPage():
-          shopify.present(url);
+          shopify.present(url, {
+            onClose: () => eventHandlers.onCancel?.(),
+            onFail: error => eventHandlers.onFail?.(error),
+          });
           return;
         // Cart URLs
         case storefrontUrl.isCart():
@@ -495,7 +477,7 @@ function Routes() {
     return () => {
       subscription.remove();
     };
-  }, [initialUrl, shopify, navigation]);
+  }, [initialUrl, shopify, navigation, eventHandlers]);
 
   return (
     <Tab.Navigator>

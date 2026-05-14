@@ -31,8 +31,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.shopify.checkoutkit.*;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -43,13 +43,25 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private final ReactApplicationContext reactContext;
   private final ObjectMapper mapper = new ObjectMapper();
 
+  @Nullable
+  private Callback onCloseCallback;
+  @Nullable
+  private Callback onFailCallback;
+  @Nullable
+  private Callback onGeolocationRequestCallback;
+
   // Geolocation-specific variables
 
   private String geolocationOrigin;
   private GeolocationPermissions.Callback geolocationCallback;
 
-  public CustomCheckoutListener(Context context, ReactApplicationContext reactContext) {
+  public CustomCheckoutListener(Context context, ReactApplicationContext reactContext,
+      @Nullable Callback onClose, @Nullable Callback onFail,
+      @Nullable Callback onGeolocationRequest) {
     this.reactContext = reactContext;
+    this.onCloseCallback = onClose;
+    this.onFailCallback = onFail;
+    this.onGeolocationRequestCallback = onGeolocationRequest;
   }
 
   // Public methods
@@ -85,11 +97,15 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     this.geolocationCallback = callback;
     this.geolocationOrigin = origin;
 
-    // Emit a "geolocationRequest" event to the app.
     try {
       Map<String, Object> event = new HashMap<>();
       event.put("origin", origin);
-      sendEventWithStringData("geolocationRequest", mapper.writeValueAsString(event));
+      String payload = mapper.writeValueAsString(event);
+      if (onGeolocationRequestCallback != null) {
+        onGeolocationRequestCallback.invoke(payload);
+      } else {
+        sendEventWithStringData("geolocationRequest", payload);
+      }
     } catch (IOException e) {
       Log.e("ShopifyCheckoutKit", "Error emitting \"geolocationRequest\" event", e);
     }
@@ -106,17 +122,26 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
 
   @Override
   public void onCheckoutFailed(CheckoutException checkoutError) {
+    if (onFailCallback == null) {
+      return;
+    }
     try {
       String data = mapper.writeValueAsString(populateErrorDetails(checkoutError));
-      sendEventWithStringData("error", data);
+      onFailCallback.invoke(data);
     } catch (IOException e) {
       Log.e("ShopifyCheckoutKit", "Error processing checkout failed event", e);
+    } finally {
+      onFailCallback = null;
     }
   }
 
   @Override
   public void onCheckoutCanceled() {
-    sendEvent("close", null);
+    if (onCloseCallback == null) {
+      return;
+    }
+    onCloseCallback.invoke();
+    onCloseCallback = null;
   }
 
   // Private
@@ -149,12 +174,6 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     } else {
       return "UnknownError";
     }
-  }
-
-  private void sendEvent(String eventName, @Nullable WritableNativeMap params) {
-    reactContext
-        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-        .emit(eventName, params);
   }
 
   private void sendEventWithStringData(String name, String data) {

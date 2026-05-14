@@ -56,8 +56,6 @@ const ShopifyCheckoutKit = {
   invalidateCache: jest.fn(),
   getConfig: jest.fn(() => exampleConfig),
   setConfig: jest.fn(),
-  addEventListener: jest.fn(),
-  removeEventListeners: jest.fn(),
   initiateGeolocationRequest: jest.fn(),
   configureAcceleratedCheckouts: jest.fn(() => true),
   isAcceleratedCheckoutAvailable: jest.fn(() => true),

@@ -87,7 +87,10 @@ function CartScreen(): React.JSX.Element {
 
   const presentCheckout = async () => {
     if (checkoutURL) {
-      ShopifyCheckout.present(checkoutURL);
+      ShopifyCheckout.present(checkoutURL, {
+        onClose: () => eventHandlers.onCancel?.(),
+        onFail: error => eventHandlers.onFail?.(error),
+      });
     }
   };
 

@@ -22,22 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 
 import {NativeEventEmitter, PermissionsAndroid, Platform} from 'react-native';
-import type {
-  EmitterSubscription,
-  EventSubscription,
-  PermissionStatus,
-} from 'react-native';
+import type {EventSubscription, PermissionStatus} from 'react-native';
 import RNShopifyCheckoutKit from './specs/NativeShopifyCheckoutKit';
 import {ShopifyCheckoutProvider, useShopifyCheckout} from './context';
 import {ApplePayContactField, ColorScheme, LogLevel} from './index.d';
 import type {
   AcceleratedCheckoutConfiguration,
-  CheckoutEvent,
-  CheckoutEventCallback,
   Configuration,
   Features,
   GeolocationRequestEvent,
   Maybe,
+  PresentCallbacks,
   ShopifyCheckoutKit,
 } from './index.d';
 import {AcceleratedCheckoutWallet} from './index.d';
@@ -140,11 +135,23 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Presents the checkout sheet for a given checkout URL
+   * Presents the checkout sheet for a given checkout URL.
+   *
+   * Exactly one of `callbacks.onClose` or `callbacks.onFail` fires per
+   * call, after which the native bridge releases both handles.
+   *
    * @param checkoutUrl The URL of the checkout to display
+   * @param callbacks Optional per-call SDK callbacks
    */
-  public present(checkoutUrl: string): void {
-    RNShopifyCheckoutKit.present(checkoutUrl);
+  public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
+    RNShopifyCheckoutKit.present(
+      checkoutUrl,
+      callbacks?.onClose ?? null,
+      callbacks?.onFail ? this.wrapFailCallback(callbacks.onFail) : null,
+      callbacks?.onGeolocationRequest
+        ? this.wrapGeolocationCallback(callbacks.onGeolocationRequest)
+        : null,
+    );
   }
 
   /**
@@ -166,47 +173,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
       );
     }
     RNShopifyCheckoutKit.setConfig(configuration);
-  }
-
-  /**
-   * Adds an event listener for checkout events
-   * @param event The type of event to listen for
-   * @param callback Function to be called when the event occurs
-   * @returns An EmitterSubscription that can be used to remove the listener
-   */
-  public addEventListener(
-    event: CheckoutEvent,
-    callback: CheckoutEventCallback,
-  ): EmitterSubscription | undefined {
-    let eventCallback;
-
-    switch (event) {
-      case 'error':
-        eventCallback = this.interceptEventEmission(
-          'error',
-          callback,
-          this.parseCheckoutError,
-        );
-        break;
-      case 'geolocationRequest':
-        eventCallback = this.interceptEventEmission(
-          'geolocationRequest',
-          callback,
-        );
-        break;
-      default:
-        eventCallback = callback;
-    }
-
-    return ShopifyCheckout.eventEmitter.addListener(event, eventCallback);
-  }
-
-  /**
-   * Removes all event listeners for a specific event type
-   * @param event The type of event to remove listeners for
-   */
-  public removeEventListeners(event: CheckoutEvent) {
-    ShopifyCheckout.eventEmitter.removeAllListeners(event);
   }
 
   /**
@@ -353,10 +319,12 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Sets up geolocation request handling for Android devices
+   * Sets up geolocation request handling for Android devices.
+   * Uses the internal NativeEventEmitter directly because the public
+   * listener API has been removed.
    */
   private subscribeToGeolocationRequestPrompts() {
-    this.geolocationCallback = this.addEventListener(
+    this.geolocationCallback = ShopifyCheckout.eventEmitter.addListener(
       'geolocationRequest',
       async () => {
         const coarseOrFineGrainAccessGranted = await this.requestGeolocation();
@@ -451,46 +419,51 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Handles event emission parsing and transformation
-   * @param event The type of event being intercepted
-   * @param callback The callback to execute with the parsed data
-   * @param transformData Optional function to transform the event data
-   * @returns Function that handles the event emission
+   * Wraps a consumer-provided `onFail` callback so the native bridge can
+   * hand it the raw JSON error payload it serializes today. Invalid JSON
+   * is reported via `LifecycleEventParseError`; the user callback only
+   * fires on a successful parse.
    */
-  private interceptEventEmission(
-    event: CheckoutEvent,
-    callback: CheckoutEventCallback,
-    transformData?: (data: any) => any,
-  ): (eventData: string | typeof callback) => void {
-    return (eventData: string | typeof callback): void => {
+  private wrapFailCallback(
+    onFail: NonNullable<PresentCallbacks['onFail']>,
+  ): (raw: string) => void {
+    return (raw: string) => {
       try {
-        if (typeof eventData === 'string') {
-          try {
-            let parsed = JSON.parse(eventData);
-            parsed = transformData?.(parsed) ?? parsed;
-            callback(parsed);
-          } catch (error) {
-            const parseError = new LifecycleEventParseError(
-              `Failed to parse "${event}" event data: Invalid JSON`,
-              {
-                cause: 'Invalid JSON',
-              },
-            );
-            // eslint-disable-next-line no-console
-            console.error(parseError, eventData);
-          }
-        } else if (eventData && typeof eventData === 'object') {
-          callback(transformData?.(eventData) ?? eventData);
-        }
-      } catch (error) {
+        const parsed = JSON.parse(raw);
+        onFail(this.parseCheckoutError(parsed));
+      } catch {
         const parseError = new LifecycleEventParseError(
-          `Failed to parse "${event}" event data`,
-          {
-            cause: 'Unknown',
-          },
+          'Failed to parse "onFail" callback payload: Invalid JSON',
+          {cause: 'Invalid JSON'},
         );
         // eslint-disable-next-line no-console
-        console.error(parseError);
+        console.error(parseError, raw);
+      }
+    };
+  }
+
+  /**
+   * Wraps a consumer-provided `onGeolocationRequest` callback so the
+   * native bridge can hand it the raw JSON origin payload. Invalid JSON
+   * is reported via `LifecycleEventParseError`; the user callback only
+   * fires on a successful parse.
+   */
+  private wrapGeolocationCallback(
+    onGeolocationRequest: NonNullable<
+      PresentCallbacks['onGeolocationRequest']
+    >,
+  ): (raw: string) => void {
+    return (raw: string) => {
+      try {
+        const parsed = JSON.parse(raw);
+        onGeolocationRequest(parsed);
+      } catch {
+        const parseError = new LifecycleEventParseError(
+          'Failed to parse "onGeolocationRequest" callback payload: Invalid JSON',
+          {cause: 'Invalid JSON'},
+        );
+        // eslint-disable-next-line no-console
+        console.error(parseError, raw);
       }
     };
   }
@@ -536,12 +509,11 @@ export {
 export type {
   AcceleratedCheckoutButtonsProps,
   AcceleratedCheckoutConfiguration,
-  CheckoutEvent,
-  CheckoutEventCallback,
   CheckoutException,
   Configuration,
   Features,
   GeolocationRequestEvent,
+  PresentCallbacks,
   RenderStateChangeEvent,
 };
 

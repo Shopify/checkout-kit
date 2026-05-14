@@ -21,7 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import type {EmitterSubscription} from 'react-native';
 import type {CheckoutException} from './errors';
 
 export type Maybe<T> = T | undefined;
@@ -169,22 +168,44 @@ export type Configuration = CommonConfiguration & {
       }
   );
 
-export type CheckoutEvent = 'close' | 'error' | 'geolocationRequest';
-
 export interface GeolocationRequestEvent {
   origin: string;
 }
 
-export type CloseEventCallback = () => void;
-export type GeolocationRequestEventCallback = (
-  event: GeolocationRequestEvent,
-) => void;
-export type CheckoutExceptionCallback = (error: CheckoutException) => void;
-
-export type CheckoutEventCallback =
-  | CloseEventCallback
-  | CheckoutExceptionCallback
-  | GeolocationRequestEventCallback;
+/**
+ * Per-call SDK callbacks for `present(url, callbacks)`.
+ *
+ * Exactly one of `onClose` or `onFail` fires per `present(...)` invocation,
+ * after which the callbacks are released.
+ *
+ * `onGeolocationRequest` may fire any number of times during a single
+ * `present(...)` call while the checkout sheet is open.
+ */
+export interface PresentCallbacks {
+  /**
+   * Fires when the checkout sheet is dismissed without a terminal error.
+   * Mirrors `DefaultCheckoutEventProcessor.onCheckoutCanceled` on Android
+   * and the iOS Swift SDK's `onClose` callback.
+   */
+  onClose?: () => void;
+  /**
+   * Fires when the checkout sheet terminates with an error.
+   * Mirrors `DefaultCheckoutEventProcessor.onCheckoutFailed` on Android
+   * and the iOS Swift SDK's `onFail` callback.
+   */
+  onFail?: (error: CheckoutException) => void;
+  /**
+   * Fires when the checkout sheet requests geolocation permissions.
+   * Only Android currently delivers this callback; on iOS the
+   * `present()` call accepts the handle but never invokes it.
+   *
+   * When set, this overrides the default internal handler driven by
+   * `features.handleGeolocationRequests`. The consumer is responsible
+   * for calling `initiateGeolocationRequest(allow)` once permissions
+   * have been resolved.
+   */
+  onGeolocationRequest?: (event: GeolocationRequestEvent) => void;
+}
 
 /**
  * Available wallet types for accelerated checkout
@@ -257,26 +278,6 @@ export interface AcceleratedCheckoutConfiguration {
   };
 }
 
-function addEventListener(
-  event: 'close',
-  callback: () => void,
-): Maybe<EmitterSubscription>;
-
-function addEventListener(
-  event: 'error',
-  callback: CheckoutExceptionCallback,
-): Maybe<EmitterSubscription>;
-
-function addEventListener(
-  event: 'geolocationRequest',
-  callback: GeolocationRequestEventCallback,
-): Maybe<EmitterSubscription>;
-
-function removeEventListeners(event: CheckoutEvent): void;
-
-export type AddEventListener = typeof addEventListener;
-export type RemoveEventListeners = typeof removeEventListeners;
-
 export interface ShopifyCheckoutKit {
   /**
    * The version number of the Shopify Checkout SDK.
@@ -293,8 +294,13 @@ export interface ShopifyCheckoutKit {
   invalidate(): void;
   /**
    * Present the checkout.
+   *
+   * @param checkoutURL The URL of the checkout to display.
+   * @param callbacks Optional per-call SDK callbacks. Exactly one of
+   * `onClose` or `onFail` fires per call, after which the callbacks are
+   * released.
    */
-  present(checkoutURL: string): void;
+  present(checkoutURL: string, callbacks?: PresentCallbacks): void;
   /**
    * Configure the checkout. See README.md for more details.
    */
@@ -303,14 +309,6 @@ export interface ShopifyCheckoutKit {
    * Return the current config for the checkout. See README.md for more details.
    */
   getConfig(): Configuration;
-  /**
-   * Listen for checkout events
-   */
-  addEventListener: AddEventListener;
-  /**
-   * Remove subscriptions to checkout events.
-   */
-  removeEventListeners: RemoveEventListeners;
   /**
    * Cleans up any event callbacks to prevent memory leaks.
    */
