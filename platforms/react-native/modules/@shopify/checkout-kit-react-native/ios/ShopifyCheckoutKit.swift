@@ -153,14 +153,6 @@ class RCTShopifyCheckoutKit: RCTEventEmitter, CheckoutDelegate {
         }
     }
 
-    @objc func preload(_ checkoutURL: String) {
-        DispatchQueue.main.async {
-            if let url = URL(string: checkoutURL) {
-                ShopifyCheckoutSheetKit.preload(checkout: url)
-            }
-        }
-    }
-
     private func getColorScheme(_ colorScheme: String) -> ShopifyCheckoutSheetKit.Configuration.ColorScheme {
         switch colorScheme {
         case "web_default":

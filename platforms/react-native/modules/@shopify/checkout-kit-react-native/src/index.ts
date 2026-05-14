@@ -54,7 +54,10 @@ import {
 import {CheckoutErrorCode} from './errors.d';
 import type {CheckoutCompletedEvent} from './events.d';
 import type {CustomEvent, PixelEvent, StandardEvent} from './pixels.d';
-import {ApplePayLabel, ApplePayStyle} from './components/AcceleratedCheckoutButtons';
+import {
+  ApplePayLabel,
+  ApplePayStyle,
+} from './components/AcceleratedCheckoutButtons';
 import type {
   AcceleratedCheckoutButtonsProps,
   RenderStateChangeEvent,
@@ -131,14 +134,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    */
   public invalidate(): void {
     RNShopifyCheckoutKit.invalidateCache();
-  }
-
-  /**
-   * Preloads checkout for a given URL to improve performance
-   * @param checkoutUrl The URL of the checkout to preload
-   */
-  public preload(checkoutUrl: string): void {
-    RNShopifyCheckoutKit.preload(checkoutUrl);
   }
 
   /**

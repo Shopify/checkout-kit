@@ -118,17 +118,9 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
     }
   }, [cartId, fetchCart, setTotalQuantity]);
 
-  const preloadCheckout = useCallback(
-    (checkoutURL: string) => {
-      if (checkoutURL) {
-        const config = shopify.getConfig();
-        if (config?.preloading) {
-          shopify.preload(checkoutURL);
-        }
-      }
-    },
-    [shopify],
-  );
+  const preloadCheckout = useCallback((_checkoutURL: string) => {
+    // Public preload support is coming soon.
+  }, []);
 
   const addToCart = useCallback(
     async (variantId: string) => {
@@ -151,11 +143,8 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
 
       if (!id) {
         let customerAccessToken: string | undefined;
-        if (
-          appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount
-        ) {
-          customerAccessToken =
-            (await getValidAccessToken()) ?? undefined;
+        if (appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount) {
+          customerAccessToken = (await getValidAccessToken()) ?? undefined;
         }
         const cartInput = createBuyerIdentityCartInput(
           appConfig,

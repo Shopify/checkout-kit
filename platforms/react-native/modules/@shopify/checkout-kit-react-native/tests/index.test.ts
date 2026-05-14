@@ -75,16 +75,12 @@ describe('ShopifyCheckoutKit', () => {
   describe('instantiation', () => {
     it('calls `setConfig` with the specified config on instantiation', () => {
       new ShopifyCheckout(config);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(config);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
     });
 
     it('does not call `setConfig` if no config was specified on instantiation', () => {
       new ShopifyCheckout();
-      expect(
-        NativeModule.setConfig,
-      ).not.toHaveBeenCalled();
+      expect(NativeModule.setConfig).not.toHaveBeenCalled();
     });
   });
 
@@ -92,12 +88,8 @@ describe('ShopifyCheckoutKit', () => {
     it('calls the `setConfig` on the Native Module', () => {
       const instance = new ShopifyCheckout();
       instance.setConfig(config);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(config);
+      expect(NativeModule.setConfig).toHaveBeenCalledTimes(1);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
     });
 
     it('calls `setConfig` with logLevel configuration', () => {
@@ -107,22 +99,7 @@ describe('ShopifyCheckoutKit', () => {
         logLevel: LogLevel.debug,
       };
       instance.setConfig(configWithLogLevel);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(configWithLogLevel);
-    });
-  });
-
-  describe('preload', () => {
-    it('calls `preload` with a checkout URL', () => {
-      const instance = new ShopifyCheckout();
-      instance.preload(checkoutUrl);
-      expect(
-        NativeModule.preload,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        NativeModule.preload,
-      ).toHaveBeenCalledWith(checkoutUrl);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithLogLevel);
     });
   });
 
@@ -130,9 +107,7 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `invalidateCache`', () => {
       const instance = new ShopifyCheckout();
       instance.invalidate();
-      expect(
-        NativeModule.invalidateCache,
-      ).toHaveBeenCalledTimes(1);
+      expect(NativeModule.invalidateCache).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -140,12 +115,8 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `present` with a checkout URL', () => {
       const instance = new ShopifyCheckout();
       instance.present(checkoutUrl);
-      expect(
-        NativeModule.present,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        NativeModule.present,
-      ).toHaveBeenCalledWith(checkoutUrl);
+      expect(NativeModule.present).toHaveBeenCalledTimes(1);
+      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
     });
   });
 
@@ -153,9 +124,7 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `dismiss`', () => {
       const instance = new ShopifyCheckout();
       instance.dismiss();
-      expect(
-        NativeModule.dismiss,
-      ).toHaveBeenCalledTimes(1);
+      expect(NativeModule.dismiss).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -167,9 +136,7 @@ describe('ShopifyCheckoutKit', () => {
         colorScheme: ColorScheme.automatic,
         logLevel: LogLevel.error,
       });
-      expect(
-        NativeModule.getConfig,
-      ).toHaveBeenCalledTimes(1);
+      expect(NativeModule.getConfig).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -191,10 +158,7 @@ describe('ShopifyCheckoutKit', () => {
         const eventName = 'pixel';
         const callback = jest.fn();
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         expect(eventEmitter.addListener).toHaveBeenCalledWith(
           'pixel',
           expect.any(Function),
@@ -214,10 +178,7 @@ describe('ShopifyCheckoutKit', () => {
         const eventName = 'pixel';
         const callback = jest.fn();
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         expect(eventEmitter.addListener).toHaveBeenCalledWith(
           'pixel',
           expect.any(Function),
@@ -242,10 +203,7 @@ describe('ShopifyCheckoutKit', () => {
         const eventName = 'pixel';
         const callback = jest.fn();
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         expect(eventEmitter.addListener).toHaveBeenCalledWith(
           'pixel',
           expect.any(Function),
@@ -271,10 +229,7 @@ describe('ShopifyCheckoutKit', () => {
         const eventName = 'pixel';
         const callback = jest.fn();
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         expect(eventEmitter.addListener).toHaveBeenCalledWith(
           'pixel',
           expect.any(Function),
@@ -295,10 +250,7 @@ describe('ShopifyCheckoutKit', () => {
           throw new Error('Callback error');
         });
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         expect(eventEmitter.addListener).toHaveBeenCalledWith(
           'pixel',
           expect.any(Function),
@@ -325,10 +277,7 @@ describe('ShopifyCheckoutKit', () => {
         const eventName = 'completed';
         const callback = jest.fn();
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         expect(eventEmitter.addListener).toHaveBeenCalledWith(
           'completed',
           expect.any(Function),
@@ -345,10 +294,7 @@ describe('ShopifyCheckoutKit', () => {
         const eventName = 'completed';
         const callback = jest.fn();
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         expect(eventEmitter.addListener).toHaveBeenCalledWith(
           'completed',
           expect.any(Function),
@@ -363,10 +309,7 @@ describe('ShopifyCheckoutKit', () => {
         const eventName = 'completed';
         const callback = jest.fn();
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         expect(eventEmitter.addListener).toHaveBeenCalledWith(
           'completed',
           expect.any(Function),
@@ -436,10 +379,7 @@ describe('ShopifyCheckoutKit', () => {
           const eventName = 'error';
           const callback = jest.fn();
           instance.addEventListener(eventName, callback);
-          NativeModule.addEventListener(
-            eventName,
-            callback,
-          );
+          NativeModule.addEventListener(eventName, callback);
           expect(eventEmitter.addListener).toHaveBeenCalledWith(
             'error',
             expect.any(Function),
@@ -459,10 +399,7 @@ describe('ShopifyCheckoutKit', () => {
         const eventName = 'error';
         const callback = jest.fn();
         instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        NativeModule.addEventListener(eventName, callback);
         const error = {
           __typename: 'UnknownError',
           message: 'Something went wrong',
@@ -552,9 +489,9 @@ describe('ShopifyCheckoutKit', () => {
           'android.permission.ACCESS_COARSE_LOCATION',
           'android.permission.ACCESS_FINE_LOCATION',
         ]);
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).toHaveBeenCalledWith(true);
+        expect(NativeModule.initiateGeolocationRequest).toHaveBeenCalledWith(
+          true,
+        );
       });
 
       it('handles geolocation permission denial correctly', async () => {
@@ -577,9 +514,9 @@ describe('ShopifyCheckoutKit', () => {
           'android.permission.ACCESS_COARSE_LOCATION',
           'android.permission.ACCESS_FINE_LOCATION',
         ]);
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).toHaveBeenCalledWith(false);
+        expect(NativeModule.initiateGeolocationRequest).toHaveBeenCalledWith(
+          false,
+        );
       });
 
       it('cleans up geolocation callback on teardown', () => {
@@ -622,9 +559,7 @@ describe('ShopifyCheckoutKit', () => {
 
         await emitGeolocationRequest();
 
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).not.toHaveBeenCalled();
+        expect(NativeModule.initiateGeolocationRequest).not.toHaveBeenCalled();
       });
 
       it('tears down gracefully', () => {
@@ -735,9 +670,7 @@ describe('ShopifyCheckoutKit', () => {
           instance.configureAcceleratedCheckouts(acceleratedConfig);
 
         expect(result).toBe(true);
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',
@@ -759,9 +692,7 @@ describe('ShopifyCheckoutKit', () => {
 
         instance.configureAcceleratedCheckouts(minimalConfig);
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           null,
@@ -794,9 +725,9 @@ describe('ShopifyCheckoutKit', () => {
         };
         const expectedError = new Error('`storefrontDomain` is required');
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -812,9 +743,9 @@ describe('ShopifyCheckoutKit', () => {
 
         const expectedError = new Error('`storefrontAccessToken` is required');
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -837,9 +768,9 @@ describe('ShopifyCheckoutKit', () => {
           '`wallets.applePay.merchantIdentifier` is required',
         );
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -923,9 +854,7 @@ describe('ShopifyCheckoutKit', () => {
           },
         });
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',
@@ -951,9 +880,7 @@ describe('ShopifyCheckoutKit', () => {
           },
         });
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',

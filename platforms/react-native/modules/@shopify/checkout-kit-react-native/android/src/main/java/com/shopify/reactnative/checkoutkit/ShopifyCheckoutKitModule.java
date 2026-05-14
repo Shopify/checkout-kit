@@ -100,15 +100,6 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void preload(String checkoutURL) {
-    Activity currentActivity = getCurrentActivity();
-
-    if (currentActivity instanceof ComponentActivity) {
-      ShopifyCheckoutSheetKit.preload(checkoutURL, (ComponentActivity) currentActivity);
-    }
-  }
-
-  @ReactMethod
   public void invalidateCache() {
     ShopifyCheckoutSheetKit.invalidate();
   }

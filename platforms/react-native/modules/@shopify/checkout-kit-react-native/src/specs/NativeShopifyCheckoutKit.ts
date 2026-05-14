@@ -73,7 +73,6 @@ type ConfigurationResultSpec = {
 
 export interface Spec extends TurboModule {
   present(checkoutUrl: string): void;
-  preload(checkoutUrl: string): void;
   dismiss(): void;
   invalidateCache(): void;
   setConfig(configuration: ConfigurationSpec): void;
@@ -96,6 +95,4 @@ export interface Spec extends TurboModule {
   getConstants(): {version: string};
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>(
-  'ShopifyCheckoutKit',
-);
+export default TurboModuleRegistry.getEnforcing<Spec>('ShopifyCheckoutKit');

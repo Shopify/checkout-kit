@@ -50,7 +50,6 @@ const exampleConfig = {preloading: true};
 const ShopifyCheckoutKit = {
   version: '0.7.0',
   getConstants: jest.fn(() => ({version: '0.7.0'})),
-  preload: jest.fn(),
   present: jest.fn(),
   dismiss: jest.fn(),
   invalidateCache: jest.fn(),

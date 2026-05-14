@@ -41,7 +41,6 @@ interface Context {
   getConfig: () => Configuration | undefined;
   setConfig: (config: Configuration) => void;
   removeEventListeners: RemoveEventListeners;
-  preload: (checkoutUrl: string) => void;
   present: (checkoutUrl: string) => void;
   dismiss: () => void;
   invalidate: () => void;
@@ -80,8 +79,8 @@ export function ShopifyCheckoutProvider({
       // eslint-disable-next-line no-console
       console.warn(
         '[ShopifyCheckoutKit] Providing accessToken with contactFields (email / phoneNumber) is deprecated and will become an error in v4.' +
-        'When the user is authenticated with Customer Accounts, provide accessToken' +
-        'When the user is otherwise authenticated, provide email/phoneNumber.',
+          'When the user is authenticated with Customer Accounts, provide accessToken' +
+          'When the user is otherwise authenticated, provide email/phoneNumber.',
       );
     }
 
@@ -108,12 +107,6 @@ export function ShopifyCheckoutProvider({
     }
   }, []);
 
-  const preload = useCallback((checkoutUrl: string) => {
-    if (checkoutUrl) {
-      instance.current?.preload(checkoutUrl);
-    }
-  }, []);
-
   const invalidate = useCallback(() => {
     instance.current?.invalidate();
   }, []);
@@ -137,7 +130,6 @@ export function ShopifyCheckoutProvider({
       dismiss,
       setConfig,
       getConfig,
-      preload,
       present,
       invalidate,
       removeEventListeners,
@@ -150,7 +142,6 @@ export function ShopifyCheckoutProvider({
     removeEventListeners,
     getConfig,
     setConfig,
-    preload,
     present,
     invalidate,
   ]);

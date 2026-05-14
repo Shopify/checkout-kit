@@ -138,19 +138,6 @@ public class ShopifyCheckoutKitModuleTest {
     }
   }
 
-  @Test
-  public void testCanPreloadCheckout() {
-    try (MockedStatic<ShopifyCheckoutSheetKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutSheetKit.class)) {
-      String checkoutUrl = "https://shopify.com";
-      shopifyCheckoutKitModule.preload(checkoutUrl);
-
-      mockedShopifyCheckoutKit.verify(() -> {
-        ShopifyCheckoutSheetKit.preload(eq(checkoutUrl), any());
-      });
-    }
-  }
-
   /**
    * Module name and version
    */
