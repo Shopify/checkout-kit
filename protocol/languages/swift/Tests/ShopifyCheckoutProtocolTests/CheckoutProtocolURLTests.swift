@@ -27,53 +27,41 @@ import Testing
 
 @Suite("CheckoutProtocol URL Tests")
 struct CheckoutProtocolURLTests {
-    @Test func appendsVersionAndColorScheme() throws {
-        let input = try #require(URL(string: "https://shop.example.com/checkout"))
-        let result = CheckoutProtocol.url(for: input, colorScheme: "automatic")
+    private let baseURL = URL(string: "https://shop.com/cart/c/abc")!
 
-        let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))
-        let items = try #require(components.queryItems)
-        #expect(items.contains(URLQueryItem(name: "ec_version", value: CheckoutProtocol.specVersion)))
-        #expect(items.contains(URLQueryItem(name: "ec_color_scheme", value: "automatic")))
+    private func queryItems(_ url: URL) -> [URLQueryItem] {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
     }
 
-    @Test func appendsDefaultDelegate() throws {
-        let input = try #require(URL(string: "https://shop.example.com/checkout"))
-        let result = CheckoutProtocol.url(for: input, colorScheme: "light")
+    @Test func appendsEcVersion() {
+        let items = queryItems(CheckoutProtocol.url(for: baseURL))
+        #expect(items.contains(URLQueryItem(name: "ec_version", value: CheckoutProtocol.specVersion)))
+    }
 
-        let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))
-        let items = try #require(components.queryItems)
+    @Test func appendsDefaultDelegate() {
+        let items = queryItems(CheckoutProtocol.url(for: baseURL))
         #expect(items.contains(URLQueryItem(name: "ec_delegate", value: "window.open")))
     }
 
-    @Test func joinsMultipleDelegationsWithComma() throws {
-        let input = try #require(URL(string: "https://shop.example.com/checkout"))
+    @Test func joinsMultipleDelegationsWithComma() {
         let result = CheckoutProtocol.url(
-            for: input,
-            colorScheme: "light",
+            for: baseURL,
             delegations: ["window.open", "payment.credential"]
         )
-
-        let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))
-        let items = try #require(components.queryItems)
+        let items = queryItems(result)
         #expect(items.contains(URLQueryItem(name: "ec_delegate", value: "window.open,payment.credential")))
     }
 
-    @Test func omitsDelegateWhenEmpty() throws {
-        let input = try #require(URL(string: "https://shop.example.com/checkout"))
-        let result = CheckoutProtocol.url(for: input, colorScheme: "light", delegations: [])
-
-        let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))
-        let items = try #require(components.queryItems)
+    @Test func omitsDelegateWhenEmpty() {
+        let items = queryItems(CheckoutProtocol.url(for: baseURL, delegations: []))
         #expect(!items.contains(where: { $0.name == "ec_delegate" }))
     }
 
     @Test func preservesExistingQueryItems() throws {
-        let input = try #require(URL(string: "https://shop.example.com/checkout?cart=abc"))
-        let result = CheckoutProtocol.url(for: input, colorScheme: "light")
-
-        let components = try #require(URLComponents(url: result, resolvingAgainstBaseURL: false))
-        let items = try #require(components.queryItems)
-        #expect(items.contains(URLQueryItem(name: "cart", value: "abc")))
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?key=cart_token&utm_source=email"))
+        let items = queryItems(CheckoutProtocol.url(for: url))
+        #expect(items.contains(URLQueryItem(name: "key", value: "cart_token")))
+        #expect(items.contains(URLQueryItem(name: "utm_source", value: "email")))
+        #expect(items.contains(URLQueryItem(name: "ec_version", value: CheckoutProtocol.specVersion)))
     }
 }

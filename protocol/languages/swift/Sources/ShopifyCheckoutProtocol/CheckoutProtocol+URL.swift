@@ -26,10 +26,9 @@ import Foundation
 extension CheckoutProtocol {
     /// Returns the given checkout URL with the query parameters required to
     /// initiate the Embedded Checkout Protocol handshake (`ec_version`,
-    /// `ec_color_scheme`, `ec_delegate`).
+    /// `ec_delegate`).
     public static func url(
         for url: URL,
-        colorScheme: String,
         delegations: [String] = defaultDelegations
     ) -> URL {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
@@ -37,7 +36,6 @@ extension CheckoutProtocol {
         }
         var queryItems = components.queryItems ?? []
         queryItems.append(URLQueryItem(name: "ec_version", value: specVersion))
-        queryItems.append(URLQueryItem(name: "ec_color_scheme", value: colorScheme))
         if !delegations.isEmpty {
             queryItems.append(URLQueryItem(name: "ec_delegate", value: delegations.joined(separator: ",")))
         }
