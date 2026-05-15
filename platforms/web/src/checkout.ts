@@ -168,16 +168,6 @@ export class ShopifyCheckout
   }
 
   /**
-   * The origin we expect to receive postMessage events from. This is the
-   * origin of `src` after URL parsing and scheme validation. Returns
-   * `undefined` if `src` is unset or invalid, in which case all inbound
-   * messages are dropped.
-   */
-  #expectedOrigin(): string | undefined {
-    return this.#srcAsURL()?.origin;
-  }
-
-  /**
    * Whether the component should log diagnostic messages to the console.
    */
   get debug(): boolean {
@@ -510,6 +500,23 @@ export class ShopifyCheckout
     return message.id != null;
   }
 
+  #validateMessageOrigin(event: MessageEvent) {
+    if (!this.#srcAsURL()) {
+      throw new Error("Dropped message because src is invalid or unset");
+    }
+
+    let origin: URL;
+    try {
+      origin = new URL(event.origin);
+    } catch {
+      throw new Error(`Dropped message from non-HTTPS origin "${event.origin}"`);
+    }
+
+    if (origin.protocol !== "https:") {
+      throw new Error(`Dropped message from non-HTTPS origin "${event.origin}"`);
+    }
+  }
+
   #initCheckoutProtocol() {
     // Clean up any existing checkout protocol controller to prevent memory leaks
     // Necessary because connectedCallback() can be called multiple times
@@ -529,11 +536,10 @@ export class ShopifyCheckout
     // SDKs, browser extensions, etc.) is dropped silently.
     if (event.source !== this.#checkoutWindow) return;
 
-    const expected = this.#expectedOrigin();
-    if (!expected || event.origin !== expected) {
-      this.#debugWarn(
-        `Dropped message from unexpected origin "${event.origin}" (expected "${expected ?? "none — src is invalid or unset"}")`,
-      );
+    try {
+      this.#validateMessageOrigin(event);
+    } catch (error) {
+      this.#debugWarn(error instanceof Error ? error.message : String(error));
       return;
     }
 

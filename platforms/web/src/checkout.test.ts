@@ -1111,19 +1111,20 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("message routing", () => {
-      it("drops protocol messages from an unexpected origin", async () => {
+      it("handles protocol messages from any HTTPS origin when the source matches", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
+        const payload = makeCheckoutPayload();
         checkout.addEventListener("checkout:start", onStartSpy);
 
-        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
           origin: "https://other.example.com",
         });
         await Promise.resolve();
 
-        expect(onStartSpy).not.toHaveBeenCalled();
-        expect(checkout.checkout).toBeUndefined();
+        expect(onStartSpy).toHaveBeenCalledOnce();
+        expect(checkout.checkout).toBe(payload.checkout);
       });
 
       it("drops protocol messages when the source is not the checkout window", async () => {
@@ -1145,19 +1146,13 @@ describe("<shopify-checkout>", () => {
         expect(checkout.checkout).toBeUndefined();
       });
 
-      it("drops protocol messages when src is unset (no expected origin)", async () => {
-        // Set up a popup-style checkout WITHOUT a src so #expectedOrigin
-        // returns undefined and every inbound message is dropped.
+      it("drops protocol messages when src is unset even if the event origin is HTTPS", async () => {
         const checkout = document.createElement("shopify-checkout");
         document.body.appendChild(checkout);
         const mockCheckoutWindow = createMockWindow();
         vi.spyOn(window, "open").mockReturnValue(mockCheckoutWindow);
         vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
         vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
-        // open() with no src is a no-op (logs a warning), so we can't use
-        // it to set #checkoutWindow. Instead, set src first, open, then
-        // clear src so #expectedOrigin becomes undefined while
-        // #checkoutWindow remains the popup mock.
         checkout.src = "https://shop.example.com/checkout";
         checkout.open();
         checkout.removeAttribute("src");
@@ -1178,16 +1173,11 @@ describe("<shopify-checkout>", () => {
         await Promise.resolve();
 
         expect(onStartSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
       });
 
-      it("drops protocol messages when src uses a non-https scheme", async () => {
-        // Open with valid https src so #checkoutWindow is set, then swap
-        // src to a non-https value. #expectedOrigin now returns
-        // undefined, and inbound messages should be dropped even though
-        // the source still matches #checkoutWindow.
+      it("drops protocol messages when the event origin is not HTTPS", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        checkout.src = "http://shop.example.com/checkout";
-
         const onStartSpy = vi.fn();
         checkout.addEventListener("checkout:start", onStartSpy);
 
@@ -1198,6 +1188,22 @@ describe("<shopify-checkout>", () => {
         await Promise.resolve();
 
         expect(onStartSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
+      });
+
+      it("drops protocol messages when the event origin is opaque", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("checkout:start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: "null",
+        });
+        await Promise.resolve();
+
+        expect(onStartSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
       });
 
       it("ignores window 'message' events that aren't JSON-RPC checkout protocol messages", async () => {
@@ -1288,12 +1294,12 @@ describe("<shopify-checkout>", () => {
 
       simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
         source: mockCheckoutWindow,
-        origin: "https://other.example.com",
+        origin: "http://shop.example.com",
       });
       await Promise.resolve();
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Dropped message from unexpected origin"),
+        expect.stringContaining("Dropped message from non-HTTPS origin"),
       );
     });
 
@@ -1303,7 +1309,7 @@ describe("<shopify-checkout>", () => {
 
       simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
         source: mockCheckoutWindow,
-        origin: "https://other.example.com",
+        origin: "http://shop.example.com",
       });
       await Promise.resolve();
 
@@ -1429,14 +1435,14 @@ describe("<shopify-checkout>", () => {
 /**
  * Dispatches a synthetic checkout-protocol MessageEvent at `window` so
  * the component's listener processes it. By default both `source` and
- * `origin` are derived from `checkout` so that the component's strict
- * source-and-origin validation passes:
+ * `origin` are derived from `checkout` so that the component's source and
+ * HTTPS-origin validation passes:
  *
  * - `source`: pass the checkout browsing context (the mock window returned
  *   from `window.open` after `open()`, or another `MessageEventSource` to
  *   test drops). When omitted, defaults to `null` (messages are dropped).
  * - `origin`: the origin of `checkout.src`. Override `origin` to test
- *   that messages from foreign origins are dropped.
+ *   that messages from non-HTTPS origins are dropped.
  */
 function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMessageMap>(
   checkout: ShopifyCheckout,
@@ -1529,9 +1535,9 @@ function createMockWindow() {
 
 /**
  * Sets up a popup-target checkout whose `#checkoutWindow` is a controllable
- * mock window. Tests that exercise the strict source-and-origin validation
- * in `#handleMessage` should use this helper and pass `mockCheckoutWindow`
- * as `source` in `simulateProtocolMessageEvent`.
+ * mock window. Tests that exercise `#handleMessage` source validation should
+ * use this helper and pass `mockCheckoutWindow` as `source` in
+ * `simulateProtocolMessageEvent`.
  *
  * Callers receive the checkout, the mock window (use as both `source` for
  * `simulateProtocolMessageEvent` and the spy target for response
