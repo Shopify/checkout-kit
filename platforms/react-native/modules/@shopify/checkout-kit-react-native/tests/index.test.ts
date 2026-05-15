@@ -16,6 +16,7 @@ import {
   LogLevel,
   ColorScheme,
   CheckoutNativeErrorType,
+  CheckoutProtocol,
   type Configuration,
   type AcceleratedCheckoutConfiguration,
 } from '../src';
@@ -68,7 +69,7 @@ type Dispatch = (envelopeJson: string) => void;
 function lastDispatch(): Dispatch {
   const dispatch = NativeModule.present.mock.calls[
     NativeModule.present.mock.calls.length - 1
-  ][1] as Dispatch | null;
+  ][2] as Dispatch | null;
   if (!dispatch) {
     throw new Error(
       'Expected the last present() call to receive a non-null dispatcher',
@@ -153,7 +154,7 @@ describe('ShopifyCheckoutKit', () => {
       const instance = new ShopifyCheckout();
       instance.present(checkoutUrl);
       expect(NativeModule.present).toHaveBeenCalledTimes(1);
-      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, null);
+      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, [], null);
     });
 
     it('calls `present` with a dispatcher when callbacks are provided', () => {
@@ -161,6 +162,7 @@ describe('ShopifyCheckoutKit', () => {
       instance.present(checkoutUrl, {onClose: jest.fn()});
       expect(NativeModule.present).toHaveBeenCalledWith(
         checkoutUrl,
+        [],
         expect.any(Function),
       );
     });
@@ -286,6 +288,84 @@ describe('ShopifyCheckoutKit', () => {
       });
     });
 
+    describe('protocol handlers', () => {
+      const startPayload = {
+        id: 'chk_123',
+        currency: 'USD',
+        lineItems: [],
+        links: [],
+        status: 'active',
+        totals: [],
+        ucp: {},
+      };
+
+      it('routes envelope.type via the protocol handler map', () => {
+        const instance = new ShopifyCheckout();
+        const onStart = jest.fn();
+        instance.present(checkoutUrl, undefined, {
+          [CheckoutProtocol.start]: onStart,
+        });
+        lastDispatch()(
+          JSON.stringify({type: CheckoutProtocol.start, payload: startPayload}),
+        );
+        expect(onStart).toHaveBeenCalledTimes(1);
+        expect(onStart).toHaveBeenCalledWith(startPayload);
+        expect(onStart.mock.calls[0][0].id).toBe('chk_123');
+      });
+
+      it('passes subscribedMethods to native present()', () => {
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl, undefined, {
+          [CheckoutProtocol.start]: jest.fn(),
+        });
+        expect(NativeModule.present).toHaveBeenCalledWith(
+          checkoutUrl,
+          [CheckoutProtocol.start],
+          expect.any(Function),
+        );
+      });
+
+      it('still routes existing close/fail/geolocationRequest cases alongside protocol handlers', () => {
+        Platform.OS = 'ios';
+        const instance = new ShopifyCheckout();
+        const onClose = jest.fn();
+        const onFail = jest.fn();
+        const onGeolocationRequest = jest.fn();
+        const onStart = jest.fn();
+        instance.present(
+          checkoutUrl,
+          {onClose, onFail, onGeolocationRequest},
+          {[CheckoutProtocol.start]: onStart},
+        );
+        const dispatch = lastDispatch();
+        dispatch(JSON.stringify({type: 'close'}));
+        dispatch(
+          JSON.stringify({
+            type: 'fail',
+            payload: {
+              __typename: CheckoutNativeErrorType.InternalError,
+              message: 'boom',
+              code: CheckoutErrorCode.unknown,
+              recoverable: true,
+            },
+          }),
+        );
+        dispatch(
+          JSON.stringify({
+            type: 'geolocationRequest',
+            payload: {origin: 'https://shopify.com'},
+          }),
+        );
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(onFail).toHaveBeenCalledTimes(1);
+        expect(onFail.mock.calls[0][0]).toBeInstanceOf(InternalError);
+        expect(onGeolocationRequest).toHaveBeenCalledWith({
+          origin: 'https://shopify.com',
+        });
+        expect(onStart).not.toHaveBeenCalled();
+      });
+    });
+
     describe('envelope parsing', () => {
       it('logs a LifecycleEventParseError when the envelope is invalid JSON', () => {
         const instance = new ShopifyCheckout();
@@ -363,6 +443,7 @@ describe('ShopifyCheckoutKit', () => {
         instance.present(checkoutUrl);
         expect(NativeModule.present).toHaveBeenCalledWith(
           checkoutUrl,
+          [],
           expect.any(Function),
         );
       });
@@ -372,7 +453,7 @@ describe('ShopifyCheckoutKit', () => {
           handleGeolocationRequests: false,
         });
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, null);
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, [], null);
       });
 
       it('handles geolocation permission grant correctly', async () => {
@@ -472,7 +553,7 @@ describe('ShopifyCheckoutKit', () => {
       it('passes a null dispatcher by default — no default geolocation handling on iOS', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, null);
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, [], null);
       });
 
       it('does not run the default geolocation handler on iOS even if dispatcher fires', async () => {

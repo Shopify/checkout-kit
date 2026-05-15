@@ -39,7 +39,9 @@ import com.facebook.react.bridge.WritableMap;
 import com.shopify.checkoutkit.NativeShopifyCheckoutKitSpec;
 import com.shopify.checkoutkit.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -82,13 +84,30 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL, @Nullable Callback dispatch) {
+  public void present(String checkoutURL, ReadableArray subscribedMethods, @Nullable Callback dispatch) {
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
       checkoutListener = new CustomCheckoutListener(currentActivity, this.reactContext, dispatch);
+
+      List<String> methods = new ArrayList<>();
+      for (int i = 0; i < subscribedMethods.size(); i++) {
+        String method = subscribedMethods.getString(i);
+        if (method != null) {
+          methods.add(method);
+        }
+      }
+      CheckoutProtocol.Client client = ProtocolRelay.makeClient(
+          methods,
+          json -> {
+            if (dispatch != null) {
+              dispatch.invoke(json);
+            }
+          });
+
+
       currentActivity.runOnUiThread(() -> {
         checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
-            checkoutListener);
+            checkoutListener, client);
       });
     }
   }

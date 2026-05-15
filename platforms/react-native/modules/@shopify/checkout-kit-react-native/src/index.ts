@@ -51,6 +51,11 @@ import type {
   AcceleratedCheckoutButtonsProps,
   RenderStateChangeEvent,
 } from './components/AcceleratedCheckoutButtons';
+import {CheckoutProtocol} from './protocol';
+import type {
+  CheckoutProtocolPayloads,
+  ProtocolHandlers,
+} from './protocol';
 
 const defaultFeatures: Features = {
   handleGeolocationRequests: true,
@@ -130,8 +135,14 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * @param checkoutUrl The URL of the checkout to display
    * @param callbacks Optional per-call SDK callbacks
    */
-  public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
-    RNShopifyCheckoutKit.present(checkoutUrl, this.buildDispatcher(callbacks));
+  public present(
+    checkoutUrl: string,
+    callbacks?: PresentCallbacks,
+    protocol?: ProtocolHandlers,
+  ): void {
+    const dispatcher = this.buildDispatcher(callbacks, protocol);
+    const subscribedMethods = Object.keys(protocol ?? {});
+    RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods, dispatcher);
   }
 
   /**
@@ -306,12 +317,16 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    */
   private buildDispatcher(
     callbacks: PresentCallbacks | undefined,
+    protocol: ProtocolHandlers | undefined,
   ): ((envelopeJson: string) => void) | null {
     const needsDefaultGeolocation =
       Platform.OS === 'android' &&
       this.featureEnabled('handleGeolocationRequests');
 
-    if (!callbacks && !needsDefaultGeolocation) {
+    const hasProtocolHandlers =
+      protocol != null && Object.keys(protocol).length > 0;
+
+    if (!callbacks && !needsDefaultGeolocation && !hasProtocolHandlers) {
       return null;
     }
 
@@ -349,8 +364,16 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
             this.handleDefaultGeolocationRequest();
           }
           return;
-        default:
+        default: {
+          const method = envelope.type as keyof CheckoutProtocolPayloads;
+          const handler = protocol?.[method];
+          if (handler) {
+            handler(
+              envelope.payload as CheckoutProtocolPayloads[typeof method],
+            );
+          }
           return;
+        }
       }
     };
   }
@@ -467,6 +490,7 @@ export {
   ApplePayContactField,
   ApplePayLabel,
   ApplePayStyle,
+  CheckoutProtocol,
   ColorScheme,
   LogLevel,
   ShopifyCheckout,
@@ -491,10 +515,12 @@ export type {
   AcceleratedCheckoutButtonsProps,
   AcceleratedCheckoutConfiguration,
   CheckoutException,
+  CheckoutProtocolPayloads,
   Configuration,
   Features,
   GeolocationRequestEvent,
   PresentCallbacks,
+  ProtocolHandlers,
   RenderStateChangeEvent,
 };
 

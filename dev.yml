@@ -260,6 +260,28 @@ commands:
       build:
         desc: Build the @shopify/checkout-kit-react-native module
         run: cd platforms/react-native && pnpm module build
+      test:
+        desc: Run React Native module tests (JS + iOS + Android)
+        long_desc: |
+          Runs unit tests across all three React Native targets:
+            - JS:      Jest tests in `platforms/react-native/modules/@shopify/checkout-kit-react-native/tests/`
+            - iOS:     Swift Package tests at `platforms/react-native/modules/@shopify/checkout-kit-react-native/ios/`
+            - Android: Gradle JVM tests for `:shopify_checkout-kit-react-native` (requires a local Maven publish of `:lib`)
+        run: |
+          set -e
+          cd platforms/react-native && pnpm test
+          cd modules/@shopify/checkout-kit-react-native/ios && swift test
+          cd ../../../../sample/android && USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test
+        subcommands:
+          js:
+            desc: Run JS unit tests via jest
+            run: cd platforms/react-native && pnpm test
+          ios:
+            desc: Run native iOS unit tests (Swift Package at modules/.../ios)
+            run: cd platforms/react-native/modules/@shopify/checkout-kit-react-native/ios && swift test
+          android:
+            desc: Run native Android unit tests for the RN module (uses local Maven publish of :lib)
+            run: cd platforms/react-native/sample/android && USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)
         aliases: [style]

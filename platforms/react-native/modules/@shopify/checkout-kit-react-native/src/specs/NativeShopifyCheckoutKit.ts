@@ -74,6 +74,7 @@ type ConfigurationResultSpec = {
 export interface Spec extends TurboModule {
   present(
     checkoutUrl: string,
+    subscribedMethods: string[],
     dispatch: ((envelopeJson: string) => void) | null,
   ): void;
   preload(checkoutUrl: string): void;

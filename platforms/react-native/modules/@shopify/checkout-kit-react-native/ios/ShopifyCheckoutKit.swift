@@ -102,15 +102,23 @@ class RCTShopifyCheckoutKit: NSObject {
         invalidate()
     }
 
-    @objc func present(_ checkoutURL: String, dispatch: RCTResponseSenderBlock?) {
+    @objc func present(_ checkoutURL: String, subscribedMethods: [String], dispatch: RCTResponseSenderBlock?) {
         pendingDispatchCallback = dispatch
 
         DispatchQueue.main.async {
-            if let url = URL(string: checkoutURL), let viewController = self.getCurrentViewController() {
-                let view = CheckoutViewController(checkout: url)
-                viewController.present(view, animated: true)
-                self.checkoutSheet = view
-            }
+            guard let url = URL(string: checkoutURL),
+                  let viewController = self.getCurrentViewController() else { return }
+
+            let client = makeRelayClient(
+                subscribedMethods: subscribedMethods,
+                dispatch: { [weak self] json in
+                    self?.pendingDispatchCallback?([json])
+                }
+            )
+
+            let view = CheckoutViewController(checkout: url, client: client)
+            viewController.present(view, animated: true)
+            self.checkoutSheet = view
         }
     }
 
