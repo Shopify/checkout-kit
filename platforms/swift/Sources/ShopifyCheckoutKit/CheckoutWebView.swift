@@ -30,7 +30,6 @@ import WebKit
 protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidStartNavigation()
     func checkoutViewDidFinishNavigation()
-    func checkoutViewDidClickLink(url: URL)
     func checkoutViewDidFailWithError(error: CheckoutError)
 }
 
@@ -254,29 +253,53 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        guard let client else {
-            return
-        }
-
         Task {
-            if let response = await client.process(body) {
+            if let response = await client?.process(body) {
+                checkoutBridge.sendResponse(self, messageBody: response)
+                return
+            }
+
+            if let response = await CheckoutWebView.defaultsClient.process(body) {
                 checkoutBridge.sendResponse(self, messageBody: response)
             }
         }
     }
+
+    /// Kit-owned client that handles delegations the consumer did not register.
+    /// Today the only default is `window.open`, which falls back to
+    /// `UIApplication.shared.open(...)` after a `canOpenURL` check.
+    static let defaultsClient = CheckoutProtocol.Client()
+        .on(CheckoutProtocol.windowOpen) { request in
+            guard UIApplication.shared.canOpenURL(request.url) else {
+                return .rejected(reason: "canOpenURL returned false")
+            }
+            UIApplication.shared.open(request.url)
+            return .success
+        }
 }
 
 extension CheckoutWebView: WKNavigationDelegate {
     func webView(_: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        // Handle rare cases where the url is nil
         guard let url = action.request.url else {
             decisionHandler(.allow)
             return
         }
 
-        if isExternalLink(action) || CheckoutURL(from: url).isDeepLink() {
-            OSLogger.shared.debug("External or deep link clicked: \(url.absoluteString) - request intercepted")
-            viewDelegate?.checkoutViewDidClickLink(url: removeExternalParam(url))
-            decisionHandler(.cancel)
+        // Handle non-HTTP links triggered on external surfaces by opening them with UIApplication
+        // Scenarios include:
+        // 	- mailto:, tel: etc
+        // 	- Deep links on offsite payment sites
+        //
+        if CheckoutURL(from: url).isDeepLink() {
+            if UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url)
+                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - allowed")
+                return decisionHandler(.allow)
+            } else {
+                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - rejected")
+                return decisionHandler(.cancel)
+            }
             return
         }
 
@@ -399,27 +422,6 @@ extension CheckoutWebView: WKNavigationDelegate {
         viewDelegate?.checkoutViewDidFailWithError(
             error: .sdkError(underlying: error, recoverable: !isRecovery)
         )
-    }
-
-    private func isExternalLink(_ action: WKNavigationAction) -> Bool {
-        if action.navigationType == .linkActivated && action.targetFrame == nil {
-            return true
-        }
-
-        guard let url = action.request.url else { return false }
-        guard let url = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
-
-        guard let openExternally = url.queryItems?.first(where: { $0.name == "open_externally" })?.value else { return false }
-
-        return openExternally.lowercased() == "true" || openExternally == "1"
-    }
-
-    private func removeExternalParam(_ url: URL) -> URL {
-        guard var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return url
-        }
-        urlComponents.queryItems = urlComponents.queryItems?.filter { !($0.name == "open_externally") }
-        return urlComponents.url ?? url
     }
 
     private func isCheckout(url: URL?) -> Bool {

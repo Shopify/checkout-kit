@@ -37,10 +37,15 @@ struct CartView: View {
 
     @ObservedObject var cartManager: CartManager = .shared
 
-    private let client = CheckoutProtocolClient.shared
-
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
+
+    @AppStorage(AppStorageKeys.windowOpenHandler.rawValue)
+    var windowOpenHandler: WindowOpenHandlerOption = .default
+
+    private var client: CheckoutProtocol.Client {
+        .with(windowOpen: windowOpenHandler)
+    }
 
     var body: some View {
         if let lines = cartManager.cart?.lines.nodes {

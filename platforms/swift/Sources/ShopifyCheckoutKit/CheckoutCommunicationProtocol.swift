@@ -21,8 +21,13 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#if !COCOAPODS
+    import ShopifyCheckoutProtocol
+#endif
 import Foundation
 
 public protocol CheckoutCommunicationProtocol: Sendable {
     func process(_ message: String) async -> String?
 }
+
+extension CheckoutProtocol.Client: CheckoutCommunicationProtocol {}

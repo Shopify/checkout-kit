@@ -62,19 +62,50 @@ struct CodecDecodeTests {
         #expect(error.messages.first?.content == "Boom.")
     }
 
-    @Test func decodesRequest() throws {
+    @Test func decodesRequestCarriesRawParams() throws {
         let json = try fixtureString("request")
         let message = CheckoutProtocol.decode(jsonRpc: json)
 
-        guard case let .request(id, method, checkout) = message else {
+        guard case let .request(id, method, params) = message else {
             Issue.record("Expected .request, got \(message)")
             return
         }
 
         #expect(id == "req-456")
         #expect(method == "ec.payment.credential_request")
-        #expect(checkout.id == "checkout-789")
-        #expect(checkout.currency == "CAD")
+
+        let parsed = try #require(
+            JSONSerialization.jsonObject(with: params) as? [String: Any]
+        )
+        let checkout = try #require(parsed["checkout"] as? [String: Any])
+        #expect(checkout["id"] as? String == "checkout-789")
+        #expect(checkout["currency"] as? String == "CAD")
+    }
+
+    @Test func decodesWindowOpenRequest() throws {
+        let json = try fixtureString("window_open_request")
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .request(id, method, params) = message else {
+            Issue.record("Expected .request, got \(message)")
+            return
+        }
+
+        #expect(id == "req-window-1")
+        #expect(method == "ec.window.open_request")
+
+        let payload = try #require(CheckoutProtocol.windowOpen.decode(params))
+        #expect(payload.url == URL(string: "https://example.com/terms"))
+    }
+
+    @Test func windowOpenDescriptorRejectsEmptyURL() {
+        let params = Data(#"{"url":""}"#.utf8)
+        #expect(CheckoutProtocol.windowOpen.decode(params) == nil)
+    }
+
+    @Test func windowOpenDescriptorRejectsMissingURL() {
+        let params = Data("{}".utf8)
+        #expect(CheckoutProtocol.windowOpen.decode(params) == nil)
     }
 
     @Test func decodesUnknownMethod() {

@@ -34,11 +34,18 @@ class CheckoutWebViewTests: XCTestCase {
 
     override func setUp() {
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        CheckoutWebView.invalidate()
         view = CheckoutWebView.for(checkout: url)
         mockDelegate = MockCheckoutWebViewDelegate()
         view.viewDelegate = mockDelegate
         view.checkoutBridge = MockCheckoutBridge.self
         MockCheckoutBridge.reset()
+    }
+
+    override func tearDown() {
+        view.viewDelegate = nil
+        CheckoutWebView.invalidate()
+        super.tearDown()
     }
 
     private func createRecoveryAgent() -> CheckoutWebView {
@@ -68,88 +75,40 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertFalse(recovery.isOpaque)
     }
 
-    func testEmailContactLinkDelegation() throws {
-        let link = try XCTUnwrap(URL(string: "mailto:contact@shopify.com"))
-
-        let delegate = MockCheckoutWebViewDelegate()
-        let didClickLinkExpectation = expectation(
-            description: "checkoutViewDidClickLink was called"
-        )
-        delegate.didClickLinkExpectation = didClickLinkExpectation
-        view.viewDelegate = delegate
-
-        view.webView(view, decidePolicyFor: MockNavigationAction(url: link)) { policy in
-            XCTAssertEqual(policy, .cancel)
-        }
-
-        wait(for: [didClickLinkExpectation], timeout: 1)
-    }
-
-    func testPhoneContactLinkDelegation() throws {
-        let link = try XCTUnwrap(URL(string: "tel:1234567890"))
-
-        let delegate = MockCheckoutWebViewDelegate()
-        let didClickLinkExpectation = expectation(
-            description: "checkoutViewDidClickLink was called"
-        )
-        delegate.didClickLinkExpectation = didClickLinkExpectation
-        view.viewDelegate = delegate
-
-        view.webView(view, decidePolicyFor: MockNavigationAction(url: link)) { policy in
-            XCTAssertEqual(policy, .cancel)
-        }
-
-        wait(for: [didClickLinkExpectation], timeout: 1)
-    }
-
-    func testURLLinkDelegation() throws {
+    func testHTTPSLinkIsAllowed() throws {
         let link = try XCTUnwrap(URL(string: "https://www.shopify.com/legal/privacy/app-users"))
-
-        let delegate = MockCheckoutWebViewDelegate()
-        let didClickLinkExpectation = expectation(
-            description: "checkoutViewDidClickLink was called"
-        )
-        delegate.didClickLinkExpectation = didClickLinkExpectation
-        view.viewDelegate = delegate
+        let received = expectation(description: "policy decided")
 
         view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link)) { policy in
-            XCTAssertEqual(policy, .cancel)
+            XCTAssertEqual(policy, .allow)
+            received.fulfill()
         }
 
-        wait(for: [didClickLinkExpectation], timeout: 1)
+        wait(for: [received], timeout: 2.0)
     }
 
-    func testCheckoutDidClickLinkWasCalledForDeepLink() throws {
-        let link = try XCTUnwrap(URL(string: "shopify://app/privacy"))
-        let delegate = MockCheckoutWebViewDelegate()
-        let didClickLinkExpectation = expectation(
-            description: "checkoutViewDidClickLink was called"
-        )
-        delegate.didClickLinkExpectation = didClickLinkExpectation
-        view.viewDelegate = delegate
+    func testDeepLinkIsCancelledWhenUIApplicationCannotOpen() throws {
+        let link = try XCTUnwrap(URL(string: "unhandled-scheme://nowhere"))
+        let received = expectation(description: "policy decided")
 
         view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link)) { policy in
-            XCTAssertEqual(policy, .cancel)
+            XCTAssertEqual(policy, .cancel, "Schemes that canOpenURL refuses should be cancelled")
+            received.fulfill()
         }
 
-        wait(for: [didClickLinkExpectation], timeout: 1)
+        wait(for: [received], timeout: 2.0)
     }
 
-    func testURLLinkDelegationWithExternalParam() throws {
-        let link = try XCTUnwrap(URL(string: "https://www.shopify.com/legal/privacy/app-users?open_externally=true"))
+    func testHTTPSubframeRequestIsAllowed() throws {
+        let link = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
+        let received = expectation(description: "policy decided")
 
-        let delegate = MockCheckoutWebViewDelegate()
-        let didClickLinkExpectation = expectation(
-            description: "checkoutViewDidClickLink was called"
-        )
-        delegate.didClickLinkExpectation = didClickLinkExpectation
-        view.viewDelegate = delegate
-
-        view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link, navigationType: .other)) { policy in
-            XCTAssertEqual(policy, .cancel)
+        view.webView(view, decidePolicyFor: MockNavigationAction(url: link)) { policy in
+            XCTAssertEqual(policy, .allow)
+            received.fulfill()
         }
 
-        wait(for: [didClickLinkExpectation], timeout: 1)
+        wait(for: [received], timeout: 2.0)
     }
 
     func test403responseOnCheckoutURLCodeDelegation() throws {
@@ -498,6 +457,64 @@ class CheckoutWebViewTests: XCTestCase {
 
         XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
     }
+
+    @MainActor
+    func testWindowOpenRequestUsesConsumerOverride() async throws {
+        let id = "req-window-1"
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"\#(id)","params":{"url":"https://example.com/terms"}}"#
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        view.client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { _ in
+                .rejected(reason: "consumer override")
+            }
+        let message = MockScriptMessage(body: body)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 2.0)
+
+        let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["id"] as? String, id)
+        let resultBody = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(resultBody["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "error")
+        let messages = try XCTUnwrap(resultBody["messages"] as? [[String: Any]])
+        XCTAssertEqual(messages.first?["content"] as? String, "consumer override")
+        XCTAssertEqual(messages.first?["code"] as? String, "window_open_rejected_error")
+    }
+
+    @MainActor
+    func testDefaultsClientRejectsUnopenableScheme() async throws {
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"req-window-1","params":{"url":"unhandled-scheme://nowhere"}}"#
+
+        let raw = await CheckoutWebView.defaultsClient.process(body)
+        let response = try XCTUnwrap(raw)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["id"] as? String, "req-window-1")
+        let resultBody = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(resultBody["ucp"] as? [String: Any])
+        XCTAssertEqual(
+            ucp["status"] as? String,
+            "error",
+            "Default handler should reject schemes that canOpenURL refuses"
+        )
+    }
+
+    @MainActor
+    func testWindowOpenRequestIgnoresMalformedBody() async {
+        view.client = nil
+        let notFired = expectation(description: "sendResponse must not fire")
+        notFired.isInverted = true
+        MockCheckoutBridge.sendResponseExpectation = notFired
+        let message = MockScriptMessage(body: #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"r","params":{}}"#)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [notFired], timeout: 1.0)
+        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+    }
 }
 
 class LoadedRequestObservableWebView: CheckoutWebView {
@@ -519,12 +536,14 @@ class MockCheckoutBridge: CheckoutBridgeProtocol {
     static var sendMessageCalled = false
     static var sendResponseCalled = false
     static var lastResponseBody: String?
+    static var sendResponseExpectation: XCTestExpectation?
 
     static func reset() {
         instrumentCalled = false
         sendMessageCalled = false
         sendResponseCalled = false
         lastResponseBody = nil
+        sendResponseExpectation = nil
     }
 
     static func instrument(_: WKWebView, _: InstrumentationPayload) {
@@ -538,5 +557,6 @@ class MockCheckoutBridge: CheckoutBridgeProtocol {
     static func sendResponse(_: WKWebView, messageBody: String) {
         sendResponseCalled = true
         lastResponseBody = messageBody
+        sendResponseExpectation?.fulfill()
     }
 }

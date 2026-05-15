@@ -25,11 +25,15 @@ import Foundation
 
 extension CheckoutProtocol {
     /// Returns an `ec.ready` response if the given message is an `ec.ready` request,
-    /// otherwise `nil`. Lets the kit acknowledge the handshake without surfacing it
-    /// to consumers.
-    public static func acknowledgeReady(_ message: String) -> String? {
-        guard case let .ready(id, _) = decode(jsonRpc: message) else { return nil }
-        return encodeReadyResponse(id: id)
+    /// otherwise `nil`. The response echoes the intersection of the merchant's
+    /// requested delegations with `supportedDelegations` under a `delegate` array.
+    public static func acknowledgeReady(
+        _ message: String,
+        supportedDelegations: [String] = CheckoutProtocol.defaultDelegations
+    ) -> String? {
+        guard case let .ready(id, requested) = decode(jsonRpc: message) else { return nil }
+        let accepted = requested.filter(Set(supportedDelegations).contains)
+        return encodeReadyResponse(id: id, acceptedDelegations: accepted)
     }
 }
 
@@ -52,15 +56,30 @@ extension CheckoutProtocol {
             return .notification(method: request.method, payload: error)
         }
 
-        guard let checkout = request.params?.checkout else {
-            return .unknown(method: request.method, rawParams: jsonRpc)
-        }
-
         if let id = request.id {
-            return .request(id: id, method: request.method, checkout: checkout)
+            return .request(
+                id: id,
+                method: request.method,
+                params: extractParamsData(from: data)
+            )
         }
 
-        return .notification(method: request.method, payload: checkout)
+        if let checkout = request.params?.checkout {
+            return .notification(method: request.method, payload: checkout)
+        }
+
+        return .unknown(method: request.method, rawParams: jsonRpc)
+    }
+
+    private static func extractParamsData(from envelope: Data) -> Data {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: envelope) as? [String: Any],
+            let params = object["params"],
+            let data = try? JSONSerialization.data(withJSONObject: params)
+        else {
+            return Data("{}".utf8)
+        }
+        return data
     }
 
     static func encodeResponse(id: String, result: some Encodable) -> String {
@@ -71,8 +90,11 @@ extension CheckoutProtocol {
         return String(data: data, encoding: .utf8) ?? "{}"
     }
 
-    static func encodeReadyResponse(id: String) -> String {
-        let result = ReadyResult(ucp: UCPSuccess(version: specVersion))
+    static func encodeReadyResponse(id: String, acceptedDelegations: [String]) -> String {
+        let result = UCPSuccessResult(
+            ucp: UCPSuccess(version: specVersion),
+            delegate: acceptedDelegations.isEmpty ? nil : acceptedDelegations
+        )
         return encodeResponse(id: id, result: result)
     }
 }
@@ -83,11 +105,22 @@ private struct JSONRPCResponse<R: Encodable>: Encodable {
     let result: R
 }
 
-private struct ReadyResult: Encodable {
+struct UCPSuccessResult: Encodable {
     let ucp: UCPSuccess
+    let delegate: [String]?
+
+    init(ucp: UCPSuccess, delegate: [String]? = nil) {
+        self.ucp = ucp
+        self.delegate = delegate
+    }
 }
 
-private struct UCPSuccess: Encodable {
+struct UCPSuccess: Encodable {
     let version: String
     let status = "success"
+}
+
+struct UCPError: Encodable {
+    let version: String
+    let status = "error"
 }

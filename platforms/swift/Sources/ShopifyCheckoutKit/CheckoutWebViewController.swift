@@ -247,12 +247,6 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
         return isRecoverableError() && isWithinRetryLimit && error.isRecoverable
     }
 
-    func checkoutViewDidClickLink(url: URL) {
-        if UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
-        }
-    }
-
     private func isRecoverableError() -> Bool {
         return !CheckoutURL(from: checkoutURL).isMultipassURL()
     }
