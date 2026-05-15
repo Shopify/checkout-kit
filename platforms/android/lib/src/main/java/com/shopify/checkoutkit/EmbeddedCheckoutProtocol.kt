@@ -22,17 +22,22 @@
  */
 package com.shopify.checkoutkit
 
-import android.net.Uri
+import android.content.Context
 import android.webkit.JavascriptInterface
-import androidx.core.net.toUri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.util.concurrent.CountDownLatch
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 
 /**
  * Handles the Embedded Checkout Protocol (ECP) JS bridge.
@@ -46,6 +51,7 @@ internal class EmbeddedCheckoutProtocol(
     @Volatile private var client: CheckoutCommunicationClient? = null,
 ) {
     private val decoder = Json { ignoreUnknownKeys = true }
+    private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient(view.context)
 
     internal fun setClient(client: CheckoutCommunicationClient?) {
         this.client = client
@@ -64,7 +70,7 @@ internal class EmbeddedCheckoutProtocol(
                 // ep.cart.* is out of scope for the checkout bridge
                 request.method.startsWith("ep.") ->
                     log.d(LOG_TAG, "Ignoring out-of-scope ep method: ${request.method}.")
-                request.method == METHOD_WINDOW_OPEN_REQUEST -> handleWindowOpenRequest(request)
+                request.method == METHOD_WINDOW_OPEN_REQUEST -> handleWindowOpenRequest(message)
                 request.method == METHOD_START -> handleStart(message)
                 else -> handleClientMessage(request.method, message)
             }
@@ -75,9 +81,27 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     private fun handleReady(request: EcpRequest) {
-        log.d(LOG_TAG, "Handling $METHOD_READY, sending ACK.")
-        sendResult(request.id, UCP_SUCCESS)
+        val requested = request.params?.jsonObject?.get("delegate")?.jsonArray
+            ?.mapNotNull { it.jsonPrimitive.contentOrNull }
+            ?: emptyList()
+        val accepted = requested.filter { it in KIT_SUPPORTED_DELEGATIONS }
+        log.d(LOG_TAG, "Handling $METHOD_READY, requested=$requested accepted=$accepted")
+        sendResult(request.id, ucpReadyResult(accepted))
     }
+
+    private fun ucpReadyResult(acceptedDelegations: List<String>): String =
+        decoder.encodeToString(
+            JsonObject.serializer(),
+            buildJsonObject {
+                putJsonObject("ucp") {
+                    put("version", CheckoutProtocol.specVersion)
+                    put("status", "success")
+                }
+                if (acceptedDelegations.isNotEmpty()) {
+                    putJsonArray("delegate") { acceptedDelegations.forEach { add(it) } }
+                }
+            }
+        )
 
     private fun handleStart(message: String) {
         log.d(LOG_TAG, "Handling $METHOD_START: showing progress bar and bubbling up.")
@@ -87,39 +111,13 @@ internal class EmbeddedCheckoutProtocol(
         }
     }
 
-    private fun handleWindowOpenRequest(request: EcpRequest) {
-        val urlString = request.params?.jsonObject?.get("url")?.jsonPrimitive?.contentOrNull
-        log.d(LOG_TAG, "Handling $METHOD_WINDOW_OPEN_REQUEST: url=$urlString")
-        if (urlString == null) {
-            sendError(request.id, CODE_INVALID_PARAMS, "Missing url parameter")
-            return
-        }
-        val uri = urlString.toUri()
-        if (uri.scheme != "https" && uri.scheme != "http") {
-            log.d(LOG_TAG, "Rejecting $METHOD_WINDOW_OPEN_REQUEST with non-web scheme: ${uri.scheme}")
-            sendError(request.id, CODE_INVALID_PARAMS, "Only http and https URIs are supported")
-            return
-        }
-        if (!openExternalUrlOnMainThread(uri)) {
-            log.d(LOG_TAG, "No external URL handler; falling back to default link click behavior.")
-            onMainThread { view.getEventProcessor().onCheckoutViewLinkClicked(uri) }
-        }
-        sendResult(request.id, UCP_SUCCESS)
-    }
-
-    private fun openExternalUrlOnMainThread(uri: Uri): Boolean {
-        val currentClient = client ?: return false
-        var handled = false
-        val latch = CountDownLatch(1)
-        onMainThread {
-            try {
-                handled = currentClient.openExternalUrl(uri)
-            } finally {
-                latch.countDown()
-            }
-        }
-        latch.await()
-        return handled
+    /**
+     * Handle `ec.window.open_request` via the kit-owned default delegation client.
+     * Consumers cannot override this — `window.open` is kit-internal.
+     */
+    private fun handleWindowOpenRequest(message: String) {
+        log.d(LOG_TAG, "Handling $METHOD_WINDOW_OPEN_REQUEST")
+        defaultClient.process(message)?.let { sendRaw(it) }
     }
 
     private fun handleClientMessage(method: String, message: String) {
@@ -170,6 +168,11 @@ internal class EmbeddedCheckoutProtocol(
 
         private const val METHOD_WINDOW_OPEN_REQUEST = "ec.window.open_request"
 
+        // Delegations this SDK supports. Echoed back in the ec.ready response as the
+        // intersection of merchant-requested ∩ kit-supported. Must align with the
+        // `ec_delegate` URL param emitted from [UriExtensions.appendEcpParams].
+        private val KIT_SUPPORTED_DELEGATIONS = setOf("window.open")
+
         // Requests the SDK explicitly does not support — send a protocol-level error so the
         // web-side promise resolves rather than hanging indefinitely.
         private val UNSUPPORTED_METHODS = setOf(
@@ -179,13 +182,26 @@ internal class EmbeddedCheckoutProtocol(
             "ec.fulfillment.address_change_request",
         )
 
-        // UCP-compliant success envelope required by the spec for all result responses.
-        private val UCP_SUCCESS =
-            """{"ucp":{"version":"${CheckoutProtocol.specVersion}","status":"success"}}"""
-
         private const val CODE_PARSE_ERROR = -32700
         private const val CODE_METHOD_NOT_SUPPORTED = -32601
-        private const val CODE_INVALID_PARAMS = -32602
+
+        /**
+         * The kit's default [CheckoutProtocol.windowOpen] handler.
+         *
+         * Mirrors Swift's `defaultsClient`: launches the URI via `Intent.ACTION_VIEW`
+         * if any activity resolves it, otherwise returns [WindowOpenResult.Rejected]
+         * with `window_open_rejected_error` semantics.
+         */
+        internal fun defaultDelegationClient(context: Context): CheckoutProtocol.Client =
+            CheckoutProtocol.Client().on(CheckoutProtocol.windowOpen) { request ->
+                when (val result = ExternalUriLauncher.launch(context, request.url)) {
+                    is ExternalUriLauncher.Result.Launched -> WindowOpenResult.Success
+                    is ExternalUriLauncher.Result.Rejected -> {
+                        log.d(LOG_TAG, "window.open rejected for ${request.url}: ${result.reason}")
+                        WindowOpenResult.Rejected(reason = result.reason)
+                    }
+                }
+            }
     }
 }
 

@@ -146,7 +146,7 @@ public class InteropTest {
     @Test
     public void canInstantiateCustomEventProcessorWithDefaultArg() {
         try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
-            DefaultCheckoutEventProcessor processor = new DefaultCheckoutEventProcessor(controller.get()) {
+            DefaultCheckoutEventProcessor processor = new DefaultCheckoutEventProcessor() {
                 @Override
                 public void onCheckoutCompleted(@NonNull CheckoutCompletedEvent checkoutCompletedEvent) {
 
@@ -248,7 +248,7 @@ public class InteropTest {
             CheckoutKitDialog dialog = ShopifyCheckoutKit.present(
                     "https://shopify.dev",
                     activity,
-                    new DefaultCheckoutEventProcessor(activity) {
+                    new DefaultCheckoutEventProcessor() {
                         @Override
                         public void onCheckoutCompleted(@NonNull CheckoutCompletedEvent checkoutCompletedEvent) {
                             // do nothing

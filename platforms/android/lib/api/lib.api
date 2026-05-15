@@ -630,7 +630,6 @@ public final class com/shopify/checkoutkit/Checkout$Companion {
 }
 
 public abstract interface class com/shopify/checkoutkit/CheckoutCommunicationClient {
-	public abstract fun openExternalUrl (Landroid/net/Uri;)Z
 	public abstract fun process (Ljava/lang/String;)Ljava/lang/String;
 }
 
@@ -669,7 +668,6 @@ public abstract interface class com/shopify/checkoutkit/CheckoutEventProcessor {
 	public abstract fun onCheckoutCanceled ()V
 	public abstract fun onCheckoutCompleted (Lcom/shopify/checkoutkit/lifecycleevents/CheckoutCompletedEvent;)V
 	public abstract fun onCheckoutFailed (Lcom/shopify/checkoutkit/CheckoutException;)V
-	public abstract fun onCheckoutLinkClicked (Landroid/net/Uri;)V
 	public abstract fun onGeolocationPermissionsHidePrompt ()V
 	public abstract fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
 	public abstract fun onPermissionRequest (Landroid/webkit/PermissionRequest;)V
@@ -772,8 +770,6 @@ public final class com/shopify/checkoutkit/CheckoutProtocol {
 public final class com/shopify/checkoutkit/CheckoutProtocol$Client : com/shopify/checkoutkit/CheckoutCommunicationClient {
 	public fun <init> ()V
 	public final fun on (Lcom/shopify/checkoutkit/NotificationDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
-	public final fun onOpenExternalUrl (Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
-	public fun openExternalUrl (Landroid/net/Uri;)Z
 	public fun process (Ljava/lang/String;)Ljava/lang/String;
 }
 
@@ -1367,10 +1363,7 @@ public final class com/shopify/checkoutkit/CredentialResult$Companion {
 }
 
 public abstract class com/shopify/checkoutkit/DefaultCheckoutEventProcessor : com/shopify/checkoutkit/CheckoutEventProcessor {
-	public fun <init> (Landroid/content/Context;)V
-	public fun <init> (Landroid/content/Context;Lcom/shopify/checkoutkit/LogWrapper;)V
-	public synthetic fun <init> (Landroid/content/Context;Lcom/shopify/checkoutkit/LogWrapper;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun onCheckoutLinkClicked (Landroid/net/Uri;)V
+	public fun <init> ()V
 	public fun onGeolocationPermissionsHidePrompt ()V
 	public fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
 	public fun onPermissionRequest (Landroid/webkit/PermissionRequest;)V

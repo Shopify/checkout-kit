@@ -22,6 +22,9 @@
  */
 package com.shopify.checkoutkit
 
+import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.ResolveInfo
 import android.net.Uri
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceError
@@ -43,6 +46,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.net.HttpURLConnection
@@ -58,46 +62,71 @@ class CheckoutWebViewClientTest {
     @Before
     fun setUp() {
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
+        // Mirror real-Android behavior: startActivity throws ActivityNotFoundException when
+        // no activity resolves the intent. Robolectric defaults to silently recording the
+        // intent instead — turning on checkActivities aligns the shadow with production.
+        shadowOf(activity.application).checkActivities(true)
     }
 
     @Test
-    fun `overrides url loading to call event processor for mailto links`() {
-        val mockRequest = mockWebRequest(Uri.parse("mailto:daniel.kift@shopify.com"))
+    fun `overrides url loading for mailto links and launches intent when resolvable`() {
+        val uri = Uri.parse("mailto:daniel.kift@shopify.com")
+        registerResolverFor(uri)
+        val mockRequest = mockWebRequest(uri)
 
         val view = viewWithProcessor(activity)
         val webViewClient = view.CheckoutWebViewClient()
         val overridden = webViewClient.shouldOverrideUrlLoading(view, mockRequest)
 
         assertThat(overridden).isTrue
-        verify(mockEventProcessor).onCheckoutLinkClicked(mockRequest.url)
+        val launched = shadowOf(activity).nextStartedActivity
+        assertThat(launched).isNotNull
+        assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)
+        assertThat(launched.data).isEqualTo(uri)
     }
 
     @Test
-    fun `overrides url loading to call event processor for tel links`() {
-        val mockRequest = mockWebRequest(Uri.parse("tel:0123456789"))
+    fun `overrides url loading for tel links and launches intent when resolvable`() {
+        val uri = Uri.parse("tel:0123456789")
+        registerResolverFor(uri)
+        val mockRequest = mockWebRequest(uri)
 
         val view = viewWithProcessor(activity)
         val webViewClient = view.CheckoutWebViewClient()
         val overridden = webViewClient.shouldOverrideUrlLoading(view, mockRequest)
 
         assertThat(overridden).isTrue
-        verify(mockEventProcessor).onCheckoutLinkClicked(mockRequest.url)
+        assertThat(shadowOf(activity).nextStartedActivity).isNotNull
     }
 
     @Test
-    fun `overrides url loading to call event processor for deep links`() {
-        val mockRequest = mockWebRequest(Uri.parse("geo:40.712776,-74.005974?q=Statue+of+Liberty"))
+    fun `overrides url loading for deep links and launches intent when resolvable`() {
+        val uri = Uri.parse("geo:40.712776,-74.005974?q=Statue+of+Liberty")
+        registerResolverFor(uri)
+        val mockRequest = mockWebRequest(uri)
 
         val view = viewWithProcessor(activity)
         val webViewClient = view.CheckoutWebViewClient()
         val overridden = webViewClient.shouldOverrideUrlLoading(view, mockRequest)
 
         assertThat(overridden).isTrue
-        verify(mockEventProcessor).onCheckoutLinkClicked(mockRequest.url)
+        assertThat(shadowOf(activity).nextStartedActivity).isNotNull
     }
 
     @Test
-    fun `does not override url loading to call event processor for about blank`() {
+    fun `overrides url loading for unresolvable deep link but launches no intent`() {
+        val mockRequest = mockWebRequest(Uri.parse("myapp://path"))
+
+        val view = viewWithProcessor(activity)
+        val webViewClient = view.CheckoutWebViewClient()
+        val overridden = webViewClient.shouldOverrideUrlLoading(view, mockRequest)
+
+        assertThat(overridden).isTrue
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+    }
+
+    @Test
+    fun `does not override url loading for about blank`() {
         val mockRequest = mockWebRequest(Uri.parse("about:blank"))
 
         val view = viewWithProcessor(activity)
@@ -105,11 +134,10 @@ class CheckoutWebViewClientTest {
         val overridden = webViewClient.shouldOverrideUrlLoading(view, mockRequest)
 
         assertThat(overridden).isFalse()
-        verify(mockEventProcessor, never()).onCheckoutLinkClicked(any())
     }
 
     @Test
-    fun `does not override url loading to call event processor for web links`() {
+    fun `does not override url loading for web links`() {
         val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com"))
 
         val view = viewWithProcessor(activity)
@@ -117,7 +145,7 @@ class CheckoutWebViewClientTest {
         val overridden = webViewClient.shouldOverrideUrlLoading(view, mockRequest)
 
         assertThat(overridden).isFalse
-        verify(mockEventProcessor, never()).onCheckoutLinkClicked(mockRequest.url)
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
 
     @Test
@@ -286,18 +314,20 @@ class CheckoutWebViewClientTest {
             .hasDescription("HTTP 502 Error")
     }
 
+    // Deliberate trade-off (matches Swift PR #82): the `?open_externally=true` query-param intercept
+    // is dropped. Policy/contact links that previously relied on this param will be handled inline
+    // by the WebView until checkout-side `ec.window.open_request` dispatch ships server-side.
     @Test
-    fun `links with open_externally are delegated to the contact link function`() {
-        val host = "https://go.shop.com"
-        val loadedUri = Uri.parse("$host?open_externally=true&random_param=1")
+    fun `does not override url loading for https links carrying open_externally`() {
+        val loadedUri = Uri.parse("https://go.shop.com?open_externally=true&random_param=1")
         val mockRequest = mockWebRequest(loadedUri)
 
         val view = viewWithProcessor(activity)
         val webViewClient = view.CheckoutWebViewClient()
         val overridden = webViewClient.shouldOverrideUrlLoading(view, mockRequest)
 
-        assertThat(overridden).isTrue
-        verify(mockEventProcessor).onCheckoutLinkClicked(Uri.parse("$host?random_param=1"))
+        assertThat(overridden).isFalse
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
 
     @Test
@@ -363,6 +393,17 @@ class CheckoutWebViewClientTest {
 
         webViewClient.onReceivedHttpError(view, mockRequest, checkoutExpiredResponse)
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
+    }
+
+    private fun registerResolverFor(uri: Uri) {
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        val resolveInfo = ResolveInfo().apply {
+            activityInfo = ActivityInfo().apply {
+                packageName = "com.fake.handler"
+                name = "FakeHandlerActivity"
+            }
+        }
+        shadowOf(activity.packageManager).addResolveInfoForIntent(intent, resolveInfo)
     }
 
     private fun mockWebRequest(uri: Uri, forMainFrame: Boolean = false): WebResourceRequest {

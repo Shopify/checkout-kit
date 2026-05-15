@@ -22,8 +22,6 @@
  */
 package com.shopify.checkoutkit
 
-import android.net.Uri
-
 /**
  * Implement this interface to handle Embedded Checkout Protocol (ECP) messages beyond
  * the built-in methods handled natively by the SDK.
@@ -34,20 +32,14 @@ public interface CheckoutCommunicationClient {
     /**
      * Process a JSON-RPC 2.0 ECP message from the checkout web page.
      *
-     * Called for all EC notifications (ec.start, ec.error, ec.complete, ec.*.change)
-     * and any unknown methods. For requests, return a JSON-RPC 2.0 response string;
-     * for notifications, return null (no response is sent).
+     * Called for EC notifications (ec.start, ec.error, ec.complete, ec.*.change) and
+     * any unknown methods the kit doesn't handle natively. Delegations such as
+     * `ec.window.open_request` are handled internally by the kit and are not forwarded
+     * here. For requests, return a JSON-RPC 2.0 response string; for notifications,
+     * return null (no response is sent).
      *
      * @param message JSON-RPC 2.0 encoded message string
      * @return JSON-RPC 2.0 encoded response string, or null to send no response
      */
     public fun process(message: String): String?
-
-    /**
-     * Called when checkout requests that a URL be opened externally (ec.window.open_request).
-     *
-     * @param url the URL checkout wants opened in an external browser or app
-     * @return true if the URL was handled and displayed externally, false otherwise
-     */
-    public fun openExternalUrl(url: Uri): Boolean
 }
