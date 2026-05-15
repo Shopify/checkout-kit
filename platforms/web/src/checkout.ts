@@ -38,6 +38,7 @@ import { STYLES } from "./checkout.styles";
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
 export const EMBED_PROTOCOL_VERSION = "2026-04-08";
+export const CK_VERSION = "4.0.0";
 const EMBED_DELEGATIONS: readonly string[] = ["window.open"];
 
 const SHADOW_TEMPLATE = createTemplate(html`
@@ -157,6 +158,7 @@ export class ShopifyCheckout
     if (EMBED_DELEGATIONS.length > 0) {
       url.searchParams.set("ec_delegate", EMBED_DELEGATIONS.join(","));
     }
+    url.searchParams.set("ck_version", CK_VERSION);
     return url;
   }
 

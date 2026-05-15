@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Checkout, CheckoutProtocolMessageMap, UcpErrorResponse } from "./checkout.types";
 import "./checkout-web-component";
-import { DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT, EMBED_PROTOCOL_VERSION } from "./checkout";
+import {
+  DEFAULT_POPUP_WIDTH,
+  DEFAULT_POPUP_HEIGHT,
+  EMBED_PROTOCOL_VERSION,
+  CK_VERSION,
+} from "./checkout";
 import type { ShopifyCheckout } from "./checkout";
 
 const POPUP_TARGETS = ["popup"] as const;
@@ -823,6 +828,43 @@ describe("<shopify-checkout>", () => {
 
       const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
       expect(url.searchParams.get("ec_delegate")).toBe("window.open");
+    });
+  });
+
+  describe("ck_version parameter", () => {
+    it("appends ck_version to the opened URL", () => {
+      const checkout = renderCheckout({ target: "popup" });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ck_version")).toBe(CK_VERSION);
+    });
+
+    it("uses the documented constant value", () => {
+      expect(CK_VERSION).toBe("4.0.0");
+    });
+
+    it("includes ck_version on the overlay link", () => {
+      const checkout = renderCheckout({ src: "https://shop.example.com/checkout" });
+      const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link");
+      const url = new URL(link!.getAttribute("href") ?? "");
+      expect(url.searchParams.get("ck_version")).toBe(CK_VERSION);
+    });
+
+    it("preserves caller-provided ck_version rather than appending a duplicate", () => {
+      const checkout = renderCheckout({
+        src: "https://shop.example.com/checkout?ck_version=old",
+      });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.getAll("ck_version")).toEqual([CK_VERSION]);
     });
   });
 
