@@ -3923,7 +3923,6 @@ public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static final fun configure (Lcom/shopify/checkoutkit/ConfigurationUpdater;)V
 	public static final fun getConfiguration ()Lcom/shopify/checkoutkit/Configuration;
 	public static final fun invalidate ()V
-	public static final fun preload (Ljava/lang/String;Landroidx/activity/ComponentActivity;)V
 	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutEventProcessor;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
 	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutEventProcessor;Lcom/shopify/checkoutkit/CheckoutCommunicationClient;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
 	public static synthetic fun present$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutEventProcessor;Lcom/shopify/checkoutkit/CheckoutCommunicationClient;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
