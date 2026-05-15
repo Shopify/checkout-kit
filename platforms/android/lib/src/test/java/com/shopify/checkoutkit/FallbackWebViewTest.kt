@@ -76,16 +76,16 @@ class FallbackWebViewTest {
     fun `calls update progress when new progress is reported by WebChromeClient`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val view = FallbackWebView(activityController.get())
-            val webViewEventProcessor = mock<CheckoutWebViewEventProcessor>()
-            view.setEventProcessor(webViewEventProcessor)
+            val webViewListener = mock<CheckoutWebViewListener>()
+            view.setListener(webViewListener)
 
             val shadow = shadowOf(view)
 
             shadow.webChromeClient?.onProgressChanged(view, 20)
-            verify(webViewEventProcessor).updateProgressBar(20)
+            verify(webViewListener).updateProgressBar(20)
 
             shadow.webChromeClient?.onProgressChanged(view, 50)
-            verify(webViewEventProcessor).updateProgressBar(50)
+            verify(webViewListener).updateProgressBar(50)
         }
     }
 

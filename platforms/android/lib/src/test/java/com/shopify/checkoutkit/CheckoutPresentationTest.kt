@@ -32,7 +32,6 @@ import android.webkit.WebView
 import android.widget.RelativeLayout
 import androidx.activity.ComponentActivity
 import androidx.core.view.children
-import com.shopify.checkoutkit.lifecycleevents.emptyCompletedEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -139,7 +138,7 @@ class CheckoutPresentationTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
 
-        dialog.currentWebView().getEventProcessor().onPermissionRequest(permissionRequest)
+        dialog.currentWebView().getListener().onPermissionRequest(permissionRequest)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received).isSameAs(permissionRequest)
@@ -166,7 +165,7 @@ class CheckoutPresentationTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
 
-        val handled = dialog.currentWebView().getEventProcessor().onShowFileChooser(
+        val handled = dialog.currentWebView().getListener().onShowFileChooser(
             webView,
             filePathCallback,
             fileChooserParams,
@@ -194,7 +193,7 @@ class CheckoutPresentationTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
 
-        dialog.currentWebView().getEventProcessor().onGeolocationPermissionsShowPrompt("origin", callback)
+        dialog.currentWebView().getListener().onGeolocationPermissionsShowPrompt("origin", callback)
 
         assertThat(receivedOrigin).isEqualTo("origin")
         assertThat(receivedCallback).isSameAs(callback)
@@ -211,7 +210,7 @@ class CheckoutPresentationTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
 
-        dialog.currentWebView().getEventProcessor().onGeolocationPermissionsHidePrompt()
+        dialog.currentWebView().getListener().onGeolocationPermissionsHidePrompt()
 
         assertThat(hidden).isTrue()
     }
@@ -223,7 +222,6 @@ class CheckoutPresentationTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
 
-        dialog.currentWebView().getEventProcessor().onCheckoutViewComplete(emptyCompletedEvent())
         dialogHandle?.dismiss()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 

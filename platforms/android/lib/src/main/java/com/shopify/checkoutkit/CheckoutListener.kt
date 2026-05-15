@@ -28,18 +28,17 @@ import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
 
 /**
  * Interface to implement to allow responding to lifecycle events in checkout.
- * We'd strongly recommend extending DefaultCheckoutEventProcessor where possible
+ * We'd strongly recommend extending DefaultCheckoutListener where possible.
+ *
+ * Completion (`ec.complete`) and in-checkout state updates (totals, line items,
+ * messages) flow through [CheckoutCommunicationClient] / the Embedded Checkout
+ * Protocol — not through this interface. Kit-level failures continue to surface
+ * here via [onCheckoutFailed].
  */
-public interface CheckoutEventProcessor {
-    /**
-     * Event representing the successful completion of a checkout.
-     */
-    public fun onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent)
-
+public interface CheckoutListener {
     /**
      * Event representing an error that occurred during checkout. This can be used to display
      * error messages for example.
@@ -50,12 +49,12 @@ public interface CheckoutEventProcessor {
     public fun onCheckoutFailed(error: CheckoutException)
 
     /**
-     * Event representing the cancellation/closing of checkout by the buyer
+     * Event representing the cancellation/closing of checkout by the buyer.
      */
     public fun onCheckoutCanceled()
 
     /**
-     * A permission has been requested by the web chrome client, e.g. to access the camera
+     * A permission has been requested by the web chrome client, e.g. to access the camera.
      */
     public fun onPermissionRequest(permissionRequest: PermissionRequest)
 
@@ -71,21 +70,17 @@ public interface CheckoutEventProcessor {
 
     /**
      * Called when the client should show a location permissions prompt. For example when using 'Use my location' for
-     * pickup points in checkout
+     * pickup points in checkout.
      */
     public fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback)
 
     /**
-     * Called when the client should hide the location permissions prompt, e.g. if th request is cancelled
+     * Called when the client should hide the location permissions prompt, e.g. if the request is cancelled.
      */
     public fun onGeolocationPermissionsHidePrompt()
 }
 
-internal class NoopEventProcessor : CheckoutEventProcessor {
-    override fun onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent) {
-        /* noop */
-    }
-
+internal class NoopCheckoutListener : CheckoutListener {
     override fun onCheckoutFailed(error: CheckoutException) {
         /* noop */
     }
@@ -116,10 +111,10 @@ internal class NoopEventProcessor : CheckoutEventProcessor {
 }
 
 /**
- * An abstract class that provides a default implementation of the CheckoutEventProcessor interface
- * for the optional permission and file-chooser callbacks. Override in subclasses as needed.
+ * An abstract class that provides a default implementation of the [CheckoutListener] interface
+ * for handling checkout events.
  */
-public abstract class DefaultCheckoutEventProcessor : CheckoutEventProcessor {
+public abstract class DefaultCheckoutListener : CheckoutListener {
 
     override fun onPermissionRequest(permissionRequest: PermissionRequest) {
         // no-op override to implement

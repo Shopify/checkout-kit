@@ -22,7 +22,6 @@
  */
 package com.shopify.checkoutkit
 
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
 import org.assertj.core.api.AbstractAssert
 
 fun withPreloadingEnabled(block: () -> Unit) {
@@ -102,10 +101,14 @@ class CheckoutExceptionAssert(actual: CheckoutException) :
     }
 }
 
-fun noopDefaultCheckoutEventProcessor(): DefaultCheckoutEventProcessor {
-    return object : DefaultCheckoutEventProcessor() {
-        override fun onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent) = Unit
-        override fun onCheckoutFailed(error: CheckoutException) = Unit
-        override fun onCheckoutCanceled() = Unit
+fun noopDefaultCheckoutListener(): DefaultCheckoutListener {
+    return object : DefaultCheckoutListener() {
+        override fun onCheckoutFailed(error: CheckoutException) {
+            // no-op
+        }
+
+        override fun onCheckoutCanceled() {
+            // no-op
+        }
     }
 }

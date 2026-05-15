@@ -55,7 +55,7 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
         configureWebView()
     }
 
-    abstract fun getEventProcessor(): CheckoutWebViewEventProcessor
+    abstract fun getListener(): CheckoutWebViewListener
     abstract val recoverErrors: Boolean
 
     private fun configureWebView() {
@@ -77,22 +77,22 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 super.onProgressChanged(view, newProgress)
                 log.d(LOG_TAG, "On progress change called. New progress $newProgress.")
-                getEventProcessor().updateProgressBar(newProgress)
+                getListener().updateProgressBar(newProgress)
             }
 
             override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
-                log.d(LOG_TAG, "onGeolocationPermissionsShowPrompt called, origin $origin, invoking eventProcessor callback.")
-                getEventProcessor().onGeolocationPermissionsShowPrompt(origin, callback)
+                log.d(LOG_TAG, "onGeolocationPermissionsShowPrompt called, origin $origin, invoking listener callback.")
+                getListener().onGeolocationPermissionsShowPrompt(origin, callback)
             }
 
             override fun onGeolocationPermissionsHidePrompt() {
-                log.d(LOG_TAG, "onGeolocationPermissionsHidePrompt called, invoking eventProcessor callback.")
-                getEventProcessor().onGeolocationPermissionsHidePrompt()
+                log.d(LOG_TAG, "onGeolocationPermissionsHidePrompt called, invoking listener callback.")
+                getListener().onGeolocationPermissionsHidePrompt()
             }
 
             override fun onPermissionRequest(request: PermissionRequest) {
-                log.d(LOG_TAG, "onPermissionRequest called $request, invoking eventProcessor callback.")
-                getEventProcessor().onPermissionRequest(request)
+                log.d(LOG_TAG, "onPermissionRequest called $request, invoking listener callback.")
+                getListener().onPermissionRequest(request)
             }
 
             override fun onShowFileChooser(
@@ -100,8 +100,8 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
                 filePathCallback: ValueCallback<Array<Uri>>,
                 fileChooserParams: FileChooserParams,
             ): Boolean {
-                log.d(LOG_TAG, "onShowFileChooser called, invoking eventProcessor callback.")
-                return getEventProcessor().onShowFileChooser(webView, filePathCallback, fileChooserParams)
+                log.d(LOG_TAG, "onShowFileChooser called, invoking listener callback.")
+                return getListener().onShowFileChooser(webView, filePathCallback, fileChooserParams)
             }
         }
         isHorizontalScrollBarEnabled = false
@@ -144,8 +144,8 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !detail.didCrash()) {
                 // Renderer was killed because system ran out of memory.
                 log.d(LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
-                val eventProcessor = getEventProcessor()
-                eventProcessor.onCheckoutViewFailedWithError(
+                val listener = getListener()
+                listener.onCheckoutViewFailedWithError(
                     CheckoutKitException(
                         errorDescription = "Render process gone.",
                         errorCode = CheckoutKitException.RENDER_PROCESS_GONE,
@@ -207,11 +207,11 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
                     LOG_TAG,
                     "Handling error for main frame. URL: ${request.url}, errorCode: $errorCode, errorDescription: $errorDescription"
                 )
-                val processor = getEventProcessor()
+                val listener = getListener()
                 when {
                     errorCode == HTTP_GONE -> {
                         log.d(LOG_TAG, "Failing with cart expired. Recoverable: false")
-                        processor.onCheckoutViewFailedWithError(
+                        listener.onCheckoutViewFailedWithError(
                             CheckoutExpiredException(
                                 isRecoverable = false,
                                 errorCode = CheckoutExpiredException.CART_EXPIRED
@@ -222,7 +222,7 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
                     else -> {
                         val recoverable = isRecoverable(errorCode)
                         log.d(LOG_TAG, "Failing with other error. Code: $errorCode. Recoverable $recoverable")
-                        processor.onCheckoutViewFailedWithError(
+                        listener.onCheckoutViewFailedWithError(
                             HttpException(
                                 errorDescription = errorDescription,
                                 statusCode = errorCode,

@@ -72,6 +72,7 @@ internal class EmbeddedCheckoutProtocol(
                     log.d(LOG_TAG, "Ignoring out-of-scope ep method: ${request.method}.")
                 request.method == METHOD_WINDOW_OPEN_REQUEST -> handleWindowOpenRequest(message)
                 request.method == METHOD_START -> handleStart(message)
+                request.method == METHOD_COMPLETE -> handleComplete(message)
                 else -> handleClientMessage(request.method, message)
             }
         } catch (e: Exception) {
@@ -106,7 +107,18 @@ internal class EmbeddedCheckoutProtocol(
     private fun handleStart(message: String) {
         log.d(LOG_TAG, "Handling $METHOD_START: showing progress bar and bubbling up.")
         onMainThread {
-            view.getEventProcessor().onCheckoutViewLoadStarted()
+            view.getListener().onCheckoutViewLoadStarted()
+            client?.process(message)
+        }
+    }
+
+    private fun handleComplete(message: String) {
+        // Cache invalidation on completion is a kit invariant — independent of whether
+        // a merchant client is attached. Mark stale before delegating so a completed
+        // checkout is never reused from cache on the next present(...).
+        log.d(LOG_TAG, "Handling $METHOD_COMPLETE: marking cache stale and bubbling up.")
+        CheckoutWebView.markCacheEntryStale()
+        onMainThread {
             client?.process(message)
         }
     }
@@ -165,6 +177,7 @@ internal class EmbeddedCheckoutProtocol(
 
         internal const val METHOD_READY = "ec.ready"
         internal const val METHOD_START = "ec.start"
+        internal const val METHOD_COMPLETE = "ec.complete"
 
         private const val METHOD_WINDOW_OPEN_REQUEST = "ec.window.open_request"
 

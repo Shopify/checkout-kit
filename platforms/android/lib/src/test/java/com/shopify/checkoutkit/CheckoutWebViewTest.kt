@@ -165,23 +165,23 @@ class CheckoutWebViewTest {
     @Test
     fun `calls update progress when new progress is reported by WebChromeClient`() {
         val view = CheckoutWebView.cacheableCheckoutView(URL, activity)
-        val webViewEventProcessor = mock<CheckoutWebViewEventProcessor>()
-        view.setEventProcessor(webViewEventProcessor)
+        val webViewListener = mock<CheckoutWebViewListener>()
+        view.setListener(webViewListener)
 
         val shadow = shadowOf(view)
 
         shadow.webChromeClient?.onProgressChanged(view, 20)
-        verify(webViewEventProcessor).updateProgressBar(20)
+        verify(webViewListener).updateProgressBar(20)
 
         shadow.webChromeClient?.onProgressChanged(view, 50)
-        verify(webViewEventProcessor).updateProgressBar(50)
+        verify(webViewListener).updateProgressBar(50)
     }
 
     @Test
     fun `calls processors onPermissionRequest when resource permission requested`() {
         val view = CheckoutWebView.cacheableCheckoutView(URL, activity)
-        val webViewEventProcessor = mock<CheckoutWebViewEventProcessor>()
-        view.setEventProcessor(webViewEventProcessor)
+        val webViewListener = mock<CheckoutWebViewListener>()
+        view.setListener(webViewListener)
 
         val permissionRequest = mock<PermissionRequest>()
         val requestedResources = arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE)
@@ -190,14 +190,14 @@ class CheckoutWebViewTest {
         val shadow = shadowOf(view)
         shadow.webChromeClient?.onPermissionRequest(permissionRequest)
 
-        verify(webViewEventProcessor).onPermissionRequest(permissionRequest)
+        verify(webViewListener).onPermissionRequest(permissionRequest)
     }
 
     @Test
     fun `calls processors onShowFileChooser when called on webChromeClient`() {
         val view = CheckoutWebView.cacheableCheckoutView(URL, activity)
-        val webViewEventProcessor = mock<CheckoutWebViewEventProcessor>()
-        view.setEventProcessor(webViewEventProcessor)
+        val webViewListener = mock<CheckoutWebViewListener>()
+        view.setListener(webViewListener)
 
         val shadow = shadowOf(view)
         val filePathCallback = mock<ValueCallback<Array<Uri>>>()
@@ -205,14 +205,14 @@ class CheckoutWebViewTest {
 
         shadow.webChromeClient.onShowFileChooser(view, filePathCallback, fileChooserParams)
 
-        verify(webViewEventProcessor).onShowFileChooser(view, filePathCallback, fileChooserParams)
+        verify(webViewListener).onShowFileChooser(view, filePathCallback, fileChooserParams)
     }
 
     @Test
     fun `calls processors onGeolocationPermissionsShowPrompt when called on webChromeClient`() {
         val view = CheckoutWebView.cacheableCheckoutView(URL, activity)
-        val webViewEventProcessor = mock<CheckoutWebViewEventProcessor>()
-        view.setEventProcessor(webViewEventProcessor)
+        val webViewListener = mock<CheckoutWebViewListener>()
+        view.setListener(webViewListener)
 
         val shadow = shadowOf(view)
 
@@ -221,7 +221,7 @@ class CheckoutWebViewTest {
 
         shadow.webChromeClient.onGeolocationPermissionsShowPrompt(origin, callback)
 
-        verify(webViewEventProcessor).onGeolocationPermissionsShowPrompt(origin, callback)
+        verify(webViewListener).onGeolocationPermissionsShowPrompt(origin, callback)
     }
 
     @Test

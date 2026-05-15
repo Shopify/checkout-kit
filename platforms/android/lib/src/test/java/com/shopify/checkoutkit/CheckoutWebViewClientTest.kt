@@ -56,8 +56,8 @@ import kotlin.time.Duration.Companion.minutes
 class CheckoutWebViewClientTest {
 
     private lateinit var activity: ComponentActivity
-    private val mockEventProcessor = mock<CheckoutEventProcessor>()
-    private val checkoutWebViewEventProcessor = spy(CheckoutWebViewEventProcessor(mockEventProcessor))
+    private val mockListener = mock<CheckoutListener>()
+    private val checkoutWebViewListener = spy(CheckoutWebViewListener(mockListener))
 
     @Before
     fun setUp() {
@@ -161,7 +161,7 @@ class CheckoutWebViewClientTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutExpiredException::class.java)
             .isNotRecoverable()
@@ -178,7 +178,7 @@ class CheckoutWebViewClientTest {
         triggerOnReceivedHttpError(mockRequest, mockResponse)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutExpiredException::class.java)
             .isNotRecoverable()
@@ -196,7 +196,7 @@ class CheckoutWebViewClientTest {
         triggerOnReceivedHttpError(mockRequest, mockResponse)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(HttpException::class.java)
             .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
@@ -215,7 +215,7 @@ class CheckoutWebViewClientTest {
         triggerOnReceivedHttpError(mockRequest, mockResponse)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutUnavailableException::class.java)
             .isRecoverable()
@@ -232,7 +232,7 @@ class CheckoutWebViewClientTest {
         triggerOnReceivedHttpError(mockRequest, mockResponse)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutUnavailableException::class.java)
             .isRecoverable()
@@ -249,7 +249,7 @@ class CheckoutWebViewClientTest {
         triggerOnReceivedHttpError(mockRequest, mockResponse)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutUnavailableException::class.java)
             .isRecoverable()
@@ -268,7 +268,7 @@ class CheckoutWebViewClientTest {
         triggerOnReceivedHttpError(mockRequest, mockResponse)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutUnavailableException::class.java)
             .isNotRecoverable()
@@ -287,7 +287,7 @@ class CheckoutWebViewClientTest {
         triggerOnReceivedHttpError(mockRequest, mockResponse)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isNotRecoverable()
             .isInstanceOf(CheckoutUnavailableException::class.java)
@@ -306,7 +306,7 @@ class CheckoutWebViewClientTest {
         triggerOnReceivedHttpError(mockRequest, mockResponse)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isRecoverable()
             .isInstanceOf(HttpException::class.java)
@@ -337,7 +337,7 @@ class CheckoutWebViewClientTest {
 
         webViewClient.onPageFinished(view, "https://anything")
 
-        verify(checkoutWebViewEventProcessor).onCheckoutViewLoadComplete()
+        verify(checkoutWebViewListener).onCheckoutViewLoadComplete()
     }
 
     @Test
@@ -350,7 +350,7 @@ class CheckoutWebViewClientTest {
         val result = webViewClient.onRenderProcessGone(view, detail)
 
         assertThat(result).isFalse
-        verify(checkoutWebViewEventProcessor, never()).onCheckoutViewFailedWithError(any())
+        verify(checkoutWebViewListener, never()).onCheckoutViewFailedWithError(any())
     }
 
     @Config(sdk = [26])
@@ -364,7 +364,7 @@ class CheckoutWebViewClientTest {
         val result = webViewClient.onRenderProcessGone(view, detail)
 
         assertThat(result).isFalse
-        verify(checkoutWebViewEventProcessor, never()).onCheckoutViewFailedWithError(any())
+        verify(checkoutWebViewListener, never()).onCheckoutViewFailedWithError(any())
     }
 
     @Config(sdk = [26])
@@ -379,7 +379,7 @@ class CheckoutWebViewClientTest {
 
         assertThat(result).isTrue
         val captor = argumentCaptor<CheckoutKitException>()
-        verify(checkoutWebViewEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutKitException::class.java)
             .hasDescription("Render process gone.")
@@ -417,7 +417,7 @@ class CheckoutWebViewClientTest {
         activity: ComponentActivity,
     ): CheckoutWebView {
         val view = CheckoutWebView(activity)
-        view.setEventProcessor(checkoutWebViewEventProcessor)
+        view.setListener(checkoutWebViewListener)
         return view
     }
 

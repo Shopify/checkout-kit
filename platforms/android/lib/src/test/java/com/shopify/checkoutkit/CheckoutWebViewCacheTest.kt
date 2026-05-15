@@ -40,7 +40,7 @@ import kotlin.time.Duration.Companion.minutes
 class CheckoutWebViewCacheTest {
 
     private lateinit var activity: ComponentActivity
-    private lateinit var eventProcessor: CheckoutEventProcessor
+    private lateinit var listener: CheckoutListener
 
     @Before
     fun setUp() {
@@ -48,7 +48,7 @@ class CheckoutWebViewCacheTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
-        eventProcessor = eventProcessor()
+        listener = listener()
     }
 
     @Test
@@ -190,7 +190,7 @@ class CheckoutWebViewCacheTest {
         }
     }
 
-    private fun eventProcessor(): CheckoutEventProcessor = NoopEventProcessor()
+    private fun listener(): CheckoutListener = NoopCheckoutListener()
 
     companion object {
         private const val URL = "https://a.checkout.testurl"

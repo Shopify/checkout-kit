@@ -23,12 +23,9 @@
 package com.shopify.checkoutkit
 
 import android.content.Context
-import android.net.Uri
 import android.util.AttributeSet
 import android.webkit.WebView
-import androidx.core.net.toUri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
-import com.shopify.checkoutkit.lifecycleevents.emptyCompletedEvent
 
 internal class FallbackWebView(context: Context, attributeSet: AttributeSet? = null) :
     BaseWebView(context, attributeSet) {
@@ -41,15 +38,15 @@ internal class FallbackWebView(context: Context, attributeSet: AttributeSet? = n
         settings.userAgentString = "${settings.userAgentString} ${userAgentSuffix()}"
     }
 
-    private var checkoutEventProcessor = CheckoutWebViewEventProcessor(NoopEventProcessor())
+    private var listener = CheckoutWebViewListener(NoopCheckoutListener())
 
-    fun setEventProcessor(processor: CheckoutWebViewEventProcessor) {
-        log.d(LOG_TAG, "Setting event processor $processor.")
-        this.checkoutEventProcessor = processor
+    fun setListener(listener: CheckoutWebViewListener) {
+        log.d(LOG_TAG, "Setting listener $listener.")
+        this.listener = listener
     }
 
-    override fun getEventProcessor(): CheckoutWebViewEventProcessor {
-        return checkoutEventProcessor
+    override fun getListener(): CheckoutWebViewListener {
+        return listener
     }
 
     inner class FallbackWebViewClient : BaseWebView.BaseWebViewClient() {
@@ -64,18 +61,8 @@ internal class FallbackWebView(context: Context, attributeSet: AttributeSet? = n
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
             log.d(LOG_TAG, "onPageFinished called.")
-            getEventProcessor().onCheckoutViewLoadComplete()
-
-            val uri = url.toUri()
-            if (uri.isConfirmationPage()) {
-                log.d(LOG_TAG, "Finished page has confirmationUrl. Emitting minimal checkout completed event.")
-                getEventProcessor().onCheckoutViewComplete(
-                    emptyCompletedEvent(id = getOrderIdFromQueryString(uri))
-                )
-            }
+            getListener().onCheckoutViewLoadComplete()
         }
-
-        private fun getOrderIdFromQueryString(uri: Uri): String? = uri.getQueryParameter("order_id")
     }
 
     companion object {

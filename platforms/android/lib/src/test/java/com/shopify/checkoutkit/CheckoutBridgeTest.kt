@@ -22,7 +22,6 @@
  */
 package com.shopify.checkoutkit
 
-import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.COMPLETED
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.MODAL
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -30,7 +29,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout
@@ -41,18 +39,12 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class CheckoutBridgeTest {
 
-    private var mockEventProcessor = mock<CheckoutWebViewEventProcessor>()
+    private var mockListener = mock<CheckoutWebViewListener>()
     private lateinit var checkoutBridge: CheckoutBridge
 
     @Before
     fun init() {
-        checkoutBridge = CheckoutBridge(mockEventProcessor)
-    }
-
-    @Test
-    fun `postMessage calls web event processor onCheckoutViewComplete when completed message received`() {
-        checkoutBridge.postMessage(Json.encodeToString(WebToSdkEvent(COMPLETED.key)))
-        verify(mockEventProcessor).onCheckoutViewComplete(any())
+        checkoutBridge = CheckoutBridge(mockListener)
     }
 
     @Test
@@ -65,7 +57,7 @@ class CheckoutBridgeTest {
                 )
             )
         )
-        verify(mockEventProcessor).onCheckoutViewModalToggled(false)
+        verify(mockListener).onCheckoutViewModalToggled(false)
     }
 
     @Test
@@ -78,13 +70,13 @@ class CheckoutBridgeTest {
                 )
             )
         )
-        verify(mockEventProcessor).onCheckoutViewModalToggled(true)
+        verify(mockListener).onCheckoutViewModalToggled(true)
     }
 
     @Test
     fun `postMessage does not issue a msg to the event processor when unsupported message received`() {
         checkoutBridge.postMessage(Json.encodeToString(WebToSdkEvent("boom")))
-        verifyNoInteractions(mockEventProcessor)
+        verifyNoInteractions(mockListener)
     }
 
     @Test
@@ -105,7 +97,7 @@ class CheckoutBridgeTest {
         checkoutBridge.postMessage(eventString)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(mockEventProcessor, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
+        verify(mockListener, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
 
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutExpiredException::class.java)
@@ -132,7 +124,7 @@ class CheckoutBridgeTest {
         checkoutBridge.postMessage(eventString)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(mockEventProcessor, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
+        verify(mockListener, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
 
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutExpiredException::class.java)
@@ -156,7 +148,7 @@ class CheckoutBridgeTest {
         checkoutBridge.postMessage(eventString)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(mockEventProcessor, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
+        verify(mockListener, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
 
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutExpiredException::class.java)
@@ -184,7 +176,7 @@ class CheckoutBridgeTest {
         checkoutBridge.postMessage(eventString)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(mockEventProcessor, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
+        verify(mockListener, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
 
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutUnavailableException::class.java)
@@ -210,7 +202,7 @@ class CheckoutBridgeTest {
         checkoutBridge.postMessage(eventString)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(mockEventProcessor, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
+        verify(mockListener, timeout(2000).times(1)).onCheckoutViewFailedWithError(captor.capture())
 
         val error = captor.firstValue
         assertThat(error).isInstanceOf(ConfigurationException::class.java)
@@ -235,7 +227,7 @@ class CheckoutBridgeTest {
 
         checkoutBridge.postMessage(eventString)
 
-        verifyNoInteractions(mockEventProcessor)
+        verifyNoInteractions(mockListener)
     }
 
     @Test
@@ -250,7 +242,7 @@ class CheckoutBridgeTest {
         checkoutBridge.postMessage(eventString)
 
         val captor = argumentCaptor<CheckoutException>()
-        verify(mockEventProcessor).onCheckoutViewFailedWithError(captor.capture())
+        verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
 
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutKitException::class.java)

@@ -30,28 +30,19 @@ import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient.FileChooserParams
 import android.webkit.WebView
-import com.shopify.checkoutkit.ShopifyCheckoutKit.log
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
 
 /**
- * Event processor that can handle events internally, delegate to the CheckoutEventProcessor
- * passed into ShopifyCheckoutKit.present(), or preprocess arguments and then delegate
+ * Internal wrapper around the consumer-provided CheckoutListener. Handles dialog-internal
+ * behavior (progress bar, modal header toggling, error close) and delegates the rest to
+ * the listener.
  */
-internal class CheckoutWebViewEventProcessor(
-    private val eventProcessor: CheckoutEventProcessor,
+internal class CheckoutWebViewListener(
+    private val listener: CheckoutListener,
     private val toggleHeader: (Boolean) -> Unit = {},
     private val closeCheckoutDialogWithError: (CheckoutException) -> Unit = { CheckoutWebView.clearCache() },
     private val setProgressBarVisibility: (Int) -> Unit = {},
     private val updateProgressBarPercentage: (Int) -> Unit = {},
 ) {
-    fun onCheckoutViewComplete(checkoutCompletedEvent: CheckoutCompletedEvent) {
-        log.d(LOG_TAG, "Clearing WebView cache after checkout completion.")
-        CheckoutWebView.markCacheEntryStale()
-
-        log.d(LOG_TAG, "Calling onCheckoutCompleted $checkoutCompletedEvent.")
-        eventProcessor.onCheckoutCompleted(checkoutCompletedEvent)
-    }
-
     fun onCheckoutViewModalToggled(modalVisible: Boolean) {
         onMainThread {
             toggleHeader(modalVisible)
@@ -65,11 +56,11 @@ internal class CheckoutWebViewEventProcessor(
     }
 
     fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
-        return eventProcessor.onGeolocationPermissionsShowPrompt(origin, callback)
+        return listener.onGeolocationPermissionsShowPrompt(origin, callback)
     }
 
     fun onGeolocationPermissionsHidePrompt() {
-        return eventProcessor.onGeolocationPermissionsHidePrompt()
+        return listener.onGeolocationPermissionsHidePrompt()
     }
 
     fun onShowFileChooser(
@@ -77,12 +68,12 @@ internal class CheckoutWebViewEventProcessor(
         filePathCallback: ValueCallback<Array<Uri>>,
         fileChooserParams: FileChooserParams,
     ): Boolean {
-        return eventProcessor.onShowFileChooser(webView, filePathCallback, fileChooserParams)
+        return listener.onShowFileChooser(webView, filePathCallback, fileChooserParams)
     }
 
     fun onPermissionRequest(permissionRequest: PermissionRequest) {
         onMainThread {
-            eventProcessor.onPermissionRequest(permissionRequest)
+            listener.onPermissionRequest(permissionRequest)
         }
     }
 
@@ -102,9 +93,5 @@ internal class CheckoutWebViewEventProcessor(
         onMainThread {
             setProgressBarVisibility(VISIBLE)
         }
-    }
-
-    companion object {
-        private const val LOG_TAG = "CheckoutWebViewEventProcessor"
     }
 }

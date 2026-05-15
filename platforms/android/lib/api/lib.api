@@ -664,16 +664,6 @@ public final class com/shopify/checkoutkit/CheckoutError$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public abstract interface class com/shopify/checkoutkit/CheckoutEventProcessor {
-	public abstract fun onCheckoutCanceled ()V
-	public abstract fun onCheckoutCompleted (Lcom/shopify/checkoutkit/lifecycleevents/CheckoutCompletedEvent;)V
-	public abstract fun onCheckoutFailed (Lcom/shopify/checkoutkit/CheckoutException;)V
-	public abstract fun onGeolocationPermissionsHidePrompt ()V
-	public abstract fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
-	public abstract fun onPermissionRequest (Landroid/webkit/PermissionRequest;)V
-	public abstract fun onShowFileChooser (Landroid/webkit/WebView;Landroid/webkit/ValueCallback;Landroid/webkit/WebChromeClient$FileChooserParams;)Z
-}
-
 public abstract class com/shopify/checkoutkit/CheckoutException : java/lang/Exception {
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutException$Companion;
 	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;ZLkotlinx/serialization/internal/SerializationConstructorMarker;)V
@@ -754,6 +744,15 @@ public final class com/shopify/checkoutkit/CheckoutLineItem$$serializer : kotlin
 
 public final class com/shopify/checkoutkit/CheckoutLineItem$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class com/shopify/checkoutkit/CheckoutListener {
+	public abstract fun onCheckoutCanceled ()V
+	public abstract fun onCheckoutFailed (Lcom/shopify/checkoutkit/CheckoutException;)V
+	public abstract fun onGeolocationPermissionsHidePrompt ()V
+	public abstract fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
+	public abstract fun onPermissionRequest (Landroid/webkit/PermissionRequest;)V
+	public abstract fun onShowFileChooser (Landroid/webkit/WebView;Landroid/webkit/ValueCallback;Landroid/webkit/WebChromeClient$FileChooserParams;)Z
 }
 
 public final class com/shopify/checkoutkit/CheckoutPresentation {
@@ -1372,7 +1371,7 @@ public final class com/shopify/checkoutkit/CredentialResult$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public abstract class com/shopify/checkoutkit/DefaultCheckoutEventProcessor : com/shopify/checkoutkit/CheckoutEventProcessor {
+public abstract class com/shopify/checkoutkit/DefaultCheckoutListener : com/shopify/checkoutkit/CheckoutListener {
 	public fun <init> ()V
 	public fun onGeolocationPermissionsHidePrompt ()V
 	public fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
@@ -3933,10 +3932,10 @@ public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static final fun configure (Lcom/shopify/checkoutkit/ConfigurationUpdater;)V
 	public static final fun getConfiguration ()Lcom/shopify/checkoutkit/Configuration;
 	public static final fun invalidate ()V
-	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutEventProcessor;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
-	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutEventProcessor;Lcom/shopify/checkoutkit/CheckoutCommunicationClient;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
+	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
+	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutCommunicationClient;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
 	public static final synthetic fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
-	public static synthetic fun present$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutEventProcessor;Lcom/shopify/checkoutkit/CheckoutCommunicationClient;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
+	public static synthetic fun present$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutCommunicationClient;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
 }
 
 public final class com/shopify/checkoutkit/Signals {

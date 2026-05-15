@@ -49,7 +49,7 @@ class EmbeddedCheckoutProtocolTest {
 
     private lateinit var activity: ComponentActivity
     private lateinit var viewSpy: CheckoutWebView
-    private lateinit var mockEventProcessor: CheckoutWebViewEventProcessor
+    private lateinit var mockListener: CheckoutWebViewListener
     private lateinit var ecp: EmbeddedCheckoutProtocol
 
     @Before
@@ -63,8 +63,8 @@ class EmbeddedCheckoutProtocolTest {
         // intent instead — turning on checkActivities aligns the shadow with production.
         shadowOf(activity.application).checkActivities(true)
         viewSpy = Mockito.spy(CheckoutWebView(activity))
-        mockEventProcessor = mock()
-        whenever(viewSpy.getEventProcessor()).thenReturn(mockEventProcessor)
+        mockListener = mock()
+        whenever(viewSpy.getListener()).thenReturn(mockListener)
         ecp = EmbeddedCheckoutProtocol(viewSpy)
     }
 
@@ -305,7 +305,7 @@ class EmbeddedCheckoutProtocolTest {
     fun `ec start shows progress bar`() {
         ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}""")
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-        verify(mockEventProcessor).onCheckoutViewLoadStarted()
+        verify(mockListener).onCheckoutViewLoadStarted()
     }
 
     @Test
@@ -358,6 +358,23 @@ class EmbeddedCheckoutProtocolTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(client).process(rawMessage)
+    }
+
+    @Test
+    fun `ec complete marks the preloaded cache entry stale`() {
+        ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = true) }
+        try {
+            CheckoutWebView.cacheableCheckoutView("https://shopify.com/checkout", activity, isPreload = true)
+            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+            assertThat(CheckoutWebView.cacheEntry!!.isValid("https://shopify.com/checkout")).isTrue()
+
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":{}}}""")
+            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+            assertThat(CheckoutWebView.cacheEntry!!.isValid("https://shopify.com/checkout")).isFalse()
+        } finally {
+            ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = false) }
+        }
     }
 
     // endregion
