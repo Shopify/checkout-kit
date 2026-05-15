@@ -213,6 +213,20 @@ commands:
           `dev swift test <test_class_name>` - Run only the specified test class.
         syntax: "[test_class_name]"
         run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
+      api:
+        desc: Validate or update the public Swift API baseline (platforms/swift/api/*.json)
+        run: |
+          echo "Usage: dev swift api {check|dump}"
+          echo ""
+          echo "  check  Verify public Swift API matches the committed baselines"
+          echo "  dump   Regenerate the Swift API baselines after intentional public API changes"
+        subcommands:
+          check:
+            desc: Verify public Swift API matches the committed baselines
+            run: cd platforms/swift && ./Scripts/api check
+          dump:
+            desc: Regenerate the Swift API baselines after intentional public API changes
+            run: cd platforms/swift && ./Scripts/api dump
 
   # React Native
   react-native:
@@ -290,6 +304,20 @@ commands:
         desc: Auto-fix Swift lint and format issues
         aliases: [fix]
         run: cd platforms/react-native && ./scripts/lint_swift fix
+      api:
+        desc: Validate or update the public React Native API baseline (api/checkout-kit-react-native.api.md)
+        run: |
+          echo "Usage: dev rn api {check|dump}"
+          echo ""
+          echo "  check  Verify public RN API matches the committed report"
+          echo "  dump   Regenerate the RN API report after intentional public API changes"
+        subcommands:
+          check:
+            desc: Verify public RN API matches the committed report
+            run: cd platforms/react-native && pnpm module api:check
+          dump:
+            desc: Regenerate the RN API report after intentional public API changes
+            run: cd platforms/react-native && pnpm module api:dump
 
   # Web
   web:
