@@ -488,17 +488,6 @@ button:disabled {
   color: var(--accent);
 }
 
-.event-entry-badge {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  background: var(--accent);
-  color: var(--accent-text);
-  border-radius: 3px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .event-entry-time {
   margin-left: auto;
   color: var(--text-muted);

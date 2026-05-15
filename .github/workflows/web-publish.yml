@@ -124,6 +124,8 @@ jobs:
         env:
           DIST_TAG: ${{ steps.tag.outputs.tag }}
           NPM_CONFIG_PROVENANCE: "true"
+          NPM_TOKEN: ""
+          NODE_AUTH_TOKEN: ""
 
       - name: Dry-run summary
         if: ${{ inputs.dry-run }}

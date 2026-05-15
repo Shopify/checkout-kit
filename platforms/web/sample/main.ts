@@ -139,8 +139,6 @@ const EVENT_TYPES = [
   "checkout:messagesChange",
 ] as const;
 
-const RESPONDABLE_EVENTS = new Set<string>([]);
-
 for (const type of EVENT_TYPES) {
   checkoutEl.addEventListener(type, () => {
     appendLog(type);
@@ -179,13 +177,6 @@ function appendLog(type: string): void {
   name.className = "event-entry-name";
   name.textContent = type;
   header.append(name);
-
-  if (RESPONDABLE_EVENTS.has(type)) {
-    const badge = document.createElement("span");
-    badge.className = "event-entry-badge";
-    badge.textContent = "respondable";
-    header.append(badge);
-  }
 
   const time = document.createElement("time");
   time.className = "event-entry-time";
