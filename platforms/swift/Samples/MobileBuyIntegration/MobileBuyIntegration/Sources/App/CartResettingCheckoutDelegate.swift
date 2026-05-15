@@ -21,27 +21,23 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-@testable import ShopifyCheckoutKit
-import XCTest
+import ShopifyCheckoutKit
 
-struct MockBridgeClient: CheckoutCommunicationProtocol {
-    var responseMessage: String?
-    var receivedMessages: [String] = []
+@MainActor
+final class CartResettingCheckoutDelegate: CheckoutDelegate {
+    private var completed = false
 
-    func process(_: String) async -> String? {
-        return responseMessage
-    }
-}
-
-final class MockCheckoutDelegate: CheckoutDelegate {
-    private(set) var didCancelCount = 0
-    private(set) var didFailErrors: [CheckoutError] = []
-
-    func checkoutDidCancel() {
-        didCancelCount += 1
+    func markCompleted() {
+        completed = true
     }
 
-    func checkoutDidFail(error: CheckoutError) {
-        didFailErrors.append(error)
+    nonisolated func checkoutDidCancel() {
+        MainActor.assumeIsolated {
+            guard completed else { return }
+            completed = false
+            CartManager.shared.resetCart()
+        }
     }
+
+    nonisolated func checkoutDidFail(error _: CheckoutError) {}
 }

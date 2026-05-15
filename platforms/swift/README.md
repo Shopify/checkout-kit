@@ -144,7 +144,7 @@ struct ContentView: View {
     }
     .sheet(isPresented: $isPresented) {
       if let url = checkoutURL {
-        ShopifyCheckout(url: url)
+        ShopifyCheckout(checkout: url)
            /// Configuration
            .title("Checkout")
            .colorScheme(.automatic)
@@ -156,16 +156,8 @@ struct ContentView: View {
            .onCancel {
              isPresented = false
            }
-           .onComplete { event in
-             handleCompletedEvent(event)
-           }
            .onFail { error in
              handleError(error)
-           }
-           .onLinkClick { url in
-              if UIApplication.shared.canOpenURL(url) {
-                UIApplication.shared.open(url)
-              }
            }
            .edgesIgnoringSafeArea(.all)
       }
@@ -373,15 +365,10 @@ A preloaded checkout _is not_ automatically invalidated when checkout sheet is c
 
 ## Monitoring the lifecycle of a checkout session
 
-You can use the `ShopifyCheckoutKitDelegate` protocol to register callbacks for key lifecycle events during the checkout session:
+You can use the `CheckoutDelegate` protocol to register callbacks for lifecycle events the host app needs to react to:
 
 ```swift
-extension MyViewController: ShopifyCheckoutKitDelegate {
-  func checkoutDidComplete(event: CheckoutCompletedEvent) {
-    // Called when the checkout was completed successfully by the buyer.
-    // Use this to update UI, reset cart state, etc.
-  }
-
+extension MyViewController: CheckoutDelegate {
   func checkoutDidCancel() {
     // Called when the checkout was canceled by the buyer.
     // Use this to call `dismiss(animated:)`, etc.
@@ -389,34 +376,24 @@ extension MyViewController: ShopifyCheckoutKitDelegate {
 
   func checkoutDidFail(error: CheckoutError) {
     // Called when the checkout encountered an error and has been aborted. The callback
-    // provides a `CheckoutError` enum, with one of the following values:
-    // Internal error: exception within the Checkout SDK code
-    // You can inspect and log the Erorr and stacktrace to identify the problem.
-    case sdkError(underlying: Swift.Error)
+    // provides a `CheckoutError` enum, with one of the following cases:
 
-    // Issued when the provided checkout URL results in an error related to shop configuration.
-    // Note: The SDK only supports stores migrated for extensibility.
-    case configurationError(message: String)
+    // Internal error: exception within the Checkout SDK code.
+    // Inspect the underlying error to identify the problem.
+    case sdkError(underlying: Swift.Error, recoverable: Bool)
 
-    // Unavailable error: checkout cannot be initiated or completed, e.g. due to network or server-side error
+    // Checkout cannot be initiated or completed, e.g. due to network or server-side error.
     // The provided message describes the error and may be logged and presented to the buyer.
-    case checkoutUnavailable(message: String)
+    case checkoutUnavailable(message: String, code: CheckoutUnavailable, recoverable: Bool)
 
-    // Expired error: checkout session associated with provided checkoutURL is no longer available.
+    // Checkout session associated with the provided checkoutURL is no longer available.
     // The provided message describes the error and may be logged and presented to the buyer.
-    case checkoutExpired(message: String)
+    case checkoutExpired(message: String, code: CheckoutErrorCode, recoverable: Bool)
   }
-
-  func checkoutDidClickLink(url: URL) {
-    // Called when the buyer clicks a link within the checkout experience:
-    //  - email address (`mailto:`),
-    //  - telephone number (`tel:`),
-    //  - web (`http:`)
-    // and is being directed outside the application.
-  }
-
 }
 ```
+
+Completion events and other in-checkout messages flow through `CheckoutCommunicationProtocol` (UCP) — register handlers on a `CheckoutProtocol.Client` and pass it to `present(checkout:from:delegate:client:)`. See `Samples/MobileBuyIntegration` for a full example.
 
 ## Error handling
 
@@ -428,15 +405,9 @@ In the event of a checkout error occurring, the Checkout Kit _may_ attempt a ret
 There are some caveats to note when this scenario occurs:
 
 1. The checkout experience may look different to buyers. Though the kit will attempt to load any checkout customizations for the storefront, there is no guarantee they will show in recovery mode.
-2. The `checkoutDidComplete(event:)` will be emitted with partial data. Invocations will only receive the order ID via `event.orderDetails.id`.
+2. Completion events delivered via `CheckoutProtocol.complete` during recovery may contain partial data — typically only the order ID.
 
-Should you wish to opt-out of this fallback experience entirely, you can do so by adding a `shouldRecoverFromError(error:)` method to your delegate controller. Errors given to the `checkoutDidFail(error:)` lifecycle method, will contain an `isRecoverable` property by default indicating whether the request should be retried or not.
-
-```swift
-func shouldRecoverFromError(error: CheckoutError) {
-  return error.isRecoverable // default
-}
-```
+Errors given to `checkoutDidFail(error:)` carry an `isRecoverable` property indicating whether recovery will be attempted.
 
 ### `CheckoutError`
 
@@ -495,15 +466,7 @@ Certain payment providers finalize transactions by redirecting customers to exte
 
 See the [Universal Links guide](https://github.com/Shopify/checkout-kit/blob/main/platforms/swift/documentation/universal_links.md) for information on how to get started with adding support for Offsite Payments in your app.
 
-It is crucial for your app to be configured to handle URL clicks during the checkout process effectively. By default, the kit includes the following delegate method to manage these interactions. This code ensures that external links, such as HTTPS and deep links, are opened correctly by iOS.
-
-```swift
-public func checkoutDidClickLink(url: URL) {
-  if UIApplication.shared.canOpenURL(url) {
-    UIApplication.shared.open(url)
-  }
-}
-```
+External links opened from within checkout (HTTPS, deep links, `mailto:`, `tel:`) are forwarded to `UIApplication.shared.open(_:)` by the kit, so universal links and Offsite Payments redirects route back to your app automatically once the rest of the universal-links setup is in place.
 
 ## Accelerated Checkouts
 
