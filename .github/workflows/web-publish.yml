@@ -10,10 +10,10 @@ on:
         required: false
         type: string
       dry-run:
-        description: "Run the full pipeline + pack but skip the actual publish."
+        description: "Run the full pipeline + pack but skip the actual publish. Defaults to true for manual safety; uncheck to actually publish."
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -26,11 +26,16 @@ concurrency:
 jobs:
   publish:
     name: Publish @shopify/checkout-kit to npm
-    # Only run for web releases. Web tags are `web/X.Y.Z` to disambiguate from
-    # Swift's bare semver and Android's `android/X.Y.Z`.
+    # Only run when either:
+    #   - A GitHub Release tagged `web/X.Y.Z` is published (auto trigger), OR
+    #   - The workflow is manually dispatched from the `main` branch. The
+    #     branch lock prevents fat-fingering a publish from a feature branch
+    #     that hasn't been reviewed.
+    # Web tags are `web/X.Y.Z` to disambiguate from Swift's bare semver and
+    # Android's `android/X.Y.Z`.
     if: |
-      github.event_name == 'workflow_dispatch'
-      || startsWith(github.event.release.tag_name, 'web/')
+      (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'web/'))
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     environment:
       name: npm-web
       url: https://www.npmjs.com/package/@shopify/checkout-kit
@@ -69,6 +74,18 @@ jobs:
             exit 1
           fi
           echo "✓ Tag '$TAG_NAME' matches package.json version '$VERSION_FROM_PKG'."
+
+      - name: Verify version is not already published
+        run: |
+          set -euo pipefail
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          URL="https://registry.npmjs.org/${NAME}/${VERSION}"
+          if curl -fs "$URL" > /dev/null; then
+            echo "::error::${NAME}@${VERSION} is already published on npm. Bump platforms/web/package.json before re-running."
+            exit 1
+          fi
+          echo "::notice::${NAME}@${VERSION} is not yet on npm — safe to proceed."
 
       - name: Lint (typecheck + oxlint + format)
         run: pnpm lint
