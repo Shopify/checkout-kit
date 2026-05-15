@@ -1,8 +1,14 @@
 # Shopify Checkout Kit - Web
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/Shopify/checkout-kit/blob/main/LICENSE) [![npm latest](https://img.shields.io/npm/v/@shopify/checkout-kit/latest.svg?label=npm)](https://www.npmjs.com/package/@shopify/checkout-kit)
+[![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/Shopify/checkout-kit/blob/main/LICENSE) [![npm next](https://img.shields.io/npm/v/@shopify/checkout-kit/next.svg?label=npm%20%40next)](https://www.npmjs.com/package/@shopify/checkout-kit)
 
 <img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
+
+> [!WARNING]
+> **Alpha — early preview.** This software is an early preview and is **not**
+> production-ready. Stability is not guaranteed, and breaking changes may
+> occur in any release. Published under the `next` dist-tag — see
+> [Installation](#installation).
 
 **Shopify Checkout Kit** is a web component library that enables any website to
 present the world's highest converting, customizable, one-page checkout. The
@@ -52,15 +58,26 @@ Use the following steps to get started with adding it to your web application:
 
 ### Installation
 
+The package is currently in **pre-release**. There is no `latest` dist-tag
+published yet, so plain `pnpm add @shopify/checkout-kit` will fail with
+_no matching version_. Pin to the alpha explicitly, or follow the `next`
+dist-tag:
+
 ```sh
-pnpm add @shopify/checkout-kit
+# Pin to the current alpha (recommended for now — prereleases can change shape)
+pnpm add @shopify/checkout-kit@4.0.0-alpha.1
 
-# or using yarn
-yarn add @shopify/checkout-kit
+# Or track the latest prerelease via the `next` dist-tag
+pnpm add @shopify/checkout-kit@next
 
-# or using npm
-npm install @shopify/checkout-kit
+# The same works with npm:
+npm install @shopify/checkout-kit@4.0.0-alpha.1
+# or
+npm install @shopify/checkout-kit@next
 ```
+
+Once the first stable `4.0.0` ships, the standard `pnpm add @shopify/checkout-kit`
+(no version specifier) will work and pull from the `latest` dist-tag.
 
 ## Basic Usage
 
