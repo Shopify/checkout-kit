@@ -24,7 +24,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 // Types for this component are derived from the 2026-04-08 UCP embedded
 // checkout protocol. Embed payload shapes live in `./ucp-embed-types.ts`.
 
-import type { Checkout, EcReadyParams, ShopCash, UcpErrorResponse } from "./ucp-embed-types";
+import type {
+  Buyer,
+  Checkout,
+  CheckoutLineItem,
+  CheckoutMessage,
+  EcReadyParams,
+  OrderConfirmation,
+  ShopCash,
+  Total,
+  UcpErrorResponse,
+} from "./ucp-embed-types";
 
 // This component should follow the custom element conventions set out here:
 // https://github.com/Shopify/ui-api-design/tree/main/codex. In particular,
@@ -100,20 +110,20 @@ export interface CheckoutProperties {
   debug?: boolean | string;
 }
 
-// If I just used the raw Event class types here, the docs would output the entire documentation for `Event`
-// on every event type. This is kind of neat, but makes the pages huge, and doesn’t make it clear what fields
-// are actually important to the user. To get nice docs output, I instead created "*Docs" types that declare
-// what we actually want to show on the docs, and the implementation implements those interfaces in its types.
+// Docs-friendly event interfaces. Each carries the same `detail` shape as the
+// corresponding `CustomEvent<T>` subclass exported from `./checkout.ts`. They
+// exist so the generated API docs show what's on `event.detail` directly,
+// without dragging in the full `CustomEvent`/`Event` documentation.
 export interface CheckoutEvents {
   /**
    * Dispatched when checkout has started.
    */
-  "ec:start": EcStartEvent;
+  "checkout:start": CheckoutStartEvent;
 
   /**
    * Dispatched when the checkout was successfully completed.
    */
-  "ec:complete": EcCompleteEvent;
+  "checkout:complete": CheckoutCompleteEvent;
 
   /**
    * Dispatched when the checkout overlay is closed, either due to user action or
@@ -125,63 +135,98 @@ export interface CheckoutEvents {
    * Dispatched on a session-level fatal error. The host should tear down the
    * embedded context.
    */
-  "ec:error": EcErrorEvent;
+  "checkout:error": CheckoutErrorEvent;
 
   /**
    * Dispatched when the cart line items change.
    */
-  "ec:lineItemsChange": EcLineItemsChangeEvent;
+  "checkout:lineItemsChange": CheckoutLineItemsChangeEvent;
 
   /**
    * Dispatched when the buyer information changes.
    */
-  "ec:buyerChange": EcBuyerChangeEvent;
+  "checkout:buyerChange": CheckoutBuyerChangeEvent;
 
   /**
    * Dispatched when the totals change.
    */
-  "ec:totalsChange": EcTotalsChangeEvent;
+  "checkout:totalsChange": CheckoutTotalsChangeEvent;
 
   /**
    * Dispatched when checkout messages (warnings, errors, info) change.
    */
-  "ec:messagesChange": EcMessagesChangeEvent;
+  "checkout:messagesChange": CheckoutMessagesChangeEvent;
 }
 
-export interface CheckoutEvent {
-  target?: CheckoutElement;
+export interface CheckoutStartEvent {
+  type: "checkout:start";
+  detail: {
+    /** Initial checkout snapshot. */
+    checkout: Checkout;
+  };
 }
 
-export interface EcStartEvent extends CheckoutEvent {
-  type: "ec:start";
+export interface CheckoutCompleteEvent {
+  type: "checkout:complete";
+  detail: {
+    /** Final checkout snapshot. */
+    checkout: Checkout;
+    /** Order confirmation. */
+    order: OrderConfirmation;
+  };
 }
 
-export interface EcCompleteEvent extends CheckoutEvent {
-  type: "ec:complete";
-}
-
-export interface CheckoutCloseEvent extends CheckoutEvent {
+export interface CheckoutCloseEvent {
   type: "checkout:close";
+  detail: undefined;
 }
 
-export interface EcErrorEvent extends CheckoutEvent {
-  type: "ec:error";
+export interface CheckoutErrorEvent {
+  type: "checkout:error";
+  detail: {
+    /** Wire-shape error payload from the ECP `ec.error` notification. */
+    error: UcpErrorResponse;
+  };
 }
 
-export interface EcLineItemsChangeEvent extends CheckoutEvent {
-  type: "ec:lineItemsChange";
+export interface CheckoutLineItemsChangeEvent {
+  type: "checkout:lineItemsChange";
+  detail: {
+    /** Updated cart line items. */
+    lineItems: readonly CheckoutLineItem[];
+    /** Full checkout snapshot for handlers that want broader context. */
+    checkout: Checkout;
+  };
 }
 
-export interface EcBuyerChangeEvent extends CheckoutEvent {
-  type: "ec:buyerChange";
+export interface CheckoutBuyerChangeEvent {
+  type: "checkout:buyerChange";
+  detail: {
+    /** Updated buyer (may be undefined when buyer information is cleared). */
+    buyer: Buyer | undefined;
+    /** Full checkout snapshot for handlers that want broader context. */
+    checkout: Checkout;
+  };
 }
 
-export interface EcTotalsChangeEvent extends CheckoutEvent {
-  type: "ec:totalsChange";
+export interface CheckoutTotalsChangeEvent {
+  type: "checkout:totalsChange";
+  detail: {
+    /** Updated totals. */
+    totals: readonly Total[];
+    /** Full checkout snapshot for handlers that want broader context. */
+    checkout: Checkout;
+  };
 }
 
-export interface EcMessagesChangeEvent extends CheckoutEvent {
-  type: "ec:messagesChange";
+export interface CheckoutMessagesChangeEvent {
+  type: "checkout:messagesChange";
+  detail: {
+    /** Updated checkout-level messages (warnings, errors, info). */
+    messages: readonly CheckoutMessage[];
+    /** Full checkout snapshot for handlers that want broader context. */
+    checkout: Checkout;
+  };
 }
 
 export type TypedEventListener<Event> =
@@ -234,10 +279,13 @@ export interface CheckoutProtocolMessageMap {
 }
 
 export type {
+  Buyer,
   Checkout,
+  CheckoutLineItem,
   CheckoutMessage,
   EcReadyParams,
   OrderConfirmation,
   ShopCash,
+  Total,
   UcpErrorResponse,
 } from "./ucp-embed-types";

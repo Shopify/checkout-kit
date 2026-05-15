@@ -129,14 +129,14 @@ for (const swatch of swatches) {
 
 /** Dispatched by `ShopifyCheckout` (see `src/checkout.ts`). */
 const EVENT_TYPES = [
-  "ec:start",
-  "ec:complete",
+  "checkout:start",
+  "checkout:complete",
   "checkout:close",
-  "ec:error",
-  "ec:lineItemsChange",
-  "ec:buyerChange",
-  "ec:totalsChange",
-  "ec:messagesChange",
+  "checkout:error",
+  "checkout:lineItemsChange",
+  "checkout:buyerChange",
+  "checkout:totalsChange",
+  "checkout:messagesChange",
 ] as const;
 
 const RESPONDABLE_EVENTS = new Set<string>([]);
