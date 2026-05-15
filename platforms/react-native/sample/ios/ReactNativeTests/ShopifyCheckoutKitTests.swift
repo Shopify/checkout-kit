@@ -23,7 +23,7 @@
 
 import Foundation
 @testable import RNShopifyCheckoutKit
-@testable import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import XCTest
 
 class ShopifyCheckoutKitTests: XCTestCase {
@@ -41,10 +41,10 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     private func resetShopifyCheckoutKitDefaults() {
-        ShopifyCheckoutSheetKit.configuration.preloading = Configuration.Preloading(enabled: true)
-        ShopifyCheckoutSheetKit.configuration.colorScheme = .automatic
-        ShopifyCheckoutSheetKit.configuration.closeButtonTintColor = nil
-        ShopifyCheckoutSheetKit.configuration.logLevel = LogLevel.error
+        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configuration.colorScheme = .automatic
+        ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
+        ShopifyCheckoutKit.configuration.logLevel = LogLevel.error
     }
 
     private func getShopifyCheckoutKit() -> RCTShopifyCheckoutKit {
@@ -76,10 +76,10 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
         shopifyCheckoutKit.setConfig(configuration)
 
-        XCTAssertTrue(ShopifyCheckoutSheetKit.configuration.preloading.enabled)
-        XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.colorScheme, .dark)
-        XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.tintColor, UIColor(hex: "#FF0000"))
-        XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.backgroundColor, UIColor(hex: "#0000FF"))
+        XCTAssertTrue(ShopifyCheckoutKit.configuration.preloading.enabled)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .dark)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, UIColor(hex: "#FF0000"))
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, UIColor(hex: "#0000FF"))
     }
 
     func testConfigureWithPartialConfig() {
@@ -89,7 +89,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
         shopifyCheckoutKit.setConfig(configuration)
 
-        XCTAssertFalse(ShopifyCheckoutSheetKit.configuration.preloading.enabled)
+        XCTAssertFalse(ShopifyCheckoutKit.configuration.preloading.enabled)
     }
 
     func testConfigureWithInvalidColors() {
@@ -104,7 +104,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let defaultColorFallback = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
         shopifyCheckoutKit.setConfig(configuration)
 
-        XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.tintColor, defaultColorFallback)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, defaultColorFallback)
     }
 
   func testConfigureWithCloseButtonColor() {
@@ -118,7 +118,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.closeButtonTintColor, UIColor(hex: "#FF0000"))
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, UIColor(hex: "#FF0000"))
   }
 
   func testConfigureWithInvalidCloseButtonColor() {
@@ -133,7 +133,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     let defaultColorFallback = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.closeButtonTintColor, defaultColorFallback)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, defaultColorFallback)
   }
 
   func testConfigureWithoutCloseButtonColor() {
@@ -148,7 +148,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     shopifyCheckoutKit.setConfig(configuration)
 
     // closeButtonTintColor should remain nil when not specified (uses system default)
-    XCTAssertNil(ShopifyCheckoutSheetKit.configuration.closeButtonTintColor)
+    XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
   }
 
   func testGetConfigIncludesCloseButtonColor() {
@@ -179,7 +179,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.logLevel, LogLevel.debug)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.debug)
   }
 
   func testConfigureWithLogLevelError() {
@@ -189,7 +189,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.logLevel, LogLevel.error)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.error)
   }
 
   func testConfigureWithLogLevelNone() {
@@ -199,7 +199,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.logLevel, LogLevel.none)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.none)
   }
 
   func testConfigureWithInvalidLogLevelDefaultsToError() {
@@ -209,7 +209,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.logLevel, LogLevel.error)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.error)
   }
 
   func testLogLevelHandlesUppercaseDebug() {
@@ -219,7 +219,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.logLevel, LogLevel.debug)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.debug)
   }
 
   func testLogLevelHandlesMixedCaseDebug() {
@@ -229,7 +229,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.logLevel, LogLevel.debug)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.debug)
   }
 
   func testLogLevelHandlesUppercaseError() {
@@ -239,7 +239,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.logLevel, LogLevel.error)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.error)
   }
 
   func testSetConfigWithoutLogLevelDefaultsToError() {
@@ -249,7 +249,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     shopifyCheckoutKit.setConfig(configuration)
 
-    XCTAssertEqual(ShopifyCheckoutSheetKit.configuration.logLevel, LogLevel.error)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.error)
   }
 
   func testGetConfigIncludesLogLevel() {
@@ -319,6 +319,9 @@ class ShopifyCheckoutKitTests: XCTestCase {
     XCTAssertEqual(result?["logLevel"] as? String, "error")
   }
 
+    // TODO: re-enable when iOS CheckoutDelegate (or equivalent) lands upstream —
+    // parallels Android's DefaultCheckoutEventProcessor.onCheckoutCanceled / onCheckoutFailed.
+    /*
     /// checkoutDidComplete
     func testCheckoutDidCompleteSendsEvent() {
         let event = CheckoutCompletedEvent(
@@ -394,6 +397,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         // swiftlint:disable:next force_cast
         XCTAssertTrue((mock.checkoutSheet as! MockCheckout).dismissWasCalled)
     }
+    */
 
     private func mockSendEvent(eventName: String) -> RCTShopifyCheckoutKitMock {
         let mock = RCTShopifyCheckoutKitMock()

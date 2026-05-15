@@ -3,17 +3,19 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-. "$SCRIPT_DIR/android_sccache"
 
 args=()
+use_local=0
 for arg in "$@"; do
   if [ "$arg" = "--local" ]; then
-    export USE_LOCAL_SDK=1
+    use_local=1
   else
     args+=("$arg")
   fi
 done
 
-"$SCRIPT_DIR/../../scripts/publish_android_snapshot"
+if [ "$use_local" = "1" ]; then
+  (cd "$SCRIPT_DIR/../.." && pnpm run pod-install -- --local)
+fi
 
-exec react-native run-android "${args[@]}"
+exec react-native run-ios "${args[@]}"

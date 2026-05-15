@@ -47,10 +47,7 @@ import {
   ShopifyCheckoutProvider,
   useShopifyCheckout,
 } from '@shopify/checkout-kit-react-native';
-import type {
-  CheckoutCompletedEvent,
-  CheckoutException,
-} from '@shopify/checkout-kit-react-native';
+import type {CheckoutException} from '@shopify/checkout-kit-react-native';
 import {ConfigProvider, useConfig} from './context/Config';
 import {BuyerIdentityMode} from './auth/types';
 import {
@@ -216,13 +213,6 @@ function AppWithContext({children}: PropsWithChildren) {
       eventHandlers.onCancel?.();
     });
 
-    const completed = shopify.addEventListener(
-      'completed',
-      (event: CheckoutCompletedEvent) => {
-        eventHandlers.onComplete?.(event);
-      },
-    );
-
     const error = shopify.addEventListener(
       'error',
       (error: CheckoutException) => {
@@ -231,7 +221,6 @@ function AppWithContext({children}: PropsWithChildren) {
     );
 
     return () => {
-      completed?.remove();
       close?.remove();
       error?.remove();
     };

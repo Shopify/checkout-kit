@@ -3,18 +3,18 @@
   "version": "0.6.0",
   "private": true,
   "scripts": {
-    "android": "sh ./scripts/android",
+    "android": "bash ./scripts/android",
     "clean": "rm -rf node_modules ios/build ios/pods vendor",
     "clean:android": "(cd android && ./gradlew clean)",
-    "build:android": "sh ./scripts/build_android",
-    "release:android": "sh ./scripts/release_android",
+    "build:android": "bash ./scripts/build_android",
+    "release:android": "bash ./scripts/release_android",
     "build:ios": "sh ./scripts/build_ios",
     "lint": "pnpm run typecheck && eslint .",
-    "ios": "react-native run-ios",
+    "ios": "bash ./scripts/ios",
     "start": "react-native start -- --reset-cache",
     "typecheck": "tsc --noEmit",
     "test:ios": "sh ./scripts/test_ios",
-    "test:android": "sh ./scripts/test_android"
+    "test:android": "bash ./scripts/test_android"
   },
   "dependencies": {
     "@apollo/client": "^3.13.9",

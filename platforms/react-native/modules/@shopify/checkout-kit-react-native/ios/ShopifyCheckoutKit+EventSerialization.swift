@@ -22,10 +22,10 @@
  */
 
 import Foundation
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 
 /**
- * Shared event serialization utilities for converting ShopifyCheckoutSheetKit events
+ * Shared event serialization utilities for converting ShopifyCheckoutKit events
  * to React Native compatible dictionaries.
  */
 internal enum ShopifyEventSerialization {
@@ -57,13 +57,6 @@ internal enum ShopifyEventSerialization {
             print("Failed to convert string to JSON: \(error)", value ?? "nil")
             return [:]
         }
-    }
-
-    /**
-     * Converts a CheckoutCompletedEvent to a React Native compatible dictionary.
-     */
-    static func serialize(checkoutCompletedEvent event: CheckoutCompletedEvent) -> [String: Any] {
-        return encodeToJSON(from: event)
     }
 
     static func serialize(clickEvent url: URL) -> [String: URL] {
@@ -102,14 +95,6 @@ internal enum ShopifyEventSerialization {
                     "recoverable": recoverable
                 ]
             }
-
-        case let .configurationError(message, code, recoverable):
-            return [
-                "__typename": "ConfigurationError",
-                "message": message,
-                "code": code.rawValue,
-                "recoverable": recoverable
-            ]
 
         case let .sdkError(underlying, recoverable):
             return [

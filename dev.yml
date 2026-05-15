@@ -221,11 +221,35 @@ commands:
         aliases: [s]
         run: cd platforms/react-native && pnpm sample start --reset-cache
       ios:
-        desc: Run the iOS sample app in the simulator
-        run: cd platforms/react-native && pnpm sample ios
+        desc: Run the iOS sample app in the simulator.
+        long_desc: |
+          Builds and runs the iOS sample app on a simulator.
+
+          --local
+            Build against in-repo Swift SDK sources (runs pod install first).
+        syntax:
+          optional: --local
+        run: cd platforms/react-native && pnpm sample ios "$@"
       android:
-        desc: Run the Android sample app in the emulator
-        run: cd platforms/react-native && pnpm sample android
+        desc: Run the Android sample app in the emulator.
+        long_desc: |
+          Builds and runs the Android sample app on an emulator.
+
+          --local
+            Build against in-repo SDK sources (publishes a local Maven snapshot first).
+        syntax:
+          optional: --local
+        run: cd platforms/react-native && pnpm sample android "$@"
+      pod-install:
+        desc: Install CocoaPods for the iOS sample.
+        long_desc: |
+          Runs pod install for the iOS sample app.
+
+          --local
+            Wire the Podfile against in-repo Swift SDK sources.
+        syntax:
+          optional: --local
+        run: cd platforms/react-native && pnpm run pod-install -- "$@"
       clean:
         desc: Remove generated directories and stop sccache
         run: |

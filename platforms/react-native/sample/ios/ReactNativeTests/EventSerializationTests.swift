@@ -23,7 +23,7 @@
 
 import Foundation
 @testable import RNShopifyCheckoutKit
-import ShopifyCheckoutSheetKit
+import ShopifyCheckoutKit
 import XCTest
 
 @available(iOS 16.0, *)

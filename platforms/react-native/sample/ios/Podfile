@@ -21,6 +21,14 @@ end
 target 'ReactNative' do
   config = use_native_modules!
 
+  use_local_sdk = ENV['USE_LOCAL_SDK'] == '1'
+
+  if use_local_sdk
+    shopify_kit_path = "../../../../"
+    pod "ShopifyCheckoutKit",                       :path => shopify_kit_path
+    pod "ShopifyCheckoutKit/AcceleratedCheckouts",  :path => shopify_kit_path
+  end
+
   pod "RNShopifyCheckoutKit", :path => "../../modules/@shopify/checkout-kit-react-native"
 
   use_react_native!(

@@ -5,6 +5,17 @@ set -ex
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/android_sccache"
 
+args=()
+for arg in "$@"; do
+  if [ "$arg" = "--local" ]; then
+    export USE_LOCAL_SDK=1
+  else
+    args+=("$arg")
+  fi
+done
+
+"$SCRIPT_DIR/../../scripts/publish_android_snapshot"
+
 cd android
 
-./gradlew assembleDebug --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a
+./gradlew assembleDebug --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a "${args[@]}"

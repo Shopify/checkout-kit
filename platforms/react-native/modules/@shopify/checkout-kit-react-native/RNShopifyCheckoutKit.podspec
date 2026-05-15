@@ -16,8 +16,16 @@ Pod::Spec.new do |s|
   s.source_files = "ios/*.{h,m,mm,swift}"
 
   s.dependency "React-Core"
-  s.dependency "ShopifyCheckoutSheetKit", "~> 3.8.0"
-  s.dependency "ShopifyCheckoutSheetKit/AcceleratedCheckouts", "~> 3.8.0"
+
+  use_local_sdk = ENV['USE_LOCAL_SDK'] == '1'
+
+  if use_local_sdk
+    s.dependency "ShopifyCheckoutKit"
+    s.dependency "ShopifyCheckoutKit/AcceleratedCheckouts"
+  else
+    s.dependency "ShopifyCheckoutKit", "~> 0.0.0"
+    s.dependency "ShopifyCheckoutKit/AcceleratedCheckouts", "~> 0.0.0"
+  end
 
   install_modules_dependencies(s)
 end

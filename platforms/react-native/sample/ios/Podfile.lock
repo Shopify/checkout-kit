@@ -2605,8 +2605,8 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - ShopifyCheckoutSheetKit (~> 3.8.0)
-    - ShopifyCheckoutSheetKit/AcceleratedCheckouts (~> 3.8.0)
+    - ShopifyCheckoutKit
+    - ShopifyCheckoutKit/AcceleratedCheckouts
     - SocketRocket
     - Yoga
   - RNVectorIcons (10.3.0):
@@ -2638,11 +2638,11 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - ShopifyCheckoutSheetKit (3.8.0):
-    - ShopifyCheckoutSheetKit/Core (= 3.8.0)
-  - ShopifyCheckoutSheetKit/AcceleratedCheckouts (3.8.0):
-    - ShopifyCheckoutSheetKit/Core
-  - ShopifyCheckoutSheetKit/Core (3.8.0)
+  - ShopifyCheckoutKit (3.8.0):
+    - ShopifyCheckoutKit/Core (= 3.8.0)
+  - ShopifyCheckoutKit/AcceleratedCheckouts (3.8.0):
+    - ShopifyCheckoutKit/Core
+  - ShopifyCheckoutKit/Core (3.8.0)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
 
@@ -2732,12 +2732,13 @@ DEPENDENCIES:
   - RNScreens (from `../../node_modules/react-native-screens`)
   - "RNShopifyCheckoutKit (from `../../modules/@shopify/checkout-kit-react-native`)"
   - RNVectorIcons (from `../../node_modules/react-native-vector-icons`)
+  - ShopifyCheckoutKit (from `../../../../`)
+  - ShopifyCheckoutKit/AcceleratedCheckouts (from `../../../../`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
   trunk:
-    - ShopifyCheckoutSheetKit
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -2910,6 +2911,8 @@ EXTERNAL SOURCES:
     :path: "../../modules/@shopify/checkout-kit-react-native"
   RNVectorIcons:
     :path: "../../node_modules/react-native-vector-icons"
+  ShopifyCheckoutKit:
+    :path: "../../../../"
   Yoga:
     :path: "../../node_modules/react-native/ReactCommon/yoga"
 
@@ -2996,12 +2999,12 @@ SPEC CHECKSUMS:
   RNGestureHandler: eeb622199ef1fb3a076243131095df1c797072f0
   RNReanimated: 237d420b7bb4378ef1dacc7d7a5c674fddb4b5d2
   RNScreens: 3fc29af06302e1f1c18a7829fe57cbc2c0259912
-  RNShopifyCheckoutKit: 68b0b757093fdc6fc26282d4482cf7806c126359
+  RNShopifyCheckoutKit: 20d4b7d715f33326ec27e73dbf0e22031d248067
   RNVectorIcons: be4d047a76ad307ffe54732208fb0498fcb8477f
-  ShopifyCheckoutSheetKit: 5253ca4da4c4f31069286509693930d02b4150d8
+  ShopifyCheckoutKit: 066d577fd5fc220cd07b7027ac85c41c870533a6
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: a742cc68e8366fcfc681808162492bc0aa7a9498
 
-PODFILE CHECKSUM: 28ea9102024c9bb598fab013ab9b79a2b233064d
+PODFILE CHECKSUM: b7de0f54ab3d6982ef980cd35ebbc624c6b8a80f
 
 COCOAPODS: 1.15.2

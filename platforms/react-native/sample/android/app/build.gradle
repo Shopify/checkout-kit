@@ -153,6 +153,11 @@ android {
   }
 }
 
+def useLocalSdk = (System.getenv("USE_LOCAL_SDK") ?: "0") == "1"
+def shopifySdkArtifact = useLocalSdk
+    ? "com.shopify:checkout-kit:1.0.0"
+    : "com.shopify:checkout-kit:0.0.0"
+
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
@@ -165,7 +170,7 @@ dependencies {
     androidTestImplementation "org.mockito:mockito-android:4.11.0"
     testImplementation "org.mockito:mockito-inline:5.2.0"
     testImplementation "org.assertj:assertj-core:3.27.6"
-    testImplementation("com.shopify:checkout-sheet-kit:${SHOPIFY_CHECKOUT_SDK_VERSION}")
+    testImplementation(shopifySdkArtifact)
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
