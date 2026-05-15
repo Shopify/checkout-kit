@@ -18,6 +18,10 @@ inputs:
     description: Working directory in which to run pnpm install
     required: false
     default: .
+  ignore-scripts:
+    description: Pass --ignore-scripts to pnpm install. Set to "true" in privileged contexts (e.g. publish workflows) to prevent dependency postinstall scripts from running with elevated permissions.
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -38,4 +42,11 @@ runs:
     - name: Install dependencies
       working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: pnpm install --frozen-lockfile
+      env:
+        IGNORE_SCRIPTS: ${{ inputs.ignore-scripts }}
+      run: |
+        if [ "$IGNORE_SCRIPTS" = "true" ]; then
+          pnpm install --frozen-lockfile --ignore-scripts
+        else
+          pnpm install --frozen-lockfile
+        fi
