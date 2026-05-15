@@ -138,14 +138,14 @@ if (!customElements.get('shopify-checkout')) {
 To present checkout you first need a checkout URL. The most common way is to
 use the [Storefront GraphQL API](https://shopify.dev/docs/api/storefront) to
 assemble a cart (via `cartCreate` and related mutations) and read the
-[`checkoutUrl`](https://shopify.dev/docs/api/storefront/2024-10/objects/Cart#field-cart-checkouturl)
+[`checkoutUrl`](https://shopify.dev/docs/api/storefront/2026-04/objects/Cart#field-cart-checkouturl)
 field. Alternatively, a
 [cart permalink](https://help.shopify.com/en/manual/products/details/cart-permalink)
 can be provided.
 
 ```ts
 const response = await fetch(
-  'https://your-store.myshopify.com/api/2024-10/graphql.json',
+  'https://your-store.myshopify.com/api/2026-04/graphql.json',
   {
     method: 'POST',
     headers: {
@@ -154,20 +154,44 @@ const response = await fetch(
     },
     body: JSON.stringify({
       query: /* GraphQL */ `
-        query CheckoutUrl($id: ID!) {
-          cart(id: $id) {
-            checkoutUrl
+        mutation CreateCart($lines: [CartLineInput!]) {
+          cartCreate(input: {lines: $lines}) {
+            cart {
+              id
+              checkoutUrl
+            }
+            userErrors {
+              field
+              message
+            }
           }
         }
       `,
-      variables: {id: 'gid://shopify/Cart/...'},
+      variables: {
+        lines: [{merchandiseId: 'gid://shopify/ProductVariant/...', quantity: 1}],
+      },
     }),
   },
 );
 
-const {data} = await response.json();
-checkout.src = data.cart.checkoutUrl;
+if (!response.ok) {
+  throw new Error(`Storefront API request failed: ${response.status}`);
+}
+
+const {data, errors} = await response.json();
+if (errors?.length || data.cartCreate.userErrors.length) {
+  throw new Error('Could not create cart');
+}
+
+checkout.src = data.cartCreate.cart.checkoutUrl;
 ```
+
+For production use, see the
+[Storefront API GraphiQL Explorer](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started)
+for schema exploration and the
+[`cartCreate`](https://shopify.dev/docs/api/storefront/2026-04/mutations/cartCreate)
+mutation reference for the full input shape (buyer identity, attributes,
+discount codes, delivery preferences, etc.).
 
 > [!IMPORTANT]
 > `src` must be an `https:` URL. The component drops invalid or non-HTTPS
@@ -290,6 +314,23 @@ checkout.addEventListener('checkout:totalsChange', (event) => {
 
 checkout.addEventListener('checkout:close', () => {
   router.back();
+});
+```
+
+Reach for `event.detail.checkout` when a handler needs fields beyond the
+named slice. It carries the full UCP `Checkout` snapshot at the moment the
+event was dispatched. For example, rendering an inline cart summary on
+`checkout:start` requires line items, totals, and currency together:
+
+```ts
+checkout.addEventListener('checkout:start', (event) => {
+  const {checkout: snapshot} = event.detail;
+  loadingSpinner.hide();
+  cartSummary.render({
+    currency: snapshot.currency,
+    items: snapshot.line_items,
+    totals: snapshot.totals,
+  });
 });
 ```
 

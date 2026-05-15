@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 import { describe, expect, it } from "vitest";
 
-import { createTemplate, css, html, safe } from "./utils";
+import { createTemplate, css, html, safe, type SafeMarkup } from "./utils";
 
 describe("safe", () => {
   it("returns the input unchanged at runtime", () => {
@@ -55,6 +55,23 @@ describe("html / css tagged templates", () => {
   it("css is the same function as html", () => {
     expect(css).toBe(html);
   });
+
+  describe("unsafe interpolation", () => {
+    it("rejects raw strings at the type level", () => {
+      const raw = "<script>alert(1)</script>";
+      // @ts-expect-error — raw strings must go through `safe()` first.
+      const result = html`prefix ${raw} suffix`;
+      // The directive above asserts the compile-time guard. At runtime the
+      // call still succeeds; this assertion exists so the test exercises
+      // something other than the type-system check.
+      expect(typeof result).toBe("string");
+    });
+
+    it("does not sanitize values at runtime if the type system is bypassed", () => {
+      const escaped = "<script>alert(1)</script>" as unknown as SafeMarkup;
+      expect(html`prefix ${escaped} suffix`).toBe("prefix <script>alert(1)</script> suffix");
+    });
+  });
 });
 
 describe("createTemplate", () => {
@@ -63,14 +80,14 @@ describe("createTemplate", () => {
     expect(template).toBeInstanceOf(HTMLTemplateElement);
     const div = template.content.querySelector("div");
     expect(div).toBeTruthy();
-    expect(div?.classList.contains("hi")).toBe(true);
-    expect(div?.textContent).toBe("hi");
+    expect(div!.classList.contains("hi")).toBe(true);
+    expect(div!.textContent).toBe("hi");
   });
 
   it("clones to a live tree when content is appended", () => {
     const template = createTemplate(html`<span>cloned</span>`);
     const host = document.createElement("div");
     host.append(template.content.cloneNode(true));
-    expect(host.querySelector("span")?.textContent).toBe("cloned");
+    expect(host.querySelector("span")!.textContent).toBe("cloned");
   });
 });

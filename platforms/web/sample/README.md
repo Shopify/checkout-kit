@@ -2,8 +2,8 @@
 
 A development harness for the `<shopify-checkout>` web component. It imports
 the same entry as published consumers (`@shopify/checkout-kit`, aliased to
-`../src/index.ts` in dev), registers the custom element, and logs `ec:*` and
-`checkout:close` events.
+`../src/index.ts` in dev), registers the custom element, and logs `checkout:*`
+events.
 
 ## Run locally
 

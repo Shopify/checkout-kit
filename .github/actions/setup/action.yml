@@ -32,7 +32,7 @@ runs:
         package_json_file: ${{ inputs.package-json-file }}
 
     - name: Setup Node.js
-      uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       with:
         node-version-file: ${{ inputs.node-version-file }}
         registry-url: 'https://registry.npmjs.org'
