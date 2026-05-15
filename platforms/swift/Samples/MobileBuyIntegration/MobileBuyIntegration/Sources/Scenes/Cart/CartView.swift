@@ -280,9 +280,9 @@ struct CartLines: View {
                                             CartManager.shared.cart = cart
                                             updating = nil
 
-                                            if let checkoutUrl = cart.checkoutURL {
-                                                ShopifyCheckoutKit.preload(checkout: checkoutUrl)
-                                            }
+                                            // if let checkoutUrl = cart.checkoutURL {
+                                            //     ShopifyCheckoutKit.preload(checkout: checkoutUrl)
+                                            // }
                                         }
                                     },
                                     label: {
