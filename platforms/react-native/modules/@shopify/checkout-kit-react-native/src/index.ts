@@ -2,23 +2,29 @@ import {PermissionsAndroid, Platform} from 'react-native';
 import type {PermissionStatus} from 'react-native';
 import RNShopifyCheckoutKit from './specs/NativeShopifyCheckoutKit';
 import {ShopifyCheckoutProvider, useShopifyCheckout} from './context';
-import {ApplePayContactField, ColorScheme, LogLevel} from './index.d';
+import {ApplePayContactField, ColorScheme, LogLevel} from './enums';
 import {
   DispatchEventParityError,
-  isSdkLifecycleEventType,
   verifyDispatchEventParity,
-  type SdkLifecycleEventType,
 } from './dispatch-events';
+import {coerceConfigurationResult} from './configuration';
+import {
+  createPresentDispatcher,
+  LifecycleEventParseError,
+} from './present-dispatcher';
 import type {
   AcceleratedCheckoutConfiguration,
+  AndroidAutomaticColors,
+  AndroidColors,
   Configuration,
   Features,
   GeolocationRequestEvent,
+  IosColors,
   PresentCallbacks,
   ShopifyCheckoutKit,
 } from './index.d';
-import {AcceleratedCheckoutWallet} from './index.d';
-import type {CheckoutException, CheckoutNativeError} from './errors.d';
+import {AcceleratedCheckoutWallet} from './enums';
+import type {CheckoutException} from './errors';
 import {
   CheckoutExpiredError,
   CheckoutClientError,
@@ -27,8 +33,8 @@ import {
   InternalError,
   CheckoutNativeErrorType,
   GenericError,
-} from './errors.d';
-import {CheckoutErrorCode} from './errors.d';
+} from './errors';
+import {CheckoutErrorCode} from './errors';
 import {
   ApplePayLabel,
   ApplePayStyle,
@@ -37,22 +43,21 @@ import type {
   AcceleratedCheckoutButtonsProps,
   RenderStateChangeEvent,
 } from './components/AcceleratedCheckoutButtons';
+import {CheckoutProtocol} from './protocol';
+import type {
+  Checkout,
+  CheckoutProtocolPayloads,
+  ProtocolHandlers,
+} from './protocol';
 
 const defaultFeatures: Features = {
   handleGeolocationRequests: true,
 };
 
-// TurboModule codegen doesn't support TypeScript string literal unions or
-// enums — spec types collapse to plain `string`. These sets are used by the
-// coercion helpers below to narrow the string back to the consumer-facing
-// enum, falling back to a safe default if native returns an unknown value.
-const colorSchemeValues: ReadonlySet<string> = new Set(
-  Object.values(ColorScheme),
-);
-const logLevelValues: ReadonlySet<string> = new Set(Object.values(LogLevel));
-
 class ShopifyCheckout implements ShopifyCheckoutKit {
   private features: Features;
+
+  private dispatchSubscription?: {remove: () => void};
 
   private _acceleratedCheckoutsReady = false;
 
@@ -95,6 +100,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * Dismisses the currently displayed checkout sheet
    */
   public dismiss(): void {
+    this.releaseDispatchSubscription();
     RNShopifyCheckoutKit.dismiss();
   }
 
@@ -102,13 +108,42 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * Presents the checkout sheet for a given checkout URL.
    *
    * Exactly one of `callbacks.onClose` or `callbacks.onFail` fires per
-   * call, after which the native bridge releases both handles.
+   * call, after which the per-presentation dispatch subscription is released.
    *
    * @param checkoutUrl The URL of the checkout to display
    * @param callbacks Optional per-call SDK callbacks
    */
-  public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
-    RNShopifyCheckoutKit.present(checkoutUrl, this.buildDispatcher(callbacks));
+  public present(
+    checkoutUrl: string,
+    callbacks?: PresentCallbacks,
+    protocol?: ProtocolHandlers,
+  ): void {
+    this.releaseDispatchSubscription();
+
+    const {dispatcher, subscribedMethods} = createPresentDispatcher({
+      callbacks,
+      protocol,
+      handleDefaultGeolocationRequests: this.featureEnabled(
+        'handleGeolocationRequests',
+      ),
+      handleDefaultGeolocationRequest: () =>
+        this.handleDefaultGeolocationRequest(),
+      respondToGeolocationRequest: allow =>
+        this.respondToGeolocationRequest(allow),
+    });
+
+    if (dispatcher) {
+      this.dispatchSubscription = RNShopifyCheckoutKit.onDispatch(
+        envelopeJson => {
+          const result = dispatcher(envelopeJson);
+          if (result.terminal) {
+            this.releaseDispatchSubscription();
+          }
+        },
+      );
+    }
+
+    RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods);
   }
 
   /**
@@ -116,7 +151,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * @returns The current Configuration
    */
   public getConfig(): Configuration {
-    return this.coerceConfigurationResult(RNShopifyCheckoutKit.getConfig());
+    return coerceConfigurationResult(RNShopifyCheckoutKit.getConfig());
   }
 
   /**
@@ -137,7 +172,9 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * Currently a no-op — retained as part of the public API for forward
    * compatibility with future protocol-client subscriptions.
    */
-  public teardown() {}
+  public teardown() {
+    this.releaseDispatchSubscription();
+  }
 
   /**
    * Configure AcceleratedCheckouts for Shop Pay and Apple Pay buttons
@@ -265,6 +302,11 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     return this.features[feature] ?? true;
   }
 
+  private releaseDispatchSubscription(): void {
+    this.dispatchSubscription?.remove();
+    this.dispatchSubscription = undefined;
+  }
+
   /**
    * Resolves the pending Android WebView geolocation permission request.
    * This does not request OS location permissions; callers should check
@@ -273,115 +315,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   private respondToGeolocationRequest(allow: boolean): void {
     if (Platform.OS === 'android') {
       RNShopifyCheckoutKit.respondToGeolocationRequest?.(allow);
-    }
-  }
-
-  /**
-   * Builds the single per-call dispatcher passed to the native bridge.
-   * Returns null when there is nothing for the bridge to deliver back —
-   * no user callbacks and no default-handler responsibilities — so the
-   * native side can skip serializing envelopes.
-   */
-  private buildDispatcher(
-    callbacks: PresentCallbacks | undefined,
-  ): ((envelopeJson: string) => void) | null {
-    const needsDefaultGeolocation =
-      Platform.OS === 'android' &&
-      this.featureEnabled('handleGeolocationRequests');
-
-    if (!callbacks && !needsDefaultGeolocation) {
-      return null;
-    }
-
-    return (envelopeJson: string) => {
-      let envelope: unknown;
-      try {
-        envelope = JSON.parse(envelopeJson);
-      } catch {
-        logParseError('envelope is not valid JSON', envelopeJson);
-        return;
-      }
-
-      if (!isPlainObject(envelope) || typeof envelope.type !== 'string') {
-        logParseError(
-          'envelope is missing a string `type` discriminator',
-          envelopeJson,
-        );
-        return;
-      }
-
-      const {type, payload} = envelope;
-
-      if (isSdkLifecycleEventType(type)) {
-        this.routeSdkLifecycleEvent(
-          type,
-          payload,
-          envelopeJson,
-          callbacks,
-          needsDefaultGeolocation,
-        );
-        return;
-      }
-
-      // Loud default. The parity check at construction time should have
-      // already caught a native/JS mismatch — hitting this branch means
-      // either the bundled native module emitted something we do not
-      // recognise, or we are missing a handler for a future event.
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[ShopifyCheckoutKit] Ignoring dispatch envelope with unknown type "${type}". ` +
-          'The native module emitted an event the JS layer does not know how to handle. ' +
-          'Confirm both sides are on compatible versions.',
-      );
-    };
-  }
-
-  /**
-   * Routes a validated SDK lifecycle envelope to the matching user
-   * callback (or the default Android geolocation handler). Payload
-   * shapes are validated per case before invoking consumer code so a
-   * native-side regression surfaces as a `LifecycleEventParseError`
-   * with the offending raw envelope attached.
-   */
-  private routeSdkLifecycleEvent(
-    type: SdkLifecycleEventType,
-    payload: unknown,
-    envelopeJson: string,
-    callbacks: PresentCallbacks | undefined,
-    needsDefaultGeolocation: boolean,
-  ): void {
-    switch (type) {
-      case 'close':
-        callbacks?.onClose?.();
-        return;
-      case 'fail': {
-        const failPayload = validateFailPayload(payload);
-        if (failPayload == null) {
-          logParseError('`fail` envelope payload is malformed', envelopeJson);
-          return;
-        }
-        callbacks?.onFail?.(this.parseCheckoutError(failPayload));
-        return;
-      }
-      case 'geolocationRequest': {
-        const geoPayload = validateGeolocationRequestPayload(payload);
-        if (geoPayload == null) {
-          logParseError(
-            '`geolocationRequest` envelope payload is malformed',
-            envelopeJson,
-          );
-          return;
-        }
-        if (callbacks?.onGeolocationRequest) {
-          callbacks.onGeolocationRequest({
-            ...geoPayload,
-            respond: allow => this.respondToGeolocationRequest(allow),
-          });
-        } else if (needsDefaultGeolocation) {
-          this.handleDefaultGeolocationRequest();
-        }
-        return;
-      }
     }
   }
 
@@ -415,121 +348,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     return status === 'granted';
   }
 
-  /**
-   * Coerces a native Configuration result into the consumer-facing
-   * Configuration type.
-   *
-   * The TurboModule codegen spec can only express primitive types — string
-   * literal unions and TypeScript enums collapse to plain `string` at the
-   * bridge boundary. On the JS side consumers expect the typed `ColorScheme`
-   * and `LogLevel` enums, so we coerce those two fields here. The rest of
-   * the rest of the payload passes through unchanged.
-   */
-  private coerceConfigurationResult(
-    raw: ReturnType<typeof RNShopifyCheckoutKit.getConfig>,
-  ): Configuration {
-    return {
-      ...raw,
-      logLevel: this.coerceLogLevel(raw.logLevel),
-      colorScheme: this.coerceColorScheme(raw.colorScheme),
-    } as Configuration;
-  }
-
-  /**
-   * Narrows a raw string from the native bridge to the ColorScheme enum.
-   * Falls back to `automatic` if the native side returns an unrecognised
-   * value (e.g. future SDK version adds a new scheme).
-   */
-  private coerceColorScheme(value: string): ColorScheme {
-    return colorSchemeValues.has(value)
-      ? (value as ColorScheme)
-      : ColorScheme.automatic;
-  }
-
-  /**
-   * Narrows a raw string from the native bridge to the LogLevel enum.
-   * Falls back to `error` (the safest default) on unrecognised values.
-   */
-  private coerceLogLevel(value: string): LogLevel {
-    return logLevelValues.has(value) ? (value as LogLevel) : LogLevel.error;
-  }
-
-  /**
-   * Converts native checkout errors into appropriate error class instances
-   * @param exception The native error to parse
-   * @returns Appropriate CheckoutException instance
-   */
-  private parseCheckoutError(
-    exception: CheckoutNativeError,
-  ): CheckoutException {
-    switch (exception?.__typename) {
-      case CheckoutNativeErrorType.InternalError:
-        return new InternalError(exception);
-      case CheckoutNativeErrorType.ConfigurationError:
-        return new ConfigurationError(exception);
-      case CheckoutNativeErrorType.CheckoutClientError:
-        return new CheckoutClientError(exception);
-      case CheckoutNativeErrorType.CheckoutHTTPError:
-        return new CheckoutHTTPError(exception);
-      case CheckoutNativeErrorType.CheckoutExpiredError:
-        return new CheckoutExpiredError(exception);
-      default:
-        return new GenericError(exception);
-    }
-  }
-}
-
-export class LifecycleEventParseError extends Error {
-  constructor(message?: string, options?: ErrorOptions) {
-    super(message, options);
-    this.name = 'LifecycleEventParseError';
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, LifecycleEventParseError);
-    }
-  }
-}
-
-// --- internal helpers ---
-
-type GeolocationRequestPayload = Pick<GeolocationRequestEvent, 'origin'>;
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
- * Narrow validator for `fail` envelope payloads. Only confirms the
- * shape the JS dispatcher relies on — full coercion happens later in
- * `parseCheckoutError`. Returns `null` on shape mismatch so the caller
- * can log a `LifecycleEventParseError` instead of crashing user code.
- */
-function validateFailPayload(payload: unknown): CheckoutNativeError | null {
-  if (!isPlainObject(payload)) return null;
-  if (typeof payload.__typename !== 'string') return null;
-  if (typeof payload.message !== 'string') return null;
-  if (typeof payload.code !== 'string') return null;
-  if ('statusCode' in payload && typeof payload.statusCode !== 'number') {
-    return null;
-  }
-  return payload as unknown as CheckoutNativeError;
-}
-
-function validateGeolocationRequestPayload(
-  payload: unknown,
-): GeolocationRequestPayload | null {
-  if (!isPlainObject(payload)) return null;
-  if (typeof payload.origin !== 'string') return null;
-  return {origin: payload.origin};
-}
-
-function logParseError(detail: string, raw: string): void {
-  const err = new LifecycleEventParseError(
-    `Failed to handle present() dispatcher envelope: ${detail}`,
-    {cause: detail},
-  );
-  // eslint-disable-next-line no-console
-  console.error(err, raw);
 }
 
 // API
@@ -538,8 +356,10 @@ export {
   ApplePayContactField,
   ApplePayLabel,
   ApplePayStyle,
+  CheckoutProtocol,
   ColorScheme,
   DispatchEventParityError,
+  LifecycleEventParseError,
   LogLevel,
   ShopifyCheckout,
   ShopifyCheckoutProvider,
@@ -562,11 +382,17 @@ export {
 export type {
   AcceleratedCheckoutButtonsProps,
   AcceleratedCheckoutConfiguration,
+  AndroidAutomaticColors,
+  AndroidColors,
+  Checkout,
   CheckoutException,
+  CheckoutProtocolPayloads,
   Configuration,
   Features,
   GeolocationRequestEvent,
+  IosColors,
   PresentCallbacks,
+  ProtocolHandlers,
   RenderStateChangeEvent,
 };
 

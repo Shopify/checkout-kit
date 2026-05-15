@@ -1,4 +1,21 @@
 import type {CheckoutException} from './errors';
+import type {ProtocolHandlers} from './protocol';
+import type {
+  ApplePayContactField,
+  ColorScheme,
+  LogLevel,
+} from './enums';
+export {
+  AcceleratedCheckoutWallet,
+  ApplePayContactField,
+  ColorScheme,
+  LogLevel,
+} from './enums';
+export type {
+  Checkout,
+  CheckoutProtocolPayloads,
+  ProtocolHandlers,
+} from './protocol';
 
 export type Maybe<T> = T | undefined;
 
@@ -12,29 +29,6 @@ export interface Features {
    * `present()` and resolve each request with `event.respond(allow)`.
    */
   handleGeolocationRequests: boolean;
-}
-
-export enum ColorScheme {
-  automatic = 'automatic',
-  light = 'light',
-  dark = 'dark',
-  web = 'web_default',
-}
-
-/**
- * Log level for Checkout Kit.
- * Controls the verbosity of logs emitted by the native SDK.
- * @defaults to error
- */
-export enum LogLevel {
-  /**
-   * Show debug logs.
-   */
-  debug = 'debug',
-  /**
-   * Show only error logs.
-   */
-  error = 'error',
 }
 
 export interface IosColors {
@@ -157,7 +151,7 @@ export interface GeolocationRequestEvent {
 }
 
 /**
- * Per-call SDK callbacks for `present(url, callbacks)`.
+ * Per-call SDK callbacks for `present(url, callbacks, protocol)`.
  *
  * Exactly one of `onClose` or `onFail` fires per `present(...)` invocation,
  * after which the callbacks are released.
@@ -188,19 +182,6 @@ export interface PresentCallbacks {
    * for resolving Android permissions and calling `event.respond(allow)`.
    */
   onGeolocationRequest?: (event: GeolocationRequestEvent) => void;
-}
-
-/**
- * Available wallet types for accelerated checkout
- */
-export enum AcceleratedCheckoutWallet {
-  shopPay = 'shopPay',
-  applePay = 'applePay',
-}
-
-export enum ApplePayContactField {
-  email = 'email',
-  phone = 'phone',
 }
 
 /**
@@ -273,8 +254,13 @@ export interface ShopifyCheckoutKit {
    * @param callbacks Optional per-call SDK callbacks. Exactly one of
    * `onClose` or `onFail` fires per call, after which the callbacks are
    * released.
+   * @param protocol Optional per-call Checkout Protocol event handlers.
    */
-  present(checkoutURL: string, callbacks?: PresentCallbacks): void;
+  present(
+    checkoutURL: string,
+    callbacks?: PresentCallbacks,
+    protocol?: ProtocolHandlers,
+  ): void;
   /**
    * Configure the checkout. See README.md for more details.
    */

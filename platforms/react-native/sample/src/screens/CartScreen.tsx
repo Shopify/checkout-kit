@@ -17,6 +17,7 @@ import {
   AcceleratedCheckoutButtons,
   ApplePayLabel,
   AcceleratedCheckoutWallet,
+  CheckoutProtocol,
 } from '@shopify/checkout-kit-react-native';
 import {useConfig} from '../context/Config';
 import useShopify from '../hooks/useShopify';
@@ -69,10 +70,23 @@ function CartScreen(): React.JSX.Element {
 
   const presentCheckout = async () => {
     if (checkoutURL) {
-      ShopifyCheckout.present(checkoutURL, {
-        onClose: () => sheetEventHandlers.onCancel?.(),
-        onFail: error => sheetEventHandlers.onFail?.(error),
-      });
+      ShopifyCheckout.present(
+        checkoutURL,
+        {
+          onClose: () => sheetEventHandlers.onCancel?.(),
+          onFail: error => sheetEventHandlers.onFail?.(error),
+        },
+        {
+          // First UCP protocol event surfaced end-to-end. Logging only —
+          // once we're satisfied the relay is wired correctly we'll route
+          // protocol events through `useShopifyEventHandlers` (or an
+          // equivalent) just like the SDK lifecycle ones above.
+          [CheckoutProtocol.start]: checkout => {
+            // eslint-disable-next-line no-console
+            console.log('[Cart - Protocol.ec.start]', checkout);
+          },
+        },
+      );
     }
   };
 

@@ -621,11 +621,6 @@ shopify.present(checkoutUrl, {
 `onClose` and `onFail` are mutually exclusive — exactly one of them fires
 per `present(...)` call, after which both handles are released.
 
-> Protocol-level callbacks (`start`, `complete`, `error` on the protocol
-> client) are not part of this section and will land in a follow-up release
-> alongside a `<CheckoutSheet>` component. Checkout completion is not
-> currently surfaced through the per-call callbacks.
-
 ## Identity & customer accounts
 
 Buyer-aware checkout experience reduces friction and increases conversion.

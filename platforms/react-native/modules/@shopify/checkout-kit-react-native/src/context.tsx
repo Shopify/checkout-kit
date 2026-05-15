@@ -2,6 +2,7 @@ import React, {useCallback, useMemo, useRef, useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {ShopifyCheckout} from './index';
 import type {Configuration, Features, PresentCallbacks} from './index.d';
+import type {ProtocolHandlers} from './protocol';
 
 type Maybe<T> = T | undefined;
 
@@ -9,7 +10,11 @@ interface Context {
   acceleratedCheckoutsAvailable: boolean;
   getConfig: () => Configuration | undefined;
   setConfig: (config: Configuration) => void;
-  present: (checkoutUrl: string, callbacks?: PresentCallbacks) => void;
+  present: (
+    checkoutUrl: string,
+    callbacks?: PresentCallbacks,
+    protocol?: ProtocolHandlers,
+  ) => void;
   dismiss: () => void;
   version: Maybe<string>;
 }
@@ -58,9 +63,13 @@ export function ShopifyCheckoutProvider({
   }, [configuration]);
 
   const present = useCallback(
-    (checkoutUrl: string, callbacks?: PresentCallbacks) => {
+    (
+      checkoutUrl: string,
+      callbacks?: PresentCallbacks,
+      protocol?: ProtocolHandlers,
+    ) => {
       if (checkoutUrl) {
-        instance.current?.present(checkoutUrl, callbacks);
+        instance.current?.present(checkoutUrl, callbacks, protocol);
       }
     },
     [],

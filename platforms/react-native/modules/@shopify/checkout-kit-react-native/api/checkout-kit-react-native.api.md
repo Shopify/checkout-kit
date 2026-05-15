@@ -4,6 +4,7 @@
 
 ```ts
 
+import { Checkout } from '@shopify/checkout-kit-protocol';
 import type { PropsWithChildren } from 'react';
 import { default as React_2 } from 'react';
 
@@ -41,17 +42,32 @@ export interface AcceleratedCheckoutConfiguration {
 // @public
 export enum AcceleratedCheckoutWallet {
     // (undocumented)
-    applePay = 'applePay',
+    applePay = "applePay",
     // (undocumented)
-    shopPay = 'shopPay',
+    shopPay = "shopPay"
+}
+
+// @public (undocumented)
+export interface AndroidAutomaticColors {
+    dark: AndroidColors;
+    light: AndroidColors;
+}
+
+// @public (undocumented)
+export interface AndroidColors {
+    backgroundColor: string;
+    closeButtonColor?: string;
+    headerBackgroundColor: string;
+    headerTextColor: string;
+    progressIndicator: string;
 }
 
 // @public (undocumented)
 export enum ApplePayContactField {
     // (undocumented)
-    email = 'email',
+    email = "email",
     // (undocumented)
-    phone = 'phone',
+    phone = "phone"
 }
 
 // @public (undocumented)
@@ -104,78 +120,88 @@ export enum ApplePayStyle {
     whiteOutline = "whiteOutline"
 }
 
+export { Checkout }
+
 // Warning: (ae-forgotten-export) The symbol "GenericErrorWithCode" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export class CheckoutClientError extends GenericErrorWithCode {}
+export class CheckoutClientError extends GenericErrorWithCode {
+}
 
 // @public (undocumented)
 export enum CheckoutErrorCode {
     // (undocumented)
-    cartCompleted = 'cart_completed',
+    cartCompleted = "cart_completed",
     // (undocumented)
-    cartExpired = 'cart_expired',
+    cartExpired = "cart_expired",
     // (undocumented)
-    clientError = 'client_error',
+    clientError = "client_error",
     // (undocumented)
-    httpError = 'http_error',
+    httpError = "http_error",
     // (undocumented)
-    invalidCart = 'invalid_cart',
+    invalidCart = "invalid_cart",
     // (undocumented)
-    receivingBridgeEventError = 'error_receiving_message',
+    receivingBridgeEventError = "error_receiving_message",
     // (undocumented)
-    renderProcessGone = 'render_process_gone',
+    renderProcessGone = "render_process_gone",
     // (undocumented)
-    sendingBridgeEventError = 'error_sending_message',
+    sendingBridgeEventError = "error_sending_message",
     // (undocumented)
-    storefrontPasswordRequired = 'storefront_password_required',
+    storefrontPasswordRequired = "storefront_password_required",
     // (undocumented)
-    unknown = 'unknown',
+    unknown = "unknown"
 }
 
 // @public (undocumented)
-export type CheckoutException =
-| CheckoutClientError
-| CheckoutExpiredError
-| CheckoutHTTPError
-| ConfigurationError
-| GenericError
-| InternalError;
+export type CheckoutException = CheckoutClientError | CheckoutExpiredError | CheckoutHTTPError | ConfigurationError | GenericError | InternalError;
 
 // @public (undocumented)
-export class CheckoutExpiredError extends GenericErrorWithCode {}
+export class CheckoutExpiredError extends GenericErrorWithCode {
+}
 
 // Warning: (ae-forgotten-export) The symbol "GenericNetworkError" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export class CheckoutHTTPError extends GenericNetworkError {}
+export class CheckoutHTTPError extends GenericNetworkError {
+}
 
 // @public (undocumented)
 export enum CheckoutNativeErrorType {
     // (undocumented)
-    CheckoutClientError = 'CheckoutClientError',
+    CheckoutClientError = "CheckoutClientError",
     // (undocumented)
-    CheckoutExpiredError = 'CheckoutExpiredError',
+    CheckoutExpiredError = "CheckoutExpiredError",
     // (undocumented)
-    CheckoutHTTPError = 'CheckoutHTTPError',
+    CheckoutHTTPError = "CheckoutHTTPError",
     // (undocumented)
-    ConfigurationError = 'ConfigurationError',
+    ConfigurationError = "ConfigurationError",
     // (undocumented)
-    InternalError = 'InternalError',
+    InternalError = "InternalError",
     // (undocumented)
-    UnknownError = 'UnknownError',
+    UnknownError = "UnknownError"
+}
+
+// @public (undocumented)
+export const CheckoutProtocol: {
+    readonly start: "ec.start";
+};
+
+// @public (undocumented)
+export interface CheckoutProtocolPayloads {
+    // (undocumented)
+    'ec.start': Checkout;
 }
 
 // @public (undocumented)
 export enum ColorScheme {
     // (undocumented)
-    automatic = 'automatic',
+    automatic = "automatic",
     // (undocumented)
-    dark = 'dark',
+    dark = "dark",
     // (undocumented)
-    light = 'light',
+    light = "light",
     // (undocumented)
-    web = 'web_default',
+    web = "web_default"
 }
 
 // Warning: (ae-forgotten-export) The symbol "CommonConfiguration" needs to be exported by the entry point index.d.ts
@@ -201,7 +227,8 @@ export type Configuration = CommonConfiguration & {
 );
 
 // @public (undocumented)
-export class ConfigurationError extends GenericErrorWithCode {}
+export class ConfigurationError extends GenericErrorWithCode {
+}
 
 // @public
 export class DispatchEventParityError extends Error {
@@ -216,12 +243,7 @@ export interface Features {
 // @public (undocumented)
 export class GenericError {
     // Warning: (ae-forgotten-export) The symbol "CheckoutNativeError" needs to be exported by the entry point index.d.ts
-    constructor(exception?: CheckoutNativeError) {
-        this.code = getCheckoutErrorCode(exception?.code);
-        this.message = exception?.message;
-        this.name = this.constructor.name;
-        this.statusCode = exception?.statusCode;
-    }
+    constructor(exception?: CheckoutNativeError);
     // (undocumented)
     code: CheckoutErrorCode;
     // (undocumented)
@@ -240,14 +262,18 @@ export interface GeolocationRequestEvent {
 
 // @public (undocumented)
 export class InternalError {
-    constructor(exception: CheckoutNativeError) {
-        this.code = getCheckoutErrorCode(exception.code);
-        this.message = exception.message;
-    }
+    constructor(exception: CheckoutNativeError);
     // (undocumented)
     code: CheckoutErrorCode;
     // (undocumented)
     message: string;
+}
+
+// @public (undocumented)
+export interface IosColors {
+    backgroundColor?: string;
+    closeButtonColor?: string;
+    tintColor?: string;
 }
 
 // @public (undocumented)
@@ -257,8 +283,8 @@ export class LifecycleEventParseError extends Error {
 
 // @public
 export enum LogLevel {
-    debug = 'debug',
-    error = 'error',
+    debug = "debug",
+    error = "error"
 }
 
 // @public
@@ -267,6 +293,11 @@ export interface PresentCallbacks {
     onFail?: (error: CheckoutException) => void;
     onGeolocationRequest?: (event: GeolocationRequestEvent) => void;
 }
+
+// @public (undocumented)
+export type ProtocolHandlers = Partial<{
+    [K in keyof CheckoutProtocolPayloads]: (payload: CheckoutProtocolPayloads[K]) => void;
+}>;
 
 // @public (undocumented)
 export enum RenderState {
@@ -297,7 +328,7 @@ export class ShopifyCheckout implements ShopifyCheckoutKit {
     dismiss(): void;
     getConfig(): Configuration;
     isAcceleratedCheckoutAvailable(): boolean;
-    present(checkoutUrl: string, callbacks?: PresentCallbacks): void;
+    present(checkoutUrl: string, callbacks?: PresentCallbacks, protocol?: ProtocolHandlers): void;
     setConfig(configuration: Configuration): void;
     teardown(): void;
     // (undocumented)
@@ -313,12 +344,6 @@ export function ShopifyCheckoutProvider(input: PropsWithChildren<Props>): React_
 //
 // @public (undocumented)
 export function useShopifyCheckout(): Context;
-
-// Warnings were encountered during analysis:
-//
-// lib/typescript/src/_types/index.d.ts:125:11 - (ae-forgotten-export) The symbol "IosColors" needs to be exported by the entry point index.d.ts
-// lib/typescript/src/_types/index.d.ts:126:11 - (ae-forgotten-export) The symbol "AndroidColors" needs to be exported by the entry point index.d.ts
-// lib/typescript/src/_types/index.d.ts:139:11 - (ae-forgotten-export) The symbol "AndroidAutomaticColors" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -5,7 +5,12 @@ import {
   ShopifyCheckoutProvider,
   useShopifyCheckout,
 } from '../src/context';
-import {ApplePayContactField, ColorScheme, type Configuration} from '../src';
+import {
+  ApplePayContactField,
+  CheckoutProtocol,
+  ColorScheme,
+  type Configuration,
+} from '../src';
 
 const checkoutUrl = 'https://shopify.com/checkout';
 const config: Configuration = {
@@ -154,7 +159,7 @@ describe('useShopifyCheckout', () => {
     jest.clearAllMocks();
   });
 
-  it('provides present function and calls it with checkoutUrl and a null dispatcher when no callbacks are passed', () => {
+  it('provides present function and calls native present when no callbacks are passed', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -172,11 +177,11 @@ describe('useShopifyCheckout', () => {
 
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
-      null,
+      [],
     );
   });
 
-  it('forwards a dispatcher to native when callbacks are supplied', () => {
+  it('subscribes to dispatch events when callbacks are supplied', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -196,9 +201,39 @@ describe('useShopifyCheckout', () => {
       hookValue.present(checkoutUrl, {onClose, onFail, onGeolocationRequest});
     });
 
+    expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
+      expect.any(Function),
+    );
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
+      [],
+    );
+  });
+
+  it('forwards protocol handlers through the provider present function', () => {
+    let hookValue: any;
+    const onHookValue = (value: any) => {
+      hookValue = value;
+    };
+
+    render(
+      <Wrapper>
+        <HookTestComponent onHookValue={onHookValue} />
+      </Wrapper>,
+    );
+
+    act(() => {
+      hookValue.present(checkoutUrl, undefined, {
+        [CheckoutProtocol.start]: jest.fn(),
+      });
+    });
+
+    expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
       expect.any(Function),
+    );
+    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+      checkoutUrl,
+      [CheckoutProtocol.start],
     );
   });
 

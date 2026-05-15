@@ -21,26 +21,24 @@ export enum CheckoutNativeErrorType {
 }
 
 function getCheckoutErrorCode(code: string | undefined): CheckoutErrorCode {
-  const codeKey = Object.keys(CheckoutErrorCode).find(
-    key => CheckoutErrorCode[key as keyof typeof CheckoutErrorCode] === code,
-  );
-
-  return codeKey ? CheckoutErrorCode[codeKey] : CheckoutErrorCode.unknown;
+  return Object.values(CheckoutErrorCode).includes(code as CheckoutErrorCode)
+    ? (code as CheckoutErrorCode)
+    : CheckoutErrorCode.unknown;
 }
 
 type BridgeError = {
   __typename: CheckoutNativeErrorType;
   code: CheckoutErrorCode;
   message: string;
+  statusCode?: number;
 };
 
-export type CheckoutNativeError =
-  | BridgeError
-  | (BridgeError & {statusCode: number});
+export type CheckoutNativeError = BridgeError;
 
 class GenericErrorWithCode {
   message: string;
   code: CheckoutErrorCode;
+  name: string;
 
   constructor(exception: CheckoutNativeError) {
     this.code = getCheckoutErrorCode(exception.code);
@@ -53,10 +51,11 @@ class GenericNetworkError {
   code: CheckoutErrorCode;
   message: string;
   statusCode: number;
+  name: string;
 
   constructor(exception: CheckoutNativeError) {
     this.code = getCheckoutErrorCode(exception.code);
-    this.statusCode = exception.statusCode;
+    this.statusCode = exception.statusCode as number;
     this.message = exception.message;
     this.name = this.constructor.name;
   }
@@ -98,3 +97,22 @@ export type CheckoutException =
   | ConfigurationError
   | GenericError
   | InternalError;
+
+export function parseCheckoutError(
+  exception: CheckoutNativeError,
+): CheckoutException {
+  switch (exception?.__typename) {
+    case CheckoutNativeErrorType.InternalError:
+      return new InternalError(exception);
+    case CheckoutNativeErrorType.ConfigurationError:
+      return new ConfigurationError(exception);
+    case CheckoutNativeErrorType.CheckoutClientError:
+      return new CheckoutClientError(exception);
+    case CheckoutNativeErrorType.CheckoutHTTPError:
+      return new CheckoutHTTPError(exception);
+    case CheckoutNativeErrorType.CheckoutExpiredError:
+      return new CheckoutExpiredError(exception);
+    default:
+      return new GenericError(exception);
+  }
+}

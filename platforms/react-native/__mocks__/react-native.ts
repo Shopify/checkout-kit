@@ -49,6 +49,7 @@ const exampleConfig = {
   colorScheme: 'automatic',
   logLevel: 'error',
 };
+const shopifyCheckoutKitEventEmitter = createMockEmitter();
 
 const ShopifyCheckoutKit = {
   version: '0.7.0',
@@ -56,6 +57,9 @@ const ShopifyCheckoutKit = {
     version: '0.7.0',
     dispatchEventTypes: ['close', 'fail', 'geolocationRequest'],
   })),
+  onDispatch: jest.fn((callback: (envelopeJson: string) => void) =>
+    shopifyCheckoutKitEventEmitter.addListener('onDispatch', callback),
+  ),
   preload: jest.fn(),
   present: jest.fn(),
   dismiss: jest.fn(),
@@ -76,7 +80,7 @@ module.exports = {
   PermissionsAndroid: {
     requestMultiple: jest.fn(async () => ({})),
   },
-  NativeEventEmitter: jest.fn(() => createMockEmitter()),
+  NativeEventEmitter: jest.fn(() => shopifyCheckoutKitEventEmitter),
   requireNativeComponent,
   codegenNativeComponent,
   TurboModuleRegistry: {
@@ -90,7 +94,7 @@ module.exports = {
   NativeModules: {
     ShopifyCheckoutKit: {
       ...ShopifyCheckoutKit,
-      eventEmitter: createMockEmitter(),
+      eventEmitter: shopifyCheckoutKitEventEmitter,
     },
   },
   StyleSheet,
