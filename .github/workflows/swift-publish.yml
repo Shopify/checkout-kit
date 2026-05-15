@@ -11,9 +11,11 @@ permissions:
 
 jobs:
   cocoapods:
-    # Only run for Swift releases. Android releases are tagged `android/X.Y.Z`;
-    # Swift releases use bare semver (`X.Y.Z`).
-    if: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.event.release.tag_name, 'android/') }}
+    # Only run for Swift releases. Swift owns the bare-semver tag namespace
+    # (`X.Y.Z`); other platforms use a slash-prefixed namespace
+    # (`android/X.Y.Z`, `web/X.Y.Z`, etc.). Filtering on "no slash" means this
+    # workflow doesn't need updating each time a new platform namespace lands.
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.release.tag_name, '/') }}
     runs-on: ${{ vars.MACOS_RUNNER }}
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/platforms/swift/Gemfile

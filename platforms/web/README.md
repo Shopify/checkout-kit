@@ -326,6 +326,11 @@ field to try `open()` / `close()` / `focus()` and see the live event stream.
 We welcome code contributions, feature requests, and reporting of issues.
 Please see [guidelines and instructions](../../.github/CONTRIBUTING.md).
 
+## Releasing
+
+See [RELEASING.md](./RELEASING.md) for the day-to-day publish flow, tag
+conventions, and one-time setup notes.
+
 ## License
 
 Shopify's Checkout Kit is provided under an [MIT License](LICENSE).
