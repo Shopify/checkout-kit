@@ -24,7 +24,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 // Registers `<shopify-checkout>` (side effect).
 import "./checkout-web-component";
 
-// Public API for `@shopify/checkout-kit`.
-export const VERSION = "0.0.1";
-
+// The custom element class.
 export { ShopifyCheckout } from "./checkout";
+
+// Event classes — useful for `instanceof` checks and as type aliases for handlers.
+export {
+  ShopifyCheckoutStartEvent,
+  ShopifyCheckoutCompleteEvent,
+  ShopifyCheckoutCloseEvent,
+  ShopifyCheckoutErrorEvent,
+  ShopifyCheckoutLineItemsChangeEvent,
+  ShopifyCheckoutBuyerChangeEvent,
+  ShopifyCheckoutTotalsChangeEvent,
+  ShopifyCheckoutMessagesChangeEvent,
+} from "./checkout";
+
+// Event detail payload types — useful for typing handler parameter shapes.
+export type {
+  ShopifyCheckoutStartEventDetail,
+  ShopifyCheckoutCompleteEventDetail,
+  ShopifyCheckoutErrorEventDetail,
+  ShopifyCheckoutLineItemsChangeEventDetail,
+  ShopifyCheckoutBuyerChangeEventDetail,
+  ShopifyCheckoutTotalsChangeEventDetail,
+  ShopifyCheckoutMessagesChangeEventDetail,
+} from "./checkout";
+
+// Public configuration types.
+export type { CheckoutTarget } from "./checkout.types";
+
+// UCP domain types — surfaced because they appear on event details and the
+// `element.checkout` / `element.error` mirrors.
+export type {
+  Buyer,
+  Checkout,
+  CheckoutLineItem,
+  CheckoutMessage,
+  OrderConfirmation,
+  Total,
+  UcpErrorResponse,
+} from "./checkout.types";

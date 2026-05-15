@@ -29,6 +29,7 @@ Check out our blog to
   - [`debug`](#debug)
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
+- [Checkout lifecycle](#checkout-lifecycle)
 - [Explore the sample app](#explore-the-sample-app)
 - [Contributing](#contributing)
 - [License](#license)
@@ -112,8 +113,8 @@ checkout.src = 'https://your-store.myshopify.com/checkouts/cn/abc123';
 checkout.target = 'popup';
 document.body.append(checkout);
 
-checkout.addEventListener('ec:complete', () => {
-  console.log('Order complete', checkout.checkout);
+checkout.addEventListener('checkout:complete', (event) => {
+  console.log('Order complete', event.detail.order.id);
 });
 
 checkout.open();
@@ -253,6 +254,58 @@ shopify-checkout::part(overlay) {
   display: none;
 }
 ```
+
+## Checkout lifecycle
+
+The element dispatches `checkout:*` `CustomEvent`s at every meaningful moment
+of the checkout session. All events bubble, so you can listen anywhere in your
+DOM — including a single delegated listener at `document` if you have many
+elements on the page. Each event carries a typed `event.detail` payload with
+exactly the fields relevant to that moment.
+
+| Event                       | `event.detail`                                  | When it fires                                                              |
+| --------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------- |
+| `checkout:start`            | `{checkout}`                                    | Checkout has loaded and is interactive.                                    |
+| `checkout:complete`         | `{checkout, order}`                             | The buyer completed the order successfully.                                |
+| `checkout:close`            | _(none)_                                        | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
+| `checkout:error`            | `{error}`                                       | Session-level fatal error — tear down the embedded context.                |
+| `checkout:lineItemsChange`  | `{lineItems, checkout}`                         | The cart's line items changed (item added/removed/quantity updated).       |
+| `checkout:buyerChange`      | `{buyer, checkout}`                             | The buyer's information changed (email, address, etc.).                    |
+| `checkout:totalsChange`     | `{totals, checkout}`                            | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
+| `checkout:messagesChange`   | `{messages, checkout}`                          | Checkout-level warnings/errors/info shown inside the checkout changed.     |
+
+The `checkout` field on every `*Change` event is the full UCP `Checkout`
+snapshot, included for handlers that want broader context. Most handlers only
+need the named slice (e.g. `event.detail.totals`).
+
+```ts
+checkout.addEventListener('checkout:complete', (event) => {
+  const {order} = event.detail;
+  analytics.track('checkout_complete', {orderId: order.id});
+});
+
+checkout.addEventListener('checkout:totalsChange', (event) => {
+  miniCart.updateTotals(event.detail.totals);
+});
+
+checkout.addEventListener('checkout:close', () => {
+  router.back();
+});
+```
+
+The full UCP `Checkout` snapshot is also mirrored to the
+[`element.checkout`](#) property every time a payload-carrying event arrives,
+and the latest error is mirrored to [`element.error`](#) when `checkout:error`
+fires — useful for handlers that don't have a reference to the originating
+event. TypeScript users get fully typed events via overloaded
+`addEventListener` signatures — no additional setup required.
+
+> [!NOTE]
+> The public `checkout:*` event names are stable. They are not 1:1 with the
+> underlying [Embedded Checkout Protocol](https://ucp.dev/2026-04-08/specification/embedded-checkout/)
+> wire messages — the component speaks ECP internally and translates to these
+> friendlier names so the public surface stays insulated from protocol
+> revisions.
 
 ## Explore the sample app
 

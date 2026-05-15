@@ -31,6 +31,11 @@ import type {
   TypedEventListener,
   CheckoutProtocolMessageData,
   Checkout,
+  CheckoutLineItem,
+  CheckoutMessage,
+  Total,
+  Buyer,
+  OrderConfirmation,
   UcpErrorResponse,
 } from "./checkout.types";
 import { STYLES } from "./checkout.styles";
@@ -80,13 +85,13 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @attribute src - The URL of the checkout to load.
  * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
  *
- * @event ec:start - Dispatched when the checkout has started
- * @event ec:complete - Dispatched when the checkout was successfully completed
- * @event ec:error - Dispatched on a session-level fatal error
- * @event ec:lineItemsChange - Dispatched when cart line items change
- * @event ec:buyerChange - Dispatched when buyer information changes
- * @event ec:totalsChange - Dispatched when totals change
- * @event ec:messagesChange - Dispatched when checkout messages change
+ * @event checkout:start - Dispatched when the checkout has started
+ * @event checkout:complete - Dispatched when the checkout was successfully completed
+ * @event checkout:error - Dispatched on a session-level fatal error
+ * @event checkout:lineItemsChange - Dispatched when cart line items change
+ * @event checkout:buyerChange - Dispatched when buyer information changes
+ * @event checkout:totalsChange - Dispatched when totals change
+ * @event checkout:messagesChange - Dispatched when checkout messages change
  * @event checkout:close - Dispatched when the checkout overlay is closed (synthetic, not part of ECP)
  *
  * @example
@@ -225,8 +230,8 @@ export class ShopifyCheckout
    *
    * @returns The current Checkout, or undefined before the first notification.
    * @example
-   * checkout.addEventListener('ec:start', () => {
-   *   const {line_items, totals, buyer} = checkout.checkout;
+   * checkout.addEventListener('checkout:start', (event) => {
+   *   const {line_items, totals, buyer} = event.detail.checkout;
    * });
    */
   get checkout(): Checkout | undefined {
@@ -238,8 +243,8 @@ export class ShopifyCheckout
    *
    * @returns The UCP error response, or undefined.
    * @example
-   * checkout.addEventListener('ec:error', () => {
-   *   const {messages} = checkout.error;
+   * checkout.addEventListener('checkout:error', (event) => {
+   *   const {messages} = event.detail.error;
    *   console.error(messages[0]?.code, messages[0]?.content);
    * });
    */
@@ -553,32 +558,63 @@ export class ShopifyCheckout
         break;
       }
       case "ec.start": {
-        this.dispatchEvent(new ShopifyEcStartEvent());
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.start"]).checkout;
+        this.dispatchEvent(new ShopifyCheckoutStartEvent({ checkout }));
         break;
       }
       case "ec.complete": {
-        this.dispatchEvent(new ShopifyEcCompleteEvent());
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.complete"]).checkout;
+        // `order` is populated on `ec.complete` per ECP spec; fall back defensively.
+        const order = checkout.order as OrderConfirmation;
+        this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout, order }));
         break;
       }
       case "ec.error": {
-        this.#error = message.body as CheckoutProtocolMessageMap["ec.error"];
-        this.dispatchEvent(new ShopifyEcErrorEvent());
+        const error = message.body as CheckoutProtocolMessageMap["ec.error"];
+        this.#error = error;
+        this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
         break;
       }
       case "ec.line_items.change": {
-        this.dispatchEvent(new ShopifyEcLineItemsChangeEvent());
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.line_items.change"])
+          .checkout;
+        this.dispatchEvent(
+          new ShopifyCheckoutLineItemsChangeEvent({
+            checkout,
+            lineItems: checkout.line_items,
+          }),
+        );
         break;
       }
       case "ec.buyer.change": {
-        this.dispatchEvent(new ShopifyEcBuyerChangeEvent());
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.buyer.change"]).checkout;
+        this.dispatchEvent(
+          new ShopifyCheckoutBuyerChangeEvent({
+            checkout,
+            buyer: checkout.buyer,
+          }),
+        );
         break;
       }
       case "ec.totals.change": {
-        this.dispatchEvent(new ShopifyEcTotalsChangeEvent());
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.totals.change"]).checkout;
+        this.dispatchEvent(
+          new ShopifyCheckoutTotalsChangeEvent({
+            checkout,
+            totals: checkout.totals,
+          }),
+        );
         break;
       }
       case "ec.messages.change": {
-        this.dispatchEvent(new ShopifyEcMessagesChangeEvent());
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.messages.change"])
+          .checkout;
+        this.dispatchEvent(
+          new ShopifyCheckoutMessagesChangeEvent({
+            checkout,
+            messages: checkout.messages ?? [],
+          }),
+        );
         break;
       }
       case "ec.window.open_request": {
@@ -702,8 +738,8 @@ export class ShopifyCheckout
    */
   // we overload these so that the consumer of the component can autocomplete the correct events
   override addEventListener(
-    type: "ec:start",
-    listener: TypedEventListener<ShopifyEcStartEvent> | null,
+    type: "checkout:start",
+    listener: TypedEventListener<ShopifyCheckoutStartEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
@@ -714,38 +750,38 @@ export class ShopifyCheckout
   ): void;
 
   override addEventListener(
-    type: "ec:complete",
-    listener: TypedEventListener<ShopifyEcCompleteEvent> | null,
+    type: "checkout:complete",
+    listener: TypedEventListener<ShopifyCheckoutCompleteEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "ec:error",
-    listener: TypedEventListener<ShopifyEcErrorEvent> | null,
+    type: "checkout:error",
+    listener: TypedEventListener<ShopifyCheckoutErrorEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "ec:lineItemsChange",
-    listener: TypedEventListener<ShopifyEcLineItemsChangeEvent> | null,
+    type: "checkout:lineItemsChange",
+    listener: TypedEventListener<ShopifyCheckoutLineItemsChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "ec:buyerChange",
-    listener: TypedEventListener<ShopifyEcBuyerChangeEvent> | null,
+    type: "checkout:buyerChange",
+    listener: TypedEventListener<ShopifyCheckoutBuyerChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "ec:totalsChange",
-    listener: TypedEventListener<ShopifyEcTotalsChangeEvent> | null,
+    type: "checkout:totalsChange",
+    listener: TypedEventListener<ShopifyCheckoutTotalsChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "ec:messagesChange",
-    listener: TypedEventListener<ShopifyEcMessagesChangeEvent> | null,
+    type: "checkout:messagesChange",
+    listener: TypedEventListener<ShopifyCheckoutMessagesChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
@@ -759,32 +795,78 @@ export class ShopifyCheckout
   }
 }
 
-// An abstract class here lets us force the type of the target and currentTarget properties,
-// without introducing a real class in the prototype chain.
-abstract class ShopifyCheckoutEvent extends Event {
-  // Convenience getter for accessing the checkout related to this event
-  get checkout() {
-    return this.target as ShopifyCheckout;
+/* ------------------------------------------------------------
+ * Event detail shapes — what each event carries on `event.detail`.
+ * ------------------------------------------------------------
+ */
+
+export interface ShopifyCheckoutStartEventDetail {
+  /** Initial checkout snapshot from the ECP `ec.start` notification. */
+  checkout: Checkout;
+}
+
+export interface ShopifyCheckoutCompleteEventDetail {
+  /** Final checkout snapshot from the ECP `ec.complete` notification. */
+  checkout: Checkout;
+  /** Order confirmation populated when checkout completes. */
+  order: OrderConfirmation;
+}
+
+export interface ShopifyCheckoutErrorEventDetail {
+  /** Wire-shape error payload from the ECP `ec.error` notification. */
+  error: UcpErrorResponse;
+}
+
+export interface ShopifyCheckoutLineItemsChangeEventDetail {
+  /** Updated cart line items. */
+  lineItems: readonly CheckoutLineItem[];
+  /** Full checkout snapshot for handlers that want broader context. */
+  checkout: Checkout;
+}
+
+export interface ShopifyCheckoutBuyerChangeEventDetail {
+  /** Updated buyer (may be undefined when buyer information is cleared). */
+  buyer: Buyer | undefined;
+  /** Full checkout snapshot for handlers that want broader context. */
+  checkout: Checkout;
+}
+
+export interface ShopifyCheckoutTotalsChangeEventDetail {
+  /** Updated totals. */
+  totals: readonly Total[];
+  /** Full checkout snapshot for handlers that want broader context. */
+  checkout: Checkout;
+}
+
+export interface ShopifyCheckoutMessagesChangeEventDetail {
+  /** Updated checkout-level messages (warnings, errors, info). */
+  messages: readonly CheckoutMessage[];
+  /** Full checkout snapshot for handlers that want broader context. */
+  checkout: Checkout;
+}
+
+/* ------------------------------------------------------------
+ * Event classes — `CustomEvent<T>` subclasses carrying typed details.
+ * ------------------------------------------------------------
+ */
+
+export class ShopifyCheckoutStartEvent extends CustomEvent<ShopifyCheckoutStartEventDetail> {
+  declare type: "checkout:start";
+
+  constructor(detail: ShopifyCheckoutStartEventDetail) {
+    super("checkout:start", { detail, bubbles: true });
   }
 }
 
-export class ShopifyEcStartEvent extends ShopifyCheckoutEvent {
-  declare type: "ec:start";
+export class ShopifyCheckoutCompleteEvent extends CustomEvent<ShopifyCheckoutCompleteEventDetail> {
+  declare type: "checkout:complete";
 
-  constructor() {
-    super("ec:start", { bubbles: true });
+  constructor(detail: ShopifyCheckoutCompleteEventDetail) {
+    super("checkout:complete", { detail, bubbles: true });
   }
 }
 
-export class ShopifyEcCompleteEvent extends ShopifyCheckoutEvent {
-  declare type: "ec:complete";
-
-  constructor() {
-    super("ec:complete", { bubbles: true });
-  }
-}
-
-export class ShopifyCheckoutCloseEvent extends ShopifyCheckoutEvent {
+export class ShopifyCheckoutCloseEvent extends CustomEvent<undefined> {
   declare type: "checkout:close";
 
   constructor() {
@@ -792,43 +874,43 @@ export class ShopifyCheckoutCloseEvent extends ShopifyCheckoutEvent {
   }
 }
 
-export class ShopifyEcErrorEvent extends ShopifyCheckoutEvent {
-  declare type: "ec:error";
+export class ShopifyCheckoutErrorEvent extends CustomEvent<ShopifyCheckoutErrorEventDetail> {
+  declare type: "checkout:error";
 
-  constructor() {
-    super("ec:error", { bubbles: true });
+  constructor(detail: ShopifyCheckoutErrorEventDetail) {
+    super("checkout:error", { detail, bubbles: true });
   }
 }
 
-export class ShopifyEcLineItemsChangeEvent extends ShopifyCheckoutEvent {
-  declare type: "ec:lineItemsChange";
+export class ShopifyCheckoutLineItemsChangeEvent extends CustomEvent<ShopifyCheckoutLineItemsChangeEventDetail> {
+  declare type: "checkout:lineItemsChange";
 
-  constructor() {
-    super("ec:lineItemsChange", { bubbles: true });
+  constructor(detail: ShopifyCheckoutLineItemsChangeEventDetail) {
+    super("checkout:lineItemsChange", { detail, bubbles: true });
   }
 }
 
-export class ShopifyEcBuyerChangeEvent extends ShopifyCheckoutEvent {
-  declare type: "ec:buyerChange";
+export class ShopifyCheckoutBuyerChangeEvent extends CustomEvent<ShopifyCheckoutBuyerChangeEventDetail> {
+  declare type: "checkout:buyerChange";
 
-  constructor() {
-    super("ec:buyerChange", { bubbles: true });
+  constructor(detail: ShopifyCheckoutBuyerChangeEventDetail) {
+    super("checkout:buyerChange", { detail, bubbles: true });
   }
 }
 
-export class ShopifyEcTotalsChangeEvent extends ShopifyCheckoutEvent {
-  declare type: "ec:totalsChange";
+export class ShopifyCheckoutTotalsChangeEvent extends CustomEvent<ShopifyCheckoutTotalsChangeEventDetail> {
+  declare type: "checkout:totalsChange";
 
-  constructor() {
-    super("ec:totalsChange", { bubbles: true });
+  constructor(detail: ShopifyCheckoutTotalsChangeEventDetail) {
+    super("checkout:totalsChange", { detail, bubbles: true });
   }
 }
 
-export class ShopifyEcMessagesChangeEvent extends ShopifyCheckoutEvent {
-  declare type: "ec:messagesChange";
+export class ShopifyCheckoutMessagesChangeEvent extends CustomEvent<ShopifyCheckoutMessagesChangeEventDetail> {
+  declare type: "checkout:messagesChange";
 
-  constructor() {
-    super("ec:messagesChange", { bubbles: true });
+  constructor(detail: ShopifyCheckoutMessagesChangeEventDetail) {
+    super("checkout:messagesChange", { detail, bubbles: true });
   }
 }
 
