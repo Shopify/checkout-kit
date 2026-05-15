@@ -62,6 +62,34 @@ describe("<shopify-checkout>", () => {
       expect(checkout.shadowRoot!.querySelector("script")).toBeNull();
       expect((window as unknown as { __xssed?: boolean }).__xssed).toBeUndefined();
     });
+
+    it("closes an open session when the target attribute changes mid-flight", () => {
+      const checkout = renderCheckout({ target: "popup" });
+      const mockWindow = createMockWindow();
+      vi.spyOn(window, "open").mockReturnValue(mockWindow);
+      vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+      vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+      const closeEventSpy = vi.fn();
+      checkout.addEventListener("checkout:close", closeEventSpy);
+
+      checkout.open();
+      expect(closeEventSpy).not.toHaveBeenCalled();
+
+      checkout.setAttribute("target", "auto");
+
+      expect(closeEventSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("is a no-op when the target attribute is set to the same value", () => {
+      const checkout = renderCheckout({ target: "popup" });
+      const wrapper = checkout.shadowRoot!.querySelector(".Shopify-target")!;
+      const classBefore = wrapper.className;
+
+      checkout.setAttribute("target", checkout.getAttribute("target")!);
+
+      expect(wrapper.className).toBe(classBefore);
+    });
   });
 
   describe("properties", () => {
@@ -81,6 +109,35 @@ describe("<shopify-checkout>", () => {
         const newTarget = "_blank";
         checkout.target = newTarget;
         expect(checkout.getAttribute("target")).toBe(newTarget);
+      });
+    });
+
+    describe("debug", () => {
+      it("sets the debug attribute when assigned true", () => {
+        const checkout = renderCheckout();
+        checkout.debug = true;
+        expect(checkout.hasAttribute("debug")).toBe(true);
+        expect(checkout.getAttribute("debug")).toBe("");
+      });
+
+      it("sets the debug attribute to a string value when assigned a string", () => {
+        const checkout = renderCheckout();
+        checkout.debug = "verbose";
+        expect(checkout.getAttribute("debug")).toBe("verbose");
+      });
+
+      it("removes the debug attribute when assigned undefined", () => {
+        const checkout = renderCheckout({ debug: "" });
+        expect(checkout.hasAttribute("debug")).toBe(true);
+        checkout.debug = undefined;
+        expect(checkout.hasAttribute("debug")).toBe(false);
+      });
+
+      it("removes the debug attribute when assigned false", () => {
+        const checkout = renderCheckout({ debug: "" });
+        expect(checkout.hasAttribute("debug")).toBe(true);
+        checkout.debug = false;
+        expect(checkout.hasAttribute("debug")).toBe(false);
       });
     });
   });
@@ -395,6 +452,152 @@ describe("<shopify-checkout>", () => {
           const calledUrl = new URL(firstCall[0] as string);
           expect(calledUrl.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
           expect(firstCall[1]).toBe("my-named-window");
+        });
+      });
+
+      describe('when target is "_self", "_parent", or "_top"', () => {
+        it.each(["_self", "_parent", "_top"] as const)(
+          "falls back to 'auto' when target=%s and warns in debug mode",
+          (target) => {
+            const checkout = renderCheckout({ target, debug: "" });
+            const mockWindow = createMockWindow();
+            const openSpy = vi.spyOn(window, "open").mockReturnValue(mockWindow);
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+            checkout.open();
+
+            expect(openSpy).toHaveBeenCalledWith(expect.any(String), "auto");
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+              expect.stringContaining(`target="${target}" would navigate the current page`),
+            );
+          },
+        );
+
+        it("does not warn when debug is disabled", () => {
+          const checkout = renderCheckout({ target: "_self" });
+          vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+          const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+          vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+          vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+          checkout.open();
+
+          expect(consoleWarnSpy).not.toHaveBeenCalled();
+        });
+      });
+
+      describe("when called twice", () => {
+        it("closes the existing session before opening a new one", () => {
+          const checkout = renderCheckout({ target: "popup" });
+          const firstWindow = createMockWindow();
+          const secondWindow = createMockWindow();
+          const openSpy = vi
+            .spyOn(window, "open")
+            .mockReturnValueOnce(firstWindow)
+            .mockReturnValueOnce(secondWindow);
+          vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+          vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+          const closeEventSpy = vi.fn();
+          checkout.addEventListener("checkout:close", closeEventSpy);
+
+          checkout.open();
+          checkout.open();
+
+          expect(closeEventSpy).toHaveBeenCalledTimes(1);
+          expect(openSpy).toHaveBeenCalledTimes(2);
+        });
+      });
+
+      describe("overlay scrim", () => {
+        function openWithRealOverlay(): {
+          checkout: ShopifyCheckout;
+          mockWindow: Window;
+        } {
+          const checkout = renderCheckout({ target: "popup" });
+          const mockWindow = createMockWindow();
+          vi.spyOn(window, "open").mockReturnValue(mockWindow);
+          vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+          checkout.open();
+          return { checkout, mockWindow };
+        }
+
+        it("closes the dialog when the overlay close button is clicked", () => {
+          const { checkout } = openWithRealOverlay();
+          const dialog = checkout.shadowRoot!.querySelector<HTMLDialogElement>("#overlay")!;
+          const dialogCloseSpy = vi
+            .spyOn(HTMLDialogElement.prototype, "close")
+            .mockImplementation(() => {});
+
+          const closeButton =
+            checkout.shadowRoot!.querySelector<HTMLButtonElement>("#overlay-close-button")!;
+          closeButton.click();
+
+          expect(dialogCloseSpy).toHaveBeenCalled();
+          expect(dialog).toBeTruthy();
+        });
+
+        it("focuses the popup when the overlay link is clicked", () => {
+          const { checkout, mockWindow } = openWithRealOverlay();
+          const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link")!;
+
+          const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+          link.dispatchEvent(event);
+
+          expect(event.defaultPrevented).toBe(true);
+          expect(mockWindow.focus).toHaveBeenCalled();
+        });
+      });
+
+      describe("when the popup is dismissed externally", () => {
+        it("aborts the open session if the popup was closed before refocus", () => {
+          vi.useFakeTimers();
+          try {
+            const checkout = renderCheckout({ target: "popup" });
+            const mockWindow = createMockWindow();
+            (mockWindow as { closed: boolean }).closed = false;
+            vi.spyOn(window, "open").mockReturnValue(mockWindow);
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("checkout:close", closeEventSpy);
+
+            checkout.open();
+
+            (mockWindow as { closed: boolean }).closed = true;
+            window.dispatchEvent(new FocusEvent("focus"));
+            vi.advanceTimersByTime(50);
+
+            expect(closeEventSpy).toHaveBeenCalledTimes(1);
+          } finally {
+            vi.useRealTimers();
+          }
+        });
+
+        it("does not abort if the popup is still open after refocus", () => {
+          vi.useFakeTimers();
+          try {
+            const checkout = renderCheckout({ target: "popup" });
+            const mockWindow = createMockWindow();
+            (mockWindow as { closed: boolean }).closed = false;
+            vi.spyOn(window, "open").mockReturnValue(mockWindow);
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("checkout:close", closeEventSpy);
+
+            checkout.open();
+            window.dispatchEvent(new FocusEvent("focus"));
+            vi.advanceTimersByTime(50);
+
+            expect(closeEventSpy).not.toHaveBeenCalled();
+          } finally {
+            vi.useRealTimers();
+          }
         });
       });
     });
@@ -853,6 +1056,58 @@ describe("<shopify-checkout>", () => {
           { targetOrigin },
         );
       });
+
+      it("posts a JSON-RPC error when the url string cannot be parsed", () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.window.open_request",
+          { url: "not a real url" },
+          { id: "open-bad-url", source: mockCheckoutWindow },
+        );
+
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "open-bad-url",
+            error: {
+              code: -32602,
+              message: "Invalid params: url is not a valid URL",
+            },
+          },
+          { targetOrigin: new URL(checkout.src).origin },
+        );
+      });
+
+      it("posts a JSON-RPC error when the url uses a non-https scheme", () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const windowOpenSpy = vi.spyOn(window, "open");
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.window.open_request",
+          { url: "http://example.com/insecure" },
+          { id: "open-http", source: mockCheckoutWindow },
+        );
+
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "open-http",
+            error: {
+              code: -32602,
+              message: "Invalid params: url must use https scheme",
+            },
+          },
+          { targetOrigin: new URL(checkout.src).origin },
+        );
+        expect(windowOpenSpy).not.toHaveBeenCalledWith(
+          "http://example.com/insecure",
+          "_blank",
+          "noopener",
+        );
+      });
     });
 
     describe("message routing", () => {
@@ -943,6 +1198,34 @@ describe("<shopify-checkout>", () => {
         await Promise.resolve();
 
         expect(onStartSpy).not.toHaveBeenCalled();
+      });
+
+      it("ignores window 'message' events that aren't JSON-RPC checkout protocol messages", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("checkout:start", onStartSpy);
+        const debugWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            data: { hello: "world" },
+            source: mockCheckoutWindow,
+            origin: new URL(checkout.src).origin,
+          }),
+        );
+        await Promise.resolve();
+
+        expect(onStartSpy).not.toHaveBeenCalled();
+        expect(debugWarnSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("addEventListener override", () => {
+      it("is a no-op when called with a null listener", () => {
+        const checkout = renderCheckout();
+        expect(() => {
+          checkout.addEventListener("checkout:start", null as unknown as EventListener);
+        }).not.toThrow();
       });
     });
   });
@@ -1130,6 +1413,13 @@ describe("<shopify-checkout>", () => {
       expect(secondSpy).toHaveBeenCalledOnce();
       expect(first.checkout.checkout).toBe(firstPayload.checkout);
       expect(second.checkout.checkout).toBe(secondPayload.checkout);
+    });
+
+    it("aborts the prior protocol listener controller when reattached to the DOM", () => {
+      const checkout = renderCheckout();
+      const detached = document.body.removeChild(checkout);
+      document.body.appendChild(detached);
+      expect(detached.isConnected).toBe(true);
     });
   });
 });
