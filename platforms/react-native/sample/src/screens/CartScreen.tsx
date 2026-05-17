@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/Entypo';
 
 import {
+  CheckoutProtocol,
   useShopifyCheckout,
   AcceleratedCheckoutButtons,
   ApplePayLabel,
@@ -33,8 +34,15 @@ import {
 function CartScreen(): React.JSX.Element {
   const ShopifyCheckout = useShopifyCheckout();
   const [refreshing, setRefreshing] = React.useState(false);
-  const {cartId, checkoutURL, totalQuantity, removeFromCart, addingToCart} =
-    useCart();
+  const {
+    cartId,
+    checkoutURL,
+    totalQuantity,
+    removeFromCart,
+    addingToCart,
+    clearCart,
+  } = useCart();
+  const checkoutCompletedRef = React.useRef(false);
   const {queries} = useShopify();
   const {appConfig} = useConfig();
   // Separate handler instances so debug logs are labelled with the actual
@@ -44,6 +52,11 @@ function CartScreen(): React.JSX.Element {
   const sheetEventHandlers = useShopifyEventHandlers('Cart - CheckoutSheet');
   const sheetProtocolEventHandlers = useShopifyProtocolEventHandlers(
     'Cart - CheckoutSheet Protocol',
+    {
+      [CheckoutProtocol.complete]: () => {
+        checkoutCompletedRef.current = true;
+      },
+    },
   );
   const acceleratedCheckoutEventHandlers = useShopifyEventHandlers(
     'Cart - AcceleratedCheckoutButtons',
@@ -82,8 +95,18 @@ function CartScreen(): React.JSX.Element {
       ShopifyCheckout.present(
         checkoutURL,
         {
-          onClose: () => sheetEventHandlers.onCancel?.(),
-          onFail: error => sheetEventHandlers.onFail?.(error),
+          onClose: () => {
+            sheetEventHandlers.onCancel?.();
+
+            if (checkoutCompletedRef.current) {
+              checkoutCompletedRef.current = false;
+              clearCart();
+            }
+          },
+          onFail: error => {
+            checkoutCompletedRef.current = false;
+            sheetEventHandlers.onFail?.(error);
+          },
         },
         sheetProtocolEventHandlers,
       );

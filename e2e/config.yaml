@@ -1,0 +1,4 @@
+platform:
+  ios:
+    # Lets Maestro inspect elements presented inside iOS checkout modal views.
+    snapshotKeyHonorModalViews: true
