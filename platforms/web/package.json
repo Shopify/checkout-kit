@@ -1,6 +1,6 @@
 {
   "name": "@shopify/checkout-kit",
-  "version": "4.0.0-alpha.1",
+  "version": "4.0.0-alpha.2",
   "description": "A web component for embedding Shopify's Checkout Kit in any website.",
   "license": "MIT",
   "author": "Shopify",
