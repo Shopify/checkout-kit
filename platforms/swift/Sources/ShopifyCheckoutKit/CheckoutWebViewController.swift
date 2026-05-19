@@ -27,6 +27,7 @@ import WebKit
 class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControllerDelegate {
     var onCancel: (() -> Void)?
     var onFail: ((CheckoutError) -> Void)?
+    weak var delegate: (any CheckoutDelegate)?
     var client: (any CheckoutCommunicationProtocol)?
 
     var checkoutViewDidFailWithErrorCount = 0
@@ -77,8 +78,9 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     // MARK: Initializers
 
-    public init(checkoutURL url: URL, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
+    public init(checkoutURL url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         checkoutURL = url
+        self.delegate = delegate
         self.client = client
 
         let checkoutView = CheckoutWebView.for(checkout: url, entryPoint: entryPoint)
@@ -182,6 +184,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         }
 
         onCancel?()
+        delegate?.checkoutDidCancel()
     }
 
     package func presentFallbackViewController(url: URL) {
@@ -192,6 +195,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         checkoutView.translatesAutoresizingMaskIntoConstraints = false
         checkoutView.scrollView.contentInsetAdjustmentBehavior = .never
         checkoutView.viewDelegate = self
+        checkoutView.client = client
         checkoutView.alpha = 1
 
         view.addSubview(checkoutView)
@@ -233,11 +237,12 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
     func checkoutViewDidFailWithError(error: CheckoutError) {
         checkoutViewDidFailWithErrorCount += 1
         CheckoutWebView.invalidate()
-        onFail?(error)
 
         if shouldAttemptRecovery(for: error) {
             presentFallbackViewController(url: checkoutURL)
         } else {
+            onFail?(error)
+            delegate?.checkoutDidFail(error: error)
             dismiss(animated: true)
         }
     }

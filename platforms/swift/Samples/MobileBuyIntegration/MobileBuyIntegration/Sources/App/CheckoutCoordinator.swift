@@ -30,13 +30,14 @@ class CheckoutCoordinator: UIViewController {
     var window: UIWindow?
     var root: UIViewController?
 
-    private let client = CheckoutProtocol.Client()
+    private let checkoutDelegate = CartResettingCheckoutDelegate()
+    private lazy var client = CheckoutProtocol.Client()
         .on(CheckoutProtocol.start) { checkout in
             OSLogger.shared.debug("[UCP] Checkout started: \(checkout.id)")
         }
-        .on(CheckoutProtocol.complete) { checkout in
+        .on(CheckoutProtocol.complete) { [checkoutDelegate] checkout in
             OSLogger.shared.debug("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
-            CartManager.shared.resetCart()
+            checkoutDelegate.markCompleted()
         }
 
     init(window: UIWindow?) {
@@ -53,7 +54,7 @@ class CheckoutCoordinator: UIViewController {
 
     public func present(checkout url: URL) {
         if let rootViewController = window?.topMostViewController() {
-            ShopifyCheckoutKit.present(checkout: url, from: rootViewController, client: client)
+            ShopifyCheckoutKit.present(checkout: url, from: rootViewController, delegate: checkoutDelegate, client: client)
             root = rootViewController
         }
     }

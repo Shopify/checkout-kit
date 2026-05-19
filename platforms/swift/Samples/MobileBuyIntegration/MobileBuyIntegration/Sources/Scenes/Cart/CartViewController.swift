@@ -151,13 +151,14 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
     private var buttonStackView: UIStackView!
     private var checkoutButton: UIButton!
 
-    private let client = CheckoutProtocol.Client()
+    private let checkoutDelegate = CartResettingCheckoutDelegate()
+    private lazy var client = CheckoutProtocol.Client()
         .on(CheckoutProtocol.start) { checkout in
             print("[UCP] Checkout started: \(checkout.id)")
         }
-        .on(CheckoutProtocol.complete) { checkout in
+        .on(CheckoutProtocol.complete) { [checkoutDelegate] checkout in
             print("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
-            CartManager.shared.resetCart()
+            checkoutDelegate.markCompleted()
         }
 
     // MARK: Initializers
@@ -404,7 +405,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
     @objc private func presentCheckout() {
         guard let url = CartManager.shared.cart?.checkoutURL else { return }
 
-        ShopifyCheckoutKit.present(checkout: url, from: self, client: client)
+        ShopifyCheckoutKit.present(checkout: url, from: self, delegate: checkoutDelegate, client: client)
     }
 
     @objc private func resetCart() {

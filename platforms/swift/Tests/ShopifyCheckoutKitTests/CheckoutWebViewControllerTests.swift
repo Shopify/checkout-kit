@@ -144,6 +144,43 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertTrue(viewController.dismissAnimated)
     }
 
+    func test_checkoutViewDidFailWithError_invokesDelegate() {
+        let delegate = MockCheckoutDelegate()
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
+
+        viewController.checkoutViewDidFailWithError(error: nonRecoverableError)
+
+        XCTAssertEqual(delegate.didFailErrors.count, 1)
+    }
+
+    func test_checkoutViewDidFailWithError_doesNotInvokeDelegateWhileRecovering() {
+        let delegate = MockCheckoutDelegate()
+        var onFailCount = 0
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
+        viewController.onFail = { _ in onFailCount += 1 }
+
+        viewController.checkoutViewDidFailWithError(error: recoverableError)
+
+        XCTAssertTrue(viewController.presentFallbackViewControllerCalled)
+        XCTAssertEqual(delegate.didFailErrors.count, 0)
+        XCTAssertEqual(onFailCount, 0)
+
+        viewController.checkoutViewDidFailWithError(error: recoverableError)
+
+        XCTAssertTrue(viewController.dismissCalled)
+        XCTAssertEqual(delegate.didFailErrors.count, 1)
+        XCTAssertEqual(onFailCount, 1)
+    }
+
+    func test_presentationControllerDidDismiss_invokesDelegateCancel() {
+        let delegate = MockCheckoutDelegate()
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
+
+        viewController.presentationControllerDidDismiss(UIPresentationController(presentedViewController: viewController, presenting: nil))
+
+        XCTAssertEqual(delegate.didCancelCount, 1)
+    }
+
     func test_checkoutViewDidFailWithError_respectsErrorRecoverableProperty() {
         struct TestCase {
             let name: String
