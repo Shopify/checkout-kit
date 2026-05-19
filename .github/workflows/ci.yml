@@ -37,11 +37,13 @@ jobs:
           filters: |
             android:
               - 'platforms/android/**'
+              - 'protocol/**'
               - '.github/workflows/android-test.yml'
               - '.github/workflows/android-license-headers.yml'
               - '.github/workflows/ci.yml'
             swift:
               - 'platforms/swift/**'
+              - 'protocol/**'
               - 'Package.swift'
               - 'Package.resolved'
               - '.github/workflows/swift-test-package.yml'
@@ -51,6 +53,11 @@ jobs:
               - '.github/workflows/ci.yml'
             reactNative:
               - 'platforms/react-native/**'
+              - 'platforms/swift/**'
+              - 'platforms/android/**'
+              - 'protocol/**'
+              - 'Package.swift'
+              - 'Package.resolved'
               - '.github/workflows/rn-test.yml'
               - '.github/workflows/rn-test-android.yml'
               - '.github/workflows/rn-test-ios.yml'
