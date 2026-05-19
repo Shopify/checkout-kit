@@ -86,7 +86,11 @@ if [[ "$ACTION" == *"test"* && -n "$TEST_FILTER" ]]; then
 fi
 
 if command -v xcbeautify >/dev/null 2>&1; then
-    eval "$xcodebuild_cmd" | xcbeautify --renderer github-actions
+    xcbeautify_args=""
+    if [ "$CI" = "true" ]; then
+        xcbeautify_args="--renderer github-actions"
+    fi
+    eval "$xcodebuild_cmd" | xcbeautify $xcbeautify_args
 else
     eval "$xcodebuild_cmd"
 fi
