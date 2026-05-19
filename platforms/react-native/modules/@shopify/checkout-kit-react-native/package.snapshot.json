@@ -4,7 +4,7 @@
   "android/proguard-rules.pro",
   "android/src/main/AndroidManifest.xml",
   "android/src/main/AndroidManifestNew.xml",
-  "android/src/main/java/com/shopify/reactnative/checkoutkit/CustomCheckoutEventProcessor.java",
+  "android/src/main/java/com/shopify/reactnative/checkoutkit/CustomCheckoutListener.java",
   "android/src/main/java/com/shopify/reactnative/checkoutkit/ShopifyCheckoutKitModule.java",
   "android/src/main/java/com/shopify/reactnative/checkoutkit/ShopifyCheckoutKitPackage.java",
   "ios/AcceleratedCheckoutButtons.swift",

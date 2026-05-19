@@ -66,7 +66,7 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
     }
 
     // TODO: re-enable when iOS CheckoutDelegate (or equivalent) lands upstream —
-    // parallels Android's DefaultCheckoutEventProcessor.onCheckoutCanceled / onCheckoutFailed.
+    // parallels Android's DefaultCheckoutListener.onCheckoutCanceled / onCheckoutFailed.
     // Until then, the JS "error" and "close" events stay declared in supportedEvents()
     // but native never emits them.
     /*
