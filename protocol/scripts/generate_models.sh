@@ -1,24 +1,4 @@
 #!/bin/bash
-# MIT License
-#
-# Copyright 2023-present, Shopify Inc.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -41,98 +21,6 @@ fi
 TEMP_SCHEMAS=()
 cleanup() { rm -f "${TEMP_SCHEMAS[@]}"; }
 trap cleanup EXIT
-
-# quicktype does not emit license headers. Prepend the MIT header to generated
-# files so they pass CI license-header checks. Variants match the conventions
-# already used by the generated platform sources.
-prepend_license() {
-  local lang="$1"
-  local file="$2"
-  local header
-  if [[ "$lang" == "kotlin" ]]; then
-    header=$(cat <<'EOF'
-/*
- * MIT License
- *
- * Copyright 2023-present, Shopify Inc.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-EOF
-)
-  elif [[ "$lang" == "typescript" ]]; then
-    header=$(cat <<'EOF'
-/*
-MIT License
-
-Copyright 2023 - Present, Shopify Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-EOF
-)
-  else
-    header=$(cat <<'EOF'
-/*
- MIT License
-
- Copyright 2023 - Present, Shopify Inc.
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-EOF
-)
-  fi
-  local tmp
-  tmp=$(mktemp)
-  { printf '%s\n\n' "$header"; cat "$file"; } > "$tmp"
-  mv "$tmp" "$file"
-}
 
 # quicktype generates non-deterministic color-based names (e.g. PurplePayment, FluffyPayment)
 # when inline objects collide with existing type names. Injecting "title" fields into the
@@ -229,7 +117,6 @@ case "$LANG" in
       -e 's/typealias Totals = JsonArray<TotalElement>/typealias Totals = List<TotalElement>/' \
       "${OUTPUT}"
 
-    prepend_license "kotlin" "${OUTPUT}"
 
     echo "Generated ${OUTPUT}"
     ;;
@@ -260,7 +147,6 @@ case "$LANG" in
       -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
       "${OUTPUT}"
 
-    prepend_license "swift" "${OUTPUT}"
 
     echo "Generated ${OUTPUT}"
     ;;
@@ -292,7 +178,6 @@ case "$LANG" in
       -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
       "${OUTPUT}"
 
-    prepend_license "typescript" "${OUTPUT}"
 
     echo "Generated ${OUTPUT}"
     ;;

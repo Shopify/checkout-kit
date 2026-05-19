@@ -77,7 +77,6 @@ open:
   "PRs": "https://github.com/Shopify/checkout-kit/pulls"
 
 check:
-  android-license-headers: cd platforms/android && ./scripts/check_license_headers.rb
   android-detekt: cd platforms/android && ./gradlew detekt
   android-lint: cd platforms/android && ./gradlew lintRelease
   swift-lint: cd platforms/swift && ./Scripts/lint
@@ -164,17 +163,13 @@ commands:
             run: cd platforms/android && ./gradlew :lib:apiDump
 
       check:
-        desc: Run all Android checks (license headers, detekt, android lint)
+        desc: Run all Android checks (detekt, android lint)
         run: |
           set -e
           cd platforms/android
-          ./scripts/check_license_headers.rb
           ./gradlew detekt
           ./gradlew lintRelease
         subcommands:
-          license-headers:
-            desc: Check MIT license headers in source files
-            run: cd platforms/android && ./scripts/check_license_headers.rb
           detekt:
             desc: Run detekt static analysis
             run: cd platforms/android && ./gradlew detekt

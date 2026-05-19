@@ -63,9 +63,6 @@ jobs:
       - name: Verify package (publint)
         run: pnpm verify
 
-      - name: Check license headers
-        run: ./scripts/check_license_headers.rb
-
       - name: Pack and inspect contents
         run: |
           pnpm pack --pack-destination /tmp/web-bootstrap
