@@ -28,6 +28,7 @@ jobs:
       swift: ${{ steps.filter.outputs.swift }}
       reactNative: ${{ steps.filter.outputs.reactNative }}
       web: ${{ steps.filter.outputs.web }}
+      licenseInfra: ${{ steps.filter.outputs.licenseInfra }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -35,12 +36,13 @@ jobs:
         id: filter
         with:
           filters: |
+            licenseInfra:
+              - '.github/workflows/license-headers.yml'
+              - 'scripts/check_license_headers.rb'
             android:
               - 'platforms/android/**'
               - 'protocol/**'
               - '.github/workflows/android-test.yml'
-              - '.github/workflows/license-headers.yml'
-              - 'scripts/check_license_headers.rb'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             swift:
@@ -74,8 +76,6 @@ jobs:
             web:
               - 'platforms/web/**'
               - '.github/workflows/web.yml'
-              - '.github/workflows/license-headers.yml'
-              - 'scripts/check_license_headers.rb'
               - '.github/actions/setup/**'
               - '.github/workflows/ci.yml'
 
@@ -88,7 +88,7 @@ jobs:
   android-license-headers:
     name: Android
     needs: changes
-    if: needs.changes.outputs.android == 'true'
+    if: needs.changes.outputs.android == 'true' || needs.changes.outputs.licenseInfra == 'true'
     uses: ./.github/workflows/license-headers.yml
     with:
       target: platforms/android
@@ -110,6 +110,14 @@ jobs:
     needs: changes
     if: needs.changes.outputs.swift == 'true'
     uses: ./.github/workflows/swift-lint.yml
+
+  swift-license-headers:
+    name: Swift
+    needs: changes
+    if: needs.changes.outputs.swift == 'true' || needs.changes.outputs.licenseInfra == 'true'
+    uses: ./.github/workflows/license-headers.yml
+    with:
+      target: platforms/swift
 
   rn-test:
     name: React Native
@@ -174,7 +182,7 @@ jobs:
   web-license-headers:
     name: Web
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.licenseInfra == 'true'
     uses: ./.github/workflows/license-headers.yml
     with:
       target: platforms/web/src
@@ -205,6 +213,7 @@ jobs:
       - swift-test-package
       - swift-build-samples
       - swift-lint
+      - swift-license-headers
       - rn-test
       - rn-test-android
       - rn-test-ios

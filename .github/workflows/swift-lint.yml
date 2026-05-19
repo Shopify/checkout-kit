@@ -51,16 +51,6 @@ jobs:
 
       - run: ./Scripts/lint check --verbose --skip-pod
 
-  check-license-headers:
-    name: License Headers
-    runs-on: ${{ vars.MACOS_RUNNER }}
-    defaults:
-      run:
-        working-directory: platforms/swift
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - run: ./Scripts/ensure_license
-
   lint-podspec:
     name: CocoaPods
     runs-on: ${{ vars.MACOS_RUNNER }}
