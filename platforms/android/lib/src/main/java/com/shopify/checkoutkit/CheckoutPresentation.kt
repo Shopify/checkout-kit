@@ -28,7 +28,6 @@ import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
 
 /**
  * Kotlin-first builder for per-presentation checkout callbacks.
@@ -103,10 +102,8 @@ public class CheckoutPresentation internal constructor() {
         communicationClient = client
     }
 
-    internal fun buildEventProcessor(): DefaultCheckoutEventProcessor =
-        object : DefaultCheckoutEventProcessor() {
-            override fun onCheckoutCompleted(checkoutCompletedEvent: CheckoutCompletedEvent) = Unit
-
+    internal fun buildListener(): DefaultCheckoutListener =
+        object : DefaultCheckoutListener() {
             override fun onCheckoutFailed(error: CheckoutException) {
                 onFail?.invoke(error)
             }

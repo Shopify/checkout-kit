@@ -31,7 +31,6 @@ import android.widget.RelativeLayout
 import androidx.activity.ComponentActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.children
-import com.shopify.checkoutkit.lifecycleevents.emptyCompletedEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.awaitility.Awaitility.await
@@ -55,7 +54,7 @@ import java.util.concurrent.TimeUnit
 class CheckoutDialogTest {
 
     private lateinit var activity: ComponentActivity
-    private lateinit var processor: DefaultCheckoutEventProcessor
+    private lateinit var processor: DefaultCheckoutListener
     private lateinit var configuration: Configuration
 
     @Before
@@ -65,7 +64,7 @@ class CheckoutDialogTest {
             it.preloading = Preloading(enabled = false)
         }
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
-        processor = noopDefaultCheckoutEventProcessor()
+        processor = noopDefaultCheckoutListener()
     }
 
     @After
@@ -144,23 +143,23 @@ class CheckoutDialogTest {
 
     @Test
     fun `calls onCheckoutCanceled if cancel is called`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
         val dialog = ShadowDialog.getLatestDialog()
         dialog.cancel()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockEventProcessor).onCheckoutCanceled()
-        verify(mockEventProcessor, never()).onCheckoutFailed(any())
+        verify(mockListener).onCheckoutCanceled()
+        verify(mockListener, never()).onCheckoutFailed(any())
     }
 
     @Test
     fun `closeCheckoutDialogWithError marks cache entry stale`() {
         withPreloadingEnabled {
-            val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
+            val mockListener = mock<DefaultCheckoutListener>()
             ShopifyCheckoutKit.preload("https://shopify.com", activity)
-            ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+            ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
             assertThat(CheckoutWebView.cacheEntry).isNotNull()
 
@@ -177,8 +176,8 @@ class CheckoutDialogTest {
 
     @Test
     fun `calls onCheckoutFailed if closeCheckoutDialogWithError for non-recoverable error`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
         val dialog = ShadowDialog.getLatestDialog()
         val checkoutDialog = dialog as CheckoutDialog
@@ -187,14 +186,14 @@ class CheckoutDialogTest {
         checkoutDialog.closeCheckoutDialogWithError(error)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockEventProcessor, never()).onCheckoutCanceled()
-        verify(mockEventProcessor).onCheckoutFailed(error)
+        verify(mockListener, never()).onCheckoutCanceled()
+        verify(mockListener).onCheckoutFailed(error)
     }
 
     @Test
     fun `calls attemptToRecoverFromError if closeCheckoutDialogWithError is called with recoverable error`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
         val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
@@ -205,14 +204,14 @@ class CheckoutDialogTest {
         // attemptToRecoverFromError creates a FallbackWebView and removes the CheckoutWebView
         assertThat(checkoutDialog.containsChildOfType(FallbackWebView::class.java)).isTrue()
         assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        verify(mockEventProcessor, never()).onCheckoutCanceled()
-        verify(mockEventProcessor).onCheckoutFailed(any())
+        verify(mockListener, never()).onCheckoutCanceled()
+        verify(mockListener).onCheckoutFailed(any())
     }
 
     @Test
     fun `does not call attemptToRecoverFromError if closeCheckoutDialogWithError is called when url contains multipass`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com/account/login/multipass", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com/account/login/multipass", activity, mockListener)
 
         val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
@@ -223,13 +222,13 @@ class CheckoutDialogTest {
         // attemptToRecoverFromError creates a FallbackWebView and removes the CheckoutWebView
         assertThat(checkoutDialog.containsChildOfType(FallbackWebView::class.java)).isFalse()
         assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        verify(mockEventProcessor, never()).onCheckoutCanceled()
-        verify(mockEventProcessor).onCheckoutFailed(any())
+        verify(mockListener, never()).onCheckoutCanceled()
+        verify(mockListener).onCheckoutFailed(any())
     }
 
     @Test
     fun `can disable fallback behaviour via shouldRecoverFromError`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
+        val mockListener = mock<DefaultCheckoutListener>()
         ShopifyCheckoutKit.configure {
             it.errorRecovery = object : ErrorRecovery {
                 override fun shouldRecoverFromError(checkoutException: CheckoutException): Boolean {
@@ -237,7 +236,7 @@ class CheckoutDialogTest {
                 }
             }
         }
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
         val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
@@ -249,14 +248,14 @@ class CheckoutDialogTest {
         // attemptToRecoverFromError creates a FallbackWebView and removes the CheckoutWebView
         assertThat(checkoutDialog.containsChildOfType(FallbackWebView::class.java)).isFalse()
         assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        verify(mockEventProcessor, never()).onCheckoutCanceled()
-        verify(mockEventProcessor).onCheckoutFailed(error)
+        verify(mockListener, never()).onCheckoutCanceled()
+        verify(mockListener).onCheckoutFailed(error)
     }
 
     @Test
     fun `calls onCheckoutCanceled if close menu item is clicked`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
         val dialog = ShadowDialog.getLatestDialog()
         assertThat(dialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
@@ -266,7 +265,7 @@ class CheckoutDialogTest {
         header.menu.performIdentifierAction(R.id.checkoutKitCloseBtn, 0)
         ShadowLooper.runUiThreadTasks()
 
-        verify(mockEventProcessor, timeout(2000)).onCheckoutCanceled()
+        verify(mockListener, timeout(2000)).onCheckoutCanceled()
     }
 
     @Test
@@ -316,8 +315,8 @@ class CheckoutDialogTest {
 
     @Test
     fun `closeCheckoutDialogWithError does not recover on second recoverable error - prevents infinite loop`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
         val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
@@ -340,8 +339,8 @@ class CheckoutDialogTest {
 
     @Test
     fun `closeCheckoutDialogWithError increments recovery attempt count`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
         val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         assertThat(checkoutDialog.recoveryAttemptCount).isEqualTo(0)
@@ -402,25 +401,6 @@ class CheckoutDialogTest {
     }
 
     @Test
-    fun `attemptToRecoverFromError sets event processor`() {
-        val checkoutUrl = "https://shopify.com"
-        val mockProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present(checkoutUrl, activity, mockProcessor)
-
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        dialog.attemptToRecoverFromError(checkoutException(isRecoverable = true))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        val layout = dialog.findViewById<RelativeLayout>(R.id.checkoutKitContainer)
-        val fallbackView = layout.children.first { it is FallbackWebView } as FallbackWebView
-
-        val completedEvent = emptyCompletedEvent()
-
-        fallbackView.getEventProcessor().onCheckoutViewComplete(completedEvent)
-        verify(mockProcessor).onCheckoutCompleted(completedEvent)
-    }
-
-    @Test
     fun `dialog applies custom close icon when provided`() {
         val customIcon = DrawableResource(android.R.drawable.ic_delete)
         ShopifyCheckoutKit.configure {
@@ -435,7 +415,7 @@ class CheckoutDialogTest {
             )
         }
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mock<DefaultCheckoutEventProcessor>())
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mock<DefaultCheckoutListener>())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
@@ -459,7 +439,7 @@ class CheckoutDialogTest {
             }
         }
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mock<DefaultCheckoutEventProcessor>())
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mock<DefaultCheckoutListener>())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
@@ -481,7 +461,7 @@ class CheckoutDialogTest {
         ShopifyCheckoutKit.configure {
             it.colorScheme = ColorScheme.Light() // Default colors, no custom icon or tint
         }
-        val mockProcessor = mock<DefaultCheckoutEventProcessor>()
+        val mockProcessor = mock<DefaultCheckoutListener>()
         ShopifyCheckoutKit.present("https://shopify.com", activity, mockProcessor)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
@@ -522,7 +502,7 @@ class CheckoutDialogTest {
         )
 
         ShopifyCheckoutKit.configure { it.colorScheme = colorScheme }
-        val mockProcessor = mock<DefaultCheckoutEventProcessor>()
+        val mockProcessor = mock<DefaultCheckoutListener>()
         ShopifyCheckoutKit.present("https://shopify.com", activity, mockProcessor)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
@@ -542,22 +522,22 @@ class CheckoutDialogTest {
 
     @Test
     fun `back press cancels dialog when WebView has no history to navigate`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         dialog.onBackPressedDispatcher.onBackPressed()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockEventProcessor).onCheckoutCanceled()
+        verify(mockListener).onCheckoutCanceled()
         assertThat(dialog.isShowing).isFalse()
     }
 
     @Test
     fun `back press navigates WebView history when history exists and not on confirmation page`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com/checkouts/c/abc", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com/checkouts/c/abc", activity, mockListener)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
@@ -569,15 +549,15 @@ class CheckoutDialogTest {
         dialog.onBackPressedDispatcher.onBackPressed()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockEventProcessor, never()).onCheckoutCanceled()
+        verify(mockListener, never()).onCheckoutCanceled()
         assertThat(dialog.isShowing).isTrue()
         assertThat(shadowOf(webView).goBackInvocations).isGreaterThan(0)
     }
 
     @Test
     fun `back press cancels dialog when on confirmation page even with history`() {
-        val mockEventProcessor = mock<DefaultCheckoutEventProcessor>()
-        ShopifyCheckoutKit.present("https://shopify.com/checkouts/c/abc", activity, mockEventProcessor)
+        val mockListener = mock<DefaultCheckoutListener>()
+        ShopifyCheckoutKit.present("https://shopify.com/checkouts/c/abc", activity, mockListener)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
@@ -589,7 +569,7 @@ class CheckoutDialogTest {
         dialog.onBackPressedDispatcher.onBackPressed()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockEventProcessor).onCheckoutCanceled()
+        verify(mockListener).onCheckoutCanceled()
         assertThat(dialog.isShowing).isFalse()
         assertThat(shadowOf(webView).goBackInvocations).isEqualTo(0)
     }

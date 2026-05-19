@@ -41,7 +41,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     override val recoverErrors = true
     var isPreload = false
 
-    private val checkoutBridge = CheckoutBridge(CheckoutWebViewEventProcessor(NoopEventProcessor()))
+    private val checkoutBridge = CheckoutBridge(CheckoutWebViewListener(NoopCheckoutListener()))
     private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocol(this)
     private var loadComplete = false
 
@@ -54,9 +54,9 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
     fun hasFinishedLoading() = loadComplete
 
-    fun setEventProcessor(eventProcessor: CheckoutWebViewEventProcessor) {
-        log.d(LOG_TAG, "Setting event processor $eventProcessor.")
-        checkoutBridge.setEventProcessor(eventProcessor)
+    fun setListener(listener: CheckoutWebViewListener) {
+        log.d(LOG_TAG, "Setting listener $listener.")
+        checkoutBridge.setListener(listener)
     }
 
     fun setClient(client: CheckoutCommunicationClient?) {
@@ -64,8 +64,8 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         embeddedCheckoutProtocol.setClient(client)
     }
 
-    override fun getEventProcessor(): CheckoutWebViewEventProcessor {
-        return checkoutBridge.getEventProcessor()
+    override fun getListener(): CheckoutWebViewListener {
+        return checkoutBridge.getListener()
     }
 
     override fun onAttachedToWindow() {
@@ -97,14 +97,14 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
             log.d(LOG_TAG, "onPageStarted called $url.")
-            checkoutBridge.getEventProcessor().onCheckoutViewLoadStarted()
+            checkoutBridge.getListener().onCheckoutViewLoadStarted()
         }
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
             log.d(LOG_TAG, "onPageFinished called $url.")
             loadComplete = true
-            getEventProcessor().onCheckoutViewLoadComplete()
+            getListener().onCheckoutViewLoadComplete()
         }
 
         override fun shouldOverrideUrlLoading(

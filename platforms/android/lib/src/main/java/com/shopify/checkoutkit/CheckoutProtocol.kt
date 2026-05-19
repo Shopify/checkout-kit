@@ -53,7 +53,7 @@ import java.util.concurrent.CountDownLatch
  *     .on(CheckoutProtocol.start)  { checkout -> showProgressUI(checkout) }
  *     .on(CheckoutProtocol.complete) { checkout -> navigateToConfirmation(checkout) }
  *
- * ShopifyCheckoutKit.present(url, activity, eventProcessor, client)
+ * ShopifyCheckoutKit.present(url, activity, checkoutListener, client)
  * ```
  */
 public object CheckoutProtocol {

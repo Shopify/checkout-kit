@@ -299,10 +299,10 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 ```
 
 If you prefer a reusable object, or are integrating from Java, extend
-`DefaultCheckoutEventProcessor` and pass it to the existing `present(...)` overload:
+`DefaultCheckoutListener` and pass it to the existing `present(...)` overload:
 
 ```kotlin
-val processor = object : DefaultCheckoutEventProcessor() {
+val listener = object : DefaultCheckoutListener() {
     override fun onShowFileChooser(
         webView: WebView,
         filePathCallback: ValueCallback<Array<Uri>>,
@@ -324,11 +324,11 @@ val processor = object : DefaultCheckoutEventProcessor() {
     }
 }
 
-ShopifyCheckoutKit.present(checkoutUrl, context, processor)
+ShopifyCheckoutKit.present(checkoutUrl, context, listener)
 ```
 
 > [!Note]
-> The `DefaultCheckoutEventProcessor` overload remains available for reusable or Java-facing
+> The `DefaultCheckoutListener` overload remains available for reusable or Java-facing
 > integrations and provides default implementations for optional browser/system callbacks.
 
 ### Error handling

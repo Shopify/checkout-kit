@@ -53,7 +53,7 @@ import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 
 internal class CheckoutDialog(
     private val checkoutUrl: String,
-    private val checkoutEventProcessor: CheckoutEventProcessor,
+    private val checkoutListener: CheckoutListener,
     context: Context,
     private val communicationClient: CheckoutCommunicationClient? = null,
 ) : ComponentDialog(context) {
@@ -90,8 +90,8 @@ internal class CheckoutDialog(
         )
 
         checkoutWebView.onResume()
-        log.d(LOG_TAG, "Setting event processor on WebView.")
-        checkoutWebView.setEventProcessor(eventProcessor())
+        log.d(LOG_TAG, "Setting listener on WebView.")
+        checkoutWebView.setListener(webViewListener())
         log.d(LOG_TAG, "Setting communication client on WebView.")
         checkoutWebView.setClient(communicationClient)
 
@@ -119,7 +119,7 @@ internal class CheckoutDialog(
         setOnCancelListener {
             log.d(LOG_TAG, "Cancel listener invoked, invoking onCheckoutCanceled.")
             CheckoutWebViewContainer.retainCacheEntry = RetainCacheEntry.IF_NOT_STALE
-            checkoutEventProcessor.onCheckoutCanceled()
+            checkoutListener.onCheckoutCanceled()
         }
 
         setOnDismissListener {
@@ -203,7 +203,7 @@ internal class CheckoutDialog(
         log.d(LOG_TAG, "Closing dialog with error, marking cache entry stale, calling onCheckoutFailed.")
         recoveryAttemptCount++
         CheckoutWebView.markCacheEntryStale()
-        checkoutEventProcessor.onCheckoutFailed(exception)
+        checkoutListener.onCheckoutFailed(exception)
 
         val isOneTimeUseUrl = this.checkoutUrl.isOneTimeUse()
         val shouldRecover = ShopifyCheckoutKit.configuration.errorRecovery.shouldRecoverFromError(exception)
@@ -233,16 +233,16 @@ internal class CheckoutDialog(
         addWebViewToContainer(
             ShopifyCheckoutKit.configuration.colorScheme,
             FallbackWebView(context).apply {
-                setEventProcessor(eventProcessor())
+                setListener(webViewListener())
                 loadUrl(checkoutUrl)
             }
         )
         return true
     }
 
-    private fun eventProcessor(): CheckoutWebViewEventProcessor {
-        return CheckoutWebViewEventProcessor(
-            eventProcessor = checkoutEventProcessor,
+    private fun webViewListener(): CheckoutWebViewListener {
+        return CheckoutWebViewListener(
+            listener = checkoutListener,
             toggleHeader = ::toggleHeader,
             closeCheckoutDialogWithError = ::closeCheckoutDialogWithError,
             setProgressBarVisibility = ::setProgressBarVisibility,

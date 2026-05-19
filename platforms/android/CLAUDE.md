@@ -28,7 +28,8 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 - **`FallbackWebView.kt`** — minimal WebView swapped in during error recovery when the primary path fails.
 - **`CheckoutBridge.kt`** — the JS ↔ native bridge. `SCHEMA_VERSION` is a cross-boundary contract with the web checkout team; bumping it requires coordination with them.
 - **`Configuration.kt`** — runtime config container (color scheme, preload enable, log level, error recovery policy). Any config change clears the WebView cache.
-- **`CheckoutEventProcessor.kt`** + **`DefaultCheckoutEventProcessor`** — consumer-implemented lifecycle interface (completion, failure, permission prompts, link clicks). Changes here are consumer API changes.
+- **`CheckoutListener.kt`** + **`DefaultCheckoutListener`** — consumer-implemented lifecycle interface (failure, cancellation, permission prompts, file chooser). Changes here are consumer API changes.
+- **`CheckoutPresentation.kt`** — Kotlin-first builder for per-presentation callbacks (`onFail`, `onCancel`, browser/system hooks, ECP `connect(...)`). Builds a `DefaultCheckoutListener` internally.
 
 ## Testing patterns
 

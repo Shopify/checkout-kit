@@ -83,7 +83,7 @@ public object ShopifyCheckoutKit {
      * Preloads a Shopify checkout in the background.
      *
      * Preloading checkout is fully optional, but allows reducing the time taken between calling
-     * {@link ShopifyCheckoutKit#present(String, ComponentActivity, CheckoutEventProcessor)} and having a fully interactive checkout.
+     * {@link ShopifyCheckoutKit#present(String, ComponentActivity, CheckoutListener)} and having a fully interactive checkout.
      * Note: Preload must be called on all cart changes to avoid stale checkouts being presented.
      * Preloaded checkouts also have a TTL of 5 minutes, after checkout will be re-loaded on calling present.
      *
@@ -140,7 +140,7 @@ public object ShopifyCheckoutKit {
         return present(
             checkoutUrl = checkoutUrl,
             context = context,
-            checkoutEventProcessor = presentation.buildEventProcessor(),
+            checkoutListener = presentation.buildListener(),
             communicationClient = presentation.communicationClient,
         )
     }
@@ -150,8 +150,8 @@ public object ShopifyCheckoutKit {
      *
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
-     * @param checkoutEventProcessor provides callbacks to allow clients to listen for and respond to checkout lifecycle events such as
-     * (failure, completion, cancellation, and browser/system prompts).
+     * @param checkoutListener provides callbacks to allow clients to listen for and respond to checkout lifecycle events
+     * (failure, cancellation, permission prompts, file chooser).
      * @param communicationClient optional handler for Embedded Checkout Protocol (ECP) messages.
      * Implement [CheckoutCommunicationClient] to intercept arbitrary ECP messages from the checkout
      * web page. Built-in messages ([ec.ready][EmbeddedCheckoutProtocol.METHOD_READY] and
@@ -160,10 +160,10 @@ public object ShopifyCheckoutKit {
      */
     @JvmOverloads
     @JvmStatic
-    public fun <T : DefaultCheckoutEventProcessor> present(
+    public fun <T : DefaultCheckoutListener> present(
         checkoutUrl: String,
         context: ComponentActivity,
-        checkoutEventProcessor: T,
+        checkoutListener: T,
         communicationClient: CheckoutCommunicationClient? = null,
     ): CheckoutKitDialog? {
         log.d("ShopifyCheckoutKit", "Present called with checkoutUrl $checkoutUrl.")
@@ -172,7 +172,7 @@ public object ShopifyCheckoutKit {
             return null
         }
         log.d("ShopifyCheckoutKit", "Constructing Dialog")
-        val dialog = CheckoutDialog(checkoutUrl, checkoutEventProcessor, context, communicationClient)
+        val dialog = CheckoutDialog(checkoutUrl, checkoutListener, context, communicationClient)
         context.lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
                 log.d("ShopifyCheckoutKit", "Context is being destroyed, dismissing dialog.")

@@ -23,33 +23,26 @@
 package com.shopify.checkoutkit
 
 import android.webkit.JavascriptInterface
-import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.COMPLETED
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.ERROR
 import com.shopify.checkoutkit.CheckoutBridge.CheckoutWebOperation.MODAL
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import com.shopify.checkoutkit.errorevents.CheckoutErrorDecoder
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEventDecoder
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 internal class CheckoutBridge(
-    private var eventProcessor: CheckoutWebViewEventProcessor,
+    private var listener: CheckoutWebViewListener,
     private val decoder: Json = Json { ignoreUnknownKeys = true },
-    private val checkoutCompletedEventDecoder: CheckoutCompletedEventDecoder = CheckoutCompletedEventDecoder(
-        decoder,
-        log
-    ),
     private val checkoutErrorDecoder: CheckoutErrorDecoder = CheckoutErrorDecoder(decoder, log),
 ) {
 
-    fun setEventProcessor(eventProcessor: CheckoutWebViewEventProcessor) {
-        this.eventProcessor = eventProcessor
+    fun setListener(listener: CheckoutWebViewListener) {
+        this.listener = listener
     }
 
-    fun getEventProcessor(): CheckoutWebViewEventProcessor = this.eventProcessor
+    fun getListener(): CheckoutWebViewListener = this.listener
 
     enum class CheckoutWebOperation(val key: String) {
-        COMPLETED("completed"),
         MODAL("checkoutBlockingEvent"),
         ERROR("error");
 
@@ -69,23 +62,13 @@ internal class CheckoutBridge(
             val decodedMsg = decoder.decodeFromString<WebToSdkEvent>(message)
 
             when (CheckoutWebOperation.fromKey(decodedMsg.name)) {
-                COMPLETED -> {
-                    log.d(LOG_TAG, "Received Completed message.  Attempting to decode.")
-                    checkoutCompletedEventDecoder.decode(decodedMsg).let { event ->
-                        log.d(LOG_TAG, "Decoded message $event.")
-                        onMainThread {
-                            eventProcessor.onCheckoutViewComplete(event)
-                        }
-                    }
-                }
-
                 MODAL -> {
                     log.d(LOG_TAG, "Received Modal message.")
                     val modalVisible = decodedMsg.body.toBooleanStrictOrNull()
                     modalVisible?.let {
                         log.d(LOG_TAG, "Modal visible $it")
                         onMainThread {
-                            eventProcessor.onCheckoutViewModalToggled(modalVisible)
+                            listener.onCheckoutViewModalToggled(modalVisible)
                         }
                     }
                 }
@@ -95,7 +78,7 @@ internal class CheckoutBridge(
                     checkoutErrorDecoder.decode(decodedMsg)?.let { exception ->
                         log.d(LOG_TAG, "Decoded message $exception.")
                         onMainThread {
-                            eventProcessor.onCheckoutViewFailedWithError(exception)
+                            listener.onCheckoutViewFailedWithError(exception)
                         }
                     }
                 }
@@ -105,7 +88,7 @@ internal class CheckoutBridge(
         } catch (e: Exception) {
             log.d(LOG_TAG, "Failed to decode message with error: $e. Calling onCheckoutFailedWithError")
             onMainThread {
-                eventProcessor.onCheckoutViewFailedWithError(
+                listener.onCheckoutViewFailedWithError(
                     CheckoutKitException(
                         errorDescription = "Error decoding message from checkout.",
                         errorCode = CheckoutKitException.ERROR_RECEIVING_MESSAGE_FROM_CHECKOUT,

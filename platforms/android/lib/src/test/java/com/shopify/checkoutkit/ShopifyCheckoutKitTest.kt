@@ -136,7 +136,7 @@ class ShopifyCheckoutKitTest {
                 ShopifyCheckoutKit.present(
                     "https://one.com",
                     activity,
-                    noopDefaultCheckoutEventProcessor()
+                    noopDefaultCheckoutListener()
                 )
                 ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
@@ -175,7 +175,7 @@ class ShopifyCheckoutKitTest {
                 ShopifyCheckoutKit.present(
                     "https://one.com",
                     activity,
-                    noopDefaultCheckoutEventProcessor()
+                    noopDefaultCheckoutListener()
                 )
                 ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
