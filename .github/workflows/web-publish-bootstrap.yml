@@ -64,7 +64,7 @@ jobs:
         run: pnpm verify
 
       - name: Check license headers
-        run: ./scripts/check_license_headers.rb
+        run: ruby "$GITHUB_WORKSPACE/scripts/check_license_headers.rb" platforms/web/src
 
       - name: Pack and inspect contents
         run: |

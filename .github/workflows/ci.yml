@@ -39,7 +39,8 @@ jobs:
               - 'platforms/android/**'
               - 'protocol/**'
               - '.github/workflows/android-test.yml'
-              - '.github/workflows/android-license-headers.yml'
+              - '.github/workflows/license-headers.yml'
+              - 'scripts/check_license_headers.rb'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             swift:
@@ -73,7 +74,8 @@ jobs:
             web:
               - 'platforms/web/**'
               - '.github/workflows/web.yml'
-              - '.github/workflows/web-license-headers.yml'
+              - '.github/workflows/license-headers.yml'
+              - 'scripts/check_license_headers.rb'
               - '.github/actions/setup/**'
               - '.github/workflows/ci.yml'
 
@@ -87,7 +89,9 @@ jobs:
     name: Android
     needs: changes
     if: needs.changes.outputs.android == 'true'
-    uses: ./.github/workflows/android-license-headers.yml
+    uses: ./.github/workflows/license-headers.yml
+    with:
+      target: platforms/android
 
   swift-test-package:
     name: Swift
@@ -171,7 +175,9 @@ jobs:
     name: Web
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    uses: ./.github/workflows/web-license-headers.yml
+    uses: ./.github/workflows/license-headers.yml
+    with:
+      target: platforms/web/src
 
   breaking-changes:
     name: Breaking Changes
