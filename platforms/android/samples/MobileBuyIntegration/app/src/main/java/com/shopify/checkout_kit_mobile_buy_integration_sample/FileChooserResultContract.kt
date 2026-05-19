@@ -38,35 +38,37 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * For handling 3p apps that require a FileChooser / Camera in response to onShowFileChooser()
+ * Handles file chooser / camera requests triggered by checkout.
  */
 class FileChooserResultContract : ActivityResultContract<FileChooserParams, Uri?>() {
     private var cameraImageUri: Uri? = null
 
     override fun createIntent(context: Context, input: FileChooserParams): Intent {
-        val fileChooserIntent = input.createIntent()
-        fileChooserIntent.addCategory(Intent.CATEGORY_OPENABLE)
-        var mimeType = if (input.acceptTypes == null) DEFAULT_MIME_TYPE else input.acceptTypes[0]
+        val fileChooserIntent = input.createIntent().apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+        }
+
+        var mimeType = input.acceptTypes.firstOrNull().orEmpty()
         if (!ACCEPTABLE_MIME_TYPES.contains(mimeType)) {
             mimeType = DEFAULT_MIME_TYPE
         }
-        fileChooserIntent.setType(mimeType)
+        fileChooserIntent.type = mimeType
 
         val photoFile = createImageFile(context)
         cameraImageUri = FileProvider.getUriForFile(context, "${context.packageName}.provider", photoFile)
         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
             putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri)
-            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)  // Ensures URI can be written
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
 
-        val chooserIntent = Intent.createChooser(fileChooserIntent, context.getText(R.string.filechooser_title))
-        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
-        return chooserIntent
+        return Intent.createChooser(fileChooserIntent, context.getText(R.string.filechooser_title)).apply {
+            putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
+        }
     }
 
-    override fun parseResult(resultCode: Int, intent: Intent?) : Uri? {
+    override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
         return if (resultCode == RESULT_OK) {
-            intent?.data ?: cameraImageUri // Return the image URI captured by the camera
+            intent?.data ?: cameraImageUri
         } else {
             null
         }
@@ -78,8 +80,8 @@ class FileChooserResultContract : ActivityResultContract<FileChooserParams, Uri?
         return File.createTempFile("$IMG_FILE_PREFIX${timeStamp}_", IMG_FILE_SUFFIX, storageDir)
     }
 
-    companion object {
-        private val ACCEPTABLE_MIME_TYPES = arrayListOf("image/*", "video/*")
+    private companion object {
+        private val ACCEPTABLE_MIME_TYPES = setOf("image/*", "video/*")
         private const val DEFAULT_MIME_TYPE = "*/*"
         private const val DATE_FORMAT_PATTERN = "yyyyMMdd_HHmmss"
         private const val IMG_FILE_PREFIX = "JPEG_"

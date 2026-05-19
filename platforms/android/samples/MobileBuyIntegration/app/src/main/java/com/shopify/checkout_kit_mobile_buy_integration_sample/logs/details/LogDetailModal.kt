@@ -57,7 +57,7 @@ fun LogDetailModal(
                 when (logLine?.type) {
                     LogType.STANDARD -> LogDetails("Checkout Lifecycle Event", logLine.message, Modifier.fillMaxWidth())
                     LogType.ERROR -> LogDetails("Checkout Error", "${logLine.errorDetails}", Modifier.fillMaxWidth())
-                    LogType.CHECKOUT_COMPLETED -> CheckoutCompletedDetails(logLine.checkoutCompleted, prettyJson)
+                    LogType.CHECKOUT_COMPLETED -> CheckoutCompletedDetails(logLine.checkoutCompletedPayload, prettyJson)
                     else -> Text("Unknown log type ${logLine?.type}")
                 }
             }

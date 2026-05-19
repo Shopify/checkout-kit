@@ -22,14 +22,10 @@
  */
 package com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverter
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent
-import com.shopify.checkoutkit.lifecycleevents.OrderDetails
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.util.Date
 import java.util.UUID
 
@@ -40,7 +36,7 @@ data class LogLine(
     val message: String,
     val type: LogType,
     @Embedded(prefix = "error_details") val errorDetails: ErrorDetails? = null,
-    @Embedded(prefix = "checkout_completed") val checkoutCompleted: CheckoutCompletedEvent? = null,
+    @ColumnInfo(name = "checkout_completedorderDetails") val checkoutCompletedPayload: String? = null,
 )
 
 enum class LogType {
@@ -51,15 +47,3 @@ data class ErrorDetails(
     val type: String?,
     val message: String,
 )
-
-class Converters {
-    @TypeConverter
-    fun orderDetailsToString(value: OrderDetails): String {
-        return Json.encodeToString<OrderDetails>(value)
-    }
-
-    @TypeConverter
-    fun stringToOrderDetails(value: String): OrderDetails {
-        return Json.decodeFromString<OrderDetails>(value)
-    }
-}

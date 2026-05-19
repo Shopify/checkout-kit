@@ -22,22 +22,27 @@
  */
 package com.shopify.checkout_kit_mobile_buy_integration_sample.cart
 
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.shopify.checkout_kit_mobile_buy_integration_sample.MainActivity
 import com.shopify.checkout_kit_mobile_buy_integration_sample.R
 import com.shopify.checkout_kit_mobile_buy_integration_sample.cart.data.CartRepository
 import com.shopify.checkout_kit_mobile_buy_integration_sample.cart.data.CartState
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.ID
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.SnackbarController
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.SnackbarEvent
+import com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs.Logger
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.navigation.Screen
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.PreferencesManager
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.authentication.data.CustomerRepository
+import com.shopify.checkoutkit.Checkout
 import com.shopify.checkoutkit.CheckoutProtocol
-import com.shopify.checkoutkit.DefaultCheckoutEventProcessor
+import com.shopify.checkoutkit.CheckoutException
 import com.shopify.checkoutkit.ShopifyCheckoutKit
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,6 +55,7 @@ class CartViewModel(
     private val cartRepository: CartRepository,
     private val preferencesManager: PreferencesManager,
     private val customerRepository: CustomerRepository,
+    private val logger: Logger,
 ) : ViewModel() {
 
     private val _cartState = MutableStateFlow<CartState>(CartState.Empty)
@@ -107,20 +113,33 @@ class CartViewModel(
         _cartState.value = CartState.Empty
     }
 
-    fun <T : DefaultCheckoutEventProcessor> presentCheckout(
+    fun presentCheckout(
         url: String,
         activity: ComponentActivity,
-        eventProcessor: T
+        navController: NavController,
     ) {
         Timber.i("Presenting checkout with $url")
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.start) { Timber.i("ECP ec.start: $it") }
-            .on(CheckoutProtocol.complete) { Timber.i("ECP ec.complete: $it") }
-            .on(CheckoutProtocol.error) { Timber.i("ECP ec.error: $it") }
-            .on(CheckoutProtocol.totalsChange) { Timber.i("ECP ec.totals.change: $it") }
-            .on(CheckoutProtocol.lineItemsChange) { Timber.i("ECP ec.line_items.change: $it") }
-            .on(CheckoutProtocol.messagesChange) { Timber.i("ECP ec.messages.change: $it") }
-        ShopifyCheckoutKit.present(url, activity, eventProcessor, client)
+        val sampleActivity = activity as? MainActivity
+        ShopifyCheckoutKit.present(url, activity) {
+            onFail { error ->
+                handleCheckoutFailed(error, activity)
+            }
+            onCancel {
+                handleCheckoutCanceled()
+            }
+            sampleActivity?.let { mainActivity ->
+                onShowFileChooser { _, filePathCallback, fileChooserParams ->
+                    mainActivity.onShowFileChooser(filePathCallback, fileChooserParams)
+                }
+                onGeolocationPermissionsShowPrompt { origin, callback ->
+                    mainActivity.onGeolocationPermissionsShowPrompt(origin, callback)
+                }
+                onGeolocationPermissionsHidePrompt {
+                    mainActivity.onGeolocationPermissionsHidePrompt()
+                }
+            }
+            connect(buildCommunicationClient(navController))
+        }
     }
 
     fun preloadCheckout(
@@ -139,6 +158,50 @@ class CartViewModel(
         Timber.i("Continue shopping clicked, navigating to products")
         navController.navigate(Screen.Products.route)
     }
+
+    private fun handleCheckoutCompleted(
+        checkout: Checkout,
+        navController: NavController,
+    ) {
+        logger.log(checkout)
+        clearCart()
+        viewModelScope.launch(Dispatchers.Main.immediate) {
+            navController.popBackStack(Screen.Product.route, false)
+        }
+    }
+
+    private fun handleCheckoutFailed(
+        error: CheckoutException,
+        activity: ComponentActivity,
+    ) {
+        logger.log("Checkout failed", error)
+        if (!error.isRecoverable) {
+            clearCart()
+            viewModelScope.launch(Dispatchers.Main.immediate) {
+                Toast.makeText(
+                    activity,
+                    activity.getText(R.string.checkout_error),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
+    private fun handleCheckoutCanceled() {
+        logger.log("Checkout canceled")
+    }
+
+    private fun buildCommunicationClient(navController: NavController): CheckoutProtocol.Client =
+        CheckoutProtocol.Client()
+            .on(CheckoutProtocol.start) { Timber.i("ECP ec.start: $it") }
+            .on(CheckoutProtocol.complete) { checkout ->
+                Timber.i("ECP ec.complete: $checkout")
+                handleCheckoutCompleted(checkout, navController)
+            }
+            .on(CheckoutProtocol.error) { Timber.i("ECP ec.error: $it") }
+            .on(CheckoutProtocol.totalsChange) { Timber.i("ECP ec.totals.change: $it") }
+            .on(CheckoutProtocol.lineItemsChange) { Timber.i("ECP ec.line_items.change: $it") }
+            .on(CheckoutProtocol.messagesChange) { Timber.i("ECP ec.messages.change: $it") }
 
     private fun performCartLinesAdd(cartId: ID, variantId: ID, quantity: Int, onComplete: OnComplete) = viewModelScope.launch {
         Timber.i("Adding cart lines to existing cart: $cartId, variant: $variantId, and $quantity")

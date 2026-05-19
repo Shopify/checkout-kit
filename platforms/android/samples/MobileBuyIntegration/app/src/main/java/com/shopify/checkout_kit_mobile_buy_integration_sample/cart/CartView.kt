@@ -71,12 +71,10 @@ import com.shopify.checkout_kit_mobile_buy_integration_sample.common.components.
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.components.ProgressIndicator
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.ui.theme.horizontalPadding
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.ui.theme.verticalPadding
-import com.shopify.checkoutkit.DefaultCheckoutEventProcessor
 
 @Composable
-fun <T : DefaultCheckoutEventProcessor> CartView(
+fun CartView(
     navController: NavController,
-    checkoutEventProcessor: T,
     cartViewModel: CartViewModel,
 ) {
 
@@ -120,7 +118,7 @@ fun <T : DefaultCheckoutEventProcessor> CartView(
                             cartViewModel.presentCheckout(
                                 state.checkoutUrl,
                                 activity,
-                                checkoutEventProcessor
+                                navController,
                             )
                         },
                         totalAmount = state.cartTotals.totalAmount,

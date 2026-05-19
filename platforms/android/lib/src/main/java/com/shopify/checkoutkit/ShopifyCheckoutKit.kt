@@ -125,8 +125,33 @@ public object ShopifyCheckoutKit {
      *
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
+     * @param configure a Kotlin-first builder for fail/cancel callbacks, browser/system hooks,
+     * and an optional communication client
+     * @return An instance of [CheckoutKitDialog] if the dialog was successfully created and displayed.
+     */
+    @JvmStatic
+    @JvmSynthetic
+    public fun present(
+        checkoutUrl: String,
+        context: ComponentActivity,
+        configure: CheckoutPresentation.() -> Unit,
+    ): CheckoutKitDialog? {
+        val presentation = CheckoutPresentation().apply(configure)
+        return present(
+            checkoutUrl = checkoutUrl,
+            context = context,
+            checkoutEventProcessor = presentation.buildEventProcessor(),
+            communicationClient = presentation.communicationClient,
+        )
+    }
+
+    /**
+     * Presents a Shopify checkout within a Dialog
+     *
+     * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
+     * @param context The context the checkout is being presented from
      * @param checkoutEventProcessor provides callbacks to allow clients to listen for and respond to checkout lifecycle events such as
-     * (failure, completion, cancellation, external link clicks).
+     * (failure, completion, cancellation, and browser/system prompts).
      * @param communicationClient optional handler for Embedded Checkout Protocol (ECP) messages.
      * Implement [CheckoutCommunicationClient] to intercept arbitrary ECP messages from the checkout
      * web page. Built-in messages ([ec.ready][EmbeddedCheckoutProtocol.METHOD_READY] and
