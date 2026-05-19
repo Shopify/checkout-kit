@@ -1,0 +1,70 @@
+name: React Native — Build iOS Sample
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# TODO: remove once ShopifyCheckoutKit is published to CocoaPods trunk and
+# Maven Central. Tracks the new pod/AAR name introduced by the
+# ShopifyCheckoutSheetKit → ShopifyCheckoutKit rename.
+env:
+  USE_LOCAL_SDK: "1"
+
+jobs:
+  build-ios:
+    name: Build iOS Sample
+    runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: platforms/react-native
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Switch to Xcode 26.2
+        run: sudo xcode-select --switch /Applications/Xcode_26.2.app
+
+      - name: Display Xcode info
+        run: |
+          echo "Xcode Path: $(xcode-select -p)"
+          echo "Xcode Version: $(xcrun xcodebuild -version)"
+
+      - name: Setup iOS Simulator
+        run: |
+          xcrun simctl list runtimes
+          xcrun simctl list devicetypes | grep iPhone
+          xcrun simctl delete all
+          CURRENT_SIMULATOR_UUID=$(xcrun simctl create TestDevice "iPhone 16 Pro")
+          echo "CURRENT_SIMULATOR_UUID=$CURRENT_SIMULATOR_UUID" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@6aaa311d81eba98ae12eaffbcb63296ace0efcde # v1.307.0
+        with:
+          ruby-version: 3.3.6
+          bundler-cache: true
+          working-directory: platforms/react-native/sample
+
+      - name: Install cocoapods
+        working-directory: platforms/react-native/sample
+        run: |
+          set -euo pipefail
+          bundle install
+          cd ios
+          bundle exec pod install --deployment --repo-update
+
+      - name: Build module
+        run: pnpm module build
+
+      - name: Build iOS sample
+        run: pnpm sample build:ios
