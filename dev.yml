@@ -57,10 +57,15 @@ up:
       package_manager: pnpm@10.33.1
       packages:
         - platforms/react-native
+        - platforms/web
   - custom:
       name: Install NPM dependencies (React Native)
       met?: ls -l platforms/react-native | grep node_modules
       meet: cd platforms/react-native && pnpm install
+  - custom:
+      name: Install NPM dependencies (Web)
+      met?: ls -l platforms/web | grep node_modules
+      meet: cd platforms/web && pnpm install
   - custom:
       name: Install gems (React Native sample)
       met?: (cd platforms/react-native/sample/ios && bundle check)
@@ -79,6 +84,8 @@ check:
   react-native-lint-swift: cd platforms/react-native && ./scripts/lint_swift
   react-native-lint-module: cd platforms/react-native && pnpm module lint
   react-native-lint-sample: cd platforms/react-native && pnpm sample lint
+  web-lint: cd platforms/web && pnpm lint
+  web-test: cd platforms/web && pnpm test
 
 commands:
   # Repo-wide
@@ -283,3 +290,37 @@ commands:
         desc: Auto-fix Swift lint and format issues
         aliases: [fix]
         run: cd platforms/react-native && ./scripts/lint_swift fix
+
+  # Web
+  web:
+    desc: "Web Checkout Kit commands"
+    subcommands:
+      sample:
+        desc: Start the sample app dev server
+        aliases: [s]
+        run: cd platforms/web && pnpm sample
+      build:
+        desc: Build the @shopify/checkout-kit package
+        run: cd platforms/web && pnpm build
+      test:
+        desc: Run unit tests with coverage
+        run: cd platforms/web && pnpm test
+        subcommands:
+          watch:
+            desc: Run tests in watch mode
+            run: cd platforms/web && pnpm test:watch
+      lint:
+        desc: Run typecheck, oxlint, and format checks
+        aliases: [style]
+        run: cd platforms/web && pnpm lint
+      format:
+        desc: Auto-fix JS lint and formatting issues
+        aliases: [fix]
+        run: |
+          set -e
+          cd platforms/web
+          pnpm run lint:js:fix
+          pnpm run format
+      clean:
+        desc: Remove dist and coverage directories
+        run: cd platforms/web && pnpm clean
