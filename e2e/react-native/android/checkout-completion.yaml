@@ -1,0 +1,280 @@
+appId: com.shopify.checkoutkit.reactnativedemo
+name: Checkout submits and shows result
+tags:
+  - android
+  - checkout
+
+env:
+  PRODUCT_INDEX: "0"
+
+  # Checkout contact fixture
+  EMAIL: "maestro.e2e@shopify.com"
+  FIRST_NAME: "Maestro"
+  LAST_NAME: "Shopify"
+
+  # Checkout shipping fixture
+  COUNTRY_LABEL: "United States"
+  ADDRESS_LINE1: "700 S Flower St"
+  CITY: "Los Angeles"
+  STATE_FIELD_LABEL: "State"
+  STATE_LABEL: "California"
+  POSTAL_CODE: "90017"
+  POSTAL_FIELD_LABEL: "ZIP code"
+
+  # Checkout payment fixture
+  CARD_NUMBER: "1"
+  CARD_EXPIRY_DISPLAY: "12 / 30"
+  CARD_SECURITY_CODE: "123"
+  CARDHOLDER_NAME: "Maestro Shopify"
+
+  # Accepted successful checkout states for this smoke test.
+  POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
+---
+# Timeout tiers:
+#   3000   - animation settles
+#   5000   - local in-page interactions and optional probes
+#   15000  - sample-app checkout transitions
+#   60000  - cold starts, first checkout paint, final submit
+
+# Product and cart
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: product-${PRODUCT_INDEX}-add-to-cart-button
+    timeout: 60000
+- scrollUntilVisible:
+    element:
+      id: product-${PRODUCT_INDEX}-add-to-cart-button
+    direction: DOWN
+    timeout: 5000
+    centerElement: true
+- tapOn:
+    id: product-${PRODUCT_INDEX}-add-to-cart-button
+    enabled: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: ".*1, Cart$"
+    timeout: 15000
+- tapOn:
+    id: header-cart-icon
+- extendedWaitUntil:
+    visible:
+      id: checkout-button
+    timeout: 15000
+- tapOn:
+    id: checkout-button
+    enabled: true
+
+# Contact
+- extendedWaitUntil:
+    visible:
+      text: "^Email( or mobile phone number)?$"
+    timeout: 60000
+- tapOn: "Email or mobile phone number"
+- inputText: "${EMAIL}"
+- extendedWaitUntil:
+    visible: "^${EMAIL}$"
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      text: "^First name( \\(optional\\))?$"
+    direction: DOWN
+    timeout: 5000
+    visibilityPercentage: 100
+    centerElement: true
+- tapOn: "First name (optional)"
+- inputText: "${FIRST_NAME}"
+- extendedWaitUntil:
+    visible: "^${FIRST_NAME}$"
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      text: "^Last name$"
+    direction: DOWN
+    timeout: 5000
+    visibilityPercentage: 100
+    centerElement: true
+- tapOn: "Last name"
+- inputText: "${LAST_NAME}"
+- extendedWaitUntil:
+    visible: "^${LAST_NAME}$"
+    timeout: 5000
+
+# Shipping address
+- scrollUntilVisible:
+    element:
+      text: "Country/Region"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Country/Region"
+- waitForAnimationToEnd:
+    timeout: 3000
+- scrollUntilVisible:
+    element:
+      text: "^${COUNTRY_LABEL}$"
+    direction: UP
+    timeout: 5000
+    visibilityPercentage: 10
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "^${COUNTRY_LABEL}$"
+    direction: DOWN
+    timeout: 5000
+    visibilityPercentage: 10
+    optional: true
+- tapOn:
+    text: "^${COUNTRY_LABEL}$"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- scrollUntilVisible:
+    element:
+      text: "Address"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Address"
+- eraseText: 80
+- inputText: "${ADDRESS_LINE1}"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "^${ADDRESS_LINE1}$"
+    timeout: 5000
+- runFlow:
+    when:
+      visible: "Close suggestions"
+    commands:
+      - tapOn: "Close suggestions"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- extendedWaitUntil:
+    notVisible:
+      id: shipping-address1-autocomplete-title
+    timeout: 5000
+- extendedWaitUntil:
+    notVisible:
+      id: shipping-address1-options
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      text: "^City$"
+    direction: DOWN
+    timeout: 5000
+    centerElement: true
+- tapOn: "City"
+- eraseText: 80
+- inputText: "${CITY}"
+- extendedWaitUntil:
+    visible: "^${CITY}$"
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      text: "^${STATE_FIELD_LABEL}$"
+    direction: DOWN
+    timeout: 5000
+    centerElement: true
+- runFlow:
+    when:
+      notVisible: "^${STATE_LABEL}$"
+    commands:
+      - tapOn: "State"
+      - waitForAnimationToEnd:
+          timeout: 3000
+      - scrollUntilVisible:
+          element:
+            text: "^${STATE_LABEL}$"
+          direction: UP
+          timeout: 5000
+          visibilityPercentage: 100
+          optional: true
+      - scrollUntilVisible:
+          element:
+            text: "^${STATE_LABEL}$"
+          direction: DOWN
+          timeout: 5000
+          visibilityPercentage: 100
+          optional: true
+      - tapOn:
+          text: "^${STATE_LABEL}$"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- extendedWaitUntil:
+    notVisible: "Select a state"
+    timeout: 5000
+- extendedWaitUntil:
+    visible: "^${STATE_LABEL}$"
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      text: "^${POSTAL_FIELD_LABEL}$"
+    direction: DOWN
+    timeout: 5000
+    centerElement: true
+- tapOn: "ZIP code"
+- eraseText: 80
+- inputText: "${POSTAL_CODE}"
+- extendedWaitUntil:
+    visible: "^${POSTAL_CODE}$"
+    timeout: 5000
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Payment
+- scrollUntilVisible:
+    element:
+      id: number
+    direction: DOWN
+    timeout: 5000
+    centerElement: true
+- tapOn:
+    text: "Card number"
+    index: -1
+- inputText: "${CARD_NUMBER}"
+- tapOn:
+    id: expiry
+- inputText: "1"
+- waitForAnimationToEnd:
+    timeout: 3000
+- inputText: "2"
+- waitForAnimationToEnd:
+    timeout: 3000
+- inputText: "3"
+- waitForAnimationToEnd:
+    timeout: 3000
+- inputText: "0"
+- extendedWaitUntil:
+    visible: "^${CARD_EXPIRY_DISPLAY}$"
+    timeout: 5000
+- tapOn:
+    text: "Security code"
+    index: -1
+- inputText: "${CARD_SECURITY_CODE}"
+- extendedWaitUntil:
+    visible: "^${CARD_SECURITY_CODE}$"
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: name
+    direction: DOWN
+    timeout: 5000
+    centerElement: true
+- extendedWaitUntil:
+    visible: "^${CARDHOLDER_NAME}$"
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      text: "^Pay now$"
+    direction: DOWN
+    timeout: 5000
+    centerElement: true
+- tapOn: "Pay now"
+- extendedWaitUntil:
+    visible: "${POST_SUBMIT_RESULT_PATTERN}"
+    timeout: 60000
+- tapOn: "Close Checkout"
+- extendedWaitUntil:
+    visible: "^Your cart is empty\\.$"
+    timeout: 15000

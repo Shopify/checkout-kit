@@ -35,7 +35,7 @@ Use these in the `appId:` header of every flow. Don't invent new bundle ids.
 | `swift/`                  | `com.shopify.example.MobileBuyIntegration`       |
 | `android/`                | `com.shopify.checkout_kit_mobile_buy_integration_sample` |
 | `react-native/ios/`       | `com.shopify.example.CheckoutKitReactNative`     |
-| `react-native/android/`   | `com.shopify.example.CheckoutKitReactNative`     |
+| `react-native/android/`   | `com.shopify.checkoutkitreactnative`             |
 
 ## Running
 
@@ -48,7 +48,7 @@ terminal.
 | React Native, iOS  | `platforms/react-native/`       | `pnpm e2e:ios`     |
 | Swift, iOS         | TBD                             | TBD                |
 | Android (native)   | TBD                             | TBD                |
-| RN, Android        | TBD                             | TBD                |
+| RN, Android        | `platforms/react-native/`       | `pnpm e2e:android` |
 
 Maestro itself is a system CLI, not an npm dependency. Install once with:
 

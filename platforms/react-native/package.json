@@ -25,7 +25,8 @@
     "compare-snapshot": "./scripts/compare_snapshot",
     "turbo": "turbo",
     "test": "jest",
-    "e2e:ios": "maestro --platform ios test --config ../../e2e/config.yaml ../../e2e/react-native/ios"
+    "e2e:ios": "maestro --platform ios test --config ../../e2e/config.yaml ../../e2e/react-native/ios",
+    "e2e:android": "maestro --platform android test --config ../../e2e/config.yaml ../../e2e/react-native/android"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
