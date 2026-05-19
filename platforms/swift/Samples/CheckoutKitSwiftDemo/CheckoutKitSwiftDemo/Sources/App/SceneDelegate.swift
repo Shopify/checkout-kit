@@ -85,6 +85,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Catalog grid view
         productGridController.tabBarItem.image = UIImage(systemName: "square.grid.2x2")
         productGridController.tabBarItem.title = "Catalog"
+        productGridController.tabBarItem.accessibilityIdentifier = "catalog-tab"
         productGridController.navigationItem.titleView = logoImageView
         catalogCartButton = createCartButtonWithBadge()
         productGridController.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: catalogCartButton!)
@@ -92,6 +93,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Product Gallery
         productGalleryController.tabBarItem.image = UIImage(systemName: "appwindow.swipe.rectangle")
         productGalleryController.tabBarItem.title = "Products"
+        productGalleryController.tabBarItem.accessibilityIdentifier = "products-tab"
         productGalleryController.navigationItem.titleView = logoImageView
         galleryCartButton = createCartButtonWithBadge()
         productGalleryController.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: galleryCartButton!)
@@ -99,16 +101,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Cart (UI Kit)
         swiftUICartController.tabBarItem.image = UIImage(systemName: "cart")
         swiftUICartController.tabBarItem.title = "Cart"
+        swiftUICartController.tabBarItem.accessibilityIdentifier = "cart-tab"
         swiftUICartController.navigationItem.title = "Cart (SwiftUI)"
 
         // Account
         accountController.tabBarItem.image = UIImage(systemName: "person.circle")
         accountController.tabBarItem.title = "Log in"
+        accountController.tabBarItem.accessibilityIdentifier = "account-tab"
         subscribeToAuthStateChanges()
 
         // Settings
         settingsController.tabBarItem.image = UIImage(systemName: "gearshape.2")
         settingsController.tabBarItem.title = "Settings"
+        settingsController.tabBarItem.accessibilityIdentifier = "settings-tab"
     }
 
     private func subscribeToAuthStateChanges() {

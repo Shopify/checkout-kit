@@ -80,7 +80,7 @@ struct CartView: View {
                     )
                     .disabled(isBusy)
                     .foregroundColor(.white)
-                    .accessibilityIdentifier("checkoutSheetButton")
+                    .accessibilityIdentifier("checkout-button")
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)

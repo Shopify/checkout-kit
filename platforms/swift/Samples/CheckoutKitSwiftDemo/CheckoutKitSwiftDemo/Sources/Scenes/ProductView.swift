@@ -111,6 +111,7 @@ struct ProductView: View {
                         .foregroundStyle(.white)
                         .cornerRadius(DesignSystem.cornerRadius)
                         .disabled(!variant.availableForSale || loading)
+                        .accessibilityIdentifier("add-to-cart-button")
 
                         if variant.availableForSale {
                             AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)

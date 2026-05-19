@@ -46,7 +46,7 @@ terminal.
 | Platform           | From                            | Command            |
 | ------------------ | ------------------------------- | ------------------ |
 | React Native, iOS  | `platforms/react-native/`       | `pnpm e2e:ios`     |
-| Swift, iOS         | TBD                             | TBD                |
+| Swift, iOS         | `platforms/swift/`              | `./Scripts/e2e_maestro_ios` |
 | Android (native)   | TBD                             | TBD                |
 | RN, Android        | `platforms/react-native/`       | `pnpm e2e:android` |
 

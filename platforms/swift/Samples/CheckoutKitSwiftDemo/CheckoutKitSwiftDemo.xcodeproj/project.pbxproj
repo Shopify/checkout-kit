@@ -159,7 +159,7 @@
 			mainGroup = 4EBBA75E2A5F0CE200193E19;
 			packageReferences = (
 				CB00000012345678 /* XCRemoteSwiftPackageReference "apollo-ios" */,
-				CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../../../checkout-kit" */,
+				CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../.." */,
 			);
 			productRefGroup = 4EBBA7682A5F0CE200193E19 /* Products */;
 			projectDirPath = "";
@@ -443,9 +443,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../../../checkout-kit" */ = {
+		CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../.." */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../../../../checkout-kit";
+			relativePath = "../../../..";
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -473,17 +473,17 @@
 		};
 		CB001E302F3CDA0300286F69 /* ShopifyCheckoutProtocol */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../../../checkout-kit" */;
+			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../.." */;
 			productName = ShopifyCheckoutProtocol;
 		};
 		CB1B10B42E4CDDB0001713F8 /* ShopifyCheckoutKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../../../checkout-kit" */;
+			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../.." */;
 			productName = ShopifyCheckoutKit;
 		};
 		CBED2D4E2F3F5D1B00EC866A /* ShopifyAcceleratedCheckouts */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../../../checkout-kit" */;
+			package = CB2370002FB21BF100F0D914 /* XCLocalSwiftPackageReference "../../../.." */;
 			productName = ShopifyAcceleratedCheckouts;
 		};
 /* End XCSwiftPackageProductDependency section */

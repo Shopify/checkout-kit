@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+maestro --platform ios test --config ../../e2e/config.yaml ../../e2e/swift
