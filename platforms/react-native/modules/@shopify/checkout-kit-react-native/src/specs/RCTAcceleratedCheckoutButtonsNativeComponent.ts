@@ -34,7 +34,6 @@ type FailEvent = Readonly<{
   __typename: string;
   message: string;
   code?: string;
-  recoverable?: boolean;
 }>;
 
 type RenderStateChangeEvent = Readonly<{
@@ -62,9 +61,6 @@ interface NativeProps extends ViewProps {
   onRenderStateChange?: BubblingEventHandler<RenderStateChangeEvent>;
   onClickLink?: BubblingEventHandler<ClickLinkEvent>;
   onSizeChange?: DirectEventHandler<SizeChangeEvent>;
-  onShouldRecoverFromError?: DirectEventHandler<
-    Readonly<{recoverable: boolean}>
-  >;
 }
 
 export default codegenNativeComponent<NativeProps>(

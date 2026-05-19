@@ -30,7 +30,6 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     weak var delegate: (any CheckoutDelegate)?
     var client: (any CheckoutCommunicationProtocol)?
 
-    var checkoutViewDidFailWithErrorCount = 0
     var checkoutView: CheckoutWebView
 
     lazy var progressBar: ProgressBarView = {
@@ -186,41 +185,6 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         onCancel?()
         delegate?.checkoutDidCancel()
     }
-
-    package func presentFallbackViewController(url: URL) {
-        progressObserver?.invalidate()
-        checkoutView.removeFromSuperview()
-
-        checkoutView = CheckoutWebView.for(checkout: url, recovery: true)
-        checkoutView.translatesAutoresizingMaskIntoConstraints = false
-        checkoutView.scrollView.contentInsetAdjustmentBehavior = .never
-        checkoutView.viewDelegate = self
-        checkoutView.client = client
-        checkoutView.alpha = 1
-
-        view.addSubview(checkoutView)
-        NSLayoutConstraint.activate([
-            checkoutView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            checkoutView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            checkoutView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            checkoutView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        view.addSubview(progressBar)
-        progressBar.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            progressBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            progressBar.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            progressBar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            progressBar.heightAnchor.constraint(equalToConstant: 1)
-        ])
-        view.bringSubviewToFront(checkoutView)
-        view.bringSubviewToFront(progressBar)
-
-        observeProgressChanges(checkoutView)
-        checkoutView.load(checkout: url)
-        progressBar.startAnimating()
-    }
 }
 
 extension CheckoutWebViewController: CheckoutWebViewDelegate {
@@ -235,24 +199,9 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
     }
 
     func checkoutViewDidFailWithError(error: CheckoutError) {
-        checkoutViewDidFailWithErrorCount += 1
         CheckoutWebView.invalidate()
-
-        if shouldAttemptRecovery(for: error) {
-            presentFallbackViewController(url: checkoutURL)
-        } else {
-            onFail?(error)
-            delegate?.checkoutDidFail(error: error)
-            dismiss(animated: true)
-        }
-    }
-
-    func shouldAttemptRecovery(for error: CheckoutError) -> Bool {
-        let isWithinRetryLimit = checkoutViewDidFailWithErrorCount < 2
-        return isRecoverableError() && isWithinRetryLimit && error.isRecoverable
-    }
-
-    private func isRecoverableError() -> Bool {
-        return !CheckoutURL(from: checkoutURL).isMultipassURL()
+        onFail?(error)
+        delegate?.checkoutDidFail(error: error)
+        dismiss(animated: true)
     }
 }

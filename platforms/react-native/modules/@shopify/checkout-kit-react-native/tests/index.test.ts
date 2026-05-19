@@ -190,21 +190,18 @@ describe('ShopifyCheckoutKit', () => {
         __typename: CheckoutNativeErrorType.InternalError,
         message: 'Something went wrong',
         code: CheckoutErrorCode.unknown,
-        recoverable: true,
       };
 
       const configError = {
         __typename: CheckoutNativeErrorType.ConfigurationError,
         message: 'Storefront Password Required',
         code: CheckoutErrorCode.storefrontPasswordRequired,
-        recoverable: false,
       };
 
       const clientError = {
         __typename: CheckoutNativeErrorType.CheckoutClientError,
         message: 'Storefront Password Required',
         code: CheckoutErrorCode.storefrontPasswordRequired,
-        recoverable: false,
       };
 
       const networkError = {
@@ -212,14 +209,12 @@ describe('ShopifyCheckoutKit', () => {
         message: 'Checkout not found',
         code: CheckoutErrorCode.httpError,
         statusCode: 400,
-        recoverable: false,
       };
 
       const expiredError = {
         __typename: CheckoutNativeErrorType.CheckoutExpiredError,
         message: 'Customer Account Required',
         code: CheckoutErrorCode.cartExpired,
-        recoverable: false,
       };
 
       it.each([
@@ -255,7 +250,6 @@ describe('ShopifyCheckoutKit', () => {
           expect(calledWith).not.toHaveProperty('__typename');
           expect(calledWith).toHaveProperty('code');
           expect(calledWith).toHaveProperty('message');
-          expect(calledWith).toHaveProperty('recoverable');
         },
       );
 

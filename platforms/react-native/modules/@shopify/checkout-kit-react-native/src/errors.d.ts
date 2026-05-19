@@ -55,7 +55,6 @@ type BridgeError = {
   __typename: CheckoutNativeErrorType;
   code: CheckoutErrorCode;
   message: string;
-  recoverable: boolean;
 };
 
 export type CheckoutNativeError =
@@ -64,13 +63,11 @@ export type CheckoutNativeError =
 
 class GenericErrorWithCode {
   message: string;
-  recoverable: boolean;
   code: CheckoutErrorCode;
 
   constructor(exception: CheckoutNativeError) {
     this.code = getCheckoutErrorCode(exception.code);
     this.message = exception.message;
-    this.recoverable = exception.recoverable;
     this.name = this.constructor.name;
   }
 }
@@ -78,14 +75,12 @@ class GenericErrorWithCode {
 class GenericNetworkError {
   code: CheckoutErrorCode;
   message: string;
-  recoverable: boolean;
   statusCode: number;
 
   constructor(exception: CheckoutNativeError) {
     this.code = getCheckoutErrorCode(exception.code);
     this.statusCode = exception.statusCode;
     this.message = exception.message;
-    this.recoverable = exception.recoverable;
     this.name = this.constructor.name;
   }
 }
@@ -98,7 +93,6 @@ export class CheckoutHTTPError extends GenericNetworkError {}
 export class GenericError {
   code: CheckoutErrorCode;
   message?: string;
-  recoverable: boolean;
   statusCode?: number;
   name: string;
 
@@ -106,7 +100,6 @@ export class GenericError {
     this.code = getCheckoutErrorCode(exception?.code);
     this.message = exception?.message;
     this.name = this.constructor.name;
-    this.recoverable = exception?.recoverable ?? false;
     this.statusCode = exception?.statusCode;
   }
 }
@@ -114,12 +107,10 @@ export class GenericError {
 export class InternalError {
   code: CheckoutErrorCode;
   message: string;
-  recoverable: boolean;
 
   constructor(exception: CheckoutNativeError) {
     this.code = getCheckoutErrorCode(exception.code);
     this.message = exception.message;
-    this.recoverable = exception.recoverable;
   }
 }
 

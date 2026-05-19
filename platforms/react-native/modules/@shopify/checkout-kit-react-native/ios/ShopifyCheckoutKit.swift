@@ -71,10 +71,6 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
     // but native never emits them.
     /*
 
-    func shouldRecoverFromError(error: CheckoutError) -> Bool {
-        return error.isRecoverable
-    }
-
     func checkoutDidFail(error: CheckoutError) {
         guard hasListeners else { return }
 

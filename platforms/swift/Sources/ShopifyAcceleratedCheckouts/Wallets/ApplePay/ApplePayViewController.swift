@@ -114,7 +114,7 @@ class ApplePayViewController: WalletController, PayController {
                 "[startPayment] Failed to setup cart: \(error)"
             )
             Task { @MainActor in
-                self.onCheckoutFail?(.sdkError(underlying: error, recoverable: false))
+                self.onCheckoutFail?(.sdkError(underlying: error))
             }
         }
 

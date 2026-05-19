@@ -30,8 +30,7 @@ public enum UserAgent {
     /// Shared format for CheckoutKit and AcceleratedCheckouts
     package static func string(
         platform: Platform? = nil,
-        entryPoint: MetaData.EntryPoint? = nil,
-        recovery: Bool = false
+        entryPoint: MetaData.EntryPoint? = nil
     ) -> String {
         var parameters = "iOS;Swift"
         if let swiftVersion = SwiftVersion.current {
@@ -49,10 +48,6 @@ public enum UserAgent {
 
         if let entryPoint {
             userAgentString.append(" \(entryPoint.rawValue)")
-        }
-
-        if recovery {
-            userAgentString.append(" recovery")
         }
 
         return userAgentString

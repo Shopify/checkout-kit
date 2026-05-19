@@ -380,15 +380,15 @@ extension MyViewController: CheckoutDelegate {
 
     // Internal error: exception within the Checkout SDK code.
     // Inspect the underlying error to identify the problem.
-    case sdkError(underlying: Swift.Error, recoverable: Bool)
+    case sdkError(underlying: Swift.Error)
 
     // Checkout cannot be initiated or completed, e.g. due to network or server-side error.
     // The provided message describes the error and may be logged and presented to the buyer.
-    case checkoutUnavailable(message: String, code: CheckoutUnavailable, recoverable: Bool)
+    case checkoutUnavailable(message: String, code: CheckoutUnavailable)
 
     // Checkout session associated with the provided checkoutURL is no longer available.
     // The provided message describes the error and may be logged and presented to the buyer.
-    case checkoutExpired(message: String, code: CheckoutErrorCode, recoverable: Bool)
+    case checkoutExpired(message: String, code: CheckoutErrorCode)
   }
 }
 ```
@@ -397,28 +397,18 @@ Completion events and other in-checkout messages flow through `CheckoutCommunica
 
 ## Error handling
 
-In the event of a checkout error occurring, the Checkout Kit _may_ attempt a retry to recover from the error. Recovery will happen in the background by discarding the failed webview and creating a new "recovery" instance. Recovery will be attempted in the following scenarios:
-
-- The webview receives a response with a 5XX status code
-- An internal SDK error is emitted
-
-There are some caveats to note when this scenario occurs:
-
-1. The checkout experience may look different to buyers. Though the kit will attempt to load any checkout customizations for the storefront, there is no guarantee they will show in recovery mode.
-2. Completion events delivered via `CheckoutProtocol.complete` during recovery may contain partial data — typically only the order ID.
-
-Errors given to `checkoutDidFail(error:)` carry an `isRecoverable` property indicating whether recovery will be attempted.
+Errors are forwarded to `checkoutDidFail(error:)`. The dialog dismisses after the delegate is invoked.
 
 ### `CheckoutError`
 
 | Type                                                            | Description                                | Recommendation                                                                              |
 | --------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `.checkoutUnavailable(message: "Forbidden")`                    | Access to checkout is forbidden.           | This error is unrecoverable.                                                                |
-| `.checkoutUnavailable(message: "Internal Server Error")`        | An internal server error occurred.         | This error will be ephemeral. Try again shortly.                                            |
+| `.checkoutUnavailable(message: "Forbidden")`                    | Access to checkout is forbidden.           | Treat as fatal for this session.                                                            |
+| `.checkoutUnavailable(message: "Internal Server Error")`        | An internal server error occurred.         | Likely ephemeral — retry by opening a fresh checkout URL.                                   |
 | `.checkoutUnavailable(message: "Storefront password required")` | Access to checkout is password restricted. | We are working on ways to enable the Checkout Kit for usage with password protected stores. |
 | `.checkoutExpired(message: "Checkout already completed")`       | The checkout has already been completed    | If this is incorrect, create a new cart and open a new checkout URL.                        |
 | `.checkoutExpired(message: "Cart is empty")`                    | The cart session has expired.              | Create a new cart and open a new checkout URL.                                              |
-| `.sdkError(underlying:)`                                        | An error was thrown internally.            | Please open an issue in this repo with as much detail as possible. URL.                     |
+| `.sdkError(underlying:)`                                        | An error was thrown internally.            | Please open an issue in this repo with as much detail as possible.                          |
 
 ## Integrating identity & customer accounts
 
@@ -448,8 +438,7 @@ In addition to specifying the line items, the Cart can include buyer identity (n
 > The above JSON omits useful customer attributes that should be provided where possible and encryption and signing should be done server-side to ensure Multipass keys are kept secret.
 
 > [!NOTE]
-> Multipass errors are not "recoverable" (See [Error Handling](#error-handling)) due to their one-time nature. Failed requests containing multipass URLs
-> will require re-generating new tokens.
+> Multipass tokens are single-use. If a request containing a multipass URL fails, generate a fresh token before re-opening checkout.
 
 ### Shop Pay
 
