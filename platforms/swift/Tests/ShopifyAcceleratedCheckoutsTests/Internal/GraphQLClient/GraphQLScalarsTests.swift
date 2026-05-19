@@ -363,4 +363,8 @@ final class GraphQLScalarsTests: XCTestCase {
         XCTAssertEqual(decoded.countryCode, product.countryCode)
         XCTAssertEqual(decoded.currencyCode, product.currencyCode)
     }
+
+    func testCIAnnotationVerification_DROP_BEFORE_MERGE() {
+        XCTAssertEqual("expected", "actual")
+    }
 }
