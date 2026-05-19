@@ -65,10 +65,6 @@ up:
       name: Install gems (React Native sample)
       met?: (cd platforms/react-native/sample/ios && bundle check)
       meet: cd platforms/react-native/sample/ios && bundle install
-  - custom:
-      name: Install pods (React Native sample)
-      met?: (cd platforms/react-native/sample/ios && bundle exec pod check --ignore-dev-pods)
-      meet: cd platforms/react-native && pnpm run pod-install
 
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
