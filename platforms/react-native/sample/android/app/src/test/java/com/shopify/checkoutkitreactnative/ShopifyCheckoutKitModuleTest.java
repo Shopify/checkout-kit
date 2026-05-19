@@ -18,12 +18,8 @@ import com.shopify.checkoutkit.ShopifyCheckoutKit;
 import com.shopify.checkoutkit.Preloading;
 import com.shopify.checkoutkit.ColorScheme;
 import com.shopify.checkoutkit.LogLevel;
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent;
-import com.shopify.checkoutkit.lifecycleevents.OrderDetails;
-import com.shopify.checkoutkit.lifecycleevents.CartInfo;
-import com.shopify.checkoutkit.lifecycleevents.Price;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
-import com.shopify.reactnative.checkoutkit.CustomCheckoutEventProcessor;
+import com.shopify.reactnative.checkoutkit.CustomCheckoutListener;
 
 import org.junit.After;
 import org.junit.Before;
@@ -41,8 +37,6 @@ import static org.mockito.Mockito.*;
 
 import android.content.Context;
 
-import java.util.ArrayList;
-import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ShopifyCheckoutKitModuleTest {
@@ -468,38 +462,13 @@ public class ShopifyCheckoutKitModuleTest {
    * Events
    */
 
-  @Test
-  public void testCanProcessCheckoutCompletedEvents() {
-    CustomCheckoutEventProcessor processor = new CustomCheckoutEventProcessor(mockContext, mockReactContext);
-
-    CartInfo cartInfo = new CartInfo(new ArrayList<>(), new Price(), "cart-token");
-    OrderDetails orderDetails = new OrderDetails(
-        null, // billingAddress
-        cartInfo,
-        new ArrayList<>(), // deliveries
-        "test@example.com", // email
-        "order-123", // id
-        new ArrayList<>(), // paymentMethods
-        "+1234567890" // phone
-    );
-
-    CheckoutCompletedEvent completedEvent = new CheckoutCompletedEvent(orderDetails);
-
-    processor.onCheckoutCompleted(completedEvent);
-
-    verify(mockEventEmitter).emit(eq("completed"), stringCaptor.capture());
-
-    assertThat(stringCaptor.getValue())
-        .contains("order-123", "test@example.com", "cart-token");
-  }
-
   /**
    * Errors
    */
 
   @Test
   public void testCanProcessCheckoutExpiredErrors() {
-    CustomCheckoutEventProcessor processor = new CustomCheckoutEventProcessor(mockContext, mockReactContext);
+    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext);
 
     // Use minimal mocking - just enough to test the processing logic
     CheckoutExpiredException mockException = mock(CheckoutExpiredException.class);
@@ -517,7 +486,7 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testCanProcessClientErrors() {
-    CustomCheckoutEventProcessor processor = new CustomCheckoutEventProcessor(mockContext, mockReactContext);
+    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext);
 
     ClientException mockException = mock(ClientException.class);
     when(mockException.getErrorDescription()).thenReturn("Customer account required");
@@ -535,7 +504,7 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testCanProcessHttpErrors() {
-    CustomCheckoutEventProcessor processor = new CustomCheckoutEventProcessor(mockContext, mockReactContext);
+    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext);
 
     HttpException mockException = mock(HttpException.class);
     when(mockException.getErrorDescription()).thenReturn("Not Found");

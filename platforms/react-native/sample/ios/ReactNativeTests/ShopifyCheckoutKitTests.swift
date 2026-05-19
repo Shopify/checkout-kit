@@ -320,7 +320,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
   }
 
     // TODO: re-enable when iOS CheckoutDelegate (or equivalent) lands upstream —
-    // parallels Android's DefaultCheckoutEventProcessor.onCheckoutCanceled / onCheckoutFailed.
+    // parallels Android's DefaultCheckoutListener.onCheckoutCanceled / onCheckoutFailed.
     /*
     /// checkoutDidComplete
     func testCheckoutDidCompleteSendsEvent() {

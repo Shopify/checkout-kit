@@ -34,13 +34,12 @@ import com.shopify.checkoutkit.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.shopify.checkoutkit.lifecycleevents.CheckoutCompletedEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CustomCheckoutEventProcessor extends DefaultCheckoutEventProcessor {
+public class CustomCheckoutListener extends DefaultCheckoutListener {
   private final ReactApplicationContext reactContext;
   private final ObjectMapper mapper = new ObjectMapper();
 
@@ -49,7 +48,7 @@ public class CustomCheckoutEventProcessor extends DefaultCheckoutEventProcessor 
   private String geolocationOrigin;
   private GeolocationPermissions.Callback geolocationCallback;
 
-  public CustomCheckoutEventProcessor(Context context, ReactApplicationContext reactContext) {
+  public CustomCheckoutListener(Context context, ReactApplicationContext reactContext) {
     this.reactContext = reactContext;
   }
 
@@ -118,16 +117,6 @@ public class CustomCheckoutEventProcessor extends DefaultCheckoutEventProcessor 
   @Override
   public void onCheckoutCanceled() {
     sendEvent("close", null);
-  }
-
-  @Override
-  public void onCheckoutCompleted(@NonNull CheckoutCompletedEvent event) {
-    try {
-      String data = mapper.writeValueAsString(event);
-      sendEventWithStringData("completed", data);
-    } catch (IOException e) {
-      Log.e("ShopifyCheckoutKit", "Error processing completed event", e);
-    }
   }
 
   // Private

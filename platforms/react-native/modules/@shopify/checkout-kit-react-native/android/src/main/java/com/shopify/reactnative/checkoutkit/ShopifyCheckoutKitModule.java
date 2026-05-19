@@ -49,7 +49,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   private CheckoutKitDialog checkoutSheet;
 
-  private CustomCheckoutEventProcessor checkoutEventProcessor;
+  private CustomCheckoutListener checkoutListener;
 
   public ShopifyCheckoutKitModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -83,10 +83,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   public void present(String checkoutURL) {
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      checkoutEventProcessor = new CustomCheckoutEventProcessor(currentActivity, this.reactContext);
+      checkoutListener = new CustomCheckoutListener(currentActivity, this.reactContext);
       currentActivity.runOnUiThread(() -> {
         checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
-            checkoutEventProcessor);
+            checkoutListener);
       });
     }
   }
@@ -189,8 +189,8 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   @ReactMethod
   public void initiateGeolocationRequest(boolean allow) {
-    if (checkoutEventProcessor != null) {
-      checkoutEventProcessor.invokeGeolocationCallback(allow);
+    if (checkoutListener != null) {
+      checkoutListener.invokeGeolocationCallback(allow);
     }
   }
 
