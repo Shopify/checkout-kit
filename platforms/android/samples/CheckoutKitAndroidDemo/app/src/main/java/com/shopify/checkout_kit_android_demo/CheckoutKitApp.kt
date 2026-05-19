@@ -32,8 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.shopify.checkout_kit_android_demo.cart.CartViewModel
@@ -76,7 +79,11 @@ fun CheckoutKitAppRoot(
 
     CheckoutKitSampleTheme(darkTheme = useDarkTheme) {
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .semantics {
+                    testTagsAsResourceId = true
+                },
         ) {
             val navController = rememberNavController()
             var currentScreen by remember { mutableStateOf<Screen>(Screen.Product) }
@@ -117,9 +124,12 @@ fun CheckoutKitAppRoot(
                             )
                         },
                         actions = {
-                            IconButton(onClick = {
-                                navController.navigate(Screen.Cart.route)
-                            }) {
+                            IconButton(
+                                modifier = Modifier.testTag("cart-tab"),
+                                onClick = {
+                                    navController.navigate(Screen.Cart.route)
+                                }
+                            ) {
                                 BadgedBox(badge = {
                                     if (totalQuantity > 0) {
                                         Badge(

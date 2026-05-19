@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,7 +29,9 @@ fun AddToCartButton(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TextButton(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("add-to-cart-button"),
             enabled = !loading,
             onClick = onClick,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),

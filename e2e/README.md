@@ -23,6 +23,9 @@ sample ships to both platforms; its flows are split because some assertions
 are platform-specific (iOS accessibility-label patterns vs Android resource
 strings).
 
+Checkout flows submit payment, wait for a post-submit checkout result, close
+checkout, and assert that the sample app cart is empty.
+
 Folders are created when their first flow lands. Don't pre-create empty
 directories.
 
@@ -47,7 +50,7 @@ terminal.
 | ------------------ | ------------------------------- | ------------------ |
 | React Native, iOS  | `platforms/react-native/`       | `pnpm e2e:ios`     |
 | Swift, iOS         | `platforms/swift/`              | `./Scripts/e2e_maestro_ios` |
-| Android (native)   | TBD                             | TBD                |
+| Android (native)   | `platforms/android/`            | `./scripts/e2e_maestro_android` |
 | RN, Android        | `platforms/react-native/`       | `pnpm e2e:android` |
 
 Maestro itself is a system CLI, not an npm dependency. Install once with:
@@ -55,6 +58,31 @@ Maestro itself is a system CLI, not an npm dependency. Install once with:
 ```
 curl -fsSL "https://get.maestro.mobile.dev" | bash
 ```
+
+To pin the native Android runner to a specific emulator, set
+`MAESTRO_ANDROID_UDID`:
+
+```
+MAESTRO_ANDROID_UDID=emulator-5556 ./scripts/e2e_maestro_android
+```
+
+If local Android runs fail before `launchApp` with `deviceInfo`,
+`io.grpc.StatusRuntimeException: UNAVAILABLE`, or `tcp:7001 closed`, Maestro
+failed to start its on-device Android driver. The native Android runner retries
+that failure once with a local fallback that installs and starts the driver
+manually, then runs Maestro with `--no-reinstall-driver`.
+
+The fallback auto-detects the Android device when exactly one device is
+connected. If multiple devices are connected, set `MAESTRO_ANDROID_UDID`.
+To force the fallback path manually, run:
+
+```
+MAESTRO_ANDROID_UDID=emulator-5556 MAESTRO_ANDROID_MANUAL_DRIVER=1 ./scripts/e2e_maestro_android
+```
+
+The fallback auto-detects Homebrew formula installs of Maestro. For other
+install layouts, set `MAESTRO_CLIENT_JAR` to the local `maestro-client.jar`.
+Set `MAESTRO_ANDROID_AUTO_DRIVER_FALLBACK=0` to disable the automatic retry.
 
 ## Adding a flow
 

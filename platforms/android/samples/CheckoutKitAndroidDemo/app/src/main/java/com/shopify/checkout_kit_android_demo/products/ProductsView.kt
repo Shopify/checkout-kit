@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -97,6 +98,7 @@ fun ProductsView(
                             Product(
                                 product = product,
                                 imageHeight = if (largeScreen) defaultProductImageHeightLg else defaultProductImageHeight,
+                                testTag = "product-${index}-grid-item",
                                 onProductClick = { productId ->
                                     productsViewModel.productClicked(navController, productId)
                                 }
@@ -113,10 +115,12 @@ fun ProductsView(
 fun Product(
     product: Product,
     imageHeight: Dp,
+    testTag: String,
     onProductClick: (id: ID) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier
         .wrapContentWidth()
+        .testTag(testTag)
         .clickable {
             onProductClick(product.id)
         }) {

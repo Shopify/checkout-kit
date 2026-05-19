@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+MANUAL_DRIVER="${MAESTRO_ANDROID_MANUAL_DRIVER:-}"
+AUTO_DRIVER_FALLBACK="${MAESTRO_ANDROID_AUTO_DRIVER_FALLBACK:-1}"
+ANDROID_UDID="${MAESTRO_ANDROID_UDID:-}"
+DRIVER_PID=""
+
+is_truthy() {
+  case "${1:-}" in
+    1 | true | TRUE | yes | YES)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+resolve_udid() {
+  if [[ -n "${ANDROID_UDID}" ]]; then
+    printf "%s\n" "${ANDROID_UDID}"
+    return
+  fi
+
+  local devices
+  local device_count
+
+  devices="$(adb devices | awk 'NR > 1 && $2 == "device" { print $1 }')"
+  device_count="$(printf "%s\n" "${devices}" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+  if [[ "${device_count}" != "1" ]]; then
+    echo "Maestro Android driver fallback requires MAESTRO_ANDROID_UDID when ${device_count} devices are connected." >&2
+    exit 1
+  fi
+
+  printf "%s\n" "${devices}"
+}
+
+locate_maestro_client_jar() {
+  if [[ -n "${MAESTRO_CLIENT_JAR:-}" ]]; then
+    if [[ -f "${MAESTRO_CLIENT_JAR}" ]]; then
+      printf "%s\n" "${MAESTRO_CLIENT_JAR}"
+      return
+    fi
+
+    echo "MAESTRO_CLIENT_JAR does not point to a file: ${MAESTRO_CLIENT_JAR}" >&2
+    exit 1
+  fi
+
+  if command -v brew >/dev/null 2>&1; then
+    local brew_prefix
+    brew_prefix="$(brew --prefix mobile-dev-inc/tap/maestro 2>/dev/null || true)"
+
+    if [[ -n "${brew_prefix}" && -f "${brew_prefix}/libexec/lib/maestro-client.jar" ]]; then
+      printf "%s\n" "${brew_prefix}/libexec/lib/maestro-client.jar"
+      return
+    fi
+  fi
+
+  local jar
+  for jar in \
+    /opt/homebrew/Cellar/maestro/*/libexec/lib/maestro-client.jar \
+    /usr/local/Cellar/maestro/*/libexec/lib/maestro-client.jar; do
+    if [[ -f "${jar}" ]]; then
+      printf "%s\n" "${jar}"
+      return
+    fi
+  done
+
+  cat >&2 <<'EOF'
+Could not locate maestro-client.jar.
+
+Set MAESTRO_CLIENT_JAR to the path for your Maestro installation, then retry.
+EOF
+  exit 1
+}
+
+prepare_driver_apks() {
+  local maestro_client_jar="$1"
+  local apk_dir="${MAESTRO_ANDROID_DRIVER_APK_DIR:-${TMPDIR:-/tmp}/maestro-android-driver}"
+
+  if ! command -v jar >/dev/null 2>&1; then
+    echo "Could not find the jar command needed to extract Maestro Android driver APKs." >&2
+    exit 1
+  fi
+
+  mkdir -p "${apk_dir}"
+
+  if [[ ! -f "${apk_dir}/maestro-app.apk" || ! -f "${apk_dir}/maestro-server.apk" ]]; then
+    (
+      cd "${apk_dir}"
+      jar xf "${maestro_client_jar}" maestro-app.apk maestro-server.apk
+    )
+  fi
+
+  if [[ ! -f "${apk_dir}/maestro-app.apk" || ! -f "${apk_dir}/maestro-server.apk" ]]; then
+    echo "Failed to extract Maestro Android driver APKs from ${maestro_client_jar}." >&2
+    exit 1
+  fi
+
+  printf "%s\n" "${apk_dir}"
+}
+
+cleanup_manual_driver() {
+  if [[ -n "${ANDROID_UDID}" ]]; then
+    adb -s "${ANDROID_UDID}" shell am force-stop dev.mobile.maestro >/dev/null 2>&1 || true
+    adb -s "${ANDROID_UDID}" forward --remove tcp:7001 >/dev/null 2>&1 || true
+  fi
+
+  if [[ -n "${DRIVER_PID}" ]]; then
+    wait "${DRIVER_PID}" >/dev/null 2>&1 || true
+  fi
+}
+
+start_manual_driver() {
+  local maestro_client_jar
+  local apk_dir
+  local driver_log
+
+  ANDROID_UDID="$(resolve_udid)"
+  maestro_client_jar="$(locate_maestro_client_jar)"
+  apk_dir="$(prepare_driver_apks "${maestro_client_jar}")"
+  driver_log="${MAESTRO_ANDROID_DRIVER_LOG:-${TMPDIR:-/tmp}/maestro-android-driver-${ANDROID_UDID}.log}"
+
+  trap cleanup_manual_driver EXIT
+
+  adb -s "${ANDROID_UDID}" shell am force-stop dev.mobile.maestro >/dev/null 2>&1 || true
+  adb -s "${ANDROID_UDID}" forward --remove tcp:7001 >/dev/null 2>&1 || true
+  adb -s "${ANDROID_UDID}" install -r -g "${apk_dir}/maestro-app.apk"
+  adb -s "${ANDROID_UDID}" install -r -g "${apk_dir}/maestro-server.apk"
+  adb -s "${ANDROID_UDID}" forward tcp:7001 tcp:7001 >/dev/null
+  adb -s "${ANDROID_UDID}" shell am instrument -w dev.mobile.maestro.test/androidx.test.runner.AndroidJUnitRunner >"${driver_log}" 2>&1 &
+  DRIVER_PID="$!"
+
+  sleep 2
+}
+
+run_maestro() {
+  local use_existing_driver="${1:-}"
+  local args=(--platform android)
+
+  if [[ -n "${ANDROID_UDID}" ]]; then
+    args+=(--udid "${ANDROID_UDID}")
+  fi
+
+  args+=(test)
+
+  if [[ "${use_existing_driver}" == "use-existing-driver" ]]; then
+    args+=(--no-reinstall-driver)
+  fi
+
+  args+=(--config "${REPO_ROOT}/e2e/config.yaml" "${REPO_ROOT}/e2e/android")
+
+  maestro "${args[@]}"
+}
+
+is_driver_bootstrap_failure() {
+  local output_file="$1"
+
+  grep -Eq \
+    'deviceInfo command|Not able to reach the gRPC server|StatusRuntimeException: UNAVAILABLE|tcp:7001\): closed|driver.*did not start|Failed to start.*driver' \
+    "${output_file}"
+}
+
+latest_maestro_log() {
+  /bin/ls -t "${HOME}/.maestro/tests/"*/maestro.log 2>/dev/null | head -n 1 || true
+}
+
+run_maestro_with_fallback() {
+  local output_file
+  local debug_log
+  local driver_failure=""
+  local maestro_status
+
+  output_file="$(mktemp "${TMPDIR:-/tmp}/maestro-android-run.XXXXXX.log")"
+
+  set +e
+  run_maestro 2>&1 | tee "${output_file}"
+  maestro_status="${PIPESTATUS[0]}"
+  set -e
+
+  if [[ "${maestro_status}" == "0" ]]; then
+    rm -f "${output_file}"
+    return 0
+  fi
+
+  debug_log="$(latest_maestro_log)"
+
+  if ! is_truthy "${AUTO_DRIVER_FALLBACK}"; then
+    rm -f "${output_file}"
+    return "${maestro_status}"
+  fi
+
+  if is_driver_bootstrap_failure "${output_file}"; then
+    driver_failure="1"
+  elif [[ -n "${debug_log}" && -f "${debug_log}" ]] && is_driver_bootstrap_failure "${debug_log}"; then
+    driver_failure="1"
+  fi
+
+  if [[ -z "${driver_failure}" ]]; then
+    rm -f "${output_file}"
+    return "${maestro_status}"
+  fi
+
+  rm -f "${output_file}"
+
+  echo "Maestro Android driver startup failed. Retrying with the local driver fallback..." >&2
+  start_manual_driver
+  run_maestro use-existing-driver
+}
+
+if is_truthy "${MANUAL_DRIVER}"; then
+  start_manual_driver
+  run_maestro use-existing-driver
+else
+  run_maestro_with_fallback
+fi
