@@ -19,6 +19,31 @@ class CheckoutWebView: WKWebView {
 
     var client: (any CheckoutCommunicationProtocol)?
 
+    /// Kit-owned client that handles delegations and kit-mandated notifications. Currently:
+    ///   - `window.open` - falls back to `UIApplication.shared.open(...)` after a
+    ///     `canOpenURL` check (consumers may still override via their own client).
+    ///   - `ec.error` - when the payload carries `severity: "unrecoverable"`, dismiss
+    ///     the kit via `viewDelegate`. Per UCP spec, `unrecoverable` means no valid
+    ///     resource exists to act on, so consumers don't have to wire dismissal in
+    ///     every error handler.
+    lazy var defaultsClient: CheckoutProtocol.Client = .init()
+        .on(CheckoutProtocol.windowOpen) { request in
+            guard UIApplication.shared.canOpenURL(request.url) else {
+                return .rejected(reason: "canOpenURL returned false")
+            }
+            UIApplication.shared.open(request.url)
+            return .success
+        }
+        .on(CheckoutProtocol.error) { [weak self] payload in
+            guard payload.messages.contains(where: { $0.severity == .unrecoverable }) else { return }
+            self?.viewDelegate?.checkoutViewDidFailWithError(
+                error: .checkoutUnavailable(
+                    message: "Embedded checkout reported unrecoverable error.",
+                    code: .clientError(code: .unknown)
+                )
+            )
+        }
+
     static func `for`(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
         OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString)")
         return CheckoutWebView(entryPoint: entryPoint)
@@ -133,28 +158,31 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         Task {
-            if let response = await client?.process(body) {
+            let isErrorNotification = CheckoutWebView.message(body, hasMethod: CheckoutProtocol.error.method)
+            let clientResponse = await client?.process(body)
+            if let response = clientResponse {
                 checkoutBridge.sendResponse(self, messageBody: response)
-                return
             }
 
-            if let response = await CheckoutWebView.defaultsClient.process(body) {
+            // Defaults are fallback handlers except for ec.error: unrecoverable errors
+            // must still dismiss checkout after being emitted to the client.
+            if isErrorNotification || clientResponse == nil,
+               let response = await defaultsClient.process(body)
+            {
                 checkoutBridge.sendResponse(self, messageBody: response)
             }
         }
     }
 
-    /// Kit-owned client that handles delegations the consumer did not register.
-    /// Today the only default is `window.open`, which falls back to
-    /// `UIApplication.shared.open(...)` after a `canOpenURL` check.
-    static let defaultsClient = CheckoutProtocol.Client()
-        .on(CheckoutProtocol.windowOpen) { request in
-            guard UIApplication.shared.canOpenURL(request.url) else {
-                return .rejected(reason: "canOpenURL returned false")
-            }
-            UIApplication.shared.open(request.url)
-            return .success
+    private static func message(_ body: String, hasMethod method: String) -> Bool {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: Data(body.utf8)) as? [String: Any],
+            object["method"] as? String == method
+        else {
+            return false
         }
+        return true
+    }
 }
 
 extension CheckoutWebView: WKNavigationDelegate {

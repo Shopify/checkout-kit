@@ -81,7 +81,7 @@ public object ShopifyCheckoutKit {
      * @param communicationClient optional handler for Embedded Checkout Protocol (ECP) messages.
      * Implement [CheckoutCommunicationClient] to intercept arbitrary ECP messages from the checkout
      * web page. Built-in messages ([ec.ready][EmbeddedCheckoutProtocol.METHOD_READY] and
-     * [ec.start][EmbeddedCheckoutProtocol.METHOD_START]) are handled automatically by the SDK.
+     * [ec.start][CheckoutProtocol.start]) are handled automatically by the SDK.
      * @return An instance of [CheckoutKitDialog] if the dialog was successfully created and displayed.
      */
     @JvmOverloads

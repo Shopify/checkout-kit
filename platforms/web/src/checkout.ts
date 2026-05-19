@@ -556,6 +556,11 @@ export class ShopifyCheckout
         const error = message.body as CheckoutProtocolMessageMap["ec.error"];
         this.#error = error;
         this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
+        // Per UCP spec, `unrecoverable` means no valid resource exists to act on —
+        // the kit closes so consumers don't have to wire dismissal in every handler.
+        if (error.messages.some((m) => m.severity === "unrecoverable")) {
+          this.close();
+        }
         break;
       }
       case "ec.line_items.change": {

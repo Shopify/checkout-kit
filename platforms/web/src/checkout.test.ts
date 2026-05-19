@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Checkout, CheckoutProtocolMessageMap, UcpErrorResponse } from "./checkout.types";
+import type { CheckoutMessageError } from "./ucp-embed-types";
 import "./checkout-web-component";
 import {
   DEFAULT_POPUP_WIDTH,
@@ -543,7 +544,10 @@ describe("<shopify-checkout>", () => {
           const { checkout, mockWindow } = openWithRealOverlay();
           const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link")!;
 
-          const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+          const event = new MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+          });
           link.dispatchEvent(event);
 
           expect(event.defaultPrevented).toBe(true);
@@ -713,7 +717,9 @@ describe("<shopify-checkout>", () => {
         const listenForEvent = waitForEvent(checkout, "checkout:start", onStartSpy);
 
         const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.start", payload, { source: mockCheckoutWindow });
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: mockCheckoutWindow,
+        });
         await listenForEvent;
 
         expect(checkout.checkout).toBe(payload.checkout);
@@ -744,7 +750,7 @@ describe("<shopify-checkout>", () => {
         const onErrorSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "checkout:error", onErrorSpy);
 
-        const errorPayload = makeErrorPayload();
+        const errorPayload = makeErrorPayload({ severity: "recoverable" });
         simulateProtocolMessageEvent(checkout, "ec.error", errorPayload, {
           source: mockCheckoutWindow,
         });
@@ -753,6 +759,44 @@ describe("<shopify-checkout>", () => {
         expect(checkout.error).toStrictEqual(errorPayload);
         expect(onErrorSpy).toHaveBeenCalledOnce();
       });
+
+      it("auto-closes when any message has severity 'unrecoverable'", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const errorOrder: string[] = [];
+        checkout.addEventListener("checkout:error", () => errorOrder.push("error"));
+        checkout.addEventListener("checkout:close", () => errorOrder.push("close"));
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.error",
+          makeErrorPayload({ severity: "unrecoverable" }),
+          { source: mockCheckoutWindow },
+        );
+        await Promise.resolve();
+
+        expect(errorOrder).toStrictEqual(["error", "close"]);
+      });
+
+      const NON_FATAL_SEVERITIES: ReadonlyArray<CheckoutMessageError["severity"]> = [
+        "recoverable",
+        "requires_buyer_input",
+        "requires_buyer_review",
+      ];
+      it.each(NON_FATAL_SEVERITIES)(
+        "does not auto-close when severity is %s",
+        async (severity: CheckoutMessageError["severity"]) => {
+          const { checkout, mockCheckoutWindow } = openPopupCheckout();
+          const closeSpy = vi.fn();
+          checkout.addEventListener("checkout:close", closeSpy);
+
+          simulateProtocolMessageEvent(checkout, "ec.error", makeErrorPayload({ severity }), {
+            source: mockCheckoutWindow,
+          });
+          await Promise.resolve();
+
+          expect(closeSpy).not.toHaveBeenCalled();
+        },
+      );
     });
 
     describe("checkout:lineItemsChange", () => {
@@ -838,7 +882,9 @@ describe("<shopify-checkout>", () => {
         const wait = waitForEvent(checkout, "checkout:start", spy);
 
         const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.start", payload, { source: mockCheckoutWindow });
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: mockCheckoutWindow,
+        });
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
@@ -850,7 +896,10 @@ describe("<shopify-checkout>", () => {
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "checkout:complete", spy);
 
-        const order = { id: "order-1", permalink_url: "https://example.com/orders/1" };
+        const order = {
+          id: "order-1",
+          permalink_url: "https://example.com/orders/1",
+        };
         const payload = makeCheckoutPayload({ order });
         simulateProtocolMessageEvent(checkout, "ec.complete", payload, {
           source: mockCheckoutWindow,
@@ -1266,7 +1315,9 @@ describe("<shopify-checkout>", () => {
     });
 
     it("includes ck_version on the overlay link", () => {
-      const checkout = renderCheckout({ src: "https://shop.example.com/checkout" });
+      const checkout = renderCheckout({
+        src: "https://shop.example.com/checkout",
+      });
       const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link");
       const url = new URL(link!.getAttribute("href") ?? "");
       expect(url.searchParams.get("ck_version")).toBe(CK_VERSION);
@@ -1508,7 +1559,10 @@ function renderCheckout(attributes: Record<string, string | undefined> = {}) {
 
 function mockWindowSize(width = 1200, height = 800) {
   Object.defineProperty(window, "outerWidth", { value: width, writable: true });
-  Object.defineProperty(window, "outerHeight", { value: height, writable: true });
+  Object.defineProperty(window, "outerHeight", {
+    value: height,
+    writable: true,
+  });
   Object.defineProperty(window, "screenLeft", { value: 0, writable: true });
   Object.defineProperty(window, "screenTop", { value: 0, writable: true });
   Object.defineProperty(document.documentElement, "clientWidth", {
@@ -1577,7 +1631,9 @@ function makeCheckoutPayload(overrides: Partial<Checkout> = {}): {
   };
 }
 
-function makeErrorPayload(): UcpErrorResponse {
+function makeErrorPayload(overrides?: {
+  severity?: CheckoutMessageError["severity"];
+}): UcpErrorResponse {
   return {
     ucp: { version: "2026-04-08", status: "error" },
     messages: [
@@ -1585,7 +1641,7 @@ function makeErrorPayload(): UcpErrorResponse {
         type: "error",
         code: "session_failed",
         content: "Session failed",
-        severity: "unrecoverable",
+        severity: overrides?.severity ?? "unrecoverable",
       },
     ],
   };
