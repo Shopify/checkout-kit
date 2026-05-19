@@ -81,9 +81,10 @@ public object CheckoutProtocol {
         }
     )
 
-    // Delegations — kit-internal. Consumers cannot override; [EmbeddedCheckoutProtocol]
-    // wires the kit's default handler via [defaultDelegationClient].
-    internal val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult> = DelegationDescriptor(
+    // Delegations — request-response. Merchant-overridable: if a consumer registers a
+    // handler via [Client.on], it wins; otherwise [EmbeddedCheckoutProtocol] falls back
+    // to the kit's built-in handler from [EmbeddedCheckoutProtocol.defaultDelegationClient].
+    public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult> = DelegationDescriptor(
         method = "ec.window.open_request",
         decode = { params ->
             params?.jsonObject?.get("url")?.jsonPrimitive?.contentOrNull
@@ -167,11 +168,12 @@ public object CheckoutProtocol {
         /**
          * Register a handler for an EC delegation descriptor.
          *
-         * Internal: used by the kit to wire its own default delegation handlers
-         * (see [EmbeddedCheckoutProtocol.defaultDelegationClient]). Not exposed to
-         * consumers — delegations like `ec.window.open_request` are handled internally.
+         * Delegations are request-response: the handler is invoked on the **main thread**
+         * and its typed return value is encoded back to the checkout page as a JSON-RPC
+         * response. If no handler is registered for a descriptor, the kit falls back to
+         * its built-in default (see [EmbeddedCheckoutProtocol.defaultDelegationClient]).
          */
-        internal fun <P : Any, R : Any> on(
+        public fun <P : Any, R : Any> on(
             descriptor: DelegationDescriptor<P, R>,
             handler: (P) -> R,
         ): Client = Client(handlers, delegations + (descriptor.method to Delegation.Typed(descriptor, handler)))
@@ -295,29 +297,31 @@ public class NotificationDescriptor<P : Any> internal constructor(
 /**
  * Describes a typed EC delegation handler binding.
  *
- * Delegations are request-response: the kit's default handler returns a typed result
- * that gets encoded into a JSON-RPC response back to the checkout page.
- * Internal — delegations are not consumer-overridable.
+ * Delegations are request-response: the handler returns a typed result that gets
+ * encoded into a JSON-RPC response back to the checkout page. Obtain instances via
+ * [CheckoutProtocol] static properties (e.g. [CheckoutProtocol.windowOpen]); do not
+ * instantiate directly.
  */
-internal class DelegationDescriptor<P : Any, R : Any>(
-    val method: String,
-    val decode: (JsonElement?) -> P?,
-    val encode: (R) -> JsonElement,
+public class DelegationDescriptor<P : Any, R : Any> internal constructor(
+    public val method: String,
+    internal val decode: (JsonElement?) -> P?,
+    internal val encode: (R) -> JsonElement,
 )
 
 /** Payload delivered with the [CheckoutProtocol.windowOpen] delegation. */
-internal data class WindowOpenRequest(val url: Uri)
+public data class WindowOpenRequest internal constructor(public val url: Uri)
 
 /**
- * Outcome the kit's default [CheckoutProtocol.windowOpen] handler returns to the checkout page.
+ * Outcome a [CheckoutProtocol.windowOpen] handler returns to the checkout page.
  *
  * [Success] indicates the URL was opened externally.
- * [Rejected] indicates no activity resolved the URL — the page receives a UCP
- * `window_open_rejected_error` envelope and may surface a fallback message to the buyer.
+ * [Rejected] indicates the URL could not be (or was deliberately not) opened — the
+ * page receives a UCP `window_open_rejected_error` envelope and may surface a
+ * fallback message to the buyer.
  */
-internal sealed class WindowOpenResult {
-    object Success : WindowOpenResult()
-    data class Rejected(val reason: String? = null) : WindowOpenResult()
+public sealed class WindowOpenResult {
+    public object Success : WindowOpenResult()
+    public data class Rejected(public val reason: String? = null) : WindowOpenResult()
 }
 
 /** Payload delivered with the [CheckoutProtocol.error] notification. */

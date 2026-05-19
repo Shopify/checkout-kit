@@ -22,8 +22,10 @@
  */
 package com.shopify.checkout_kit_mobile_buy_integration_sample.cart
 
+import android.content.ActivityNotFoundException
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -42,6 +44,7 @@ import com.shopify.checkoutkit.Checkout
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.CheckoutException
 import com.shopify.checkoutkit.ShopifyCheckoutKit
+import com.shopify.checkoutkit.WindowOpenResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -138,7 +141,7 @@ class CartViewModel(
                     mainActivity.onGeolocationPermissionsHidePrompt()
                 }
             }
-            connect(buildCommunicationClient(navController))
+            connect(buildCommunicationClient(navController, activity))
         }
     }
 
@@ -191,7 +194,10 @@ class CartViewModel(
         logger.log("Checkout canceled")
     }
 
-    private fun buildCommunicationClient(navController: NavController): CheckoutProtocol.Client =
+    private fun buildCommunicationClient(
+        navController: NavController,
+        activity: ComponentActivity,
+    ): CheckoutProtocol.Client =
         CheckoutProtocol.Client()
             .on(CheckoutProtocol.start) { Timber.i("ECP ec.start: $it") }
             .on(CheckoutProtocol.complete) { checkout ->
@@ -202,6 +208,21 @@ class CartViewModel(
             .on(CheckoutProtocol.totalsChange) { Timber.i("ECP ec.totals.change: $it") }
             .on(CheckoutProtocol.lineItemsChange) { Timber.i("ECP ec.line_items.change: $it") }
             .on(CheckoutProtocol.messagesChange) { Timber.i("ECP ec.messages.change: $it") }
+            .on(CheckoutProtocol.windowOpen) { request ->
+                val scheme = request.url.scheme?.lowercase()
+                Timber.i("ECP ec.window.open_request ($scheme): ${request.url}")
+                if (scheme != "http" && scheme != "https") {
+                    WindowOpenResult.Rejected(reason = "unsupported URL scheme: $scheme")
+                } else {
+                    try {
+                        CustomTabsIntent.Builder().build().launchUrl(activity, request.url)
+                        WindowOpenResult.Success
+                    } catch (e: ActivityNotFoundException) {
+                        Timber.w(e, "No activity resolved ${request.url}")
+                        WindowOpenResult.Rejected(reason = "no activity resolved URL")
+                    }
+                }
+            }
 
     private fun performCartLinesAdd(cartId: ID, variantId: ID, quantity: Int, onComplete: OnComplete) = viewModelScope.launch {
         Timber.i("Adding cart lines to existing cart: $cartId, variant: $variantId, and $quantity")

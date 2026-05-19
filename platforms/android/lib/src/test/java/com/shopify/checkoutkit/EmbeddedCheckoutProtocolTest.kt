@@ -225,7 +225,7 @@ class EmbeddedCheckoutProtocolTest {
 
     // endregion
 
-    // region ec.window.open_request — handled by kit-owned default delegation client
+    // region ec.window.open_request — merchant-overridable with kit fallback
 
     @Test
     fun `window open launches intent when activity resolves the uri`() {
@@ -256,16 +256,55 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
-    fun `window open ignores consumer client — kit default always handles it`() {
+    fun `window open falls back to kit default when consumer client has no handler`() {
         registerFakeBrowserFor("https://example.com")
-        val consumerClient = mock<CheckoutCommunicationClient>()
-        ecp.setClient(consumerClient)
+        // Empty typed client — no .on(CheckoutProtocol.windowOpen) registered.
+        ecp.setClient(CheckoutProtocol.Client())
 
-        ecp.postMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
+        val js = captureEvaluatedJs {
+            ecp.postMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
+        }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(consumerClient, never()).process(any())
+        assertThat(js).contains("\"status\":\"success\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNotNull()
+    }
+
+    @Test
+    fun `window open uses merchant handler when registered and skips kit default`() {
+        registerFakeBrowserFor("https://example.com")
+        val merchantClient = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { _ ->
+                WindowOpenResult.Rejected(reason = "merchant says no")
+            }
+        ecp.setClient(merchantClient)
+
+        val js = captureEvaluatedJs {
+            ecp.postMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
+        }
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(js).contains("merchant says no")
+        // Kit default never ran — no intent launched.
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+    }
+
+    @Test
+    fun `window open passes the parsed url through to the merchant handler`() {
+        var captured: WindowOpenRequest? = null
+        val merchantClient = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { request ->
+                captured = request
+                WindowOpenResult.Success
+            }
+        ecp.setClient(merchantClient)
+
+        ecp.postMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com/promo?id=42"))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(captured).isNotNull()
+        assertThat(captured!!.url.toString()).isEqualTo("https://example.com/promo?id=42")
     }
 
     @Test
