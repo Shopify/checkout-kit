@@ -8,6 +8,10 @@ on:
         required: false
         type: string
         default: Run
+      setup-storefront-env:
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -67,6 +71,13 @@ jobs:
           echo "✅ Created simulator with UUID: $CURRENT_SIMULATOR_UUID"
           echo "CURRENT_SIMULATOR_UUID=$CURRENT_SIMULATOR_UUID" >> $GITHUB_ENV
           echo ""
+
+      - name: Setup sample app storefront configuration
+        if: ${{ inputs.setup-storefront-env }}
+        env:
+          STOREFRONT_DOMAIN: example.myshopify.com
+          STOREFRONT_ACCESS_TOKEN: test-token
+        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
 
       - name: Run Tests
         run: ${{ inputs.test-path }}

@@ -188,16 +188,22 @@ pnpm pod-install sample/ios
 pnpm module build
 ```
 
-### Update the dotenv file
+### Update sample configuration
 
-Replace the details in the `sample/.env.example` file and rename it to
-`sample/.env`
+From the repo root, copy the shared example and generate platform-local config:
+
+```sh
+cp .env.example .env
+scripts/setup_storefront_env
+```
+
+Fill `.env` with your local storefront values:
 
 ```
 # Storefront Details
 STOREFRONT_DOMAIN="YOUR_STORE.myshopify.com"
 STOREFRONT_ACCESS_TOKEN="YOUR_PUBLIC_STOREFRONT_ACCESS_TOKEN"
-STOREFRONT_VERSION="2025-07"
+API_VERSION="2026-04"
 ```
 
 ### Start the sample app

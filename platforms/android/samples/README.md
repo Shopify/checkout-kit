@@ -8,18 +8,21 @@ This directory contains Android sample apps for Checkout Kit.
 
 ## Setup
 
-From `platforms/android/samples/MobileBuyIntegration`:
+From the repo root:
 
 ```sh
 cp .env.example .env
+scripts/setup_storefront_env
 ```
 
-Fill in:
+Fill `.env` with:
 
 - `STOREFRONT_DOMAIN`
 - `STOREFRONT_ACCESS_TOKEN`
 - `API_VERSION`
 - Optional Customer Account API values
 - Optional demo buyer identity values
+
+The setup script generates `platforms/android/samples/MobileBuyIntegration/.env`.
 
 Open `MobileBuyIntegration` in Android Studio, sync Gradle, then build and run the `app` target.

@@ -20,6 +20,11 @@ def loadProperties() {
 
 def properties = loadProperties()
 
+def propertyOrDefault = { String key, String defaultValue ->
+    def value = properties.getProperty(key)
+    return value?.trim() ? value.trim() : defaultValue
+}
+
 // Storefront API
 def storefrontDomain = properties.getProperty("STOREFRONT_DOMAIN")
 def accessToken = properties.getProperty("STOREFRONT_ACCESS_TOKEN")
@@ -27,14 +32,28 @@ def apiVersion = properties.getProperty("API_VERSION", "2026-04")
 
 // Customer Account API
 def customerAccountApiClientId = properties.getProperty("CUSTOMER_ACCOUNT_API_CLIENT_ID")
+def customerAccountApiShopId = properties.getProperty("CUSTOMER_ACCOUNT_API_SHOP_ID")
+def customerAccountApiVersion = propertyOrDefault("CUSTOMER_ACCOUNT_API_VERSION", "unstable")
 def customerAccountApiRedirectUri = properties.getProperty("CUSTOMER_ACCOUNT_API_REDIRECT_URI")
 
 def customerAccountApiGraphQLBaseUrl = properties.getProperty("CUSTOMER_ACCOUNT_API_GRAPHQL_BASE_URL")
 def customerAccountApiAuthBaseUrl = properties.getProperty("CUSTOMER_ACCOUNT_API_AUTH_BASE_URL")
 
+if (!customerAccountApiRedirectUri && customerAccountApiShopId) {
+    customerAccountApiRedirectUri = "shop.${customerAccountApiShopId}.app://callback"
+}
+
+if (!customerAccountApiGraphQLBaseUrl && customerAccountApiShopId) {
+    customerAccountApiGraphQLBaseUrl = "https://shopify.com/${customerAccountApiShopId}/account/customer/api/${customerAccountApiVersion}/graphql"
+}
+
+if (!customerAccountApiAuthBaseUrl && customerAccountApiShopId) {
+    customerAccountApiAuthBaseUrl = "https://shopify.com/authentication/${customerAccountApiShopId}"
+}
+
 // Demo buyer identity (prefill toggle in Settings)
-def prefillEmail = properties.getProperty("PREFILL_EMAIL", "test.buyer@example.com")
-def prefillPhone = properties.getProperty("PREFILL_PHONE", "+16135550123")
+def prefillEmail = properties.getProperty("EMAIL", properties.getProperty("PREFILL_EMAIL", "test.buyer@example.com"))
+def prefillPhone = properties.getProperty("PHONE", properties.getProperty("PREFILL_PHONE", "+14165550100"))
 
 if (!storefrontDomain || !accessToken) {
     println("**** Please add a .env file with STOREFRONT_DOMAIN and STOREFRONT_ACCESS_TOKEN set *****")

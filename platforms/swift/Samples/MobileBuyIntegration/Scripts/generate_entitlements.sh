@@ -20,4 +20,4 @@ fi
 
 sed "s/{STOREFRONT_DOMAIN}/$STOREFRONT_DOMAIN?mode=developer/g" "$TEMPLATE_FILE" > "$OUTPUT_FILE"
 
-echo "Success: Entitlements file generated at $OUTPUT_FILE with domain $STOREFRONT_DOMAIN"
+echo "Success: Entitlements file generated at $OUTPUT_FILE"
