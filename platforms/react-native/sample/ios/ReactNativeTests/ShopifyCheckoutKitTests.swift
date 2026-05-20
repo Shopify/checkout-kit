@@ -303,6 +303,23 @@ class ShopifyCheckoutKitTests: XCTestCase {
     XCTAssertEqual(result?["logLevel"] as? String, "error")
   }
 
+  func testFailedPresentReleasesPendingDispatchCallback() {
+    let presentAttemptCompleted = expectation(description: "present attempt completed")
+    var dispatchCount = 0
+
+    shopifyCheckoutKit.present("", dispatch: { _ in
+      dispatchCount += 1
+    })
+
+    DispatchQueue.main.async {
+      self.shopifyCheckoutKit.checkoutDidCancel()
+      XCTAssertEqual(dispatchCount, 0)
+      presentAttemptCompleted.fulfill()
+    }
+
+    wait(for: [presentAttemptCompleted], timeout: 1)
+  }
+
     // TODO: re-enable terminal-event tests (checkoutDidComplete, checkoutDidCancel, checkoutDidFail)
     // once the iOS CheckoutDelegate lands upstream — parallels Android's
     // DefaultCheckoutListener.onCheckoutCanceled / onCheckoutFailed.

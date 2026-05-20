@@ -30,9 +30,9 @@ export type Maybe<T> = T | undefined;
  */
 export interface Features {
   /**
-   * When enabled, the checkout will handle geolocation permission requests internally.
-   * If disabled, geolocation requests will emit a 'geolocationRequest' event that
-   * must be handled by the application.
+   * When enabled, checkout handles Android geolocation permission requests internally.
+   * If disabled, applications must pass an `onGeolocationRequest` callback to
+   * `present()` and resolve each request with `event.respond(allow)`.
    */
   handleGeolocationRequests: boolean;
 }
@@ -165,7 +165,18 @@ export type Configuration = CommonConfiguration & {
   );
 
 export interface GeolocationRequestEvent {
+  /**
+   * The WebView origin requesting geolocation access.
+   */
   origin: string;
+  /**
+   * Resolves the pending Android WebView geolocation request.
+   *
+   * This does not request OS location permissions. Consumers should request or
+   * check Android permissions first, then call `respond(...)` with the resolved
+   * allow/deny value.
+   */
+  respond: (allow: boolean) => void;
 }
 
 /**
@@ -197,8 +208,7 @@ export interface PresentCallbacks {
    *
    * When set, this overrides the default internal handler driven by
    * `features.handleGeolocationRequests`. The consumer is responsible
-   * for calling `initiateGeolocationRequest(allow)` once permissions
-   * have been resolved.
+   * for resolving Android permissions and calling `event.respond(allow)`.
    */
   onGeolocationRequest?: (event: GeolocationRequestEvent) => void;
 }

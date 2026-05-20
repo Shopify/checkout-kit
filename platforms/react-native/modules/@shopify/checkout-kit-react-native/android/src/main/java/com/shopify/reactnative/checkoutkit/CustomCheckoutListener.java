@@ -23,7 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 package com.shopify.reactnative.checkoutkit;
 
-import android.content.Context;
 import android.util.Log;
 import android.webkit.GeolocationPermissions;
 
@@ -32,8 +31,6 @@ import androidx.annotation.Nullable;
 
 import com.shopify.checkoutkit.*;
 import com.facebook.react.bridge.Callback;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.facebook.react.bridge.ReactApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
@@ -41,7 +38,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CustomCheckoutListener extends DefaultCheckoutListener {
-  private final ReactApplicationContext reactContext;
+  private static final String TAG = "ShopifyCheckoutKit";
+
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Nullable
@@ -52,9 +50,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private String geolocationOrigin;
   private GeolocationPermissions.Callback geolocationCallback;
 
-  public CustomCheckoutListener(Context context, ReactApplicationContext reactContext,
-      @Nullable Callback dispatch) {
-    this.reactContext = reactContext;
+  public CustomCheckoutListener(@Nullable Callback dispatch) {
     this.dispatchCallback = dispatch;
   }
 
@@ -66,6 +62,12 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
       geolocationCallback.invoke(geolocationOrigin, allow, retainGeolocationForFutureRequests);
       geolocationCallback = null;
     }
+  }
+
+  public void release() {
+    dispatchCallback = null;
+    geolocationCallback = null;
+    geolocationOrigin = null;
   }
 
   // Lifecycle events
@@ -88,14 +90,18 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     this.geolocationOrigin = origin;
 
     if (dispatchCallback == null) {
+      // Multi-shot geolocation requests can in principle arrive after a
+      // terminal event has nulled the dispatcher. Log so the silence is
+      // observable rather than mystifying.
+      Log.w(TAG, "Dropping geolocationRequest \u2014 dispatcher already released by a terminal event.");
       return;
     }
     try {
       Map<String, Object> payload = new HashMap<>();
       payload.put("origin", origin);
-      dispatchCallback.invoke(buildEnvelope("geolocationRequest", payload));
+      dispatchCallback.invoke(buildEnvelope(DispatchEventTypes.GEOLOCATION_REQUEST, payload));
     } catch (IOException e) {
-      Log.e("ShopifyCheckoutKit", "Error emitting \"geolocationRequest\" event", e);
+      Log.e(TAG, "Error emitting \"geolocationRequest\" event", e);
     }
   }
 
@@ -109,29 +115,33 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
 
   @Override
   public void onCheckoutFailed(CheckoutException checkoutError) {
-    if (dispatchCallback == null) {
+    Callback dispatch = dispatchCallback;
+    if (dispatch == null) {
+      release();
       return;
     }
     try {
-      dispatchCallback.invoke(buildEnvelope("fail", populateErrorDetails(checkoutError)));
+      dispatch.invoke(buildEnvelope(DispatchEventTypes.FAIL, populateErrorDetails(checkoutError)));
     } catch (IOException e) {
-      Log.e("ShopifyCheckoutKit", "Error processing checkout failed event", e);
+      Log.e(TAG, "Error processing checkout failed event", e);
     } finally {
-      dispatchCallback = null;
+      release();
     }
   }
 
   @Override
   public void onCheckoutCanceled() {
-    if (dispatchCallback == null) {
+    Callback dispatch = dispatchCallback;
+    if (dispatch == null) {
+      release();
       return;
     }
     try {
-      dispatchCallback.invoke(buildEnvelope("close", null));
+      dispatch.invoke(buildEnvelope(DispatchEventTypes.CLOSE, null));
     } catch (IOException e) {
-      Log.e("ShopifyCheckoutKit", "Error processing checkout canceled event", e);
+      Log.e(TAG, "Error processing checkout canceled event", e);
     } finally {
-      dispatchCallback = null;
+      release();
     }
   }
 
@@ -150,7 +160,6 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     Map<String, Object> errorMap = new HashMap();
     errorMap.put("__typename", getErrorTypeName(checkoutError));
     errorMap.put("message", checkoutError.getErrorDescription());
-    errorMap.put("recoverable", checkoutError.isRecoverable());
     errorMap.put("code", checkoutError.getErrorCode());
 
     if (checkoutError instanceof HttpException) {
@@ -176,9 +185,4 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     }
   }
 
-  private void sendEventWithStringData(String name, String data) {
-    reactContext
-        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-        .emit(name, data);
-  }
 }

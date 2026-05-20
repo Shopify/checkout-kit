@@ -32,15 +32,15 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import org.robolectric.RobolectricTestRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import android.content.Context;
 
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(RobolectricTestRunner.class)
 public class ShopifyCheckoutKitModuleTest {
   @Mock
   private ReactApplicationContext mockReactContext;
@@ -48,8 +48,6 @@ public class ShopifyCheckoutKitModuleTest {
   private ComponentActivity mockComponentActivity;
   @Mock
   private DeviceEventManagerModule.RCTDeviceEventEmitter mockEventEmitter;
-  @Mock
-  private Context mockContext;
 
   @Captor
   ArgumentCaptor<Runnable> runnableCaptor;
@@ -57,6 +55,7 @@ public class ShopifyCheckoutKitModuleTest {
   private ArgumentCaptor<String> stringCaptor;
 
   private ShopifyCheckoutKitModule shopifyCheckoutKitModule;
+  private AutoCloseable mocks;
 
   // Store initial configuration to restore after each test
   private ColorScheme initialColorScheme;
@@ -79,12 +78,17 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Before
   public void setup() {
+    mocks = MockitoAnnotations.openMocks(this);
     mockedArguments = Mockito.mockStatic(Arguments.class);
     mockedArguments.when(Arguments::createMap).thenAnswer(invocation -> new JavaOnlyMap());
 
     when(mockReactContext.getCurrentActivity()).thenReturn(mockComponentActivity);
-    when(mockReactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class))
-        .thenReturn(mockEventEmitter);
+    // Note: the old `CustomCheckoutListener` used `reactContext.getJSModule(...)`
+    // to emit DeviceEventManagerModule events. Both the field and the method
+    // call are gone now, replaced by the per-`present()` dispatcher callback,
+    // so no `getJSModule(...)` stub is required here. `mockEventEmitter` is
+    // still referenced from a few `verify(..., never()).emit(...)` assertions
+    // below that defensively confirm the legacy emit path stays dead.
     shopifyCheckoutKitModule = new ShopifyCheckoutKitModule(mockReactContext);
 
     // Capture initial configuration state to restore after each test
@@ -93,10 +97,13 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @After
-  public void tearDown() {
+  public void tearDown() throws Exception {
     // Close mocked static
     if (mockedArguments != null) {
       mockedArguments.close();
+    }
+    if (mocks != null) {
+      mocks.close();
     }
 
     // Reset configuration to initial state after each test
@@ -130,7 +137,7 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testPresentForwardsOnCloseCallback() {
     Callback dispatch = mock(Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, dispatch);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     processor.onCheckoutCanceled();
 
@@ -142,7 +149,7 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testOnCloseCallbackIsSingleShot() {
     Callback dispatch = mock(Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, dispatch);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     processor.onCheckoutCanceled();
     processor.onCheckoutCanceled();
@@ -151,10 +158,47 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
+  public void testReleaseDropsPendingDispatchCallback() {
+    Callback dispatch = mock(Callback.class);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
+
+    processor.release();
+    processor.onCheckoutCanceled();
+
+    verify(dispatch, never()).invoke(any(Object[].class));
+  }
+
+  @Test
+  public void testReleaseClearsPendingGeolocationCallback() {
+    Callback dispatch = mock(Callback.class);
+    GeolocationPermissions.Callback permissionsCallback = mock(GeolocationPermissions.Callback.class);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
+
+    processor.onGeolocationPermissionsShowPrompt("https://shopify.com", permissionsCallback);
+    processor.release();
+    processor.invokeGeolocationCallback(true);
+
+    verify(permissionsCallback, never()).invoke(anyString(), anyBoolean(), anyBoolean());
+  }
+
+  @Test
+  public void testTerminalEventClearsPendingGeolocationCallback() {
+    Callback dispatch = mock(Callback.class);
+    GeolocationPermissions.Callback permissionsCallback = mock(GeolocationPermissions.Callback.class);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
+
+    processor.onGeolocationPermissionsShowPrompt("https://shopify.com", permissionsCallback);
+    processor.onCheckoutCanceled();
+    processor.invokeGeolocationCallback(true);
+
+    verify(permissionsCallback, never()).invoke(anyString(), anyBoolean(), anyBoolean());
+  }
+
+  @Test
   public void testGeolocationDispatchesEnvelopeWithOrigin() {
     Callback dispatch = mock(Callback.class);
     GeolocationPermissions.Callback permissionsCallback = mock(GeolocationPermissions.Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, dispatch);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     processor.onGeolocationPermissionsShowPrompt("https://shopify.com", permissionsCallback);
 
@@ -169,7 +213,7 @@ public class ShopifyCheckoutKitModuleTest {
   public void testGeolocationDispatchIsMultiShot() {
     Callback dispatch = mock(Callback.class);
     GeolocationPermissions.Callback permissionsCallback = mock(GeolocationPermissions.Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, dispatch);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     processor.onGeolocationPermissionsShowPrompt("https://shopify.com", permissionsCallback);
     processor.onGeolocationPermissionsShowPrompt("https://shopify.com", permissionsCallback);
@@ -180,7 +224,7 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testGeolocationWithNoDispatchCallbackDoesNotInvoke() {
     GeolocationPermissions.Callback permissionsCallback = mock(GeolocationPermissions.Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, null);
+    CustomCheckoutListener processor = new CustomCheckoutListener(null);
 
     processor.onGeolocationPermissionsShowPrompt("https://shopify.com", permissionsCallback);
 
@@ -189,7 +233,7 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testCheckoutCanceledWithNoDispatchCallbackDoesNotEmitCloseEvent() {
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, null);
+    CustomCheckoutListener processor = new CustomCheckoutListener(null);
 
     processor.onCheckoutCanceled();
 
@@ -515,7 +559,7 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testCanProcessCheckoutExpiredErrors() {
     Callback dispatch = mock(Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, dispatch);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     CheckoutExpiredException mockException = mock(CheckoutExpiredException.class);
     when(mockException.getErrorDescription()).thenReturn("Cart has expired");
@@ -527,14 +571,13 @@ public class ShopifyCheckoutKitModuleTest {
     verify(dispatch).invoke(args.capture());
 
     assertThat((String) args.getValue()[0])
-        .contains("\"type\":\"fail\"", "CheckoutExpiredError", "Cart has expired", "cart_expired",
-            "\"recoverable\":false");
+        .contains("\"type\":\"fail\"", "CheckoutExpiredError", "Cart has expired", "cart_expired");
   }
 
   @Test
   public void testCanProcessClientErrors() {
     Callback dispatch = mock(Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, dispatch);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     ClientException mockException = mock(ClientException.class);
     when(mockException.getErrorDescription()).thenReturn("Customer account required");
@@ -546,14 +589,13 @@ public class ShopifyCheckoutKitModuleTest {
     verify(dispatch).invoke(args.capture());
 
     assertThat((String) args.getValue()[0])
-        .contains("\"type\":\"fail\"", "CheckoutClientError", "Customer account required", "customer_account_required",
-            "\"recoverable\":true");
+        .contains("\"type\":\"fail\"", "CheckoutClientError", "Customer account required", "customer_account_required");
   }
 
   @Test
   public void testCanProcessHttpErrors() {
     Callback dispatch = mock(Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, dispatch);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     HttpException mockException = mock(HttpException.class);
     when(mockException.getErrorDescription()).thenReturn("Not Found");
@@ -566,19 +608,17 @@ public class ShopifyCheckoutKitModuleTest {
     verify(dispatch).invoke(args.capture());
 
     assertThat((String) args.getValue()[0])
-        .contains("\"type\":\"fail\"", "CheckoutHTTPError", "Not Found", "http_error", "\"statusCode\":404",
-            "\"recoverable\":false");
+        .contains("\"type\":\"fail\"", "CheckoutHTTPError", "Not Found", "http_error", "\"statusCode\":404");
   }
 
   @Test
   public void testOnFailCallbackIsSingleShot() {
     Callback dispatch = mock(Callback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, dispatch);
+    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     CheckoutExpiredException mockException = mock(CheckoutExpiredException.class);
     when(mockException.getErrorDescription()).thenReturn("Cart has expired");
     when(mockException.getErrorCode()).thenReturn("cart_expired");
-    when(mockException.isRecoverable()).thenReturn(false);
 
     processor.onCheckoutFailed(mockException);
     processor.onCheckoutFailed(mockException);
@@ -588,7 +628,7 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testCheckoutFailedWithNoDispatchCallbackDoesNotEmitFailEvent() {
-    CustomCheckoutListener processor = new CustomCheckoutListener(mockContext, mockReactContext, null);
+    CustomCheckoutListener processor = new CustomCheckoutListener(null);
 
     CheckoutExpiredException mockException = mock(CheckoutExpiredException.class);
 

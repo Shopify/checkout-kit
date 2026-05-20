@@ -601,7 +601,7 @@ shopify.present(checkoutUrl, {
     // The sheet was dismissed without a terminal error
   },
   onFail: (error: CheckoutException) => {
-    // A terminal error occurred — inspect `error.code`, `error.recoverable`, etc.
+    // A terminal error occurred — inspect `error.code`, `error.message`, etc.
   },
 });
 ```
@@ -739,9 +739,9 @@ behalf.
 The geolocation request flow follows this sequence:
 
 1. When checkout needs location data (e.g., to show nearby pickup points), it triggers a geolocation request.
-2. If you've passed an `onGeolocationRequest` callback to `present()`, that callback is invoked.
+2. If you've passed an `onGeolocationRequest` callback to `present()`, that callback is invoked. Request or check Android permissions, then call `event.respond(allow)`.
 3. Otherwise, with `features.handleGeolocationRequests: true` (the default), the module automatically handles the Android runtime permission request.
-4. The result is passed back to checkout, which then proceeds to show relevant pickup points if permission was granted.
+4. The response is passed back to checkout, which then proceeds to show relevant pickup points if permission was granted.
 
 > [!NOTE]
 > If the user denies location permissions, the checkout will still function but will not be able to show nearby pickup points. Users can manually enter their location instead.
@@ -751,13 +751,14 @@ The geolocation request flow follows this sequence:
 > [!NOTE]
 > This section is only applicable for Android.
 
-There are two ways to opt out, depending on whether you want to override the
-behavior for every presentation or just one.
+There are two ways to customize Android geolocation handling, depending on
+whether you want to override the behavior for one presentation or disable the
+fallback globally.
 
 **Per-call override.** Pass an `onGeolocationRequest` callback to
 `present()`. When set, the callback fires instead of the default handler
 for that one presentation; the consumer is responsible for resolving
-permissions and calling `initiateGeolocationRequest(allow)`:
+permissions and calling `event.respond(allow)`:
 
 ```tsx
 shopify.present(checkoutUrl, {
@@ -769,16 +770,19 @@ shopify.present(checkoutUrl, {
     const granted =
       results[coarse] === 'granted' || results[fine] === 'granted';
 
-    shopify.initiateGeolocationRequest(granted);
+    event.respond(granted);
   },
 });
 ```
 
-**Process-wide opt-out.** Set `features.handleGeolocationRequests` to
-`false` when you instantiate the `ShopifyCheckout` class to disable the
-default handler entirely. Use this if you intend to always handle
-geolocation yourself but don't want to wire the callback at every call
-site.
+`event.respond(...)` resolves checkout's pending WebView geolocation request.
+It does not request OS permissions by itself.
+
+**Process-wide default-handler opt-out.** Set
+`features.handleGeolocationRequests` to `false` when you instantiate the
+`ShopifyCheckout` class to disable the default handler entirely. When this is
+set, pass `onGeolocationRequest` to any `present()` call that may need
+geolocation; otherwise the checkout geolocation request will not be resolved.
 
 ```tsx
 const shopifyCheckout = new ShopifyCheckout(config, {handleGeolocationRequests: false});

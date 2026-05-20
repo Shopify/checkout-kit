@@ -52,14 +52,17 @@ const exampleConfig = {
 
 const ShopifyCheckoutKit = {
   version: '0.7.0',
-  getConstants: jest.fn(() => ({version: '0.7.0'})),
+  getConstants: jest.fn(() => ({
+    version: '0.7.0',
+    dispatchEventTypes: ['close', 'fail', 'geolocationRequest'],
+  })),
   preload: jest.fn(),
   present: jest.fn(),
   dismiss: jest.fn(),
   invalidateCache: jest.fn(),
   getConfig: jest.fn(() => exampleConfig),
   setConfig: jest.fn(),
-  initiateGeolocationRequest: jest.fn(),
+  respondToGeolocationRequest: jest.fn(),
   configureAcceleratedCheckouts: jest.fn(() => true),
   isAcceleratedCheckoutAvailable: jest.fn(() => true),
   isApplePayAvailable: jest.fn(() => true),
