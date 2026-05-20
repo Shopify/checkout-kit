@@ -38,7 +38,6 @@ import kotlin.time.Duration.Companion.minutes
 internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = null) :
     BaseWebView(context, attributeSet) {
 
-    override val recoverErrors = true
     var isPreload = false
 
     private val checkoutBridge = CheckoutBridge(CheckoutWebViewListener(NoopCheckoutListener()))

@@ -22,12 +22,11 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 ## Key components
 
 - **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, preload, present).
-- **`CheckoutDialog.kt`** — the dialog that hosts the WebView, including the progress indicator and error-recovery coordination.
+- **`CheckoutDialog.kt`** — the dialog that hosts the WebView, including the progress indicator and checkout error coordination.
 - **`CheckoutWebView.kt`** — primary WebView. Holds the URL-keyed cache with a **5-minute preload TTL**; instruments page loads; routes bridge messages.
 - **`BaseWebView.kt`** — abstract base class. Any new WebView variant must extend this so shared configuration (JS interface name, user agent suffix, client handling) is consistent.
-- **`FallbackWebView.kt`** — minimal WebView swapped in during error recovery when the primary path fails.
 - **`CheckoutBridge.kt`** — the JS ↔ native bridge. `SCHEMA_VERSION` is a cross-boundary contract with the web checkout team; bumping it requires coordination with them.
-- **`Configuration.kt`** — runtime config container (color scheme, preload enable, log level, error recovery policy). Any config change clears the WebView cache.
+- **`Configuration.kt`** — runtime config container (color scheme, preload enable, log level). Any config change clears the WebView cache.
 - **`CheckoutListener.kt`** + **`DefaultCheckoutListener`** — consumer-implemented lifecycle interface (failure, cancellation, permission prompts, file chooser). Changes here are consumer API changes.
 - **`CheckoutPresentation.kt`** — Kotlin-first builder for per-presentation callbacks (`onFail`, `onCancel`, browser/system hooks, ECP `connect(...)`). Builds a `DefaultCheckoutListener` internally.
 

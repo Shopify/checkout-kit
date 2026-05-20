@@ -23,14 +23,9 @@
 package com.shopify.checkout_kit_mobile_buy_integration_sample
 
 import android.app.Application
-import com.shopify.checkout_kit_mobile_buy_integration_sample.common.CookiePurger
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.di.setupDI
-import com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs.Logger
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.withCustomCloseIcon
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.PreferencesManager
-import com.shopify.checkoutkit.CheckoutException
-import com.shopify.checkoutkit.ErrorRecovery
-import com.shopify.checkoutkit.HttpException
 import com.shopify.checkoutkit.LogLevel
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import kotlinx.coroutines.CoroutineScope
@@ -39,7 +34,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.get
-import org.koin.android.ext.android.inject
 
 class MobileBuyIntegration : Application() {
 
@@ -61,16 +55,6 @@ class MobileBuyIntegration : Application() {
                 it.logLevel = LogLevel.DEBUG
                 it.colorScheme = settings.colorScheme.withCustomCloseIcon()
                 it.preloading = settings.preloading
-                it.errorRecovery = object : ErrorRecovery {
-                    val logger: Logger by inject()
-
-                    override fun preRecoveryActions(exception: CheckoutException, checkoutUrl: String) {
-                        logger.log("Falling back")
-                        if (exception is HttpException) {
-                            CookiePurger.purge(checkoutUrl)
-                        }
-                    }
-                }
             }
         }
     }

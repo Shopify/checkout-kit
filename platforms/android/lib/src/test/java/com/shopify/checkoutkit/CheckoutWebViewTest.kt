@@ -225,14 +225,6 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `should recover from errors`() {
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            val view = CheckoutWebView(activityController.get())
-            assertThat(view.recoverErrors).isTrue()
-        }
-    }
-
-    @Test
     fun `removeFromParent() should remove parent if a parent exists but not destroy WebView`() {
         withPreloadingEnabled {
             Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->

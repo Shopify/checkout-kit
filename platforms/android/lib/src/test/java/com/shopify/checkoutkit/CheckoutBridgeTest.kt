@@ -102,7 +102,6 @@ class CheckoutBridgeTest {
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutExpiredException::class.java)
         assertThat(error.message).isEqualTo("Cart is invalid")
-        assertThat(error.isRecoverable).isFalse()
         assertThat(error.errorCode).isEqualTo(CheckoutExpiredException.INVALID_CART)
     }
 
@@ -129,7 +128,6 @@ class CheckoutBridgeTest {
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutExpiredException::class.java)
         assertThat(error.message).isEqualTo("Checkout has been completed")
-        assertThat(error.isRecoverable).isFalse()
         assertThat(error.errorCode).isEqualTo(CheckoutExpiredException.CART_COMPLETED)
     }
 
@@ -155,7 +153,6 @@ class CheckoutBridgeTest {
         assertThat(error.message).isEqualTo(
             "Checkout is no longer available with the provided token. Please generate a new checkout URL"
         )
-        assertThat(error.isRecoverable).isFalse()
         assertThat(error.errorCode).isEqualTo(CheckoutExpiredException.CART_EXPIRED)
     }
 
@@ -181,7 +178,6 @@ class CheckoutBridgeTest {
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutUnavailableException::class.java)
         assertThat(error.message).isEqualTo("Checkout crashed")
-        assertThat(error.isRecoverable).isFalse()
         assertThat(error.errorCode).isEqualTo(CheckoutUnavailableException.CLIENT_ERROR)
     }
 
@@ -207,7 +203,6 @@ class CheckoutBridgeTest {
         val error = captor.firstValue
         assertThat(error).isInstanceOf(ConfigurationException::class.java)
         assertThat(error.message).isEqualTo("Storefront password required")
-        assertThat(error.isRecoverable).isFalse()
         assertThat(error.errorCode).isEqualTo(ConfigurationException.STOREFRONT_PASSWORD_REQUIRED)
     }
 
@@ -247,7 +242,6 @@ class CheckoutBridgeTest {
         val error = captor.firstValue
         assertThat(error).isInstanceOf(CheckoutKitException::class.java)
         assertThat(error.message).isEqualTo("Error decoding message from checkout.")
-        assertThat(error.isRecoverable).isTrue()
         assertThat(error.errorCode).isEqualTo(CheckoutKitException.ERROR_RECEIVING_MESSAGE_FROM_CHECKOUT)
     }
 }

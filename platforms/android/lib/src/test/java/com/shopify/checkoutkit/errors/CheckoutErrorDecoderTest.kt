@@ -115,7 +115,7 @@ class CheckoutErrorDecoderTest {
     }
 
     @Test
-    fun `should decode unrecoverable error as not recoverable`() {
+    fun `should decode unrecoverable error as client exception`() {
         val event = WebToSdkEvent(
             name = "error",
             body = """[
@@ -133,8 +133,7 @@ class CheckoutErrorDecoderTest {
         val decoded = decoder.decode(event)
 
         assertThat(decoded).isInstanceOf(ClientException::class.java)
-        assertThat(decoded!!.isRecoverable).isFalse()
-        assertThat(decoded.errorDescription).isEqualTo("SDK not enabled")
+        assertThat(decoded!!.errorDescription).isEqualTo("SDK not enabled")
     }
 
     @Test

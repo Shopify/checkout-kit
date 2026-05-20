@@ -31,18 +31,16 @@ import kotlinx.serialization.Serializable
 public abstract class CheckoutException(
     public val errorDescription: String,
     public val errorCode: String,
-    public val isRecoverable: Boolean
 ) : Exception(errorDescription)
 
 /**
  * Issued when an internal error occurs within Shopify Checkout Kit. If the issue persists, it is recommended to open a bug report
  * in https://github.com/Shopify/checkout-kit-android
  */
-public class CheckoutKitException(
+public class CheckoutKitException @JvmOverloads constructor(
     errorDescription: String,
     errorCode: String = UNKNOWN,
-    isRecoverable: Boolean,
-) : CheckoutException(errorDescription, errorCode, isRecoverable) {
+) : CheckoutException(errorDescription, errorCode) {
     public companion object {
         public const val ERROR_SENDING_MESSAGE_TO_CHECKOUT: String = "error_sending_message"
         public const val ERROR_RECEIVING_MESSAGE_FROM_CHECKOUT: String = "error_receiving_message"
@@ -58,11 +56,9 @@ public class CheckoutKitException(
 public open class CheckoutUnavailableException @JvmOverloads constructor(
     errorDescription: String? = null,
     errorCode: String = UNKNOWN,
-    isRecoverable: Boolean,
 ) : CheckoutException(
     errorDescription ?: "Checkout is currently unavailable due to an internal error",
     errorCode,
-    isRecoverable
 ) {
     public companion object {
         public const val CLIENT_ERROR: String = "client_error"
@@ -78,16 +74,14 @@ public open class CheckoutUnavailableException @JvmOverloads constructor(
 public class HttpException @JvmOverloads constructor(
     errorDescription: String? = null,
     public val statusCode: Int,
-    isRecoverable: Boolean
-) : CheckoutUnavailableException(errorDescription, HTTP_ERROR, isRecoverable)
+) : CheckoutUnavailableException(errorDescription, HTTP_ERROR)
 
 /**
  * Subclass of CheckoutUnavailableException, issued when Checkout is unavailable for reasons unrelated to HTTP calls.
  */
 public class ClientException @JvmOverloads constructor(
     errorDescription: String? = null,
-    isRecoverable: Boolean
-) : CheckoutUnavailableException(errorDescription, CLIENT_ERROR, isRecoverable)
+) : CheckoutUnavailableException(errorDescription, CLIENT_ERROR)
 
 /**
  * Issued when checkout is no longer available and will no longer be available with the checkout URL supplied.
@@ -98,11 +92,9 @@ public class ClientException @JvmOverloads constructor(
 public class CheckoutExpiredException @JvmOverloads constructor(
     errorDescription: String? = null,
     errorCode: String = UNKNOWN,
-    isRecoverable: Boolean,
 ) : CheckoutException(
     errorDescription ?: "Checkout is no longer available with the provided token. Please generate a new checkout URL",
     errorCode,
-    isRecoverable,
 ) {
     public companion object {
         public const val CART_EXPIRED: String = "cart_expired"
@@ -119,11 +111,9 @@ public class CheckoutExpiredException @JvmOverloads constructor(
 public class ConfigurationException @JvmOverloads constructor(
     errorDescription: String? = null,
     errorCode: String = UNKNOWN,
-    isRecoverable: Boolean,
 ) : CheckoutException(
     errorDescription ?: "Checkout is unavailable due to a configuration issue.",
     errorCode,
-    isRecoverable
 ) {
     public companion object {
         public const val STOREFRONT_PASSWORD_REQUIRED: String = "storefront_password_required"
