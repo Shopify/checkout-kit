@@ -63,20 +63,19 @@ Do not edit files in `Generated/` by hand. Update `.graphql` files and regenerat
 
 ## Setup
 
-From the repo root:
+1. From the repo root or this platform directory, create or sync the shared
+   sample configuration:
 
-```sh
-cp .env.example .env
-scripts/setup_storefront_env
-```
+   ```bash
+   dev up
+   ```
 
-Edit `.env`:
+   If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+   fill in local values, then run:
 
-```text
-STOREFRONT_DOMAIN=your-store.myshopify.com
-STOREFRONT_ACCESS_TOKEN=your-token
-API_VERSION=2026-04
-```
+   ```bash
+   scripts/setup_storefront_env
+   ```
 
 Optional values enable Customer Account API and buyer identity demo flows:
 
@@ -94,14 +93,16 @@ Open the project in Xcode, let Swift Package Manager resolve dependencies, then 
 ## Updating the Storefront API version
 
 1. Update `API_VERSION` in the repo-root `.env`.
-2. Run `scripts/setup_storefront_env` from the repo root.
-3. Download the schema with Rover. This introspects your store's Storefront API and writes `schema.<version>.graphqls` into the sample app directory.
+2. Sync the generated platform config:
 
    ```sh
-   rover graph introspect \
-     "https://$STOREFRONT_DOMAIN/api/$API_VERSION/graphql" \
-     --header="X-Shopify-Storefront-Access-Token: $STOREFRONT_ACCESS_TOKEN" \
-     --output "schema.$API_VERSION.graphqls"
+   dev up
+   ```
+
+3. Download the schema. This introspects your store's Storefront API and writes `schema.<version>.graphqls` into the sample app directory.
+
+   ```sh
+   dev apollo download_schema swift mobile-buy
    ```
 
 4. Update `.graphql` operations if the schema changed. For example, add a product field to `MobileBuyIntegration/Sources/Api/Queries/GetProducts.graphql` before regenerating types:
@@ -118,13 +119,13 @@ Open the project in Xcode, let Swift Package Manager resolve dependencies, then 
    }
    ```
 
-4. Regenerate Swift types with the Apollo iOS CLI and this sample's `apollo-codegen-config.json`. This reads the schema and `.graphql` files, then regenerates Swift code in `MobileBuyIntegration/Sources/Generated/`.
+5. Regenerate Swift types with the Apollo iOS CLI and this sample's `apollo-codegen-config.json`. This reads the schema and `.graphql` files, then regenerates Swift code in `MobileBuyIntegration/Sources/Generated/`.
 
    ```sh
-   ./apollo-ios-cli generate --path apollo-codegen-config.json
+   dev apollo codegen swift mobile-buy
    ```
 
-5. Build in Xcode and fix any compile errors from schema changes.
+6. Build in Xcode and fix any compile errors from schema changes.
 
 ## Dev commands reference
 
@@ -143,7 +144,7 @@ All commands are run from the **repo root** (`checkout-kit/`):
 
 | File | Purpose |
 | --- | --- |
-| `Storefront.xcconfig` | Store credentials, API version, Customer Account API values, and demo buyer identity. |
+| `Storefront.xcconfig` | Generated sample config from the repo-root `.env` (not checked into git). |
 | `schema.<version>.graphqls` | Storefront API schema downloaded with the Apollo iOS CLI. |
 | `apollo-codegen-config.json` | Apollo code generation configuration. |
 | `MobileBuyIntegration/Sources/Api/Network.swift` | Apollo client setup and authentication interceptor. |

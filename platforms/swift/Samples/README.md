@@ -2,6 +2,10 @@
 
 This directory contains iOS sample apps for Checkout Kit.
 
+The sample apps read generated `Storefront.xcconfig` files. From the repo root
+or any platform directory, run `dev up` to provision the repo and create or sync
+them from the shared `.env`.
+
 | Sample | Purpose |
 | --- | --- |
 | `MobileBuyIntegration` | Storefront API cart flow with Apollo iOS, checkout presentation, buyer identity modes, Customer Account API sign-in, and protocol lifecycle events. |
@@ -16,52 +20,54 @@ This directory contains iOS sample apps for Checkout Kit.
 
 ## MobileBuyIntegration
 
-From the repo root:
+### Getting Started
 
-```sh
-cp .env.example .env
-scripts/setup_storefront_env
-```
+1. Create or sync the shared configuration from the repo root or this platform
+   directory:
 
-Fill `.env` with:
+   ```sh
+   dev up
+   ```
 
-- `STOREFRONT_DOMAIN`
-- `STOREFRONT_ACCESS_TOKEN`
-- `API_VERSION`
-- Optional Customer Account API values
-- Optional demo buyer identity values
+2. If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+fill in local values, then run `scripts/setup_storefront_env`.
 
 The setup script generates `platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig`.
 
-Open `platforms/swift/Samples/Samples.xcworkspace` or `platforms/swift/Samples/MobileBuyIntegration/MobileBuyIntegration.xcodeproj` in Xcode, then build and run the `MobileBuyIntegration` scheme.
+Open `Samples/Samples.xcworkspace` or
+`Samples/MobileBuyIntegration/MobileBuyIntegration.xcodeproj` in Xcode, then
+build and run the `MobileBuyIntegration` scheme.
 
-The project generates associated-domain entitlements from `Storefront.xcconfig` during the Xcode build pre-action.
+The project generates associated-domain entitlements from
+`Storefront.xcconfig` during the Xcode build pre-action.
 
 ## ShopifyAcceleratedCheckoutsApp
 
-From the repo root:
+To get started:
 
-```sh
-cp .env.example .env
-scripts/setup_storefront_env
-```
+1. Create or sync the shared configuration from the repo root or this platform
+   directory:
 
-Fill `.env` with:
+   ```sh
+   dev up
+   ```
 
-- `STOREFRONT_DOMAIN`
-- `STOREFRONT_ACCESS_TOKEN`
-- `API_VERSION`
+2. If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+fill in local values, then run `scripts/setup_storefront_env`.
 
 The setup script generates `platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig`.
 
-Open `platforms/swift/Samples/Samples.xcworkspace` or `platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.xcodeproj` in Xcode, then build and run the `ShopifyAcceleratedCheckoutsApp` scheme.
+Open `Samples/Samples.xcworkspace` or
+`Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.xcodeproj`
+in Xcode, then build and run the `ShopifyAcceleratedCheckoutsApp` scheme.
 
 ## Troubleshooting
 
-If the build pre-action fails, Xcode usually shows `exited with status code 1`. Open the build log and check the script output.
+If the build pre-action fails, Xcode usually shows `exited with status code 1`.
+Open the build log and check the script output.
 
 | Build log output | Cause | Fix |
 | --- | --- | --- |
-| `grep: Storefront.xcconfig: No such file or directory` | The sample config file is missing. | Run `scripts/setup_storefront_env` from the repo root. |
-| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `STOREFRONT_DOMAIN` is blank. | Set your shop domain without `https://`. |
-| Associated domains do not work at runtime | Domain or app association is wrong. | Verify your custom storefront domain, app ID, and Universal Links setup. |
+| `grep: Storefront.xcconfig: No such file or directory` | `Storefront.xcconfig` file is missing. | Run `dev up` from the repo root or any platform directory. |
+| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank. | Update root `.env`, then run `dev up`. |
+| Associated domains not working at runtime | Domain value is incorrect. | Update root `.env`, then run `dev up`. |
