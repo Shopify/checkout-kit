@@ -64,7 +64,6 @@ struct SettingsView: View {
     @AppStorage(AppStorageKeys.windowOpenHandler.rawValue)
     var windowOpenHandler: WindowOpenHandlerOption = .default
 
-    @State private var preloadingEnabled = ShopifyCheckoutKit.configuration.preloading.enabled
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
     @State private var selectedColorScheme = ShopifyCheckoutKit.configuration.colorScheme
     @State private var colorScheme: ColorScheme = .light
@@ -73,11 +72,6 @@ struct SettingsView: View {
         NavigationView {
             List {
                 Section(header: Text("Features")) {
-                    Toggle("Preload checkout", isOn: $preloadingEnabled)
-                        .onChange(of: preloadingEnabled) { newValue in
-                            ShopifyCheckoutKit.configuration.preloading.enabled = newValue
-                        }
-
                     Picker("Window open handler", selection: $windowOpenHandler) {
                         ForEach(WindowOpenHandlerOption.allCases, id: \.self) { option in
                             Text(option.title).tag(option)

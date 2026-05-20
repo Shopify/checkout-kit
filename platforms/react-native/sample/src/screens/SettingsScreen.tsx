@@ -21,13 +21,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import React, {useCallback, useMemo, useEffect, useState} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {
   Pressable,
   SafeAreaView,
   SectionList,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from 'react-native';
@@ -49,17 +48,8 @@ import {
 } from '../auth/types';
 
 enum SectionType {
-  Switch = 'switch',
   SingleSelect = 'single-select',
   Text = 'text',
-}
-
-interface SwitchItem {
-  type: SectionType.Switch;
-  title: string;
-  description?: string;
-  value: boolean;
-  handler: () => void;
 }
 
 interface SingleSelectItem {
@@ -75,10 +65,6 @@ interface TextItem {
   value?: string;
 }
 
-function isSwitchItem(item: any): item is SwitchItem {
-  return item.type === SectionType.Switch;
-}
-
 function isSingleSelectItem(item: any): item is SingleSelectItem {
   return item.type === SectionType.SingleSelect;
 }
@@ -90,7 +76,7 @@ function isTextItem(item: any): item is TextItem {
 interface SectionData {
   title: string;
   footer?: string;
-  data: readonly (SwitchItem | SingleSelectItem | TextItem)[];
+  data: readonly (SingleSelectItem | TextItem)[];
 }
 
 function SettingsScreen() {
@@ -98,12 +84,6 @@ function SettingsScreen() {
   const {appConfig, setAppConfig} = useConfig();
   const {colors, setColorScheme} = useTheme();
   const styles = createStyles(colors);
-  const [preloadingEnabled, setPreloadingEnabled] = useState(false);
-
-  useEffect(() => {
-    const config = shopify.getConfig();
-    setPreloadingEnabled(config?.preloading ?? false);
-  }, [shopify]);
 
   const handleColorSchemeChange = useCallback(
     (item: SingleSelectItem) => {
@@ -115,16 +95,6 @@ function SettingsScreen() {
     },
     [appConfig, setAppConfig, setColorScheme],
   );
-
-  const handleTogglePreloading = useCallback(() => {
-    const currentConfig = shopify.getConfig();
-    const newPreloadingValue = !currentConfig?.preloading;
-    shopify.setConfig({
-      ...currentConfig,
-      preloading: newPreloadingValue,
-    });
-    setPreloadingEnabled(newPreloadingValue);
-  }, [shopify]);
 
   const {isAuthenticated, customerEmail, tokenExpiresAt, logout} = useAuth();
 
@@ -153,18 +123,6 @@ function SettingsScreen() {
       });
     },
     [appConfig, logout, setAppConfig],
-  );
-
-  const configurationOptions: readonly SwitchItem[] = useMemo(
-    () => [
-      {
-        title: 'Preload checkout',
-        type: SectionType.Switch,
-        value: preloadingEnabled,
-        handler: handleTogglePreloading,
-      },
-    ],
-    [preloadingEnabled, handleTogglePreloading],
   );
 
   const buyerIdentityOptions: readonly SingleSelectItem[] = useMemo(
@@ -253,10 +211,6 @@ function SettingsScreen() {
   const sections: SectionData[] = useMemo(
     () => [
       {
-        title: 'Features',
-        data: configurationOptions,
-      },
-      {
         title: 'Authentication',
         footer:
           'Prefills buyer identity at checkout. Changing this setting will clear your cart.',
@@ -279,7 +233,6 @@ function SettingsScreen() {
     ],
     [
       themeOptions,
-      configurationOptions,
       buyerIdentityOptions,
       applePayStyleOptions,
       informationalItems,
@@ -292,12 +245,6 @@ function SettingsScreen() {
         sections={sections}
         keyExtractor={item => item.title}
         renderItem={({item, section}) => {
-          if (isSwitchItem(item)) {
-            return (
-              <SwitchItem styles={styles} item={item} onChange={item.handler} />
-            );
-          }
-
           if (isSingleSelectItem(item)) {
             const sectionHandlers: Record<string, (item: SingleSelectItem) => void> = {
               Authentication: handleBuyerIdentityModeChange,
@@ -352,12 +299,6 @@ function SettingsScreen() {
   );
 }
 
-interface SwitchItemProps {
-  item: SwitchItem;
-  styles: ReturnType<typeof createStyles>;
-  onChange: () => void;
-}
-
 interface SelectItemProps {
   item: SingleSelectItem;
   styles: ReturnType<typeof createStyles>;
@@ -367,27 +308,6 @@ interface SelectItemProps {
 interface TextItemProps {
   item: TextItem;
   styles: ReturnType<typeof createStyles>;
-}
-
-function SwitchItem({item, styles, onChange}: SwitchItemProps) {
-  return (
-    <View>
-      <View style={styles.listItem}>
-        <Text style={styles.listItemText}>{item.title}</Text>
-        <Switch
-          trackColor={{false: '#767577', true: '#81b0ff'}}
-          thumbColor="#fff"
-          ios_backgroundColor="#eee"
-          onValueChange={onChange}
-          value={item.value}
-          style={styles.listItemSwitch}
-        />
-      </View>
-      {item.description && (
-        <Text style={styles.listItemDescription}>{item.description}</Text>
-      )}
-    </View>
-  );
 }
 
 function SelectItem({item, styles, onPress}: SelectItemProps) {

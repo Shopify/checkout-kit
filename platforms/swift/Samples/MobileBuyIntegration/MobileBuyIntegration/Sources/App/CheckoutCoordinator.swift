@@ -58,8 +58,4 @@ class CheckoutCoordinator: UIViewController {
             root = rootViewController
         }
     }
-
-    public func preload() {
-        CartManager.shared.preloadCheckout()
-    }
 }

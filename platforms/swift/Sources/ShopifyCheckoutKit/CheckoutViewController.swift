@@ -58,8 +58,6 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
     public init(checkout url: URL) {
         checkoutURL = CheckoutProtocol.url(for: url)
-
-        ShopifyCheckoutKit.invalidateOnConfigurationChange = false
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {

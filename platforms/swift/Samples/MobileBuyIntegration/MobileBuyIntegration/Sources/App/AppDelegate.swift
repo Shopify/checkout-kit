@@ -48,7 +48,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         ShopifyCheckoutKit.configure {
             $0.colorScheme = .automatic
             $0.tintColor = ColorPalette.primaryColor
-            $0.preloading.enabled = false
             $0.logger = FileLogger("log.txt")
             $0.logLevel = checkoutKitLogLevel
         }

@@ -33,7 +33,6 @@ class CheckoutViewDelegateTests: XCTestCase {
 
     override func setUp() {
         ShopifyCheckoutKit.configure {
-            $0.preloading.enabled = true
             $0.title = customTitle ?? "Checkout"
         }
         viewController = MockCheckoutWebViewController(
@@ -58,75 +57,33 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertEqual(viewController.title, "Custom title")
     }
 
-    func testCheckoutViewDidFailWithErrorInvalidatesViewCache() {
-        let one = CheckoutWebView.for(checkout: checkoutURL)
-        let two = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertEqual(one, two)
-
+    func testCheckoutViewDidFailWithErrorDismissesViewController() {
         viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500)))
 
-        let three = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertNotEqual(two, three)
         XCTAssertTrue(viewController.dismissCalled)
     }
 
-    func testFailWithErrorDisablesPreloadingActivtedByClient() {
-        CheckoutWebView.preloadingActivatedByClient = true
-
-        _ = CheckoutWebView.for(checkout: checkoutURL)
-
-        viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500)))
-
-        XCTAssertEqual(false, CheckoutWebView.preloadingActivatedByClient)
-    }
-
-    func testCloseInvalidatesViewCache() {
-        let one = CheckoutWebView.for(checkout: checkoutURL)
-        let two = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertEqual(one, two)
+    func testCloseInvokesCancelDelegate() {
+        var didCancel = false
+        viewController.onCancel = {
+            didCancel = true
+        }
 
         viewController.close()
 
-        let three = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertNotEqual(two, three)
+        XCTAssertTrue(didCancel)
     }
 
-    func testCloseDoesNotInvalidateViewCacheWhenPreloadingIsCalledByClient() {
-        ShopifyCheckoutKit.preload(checkout: checkoutURL)
-
-        let one = CheckoutWebView.for(checkout: checkoutURL)
-        let two = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertEqual(one, two)
-
-        viewController.close()
-
-        let three = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertEqual(one, three)
-    }
-
-    func testPresentationControllerDidDismissInvalidatesViewCache() throws {
-        let one = CheckoutWebView.for(checkout: checkoutURL)
-        let two = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertEqual(one, two)
+    func testPresentationControllerDidDismissInvokesCancelDelegate() throws {
+        var didCancel = false
+        viewController.onCancel = {
+            didCancel = true
+        }
 
         let presentationController = try XCTUnwrap(UIViewController().presentationController)
         viewController.presentationControllerDidDismiss(presentationController)
 
-        let three = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertNotEqual(two, three)
-    }
-
-    func testPresentationControllerDidDismissSavesCacheWhenActivatedByClient() throws {
-        CheckoutWebView.preloadingActivatedByClient = true
-        let one = CheckoutWebView.for(checkout: checkoutURL)
-        let two = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertEqual(one, two)
-
-        let presentationController = try XCTUnwrap(UIViewController().presentationController)
-        viewController.presentationControllerDidDismiss(presentationController)
-
-        let three = CheckoutWebView.for(checkout: checkoutURL)
-        XCTAssertEqual(one, three)
+        XCTAssertTrue(didCancel)
     }
 
     func testCheckoutViewDidStartNavigationShowsProgressBar() {

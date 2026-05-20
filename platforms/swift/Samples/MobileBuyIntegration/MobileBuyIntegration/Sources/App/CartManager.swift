@@ -52,17 +52,6 @@ class CartManager: ObservableObject {
 
     init() {}
 
-    public func preloadCheckout() {
-        // if let url = cart?.checkoutURL, isDirty {
-        //     ShopifyCheckoutKit.preload(checkout: url)
-        //     markCartAsReady()
-        // }
-    }
-
-    func markCartAsReady() {
-        isDirty = false
-    }
-
     // MARK: Cart Actions
 
     func performCartLinesAdd(variant: String) async throws -> Storefront.CartFragment {

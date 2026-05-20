@@ -41,10 +41,8 @@ interface Context {
   getConfig: () => Configuration | undefined;
   setConfig: (config: Configuration) => void;
   removeEventListeners: RemoveEventListeners;
-  preload: (checkoutUrl: string) => void;
   present: (checkoutUrl: string) => void;
   dismiss: () => void;
-  invalidate: () => void;
   version: Maybe<string>;
 }
 
@@ -108,16 +106,6 @@ export function ShopifyCheckoutProvider({
     }
   }, []);
 
-  const preload = useCallback((checkoutUrl: string) => {
-    if (checkoutUrl) {
-      instance.current?.preload(checkoutUrl);
-    }
-  }, []);
-
-  const invalidate = useCallback(() => {
-    instance.current?.invalidate();
-  }, []);
-
   const dismiss = useCallback(() => {
     instance.current?.dismiss();
   }, []);
@@ -137,9 +125,7 @@ export function ShopifyCheckoutProvider({
       dismiss,
       setConfig,
       getConfig,
-      preload,
       present,
-      invalidate,
       removeEventListeners,
       version: instance.current?.version,
     };
@@ -150,9 +136,7 @@ export function ShopifyCheckoutProvider({
     removeEventListeners,
     getConfig,
     setConfig,
-    preload,
     present,
-    invalidate,
   ]);
 
   return (

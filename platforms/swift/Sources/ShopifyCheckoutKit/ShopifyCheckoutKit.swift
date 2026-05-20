@@ -29,14 +29,9 @@ import UIKit
 /// The version of the `ShopifyCheckoutKit` library.
 public let version = "3.8.0"
 
-var invalidateOnConfigurationChange = true
-
 /// The configuration options for the `ShopifyCheckoutKit` library.
 public var configuration = Configuration() {
     didSet {
-        if invalidateOnConfigurationChange {
-            CheckoutWebView.invalidate()
-        }
         OSLogger.shared.logLevel = configuration.logLevel
     }
 }
@@ -44,22 +39,6 @@ public var configuration = Configuration() {
 /// A convienence function for configuring the `ShopifyCheckoutKit` library.
 public func configure(_ block: (inout Configuration) -> Void) {
     block(&configuration)
-}
-
-/// Public preload support is coming soon.
-internal func preload(checkout url: URL) {
-    guard configuration.preloading.enabled else {
-        return
-    }
-
-    let url = CheckoutProtocol.url(for: url)
-    CheckoutWebView.preloadingActivatedByClient = true
-    CheckoutWebView.for(checkout: url).load(checkout: url, isPreload: true)
-}
-
-/// Invalidate the checkout cache from preload calls
-public func invalidate() {
-    CheckoutWebView.invalidate(disconnect: true)
 }
 
 @discardableResult
