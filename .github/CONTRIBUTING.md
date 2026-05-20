@@ -50,6 +50,11 @@ dev check
 
 Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, and `dev react-native <command>` (or `dev rn`). Protocol schema/model commands are available as `dev protocol <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
 
+Sample app storefront configuration is generated from the repo-root `.env`.
+Shopify employees get this through `dev up`. External contributors can copy
+`.env.example` to `.env`, fill in local storefront values, then run
+`scripts/setup_storefront_env` from the repo root.
+
 ---
 
 ## Swift (`platforms/swift/`)

@@ -63,36 +63,39 @@ Do not edit files in `Generated/` by hand. Update `.graphql` files and regenerat
 
 ## Setup
 
-From `platforms/swift`:
+From the repo root:
 
 ```sh
-cp Samples/MobileBuyIntegration/Storefront.xcconfig.example \
-  Samples/MobileBuyIntegration/Storefront.xcconfig
+cp .env.example .env
+scripts/setup_storefront_env
 ```
 
-Edit `Storefront.xcconfig`:
+Edit `.env`:
 
 ```text
-STOREFRONT_DOMAIN = your-store.myshopify.com
-STOREFRONT_ACCESS_TOKEN = your-token
-API_VERSION = 2026-04
+STOREFRONT_DOMAIN=your-store.myshopify.com
+STOREFRONT_ACCESS_TOKEN=your-token
+API_VERSION=2026-04
 ```
 
 Optional values enable Customer Account API and buyer identity demo flows:
 
 ```text
-CUSTOMER_ACCOUNT_API_CLIENT_ID = your-client-id
-CUSTOMER_ACCOUNT_API_SHOP_ID = your-shop-id
-EMAIL = test.buyer@example.com
-PHONE = +16135550123
+CUSTOMER_ACCOUNT_API_CLIENT_ID=your-client-id
+CUSTOMER_ACCOUNT_API_SHOP_ID=your-shop-id
+EMAIL=test.buyer@example.com
+PHONE=+16135550123
 ```
+
+The setup script generates this sample's `Storefront.xcconfig`.
 
 Open the project in Xcode, let Swift Package Manager resolve dependencies, then build and run.
 
 ## Updating the Storefront API version
 
-1. Update `API_VERSION` in `Storefront.xcconfig`.
-2. Download the schema with Rover. This introspects your store's Storefront API and writes `schema.<version>.graphqls` into the sample app directory.
+1. Update `API_VERSION` in the repo-root `.env`.
+2. Run `scripts/setup_storefront_env` from the repo root.
+3. Download the schema with Rover. This introspects your store's Storefront API and writes `schema.<version>.graphqls` into the sample app directory.
 
    ```sh
    rover graph introspect \
@@ -101,7 +104,7 @@ Open the project in Xcode, let Swift Package Manager resolve dependencies, then 
      --output "schema.$API_VERSION.graphqls"
    ```
 
-3. Update `.graphql` operations if the schema changed. For example, add a product field to `MobileBuyIntegration/Sources/Api/Queries/GetProducts.graphql` before regenerating types:
+4. Update `.graphql` operations if the schema changed. For example, add a product field to `MobileBuyIntegration/Sources/Api/Queries/GetProducts.graphql` before regenerating types:
 
    ```graphql
    query GetProducts(...) {

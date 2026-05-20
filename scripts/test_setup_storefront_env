@@ -1,0 +1,278 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+fixtures=()
+
+cleanup() {
+  local fixture
+  if [[ "${#fixtures[@]}" -eq 0 ]]; then
+    return
+  fi
+
+  for fixture in "${fixtures[@]}"; do
+    rm -rf "$fixture"
+  done
+}
+
+trap cleanup EXIT
+
+fail() {
+  echo "test_setup_storefront_env: $1" >&2
+  exit 1
+}
+
+make_fixture() {
+  local fixture
+  fixture="$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-storefront-env.XXXXXX")"
+  fixtures+=("$fixture")
+
+  mkdir -p \
+    "$fixture/scripts" \
+    "$fixture/platforms/android/samples/MobileBuyIntegration" \
+    "$fixture/platforms/react-native/sample" \
+    "$fixture/platforms/swift/Samples/MobileBuyIntegration" \
+    "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp"
+
+  cp "$REPO_ROOT/scripts/setup_storefront_env" "$fixture/scripts/setup_storefront_env"
+  chmod +x "$fixture/scripts/setup_storefront_env"
+
+  printf '%s\n' "$fixture"
+}
+
+assert_file_exists() {
+  [[ -f "$1" ]] || fail "expected generated file is missing"
+}
+
+assert_contains() {
+  local path="$1"
+  local pattern="$2"
+
+  grep -Fq "$pattern" "$path" || fail "expected generated file content was not found: $path: $pattern"
+}
+
+assert_not_contains() {
+  local path="$1"
+  local pattern="$2"
+
+  if grep -Fq "$pattern" "$path"; then
+    fail "unexpected generated file content was found"
+  fi
+}
+
+assert_output_is_sanitized() {
+  local output_path="$1"
+  local value
+
+  for value in \
+    synthetic-store.example.myshopify.com \
+    synthetic-token \
+    synthetic-merchant \
+    synthetic-client \
+    synthetic-shop \
+    migrated-store.example.myshopify.com \
+    migrated-token \
+    migrated-client \
+    migrated-shop; do
+    if grep -Fq "$value" "$output_path"; then
+      fail "command output included a configured value"
+    fi
+  done
+}
+
+test_sync_and_check() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
+    STOREFRONT_ACCESS_TOKEN=synthetic-token \
+    STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant \
+    CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
+    CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
+    "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_file_exists "$fixture/.env"
+  assert_file_exists "$fixture/platforms/android/samples/MobileBuyIntegration/.env"
+  assert_file_exists "$fixture/platforms/react-native/sample/.env"
+  assert_file_exists "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig"
+  assert_file_exists "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
+  assert_not_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "STOREFRONT_MERCHANT_IDENTIFIER"
+  assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "STOREFRONT_MERCHANT_IDENTIFIER"
+  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
+  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "EMAIL"
+
+  "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  awk '
+    /^API_VERSION=/ { print "API_VERSION=2026-01"; next }
+    { print }
+  ' "$fixture/.env" >"$fixture/.env.next"
+  mv "$fixture/.env.next" "$fixture/.env"
+
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+  assert_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "API_VERSION=2026-01"
+  assert_contains "$fixture/platforms/react-native/sample/.env" "API_VERSION=\"2026-01\""
+  assert_contains "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" "API_VERSION = 2026-01"
+  assert_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "API_VERSION = 2026-01"
+
+  printf '%s\n' "stale" >"$fixture/platforms/android/samples/MobileBuyIntegration/.env"
+  if "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1; then
+    fail "stale generated config passed --check"
+  fi
+  assert_output_is_sanitized "$output"
+}
+
+test_required_values_only() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
+    STOREFRONT_ACCESS_TOKEN=synthetic-token \
+    "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_file_exists "$fixture/.env"
+  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
+
+  "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+}
+
+test_optional_sync_updates_blank_optional_values_after_required_setup() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
+    STOREFRONT_ACCESS_TOKEN=synthetic-token \
+    "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
+
+  STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant \
+    CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
+    CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
+    "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant"
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop"
+  assert_contains "$fixture/platforms/react-native/sample/.env" "STOREFRONT_MERCHANT_IDENTIFIER=\"synthetic-merchant\""
+  assert_contains "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID = synthetic-client"
+  assert_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.synthetic-shop.app://callback"
+}
+
+test_normalizes_existing_root_env() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  cat >"$fixture/.env" <<'EOF'
+STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=synthetic-token
+EOF
+
+  if "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1; then
+    fail "non-canonical root .env passed --check"
+  fi
+  assert_output_is_sanitized "$output"
+
+  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$fixture/.env" "EMAIL=checkout-kit@example.com"
+
+  "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+}
+
+test_blank_customer_account_api_version_defaults() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  cat >"$fixture/.env" <<'EOF'
+STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=synthetic-token
+STOREFRONT_MERCHANT_IDENTIFIER=
+API_VERSION=2026-04
+CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client
+CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop
+CUSTOMER_ACCOUNT_API_VERSION=
+EMAIL=checkout-kit@example.com
+ADDRESS_1=650 King Street
+ADDRESS_2=Shopify HQ
+CITY=Toronto
+COMPANY=Shopify
+COUNTRY=CA
+FIRST_NAME=Evelyn
+LAST_NAME=Hartley
+PROVINCE=ON
+ZIP=M5V 1M7
+PHONE=+14165550100
+EOF
+
+  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "/2026-04/graphql"
+}
+
+test_migration_from_platform_config() {
+  local fixture output android_env
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  android_env="$fixture/platforms/android/samples/MobileBuyIntegration/.env"
+
+  cat >"$android_env" <<'EOF'
+STOREFRONT_DOMAIN=migrated-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=migrated-token
+CUSTOMER_ACCOUNT_API_CLIENT_ID=migrated-client
+CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.migrated-shop.app://callback
+CUSTOMER_ACCOUNT_API_GRAPHQL_BASE_URL=https://shopify.com/migrated-shop/account/customer/api/2026-04/graphql
+EMAIL=migrated@example.com
+PHONE=+15555550100
+EOF
+
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_file_exists "$fixture/.env"
+  assert_contains "$fixture/.env" "API_VERSION=2026-04"
+  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+
+  "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+}
+
+test_sync_and_check
+test_required_values_only
+test_optional_sync_updates_blank_optional_values_after_required_setup
+test_normalizes_existing_root_env
+test_blank_customer_account_api_version_defaults
+test_migration_from_platform_config
+
+echo "setup_storefront_env synthetic tests passed."
