@@ -169,6 +169,7 @@ if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 	# platforms/swift/ and protocol/languages/swift/. Run lint from the
 	# repo root.
 	REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
+	export BUNDLE_GEMFILE="${BUNDLE_GEMFILE:-$REPO_ROOT/platforms/swift/Gemfile}"
 	POD_LOG=""
 	if [[ "$VERBOSE" == "true" ]]; then
 		(cd "$REPO_ROOT" && bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings)
@@ -188,7 +189,7 @@ if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 
 		echo "❌ CocoaPods lint exit status: $POD_STATUS"
 		echo "❌ CocoaPods detected issues that need to be fixed."
-		echo "🔧 Run 'bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings --verbose' from the repo root for details"
+		echo "🔧 Run 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings --verbose' from the repo root for details"
 		exit 1
 	fi
 

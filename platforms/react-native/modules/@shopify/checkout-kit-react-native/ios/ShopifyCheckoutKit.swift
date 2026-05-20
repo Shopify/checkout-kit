@@ -65,34 +65,34 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
         hasListeners = false
     }
 
-    // TODO: re-enable when iOS CheckoutDelegate (or equivalent) lands upstream —
+    // TODO: re-enable when iOS CheckoutDelegate (or equivalent) lands upstream -
     // parallels Android's DefaultCheckoutListener.onCheckoutCanceled / onCheckoutFailed.
     // Until then, the JS "error" and "close" events stay declared in supportedEvents()
     // but native never emits them.
     /*
 
-    func shouldRecoverFromError(error: CheckoutError) -> Bool {
-        return error.isRecoverable
-    }
+     func shouldRecoverFromError(error: CheckoutError) -> Bool {
+         return error.isRecoverable
+     }
 
-    func checkoutDidFail(error: CheckoutError) {
-        guard hasListeners else { return }
+     func checkoutDidFail(error: CheckoutError) {
+         guard hasListeners else { return }
 
-        sendEvent(withName: "error", body: ShopifyEventSerialization.serialize(checkoutError: error))
-    }
+         sendEvent(withName: "error", body: ShopifyEventSerialization.serialize(checkoutError: error))
+     }
 
-    func checkoutDidCancel() {
-        DispatchQueue.main.async {
-            if self.hasListeners {
-                self.sendEvent(withName: "close", body: nil)
-            }
+     func checkoutDidCancel() {
+         DispatchQueue.main.async {
+             if self.hasListeners {
+                 self.sendEvent(withName: "close", body: nil)
+             }
 
-            self.checkoutSheet?.dismiss(animated: true)
-        }
-    }
+             self.checkoutSheet?.dismiss(animated: true)
+         }
+     }
 
-    func checkoutDidEmitWebPixelEvent(event _: PixelEvent) {}
-    */
+     func checkoutDidEmitWebPixelEvent(event _: PixelEvent) {}
+     */
 
     @objc override func constantsToExport() -> [AnyHashable: Any]! {
         return [
@@ -150,7 +150,7 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
         }
     }
 
-    @objc func preload(_ checkoutURL: String) {
+    @objc func preload(_: String) {
         // Public native preload support is not exposed by the local iOS SDK.
     }
 

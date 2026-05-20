@@ -441,7 +441,7 @@ function BuyerIdentityDetails({
       if (authenticated) {
         return (
           <View style={styles.sectionFooter}>
-            <Text style={[styles.sectionFooterText, {color: '#f5a623'}]}>
+            <Text style={[styles.sectionFooterText, styles.warningText]}>
               Changing Buyer Identity will log you out.
             </Text>
             <View style={styles.detailRow}>
@@ -537,6 +537,9 @@ function createStyles(colors: Colors) {
     linkText: {
       fontSize: 12,
       color: '#007AFF',
+    },
+    warningText: {
+      color: '#f5a623',
     },
   });
 }

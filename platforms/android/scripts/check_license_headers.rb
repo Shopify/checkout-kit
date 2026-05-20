@@ -4,7 +4,10 @@ require 'find'
 files = []
 
 Find.find('.') do |path|
-    next if path.include?('build/generated')
+    if File.directory?(path) && ['.gradle', 'build'].include?(File.basename(path))
+        Find.prune
+    end
+
     next unless File.file?(path) && path.end_with?('.kt')
 
     lines = File.readlines(path)
