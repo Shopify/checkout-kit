@@ -633,37 +633,6 @@ public abstract interface class com/shopify/checkoutkit/CheckoutCommunicationCli
 	public abstract fun process (Ljava/lang/String;)Ljava/lang/String;
 }
 
-public final class com/shopify/checkoutkit/CheckoutError {
-	public static final field Companion Lcom/shopify/checkoutkit/CheckoutError$Companion;
-	public fun <init> ()V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/CheckoutError;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutError;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutError;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCode ()Ljava/lang/String;
-	public final fun getContent ()Ljava/lang/String;
-	public final fun getSeverity ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/shopify/checkoutkit/CheckoutError$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutError$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/CheckoutError;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/CheckoutError;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/CheckoutError$Companion {
-	public final fun serializer ()Lkotlinx/serialization/KSerializer;
-}
-
 public abstract class com/shopify/checkoutkit/CheckoutException : java/lang/Exception {
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutException$Companion;
 	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;ZLkotlinx/serialization/internal/SerializationConstructorMarker;)V

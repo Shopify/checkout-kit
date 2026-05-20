@@ -135,18 +135,28 @@ class CheckoutProtocolTest {
 
     @Test
     fun `process dispatches ec error to registered handler with decoded payload`() {
-        var received: CheckoutError? = null
+        var received: ErrorResponse? = null
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.error) { received = it }
 
         val errorMsg = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
-            """{"messages":[{"code":"unknown_error","content":"fail","severity":"unrecoverable"}]}}"""
+            """{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":[""" +
+            """{"type":"error","code":"unknown_error","content":"fail","severity":"unrecoverable"},""" +
+            """{"type":"error","code":"session_expired","content":"expired","severity":"recoverable"}""" +
+            """],"continue_url":"https://example.com/retry"}}}"""
         client.process(errorMsg)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(received?.code).isEqualTo("unknown_error")
-        assertThat(received?.content).isEqualTo("fail")
-        assertThat(received?.severity).isEqualTo("unrecoverable")
+        assertThat(received?.ucp?.version).isEqualTo("2026-04-08")
+        assertThat(received?.ucp?.status).isEqualTo(StatusEnum.Error)
+        assertThat(received?.messages).hasSize(2)
+        assertThat(received?.messages?.get(0)?.type).isEqualTo(MessageType.Error)
+        assertThat(received?.messages?.get(0)?.code).isEqualTo("unknown_error")
+        assertThat(received?.messages?.get(0)?.content).isEqualTo("fail")
+        assertThat(received?.messages?.get(0)?.severity).isEqualTo(Severity.Unrecoverable)
+        assertThat(received?.messages?.get(1)?.code).isEqualTo("session_expired")
+        assertThat(received?.messages?.get(1)?.severity).isEqualTo(Severity.Recoverable)
+        assertThat(received?.continueURL).isEqualTo("https://example.com/retry")
     }
 
     @Test

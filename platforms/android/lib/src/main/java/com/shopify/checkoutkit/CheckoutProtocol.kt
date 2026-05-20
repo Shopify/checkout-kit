@@ -67,14 +67,14 @@ public object CheckoutProtocol {
     public val lineItemsChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.line_items.change")
     internal val buyerChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.buyer.change")
     public val totalsChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.totals.change")
-    public val error: NotificationDescriptor<CheckoutError> = NotificationDescriptor(
+    public val error: NotificationDescriptor<ErrorResponse> = NotificationDescriptor(
         method = "ec.error",
         decode = { params ->
-            params?.jsonObject?.get("messages")?.let {
+            params?.jsonObject?.get("error")?.let {
                 try {
-                    json.decodeFromJsonElement<List<CheckoutError>>(it).firstOrNull()
+                    json.decodeFromJsonElement<ErrorResponse>(it)
                 } catch (e: Exception) {
-                    log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ec.error messages: $e  raw=$it")
+                    log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ec.error params: $e  raw=$it")
                     null
                 }
             }
@@ -319,14 +319,6 @@ internal sealed class WindowOpenResult {
     object Success : WindowOpenResult()
     data class Rejected(val reason: String? = null) : WindowOpenResult()
 }
-
-/** Payload delivered with the [CheckoutProtocol.error] notification. */
-@Serializable
-public data class CheckoutError internal constructor(
-    public val code: String? = null,
-    public val content: String? = null,
-    public val severity: String? = null,
-)
 
 // UCP wire envelopes for delegation responses. Mirror Swift's UCPSuccess / UCPError /
 // WindowOpenRejectedBody (origin/swift/window.open_request: ShopifyCheckoutProtocol/Codec.swift +
