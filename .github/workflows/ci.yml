@@ -61,6 +61,8 @@ jobs:
               - '.github/workflows/rn-test.yml'
               - '.github/workflows/rn-test-android.yml'
               - '.github/workflows/rn-test-ios.yml'
+              - '.github/workflows/rn-build-android.yml'
+              - '.github/workflows/rn-build-ios.yml'
               - '.github/workflows/rn-license-headers.yml'
               - '.github/workflows/rn-check-packed-files.yml'
               - '.github/workflows/rn-lint.yml'
@@ -123,6 +125,18 @@ jobs:
     if: needs.changes.outputs.reactNative == 'true'
     uses: ./.github/workflows/rn-test-ios.yml
 
+  rn-build-android:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-build-android.yml
+
+  rn-build-ios:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-build-ios.yml
+
   rn-license-headers:
     name: React Native
     needs: changes
@@ -172,6 +186,8 @@ jobs:
       - rn-test
       - rn-test-android
       - rn-test-ios
+      - rn-build-android
+      - rn-build-ios
       - rn-license-headers
       - rn-check-packed-files
       - rn-lint

@@ -1,0 +1,53 @@
+name: React Native — Build Android Sample
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '22'
+  # TODO: remove once ShopifyCheckoutKit is published to CocoaPods trunk and
+  # Maven Central. Tracks the new pod/AAR name introduced by the
+  # ShopifyCheckoutSheetKit → ShopifyCheckoutKit rename.
+  USE_LOCAL_SDK: "1"
+
+jobs:
+  build-android:
+    name: Build Android Sample
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: platforms/react-native
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
+
+      - name: Install JDK
+        id: setup-java
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: zulu
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Build Android sample
+        timeout-minutes: 20
+        env:
+          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=768m
+          JAVA_HOME: ${{ steps.setup-java.outputs.path }}
+        run: |
+          echo "JAVA_HOME: $JAVA_HOME"
+          java -version
+          echo "STOREFRONT_DOMAIN=myshopify.com" > sample/.env
+          pnpm module build
+          pnpm sample build:android --no-daemon

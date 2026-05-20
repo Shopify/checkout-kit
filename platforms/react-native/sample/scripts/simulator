@@ -12,14 +12,14 @@ get_sim_destination() {
   udid="$(xcrun simctl list devices booted \
     | grep -E 'iPhone|iPad' \
     | sed -n -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/p' \
-    | head -n1)"
+    | head -n1 || true)"
 
   # If none booted, pick the first available iOS simulator (iPhone or iPad)
   if [[ -z "$udid" ]]; then
     udid="$(xcrun simctl list devices available \
       | grep -E 'iPhone|iPad' \
       | sed -n -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/p' \
-      | head -n1)"
+      | head -n1 || true)"
   fi
 
   if [[ -n "$udid" ]]; then
