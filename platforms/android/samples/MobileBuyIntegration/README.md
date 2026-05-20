@@ -66,20 +66,19 @@ Do not edit files in `app/build/generated/source/apollo/` by hand. Update `.grap
 
 ## Setup
 
-From the repo root:
+1. From the repo root or this platform directory, create or sync the shared
+   sample configuration:
 
-```sh
-cp .env.example .env
-scripts/setup_storefront_env
-```
+   ```bash
+   dev up
+   ```
 
-Edit the repo-root `.env`:
+   If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+   fill in local values, then run:
 
-```text
-STOREFRONT_DOMAIN=your-store.myshopify.com
-STOREFRONT_ACCESS_TOKEN=your-token
-API_VERSION=2026-04
-```
+   ```bash
+   scripts/setup_storefront_env
+   ```
 
 Optional values enable Customer Account API and buyer identity demo flows:
 
@@ -98,14 +97,16 @@ Open the project in Android Studio, sync Gradle, then build and run.
 ## Updating the Storefront API version
 
 1. Update `API_VERSION` in the repo-root `.env`.
-2. Run `scripts/setup_storefront_env` from the repo root.
-3. Download the schema with Rover. This introspects your store's Storefront API and writes `schema.graphqls` into `app/src/main/graphql/`.
+2. Sync the generated platform config:
 
    ```sh
-   rover graph introspect \
-     "https://$STOREFRONT_DOMAIN/api/$API_VERSION/graphql" \
-     --header="X-Shopify-Storefront-Access-Token: $STOREFRONT_ACCESS_TOKEN" \
-     --output "app/src/main/graphql/schema.graphqls"
+   dev up
+   ```
+
+3. Download the schema. This introspects your store's Storefront API and writes `schema.graphqls` into `app/src/main/graphql/`.
+
+   ```sh
+   dev apollo download_schema android
    ```
 
 4. Update GraphQL operations in `app/src/main/graphql/` if the schema changed. For example, add a product field to `FetchProducts.graphql` before regenerating types:
@@ -122,13 +123,13 @@ Open the project in Android Studio, sync Gradle, then build and run.
    }
    ```
 
-4. Regenerate Kotlin types with Apollo Kotlin. This reads the schema and `.graphql` files, then regenerates Kotlin code in `app/build/generated/source/apollo/`.
+5. Regenerate Kotlin types with Apollo Kotlin. This reads the schema and `.graphql` files, then regenerates Kotlin code in `app/build/generated/source/apollo/`.
 
    ```sh
-   ./gradlew :app:generateApolloSources
+   dev apollo codegen android
    ```
 
-5. Build and fix any compile errors from schema changes:
+6. Build and fix any compile errors from schema changes:
 
    ```sh
    ./gradlew :app:assembleDebug
@@ -138,7 +139,7 @@ Open the project in Android Studio, sync Gradle, then build and run.
 
 | File | Purpose |
 | --- | --- |
-| `.env` | Store credentials, API version, Customer Account API values, and demo buyer identity. |
+| `.env` | Generated sample config from the repo-root `.env` (not checked into git). |
 | `app/build.gradle` | Apollo plugin configuration and `BuildConfig` values from `.env`. |
 | `app/src/main/graphql/schema.graphqls` | Storefront API schema. |
 | `common/client/StorefrontApiClient.kt` | Apollo client setup and Storefront API auth header. |

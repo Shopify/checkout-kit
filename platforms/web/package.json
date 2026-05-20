@@ -53,7 +53,7 @@
     "ecommerce"
   ],
   "scripts": {
-    "clean": "rm -rf dist coverage",
+    "clean": "rm -rf dist sample/dist coverage",
     "build": "vite build && pnpm run build:manifest",
     "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' --outdir dist",
     "dev": "vite build --watch",
@@ -62,8 +62,8 @@
     "lint": "pnpm run typecheck && pnpm run sample:typecheck && pnpm run lint:js && pnpm run format:check",
     "lint:js": "oxlint --report-unused-disable-directives --max-warnings 0 src sample",
     "lint:js:fix": "oxlint --fix src sample",
-    "format": "oxfmt src sample",
-    "format:check": "oxfmt --check src sample",
+    "format": "oxfmt src sample '!sample/dist/**'",
+    "format:check": "oxfmt --check src sample '!sample/dist/**'",
     "typecheck": "tsc --noEmit",
     "sample": "vite --config sample/vite.config.ts",
     "sample:build": "vite build --config sample/vite.config.ts",

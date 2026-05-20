@@ -5,6 +5,7 @@ platforms/
   swift/         # iOS Swift Package and CocoaPods sources
   android/       # Android library and sample apps
   react-native/  # React Native wrapper
+  web/           # Web component package and sample app
 protocol/        # cross-platform communication layer based on UCP
 e2e/             # cross-platform end-to-end tests
 .github/         # workflows, issue templates, CODEOWNERS
@@ -19,14 +20,17 @@ e2e/             # cross-platform end-to-end tests
 > shadowenv exec --dir <repo_root> -- /opt/dev/bin/dev test [ARGS]
 > ```
 
-Run `dev` commands from the repo root. Use `dev up` before running commands when
-the environment may not be provisioned.
+Run `dev` commands from the repo root or any platform directory. Use `dev up`
+before running commands when the environment may not be provisioned.
 
 For platform-scoped work, prefer the root `dev.yml` commands:
 
 - Android: `dev android <command>`
 - Swift: `dev swift <command>`
 - React Native: `dev react-native <command>` or `dev rn <command>`
+- Web: `dev web <command>`
+
+Use `dev up` for setup and setup recovery.
 
 For protocol schema/model work, use `dev protocol <command>`.
 
@@ -87,3 +91,11 @@ USE_LOCAL_SDK=1 ./scripts/publish_android_snapshot
 cd sample/android
 USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:testDebugUnitTest
 ```
+
+## Sensitive configuration
+
+Treat storefront environment and generated sample app configuration values as
+sensitive. Never print, commit, paste, or document real values from `.env`,
+generated platform config, access tokens, merchant identifiers, shop IDs,
+account IDs, or storefront domains. Use synthetic placeholders for docs and
+verification.

@@ -4,6 +4,7 @@ node_modules/
 
 # Build output
 dist/
+sample/dist/
 build/
 coverage/
 custom-elements.json
