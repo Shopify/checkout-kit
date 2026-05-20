@@ -743,10 +743,12 @@ public final class com/shopify/checkoutkit/CheckoutProtocol {
 	public final fun getMessagesChange ()Lcom/shopify/checkoutkit/NotificationDescriptor;
 	public final fun getStart ()Lcom/shopify/checkoutkit/NotificationDescriptor;
 	public final fun getTotalsChange ()Lcom/shopify/checkoutkit/NotificationDescriptor;
+	public final fun getWindowOpen ()Lcom/shopify/checkoutkit/DelegationDescriptor;
 }
 
 public final class com/shopify/checkoutkit/CheckoutProtocol$Client : com/shopify/checkoutkit/CheckoutCommunicationClient {
 	public fun <init> ()V
+	public final fun on (Lcom/shopify/checkoutkit/DelegationDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
 	public final fun on (Lcom/shopify/checkoutkit/NotificationDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
 	public fun process (Ljava/lang/String;)Ljava/lang/String;
 }
@@ -1346,6 +1348,10 @@ public abstract class com/shopify/checkoutkit/DefaultCheckoutListener : com/shop
 	public fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
 	public fun onPermissionRequest (Landroid/webkit/PermissionRequest;)V
 	public fun onShowFileChooser (Landroid/webkit/WebView;Landroid/webkit/ValueCallback;Landroid/webkit/WebChromeClient$FileChooserParams;)Z
+}
+
+public final class com/shopify/checkoutkit/DelegationDescriptor {
+	public final fun getMethod ()Ljava/lang/String;
 }
 
 public final class com/shopify/checkoutkit/Display {
@@ -4332,6 +4338,36 @@ public final class com/shopify/checkoutkit/UCPOrderResponseSchemaService$$serial
 
 public final class com/shopify/checkoutkit/UCPOrderResponseSchemaService$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/WindowOpenRequest {
+	public final fun component1 ()Landroid/net/Uri;
+	public final fun copy (Landroid/net/Uri;)Lcom/shopify/checkoutkit/WindowOpenRequest;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/WindowOpenRequest;Landroid/net/Uri;ILjava/lang/Object;)Lcom/shopify/checkoutkit/WindowOpenRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getUrl ()Landroid/net/Uri;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/shopify/checkoutkit/WindowOpenResult {
+}
+
+public final class com/shopify/checkoutkit/WindowOpenResult$Rejected : com/shopify/checkoutkit/WindowOpenResult {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/shopify/checkoutkit/WindowOpenResult$Rejected;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/WindowOpenResult$Rejected;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/WindowOpenResult$Rejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/WindowOpenResult$Success : com/shopify/checkoutkit/WindowOpenResult {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/WindowOpenResult$Success;
 }
 
 public final class com/shopify/checkoutkit/lifecycleevents/Address {

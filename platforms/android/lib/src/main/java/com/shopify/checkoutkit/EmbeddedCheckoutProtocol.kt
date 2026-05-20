@@ -124,12 +124,23 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     /**
-     * Handle `ec.window.open_request` via the kit-owned default delegation client.
-     * Consumers cannot override this — `window.open` is kit-internal.
+     * Handle `ec.window.open_request`.
+     *
+     * Tries the merchant's [client] first — if they registered a handler via
+     * `.on(CheckoutProtocol.windowOpen) { ... }`, their response wins. Otherwise
+     * falls back to the kit-owned [defaultClient], which launches the URL via
+     * `Intent.ACTION_VIEW` (see [defaultDelegationClient]).
      */
     private fun handleWindowOpenRequest(message: String) {
         log.d(LOG_TAG, "Handling $METHOD_WINDOW_OPEN_REQUEST")
-        defaultClient.process(message)?.let { sendRaw(it) }
+        onMainThread {
+            val merchantResponse = client?.process(message)
+            if (merchantResponse != null) {
+                sendRaw(merchantResponse)
+            } else {
+                defaultClient.process(message)?.let { sendRaw(it) }
+            }
+        }
     }
 
     private fun handleClientMessage(method: String, message: String) {
