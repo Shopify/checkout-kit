@@ -70,23 +70,22 @@ import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
 
 const log = createDebugLogger('ENV');
 
-function quote(str: string | undefined) {
-  return `"${str}"`;
+function configured(value: string | undefined) {
+  return value ? 'configured' : 'missing';
 }
 
+const storefrontApiVersion = env.API_VERSION ?? env.STOREFRONT_VERSION;
+
 console.groupCollapsed('ENV');
-log('STOREFRONT_DOMAIN:', quote(env.STOREFRONT_DOMAIN));
-log(
-  'STOREFRONT_ACCESS_TOKEN:',
-  '*'.repeat(8) + env.STOREFRONT_ACCESS_TOKEN?.slice(-4),
-);
-log('STOREFRONT_VERSION:', quote(env.STOREFRONT_VERSION));
+log('STOREFRONT_DOMAIN:', configured(env.STOREFRONT_DOMAIN));
+log('STOREFRONT_ACCESS_TOKEN:', configured(env.STOREFRONT_ACCESS_TOKEN));
+log('API_VERSION:', configured(storefrontApiVersion));
 log(
   'STOREFRONT_MERCHANT_IDENTIFIER:',
-  quote(env.STOREFRONT_MERCHANT_IDENTIFIER),
+  configured(env.STOREFRONT_MERCHANT_IDENTIFIER),
 );
-log('EMAIL:', quote(env.EMAIL));
-log('PHONE:', quote(env.PHONE));
+log('EMAIL:', configured(env.EMAIL));
+log('PHONE:', configured(env.PHONE));
 console.groupEnd();
 
 export type RootStackParamList = {
@@ -111,7 +110,7 @@ const AccountStack = createNativeStackNavigator<AccountStackParamList>();
 export const cache = new InMemoryCache();
 
 const client = new ApolloClient({
-  uri: `https://${env.STOREFRONT_DOMAIN}/api/${env.STOREFRONT_VERSION}/graphql.json`,
+  uri: `https://${env.STOREFRONT_DOMAIN}/api/${storefrontApiVersion}/graphql.json`,
   cache,
   headers: {
     'Content-Type': 'application/json',

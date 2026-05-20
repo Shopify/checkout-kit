@@ -1,29 +1,29 @@
 // --- Storefront
 // --- Find your Storefront API access token under:
 // ----- https://admin.shopify.com/store/{STOREFRONT}/settings/apps/development/{APP_ID}/api_credentials
+// --- Prefer the repo-root .env.example for shared setup, then run scripts/setup_storefront_env.
 
-STOREFRONT_DOMAIN = <INSERT_STOREFRONT_DOMAIN>
-STOREFRONT_ACCESS_TOKEN = <INSERT_STOREFRONT_ACCESS_TOKEN>
-STOREFRONT_MERCHANT_IDENTIFIER = <INSERT_STOREFRONT_MERCHANT_IDENTIFIER>
+STOREFRONT_DOMAIN = your-store.myshopify.com
+STOREFRONT_ACCESS_TOKEN = your-public-storefront-access-token
+STOREFRONT_MERCHANT_IDENTIFIER =
+API_VERSION = 2025-07
 
 // --- Customer Account API (optional)
 // --- Find these under your Headless app configuration:
 // ----- https://admin.shopify.com/store/{STOREFRONT}/settings/apps/development/{APP_ID}
-CUSTOMER_ACCOUNT_API_CLIENT_ID = <INSERT_CLIENT_ID>
-CUSTOMER_ACCOUNT_API_SHOP_ID = <INSERT_SHOP_ID>
+CUSTOMER_ACCOUNT_API_CLIENT_ID =
+CUSTOMER_ACCOUNT_API_SHOP_ID =
 
 // --- Buyer preference data
-EMAIL = test-checkout-sdk@shopify.com
+EMAIL = checkout-kit@example.com
 
-FIRST_NAME = Test
-LAST_NAME = Test
+FIRST_NAME = Evelyn
+LAST_NAME = Hartley
 
-ADDRESS_1 = The Cloak & Dagger
-ADDRESS_2 = 1st Street Southeast
-CITY = Calgary
+ADDRESS_1 = 650 King Street
+ADDRESS_2 = Shopify HQ
+CITY = Toronto
 COUNTRY = CA
-PROVINCE = AB
-ZIP = T1X 0L3
-PHONE = +155565708743
-
-API_VERSION = 2025-07
+PROVINCE = ON
+ZIP = M5V 1M7
+PHONE = +14165550100

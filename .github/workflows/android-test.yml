@@ -50,8 +50,10 @@ jobs:
           cache: 'gradle'
 
       - name: Setup sample app environment
-        run: cp .env.example .env
-        working-directory: platforms/android/samples/MobileBuyIntegration
+        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+        env:
+          STOREFRONT_DOMAIN: example.myshopify.com
+          STOREFRONT_ACCESS_TOKEN: test-token
 
       - name: Build Sample App
         run: ./gradlew assembleDebug

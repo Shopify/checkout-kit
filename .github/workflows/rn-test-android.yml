@@ -53,10 +53,12 @@ jobs:
         env:
           GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=768m
           JAVA_HOME: ${{ steps.setup-java.outputs.path }}
+          STOREFRONT_DOMAIN: example.myshopify.com
+          STOREFRONT_ACCESS_TOKEN: test-token
         run: |
           echo "JAVA_HOME: $JAVA_HOME"
           java -version
           javac -version
-          echo "STOREFRONT_DOMAIN=myshopify.com" > sample/.env
+          ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
           pnpm module build
           pnpm sample test:android --no-daemon

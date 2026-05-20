@@ -3,44 +3,66 @@ set -euo pipefail
 
 cd samples/MobileBuyIntegration
 
-if [ ! -f ".env" ]; then
+ENV_FILE=".env"
+
+if [ ! -f "$ENV_FILE" ]; then
   echo "❌ .env file not found in samples/MobileBuyIntegration/"
-  echo "   Run 'cp .env.example .env' and fill in your credentials."
+  echo "   Run scripts/setup_storefront_env from the repo root."
   exit 1
 fi
 
-npx -y dotenv-cli -e .env -- sh -c '
-  DOMAIN="$STOREFRONT_DOMAIN"
-  TOKEN="$STOREFRONT_ACCESS_TOKEN"
-  VERSION="$API_VERSION"
+read_env_value() {
+  local key="$1"
+  awk -v key="$key" '
+    /^[[:space:]]*#/ || /^[[:space:]]*\/\// || /^[[:space:]]*$/ { next }
+    $0 !~ /=/ { next }
+    {
+      line = $0
+      sub(/^[[:space:]]*/, "", line)
+      candidate = line
+      sub(/=.*/, "", candidate)
+      sub(/[[:space:]]*$/, "", candidate)
+      if (candidate == key) {
+        value = substr(line, index(line, "=") + 1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+        if (value ~ /^".*"$/ || value ~ /^'\''.*'\''$/) {
+          value = substr(value, 2, length(value) - 2)
+        }
+        print value
+        exit
+      }
+    }
+  ' "$ENV_FILE"
+}
 
-  if [ -z "$DOMAIN" ]; then
-    echo "❌ STOREFRONT_DOMAIN is not set. Check your .env file."
-    exit 1
-  fi
-  if [ -z "$TOKEN" ]; then
-    echo "❌ STOREFRONT_ACCESS_TOKEN is not set. Check your .env file."
-    exit 1
-  fi
-  if [ -z "$VERSION" ]; then
-    echo "❌ API_VERSION is not set. Check your .env file."
-    echo "   Add API_VERSION=2025-07 to your .env"
-    exit 1
-  fi
+DOMAIN="$(read_env_value STOREFRONT_DOMAIN)"
+TOKEN="$(read_env_value STOREFRONT_ACCESS_TOKEN)"
+VERSION="$(read_env_value API_VERSION)"
 
-  echo "📡 Downloading schema for MobileBuyIntegration..."
-  echo "   Domain: $DOMAIN"
-  echo "   API Version: $VERSION"
+if [ -z "$DOMAIN" ]; then
+  echo "❌ STOREFRONT_DOMAIN is not set. Check your .env file."
+  exit 1
+fi
+if [ -z "$TOKEN" ]; then
+  echo "❌ STOREFRONT_ACCESS_TOKEN is not set. Check your .env file."
+  exit 1
+fi
+if [ -z "$VERSION" ]; then
+  echo "❌ API_VERSION is not set. Check your .env file."
+  echo "   Add API_VERSION=2025-07 to your .env"
+  exit 1
+fi
 
-  rover graph introspect \
-    "https://$DOMAIN/api/$VERSION/graphql" \
-    --header="X-Shopify-Storefront-Access-Token: $TOKEN" \
-    --output "app/src/main/graphql/schema.graphqls"
+echo "📡 Downloading schema for MobileBuyIntegration..."
+echo "   Domain: $DOMAIN"
+echo "   API Version: $VERSION"
 
-  if [ $? -eq 0 ]; then
-    echo "✅ Schema downloaded to app/src/main/graphql/schema.graphqls"
-  else
-    echo "❌ Schema download failed. Check your network connection and credentials."
-    exit 1
-  fi
-'
+if rover graph introspect \
+  "https://$DOMAIN/api/$VERSION/graphql" \
+  --header="X-Shopify-Storefront-Access-Token: $TOKEN" \
+  --output "app/src/main/graphql/schema.graphqls"; then
+  echo "✅ Schema downloaded to app/src/main/graphql/schema.graphqls"
+else
+  echo "❌ Schema download failed. Check your network connection and credentials."
+  exit 1
+fi
