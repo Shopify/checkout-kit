@@ -21,12 +21,12 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 ## Key components
 
-- **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, preload, present).
+- **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, present).
 - **`CheckoutDialog.kt`** — the dialog that hosts the WebView, including the progress indicator and checkout error coordination.
-- **`CheckoutWebView.kt`** — primary WebView. Holds the URL-keyed cache with a **5-minute preload TTL**; instruments page loads; routes bridge messages.
+- **`CheckoutWebView.kt`** — primary WebView. Instruments page loads; routes bridge messages.
 - **`BaseWebView.kt`** — abstract base class. Any new WebView variant must extend this so shared configuration (JS interface name, user agent suffix, client handling) is consistent.
 - **`CheckoutBridge.kt`** — the JS ↔ native bridge. `SCHEMA_VERSION` is a cross-boundary contract with the web checkout team; bumping it requires coordination with them.
-- **`Configuration.kt`** — runtime config container (color scheme, preload enable, log level). Any config change clears the WebView cache.
+- **`Configuration.kt`** — runtime config container (color scheme, log level).
 - **`CheckoutListener.kt`** + **`DefaultCheckoutListener`** — consumer-implemented lifecycle interface (failure, cancellation, permission prompts, file chooser). Changes here are consumer API changes.
 - **`CheckoutPresentation.kt`** — Kotlin-first builder for per-presentation callbacks (`onFail`, `onCancel`, browser/system hooks, ECP `connect(...)`). Builds a `DefaultCheckoutListener` internally.
 
@@ -95,5 +95,4 @@ Publishing goes through GitHub Releases → the repo-root `.github/workflows/and
 - **Library Kotlin version pin.** Consumer compatibility floor; any migration is a deliberate major-version decision.
 - **`minSdk` / JVM target.** Same story.
 - **`CheckoutBridge.SCHEMA_VERSION`.** Cross-team contract with the web checkout — changing it without coordination breaks the bridge.
-- **Preload TTL (5 minutes).** Performance-sensitive; has been tuned. Don't tweak without a reason.
 - **`-Xexplicit-api=strict`.** Removing this would let implicit public declarations ship; keeping it is a consumer-protection invariant.

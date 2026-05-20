@@ -54,7 +54,6 @@ type ColorsSpec = {
 };
 
 type ConfigurationSpec = {
-  preloading?: boolean;
   title?: string;
   colorScheme?: string;
   logLevel?: string;
@@ -62,7 +61,6 @@ type ConfigurationSpec = {
 };
 
 type ConfigurationResultSpec = {
-  preloading: boolean;
   colorScheme: string;
   logLevel: string;
   title?: string;
@@ -73,9 +71,7 @@ type ConfigurationResultSpec = {
 
 export interface Spec extends TurboModule {
   present(checkoutUrl: string): void;
-  preload(checkoutUrl: string): void;
   dismiss(): void;
-  invalidateCache(): void;
   setConfig(configuration: ConfigurationSpec): void;
   getConfig(): ConfigurationResultSpec;
   configureAcceleratedCheckouts(

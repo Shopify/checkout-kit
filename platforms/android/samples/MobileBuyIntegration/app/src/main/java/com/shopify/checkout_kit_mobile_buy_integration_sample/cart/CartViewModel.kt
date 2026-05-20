@@ -97,8 +97,6 @@ class CartViewModel(
                 try {
                     val cart = cartRepository.modifyCartLine(state.cartID, lineItemId, quantity)
                     Timber.i("Cart modification complete")
-                    Timber.i("Invalidating previous preloads, so checkout reflects modified cart state")
-                    ShopifyCheckoutKit.invalidate()
                     _cartState.value = if (cart.cartTotals.totalQuantity == 0) CartState.Empty else cart
                     _loadingState.value = false
                 } catch (e: Exception) {
@@ -143,18 +141,6 @@ class CartViewModel(
             }
             connect(buildCommunicationClient(navController, activity))
         }
-    }
-
-    fun preloadCheckout(
-        activity: ComponentActivity,
-    ) {
-        // val state = _cartState.value
-        // if (state is CartState.Cart) {
-        //     Timber.i("Preloading checkout with url ${state.checkoutUrl}")
-        //     ShopifyCheckoutKit.preload(state.checkoutUrl, activity)
-        // } else {
-        //     Timber.i("Skipping checkout preload, cart is empty")
-        // }
     }
 
     fun continueShopping(navController: NavController) {

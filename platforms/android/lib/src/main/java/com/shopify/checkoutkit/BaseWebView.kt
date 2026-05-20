@@ -234,8 +234,6 @@ internal fun BaseWebView.removeFromParent() {
     val parent = this.parent
     if (parent is ViewGroup) {
         log.d("BaseWebView", "Existing parent found for WebView, removing.")
-        // Ensure view is not destroyed when removing from parent
-        CheckoutWebViewContainer.retainCacheEntry = RetainCacheEntry.YES
         parent.removeView(this)
     }
 }

@@ -81,11 +81,10 @@ internal class CheckoutDialog(
         // properly into the fields. To be investigated further.
         window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
-        log.d(LOG_TAG, "Finding or creating new WebView.")
-        val checkoutWebView = CheckoutWebView.cacheableCheckoutView(
-            checkoutUrl,
-            context,
-        )
+        log.d(LOG_TAG, "Creating new WebView.")
+        val checkoutWebView = CheckoutWebView(context as Context).apply {
+            loadCheckout(checkoutUrl)
+        }
 
         checkoutWebView.onResume()
         log.d(LOG_TAG, "Setting listener on WebView.")
@@ -116,7 +115,6 @@ internal class CheckoutDialog(
         onBackPressedDispatcher.addCallback(backNavigationCallback)
         setOnCancelListener {
             log.d(LOG_TAG, "Cancel listener invoked, invoking onCheckoutCanceled.")
-            CheckoutWebViewContainer.retainCacheEntry = RetainCacheEntry.IF_NOT_STALE
             checkoutListener.onCheckoutCanceled()
         }
 
@@ -198,8 +196,7 @@ internal class CheckoutDialog(
     }
 
     internal fun closeCheckoutDialogWithError(exception: CheckoutException) {
-        log.d(LOG_TAG, "Closing dialog with error, marking cache entry stale, calling onCheckoutFailed.")
-        CheckoutWebView.markCacheEntryStale()
+        log.d(LOG_TAG, "Closing dialog with error, calling onCheckoutFailed.")
         checkoutListener.onCheckoutFailed(exception)
         dismiss()
     }

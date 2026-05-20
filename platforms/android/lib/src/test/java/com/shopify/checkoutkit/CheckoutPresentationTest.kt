@@ -54,21 +54,16 @@ class CheckoutPresentationTest {
     @Before
     fun setUp() {
         configuration = ShopifyCheckoutKit.getConfiguration()
-        ShopifyCheckoutKit.configure {
-            it.preloading = Preloading(enabled = false)
-        }
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
     }
 
     @After
     fun tearDown() {
         ShopifyCheckoutKit.configure {
-            it.preloading = configuration.preloading
             it.colorScheme = configuration.colorScheme
             it.platform = configuration.platform
             it.logLevel = configuration.logLevel
         }
-        CheckoutWebView.cacheEntry = null
     }
 
     @Test

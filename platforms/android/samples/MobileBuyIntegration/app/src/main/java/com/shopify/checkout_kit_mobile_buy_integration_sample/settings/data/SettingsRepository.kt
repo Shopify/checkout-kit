@@ -38,7 +38,6 @@ class SettingsRepository(
         return preferencesManager.userPreferencesFlow.map { preferences ->
             Settings(
                 colorScheme = preferences.colorScheme,
-                preloading = preferences.preloading,
                 buyerIdentityDemoEnabled = preferences.buyerIdentityDemoEnabled,
             )
         }
@@ -49,13 +48,6 @@ class SettingsRepository(
      */
     suspend fun setColorScheme(colorScheme: ColorScheme) {
         preferencesManager.setColorScheme(colorScheme)
-    }
-
-    /**
-     * Update the [preloading](https://github.com/Shopify/checkout-kit-android/?tab=readme-ov-file#preloading) setting
-     */
-    suspend fun setPreloadingEnabled(enabled: Boolean) {
-        preferencesManager.setPreloadingEnabled(enabled)
     }
 
     /**

@@ -50,7 +50,6 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.net.HttpURLConnection
-import kotlin.time.Duration.Companion.minutes
 
 @RunWith(RobolectricTestRunner::class)
 class CheckoutWebViewClientTest {
@@ -149,12 +148,11 @@ class CheckoutWebViewClientTest {
     }
 
     @Test
-    fun `should call event processor and clear cache on web resource load error for main frame`() {
+    fun `should call event processor on web resource load error for main frame`() {
         val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com"), true)
         val mockResponse = mockWebResourceError()
 
         val view = viewWithProcessor(activity)
-        CheckoutWebView.cacheEntry = view.toCacheEntry(mockRequest.url.toString())
         val webViewClient = view.CheckoutWebViewClient()
 
         webViewClient.onReceivedError(view, mockRequest, mockResponse)
@@ -379,7 +377,6 @@ class CheckoutWebViewClientTest {
 
     private fun triggerOnReceivedHttpError(mockRequest: WebResourceRequest, checkoutExpiredResponse: WebResourceResponse) {
         val view = viewWithProcessor(activity)
-        CheckoutWebView.cacheEntry = view.toCacheEntry(mockRequest.url.toString())
         val webViewClient = view.CheckoutWebViewClient()
 
         webViewClient.onReceivedHttpError(view, mockRequest, checkoutExpiredResponse)
@@ -432,14 +429,5 @@ class CheckoutWebViewClientTest {
         whenever(mock.reasonPhrase).thenReturn(description)
         whenever(mock.responseHeaders).thenReturn(headers)
         return mock
-    }
-
-    private fun CheckoutWebView.toCacheEntry(key: String): CheckoutWebView.CheckoutWebViewCacheEntry {
-        return CheckoutWebView.CheckoutWebViewCacheEntry(
-            key = key,
-            view = this,
-            clock = CheckoutWebView.CheckoutWebViewCacheClock(),
-            timeout = 5.minutes.inWholeMilliseconds,
-        )
     }
 }

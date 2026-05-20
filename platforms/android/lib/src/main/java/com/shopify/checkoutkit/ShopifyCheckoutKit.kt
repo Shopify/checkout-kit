@@ -27,7 +27,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
 /**
- * Entrypoint to the library, allows configuring, preloading, and presenting Shopify checkouts.
+ * Entrypoint to the library, allows configuring and presenting Shopify checkouts.
  */
 public object ShopifyCheckoutKit {
 
@@ -57,9 +57,8 @@ public object ShopifyCheckoutKit {
     /**
      * Allows configuring ShopifyCheckoutKit.
      *
-     * Current configuration options are for enabling and disabling preloading, and for setting the checkout color scheme.
      * Kotlin example:
-     * {@code ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = enabled) }}
+     * {@code ShopifyCheckoutKit.configure { it.colorScheme = ColorScheme.Dark() }}
      *
      * @param setter a function that modifies the configuration object
      * @see Configuration
@@ -67,57 +66,6 @@ public object ShopifyCheckoutKit {
     @JvmStatic
     public fun configure(setter: ConfigurationUpdater) {
         setter.configure(configuration)
-        CheckoutWebView.clearCache()
-    }
-
-    /**
-     * Invalidate WebViews cached due to preload calls
-     */
-    @JvmStatic
-    public fun invalidate() {
-        log.d("ShopifyCheckoutKit", "Invalidate called, marking cache entry stale.")
-        CheckoutWebView.markCacheEntryStale()
-    }
-
-    /**
-     * Preloads a Shopify checkout in the background.
-     *
-     * Preloading checkout is fully optional, but allows reducing the time taken between calling
-     * {@link ShopifyCheckoutKit#present(String, ComponentActivity, CheckoutListener)} and having a fully interactive checkout.
-     * Note: Preload must be called on all cart changes to avoid stale checkouts being presented.
-     * Preloaded checkouts also have a TTL of 5 minutes, after checkout will be re-loaded on calling present.
-     *
-     * @param checkoutUrl The URL of the checkout to be loaded, this can be obtained via the Storefront API
-     * @param context The context the checkout is being presented from
-     *
-     * Public preload support is coming soon.
-     */
-    @JvmStatic
-    internal fun preload(checkoutUrl: String, context: ComponentActivity) {
-        log.d("ShopifyCheckoutKit", "Preload called. Preloading enabled ${configuration.preloading.enabled}.")
-        if (!configuration.preloading.enabled) return
-
-        val cacheEntry = CheckoutWebView.cacheEntry
-        if (cacheEntry?.view != null && cacheEntry.view.isInViewHierarchy()) {
-            if (cacheEntry.key != checkoutUrl) {
-                log.d(
-                    "ShopifyCheckoutKit",
-                    "View already cached and in view hierarchy, but with different url, marking stale."
-                )
-                CheckoutWebView.markCacheEntryStale()
-            }
-
-            log.d("ShopifyCheckoutKit", "Calling loadCheckout on existing view with url $checkoutUrl.")
-            cacheEntry.view.loadCheckout(checkoutUrl, false)
-        } else {
-            log.d("ShopifyCheckoutKit", "Fetching cacheable WebView.")
-            CheckoutWebView.markCacheEntryStale()
-            CheckoutWebView.cacheableCheckoutView(
-                url = checkoutUrl,
-                activity = context,
-                isPreload = true,
-            )
-        }
     }
 
     /**
@@ -196,8 +144,4 @@ public fun interface CheckoutKitDialog {
      * Dismisses the checkout sheet dialog.
      */
     public fun dismiss()
-}
-
-private fun CheckoutWebView.isInViewHierarchy(): Boolean {
-    return this.parent != null
 }

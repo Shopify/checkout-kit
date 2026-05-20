@@ -24,176 +24,27 @@ package com.shopify.checkoutkit
 
 import androidx.activity.ComponentActivity
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
-import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 class ShopifyCheckoutKitTest {
 
-    @Before
-    fun setUp() {
-        ShopifyCheckoutKit.configure {
-            it.preloading = Preloading(enabled = false)
-        }
-    }
-
-    @After
-    fun tearDown() {
-        CheckoutWebView.cacheEntry = null
-    }
-
     @Test
-    fun `preload is a noop if preloading is not enabled`() {
+    fun `present returns null when activity is finishing`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            val url = "https://shopify.dev"
-            ShopifyCheckoutKit.preload(url, activityController.get())
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            val activity = activityController.get()
+            activity.finish()
 
-            assertThat(CheckoutWebView.cacheEntry).isNull()
-        }
-    }
+            val dialog = ShopifyCheckoutKit.present(
+                "https://shopify.dev",
+                activity,
+                noopDefaultCheckoutListener()
+            )
 
-    @Test
-    fun `preload caches a WebView and loads the URL if cache is currently empty`() {
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            withPreloadingEnabled {
-                val url = "https://shopify.dev"
-                ShopifyCheckoutKit.preload(url, activityController.get())
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                assertThat(CheckoutWebView.cacheEntry).isNotNull()
-                val entry = CheckoutWebView.cacheEntry!!
-
-                assertThat(entry.isStale).isFalse()
-                assertThat(entry.view).isInstanceOf(CheckoutWebView::class.java)
-            }
-        }
-    }
-
-    @Test
-    fun `invalidate marks cache entry as stale meaning it will not be used when presenting`() {
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            withPreloadingEnabled {
-                val url = "https://shopify.dev"
-                ShopifyCheckoutKit.preload(url, activityController.get())
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                ShopifyCheckoutKit.invalidate()
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                assertThat(CheckoutWebView.cacheEntry).isNotNull()
-                val entry = CheckoutWebView.cacheEntry!!
-
-                assertThat(entry.isStale).isTrue()
-            }
-        }
-    }
-
-    @Test
-    fun `preload caches a new WebView, loads the URL, and destroys old view if cache is not empty`() {
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            withPreloadingEnabled {
-                val url = "https://shopify.dev"
-                ShopifyCheckoutKit.preload(url, activityController.get())
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-                val originalEntry = CheckoutWebView.cacheEntry
-
-                ShopifyCheckoutKit.preload(url, activityController.get())
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                assertThat(CheckoutWebView.cacheEntry).isNotNull()
-                val entry = CheckoutWebView.cacheEntry!!
-
-                assertThat(entry.isStale).isFalse()
-                assertThat(entry.view).isInstanceOf(CheckoutWebView::class.java)
-                assertThat(entry.view).isNotEqualTo(originalEntry)
-                assertThat(shadowOf(originalEntry?.view).wasDestroyCalled()).isTrue()
-            }
-        }
-    }
-
-    @Test
-    fun `preload while presented loads url in the existing view`() {
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            withPreloadingEnabled {
-                val activity = activityController.get()
-
-                // first preload caches the view
-                ShopifyCheckoutKit.preload("https://one.com", activityController.get())
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                val originalEntry = CheckoutWebView.cacheEntry
-                assertThat(originalEntry!!.key).isEqualTo("https://one.com")
-                assertThat(originalEntry.isStale).isFalse()
-
-                // present loads the cached view
-                ShopifyCheckoutKit.present(
-                    "https://one.com",
-                    activity,
-                    noopDefaultCheckoutListener()
-                )
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                val secondEntry = CheckoutWebView.cacheEntry
-                assertThat(secondEntry!!.key).isEqualTo("https://one.com")
-                assertThat(secondEntry.isStale).isFalse()
-
-                // preload after present loads URL in the cached view
-                ShopifyCheckoutKit.preload("https://one.com", activityController.get())
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                val thirdEntry = CheckoutWebView.cacheEntry
-                assertThat(thirdEntry!!.key).isEqualTo("https://one.com")
-                assertThat(thirdEntry.isStale).isFalse()
-
-                assertThat(shadowOf(thirdEntry.view).lastLoadedUrl).startsWith("https://one.com")
-            }
-        }
-    }
-
-    @Test
-    fun `preload after presented loads the url and marks cache stale if url doesn't match cache key`() {
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            withPreloadingEnabled {
-                val activity = activityController.get()
-
-                // first preload caches the view
-                ShopifyCheckoutKit.preload("https://one.com", activityController.get())
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                val originalEntry = CheckoutWebView.cacheEntry
-                assertThat(originalEntry?.key).isEqualTo("https://one.com")
-                assertThat(originalEntry?.isStale).isFalse()
-
-                // present loads the cached view
-                ShopifyCheckoutKit.present(
-                    "https://one.com",
-                    activity,
-                    noopDefaultCheckoutListener()
-                )
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                val secondEntry = CheckoutWebView.cacheEntry
-                assertThat(secondEntry?.key).isEqualTo("https://one.com")
-                assertThat(secondEntry?.isStale).isFalse()
-
-                // preload after present loads URL in the cached view
-                ShopifyCheckoutKit.preload("https://two.com", activityController.get())
-                ShadowLooper.shadowMainLooper().runToEndOfTasks()
-
-                // as the URL no longer matches the cache key, mark the cache entry as stale
-                val thirdEntry = CheckoutWebView.cacheEntry
-                assertThat(thirdEntry?.key).isEqualTo("https://one.com")
-                assertThat(thirdEntry?.isStale).isTrue()
-
-                assertThat(shadowOf(thirdEntry?.view).lastLoadedUrl).startsWith("https://two.com")
-            }
+            assertThat(dialog).isNull()
         }
     }
 }

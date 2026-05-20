@@ -30,7 +30,6 @@ import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.authentic
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.data.Settings
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.data.SettingsRepository
 import com.shopify.checkoutkit.ColorScheme
-import com.shopify.checkoutkit.Preloading
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,13 +67,6 @@ class SettingsViewModel(
             it.colorScheme = colorScheme.withCustomCloseIcon()
         }
         settingsRepository.setColorScheme(colorScheme)
-    }
-
-    fun setPreloadingEnabled(enabled: Boolean) = viewModelScope.launch {
-        ShopifyCheckoutKit.configure {
-            it.preloading = Preloading(enabled = enabled)
-        }
-        settingsRepository.setPreloadingEnabled(enabled)
     }
 
     fun setBuyerIdentityDemoEnabled(enabled: Boolean) = viewModelScope.launch {

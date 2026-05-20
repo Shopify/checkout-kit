@@ -24,15 +24,6 @@ package com.shopify.checkoutkit
 
 import org.assertj.core.api.AbstractAssert
 
-fun withPreloadingEnabled(block: () -> Unit) {
-    try {
-        ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = true) }
-        block()
-    } finally {
-        ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = false) }
-    }
-}
-
 class CheckoutExceptionAssert(actual: CheckoutException) :
     AbstractAssert<CheckoutExceptionAssert, CheckoutException>(actual, CheckoutExceptionAssert::class.java) {
     companion object {

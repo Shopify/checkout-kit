@@ -23,10 +23,8 @@
 package com.shopify.checkout_kit_mobile_buy_integration_sample.settings.data
 
 import com.shopify.checkoutkit.ColorScheme
-import com.shopify.checkoutkit.Preloading
 
 data class Settings(
-    val preloading: Preloading,
     val colorScheme: ColorScheme,
     val buyerIdentityDemoEnabled: Boolean
 )

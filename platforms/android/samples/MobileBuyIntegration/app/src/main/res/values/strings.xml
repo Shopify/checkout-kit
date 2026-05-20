@@ -22,10 +22,6 @@
     <string name="color_scheme_light" translatable="false">Light</string>
     <string name="color_scheme_web" translatable="false">Web</string>
 
-    <string name="preloading_note" translatable="false">
-        NOTE: If preloading is enabled, color scheme changes may not be applied unless the cart is preloaded again.
-    </string>
-
     <string name="sample_app_version" translatable="false">Sample app version</string>
     <string name="sdk_version" translatable="false">Checkout Kit version</string>
 

@@ -42,7 +42,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.shopify.checkout_kit_mobile_buy_integration_sample.R
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.components.BodyMedium
-import com.shopify.checkout_kit_mobile_buy_integration_sample.common.components.BodySmall
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.components.Header3
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.ui.theme.verticalPadding
 import com.shopify.checkoutkit.Color
@@ -106,12 +105,6 @@ fun ColorSchemeSection(
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
-            )
-        }
-
-        Column(Modifier.padding(vertical = 8.dp)) {
-            BodySmall(
-                stringResource(R.string.preloading_note),
             )
         }
     }

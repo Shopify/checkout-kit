@@ -30,7 +30,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.shopify.checkoutkit.ColorScheme
-import com.shopify.checkoutkit.Preloading
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
@@ -44,12 +43,10 @@ class PreferencesManager(private val context: Context) {
         val colorScheme = decoder.decodeFromString<ColorScheme>(
             preferences[COLOR_SCHEME] ?: DEFAULT_COLOR_SCHEME
         )
-        val preloading = preferences[PRELOADING] ?: true
         val buyerIdentityDemoEnabled = preferences[BUYER_IDENTITY] ?: false
 
         UserPreferences(
             colorScheme = colorScheme,
-            preloading = Preloading(preloading),
             buyerIdentityDemoEnabled = buyerIdentityDemoEnabled
         )
     }
@@ -57,7 +54,6 @@ class PreferencesManager(private val context: Context) {
     suspend fun setColorScheme(colorScheme: ColorScheme) =
         saveData(COLOR_SCHEME, Json.encodeToString(ColorScheme.serializer(), colorScheme))
 
-    suspend fun setPreloadingEnabled(enabled: Boolean) = saveData(PRELOADING, enabled)
     suspend fun setBuyerIdentityDemoEnabled(enabled: Boolean) = saveData(BUYER_IDENTITY, enabled)
 
     private suspend fun <T> saveData(key: Preferences.Key<T>, value: T) = context.dataStore.edit {
@@ -66,7 +62,6 @@ class PreferencesManager(private val context: Context) {
 
     companion object {
         private val COLOR_SCHEME = stringPreferencesKey("colorScheme")
-        private val PRELOADING = booleanPreferencesKey("preloading")
         private val BUYER_IDENTITY = booleanPreferencesKey("buyerIdentity")
 
         private val DEFAULT_COLOR_SCHEME = Json.encodeToString(
@@ -78,6 +73,5 @@ class PreferencesManager(private val context: Context) {
 
 data class UserPreferences(
     val colorScheme: ColorScheme,
-    val preloading: Preloading,
     val buyerIdentityDemoEnabled: Boolean,
 )

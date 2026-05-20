@@ -15,7 +15,6 @@ import com.shopify.checkoutkit.ClientException;
 import com.shopify.checkoutkit.ConfigurationException;
 import com.shopify.checkoutkit.HttpException;
 import com.shopify.checkoutkit.ShopifyCheckoutKit;
-import com.shopify.checkoutkit.Preloading;
 import com.shopify.checkoutkit.ColorScheme;
 import com.shopify.checkoutkit.LogLevel;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
@@ -57,7 +56,6 @@ public class ShopifyCheckoutKitModuleTest {
   private ShopifyCheckoutKitModule shopifyCheckoutKitModule;
 
   // Store initial configuration to restore after each test
-  private Preloading initialPreloading;
   private ColorScheme initialColorScheme;
   private LogLevel initialLogLevel;
 
@@ -87,7 +85,6 @@ public class ShopifyCheckoutKitModuleTest {
     shopifyCheckoutKitModule = new ShopifyCheckoutKitModule(mockReactContext);
 
     // Capture initial configuration state to restore after each test
-    initialPreloading = ShopifyCheckoutKitModule.checkoutConfig.getPreloading();
     initialColorScheme = ShopifyCheckoutKitModule.checkoutConfig.getColorScheme();
     initialLogLevel = ShopifyCheckoutKitModule.checkoutConfig.getLogLevel();
   }
@@ -101,7 +98,6 @@ public class ShopifyCheckoutKitModuleTest {
 
     // Reset configuration to initial state after each test
     ShopifyCheckoutKit.configure(configuration -> {
-      configuration.setPreloading(initialPreloading);
       configuration.setColorScheme(initialColorScheme);
       configuration.setLogLevel(initialLogLevel);
       ShopifyCheckoutKitModule.checkoutConfig = configuration;
@@ -128,13 +124,6 @@ public class ShopifyCheckoutKitModuleTest {
     }
   }
 
-  @Test
-  public void testCanPreloadCheckout() {
-    String checkoutUrl = "https://shopify.com";
-
-    shopifyCheckoutKitModule.preload(checkoutUrl);
-  }
-
   /**
    * Module name and version
    */
@@ -159,22 +148,8 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testHasCorrectDefaultConfiguration() {
     // Test that the module starts with sensible defaults
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getPreloading().getEnabled())
-        .isTrue();
-
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
         .isEqualTo("automatic");
-  }
-
-  @Test
-  public void testCanDisablePreloading() {
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putBoolean("preloading", false);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getPreloading().getEnabled())
-        .isFalse();
   }
 
   @Test
@@ -390,7 +365,6 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testSetConfigWithoutLogLevelDefaultsToError() {
     JavaOnlyMap config = new JavaOnlyMap();
-    config.putBoolean("preloading", true);
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -524,14 +498,11 @@ public class ShopifyCheckoutKitModuleTest {
   public void testCompleteConfigurationAndEventFlow() {
     // Set up configuration
     JavaOnlyMap config = new JavaOnlyMap();
-    config.putBoolean("preloading", true);
     config.putString("colorScheme", "dark");
 
     shopifyCheckoutKitModule.setConfig(config);
 
     // Verify configuration was applied
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getPreloading().getEnabled())
-        .isTrue();
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
         .isEqualTo("dark");
   }

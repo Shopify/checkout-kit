@@ -110,14 +110,6 @@ fun SettingsView(
                         }
                     }
 
-                    PreloadingSwitch(
-                        checked = uiState.settings.preloading.enabled,
-                        onCheckedChange = settingsViewModel::setPreloadingEnabled,
-                        modifier = Modifier
-                            .background(color = MaterialTheme.colorScheme.background)
-                            .fillMaxWidth()
-                    )
-
                     BuyerIdentityDemoSwitch(
                         checked = uiState.settings.buyerIdentityDemoEnabled,
                         onCheckedChange = settingsViewModel::setBuyerIdentityDemoEnabled,

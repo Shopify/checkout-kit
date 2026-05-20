@@ -29,16 +29,10 @@ import android.os.Looper
 import android.util.AttributeSet
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
-import androidx.activity.ComponentActivity
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
-import java.util.concurrent.CountDownLatch
-import kotlin.math.abs
-import kotlin.time.Duration.Companion.minutes
 
 internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = null) :
     BaseWebView(context, attributeSet) {
-
-    var isPreload = false
 
     private val checkoutBridge = CheckoutBridge(CheckoutWebViewListener(NoopCheckoutListener()))
     private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocol(this)
@@ -81,13 +75,11 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         removeJavascriptInterface(EmbeddedCheckoutProtocol.INTERFACE_NAME)
     }
 
-    fun loadCheckout(url: String, isPreload: Boolean) {
-        log.d(LOG_TAG, "Loading checkout with url $url. IsPreload: $isPreload.")
-        this.isPreload = isPreload
+    fun loadCheckout(url: String) {
+        log.d(LOG_TAG, "Loading checkout with url $url.")
         Handler(Looper.getMainLooper()).post {
             val ecpUrl = url.appendEcpParams(specVersion = CheckoutProtocol.specVersion)
-            val headers = if (isPreload) mutableMapOf("Shopify-Purpose" to "prefetch") else mutableMapOf()
-            loadUrl(ecpUrl, headers)
+            loadUrl(ecpUrl)
         }
     }
 
@@ -126,112 +118,5 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     companion object {
         private const val LOG_TAG = "CheckoutWebView"
         private const val JAVASCRIPT_INTERFACE_NAME = "android"
-
-        internal var cacheEntry: CheckoutWebViewCacheEntry? = null
-        internal var cacheClock = CheckoutWebViewCacheClock()
-
-        fun markCacheEntryStale() {
-            cacheEntry = cacheEntry?.copy(timeout = -1)
-        }
-
-        fun clearCache(newEntry: CheckoutWebViewCacheEntry? = null) = cacheEntry?.let {
-            Handler(Looper.getMainLooper()).post {
-                it.view.destroy()
-                cacheEntry = newEntry
-            }
-        }
-
-        fun cacheableCheckoutView(
-            url: String,
-            activity: ComponentActivity,
-            isPreload: Boolean = false,
-        ): CheckoutWebView {
-            var view: CheckoutWebView? = null
-            val countDownLatch = CountDownLatch(1)
-
-            activity.runOnUiThread {
-                view = fetchView(url, activity, isPreload)
-                countDownLatch.countDown()
-            }
-
-            countDownLatch.await()
-
-            return view!!
-        }
-
-        private fun fetchView(
-            url: String,
-            activity: ComponentActivity,
-            isPreload: Boolean,
-        ): CheckoutWebView {
-            val preloadingEnabled = ShopifyCheckoutKit.configuration.preloading.enabled
-            log.d(
-                LOG_TAG,
-                "Fetch view called for url $url. Is preload: $isPreload. Preloading enabled: $preloadingEnabled."
-            )
-            if (!preloadingEnabled || cacheEntry?.isValid(url) != true) {
-                log.d(LOG_TAG, "Constructing new CheckoutWebView and calling loadCheckout.")
-                val view = CheckoutWebView(activity as Context).apply {
-                    loadCheckout(url, isPreload)
-                    if (isPreload) {
-                        // Pauses processing that can be paused safely (e.g. geolocation, animations), but not JavaScript / network requests
-                        // https://developer.android.com/reference/android/webkit/WebView#onPause()
-                        onPause()
-                    }
-                }
-
-                setCacheEntry(
-                    CheckoutWebViewCacheEntry(
-                        key = url,
-                        view = view,
-                        clock = cacheClock,
-                        timeout = if (isPreload && preloadingEnabled) 5.minutes.inWholeMilliseconds else 0,
-                    )
-                )
-
-                return view
-            }
-
-            log.d(LOG_TAG, "Returning previously cached view.")
-            return cacheEntry!!.view
-        }
-
-        private fun setCacheEntry(cacheEntry: CheckoutWebViewCacheEntry) {
-            if (this.cacheEntry == null) {
-                log.d(
-                    LOG_TAG,
-                    "Caching CheckoutWebView with TTL: ${cacheEntry.timeout} (note: a TTL of 0 is equivalent to not caching)."
-                )
-
-                this.cacheEntry = cacheEntry
-            } else {
-                log.d(LOG_TAG, "Clearing WebView cache and destroying cached view.")
-                clearCache(cacheEntry)
-            }
-        }
-    }
-
-    internal data class CheckoutWebViewCacheEntry(
-        val key: String,
-        val view: CheckoutWebView,
-        val clock: CheckoutWebViewCacheClock,
-        val timeout: Long,
-    ) {
-        private val timestamp = clock.currentTimeMillis()
-
-        fun isValid(key: String): Boolean {
-            return key == cacheEntry!!.key && !cacheEntry!!.isStale
-        }
-
-        internal val isStale: Boolean
-            get() {
-                val staleResult = abs(timestamp - clock.currentTimeMillis()) >= timeout
-                log.d(LOG_TAG, "Checking cache entry staleness. Is stale: $staleResult.")
-                return staleResult
-            }
-    }
-
-    internal class CheckoutWebViewCacheClock {
-        fun currentTimeMillis(): Long = System.currentTimeMillis()
     }
 }
