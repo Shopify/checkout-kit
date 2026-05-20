@@ -48,18 +48,24 @@ app/build/generated/source/apollo/       # Auto-generated — do not edit
 
 ## Setup
 
-1. Copy the config template and fill in your store credentials:
+1. From the repo root, create or sync the shared sample configuration:
 
    ```bash
-   cp .env.example .env
+   dev up
    ```
 
-   Then edit `.env` with your values:
+   If the repo is already provisioned and you only need Android sample setup,
+   run:
 
+   ```bash
+   dev android setup
    ```
-   STOREFRONT_DOMAIN=your-store.myshopify.com
-   STOREFRONT_ACCESS_TOKEN=your-token
-   API_VERSION=2025-07
+
+   If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+   fill in local values, then run:
+
+   ```bash
+   scripts/setup_storefront_env
    ```
 
 2. Open the project in Android Studio and sync Gradle.
@@ -72,7 +78,8 @@ When you want to target a newer Storefront API version (e.g. to access new field
 
 ### 1. Update the API version
 
-Edit your `.env` and change the `API_VERSION` value:
+Edit the repo-root `.env` and change the `API_VERSION` value, then run
+`dev storefront-env sync`:
 
 ```
 API_VERSION=2025-10
@@ -145,7 +152,7 @@ All commands are run from the **repo root** (`checkout-kit/`):
 |------|---------|
 | `app/src/main/graphql/schema.graphqls` | Storefront API schema (downloaded, not hand-written) |
 | `app/build.gradle` | Apollo plugin config + BuildConfig fields |
-| `.env` | Store credentials + API version (not checked into git) |
+| `.env` | Generated sample config from the repo-root `.env` (not checked into git) |
 | `StorefrontApiClient.kt` | Apollo client setup, auth header |
 | `CartRepository.kt` | Cart state, create/add/update/remove operations |
 | `ProductRepository.kt` | Product fetching operations |

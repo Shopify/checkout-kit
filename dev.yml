@@ -11,48 +11,6 @@ up:
       - swiftformat
       - sccache
   - ruby
-  - custom:
-      name: Install bundle packages
-      met?: BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check
-      meet: BUNDLE_GEMFILE=platforms/swift/Gemfile bundle install
-  # Android
-  - custom:
-      name: Ensure Android sample app .env files exist
-      met?: |
-        ([ -f "./platforms/android/samples/MobileBuyIntegration/.env" ] || exit 1)
-      meet: cd platforms/android && ./scripts/setup_env.sh
-
-  - custom:
-      name: Bootstrap Mint packages
-      met?: |
-        set -e
-        cd platforms/swift
-        expected_swiftlint="$(sed -n 's#^realm/SwiftLint@##p' Mintfile)"
-        expected_swiftformat="$(sed -n 's#^nicklockwood/SwiftFormat@##p' Mintfile)"
-        swiftlint_bin="$(mint which swiftlint)"
-        swiftformat_bin="$(mint which swiftformat)"
-        test -n "$expected_swiftlint"
-        test -n "$expected_swiftformat"
-        test "$("$swiftlint_bin" version)" = "$expected_swiftlint"
-        test "$("$swiftformat_bin" --version)" = "$expected_swiftformat"
-      meet: cd platforms/swift && mint bootstrap
-  - xcode:
-      version: "26.2"
-      runtimes:
-        ios:
-          - version: 23C54 # 26.2
-            architecture_variant: arm64
-  - custom:
-      name: Ensure Storefront.xcconfig file
-      met?: |
-        ([ -f "./platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" ] || exit 1)
-      meet: cd platforms/swift && ./Scripts/ensure_storefront_config
-  - custom:
-      name: Setup entitlements
-      met?: |
-        ([ -f "./platforms/swift/Samples/MobileBuyIntegration/MobileBuyIntegration/MobileBuyIntegration.entitlements" ] || exit 1;)
-      meet: cd platforms/swift && ./Scripts/setup_entitlements
-
   - node:
       version: v22.14.0
       package_manager: pnpm@10.33.1
@@ -60,17 +18,15 @@ up:
         - platforms/react-native
         - platforms/web
   - custom:
-      name: Install NPM dependencies (React Native)
-      met?: ls -l platforms/react-native | grep node_modules
-      meet: cd platforms/react-native && pnpm install
-  - custom:
-      name: Install NPM dependencies (Web)
-      met?: ls -l platforms/web | grep node_modules
-      meet: cd platforms/web && pnpm install
-  - custom:
-      name: Install gems (React Native sample)
-      met?: (cd platforms/react-native/sample/ios && bundle check)
-      meet: cd platforms/react-native/sample/ios && bundle install
+      name: Run Checkout Kit workspace setup
+      met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts all
+      meet: ./scripts/setup_dev_workspace --skip-optional-prompts all
+  - xcode:
+      version: "26.2"
+      runtimes:
+        ios:
+          - version: 23C54 # 26.2
+            architecture_variant: arm64
 
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
@@ -78,6 +34,7 @@ open:
   "PRs": "https://github.com/Shopify/checkout-kit/pulls"
 
 check:
+  storefront-env-tests: ./scripts/test_setup_storefront_env
   android-license-headers: cd platforms/android && ./scripts/check_license_headers.rb
   android-detekt: cd platforms/android && ./gradlew detekt
   android-lint: cd platforms/android && ./gradlew lintRelease
@@ -87,11 +44,24 @@ check:
   react-native-lint-module: cd platforms/react-native && pnpm module lint
   react-native-lint-sample: cd platforms/react-native && pnpm sample lint
   react-native-license-headers: cd platforms/react-native && ./scripts/copy_license --check
+  web-license-headers: cd platforms/web && ./scripts/check_license_headers.rb
   web-lint: cd platforms/web && pnpm lint
   web-test: cd platforms/web && pnpm test
 
 commands:
   # Repo-wide
+  bootstrap:
+    desc: Prepare repo-owned setup steps and summarize platform failures
+    long_desc: |
+      Runs Checkout Kit repo-owned setup without rerunning DevHub native
+      provisioning. Use dev up first if shared tools from packages, ruby, node,
+      or xcode provisioning are missing.
+      --prompt-optional only affects storefront configuration setup for
+      Android, Swift, and React Native; web-only setup has no optional prompts.
+    syntax:
+      optional: "[--check] [--prompt-optional] [all|android|swift|react-native|rn|web]"
+    run: ./scripts/setup_dev_workspace "$@"
+
   build:
     desc: Build all supported workspaces
     run: |
@@ -99,6 +69,7 @@ commands:
       /opt/dev/bin/dev android build
       /opt/dev/bin/dev swift build
       /opt/dev/bin/dev react-native build
+      /opt/dev/bin/dev web build
 
   codegen:
     desc: "Generate UCP models. Usage: dev codegen <kotlin|swift|typescript>"
@@ -109,6 +80,23 @@ commands:
         *) echo "Usage: dev codegen <kotlin|swift|typescript>"; exit 1 ;;
       esac
 
+  storefront-env:
+    desc: "Sample app storefront configuration commands"
+    subcommands:
+      sync:
+        desc: Create or sync generated sample config from the repo-root .env
+        long_desc: |
+          Creates or syncs generated platform sample config from the repo-root
+          .env. dev up skips optional prompts for automation; run
+          dev storefront-env sync --prompt-optional to fill optional Apple Pay
+          and Customer Account API values interactively.
+        syntax:
+          optional: "[--skip-optional-prompts|--prompt-optional]"
+        run: ./scripts/setup_storefront_env "$@"
+      check:
+        desc: Verify generated sample config is up to date
+        run: ./scripts/setup_storefront_env --check
+
   format:
     desc: Auto-format and apply safe lint autocorrections across supported workspaces
     aliases: [fix]
@@ -117,6 +105,7 @@ commands:
       /opt/dev/bin/dev android format
       /opt/dev/bin/dev swift format
       /opt/dev/bin/dev react-native format
+      /opt/dev/bin/dev web format
 
   lint:
     desc: Run lint checks across supported workspaces
@@ -126,6 +115,7 @@ commands:
       /opt/dev/bin/dev android lint
       /opt/dev/bin/dev swift lint
       /opt/dev/bin/dev react-native lint
+      /opt/dev/bin/dev web lint
 
   test:
     desc: Run tests across all supported workspaces
@@ -134,8 +124,10 @@ commands:
       /opt/dev/bin/dev android test
       /opt/dev/bin/dev swift test
       /opt/dev/bin/dev react-native test
+      /opt/dev/bin/dev web test
 
   apollo:
+    desc: "Apollo GraphQL schema and code generation commands"
     subcommands:
       download_schema:
         desc: "Download GraphQL schema. Usage: dev apollo download_schema <android|swift> [accelerated|mobile-buy|all]"
@@ -162,10 +154,10 @@ commands:
     subcommands:
       build:
         desc: Build the Swift protocol target
-        run: swift build --target ShopifyCheckoutProtocol
+        run: cd protocol/languages/swift && swift build
       test:
         desc: Run Swift protocol target tests
-        run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package ShopifyCheckoutProtocolTests
+        run: cd protocol/languages/swift && swift test
       check:
         desc: Build and test the Swift protocol target
         run: |
@@ -177,6 +169,17 @@ commands:
   android:
     desc: "Android Checkout Kit commands"
     subcommands:
+      setup:
+        desc: Prepare Android sample configuration without running full repo setup
+        long_desc: |
+          Runs only Checkout Kit repo-owned Android setup. It does not run
+          DevHub native provisioning for shared tools. Use dev up first if
+          base tools are missing.
+        aliases: [up]
+        syntax:
+          optional: "[--check] [--prompt-optional]"
+        run: ./scripts/setup_dev_workspace android "$@"
+
       build:
         desc: Build the library
         run: cd platforms/android && ./gradlew :lib:build
@@ -184,10 +187,6 @@ commands:
           samples:
             desc: Build all sample applications
             run: cd platforms/android/samples/MobileBuyIntegration && ./gradlew build
-
-      clean:
-        desc: Clean Android Gradle build outputs
-        run: cd platforms/android && ./gradlew clean
 
       test:
         desc: Run all tests with clean build
@@ -208,22 +207,6 @@ commands:
         aliases: [fix]
         run: cd platforms/android && ./gradlew detekt --auto-correct
 
-      api:
-        desc: Validate or update the public API baseline (lib/api/lib.api)
-        run: |
-          echo "Usage: dev android api {check|dump}"
-          echo ""
-          echo "  check  Verify public API matches the committed baseline"
-          echo "  dump   Regenerate the baseline after intentional public API changes"
-          exit 1
-        subcommands:
-          check:
-            desc: Verify public API matches the committed baseline
-            run: cd platforms/android && ./gradlew :lib:apiCheck
-          dump:
-            desc: Regenerate the baseline after intentional public API changes
-            run: cd platforms/android && ./gradlew :lib:apiDump
-
       check:
         desc: Run all Android checks (license headers + lint)
         run: |
@@ -241,33 +224,41 @@ commands:
             desc: Run Android lint
             run: cd platforms/android && ./gradlew lintRelease
 
+      clean:
+        desc: Clean Android Gradle build outputs
+        run: cd platforms/android && ./gradlew clean
+
+      api:
+        desc: Validate or update the public API baseline (lib/api/lib.api)
+        run: |
+          echo "Usage: dev android api {check|dump}"
+          echo ""
+          echo "  check  Verify public API matches the committed baseline"
+          echo "  dump   Regenerate the baseline after intentional public API changes"
+          exit 1
+        subcommands:
+          check:
+            desc: Verify public API matches the committed baseline
+            run: cd platforms/android && ./gradlew :lib:apiCheck
+          dump:
+            desc: Regenerate the baseline after intentional public API changes
+            run: cd platforms/android && ./gradlew :lib:apiDump
+
   # Swift
   swift:
     desc: "Swift Checkout Kit commands"
     subcommands:
-      lint:
-        desc: Check format and lint issues using SwiftLint and SwiftFormat
-        aliases: [style]
-        run: cd platforms/swift && ./Scripts/lint
-      format:
-        desc: Auto-format and apply safe lint autocorrections
-        aliases: [fix]
-        run: cd platforms/swift && ./Scripts/lint fix
-      clean:
-        desc: Clean Swift packages and sample app build artifacts
-        run: |
-          set -e
-          cd platforms/swift
-          # ShopifyCheckoutKit-Package is the SPM-wide scheme: it cleans all
-          # library targets in Package.swift (ShopifyCheckoutKit,
-          # ShopifyAcceleratedCheckouts, ShopifyCheckoutProtocol) in one pass.
-          ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
-          cd Samples
-          # Sample apps have a "Run Script" build phase that runs during clean
-          # and exits non-zero when there is nothing to delete. Tolerate it so
-          # the second sample still gets cleaned.
-          ../Scripts/xcode_run clean MobileBuyIntegration || true
-          ../Scripts/xcode_run clean ShopifyAcceleratedCheckoutsApp || true
+      setup:
+        desc: Prepare Swift sample configuration, gems, Mint tools, and entitlements
+        long_desc: |
+          Runs only Checkout Kit repo-owned Swift setup. It does not run DevHub
+          native provisioning for shared tools or Xcode runtimes. Use dev up
+          first if base tools are missing.
+        aliases: [up]
+        syntax:
+          optional: "[--check] [--prompt-optional]"
+        run: ./scripts/setup_dev_workspace swift "$@"
+
       build:
         desc: Build all Swift packages and sample apps
         run: |
@@ -291,6 +282,17 @@ commands:
           `dev swift test <test_class_name>` - Run only the specified test class.
         syntax: "[test_class_name]"
         run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
+
+      lint:
+        desc: Check format and lint issues using SwiftLint and SwiftFormat
+        aliases: [style]
+        run: cd platforms/swift && ./Scripts/lint
+
+      format:
+        desc: Auto-format and apply safe lint autocorrections
+        aliases: [fix]
+        run: cd platforms/swift && ./Scripts/lint fix
+
       check:
         desc: Run Swift lint and license header checks
         run: |
@@ -302,59 +304,47 @@ commands:
             desc: Check MIT license headers in Swift source files
             run: cd platforms/swift && ./Scripts/ensure_license
 
+      clean:
+        desc: Clean Swift packages and sample app build artifacts
+        run: |
+          set -e
+          cd platforms/swift
+          # ShopifyCheckoutKit-Package is the SPM-wide scheme: it cleans all
+          # library targets in Package.swift (ShopifyCheckoutKit,
+          # ShopifyAcceleratedCheckouts, ShopifyCheckoutProtocol) in one pass.
+          ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
+          cd Samples
+          # Sample apps have a "Run Script" build phase that runs during clean
+          # and exits non-zero when there is nothing to delete. Tolerate it so
+          # the second sample still gets cleaned.
+          ../Scripts/xcode_run clean MobileBuyIntegration || true
+          ../Scripts/xcode_run clean ShopifyAcceleratedCheckoutsApp || true
+
   # React Native
   react-native:
     desc: "React Native Checkout Kit commands"
     aliases: [rn]
     subcommands:
+      setup:
+        desc: Prepare React Native packages, sample config, and iOS Ruby gems
+        long_desc: |
+          Runs only Checkout Kit repo-owned React Native setup. It does not run
+          DevHub native provisioning for shared tools or CocoaPods install. Use
+          dev up first if base tools are missing, and use dev rn pod-install
+          when iOS pods need to be installed.
+        aliases: [up]
+        syntax:
+          optional: "[--check] [--prompt-optional]"
+        run: ./scripts/setup_dev_workspace react-native "$@"
+
       build:
         desc: Build the @shopify/checkout-kit-react-native module
         run: cd platforms/react-native && pnpm module build
-      server:
-        desc: Start Metro development server
-        aliases: [s]
-        run: cd platforms/react-native && pnpm sample start --reset-cache
-      ios:
-        desc: Run the iOS sample app in the simulator.
-        long_desc: |
-          Builds and runs the iOS sample app on a simulator.
 
-          --local
-            Build against in-repo Swift SDK sources (runs pod install first).
-        syntax:
-          optional: --local
-        run: cd platforms/react-native && pnpm sample ios "$@"
-      android:
-        desc: Run the Android sample app in the emulator.
-        long_desc: |
-          Builds and runs the Android sample app on an emulator.
+      test:
+        desc: Run React Native Jest tests
+        run: cd platforms/react-native && pnpm test --testPathPatterns="modules/@shopify/checkout-kit-react-native/tests"
 
-          --local
-            Build against in-repo SDK sources (publishes a local Maven snapshot first).
-        syntax:
-          optional: --local
-        run: cd platforms/react-native && pnpm sample android "$@"
-      pod-install:
-        desc: Install CocoaPods for the iOS sample.
-        long_desc: |
-          Runs pod install for the iOS sample app.
-
-          --local
-            Wire the Podfile against in-repo Swift SDK sources.
-        syntax:
-          optional: --local
-        run: cd platforms/react-native && pnpm run pod-install -- "$@"
-      clean:
-        desc: Remove generated directories and stop sccache
-        run: |
-          cd platforms/react-native
-          pnpm module clean
-          pnpm sample clean
-          pnpm clean
-          if command -v sccache >/dev/null 2>&1; then
-            sccache --stop-server 2>/dev/null || true
-          fi
-          echo "Cleaned root, module and sample workspaces"
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)
         aliases: [style]
@@ -374,13 +364,12 @@ commands:
           sample:
             desc: Lint the sample app
             run: cd platforms/react-native && pnpm sample lint
+
       format:
         desc: Auto-format and apply safe lint autocorrections (Swift bridge only)
         aliases: [fix]
         run: cd platforms/react-native && ./scripts/lint_swift fix
-      test:
-        desc: Run React Native Jest tests
-        run: cd platforms/react-native && pnpm test --testPathPatterns="modules/@shopify/checkout-kit-react-native/tests"
+
       check:
         desc: Run React Native license header and lint checks
         run: |
@@ -392,17 +381,75 @@ commands:
             desc: Check React Native module license headers
             run: cd platforms/react-native && ./scripts/copy_license --check
 
+      clean:
+        desc: Remove generated directories and stop sccache
+        run: |
+          cd platforms/react-native
+          pnpm module clean
+          pnpm sample clean
+          pnpm clean
+          if command -v sccache >/dev/null 2>&1; then
+            sccache --stop-server 2>/dev/null || true
+          fi
+          echo "Cleaned root, module and sample workspaces"
+
+      server:
+        desc: Start Metro development server
+        aliases: [s]
+        run: cd platforms/react-native && pnpm sample start --reset-cache
+
+      ios:
+        desc: Run the iOS sample app in the simulator.
+        long_desc: |
+          Builds and runs the iOS sample app on a simulator.
+
+          --local
+            Build against in-repo Swift SDK sources (runs pod install first).
+        syntax:
+          optional: --local
+        run: cd platforms/react-native && pnpm sample ios "$@"
+
+      android:
+        desc: Run the Android sample app in the emulator.
+        long_desc: |
+          Builds and runs the Android sample app on an emulator.
+
+          --local
+            Build against in-repo SDK sources (publishes a local Maven snapshot first).
+        syntax:
+          optional: --local
+        run: cd platforms/react-native && pnpm sample android "$@"
+
+      pod-install:
+        desc: Install CocoaPods for the iOS sample.
+        long_desc: |
+          Runs pod install for the iOS sample app.
+
+          --local
+            Wire the Podfile against in-repo Swift SDK sources.
+        syntax:
+          optional: --local
+        run: cd platforms/react-native && pnpm run pod-install -- "$@"
+
   # Web
   web:
     desc: "Web Checkout Kit commands"
     subcommands:
-      sample:
-        desc: Start the sample app dev server
-        aliases: [s]
-        run: cd platforms/web && pnpm sample
+      setup:
+        desc: Prepare Web package dependencies
+        long_desc: |
+          Runs only Checkout Kit repo-owned Web setup. It does not run DevHub
+          native provisioning for shared tools. Use dev up first if base tools
+          are missing.
+        aliases: [up]
+        syntax:
+          optional: "[--check]"
+        run: ./scripts/setup_dev_workspace web "$@"
+
       build:
         desc: Build the @shopify/checkout-kit package
         run: cd platforms/web && pnpm build
+
       test:
         desc: Run unit tests with coverage
         run: cd platforms/web && pnpm test
@@ -410,10 +457,12 @@ commands:
           watch:
             desc: Run tests in watch mode
             run: cd platforms/web && pnpm test:watch
+
       lint:
         desc: Run typecheck, oxlint, and format checks
         aliases: [style]
         run: cd platforms/web && pnpm lint
+
       format:
         desc: Auto-fix JS lint and formatting issues
         aliases: [fix]
@@ -422,6 +471,38 @@ commands:
           cd platforms/web
           pnpm run lint:js:fix
           pnpm run format
+
+      check:
+        desc: Run Web license header, lint, unit tests, build, package verification, and sample build checks
+        run: |
+          set -e
+          /opt/dev/bin/dev web check license-headers
+          /opt/dev/bin/dev web lint
+          /opt/dev/bin/dev web test
+          /opt/dev/bin/dev web build
+          /opt/dev/bin/dev web verify
+          /opt/dev/bin/dev web sample build
+        subcommands:
+          license-headers:
+            desc: Check MIT license headers in Web source files
+            run: cd platforms/web && ./scripts/check_license_headers.rb
+
       clean:
         desc: Remove dist and coverage directories
         run: cd platforms/web && pnpm clean
+
+      sample:
+        desc: Start the sample app dev server
+        aliases: [s]
+        run: cd platforms/web && pnpm sample
+        subcommands:
+          build:
+            desc: Build the sample app
+            run: cd platforms/web && pnpm sample:build
+          preview:
+            desc: Preview the built sample app
+            run: cd platforms/web && pnpm sample:preview
+
+      verify:
+        desc: Run Web package verification
+        run: cd platforms/web && pnpm verify

@@ -1,8 +1,12 @@
 # Sample Project
 
-This directory contains a sample project that implements the `ShopifyCheckoutKit` library.
+This directory contains sample projects that implement the `ShopifyCheckoutKit`
+library.
 
-The project directory contains a `Storefront.xcconfig.example` file. Simply rename it to `Storefront.xcconfig` and update the contained values to match your Shopify storefront.
+The sample apps read generated `Storefront.xcconfig` files. From the repo root,
+run `dev up` to provision the repo and create or sync them from the shared
+`.env`. If the repo is already provisioned, `dev swift setup` or `dev swift up`
+refreshes Swift sample setup directly.
 
 ---
 
@@ -12,12 +16,17 @@ This project demonstrates how to use the [Mobile Buy SDK](https://github.com/Sho
 
 ### Getting Started
 
-1. Copy the example config file:
+1. Create or sync the shared configuration from the repo root:
+
 ```sh
-cp Samples/MobileBuyIntegration/Storefront.xcconfig.example Samples/MobileBuyIntegration/Storefront.xcconfig
+dev up
 ```
-2. Fill in `STOREFRONT_DOMAIN` and other keys in `Storefront.xcconfig` with your store values.
-3. Build & run — entitlements are auto-generated via a build PreAction (no manual script step needed).
+
+2. If the repo is already provisioned and you only need Swift setup, run
+`dev swift setup`.
+3. If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+fill in local values, then run `scripts/setup_storefront_env`.
+4. Build & run — entitlements are auto-generated via a build PreAction (no manual script step needed).
 
 ### Troubleshooting
 
@@ -25,9 +34,9 @@ If the build PreAction fails, Xcode will show **"exited with status code 1"**. C
 
 | Build Log Output | Cause | Fix |
 |------------------|-------|-----|
-| `grep: Storefront.xcconfig: No such file or directory` | `Storefront.xcconfig` file is missing | Copy `.xcconfig.example` to `Storefront.xcconfig` and fill in values |
-| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank | Set your store's domain in the config |
-| Associated domains not working at runtime | Domain value is incorrect | Verify domain matches your Shopify store (no `https://` prefix) |
+| `grep: Storefront.xcconfig: No such file or directory` | `Storefront.xcconfig` file is missing | Run `dev swift setup` from the repo root |
+| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank | Update root `.env`, then run `dev storefront-env sync` |
+| Associated domains not working at runtime | Domain value is incorrect | Update root `.env`, then run `dev storefront-env sync` |
 
 ---
 
@@ -37,8 +46,13 @@ This project demonstrates integrating Shopify's Accelerated Checkouts, an all in
 
 To get started:
 
-1. Copy the settings file:
+1. Create or sync the shared configuration from the repo root:
+
 ```sh
-cp Samples/ShopifyAcceleratedCheckouts/Storefront.xcconfig.example Samples/ShopifyAcceleratedCheckouts/Storefront.xcconfig
+dev up
 ```
-2. Modify each of the keys in `Storefront.xcconfig` to match the value in your store settings.
+
+2. If the repo is already provisioned and you only need Swift setup, run
+`dev swift setup`.
+3. If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+fill in local values, then run `scripts/setup_storefront_env`.

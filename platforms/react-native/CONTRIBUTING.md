@@ -18,7 +18,10 @@ specific to each workspace.
 
 If you've cloned the repo and want to run the sample app, Shopify employees can
 run `dev up` and `dev react-native <command>` from the repo root (`dev rn` is
-an alias). The underlying `pnpm` commands below are run from
+an alias). If the repo is already provisioned, `dev rn setup` or `dev rn up`
+refreshes React Native packages, sample config, and iOS Ruby gems directly.
+Run `dev rn pod-install` when iOS pods need to be installed. The underlying
+`pnpm` commands below are run from
 `platforms/react-native`:
 
 1. Install the NPM dependencies
@@ -30,7 +33,7 @@ an alias). The underlying `pnpm` commands below are run from
 2. Install iOS dependencies. (N.b. Android dependencies are automatically installed by Gradle)
 
    ```sh
-   pnpm pod-install sample/ios
+   pnpm run pod-install
    ```
 
 3. Build the Native Module
@@ -179,7 +182,7 @@ pnpm install
 ### Install Cocoapods
 
 ```sh
-pnpm pod-install sample/ios
+pnpm run pod-install
 ```
 
 ### Build the local module
@@ -190,14 +193,20 @@ pnpm module build
 
 ### Update the dotenv file
 
-Replace the details in the `sample/.env.example` file and rename it to
-`sample/.env`
+From the repo root, run `dev up` to create or sync the sample app dotenv file
+from the root `.env`.
+
+If the repo is already provisioned and you only need React Native setup, run
+`dev rn setup` or `dev rn up`.
+
+If you are not using `dev`, copy `.env.example` from the repo root to `.env`,
+fill in local values, then run `scripts/setup_storefront_env`.
 
 ```
 # Storefront Details
 STOREFRONT_DOMAIN="YOUR_STORE.myshopify.com"
 STOREFRONT_ACCESS_TOKEN="YOUR_PUBLIC_STOREFRONT_ACCESS_TOKEN"
-STOREFRONT_VERSION="2025-07"
+API_VERSION="2025-07"
 ```
 
 ### Start the sample app

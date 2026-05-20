@@ -1,7 +1,9 @@
 # Sample Projects
 
-The project directory contains a `.env.example` file.
-Simply rename it to `.env` and update the contained values to match your Shopify storefront.
+Sample app storefront configuration is generated from the repo-root `.env`.
+Run `dev up` from the repo root to provision the repo and create or sync the
+generated sample config files. If the repo is already provisioned, `dev android
+setup` or `dev android up` refreshes the Android sample setup directly.
 
 ---
 

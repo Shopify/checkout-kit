@@ -1,7 +1,7 @@
 // --- Storefront
 // --- Find your Storefront API access token under:
 // ----- https://admin.shopify.com/store/{STOREFRONT}/settings/apps/development/{APP_ID}/api_credentials
-// --- Prefer the repo-root .env.example for shared setup, then run scripts/setup_storefront_env.
+// --- Prefer the repo-root .env.example for shared setup, then run dev up or dev bootstrap.
 
 STOREFRONT_DOMAIN = your-store.myshopify.com
 STOREFRONT_ACCESS_TOKEN = your-public-storefront-access-token

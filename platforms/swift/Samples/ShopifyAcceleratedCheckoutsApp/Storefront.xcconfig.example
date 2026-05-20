@@ -1,7 +1,7 @@
 // --- Storefront
 // --- Find your Storefront API access token under:
 // ----- https://admin.shopify.com/store/{STOREFRONT}/settings/apps/development/{APP_ID}/api_credentials
-// --- Prefer the repo-root .env.example for shared setup, then run scripts/setup_storefront_env.
+// --- Prefer the repo-root .env.example for shared setup, then run dev up or dev bootstrap.
 
 // Configuration settings file format documentation can be found at:
 // https://help.apple.com/xcode/#/dev745c5c974

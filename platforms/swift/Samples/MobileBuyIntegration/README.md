@@ -53,18 +53,24 @@ MobileBuyIntegration/
 
 ## Setup
 
-1. Copy the config template and fill in your store credentials:
+1. From the repo root, create or sync the shared sample configuration:
 
    ```bash
-   cp Storefront.xcconfig.example Storefront.xcconfig
+   dev up
    ```
 
-   Then edit `Storefront.xcconfig` with your values:
+   If the repo is already provisioned and you only need Swift sample setup,
+   run:
 
+   ```bash
+   dev swift setup
    ```
-   STOREFRONT_DOMAIN = your-store.myshopify.com
-   STOREFRONT_ACCESS_TOKEN = your-token
-   API_VERSION = 2025-07
+
+   If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+   fill in local values, then run:
+
+   ```bash
+   scripts/setup_storefront_env
    ```
 
 2. Open the project in Xcode and let SPM resolve the Apollo dependency.
@@ -77,10 +83,11 @@ When you want to target a newer Storefront API version (e.g. to access new field
 
 ### 1. Update the API version
 
-Edit your `Storefront.xcconfig` and change the `API_VERSION` value:
+Edit the repo-root `.env` and change the `API_VERSION` value, then run
+`dev storefront-env sync`:
 
 ```
-API_VERSION = 2025-10
+API_VERSION=2025-10
 ```
 
 ### 2. Download the new schema
@@ -149,6 +156,6 @@ All commands are run from the **repo root** (`checkout-kit/`):
 | `schema.graphqls` | Storefront API schema (downloaded, not hand-written) |
 | `apollo-codegen-config.json` | Apollo codegen configuration |
 | `apollo-ios-cli` | Apollo CLI binary (not checked into git) |
-| `Storefront.xcconfig` | Store credentials + API version (not checked into git) |
+| `Storefront.xcconfig` | Generated sample config from the repo-root `.env` (not checked into git) |
 | `Network.swift` | Apollo client setup, auth interceptor |
 | `CartManager.swift` | Cart state, create/add/update operations |
