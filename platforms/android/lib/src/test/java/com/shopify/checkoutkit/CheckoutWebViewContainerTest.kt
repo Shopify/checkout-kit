@@ -51,26 +51,6 @@ class CheckoutWebViewContainerTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
     }
 
-    @Test
-    fun `should destroy FallbackWebView when it is removed in all cases`() {
-        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
-            withPreloadingEnabled {
-                val activity = activityController.get()
-
-                val container = CheckoutWebViewContainer(activity)
-                val fallbackView = FallbackWebView(activity)
-                val shadow = shadowOf(fallbackView)
-
-                container.addView(fallbackView)
-                assertThat(shadow.wasDestroyCalled()).isFalse()
-
-                container.removeView(fallbackView)
-
-                assertThat(shadow.wasDestroyCalled()).isTrue()
-            }
-        }
-    }
-
     // cache entries are essentially immediately stale if preloading is disabled
     @Test
     fun `should destroy CheckoutWebView when retainCacheEntry is IF_NOT_STALE and preloading is disabled`() {

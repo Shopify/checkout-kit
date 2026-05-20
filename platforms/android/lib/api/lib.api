@@ -635,11 +635,10 @@ public abstract interface class com/shopify/checkoutkit/CheckoutCommunicationCli
 
 public abstract class com/shopify/checkoutkit/CheckoutException : java/lang/Exception {
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutException$Companion;
-	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;ZLkotlinx/serialization/internal/SerializationConstructorMarker;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun getErrorCode ()Ljava/lang/String;
 	public final fun getErrorDescription ()Ljava/lang/String;
-	public final fun isRecoverable ()Z
 	public static final synthetic fun write$Self (Lcom/shopify/checkoutkit/CheckoutException;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
@@ -653,10 +652,10 @@ public final class com/shopify/checkoutkit/CheckoutExpiredException : com/shopif
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutExpiredException$Companion;
 	public static final field INVALID_CART Ljava/lang/String;
 	public static final field UNKNOWN Ljava/lang/String;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Ljava/lang/String;Z)V
-	public fun <init> (Z)V
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class com/shopify/checkoutkit/CheckoutExpiredException$Companion {
@@ -672,8 +671,9 @@ public final class com/shopify/checkoutkit/CheckoutKitException : com/shopify/ch
 	public static final field ERROR_SENDING_MESSAGE_TO_CHECKOUT Ljava/lang/String;
 	public static final field RENDER_PROCESS_GONE Ljava/lang/String;
 	public static final field UNKNOWN Ljava/lang/String;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class com/shopify/checkoutkit/CheckoutKitException$Companion {
@@ -808,19 +808,19 @@ public class com/shopify/checkoutkit/CheckoutUnavailableException : com/shopify/
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutUnavailableException$Companion;
 	public static final field HTTP_ERROR Ljava/lang/String;
 	public static final field UNKNOWN Ljava/lang/String;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Ljava/lang/String;Z)V
-	public fun <init> (Z)V
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class com/shopify/checkoutkit/CheckoutUnavailableException$Companion {
 }
 
 public final class com/shopify/checkoutkit/ClientException : com/shopify/checkoutkit/CheckoutUnavailableException {
-	public fun <init> (Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Z)V
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public abstract class com/shopify/checkoutkit/Color {
@@ -1088,20 +1088,17 @@ public final class com/shopify/checkoutkit/Configuration {
 	public fun <init> ()V
 	public final fun component1 ()Lcom/shopify/checkoutkit/ColorScheme;
 	public final fun component2 ()Lcom/shopify/checkoutkit/Preloading;
-	public final fun component3 ()Lcom/shopify/checkoutkit/ErrorRecovery;
-	public final fun component4 ()Lcom/shopify/checkoutkit/Platform;
-	public final fun component5 ()Lcom/shopify/checkoutkit/LogLevel;
-	public final fun copy (Lcom/shopify/checkoutkit/ColorScheme;Lcom/shopify/checkoutkit/Preloading;Lcom/shopify/checkoutkit/ErrorRecovery;Lcom/shopify/checkoutkit/Platform;Lcom/shopify/checkoutkit/LogLevel;)Lcom/shopify/checkoutkit/Configuration;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Configuration;Lcom/shopify/checkoutkit/ColorScheme;Lcom/shopify/checkoutkit/Preloading;Lcom/shopify/checkoutkit/ErrorRecovery;Lcom/shopify/checkoutkit/Platform;Lcom/shopify/checkoutkit/LogLevel;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Configuration;
+	public final fun component3 ()Lcom/shopify/checkoutkit/Platform;
+	public final fun component4 ()Lcom/shopify/checkoutkit/LogLevel;
+	public final fun copy (Lcom/shopify/checkoutkit/ColorScheme;Lcom/shopify/checkoutkit/Preloading;Lcom/shopify/checkoutkit/Platform;Lcom/shopify/checkoutkit/LogLevel;)Lcom/shopify/checkoutkit/Configuration;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Configuration;Lcom/shopify/checkoutkit/ColorScheme;Lcom/shopify/checkoutkit/Preloading;Lcom/shopify/checkoutkit/Platform;Lcom/shopify/checkoutkit/LogLevel;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Configuration;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getColorScheme ()Lcom/shopify/checkoutkit/ColorScheme;
-	public final fun getErrorRecovery ()Lcom/shopify/checkoutkit/ErrorRecovery;
 	public final fun getLogLevel ()Lcom/shopify/checkoutkit/LogLevel;
 	public final fun getPlatform ()Lcom/shopify/checkoutkit/Platform;
 	public final fun getPreloading ()Lcom/shopify/checkoutkit/Preloading;
 	public fun hashCode ()I
 	public final fun setColorScheme (Lcom/shopify/checkoutkit/ColorScheme;)V
-	public final fun setErrorRecovery (Lcom/shopify/checkoutkit/ErrorRecovery;)V
 	public final fun setLogLevel (Lcom/shopify/checkoutkit/LogLevel;)V
 	public final fun setPlatform (Lcom/shopify/checkoutkit/Platform;)V
 	public final fun setPreloading (Lcom/shopify/checkoutkit/Preloading;)V
@@ -1112,10 +1109,10 @@ public final class com/shopify/checkoutkit/ConfigurationException : com/shopify/
 	public static final field Companion Lcom/shopify/checkoutkit/ConfigurationException$Companion;
 	public static final field STOREFRONT_PASSWORD_REQUIRED Ljava/lang/String;
 	public static final field UNKNOWN Ljava/lang/String;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Ljava/lang/String;Z)V
-	public fun <init> (Z)V
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class com/shopify/checkoutkit/ConfigurationException$Companion {
@@ -1457,16 +1454,6 @@ public final class com/shopify/checkoutkit/EmbeddedTransportConfig$$serializer :
 
 public final class com/shopify/checkoutkit/EmbeddedTransportConfig$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
-}
-
-public abstract interface class com/shopify/checkoutkit/ErrorRecovery {
-	public abstract fun preRecoveryActions (Lcom/shopify/checkoutkit/CheckoutException;Ljava/lang/String;)V
-	public abstract fun shouldRecoverFromError (Lcom/shopify/checkoutkit/CheckoutException;)Z
-}
-
-public final class com/shopify/checkoutkit/ErrorRecovery$DefaultImpls {
-	public static fun preRecoveryActions (Lcom/shopify/checkoutkit/ErrorRecovery;Lcom/shopify/checkoutkit/CheckoutException;Ljava/lang/String;)V
-	public static fun shouldRecoverFromError (Lcom/shopify/checkoutkit/ErrorRecovery;Lcom/shopify/checkoutkit/CheckoutException;)Z
 }
 
 public final class com/shopify/checkoutkit/ErrorResponse {
@@ -2174,9 +2161,9 @@ public final class com/shopify/checkoutkit/GroupElement$Companion {
 }
 
 public final class com/shopify/checkoutkit/HttpException : com/shopify/checkoutkit/CheckoutUnavailableException {
-	public fun <init> (IZ)V
-	public fun <init> (Ljava/lang/String;IZ)V
-	public synthetic fun <init> (Ljava/lang/String;IZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (I)V
+	public fun <init> (Ljava/lang/String;I)V
+	public synthetic fun <init> (Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getStatusCode ()I
 }
 

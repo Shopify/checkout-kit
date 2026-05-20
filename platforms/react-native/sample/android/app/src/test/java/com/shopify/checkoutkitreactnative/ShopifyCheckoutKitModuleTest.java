@@ -474,14 +474,13 @@ public class ShopifyCheckoutKitModuleTest {
     CheckoutExpiredException mockException = mock(CheckoutExpiredException.class);
     when(mockException.getErrorDescription()).thenReturn("Cart has expired");
     when(mockException.getErrorCode()).thenReturn("cart_expired");
-    when(mockException.isRecoverable()).thenReturn(false);
 
     processor.onCheckoutFailed(mockException);
 
     verify(mockEventEmitter).emit(eq("error"), stringCaptor.capture());
 
     assertThat(stringCaptor.getValue())
-        .contains("CheckoutExpiredError", "Cart has expired", "cart_expired", "\"recoverable\":false");
+        .contains("CheckoutExpiredError", "Cart has expired", "cart_expired");
   }
 
   @Test
@@ -491,15 +490,13 @@ public class ShopifyCheckoutKitModuleTest {
     ClientException mockException = mock(ClientException.class);
     when(mockException.getErrorDescription()).thenReturn("Customer account required");
     when(mockException.getErrorCode()).thenReturn("customer_account_required");
-    when(mockException.isRecoverable()).thenReturn(true);
 
     processor.onCheckoutFailed(mockException);
 
     verify(mockEventEmitter).emit(eq("error"), stringCaptor.capture());
 
     assertThat(stringCaptor.getValue())
-        .contains("CheckoutClientError", "Customer account required", "customer_account_required",
-            "\"recoverable\":true");
+        .contains("CheckoutClientError", "Customer account required", "customer_account_required");
   }
 
   @Test
@@ -509,7 +506,6 @@ public class ShopifyCheckoutKitModuleTest {
     HttpException mockException = mock(HttpException.class);
     when(mockException.getErrorDescription()).thenReturn("Not Found");
     when(mockException.getErrorCode()).thenReturn("http_error");
-    when(mockException.isRecoverable()).thenReturn(false);
     when(mockException.getStatusCode()).thenReturn(404);
 
     processor.onCheckoutFailed(mockException);
@@ -517,7 +513,7 @@ public class ShopifyCheckoutKitModuleTest {
     verify(mockEventEmitter).emit(eq("error"), stringCaptor.capture());
 
     assertThat(stringCaptor.getValue())
-        .contains("CheckoutHTTPError", "Not Found", "http_error", "\"statusCode\":404", "\"recoverable\":false");
+        .contains("CheckoutHTTPError", "Not Found", "http_error", "\"statusCode\":404");
   }
 
   /**

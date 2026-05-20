@@ -32,7 +32,6 @@ package com.shopify.checkoutkit
 public data class Configuration internal constructor(
     var colorScheme: ColorScheme = ColorScheme.Automatic(),
     var preloading: Preloading = Preloading(),
-    var errorRecovery: ErrorRecovery = object : ErrorRecovery {},
     var platform: Platform? = null,
     var logLevel: LogLevel = LogLevel.WARN,
 )
@@ -48,16 +47,6 @@ public data class Preloading(
 
 public enum class LogLevel {
     DEBUG, WARN, ERROR
-}
-
-public interface ErrorRecovery {
-    public fun preRecoveryActions(exception: CheckoutException, checkoutUrl: String) {
-        // logging or pre-recovery cleanup can be added here
-    }
-
-    public fun shouldRecoverFromError(checkoutException: CheckoutException): Boolean {
-        return checkoutException.isRecoverable
-    }
 }
 
 public sealed class Platform(

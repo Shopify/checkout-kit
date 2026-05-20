@@ -175,15 +175,13 @@ class CartViewModel(
         activity: ComponentActivity,
     ) {
         logger.log("Checkout failed", error)
-        if (!error.isRecoverable) {
-            clearCart()
-            viewModelScope.launch(Dispatchers.Main.immediate) {
-                Toast.makeText(
-                    activity,
-                    activity.getText(R.string.checkout_error),
-                    Toast.LENGTH_SHORT,
-                ).show()
-            }
+        clearCart()
+        viewModelScope.launch(Dispatchers.Main.immediate) {
+            Toast.makeText(
+                activity,
+                activity.getText(R.string.checkout_error),
+                Toast.LENGTH_SHORT,
+            ).show()
         }
     }
 

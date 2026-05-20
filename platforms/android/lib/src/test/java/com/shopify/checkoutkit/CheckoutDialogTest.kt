@@ -72,7 +72,6 @@ class CheckoutDialogTest {
         ShopifyCheckoutKit.configure {
             it.preloading = configuration.preloading
             it.colorScheme = configuration.colorScheme
-            it.errorRecovery = configuration.errorRecovery
         }
     }
 
@@ -165,7 +164,7 @@ class CheckoutDialogTest {
 
             val dialog = ShadowDialog.getLatestDialog()
             val checkoutDialog = dialog as CheckoutDialog
-            val error = checkoutException(isRecoverable = false)
+            val error = checkoutException()
 
             checkoutDialog.closeCheckoutDialogWithError(error)
             shadowOf(Looper.getMainLooper()).runToEndOfTasks()
@@ -175,81 +174,20 @@ class CheckoutDialogTest {
     }
 
     @Test
-    fun `calls onCheckoutFailed if closeCheckoutDialogWithError for non-recoverable error`() {
+    fun `closeCheckoutDialogWithError invokes onCheckoutFailed and dismisses the dialog`() {
         val mockListener = mock<DefaultCheckoutListener>()
         ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
 
         val dialog = ShadowDialog.getLatestDialog()
         val checkoutDialog = dialog as CheckoutDialog
-        val error = checkoutException(isRecoverable = false)
+        val error = checkoutException()
 
         checkoutDialog.closeCheckoutDialogWithError(error)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(mockListener, never()).onCheckoutCanceled()
         verify(mockListener).onCheckoutFailed(error)
-    }
-
-    @Test
-    fun `calls attemptToRecoverFromError if closeCheckoutDialogWithError is called with recoverable error`() {
-        val mockListener = mock<DefaultCheckoutListener>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
-
-        val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
-
-        checkoutDialog.closeCheckoutDialogWithError(checkoutException(isRecoverable = true))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        // attemptToRecoverFromError creates a FallbackWebView and removes the CheckoutWebView
-        assertThat(checkoutDialog.containsChildOfType(FallbackWebView::class.java)).isTrue()
-        assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        verify(mockListener, never()).onCheckoutCanceled()
-        verify(mockListener).onCheckoutFailed(any())
-    }
-
-    @Test
-    fun `does not call attemptToRecoverFromError if closeCheckoutDialogWithError is called when url contains multipass`() {
-        val mockListener = mock<DefaultCheckoutListener>()
-        ShopifyCheckoutKit.present("https://shopify.com/account/login/multipass", activity, mockListener)
-
-        val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
-
-        checkoutDialog.closeCheckoutDialogWithError(checkoutException(isRecoverable = true))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        // attemptToRecoverFromError creates a FallbackWebView and removes the CheckoutWebView
-        assertThat(checkoutDialog.containsChildOfType(FallbackWebView::class.java)).isFalse()
-        assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        verify(mockListener, never()).onCheckoutCanceled()
-        verify(mockListener).onCheckoutFailed(any())
-    }
-
-    @Test
-    fun `can disable fallback behaviour via shouldRecoverFromError`() {
-        val mockListener = mock<DefaultCheckoutListener>()
-        ShopifyCheckoutKit.configure {
-            it.errorRecovery = object : ErrorRecovery {
-                override fun shouldRecoverFromError(checkoutException: CheckoutException): Boolean {
-                    return false
-                }
-            }
-        }
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
-
-        val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
-
-        val error = checkoutException(isRecoverable = true)
-        checkoutDialog.closeCheckoutDialogWithError(error)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        // attemptToRecoverFromError creates a FallbackWebView and removes the CheckoutWebView
-        assertThat(checkoutDialog.containsChildOfType(FallbackWebView::class.java)).isFalse()
-        assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        verify(mockListener, never()).onCheckoutCanceled()
-        verify(mockListener).onCheckoutFailed(error)
+        assertThat(checkoutDialog.isShowing).isFalse()
     }
 
     @Test
@@ -311,93 +249,6 @@ class CheckoutDialogTest {
         val configuredColor = customColors.webViewBackground.getValue(activity)
 
         assertThat(webViewContainerBackgroundColor).isEqualTo(configuredColor)
-    }
-
-    @Test
-    fun `closeCheckoutDialogWithError does not recover on second recoverable error - prevents infinite loop`() {
-        val mockListener = mock<DefaultCheckoutListener>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
-
-        val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
-
-        // First recoverable error triggers recovery
-        checkoutDialog.closeCheckoutDialogWithError(checkoutException(isRecoverable = true))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(checkoutDialog.containsChildOfType(FallbackWebView::class.java)).isTrue()
-        assertThat(checkoutDialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        assertThat(checkoutDialog.recoveryAttemptCount).isEqualTo(1)
-
-        // Second recoverable error should NOT trigger recovery - dismisses instead
-        checkoutDialog.closeCheckoutDialogWithError(checkoutException(isRecoverable = true))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(checkoutDialog.recoveryAttemptCount).isEqualTo(2)
-        assertThat(checkoutDialog.isShowing).isFalse()
-    }
-
-    @Test
-    fun `closeCheckoutDialogWithError increments recovery attempt count`() {
-        val mockListener = mock<DefaultCheckoutListener>()
-        ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
-
-        val checkoutDialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        assertThat(checkoutDialog.recoveryAttemptCount).isEqualTo(0)
-
-        checkoutDialog.closeCheckoutDialogWithError(checkoutException(isRecoverable = false))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(checkoutDialog.recoveryAttemptCount).isEqualTo(1)
-    }
-
-    @Test
-    fun `attemptToRecoverFromError replaces CheckoutWebView with FallbackWebView`() {
-        ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
-
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        assertThat(dialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
-
-        dialog.attemptToRecoverFromError(checkoutException(isRecoverable = true))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(dialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        assertThat(dialog.containsChildOfType(FallbackWebView::class.java)).isTrue()
-    }
-
-    @Test
-    fun `attemptToRecoverFromError invokes pre recovery actions`() {
-        var recoveryCalled = false
-
-        ShopifyCheckoutKit.configure {
-            it.errorRecovery = object : ErrorRecovery {
-                override fun preRecoveryActions(exception: CheckoutException, checkoutUrl: String) {
-                    recoveryCalled = true
-                }
-            }
-        }
-
-        ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
-
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        dialog.attemptToRecoverFromError(checkoutException(isRecoverable = true))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(recoveryCalled).isTrue()
-    }
-
-    @Test
-    fun `attemptToRecoverFromError loads existing checkout URL`() {
-        val checkoutUrl = "https://shopify.com"
-        ShopifyCheckoutKit.present(checkoutUrl, activity, processor)
-
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        dialog.attemptToRecoverFromError(checkoutException(isRecoverable = true))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        val layout = dialog.findViewById<RelativeLayout>(R.id.checkoutKitContainer)
-        val fallbackView = layout.children.first { it is FallbackWebView } as FallbackWebView
-        assertThat(shadowOf(fallbackView).lastLoadedUrl).isEqualTo(checkoutUrl)
     }
 
     @Test
@@ -596,11 +447,10 @@ class CheckoutDialogTest {
         return layout.children.any { clazz.isInstance(it) }
     }
 
-    private fun checkoutException(isRecoverable: Boolean): CheckoutException {
+    private fun checkoutException(): CheckoutException {
         return CheckoutKitException(
             errorCode = CheckoutKitException.ERROR_SENDING_MESSAGE_TO_CHECKOUT,
             errorDescription = "Error sending message to checkout",
-            isRecoverable = isRecoverable,
         )
     }
 }

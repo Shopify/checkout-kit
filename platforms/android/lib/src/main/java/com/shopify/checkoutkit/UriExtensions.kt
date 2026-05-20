@@ -33,7 +33,6 @@ internal fun Uri?.isContactLink(): Boolean = this.isMailtoLink() || this.isTelLi
 internal fun Uri?.isDeepLink(): Boolean = this != null && !this.isWebLink() && !this.isContactLink() && !this.isAboutScheme()
 internal fun Uri?.isConfirmationPage(): Boolean =
     this?.pathSegments?.any { CONFIRMATION_PATH_REGEX.matches(it) } == true
-internal fun String.isOneTimeUse(): Boolean = this.contains("multipass")
 
 /**
  * Appends Embedded Checkout Protocol query parameters to a checkout URL, leaving any

@@ -125,7 +125,6 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     Map<String, Object> errorMap = new HashMap();
     errorMap.put("__typename", getErrorTypeName(checkoutError));
     errorMap.put("message", checkoutError.getErrorDescription());
-    errorMap.put("recoverable", checkoutError.isRecoverable());
     errorMap.put("code", checkoutError.getErrorCode());
 
     if (checkoutError instanceof HttpException) {
