@@ -45,7 +45,10 @@ const StyleSheet = {
   flatten: jest.fn(style => style),
 };
 
-const exampleConfig = {preloading: true};
+const exampleConfig = {
+  colorScheme: 'automatic',
+  logLevel: 'error',
+};
 
 const ShopifyCheckoutKit = {
   version: '0.7.0',

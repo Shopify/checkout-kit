@@ -41,7 +41,6 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     private func resetShopifyCheckoutKitDefaults() {
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
         ShopifyCheckoutKit.configuration.colorScheme = .automatic
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
         ShopifyCheckoutKit.configuration.logLevel = LogLevel.error
@@ -57,14 +56,12 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
         // Verify that getConfig returned the expected result
-        XCTAssertEqual(result?["preloading"] as? Bool, true)
         XCTAssertEqual(result?["colorScheme"] as? String, "automatic")
     }
 
     /// configure
     func testConfigure() {
         let configuration: [AnyHashable: Any] = [
-            "preloading": true,
             "colorScheme": "dark",
             "colors": [
                 "ios": [
@@ -76,20 +73,9 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
         shopifyCheckoutKit.setConfig(configuration)
 
-        XCTAssertTrue(ShopifyCheckoutKit.configuration.preloading.enabled)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .dark)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, UIColor(hex: "#FF0000"))
         XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, UIColor(hex: "#0000FF"))
-    }
-
-    func testConfigureWithPartialConfig() {
-        let configuration: [AnyHashable: Any] = [
-            "preloading": false
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertFalse(ShopifyCheckoutKit.configuration.preloading.enabled)
     }
 
     func testConfigureWithInvalidColors() {
@@ -243,9 +229,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
   }
 
   func testSetConfigWithoutLogLevelDefaultsToError() {
-    let configuration: [AnyHashable: Any] = [
-      "preloading": true
-    ]
+    let configuration: [AnyHashable: Any] = [:]
 
     shopifyCheckoutKit.setConfig(configuration)
 

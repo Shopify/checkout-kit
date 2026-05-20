@@ -189,7 +189,6 @@ class StorefrontURL {
 const checkoutKitConfigDefaults: Configuration = {
   logLevel: LogLevel.debug,
   colorScheme: ColorScheme.dark,
-  preloading: true,
   colors: {
     ios: {
       backgroundColor: '#f0f0e8',

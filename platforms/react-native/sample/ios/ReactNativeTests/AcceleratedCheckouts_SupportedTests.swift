@@ -57,7 +57,6 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
     }
 
     private func resetCheckoutKitDefaults() {
-        ShopifyCheckoutKit.configuration.preloading = Configuration.Preloading(enabled: true)
         ShopifyCheckoutKit.configuration.colorScheme = .automatic
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
     }

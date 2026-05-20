@@ -178,10 +178,6 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     }
 
     private func didCancel() {
-        if !CheckoutWebView.preloadingActivatedByClient {
-            CheckoutWebView.invalidate()
-        }
-
         onCancel?()
         delegate?.checkoutDidCancel()
     }
@@ -199,7 +195,6 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
     }
 
     func checkoutViewDidFailWithError(error: CheckoutError) {
-        CheckoutWebView.invalidate()
         onFail?(error)
         delegate?.checkoutDidFail(error: error)
         dismiss(animated: true)

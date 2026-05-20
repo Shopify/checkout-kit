@@ -108,9 +108,6 @@ struct CartView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
-            .onAppear {
-                preloadCheckout()
-            }
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
@@ -151,10 +148,6 @@ struct CartView: View {
         } else {
             EmptyState()
         }
-    }
-
-    private func preloadCheckout() {
-        CheckoutCoordinator.shared?.preload()
     }
 
     private func presentCheckout() {
@@ -241,14 +234,10 @@ struct CartLines: View {
                                     }
                                     updating = node.id
 
-                                    ShopifyCheckoutKit.invalidate()
-
                                     _Concurrency.Task {
                                         let cart = try await CartManager.shared.performCartLinesUpdate(id: node.id, quantity: node.quantity - 1)
                                         CartManager.shared.cart = cart
                                         updating = nil
-
-                                        CartManager.shared.preloadCheckout()
                                     }
                                 }, label: {
                                     Image(systemName: "minus")
@@ -276,8 +265,6 @@ struct CartLines: View {
 
                                         updating = node.id
 
-                                        ShopifyCheckoutKit.invalidate()
-
                                         _Concurrency.Task {
                                             let cart = try await CartManager.shared.performCartLinesUpdate(
                                                 id: node.id,
@@ -285,10 +272,6 @@ struct CartLines: View {
                                             )
                                             CartManager.shared.cart = cart
                                             updating = nil
-
-                                            // if let checkoutUrl = cart.checkoutURL {
-                                            //     ShopifyCheckoutKit.preload(checkout: checkoutUrl)
-                                            // }
                                         }
                                     },
                                     label: {

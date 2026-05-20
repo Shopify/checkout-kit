@@ -34,63 +34,17 @@ protocol CheckoutWebViewDelegate: AnyObject {
 }
 
 class CheckoutWebView: WKWebView {
-    private static var cache: CacheEntry?
     var timer: Date?
 
-    static var preloadingActivatedByClient: Bool = false
-
     var checkoutBridge: CheckoutBridgeProtocol.Type = CheckoutBridge.self
-
-    weak static var uncacheableViewRef: CheckoutWebView?
 
     var isBridgeAttached = false
 
     var client: (any CheckoutCommunicationProtocol)?
 
-    var isPreloadingAvailable: Bool {
-        return ShopifyCheckoutKit.configuration.preloading.enabled
-    }
-
     static func `for`(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
         OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString)")
-
-        let cacheKey = "\(url.absoluteString)_\(entryPoint?.rawValue ?? "nil")"
-
-        guard ShopifyCheckoutKit.configuration.preloading.enabled else {
-            OSLogger.shared.debug("Preloading not enabled")
-            return uncacheableView(entryPoint: entryPoint)
-        }
-
-        guard let cache, cacheKey == cache.key, !cache.isStale else {
-            let view = CheckoutWebView(entryPoint: entryPoint)
-            CheckoutWebView.cache = CacheEntry(key: cacheKey, view: view)
-            return view
-        }
-
-        OSLogger.shared.debug("Presenting cached entry")
-        return cache.view
-    }
-
-    static func uncacheableView(entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
-        uncacheableViewRef?.detachBridge()
-        let view = CheckoutWebView(entryPoint: entryPoint)
-        uncacheableViewRef = view
-        return view
-    }
-
-    static func invalidate(disconnect: Bool = true) {
-        OSLogger.shared.debug("Invalidating cache, disconnect: \(disconnect)")
-        preloadingActivatedByClient = false
-
-        if disconnect {
-            cache?.view.detachBridge()
-        }
-
-        cache = nil
-    }
-
-    static func hasCacheEntry() -> Bool {
-        return cache != nil
+        return CheckoutWebView(entryPoint: entryPoint)
     }
 
     // MARK: Properties
@@ -108,8 +62,6 @@ class CheckoutWebView: WKWebView {
             dispatchPresentedMessage(checkoutDidLoad, checkoutDidPresent)
         }
     }
-
-    var isPreloadRequest: Bool = false
 
     private var entryPoint: MetaData.EntryPoint?
 
@@ -178,16 +130,9 @@ class CheckoutWebView: WKWebView {
 
     // MARK: -
 
-    func load(checkout url: URL, isPreload: Bool = false) {
-        OSLogger.shared.info("Loading checkout URL: \(url.absoluteString), isPreload: \(isPreload)")
-        var request = URLRequest(url: url)
-
-        if isPreload, isPreloadingAvailable {
-            isPreloadRequest = true
-            request.setValue("prefetch", forHTTPHeaderField: "Shopify-Purpose")
-        }
-
-        load(request)
+    func load(checkout url: URL) {
+        OSLogger.shared.info("Loading checkout URL: \(url.absoluteString)")
+        load(URLRequest(url: url))
     }
 
     private func dispatchPresentedMessage(_ checkoutDidLoad: Bool, _ checkoutDidPresent: Bool) {
@@ -281,8 +226,6 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         if statusCode >= 400 {
-            CheckoutWebView.invalidate()
-
             OSLogger.shared.debug("Handling response for URL: \(response.url?.absoluteString ?? "unknown URL"), status code: \(statusCode)")
 
             switch statusCode {
@@ -325,7 +268,6 @@ extension CheckoutWebView: WKNavigationDelegate {
             let endTime = Date()
             let diff = endTime.timeIntervalSince(startTime)
             let message = "Loaded checkout in \(String(format: "%.2f", diff))s"
-            let preload = String(isPreloadRequest)
 
             ShopifyCheckoutKit.configuration.logger.log(message)
 
@@ -334,8 +276,7 @@ extension CheckoutWebView: WKNavigationDelegate {
                     InstrumentationPayload(
                         name: "checkout_finished_loading",
                         value: Int(diff * 1000),
-                        type: .histogram,
-                        tags: ["preloading": preload]
+                        type: .histogram
                     )
                 )
             }
@@ -363,21 +304,5 @@ extension CheckoutWebView: WKNavigationDelegate {
 
     private func isCheckout(url: URL?) -> Bool {
         return self.url == url
-    }
-}
-
-extension CheckoutWebView {
-    fileprivate struct CacheEntry {
-        let key: String
-
-        let view: CheckoutWebView
-
-        private let timestamp = Date()
-
-        private let timeout = TimeInterval(60 * 5)
-
-        var isStale: Bool {
-            abs(timestamp.timeIntervalSinceNow) >= timeout
-        }
     }
 }
