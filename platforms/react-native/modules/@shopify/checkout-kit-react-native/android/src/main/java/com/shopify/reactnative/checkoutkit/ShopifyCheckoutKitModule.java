@@ -24,10 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 package com.shopify.reactnative.checkoutkit;
 
 import android.app.Activity;
-import android.content.Context;
 import androidx.activity.ComponentActivity;
-import androidx.annotation.NonNull;
-import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Arguments;
@@ -99,21 +96,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     }
   }
 
-  @ReactMethod
-  public void preload(String checkoutURL) {
-    // Public native preload support is not exposed by the local Android SDK.
-  }
-
-  @ReactMethod
-  public void invalidateCache() {
-    ShopifyCheckoutKit.invalidate();
-  }
-
   @ReactMethod(isBlockingSynchronousMethod = true)
   public WritableMap getConfig() {
     WritableMap resultConfig = Arguments.createMap();
 
-    resultConfig.putBoolean("preloading", checkoutConfig.getPreloading().getEnabled());
     resultConfig.putString("colorScheme", colorSchemeToString(checkoutConfig.getColorScheme()));
     resultConfig.putString("logLevel", logLevelToString(checkoutConfig.getLogLevel()));
 
@@ -122,13 +108,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   @ReactMethod
   public void setConfig(ReadableMap config) {
-    Context context = getReactApplicationContext();
-
     ShopifyCheckoutKit.configure(configuration -> {
-      if (config.hasKey("preloading")) {
-        configuration.setPreloading(new Preloading(config.getBoolean("preloading")));
-      }
-
       if (config.hasKey("logLevel")) {
         LogLevel logLevel = getLogLevel(config.getString("logLevel"));
         configuration.setLogLevel(logLevel);

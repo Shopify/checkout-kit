@@ -54,9 +54,6 @@ class EmbeddedCheckoutProtocolTest {
 
     @Before
     fun setUp() {
-        CheckoutWebView.clearCache()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
         activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         // Mirror real-Android behavior: startActivity throws ActivityNotFoundException when
         // no activity resolves the intent. Robolectric defaults to silently recording the
@@ -397,23 +394,6 @@ class EmbeddedCheckoutProtocolTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(client).process(rawMessage)
-    }
-
-    @Test
-    fun `ec complete marks the preloaded cache entry stale`() {
-        ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = true) }
-        try {
-            CheckoutWebView.cacheableCheckoutView("https://shopify.com/checkout", activity, isPreload = true)
-            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-            assertThat(CheckoutWebView.cacheEntry!!.isValid("https://shopify.com/checkout")).isTrue()
-
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":{}}}""")
-            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-            assertThat(CheckoutWebView.cacheEntry!!.isValid("https://shopify.com/checkout")).isFalse()
-        } finally {
-            ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = false) }
-        }
     }
 
     // endregion

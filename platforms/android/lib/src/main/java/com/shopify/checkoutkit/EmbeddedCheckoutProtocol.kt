@@ -119,11 +119,7 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     private fun handleComplete(message: String) {
-        // Cache invalidation on completion is a kit invariant — independent of whether
-        // a merchant client is attached. Mark stale before delegating so a completed
-        // checkout is never reused from cache on the next present(...).
-        log.d(LOG_TAG, "Handling $METHOD_COMPLETE: marking cache stale and bubbling up.")
-        CheckoutWebView.markCacheEntryStale()
+        log.d(LOG_TAG, "Handling $METHOD_COMPLETE: bubbling up.")
         onMainThread {
             client?.process(message)
         }

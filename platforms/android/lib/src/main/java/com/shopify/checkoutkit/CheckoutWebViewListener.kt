@@ -39,7 +39,7 @@ import android.webkit.WebView
 internal class CheckoutWebViewListener(
     private val listener: CheckoutListener,
     private val toggleHeader: (Boolean) -> Unit = {},
-    private val closeCheckoutDialogWithError: (CheckoutException) -> Unit = { CheckoutWebView.clearCache() },
+    private val closeCheckoutDialogWithError: (CheckoutException) -> Unit = {},
     private val setProgressBarVisibility: (Int) -> Unit = {},
     private val updateProgressBarPercentage: (Int) -> Unit = {},
 ) {

@@ -60,9 +60,6 @@ class CheckoutDialogTest {
     @Before
     fun setUp() {
         configuration = ShopifyCheckoutKit.configuration
-        ShopifyCheckoutKit.configure {
-            it.preloading = Preloading(enabled = false)
-        }
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
         processor = noopDefaultCheckoutListener()
     }
@@ -70,7 +67,6 @@ class CheckoutDialogTest {
     @After
     fun tearDown() {
         ShopifyCheckoutKit.configure {
-            it.preloading = configuration.preloading
             it.colorScheme = configuration.colorScheme
         }
     }
@@ -102,7 +98,7 @@ class CheckoutDialogTest {
         ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
 
         val webView: WebView = ShadowDialog.getLatestDialog()
-            .findViewById<CheckoutWebViewContainer>(R.id.checkoutKitContainer)
+            .findViewById<RelativeLayout>(R.id.checkoutKitContainer)
             .children.firstOrNull { it is WebView } as WebView? ?: fail("No WebVew found in dialog")
 
         assertThat(shadowOf(webView).wasOnResumeCalled()).isTrue()
@@ -151,26 +147,6 @@ class CheckoutDialogTest {
 
         verify(mockListener).onCheckoutCanceled()
         verify(mockListener, never()).onCheckoutFailed(any())
-    }
-
-    @Test
-    fun `closeCheckoutDialogWithError marks cache entry stale`() {
-        withPreloadingEnabled {
-            val mockListener = mock<DefaultCheckoutListener>()
-            ShopifyCheckoutKit.preload("https://shopify.com", activity)
-            ShopifyCheckoutKit.present("https://shopify.com", activity, mockListener)
-
-            assertThat(CheckoutWebView.cacheEntry).isNotNull()
-
-            val dialog = ShadowDialog.getLatestDialog()
-            val checkoutDialog = dialog as CheckoutDialog
-            val error = checkoutException()
-
-            checkoutDialog.closeCheckoutDialogWithError(error)
-            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-            assertThat(CheckoutWebView.cacheEntry).isNull()
-        }
     }
 
     @Test

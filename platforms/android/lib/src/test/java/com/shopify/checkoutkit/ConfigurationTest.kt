@@ -40,7 +40,6 @@ class ConfigurationTest {
     fun tearDown() {
         ShopifyCheckoutKit.configure {
             it.colorScheme = initialConfiguration.colorScheme
-            it.preloading = initialConfiguration.preloading
         }
     }
 
@@ -78,23 +77,5 @@ class ConfigurationTest {
         }
 
         assertThat(ShopifyCheckoutKit.getConfiguration().colorScheme).isEqualTo(ColorScheme.Automatic())
-    }
-
-    @Test
-    fun `can set preloading via configure function - enabled`() {
-        ShopifyCheckoutKit.configure {
-            it.preloading = Preloading(enabled = true)
-        }
-
-        assertThat(ShopifyCheckoutKit.getConfiguration().preloading.enabled).isTrue
-    }
-
-    @Test
-    fun `can set preloading via configure function - disabled`() {
-        ShopifyCheckoutKit.configure {
-            it.preloading = Preloading(enabled = false)
-        }
-
-        assertThat(ShopifyCheckoutKit.getConfiguration().preloading.enabled).isFalse
     }
 }

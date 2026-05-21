@@ -54,7 +54,6 @@ class MobileBuyIntegration : Application() {
             ShopifyCheckoutKit.configure {
                 it.logLevel = LogLevel.DEBUG
                 it.colorScheme = settings.colorScheme.withCustomCloseIcon()
-                it.preloading = settings.preloading
             }
         }
     }

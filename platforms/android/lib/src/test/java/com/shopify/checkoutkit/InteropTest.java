@@ -135,7 +135,6 @@ public class InteropTest {
     public void tearDown() {
         ShopifyCheckoutKit.configure(config -> {
             config.setColorScheme(initialConfiguration.getColorScheme());
-            config.setPreloading(initialConfiguration.getPreloading());
         });
     }
 
@@ -200,14 +199,12 @@ public class InteropTest {
     @Test
     public void canConfigureCheckoutKit() {
         ShopifyCheckoutKit.configure(configuration -> {
-            configuration.setPreloading(new Preloading(false));
             configuration.setColorScheme(new ColorScheme.Dark());
         });
 
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
 
         assertThat(configuration.getColorScheme().getId()).isEqualTo("dark");
-        assertThat(configuration.getPreloading().getEnabled()).isEqualTo(false);
     }
 
     @Test
