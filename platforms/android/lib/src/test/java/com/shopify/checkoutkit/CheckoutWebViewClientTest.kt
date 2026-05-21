@@ -164,7 +164,6 @@ class CheckoutWebViewClientTest {
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutExpiredException::class.java)
-            .isNotRecoverable()
             .hasErrorCode(CheckoutExpiredException.CART_EXPIRED)
     }
 
@@ -181,7 +180,6 @@ class CheckoutWebViewClientTest {
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutExpiredException::class.java)
-            .isNotRecoverable()
             .hasErrorCode(CheckoutExpiredException.CART_EXPIRED)
     }
 
@@ -200,7 +198,6 @@ class CheckoutWebViewClientTest {
         assertThat(captor.firstValue)
             .isInstanceOf(HttpException::class.java)
             .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
-            .isNotRecoverable()
             .hasDescription("Not Found")
             .hasStatusCode(404)
     }
@@ -218,7 +215,6 @@ class CheckoutWebViewClientTest {
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutUnavailableException::class.java)
-            .isRecoverable()
             .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
     }
 
@@ -235,7 +231,6 @@ class CheckoutWebViewClientTest {
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutUnavailableException::class.java)
-            .isRecoverable()
             .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
     }
 
@@ -252,7 +247,6 @@ class CheckoutWebViewClientTest {
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutUnavailableException::class.java)
-            .isRecoverable()
             .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
     }
 
@@ -271,7 +265,6 @@ class CheckoutWebViewClientTest {
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .isInstanceOf(CheckoutUnavailableException::class.java)
-            .isNotRecoverable()
             .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
             .hasDescription("Bad url")
     }
@@ -289,7 +282,6 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isNotRecoverable()
             .isInstanceOf(CheckoutUnavailableException::class.java)
             .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
             .hasDescription("Bad request")
@@ -308,7 +300,6 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isRecoverable()
             .isInstanceOf(HttpException::class.java)
             .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
             .hasDescription("HTTP 502 Error")

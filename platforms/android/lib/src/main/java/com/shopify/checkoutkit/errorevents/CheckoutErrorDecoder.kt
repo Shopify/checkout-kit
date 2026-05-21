@@ -56,21 +56,18 @@ internal class CheckoutErrorDecoder @JvmOverloads constructor(
                     } else {
                         ConfigurationException.UNKNOWN
                     },
-                    isRecoverable = false,
                 )
             }
 
             CheckoutErrorGroup.UNRECOVERABLE ->
                 ClientException(
                     errorDescription = this.reason,
-                    isRecoverable = false,
                 )
 
             CheckoutErrorGroup.EXPIRED ->
                 CheckoutExpiredException(
                     errorDescription = this.reason,
                     errorCode = this.expiredErrorCode(),
-                    isRecoverable = false,
                 )
 
             else -> {

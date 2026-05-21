@@ -58,8 +58,6 @@ internal class CheckoutDialog(
     private val communicationClient: CheckoutCommunicationClient? = null,
 ) : ComponentDialog(context) {
 
-    internal var recoveryAttemptCount = 0
-
     private val backNavigationCallback = object : OnBackPressedCallback(enabled = true) {
         override fun handleOnBackPressed() {
             val webView = findViewById<RelativeLayout>(R.id.checkoutKitContainer)
@@ -201,43 +199,9 @@ internal class CheckoutDialog(
 
     internal fun closeCheckoutDialogWithError(exception: CheckoutException) {
         log.d(LOG_TAG, "Closing dialog with error, marking cache entry stale, calling onCheckoutFailed.")
-        recoveryAttemptCount++
         CheckoutWebView.markCacheEntryStale()
         checkoutListener.onCheckoutFailed(exception)
-
-        val isOneTimeUseUrl = this.checkoutUrl.isOneTimeUse()
-        val shouldRecover = ShopifyCheckoutKit.configuration.errorRecovery.shouldRecoverFromError(exception)
-        val isWithinRetryLimit = recoveryAttemptCount < MAX_RECOVERY_ATTEMPTS
-
-        log.d(
-            LOG_TAG,
-            "One time use checkout URL?: $isOneTimeUseUrl, should recover?: $shouldRecover, " +
-                "within retry limit?: $isWithinRetryLimit (attempt $recoveryAttemptCount of $MAX_RECOVERY_ATTEMPTS).",
-        )
-        if (!isOneTimeUseUrl && shouldRecover && isWithinRetryLimit) {
-            log.d(LOG_TAG, "Attempting to recover from error.")
-            attemptToRecoverFromError(exception)
-        } else {
-            log.d(LOG_TAG, "Not attempting to recover, dismissing sheet.")
-            dismiss()
-        }
-    }
-
-    internal fun attemptToRecoverFromError(exception: CheckoutException): Boolean {
-        removeWebViewFromContainer()
-
-        log.d(LOG_TAG, "Invoking pre-recovery actions.")
-        ShopifyCheckoutKit.configuration.errorRecovery.preRecoveryActions(exception, checkoutUrl)
-
-        log.d(LOG_TAG, "Adding fallback WebView to container.")
-        addWebViewToContainer(
-            ShopifyCheckoutKit.configuration.colorScheme,
-            FallbackWebView(context).apply {
-                setListener(webViewListener())
-                loadUrl(checkoutUrl)
-            }
-        )
-        return true
+        dismiss()
     }
 
     private fun webViewListener(): CheckoutWebViewListener {
@@ -271,6 +235,5 @@ internal class CheckoutDialog(
 
     companion object {
         private const val LOG_TAG = "CheckoutDialog"
-        internal const val MAX_RECOVERY_ATTEMPTS = 2
     }
 }

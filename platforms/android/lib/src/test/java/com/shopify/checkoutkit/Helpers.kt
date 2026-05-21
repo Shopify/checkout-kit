@@ -41,26 +41,6 @@ class CheckoutExceptionAssert(actual: CheckoutException) :
         }
     }
 
-    fun isRecoverable(): CheckoutExceptionAssert {
-        isNotNull()
-
-        if (!actual.isRecoverable) {
-            failWithMessage("Expected exception to be recoverable but was not")
-        }
-
-        return this
-    }
-
-    fun isNotRecoverable(): CheckoutExceptionAssert {
-        isNotNull()
-
-        if (actual.isRecoverable) {
-            failWithMessage("Expected exception not to be recoverable but was")
-        }
-
-        return this
-    }
-
     fun hasDescription(description: String): CheckoutExceptionAssert {
         isNotNull()
 

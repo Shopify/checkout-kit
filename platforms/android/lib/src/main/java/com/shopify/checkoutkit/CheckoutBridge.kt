@@ -92,7 +92,6 @@ internal class CheckoutBridge(
                     CheckoutKitException(
                         errorDescription = "Error decoding message from checkout.",
                         errorCode = CheckoutKitException.ERROR_RECEIVING_MESSAGE_FROM_CHECKOUT,
-                        isRecoverable = true,
                     ),
                 )
             }

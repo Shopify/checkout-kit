@@ -65,7 +65,6 @@ class CheckoutPresentationTest {
         ShopifyCheckoutKit.configure {
             it.preloading = configuration.preloading
             it.colorScheme = configuration.colorScheme
-            it.errorRecovery = configuration.errorRecovery
             it.platform = configuration.platform
             it.logLevel = configuration.logLevel
         }
@@ -82,7 +81,7 @@ class CheckoutPresentationTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        val error = CheckoutKitException("boom", isRecoverable = false)
+        val error = CheckoutKitException("boom")
 
         dialog.closeCheckoutDialogWithError(error)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()

@@ -47,11 +47,6 @@ internal class CheckoutWebViewContainer @JvmOverloads constructor(
             }
         }
 
-        if (child is FallbackWebView) {
-            log.d(LOG_TAG, "Destroying Fallback WebView.")
-            child.destroy()
-        }
-
         retainCacheEntry = RetainCacheEntry.IF_NOT_STALE
     }
 

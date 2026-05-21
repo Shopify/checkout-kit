@@ -13,13 +13,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.shadows.ShadowDialog;
-
-import java.util.function.Function;
 
 import kotlinx.serialization.json.Json;
 import kotlinx.serialization.json.JsonKt;
@@ -139,7 +136,6 @@ public class InteropTest {
         ShopifyCheckoutKit.configure(config -> {
             config.setColorScheme(initialConfiguration.getColorScheme());
             config.setPreloading(initialConfiguration.getPreloading());
-            config.setErrorRecovery(initialConfiguration.getErrorRecovery());
         });
     }
 
@@ -181,7 +177,6 @@ public class InteropTest {
         assertThat(exception.getClass()).isEqualTo(CheckoutExpiredException.class);
         assertThat(exception.getErrorCode()).isEqualTo("cart_completed");
         assertThat(exception.getErrorDescription()).isEqualTo("Checkout has expired");
-        assertThat(exception.isRecoverable()).isEqualTo(false);
     }
 
     @SuppressWarnings("all")
@@ -204,34 +199,15 @@ public class InteropTest {
 
     @Test
     public void canConfigureCheckoutKit() {
-        @SuppressWarnings("unchecked")
-        Function<String, Void> fn = Mockito.mock(Function.class);
-        CheckoutKitException exception = new CheckoutKitException("Internal Error", "n/a", true);
-
         ShopifyCheckoutKit.configure(configuration -> {
             configuration.setPreloading(new Preloading(false));
             configuration.setColorScheme(new ColorScheme.Dark());
-            configuration.setErrorRecovery(new ErrorRecovery() {
-                @Override
-                public boolean shouldRecoverFromError(@NonNull CheckoutException checkoutException) {
-                    return false;
-                }
-
-                @Override
-                public void preRecoveryActions(@NonNull CheckoutException exception, @NonNull String checkoutUrl) {
-                    fn.apply("called");
-                }
-            });
         });
 
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
 
         assertThat(configuration.getColorScheme().getId()).isEqualTo("dark");
         assertThat(configuration.getPreloading().getEnabled()).isEqualTo(false);
-        assertThat(configuration.getErrorRecovery().shouldRecoverFromError(exception)).isEqualTo(false);
-
-        configuration.getErrorRecovery().preRecoveryActions(exception, "https://shopify.dev");
-        Mockito.verify(fn).apply("called");
     }
 
     @Test

@@ -56,7 +56,6 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
     }
 
     abstract fun getListener(): CheckoutWebViewListener
-    abstract val recoverErrors: Boolean
 
     private fun configureWebView() {
         visibility = VISIBLE
@@ -149,7 +148,6 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
                     CheckoutKitException(
                         errorDescription = "Render process gone.",
                         errorCode = CheckoutKitException.RENDER_PROCESS_GONE,
-                        isRecoverable = recoverErrors,
                     )
                 )
                 true
@@ -188,15 +186,6 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
             }
         }
 
-        internal open fun isRecoverable(statusCode: Int): Boolean {
-            return when (statusCode) {
-                TOO_MANY_REQUESTS -> recoverErrors
-                ERROR_BAD_URL -> false
-                in CLIENT_ERROR -> false
-                else -> recoverErrors
-            }
-        }
-
         private fun handleError(
             request: WebResourceRequest?,
             errorCode: Int,
@@ -210,23 +199,20 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
                 val listener = getListener()
                 when {
                     errorCode == HTTP_GONE -> {
-                        log.d(LOG_TAG, "Failing with cart expired. Recoverable: false")
+                        log.d(LOG_TAG, "Failing with cart expired.")
                         listener.onCheckoutViewFailedWithError(
                             CheckoutExpiredException(
-                                isRecoverable = false,
                                 errorCode = CheckoutExpiredException.CART_EXPIRED
                             ),
                         )
                     }
 
                     else -> {
-                        val recoverable = isRecoverable(errorCode)
-                        log.d(LOG_TAG, "Failing with other error. Code: $errorCode. Recoverable $recoverable")
+                        log.d(LOG_TAG, "Failing with other error. Code: $errorCode")
                         listener.onCheckoutViewFailedWithError(
                             HttpException(
                                 errorDescription = errorDescription,
                                 statusCode = errorCode,
-                                isRecoverable = recoverable
                             )
                         )
                     }
@@ -238,8 +224,6 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
     companion object {
         private const val LOG_TAG = "BaseWebView"
         internal const val ECP_LOG_TAG = "CheckoutECP"
-        private const val TOO_MANY_REQUESTS = 429
-        private val CLIENT_ERROR = 400..499
     }
 }
 
