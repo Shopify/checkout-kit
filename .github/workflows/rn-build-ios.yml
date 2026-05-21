@@ -18,6 +18,9 @@ jobs:
     name: Build iOS Sample
     runs-on: ${{ vars.MACOS_RUNNER }}
     timeout-minutes: 30
+    env:
+      SCCACHE_CI: "true"
+      SCCACHE_DIR: ${{ github.workspace }}/.sccache
     defaults:
       run:
         working-directory: platforms/react-native
@@ -31,6 +34,23 @@ jobs:
         run: |
           echo "Xcode Path: $(xcode-select -p)"
           echo "Xcode Version: $(xcrun xcodebuild -version)"
+
+      - name: Setup sccache
+        run: |
+          if ! command -v sccache >/dev/null 2>&1; then
+            brew install sccache
+          fi
+          mkdir -p "$SCCACHE_DIR"
+          sccache --version
+          sccache --start-server
+
+      - name: Cache sccache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ env.SCCACHE_DIR }}
+          key: ${{ runner.os }}-xcode-26.2-sccache-ios-${{ hashFiles('platforms/react-native/sample/ios/Podfile.lock', 'platforms/react-native/sample/ios/Podfile', 'platforms/react-native/sample/Gemfile.lock', 'platforms/react-native/package.json', 'platforms/react-native/sample/package.json', 'platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json', 'platforms/react-native/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-26.2-sccache-ios-
 
       - name: Setup iOS Simulator
         run: |
@@ -72,5 +92,16 @@ jobs:
       - name: Build module
         run: pnpm module build
 
+      - name: Reset sccache stats
+        run: sccache --zero-stats
+
       - name: Build iOS sample
         run: pnpm sample build:ios
+
+      - name: Show sccache stats
+        if: always()
+        run: sccache --show-stats || true
+
+      - name: Stop sccache
+        if: always()
+        run: sccache --stop-server || true
