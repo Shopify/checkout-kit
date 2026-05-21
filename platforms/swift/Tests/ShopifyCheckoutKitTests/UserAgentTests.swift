@@ -63,14 +63,4 @@ class UserAgentTests: XCTestCase {
             checkoutKitUA, "ShopifyCheckoutKit/3.8.0 (iOS;Swift \(SwiftVersion.current!))"
         )
     }
-
-    func test_string_withRecovery_shouldAppendRecoverySuffix() {
-        let recoveryUA = UserAgent.string(
-            entryPoint: .acceleratedCheckouts,
-            recovery: true
-        )
-        XCTAssertEqual(
-            recoveryUA, "ShopifyCheckoutKit/3.8.0 (iOS;Swift \(SwiftVersion.current!)) AcceleratedCheckouts recovery"
-        )
-    }
 }

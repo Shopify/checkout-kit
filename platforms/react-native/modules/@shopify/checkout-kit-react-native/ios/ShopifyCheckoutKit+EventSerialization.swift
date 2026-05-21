@@ -69,47 +69,42 @@ internal enum ShopifyEventSerialization {
      */
     static func serialize(checkoutError error: CheckoutError) -> [String: Any] {
         switch error {
-        case let .checkoutExpired(message, code, recoverable):
+        case let .checkoutExpired(message, code):
             return [
                 "__typename": "CheckoutExpiredError",
                 "message": message,
-                "code": code.rawValue,
-                "recoverable": recoverable
+                "code": code.rawValue
             ]
 
-        case let .checkoutUnavailable(message, code, recoverable):
+        case let .checkoutUnavailable(message, code):
             switch code {
             case let .clientError(clientErrorCode):
                 return [
                     "__typename": "CheckoutClientError",
                     "message": message,
-                    "code": clientErrorCode.rawValue,
-                    "recoverable": recoverable
+                    "code": clientErrorCode.rawValue
                 ]
             case let .httpError(statusCode):
                 return [
                     "__typename": "CheckoutHTTPError",
                     "message": message,
                     "code": "http_error",
-                    "statusCode": statusCode,
-                    "recoverable": recoverable
+                    "statusCode": statusCode
                 ]
             }
 
-        case let .sdkError(underlying, recoverable):
+        case let .sdkError(underlying):
             return [
                 "__typename": "InternalError",
                 "code": "unknown",
-                "message": underlying.localizedDescription,
-                "recoverable": recoverable
+                "message": underlying.localizedDescription
             ]
 
         @unknown default:
             return [
                 "__typename": "UnknownError",
                 "code": "unknown",
-                "message": error.localizedDescription,
-                "recoverable": error.isRecoverable
+                "message": error.localizedDescription
             ]
         }
     }

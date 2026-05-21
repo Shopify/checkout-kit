@@ -33,16 +33,6 @@ class CheckoutURLTests: XCTestCase {
         XCTAssertFalse(CheckoutURL(from: nonMultipassURL).isMultipassURL())
     }
 
-    func testIsConfirmationPage() throws {
-        let confirmationURL = try XCTUnwrap(URL(string: "https://shopify.com/thank-you"))
-        let legacyConfirmationURL = try XCTUnwrap(URL(string: "https://shopify.com/thank_you"))
-        let nonConfirmationURL = try XCTUnwrap(URL(string: "https://shopify.com/checkout"))
-
-        XCTAssertTrue(CheckoutURL(from: confirmationURL).isConfirmationPage())
-        XCTAssertTrue(CheckoutURL(from: legacyConfirmationURL).isConfirmationPage())
-        XCTAssertFalse(CheckoutURL(from: nonConfirmationURL).isConfirmationPage())
-    }
-
     func testIsDeepLink() throws {
         // Invalid cases
         let secureURL = try XCTUnwrap(URL(string: "https://shopify.com"))

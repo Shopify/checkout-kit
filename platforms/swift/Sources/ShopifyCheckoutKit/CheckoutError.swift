@@ -47,18 +47,9 @@ public enum CheckoutUnavailable {
 }
 
 public enum CheckoutError: Swift.Error {
-    case sdkError(underlying: Swift.Error, recoverable: Bool = true)
+    case sdkError(underlying: Swift.Error)
 
-    case checkoutUnavailable(message: String, code: CheckoutUnavailable, recoverable: Bool)
+    case checkoutUnavailable(message: String, code: CheckoutUnavailable)
 
-    case checkoutExpired(message: String, code: CheckoutErrorCode, recoverable: Bool = false)
-
-    public var isRecoverable: Bool {
-        switch self {
-        case let .checkoutExpired(_, _, recoverable),
-             let .checkoutUnavailable(_, _, recoverable),
-             let .sdkError(_, recoverable):
-            return recoverable
-        }
-    }
+    case checkoutExpired(message: String, code: CheckoutErrorCode)
 }

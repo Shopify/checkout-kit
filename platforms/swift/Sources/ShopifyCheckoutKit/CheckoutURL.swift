@@ -34,20 +34,6 @@ public struct CheckoutURL {
         return url.absoluteString.contains("multipass")
     }
 
-    public func isConfirmationPage() -> Bool {
-        let pattern = "^(thank[_-]you)$"
-        let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive)
-
-        for component in url.pathComponents {
-            let range = NSRange(location: 0, length: component.utf16.count)
-            if regex?.firstMatch(in: component, options: [], range: range) != nil {
-                return true
-            }
-        }
-
-        return false
-    }
-
     public func isBlank() -> Bool {
         return url.scheme == "about" || url.absoluteString == "about:blank"
     }

@@ -63,48 +63,11 @@ class CheckoutViewDelegateTests: XCTestCase {
         let two = CheckoutWebView.for(checkout: checkoutURL)
         XCTAssertEqual(one, two)
 
-        viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500), recoverable: false))
+        viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500)))
 
         let three = CheckoutWebView.for(checkout: checkoutURL)
         XCTAssertNotEqual(two, three)
-        XCTAssertFalse(viewController.checkoutView.isRecovery)
         XCTAssertTrue(viewController.dismissCalled)
-    }
-
-    func testInstantiatesRecoveryWebviewOnRecoverableError() {
-        let view = CheckoutWebView.for(checkout: checkoutURL)
-
-        viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500), recoverable: true))
-
-        XCTAssertNotEqual(view, viewController.checkoutView)
-        XCTAssertTrue(viewController.checkoutView.isRecovery)
-        XCTAssertFalse(viewController.checkoutView.isBridgeAttached)
-        XCTAssertFalse(viewController.checkoutView.isPreloadingAvailable)
-        XCTAssertFalse(viewController.dismissCalled)
-
-        XCTAssertFalse(viewController.checkoutView.translatesAutoresizingMaskIntoConstraints)
-        XCTAssertEqual(viewController.checkoutView.scrollView.contentInsetAdjustmentBehavior, .never)
-    }
-
-    func testDoesNotInstantiateRecoveryWebviewOnNonRecoverableError() {
-        _ = CheckoutWebView.for(checkout: checkoutURL)
-
-        viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500), recoverable: false))
-
-        XCTAssertFalse(viewController.checkoutView.isRecovery)
-    }
-
-    func testDoesNotInstantiateRecoveryForMultipassURL() throws {
-        let controller = try MockCheckoutWebViewController(
-            checkoutURL: XCTUnwrap(URL(string: "https://checkout-sdk.myshopify.com/account/login/multipass/token"))
-        )
-
-        controller.checkoutViewDidFailWithError(
-            error:
-            .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500), recoverable: true)
-        )
-
-        XCTAssertFalse(controller.checkoutView.isRecovery)
     }
 
     func testFailWithErrorDisablesPreloadingActivtedByClient() {
@@ -112,7 +75,7 @@ class CheckoutViewDelegateTests: XCTestCase {
 
         _ = CheckoutWebView.for(checkout: checkoutURL)
 
-        viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500), recoverable: false))
+        viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500)))
 
         XCTAssertEqual(false, CheckoutWebView.preloadingActivatedByClient)
     }

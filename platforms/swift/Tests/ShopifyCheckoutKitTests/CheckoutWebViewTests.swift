@@ -28,7 +28,6 @@ import XCTest
 
 class CheckoutWebViewTests: XCTestCase {
     private var view: CheckoutWebView!
-    private var recovery: CheckoutWebView!
     private var mockDelegate: MockCheckoutWebViewDelegate!
     private var url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
 
@@ -48,31 +47,9 @@ class CheckoutWebViewTests: XCTestCase {
         super.tearDown()
     }
 
-    private func createRecoveryAgent() -> CheckoutWebView {
-        recovery = CheckoutWebView.for(checkout: url, recovery: true)
-        mockDelegate = MockCheckoutWebViewDelegate()
-        recovery.viewDelegate = mockDelegate
-        return recovery
-    }
-
     func testCorrectlyConfiguresWebview() {
         XCTAssertEqual(view.configuration.applicationNameForUserAgent, CheckoutBridge.applicationName)
         XCTAssertTrue(view.configuration.allowsInlineMediaPlayback)
-    }
-
-    func testUsesRecoveryAgent() {
-        let backgroundColor: UIColor = .systemRed
-        ShopifyCheckoutKit.configuration.backgroundColor = backgroundColor
-        ShopifyCheckoutKit.configuration.colorScheme = .automatic
-        recovery = createRecoveryAgent()
-
-        XCTAssertTrue(recovery.isRecovery)
-        XCTAssertFalse(recovery.isBridgeAttached)
-        XCTAssertFalse(recovery.isPreloadingAvailable)
-        XCTAssertEqual(recovery.configuration.applicationNameForUserAgent, "ShopifyCheckoutKit/\(ShopifyCheckoutKit.version) (iOS;Swift \(SwiftVersion.current!)) recovery")
-        XCTAssertTrue(recovery.configuration.allowsInlineMediaPlayback)
-        XCTAssertEqual(recovery.backgroundColor, backgroundColor)
-        XCTAssertFalse(recovery.isOpaque)
     }
 
     func testHTTPSLinkIsAllowed() throws {
@@ -126,9 +103,8 @@ class CheckoutWebViewTests: XCTestCase {
 
         waitForExpectations(timeout: 5) { _ in
             switch self.mockDelegate.errorReceived {
-            case let .some(.checkoutUnavailable(message, _, recoverable)):
+            case let .some(.checkoutUnavailable(message, _)):
                 XCTAssertEqual(message, "forbidden")
-                XCTAssertFalse(recoverable)
             default:
                 XCTFail("Unhandled error case received")
             }
@@ -150,9 +126,8 @@ class CheckoutWebViewTests: XCTestCase {
 
         waitForExpectations(timeout: 5) { _ in
             switch self.mockDelegate.errorReceived {
-            case let .some(.checkoutUnavailable(message, _, recoverable)):
+            case let .some(.checkoutUnavailable(message, _)):
                 XCTAssertEqual(message, "unauthorized")
-                XCTAssertFalse(recoverable)
             default:
                 XCTFail("Unhandled error case received")
             }
@@ -174,9 +149,8 @@ class CheckoutWebViewTests: XCTestCase {
 
         waitForExpectations(timeout: 5) { _ in
             switch self.mockDelegate.errorReceived {
-            case let .some(.checkoutUnavailable(message, _, recoverable)):
+            case let .some(.checkoutUnavailable(message, _)):
                 XCTAssertEqual(message, "not found")
-                XCTAssertFalse(recoverable)
             default:
                 XCTFail("Unhandled error case received")
             }
@@ -198,16 +172,15 @@ class CheckoutWebViewTests: XCTestCase {
 
         waitForExpectations(timeout: 5) { _ in
             switch self.mockDelegate.errorReceived {
-            case let .some(.checkoutExpired(message, _, recoverable)):
+            case let .some(.checkoutExpired(message, _)):
                 XCTAssertEqual(message, "Checkout has expired.")
-                XCTAssertFalse(recoverable)
             default:
                 XCTFail("Unhandled error case received")
             }
         }
     }
 
-    func testTreat5XXReponsesAsRecoverable() throws {
+    func test5XXResponsesEmitCheckoutUnavailable() throws {
         try view.load(checkout: XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123")))
         let link = try XCTUnwrap(view.url)
         view.viewDelegate = mockDelegate
@@ -232,8 +205,12 @@ class CheckoutWebViewTests: XCTestCase {
                 }
 
                 switch receivedError {
-                case let .checkoutUnavailable(_, _, recoverable):
-                    XCTAssertTrue(recoverable, "Error should be recoverable for status code \(statusCode)")
+                case let .checkoutUnavailable(_, code):
+                    if case let .httpError(received) = code {
+                        XCTAssertEqual(received, statusCode)
+                    } else {
+                        XCTFail("Expected httpError code for status \(statusCode)")
+                    }
                 default:
                     XCTFail("Received incorrect `CheckoutError` case for status code \(statusCode)")
                 }
@@ -370,11 +347,10 @@ class CheckoutWebViewTests: XCTestCase {
 
         waitForExpectations(timeout: 5) { _ in
             switch self.mockDelegate.errorReceived {
-            case let .some(.sdkError(underlying, recoverable)):
+            case let .some(.sdkError(underlying)):
                 let nsError = underlying as NSError
                 XCTAssertEqual(nsError.domain, NSURLErrorDomain)
                 XCTAssertEqual(nsError.code, NSURLErrorTimedOut)
-                XCTAssertTrue(recoverable)
             default:
                 XCTFail("checkoutDidFail(.sdkError) expected to throw")
             }

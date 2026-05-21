@@ -110,11 +110,6 @@ RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onRenderStateChange, RCTBubblingEventBlock)
 
 /**
- * Direct event used to determine whether native should attempt recovery from an error.
- */
-RCT_EXPORT_VIEW_PROPERTY(onShouldRecoverFromError, RCTDirectEventBlock)
-
-/**
  * Emitted when a link is clicked within the checkout experience. Payload contains the URL.
  */
 RCT_EXPORT_VIEW_PROPERTY(onClickLink, RCTBubblingEventBlock)

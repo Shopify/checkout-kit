@@ -98,7 +98,7 @@ final class ApplePayCallbackTests: XCTestCase {
         }
 
         await MainActor.run {
-            let mockError = CheckoutError.sdkError(underlying: NSError(domain: "TestError", code: 0, userInfo: nil), recoverable: false)
+            let mockError = CheckoutError.sdkError(underlying: NSError(domain: "TestError", code: 0, userInfo: nil))
             viewController.onCheckoutFail?(mockError)
         }
 
@@ -111,7 +111,7 @@ final class ApplePayCallbackTests: XCTestCase {
         }
 
         await MainActor.run {
-            let mockError = CheckoutError.sdkError(underlying: NSError(domain: "TestError", code: 0, userInfo: nil), recoverable: false)
+            let mockError = CheckoutError.sdkError(underlying: NSError(domain: "TestError", code: 0, userInfo: nil))
             viewController.onCheckoutFail?(mockError) // Should not crash
         }
 
@@ -200,7 +200,7 @@ final class ApplePayCallbackTests: XCTestCase {
 
         for i in 0 ..< iterations {
             if i % 2 == 0 {
-                let mockError = CheckoutError.sdkError(underlying: NSError(domain: "TestError", code: 0, userInfo: nil), recoverable: false)
+                let mockError = CheckoutError.sdkError(underlying: NSError(domain: "TestError", code: 0, userInfo: nil))
                 viewController.onCheckoutFail?(mockError)
             } else {
                 viewController.onCheckoutCancel?()

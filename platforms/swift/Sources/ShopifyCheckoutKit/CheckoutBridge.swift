@@ -48,18 +48,6 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
         )
     }
 
-    static var recoveryAgent: String {
-        return recoveryAgent(entryPoint: nil)
-    }
-
-    static func recoveryAgent(entryPoint: MetaData.EntryPoint?) -> String {
-        return UserAgent.string(
-            platform: ShopifyCheckoutKit.configuration.platform,
-            entryPoint: entryPoint,
-            recovery: true
-        )
-    }
-
     static func instrument(_ webView: WKWebView, _ instrumentation: InstrumentationPayload) {
         if let payload = instrumentation.toBridgeEvent() {
             sendMessage(webView, messageName: "instrumentation", messageBody: payload)

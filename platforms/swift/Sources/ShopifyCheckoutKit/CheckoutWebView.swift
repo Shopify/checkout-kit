@@ -43,29 +43,16 @@ class CheckoutWebView: WKWebView {
 
     weak static var uncacheableViewRef: CheckoutWebView?
 
-    private var navigationObserver: NSKeyValueObservation?
-
     var isBridgeAttached = false
 
     var client: (any CheckoutCommunicationProtocol)?
 
-    var isRecovery = false {
-        didSet {
-            isBridgeAttached = false
-        }
-    }
-
     var isPreloadingAvailable: Bool {
-        return !isRecovery && ShopifyCheckoutKit.configuration.preloading.enabled
+        return ShopifyCheckoutKit.configuration.preloading.enabled
     }
 
-    static func `for`(checkout url: URL, recovery: Bool = false, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
-        OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString), recovery: \(recovery)")
-
-        if recovery {
-            CheckoutWebView.invalidate()
-            return CheckoutWebView(recovery: true, entryPoint: entryPoint)
-        }
+    static func `for`(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
+        OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString)")
 
         let cacheKey = "\(url.absoluteString)_\(entryPoint?.rawValue ?? "nil")"
 
@@ -128,19 +115,12 @@ class CheckoutWebView: WKWebView {
 
     // MARK: Initializers
 
-    init(frame: CGRect = .zero, configuration: WKWebViewConfiguration = WKWebViewConfiguration(), recovery: Bool = false, entryPoint: MetaData.EntryPoint? = nil) {
-        OSLogger.shared.debug("Initializing webview, recovery: \(recovery)")
+    init(frame: CGRect = .zero, configuration: WKWebViewConfiguration = WKWebViewConfiguration(), entryPoint: MetaData.EntryPoint? = nil) {
+        OSLogger.shared.debug("Initializing webview")
         configuration.allowsInlineMediaPlayback = true
         self.entryPoint = entryPoint
+        configuration.applicationNameForUserAgent = CheckoutBridge.applicationName(entryPoint: entryPoint)
 
-        if recovery {
-            configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
-            configuration.applicationNameForUserAgent = CheckoutBridge.recoveryAgent(entryPoint: entryPoint)
-        } else {
-            configuration.applicationNameForUserAgent = CheckoutBridge.applicationName(entryPoint: entryPoint)
-        }
-
-        isRecovery = recovery
         super.init(frame: frame, configuration: configuration)
 
         #if DEBUG
@@ -154,22 +134,12 @@ class CheckoutWebView: WKWebView {
         scrollView.contentInsetAdjustmentBehavior = .never
 
         setBackgroundColor()
-
-        if recovery {
-            observeNavigationChanges()
-        } else {
-            connectBridge()
-        }
+        connectBridge()
     }
 
     deinit {
         OSLogger.shared.debug("De-allocating webview")
-
-        if isRecovery {
-            navigationObserver?.invalidate()
-        } else {
-            detachBridge()
-        }
+        detachBridge()
     }
 
     @available(*, unavailable)
@@ -198,19 +168,6 @@ class CheckoutWebView: WKWebView {
 
         if #available(iOS 15.0, *) {
             underPageBackgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
-        }
-    }
-
-    private func observeNavigationChanges() {
-        navigationObserver = observe(\.url, options: [.new]) { [weak self] _, change in
-            guard let self else { return }
-
-            if let url = change.newValue as? URL {
-                if CheckoutURL(from: url).isConfirmationPage() {
-                    CheckoutWebView.invalidate(disconnect: false)
-                    navigationObserver?.invalidate()
-                }
-            }
         }
     }
 
@@ -300,7 +257,6 @@ extension CheckoutWebView: WKNavigationDelegate {
                 OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - rejected")
                 return decisionHandler(.cancel)
             }
-            return
         }
 
         decisionHandler(.allow)
@@ -315,7 +271,6 @@ extension CheckoutWebView: WKNavigationDelegate {
     }
 
     func handleResponse(_ response: HTTPURLResponse) -> WKNavigationResponsePolicy {
-        let allowRecoverable = !isRecovery
         let statusCode = response.statusCode
         let errorMessageForStatusCode = HTTPURLResponse.localizedString(
             forStatusCode: statusCode
@@ -331,33 +286,15 @@ extension CheckoutWebView: WKNavigationDelegate {
             OSLogger.shared.debug("Handling response for URL: \(response.url?.absoluteString ?? "unknown URL"), status code: \(statusCode)")
 
             switch statusCode {
-            case 401:
-                OSLogger.shared.debug("Unauthorized access (401)")
-                viewDelegate?.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: errorMessageForStatusCode, code: CheckoutUnavailable.httpError(statusCode: statusCode), recoverable: false))
-            case 404:
-                OSLogger.shared.debug("Not found (404)")
-                viewDelegate?.checkoutViewDidFailWithError(error: .checkoutUnavailable(
-                    message: errorMessageForStatusCode,
-                    code: CheckoutUnavailable.httpError(statusCode: statusCode),
-                    recoverable: false
-                ))
             case 410:
                 OSLogger.shared.debug("Gone (410)")
                 viewDelegate?.checkoutViewDidFailWithError(error: .checkoutExpired(message: "Checkout has expired.", code: CheckoutErrorCode.cartExpired))
-            case 500 ... 599:
-                OSLogger.shared.debug("Server error (5xx)")
-                viewDelegate?.checkoutViewDidFailWithError(error: .checkoutUnavailable(
-                    message: errorMessageForStatusCode,
-                    code: CheckoutUnavailable.httpError(statusCode: statusCode),
-                    recoverable: allowRecoverable
-                ))
             default:
                 OSLogger.shared.debug("\(statusCode) error received")
                 viewDelegate?.checkoutViewDidFailWithError(
                     error: .checkoutUnavailable(
                         message: errorMessageForStatusCode,
-                        code: CheckoutUnavailable.httpError(statusCode: statusCode),
-                        recoverable: false
+                        code: CheckoutUnavailable.httpError(statusCode: statusCode)
                     )
                 )
             }
@@ -420,7 +357,7 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         viewDelegate?.checkoutViewDidFailWithError(
-            error: .sdkError(underlying: error, recoverable: !isRecovery)
+            error: .sdkError(underlying: error)
         )
     }
 
