@@ -178,32 +178,24 @@ case "$LANG" in
       "${OUTPUT}"
 
 
+    node "${REPO_ROOT}/protocol/scripts/generate_typescript_notifications.mjs"
+
     # API Extractor consumers require dependency entry points to resolve to
     # declaration files. Runtime converter output is not valid declaration syntax,
-    # so emit declarations from the generated TypeScript source.
-    DECLARATION_OUTPUT="${OUTPUT%.ts}.d.ts"
+    # so emit declarations from the TypeScript package entry point.
+    DECLARATION_OUTPUT="${REPO_ROOT}/protocol/languages/typescript/src/index.d.ts"
     TSC_BIN="${REPO_ROOT}/platforms/react-native/node_modules/typescript/bin/tsc"
-    if [[ -f "${TSC_BIN}" ]]; then
-      node "${TSC_BIN}" \
-        --declaration \
-        --emitDeclarationOnly \
-        --noEmit false \
-        --rootDir "${REPO_ROOT}/protocol/languages/typescript/src" \
-        --declarationDir "${REPO_ROOT}/protocol/languages/typescript/src" \
-        --pretty false \
-        "${OUTPUT}"
-    else
-      tsc \
-        --declaration \
-        --emitDeclarationOnly \
-        --noEmit false \
-        --rootDir "${REPO_ROOT}/protocol/languages/typescript/src" \
-        --declarationDir "${REPO_ROOT}/protocol/languages/typescript/src" \
-        --pretty false \
-        "${OUTPUT}"
-    fi
+    INDEX_OUTPUT="${REPO_ROOT}/protocol/languages/typescript/src/index.ts"
+    node "${TSC_BIN}" \
+      --declaration \
+      --emitDeclarationOnly \
+      --noEmit false \
+      --rootDir "${REPO_ROOT}/protocol/languages/typescript/src" \
+      --declarationDir "${REPO_ROOT}/protocol/languages/typescript/src" \
+      --pretty false \
+      "${INDEX_OUTPUT}"
 
-    echo "Generated ${OUTPUT} and ${DECLARATION_OUTPUT}"
+    echo "Generated ${OUTPUT}, TypeScript protocol notifications, and ${DECLARATION_OUTPUT}"
     ;;
 
   *)

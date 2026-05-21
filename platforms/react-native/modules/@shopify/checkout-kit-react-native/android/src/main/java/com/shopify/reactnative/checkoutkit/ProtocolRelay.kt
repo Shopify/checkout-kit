@@ -35,8 +35,33 @@ object ProtocolRelay {
         var client = CheckoutProtocol.Client()
         for (method in subscribedMethods) {
             when (method) {
+                CheckoutProtocol.complete.method -> {
+                    client = client.on(CheckoutProtocol.complete) { checkout ->
+                        forwardEnvelope(method, checkout, dispatch)
+                    }
+                }
+                CheckoutProtocol.error.method -> {
+                    client = client.on(CheckoutProtocol.error) { error ->
+                        forwardEnvelope(method, error, dispatch)
+                    }
+                }
+                CheckoutProtocol.lineItemsChange.method -> {
+                    client = client.on(CheckoutProtocol.lineItemsChange) { checkout ->
+                        forwardEnvelope(method, checkout, dispatch)
+                    }
+                }
+                CheckoutProtocol.messagesChange.method -> {
+                    client = client.on(CheckoutProtocol.messagesChange) { checkout ->
+                        forwardEnvelope(method, checkout, dispatch)
+                    }
+                }
                 CheckoutProtocol.start.method -> {
                     client = client.on(CheckoutProtocol.start) { checkout ->
+                        forwardEnvelope(method, checkout, dispatch)
+                    }
+                }
+                CheckoutProtocol.totalsChange.method -> {
+                    client = client.on(CheckoutProtocol.totalsChange) { checkout ->
                         forwardEnvelope(method, checkout, dispatch)
                     }
                 }

@@ -47,6 +47,7 @@ import {CheckoutProtocol} from './protocol';
 import type {
   Checkout,
   CheckoutProtocolPayloads,
+  ErrorResponse,
   ProtocolHandlers,
 } from './protocol';
 
@@ -388,6 +389,7 @@ export type {
   CheckoutException,
   CheckoutProtocolPayloads,
   Configuration,
+  ErrorResponse,
   Features,
   GeolocationRequestEvent,
   IosColors,

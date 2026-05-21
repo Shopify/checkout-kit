@@ -84,6 +84,56 @@ class ProtocolRelayTest {
     }
 
     @Test
+    fun `relay dispatches envelope for every public checkout state event`() {
+        val methods = listOf(
+            "ec.complete",
+            "ec.line_items.change",
+            "ec.messages.change",
+            "ec.start",
+            "ec.totals.change",
+        )
+
+        for (method in methods) {
+            var captured: String? = null
+            val client = ProtocolRelay.makeClient(
+                listOf(method),
+                DispatchCallback { json -> captured = json },
+            )
+
+            client.process(checkoutNotificationFixture(method))
+            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+            val json = captured
+            assertThat(json).isNotNull()
+            val parsed = Json.parseToJsonElement(json!!).jsonObject
+            assertThat(parsed["type"]?.jsonPrimitive?.content).isEqualTo(method)
+            assertThat(parsed["payload"]!!.jsonObject["id"]?.jsonPrimitive?.content).isEqualTo("checkout-123")
+        }
+    }
+
+    @Test
+    fun `relay dispatches envelope on ec error`() {
+        var captured: String? = null
+        val client = ProtocolRelay.makeClient(
+            listOf("ec.error"),
+            DispatchCallback { json -> captured = json },
+        )
+
+        client.process(ecErrorNotificationFixture)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        val json = captured
+        assertThat(json).isNotNull()
+        val parsed = Json.parseToJsonElement(json!!).jsonObject
+        assertThat(parsed["type"]?.jsonPrimitive?.content).isEqualTo("ec.error")
+
+        val payload = parsed["payload"]!!.jsonObject
+        assertThat(payload["messages"]!!.jsonArray[0].jsonObject["content"]?.jsonPrimitive?.content)
+            .isEqualTo("Something went wrong")
+        assertThat(payload["ucp"]!!.jsonObject["status"]?.jsonPrimitive?.content).isEqualTo("error")
+    }
+
+    @Test
     fun `relay ignores methods not in subscribed list`() {
         var captured: String? = null
         val client = ProtocolRelay.makeClient(
@@ -118,6 +168,11 @@ class ProtocolRelayTest {
 private data class SnakePayload(
     @SerialName("continue_url") val continueUrl: String,
     @SerialName("line_items") val lineItems: List<String>,
+)
+
+private fun checkoutNotificationFixture(method: String) = ecStartNotificationFixture.replace(
+    "\"method\": \"ec.start\"",
+    "\"method\": \"$method\"",
 )
 
 private val ecStartNotificationFixture = """
@@ -155,6 +210,28 @@ private val ecStartNotificationFixture = """
       ],
       "links": [
         {"type": "privacy_policy", "url": "https://example.com/privacy"}
+      ]
+    }
+  }
+}
+""".trimIndent()
+
+private val ecErrorNotificationFixture = """
+{
+  "jsonrpc": "2.0",
+  "method": "ec.error",
+  "params": {
+    "error": {
+      "ucp": {
+        "version": "2026-04-08",
+        "status": "error"
+      },
+      "messages": [
+        {
+          "type": "error",
+          "content": "Something went wrong",
+          "severity": "recoverable"
+        }
       ]
     }
   }
