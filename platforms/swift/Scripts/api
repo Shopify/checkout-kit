@@ -1,0 +1,134 @@
+#!/bin/bash
+set -eo pipefail
+
+# Validate the public Swift API surface against committed baselines.
+#
+# Usage:
+#   ./Scripts/api check   # diff committed baselines vs current sources (CI gate)
+#   ./Scripts/api dump    # regenerate committed baselines from current sources
+
+SUBCOMMAND="${1:-}"
+if [[ "$SUBCOMMAND" != "check" && "$SUBCOMMAND" != "dump" ]]; then
+    echo "Usage: $0 {check|dump}" >&2
+    exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SWIFT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PACKAGE_ROOT="$(cd "$SWIFT_ROOT/../.." && pwd)"
+BASELINE_DIR="$SWIFT_ROOT/api"
+MODULES=(ShopifyCheckoutProtocol ShopifyCheckoutKit ShopifyAcceleratedCheckouts)
+TARGET="arm64-apple-ios13.0-simulator"
+
+if [[ ! -f "$PACKAGE_ROOT/Package.swift" ]]; then
+    echo "Error: Package.swift not found at $PACKAGE_ROOT" >&2
+    exit 1
+fi
+
+DERIVED_DATA="$(mktemp -d)"
+trap 'rm -rf "$DERIVED_DATA"' EXIT
+
+build_for_digester() {
+    local cmd=(
+        xcodebuild
+        -scheme ShopifyCheckoutKit-Package
+        -sdk iphonesimulator
+        -destination "generic/platform=iOS Simulator"
+        -derivedDataPath "$DERIVED_DATA"
+        -skipPackagePluginValidation
+        build
+    )
+
+    cd "$PACKAGE_ROOT"
+    if command -v xcbeautify >/dev/null 2>&1; then
+        "${cmd[@]}" | xcbeautify --renderer github-actions
+    else
+        "${cmd[@]}"
+    fi
+}
+
+dump_module() {
+    local module="$1"
+    local out_path="$2"
+    local products_dir="$DERIVED_DATA/Build/Products/Debug-iphonesimulator"
+
+    xcrun swift-api-digester \
+        -dump-sdk \
+        -module "$module" \
+        -I "$products_dir" \
+        -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+        -target "$TARGET" \
+        -abort-on-module-fail \
+        -avoid-location \
+        -avoid-tool-args \
+        -o "$out_path"
+}
+
+diagnose_module() {
+    local module="$1"
+    local baseline_path="$2"
+    local new_path="$3"
+    local products_dir="$DERIVED_DATA/Build/Products/Debug-iphonesimulator"
+
+    xcrun swift-api-digester \
+        -diagnose-sdk \
+        -module "$module" \
+        -baseline-path "$baseline_path" \
+        -input-paths "$new_path" \
+        -I "$products_dir" \
+        -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+        -target "$TARGET" \
+        2>&1 || true
+}
+
+echo "Building $PACKAGE_ROOT to produce .swiftmodule files for swift-api-digester..."
+build_for_digester
+
+case "$SUBCOMMAND" in
+    dump)
+        mkdir -p "$BASELINE_DIR"
+        for module in "${MODULES[@]}"; do
+            local_out="$BASELINE_DIR/$module.json"
+            echo "Dumping $module → $local_out"
+            dump_module "$module" "$local_out"
+        done
+        echo "Baselines regenerated under $BASELINE_DIR"
+        ;;
+
+    check)
+        TMP_OUT="$(mktemp -d)"
+        trap 'rm -rf "$DERIVED_DATA" "$TMP_OUT"' EXIT
+
+        failed_modules=()
+        for module in "${MODULES[@]}"; do
+            committed="$BASELINE_DIR/$module.json"
+            current="$TMP_OUT/$module.json"
+
+            if [[ ! -f "$committed" ]]; then
+                echo "Error: missing committed baseline at $committed" >&2
+                echo "Run \`dev swift api dump\` to generate it." >&2
+                failed_modules+=("$module")
+                continue
+            fi
+
+            dump_module "$module" "$current"
+
+            if ! diff -u "$committed" "$current"; then
+                failed_modules+=("$module")
+                echo ""
+                echo "── swift-api-digester -diagnose-sdk ($module) ──"
+                diagnose_module "$module" "$committed" "$current"
+                echo "────────────────────────────────────────────────"
+            fi
+        done
+
+        if (( ${#failed_modules[@]} > 0 )); then
+            echo ""
+            echo "Public Swift API drift detected in: ${failed_modules[*]}" >&2
+            echo "Run \`dev swift api dump\` to update the baseline if this change is intentional." >&2
+            exit 1
+        fi
+
+        echo "Public Swift API matches committed baselines for: ${MODULES[*]}"
+        ;;
+esac

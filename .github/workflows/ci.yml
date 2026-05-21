@@ -40,6 +40,7 @@ jobs:
               - 'protocol/**'
               - '.github/workflows/android-test.yml'
               - '.github/workflows/android-license-headers.yml'
+              - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             swift:
               - 'platforms/swift/**'
@@ -50,6 +51,7 @@ jobs:
               - '.github/workflows/swift-build-samples.yml'
               - '.github/workflows/swift-test-workflow.yml'
               - '.github/workflows/swift-lint.yml'
+              - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             reactNative:
               - 'platforms/react-native/**'
@@ -66,6 +68,7 @@ jobs:
               - '.github/workflows/rn-license-headers.yml'
               - '.github/workflows/rn-check-packed-files.yml'
               - '.github/workflows/rn-lint.yml'
+              - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             web:
               - 'platforms/web/**'
@@ -170,6 +173,19 @@ jobs:
     if: needs.changes.outputs.web == 'true'
     uses: ./.github/workflows/web-license-headers.yml
 
+  breaking-changes:
+    name: Breaking Changes
+    needs: changes
+    if: |
+      needs.changes.outputs.swift == 'true' ||
+      needs.changes.outputs.android == 'true' ||
+      needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/breaking-changes.yml
+    with:
+      swift: ${{ needs.changes.outputs.swift }}
+      android: ${{ needs.changes.outputs.android }}
+      react-native: ${{ needs.changes.outputs.reactNative }}
+
   # Single required status check for branch protection.
   # Passes when every relevant platform job either succeeded or was skipped
   # because no files in that platform's tree changed.
@@ -193,6 +209,7 @@ jobs:
       - rn-lint
       - web
       - web-license-headers
+      - breaking-changes
     runs-on: ubuntu-latest
     steps:
       - name: Verify all upstream jobs succeeded or were skipped

@@ -21,7 +21,9 @@
     "clean": "rm -rf lib",
     "build": "bob build",
     "lint": "pnpm run typecheck && eslint src",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "api:check": "pnpm build && node ./scripts/prepare-api-extract.mjs && api-extractor run --verbose",
+    "api:dump": "pnpm build && node ./scripts/prepare-api-extract.mjs && api-extractor run --local --verbose"
   },
   "files": [
     "LICENSE",
@@ -52,6 +54,7 @@
     "react-native": "*"
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.58.7",
     "@shopify/checkout-kit-protocol": "workspace:*",
     "react-native-builder-bob": "^0.23.2",
     "typescript": "^5.9.2"
