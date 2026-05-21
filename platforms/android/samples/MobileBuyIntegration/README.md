@@ -1,152 +1,149 @@
 # MobileBuyIntegration Sample App
 
-A sample Android app demonstrating how to integrate [Checkout Kit](../../README.md) with the Shopify Storefront API using [Apollo Kotlin](https://github.com/apollographql/apollo-kotlin).
+This sample demonstrates how to integrate Checkout Kit with the Shopify Storefront API using Apollo Kotlin.
+
+## What it covers
+
+- Product and collection browsing from the Storefront API
+- Cart create, add, update, remove, and fetch operations
+- `cart.checkoutUrl` presentation with `ShopifyCheckoutKit`
+- Typed checkout lifecycle events through `CheckoutProtocol.Client`
+- Checkout fail/cancel callbacks through the presentation builder
+- File chooser, geolocation, and web permission host callbacks
+- Buyer identity demo data for checkout prefill
+- Customer Account API sign-in and customer access token cart identity
 
 ## Checkout flow
 
-The sample's cart flow demonstrates the Kotlin-first `ShopifyCheckoutKit.present(checkoutUrl, activity) { ... }`
-API. It connects a typed `CheckoutProtocol.Client` to observe checkout state changes, including
-completion, and uses the presentation builder for fail/cancel plus the sample's file chooser and
-geolocation host callbacks so browser and system hooks stay on the Kotlin-first path.
+The sample's cart flow demonstrates the Kotlin-first `ShopifyCheckoutKit.present(checkoutUrl, activity) { ... }` API. It connects a typed `CheckoutProtocol.Client` to observe checkout state changes, including completion, and uses the presentation builder for fail/cancel plus the sample's file chooser, geolocation, and web permission host callbacks.
 
 ## Architecture
 
-The app uses **Apollo GraphQL** for all Storefront API communication. GraphQL operations are defined as `.graphql` files, and Apollo Kotlin's code generation tool produces type-safe Kotlin data classes from them.
+The app uses Apollo Kotlin for Storefront API communication. GraphQL operations are defined as `.graphql` files, and Apollo Kotlin's code generation tool produces type-safe Kotlin data classes from them.
 
-### Storefront API layer
-
+```text
+MobileBuyIntegration/
+|-- app/
+|   |-- src/main/graphql/                    Source of truth - edit these files
+|   |   |-- schema.graphqls                  Storefront API schema, downloaded
+|   |   |-- CartFragment.graphql             Reusable cart fields
+|   |   |-- CartCreate.graphql               Create a new cart
+|   |   |-- CartLinesAdd.graphql             Add items to cart
+|   |   |-- CartLinesUpdate.graphql          Update item quantities
+|   |   |-- CartLinesRemove.graphql          Remove items from cart
+|   |   |-- FetchProducts.graphql            Product listing query
+|   |   |-- FetchProduct.graphql             Single product query
+|   |   |-- FetchCollections.graphql         Collection listing query
+|   |   |-- FetchCollection.graphql          Single collection query
+|   |   |-- ProductFragment.graphql          Reusable product fields
+|   |   `-- ProductVariantFragment.graphql   Reusable product variant fields
+|   |-- build/generated/source/apollo/       Apollo-generated Kotlin types
+|   |   `-- storefront/.../graphql/
+|   |       |-- CartCreateMutation.kt
+|   |       |-- FetchProductsQuery.kt
+|   |       |-- fragment/CartFragment.kt
+|   |       |-- type/CartInput.kt
+|   |       `-- type/CartLineInput.kt
+|   `-- src/main/java/.../
+|       |-- common/client/StorefrontApiClient.kt  Apollo client wrapper and Storefront operations
+|       |-- cart/data/CartRepository.kt       Cart state, buyer identity, and cart mutations
+|       |-- products/product/data/            Product detail repository
+|       |-- products/collection/data/         Collection repository
+|       |-- settings/authentication/          Customer Account API sign-in flow
+|       |-- cart/CartViewModel.kt             Checkout presentation and protocol handlers
+|       `-- MainActivity.kt                   File chooser and geolocation permission callbacks
+`-- .env                                      Local store configuration, not checked in
 ```
-app/src/main/graphql/                    # Source of truth — you edit these
-├── schema.graphqls                          # API schema (downloaded)
-├── CartFragment.graphql                     # Reusable cart fields
-├── CartCreate.graphql                       # Create a new cart
-├── CartLinesAdd.graphql                     # Add items to cart
-├── CartLinesUpdate.graphql                  # Update item quantities
-├── CartLinesRemove.graphql                  # Remove items from cart
-├── FetchProducts.graphql                    # Product listing query
-├── FetchProduct.graphql                     # Single product query
-├── FetchCollections.graphql                 # Collection listing query
-└── FetchCollection.graphql                  # Single collection query
 
-app/build/generated/source/apollo/       # Auto-generated — do not edit
-└── storefront/.../graphql/
-    ├── CartCreateMutation.kt
-    ├── FetchProductsQuery.kt
-    ├── type/CartInput.kt, CartLineInput.kt, ...
-    └── fragment/CartFragment.kt
-```
-
-**`app/src/main/graphql/`** contains the `.graphql` files you write and maintain. These define which fields the app fetches from the Storefront API.
-
-**`app/build/generated/source/apollo/`** contains Kotlin code produced by Apollo's code generation tool. These files should not be edited by hand — they are regenerated from the `.graphql` files and the schema.
+Do not edit files in `app/build/generated/source/apollo/` by hand. Update `.graphql` files and regenerate Apollo types instead.
 
 ### How it works
 
-1. `StorefrontApiClient.kt` creates an `ApolloClient` that points at the store's Storefront API endpoint and attaches the access token via an HTTP header. It is provided as a singleton via Koin dependency injection.
-2. Repository classes (`CartRepository`, `ProductRepository`, `ProductCollectionRepository`) call suspend functions on the client using the generated operation types (e.g. `CartCreateMutation`, `FetchProductsQuery`).
-3. Responses are automatically decoded into the generated Kotlin types, giving you compile-time safety on every field access.
+1. `StorefrontApiClient.kt` wraps an `ApolloClient`, points it at the configured Storefront API endpoint, and executes generated query and mutation types.
+2. Repository classes such as `CartRepository`, `ProductRepository`, and `ProductCollectionRepository` map generated Storefront API responses into local UI state.
+3. `CartViewModel.kt` presents checkout with `ShopifyCheckoutKit.present`, connects `CheckoutProtocol.Client`, and forwards browser/system callbacks to `MainActivity`.
+4. Apollo decodes responses into generated Kotlin types, so schema or operation changes surface as compile errors.
 
 ## Setup
 
-1. Copy the config template and fill in your store credentials:
+From this directory:
 
-   ```bash
-   cp .env.example .env
-   ```
+```sh
+cp .env.example .env
+```
 
-   Then edit `.env` with your values:
+Edit `.env`:
 
-   ```
-   STOREFRONT_DOMAIN=your-store.myshopify.com
-   STOREFRONT_ACCESS_TOKEN=your-token
-   API_VERSION=2025-07
-   ```
+```text
+STOREFRONT_DOMAIN=your-store.myshopify.com
+STOREFRONT_ACCESS_TOKEN=your-token
+API_VERSION=2025-07
+```
 
-2. Open the project in Android Studio and sync Gradle.
+Optional values enable Customer Account API and buyer identity demo flows:
 
-3. Build and run.
+```text
+CUSTOMER_ACCOUNT_API_CLIENT_ID=your-client-id
+CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.<shop id>.app://callback
+CUSTOMER_ACCOUNT_API_GRAPHQL_BASE_URL=https://shopify.com/<shop id>/account/customer/api/<api version>/graphql
+CUSTOMER_ACCOUNT_API_AUTH_BASE_URL=https://shopify.com/authentication/<shop id>
+PREFILL_EMAIL=test.buyer@example.com
+PREFILL_PHONE=+16135550123
+```
+
+Open the project in Android Studio, sync Gradle, then build and run.
 
 ## Updating the Storefront API version
 
-When you want to target a newer Storefront API version (e.g. to access new fields or features), follow these steps:
+1. Update `API_VERSION` in `.env`.
+2. Download the schema with Rover. This introspects your store's Storefront API and writes `schema.graphqls` into `app/src/main/graphql/`.
 
-### 1. Update the API version
+   ```sh
+   rover graph introspect \
+     "https://$STOREFRONT_DOMAIN/api/$API_VERSION/graphql" \
+     --header="X-Shopify-Storefront-Access-Token: $STOREFRONT_ACCESS_TOKEN" \
+     --output "app/src/main/graphql/schema.graphqls"
+   ```
 
-Edit your `.env` and change the `API_VERSION` value:
+3. Update GraphQL operations in `app/src/main/graphql/` if the schema changed. For example, add a product field to `FetchProducts.graphql` before regenerating types:
 
-```
-API_VERSION=2025-10
-```
+   ```graphql
+   query FetchProducts(...) {
+     products(first: $numProducts) {
+       nodes {
+         id
+         title
+         myNewField
+       }
+     }
+   }
+   ```
 
-### 2. Download the new schema
+4. Regenerate Kotlin types with Apollo Kotlin. This reads the schema and `.graphql` files, then regenerates Kotlin code in `app/build/generated/source/apollo/`.
 
-The schema defines what types and fields are available in the API. Run from the **repo root** (`checkout-kit/`):
+   ```sh
+   ./gradlew :app:generateApolloSources
+   ```
 
-```bash
-dev apollo download_schema android
-```
+5. Build and fix any compile errors from schema changes:
 
-This uses [`rover`](https://www.apollographql.com/docs/rover/) to introspect your store's Storefront API at the configured version and writes `schema.graphqls` into `app/src/main/graphql/`.
-
-### 3. Update your GraphQL operations (if needed)
-
-If the new API version introduces fields you want to use, or deprecates fields you currently use, edit the `.graphql` files in `app/src/main/graphql/`.
-
-For example, to add a new field to products:
-
-```graphql
-# app/src/main/graphql/FetchProducts.graphql
-query FetchProducts(...) {
-  products(first: $numProducts) {
-    nodes {
-      id
-      title
-      myNewField    # <-- add new fields here
-      ...
-    }
-  }
-}
-```
-
-### 4. Run code generation
-
-From the **repo root**:
-
-```bash
-dev apollo codegen android
-```
-
-This reads the schema + your `.graphql` files and regenerates the Kotlin code in `app/build/generated/source/apollo/`. The command also runs `dev android lint` to check formatting.
-
-### 5. Build and fix any issues
-
-```bash
-./gradlew :app:assembleDebug
-```
-
-If the new schema removed or renamed fields, you'll get compile errors pointing you to the exact lines that need updating.
-
-## Dev commands reference
-
-All commands are run from the **repo root** (`checkout-kit/`):
-
-| Command | Description |
-|---------|-------------|
-| `dev apollo download_schema android` | Download the Storefront API schema for this sample app |
-| `dev apollo codegen android` | Regenerate Kotlin types from `.graphql` files |
-| `dev android lint` | Run detekt + Android lint checks |
-| `dev android build` | Build the library |
-| `dev android build samples` | Build all sample applications |
-| `dev android test` | Run all tests |
+   ```sh
+   ./gradlew :app:assembleDebug
+   ```
 
 ## Key files
 
 | File | Purpose |
-|------|---------|
-| `app/src/main/graphql/schema.graphqls` | Storefront API schema (downloaded, not hand-written) |
-| `app/build.gradle` | Apollo plugin config + BuildConfig fields |
-| `.env` | Store credentials + API version (not checked into git) |
-| `StorefrontApiClient.kt` | Apollo client setup, auth header |
-| `CartRepository.kt` | Cart state, create/add/update/remove operations |
-| `ProductRepository.kt` | Product fetching operations |
-| `ProductCollectionRepository.kt` | Collection fetching operations |
+| --- | --- |
+| `.env` | Store credentials, API version, Customer Account API values, and demo buyer identity. |
+| `app/build.gradle` | Apollo plugin configuration and `BuildConfig` values from `.env`. |
+| `app/src/main/graphql/schema.graphqls` | Storefront API schema. |
+| `common/client/StorefrontApiClient.kt` | Apollo client setup and Storefront API auth header. |
+| `cart/data/CartRepository.kt` | Cart state and Storefront API mutations. |
+| `products/product/data/ProductRepository.kt` | Product detail Storefront API calls. |
+| `products/collection/data/ProductCollectionRepository.kt` | Collection Storefront API calls. |
+| `settings/authentication/data/CustomerRepository.kt` | Customer Account API token exchange and customer lookup. |
+| `common/navigation/CheckoutKitNavHost.kt` | App navigation. |
+| `cart/CartViewModel.kt` | Checkout presentation, fail/cancel callbacks, and protocol lifecycle handlers. |
+| `MainActivity.kt` | File chooser and geolocation permission callbacks. |
+| `settings/authentication/` | Customer Account API sign-in screens and WebView flow. |

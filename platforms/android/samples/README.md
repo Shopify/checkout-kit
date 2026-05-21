@@ -1,10 +1,25 @@
-# Sample Projects
+# Android Samples
 
-The project directory contains a `.env.example` file.
-Simply rename it to `.env` and update the contained values to match your Shopify storefront.
+This directory contains Android sample apps for Checkout Kit.
 
----
+| Sample | Purpose |
+| --- | --- |
+| `MobileBuyIntegration` | Storefront API cart flow with Apollo Kotlin, checkout presentation, typed protocol lifecycle events, file chooser handling, geolocation callbacks, buyer identity demo data, and Customer Account API sign-in. |
 
-### MobileBuyIntegration
+## Setup
 
-This project demonstrates how to use the [Mobile Buy SDK](https://github.com/Shopify/mobile-buy-sdk-android) in conjunction with the `Shopify Checkout Kit` library.
+From `platforms/android/samples/MobileBuyIntegration`:
+
+```sh
+cp .env.example .env
+```
+
+Fill in:
+
+- `STOREFRONT_DOMAIN`
+- `STOREFRONT_ACCESS_TOKEN`
+- `API_VERSION`
+- Optional Customer Account API values
+- Optional demo buyer identity values
+
+Open `MobileBuyIntegration` in Android Studio, sync Gradle, then build and run the `app` target.
