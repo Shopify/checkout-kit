@@ -82,15 +82,21 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     private fun handleReady(request: EcpRequest) {
-        val requested = request.params?.jsonObject?.get("delegate")?.jsonArray
+        val checkoutAcceptedDelegations = request.params?.jsonObject?.get("delegate")?.jsonArray
             ?.mapNotNull { it.jsonPrimitive.contentOrNull }
             ?: emptyList()
-        val accepted = requested.filter { it in KIT_SUPPORTED_DELEGATIONS }
-        log.d(LOG_TAG, "Handling $METHOD_READY, requested=$requested accepted=$accepted")
-        sendResult(request.id, ucpReadyResult(accepted))
+        val negotiatedDelegations = checkoutAcceptedDelegations.filter { it in KIT_SUPPORTED_DELEGATIONS }
+        log.d(
+            LOG_TAG,
+            "Handling $METHOD_READY, " +
+                "checkoutAcceptedDelegations=$checkoutAcceptedDelegations " +
+                "checkoutKitSupportedDelegations=$KIT_SUPPORTED_DELEGATIONS " +
+                "negotiatedDelegations=$negotiatedDelegations"
+        )
+        sendResult(request.id, ucpReadyResult(negotiatedDelegations))
     }
 
-    private fun ucpReadyResult(acceptedDelegations: List<String>): String =
+    private fun ucpReadyResult(negotiatedDelegations: List<String>): String =
         decoder.encodeToString(
             JsonObject.serializer(),
             buildJsonObject {
@@ -98,8 +104,8 @@ internal class EmbeddedCheckoutProtocol(
                     put("version", CheckoutProtocol.specVersion)
                     put("status", "success")
                 }
-                if (acceptedDelegations.isNotEmpty()) {
-                    putJsonArray("delegate") { acceptedDelegations.forEach { add(it) } }
+                if (negotiatedDelegations.isNotEmpty()) {
+                    putJsonArray("delegate") { negotiatedDelegations.forEach { add(it) } }
                 }
             }
         )
@@ -193,7 +199,7 @@ internal class EmbeddedCheckoutProtocol(
         private const val METHOD_WINDOW_OPEN_REQUEST = "ec.window.open_request"
 
         // Delegations this SDK supports. Echoed back in the ec.ready response as the
-        // intersection of merchant-requested ∩ kit-supported. Must align with the
+        // intersection of checkout-accepted ∩ kit-supported. Must align with the
         // `ec_delegate` URL param emitted from [UriExtensions.appendEcpParams].
         private val KIT_SUPPORTED_DELEGATIONS = setOf("window.open")
 
