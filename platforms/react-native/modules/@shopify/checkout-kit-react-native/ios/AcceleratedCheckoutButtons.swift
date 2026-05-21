@@ -51,7 +51,7 @@ class RCTAcceleratedCheckoutButtonsManager: RCTViewManager {
     }
 
     override func constantsToExport() -> [AnyHashable: Any]! {
-        return [:]
+        return ["checkoutProtocolEventTypes": supportedProtocolRelayMethods]
     }
 }
 
@@ -107,6 +107,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     @objc var onCancel: RCTBubblingEventBlock?
     @objc var onRenderStateChange: RCTBubblingEventBlock?
     @objc var onClickLink: RCTBubblingEventBlock?
+    @objc var onDispatch: RCTDirectEventBlock?
 
     // MARK: - Private
 
@@ -272,6 +273,14 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         buttons = attachModifiers(to: buttons, wallets: shopifyWallets, applePayLabel: PayWithApplePayButtonLabel.from(applePayLabel), applePayStyle: PayWithApplePayButtonStyle.from(applePayStyle))
         // Attach event handlers
         buttons = attachEventListeners(to: buttons)
+
+        let client = makeRelayClient(
+            subscribedMethods: supportedProtocolRelayMethods,
+            dispatch: { [weak self] json in
+                self?.onDispatch?(["value": json])
+            }
+        )
+        buttons = buttons.connect(client)
 
         var view: AnyView
 

@@ -51,6 +51,19 @@ const exampleConfig = {
 };
 const shopifyCheckoutKitEventEmitter = createMockEmitter();
 
+const UIManager = {
+  getViewManagerConfig: jest.fn((name: string) => {
+    if (name === 'RCTAcceleratedCheckoutButtons') {
+      return {
+        Constants: {
+          checkoutProtocolEventTypes: ['ec.start'],
+        },
+      };
+    }
+    return null;
+  }),
+};
+
 const ShopifyCheckoutKit = {
   version: '0.7.0',
   getConstants: jest.fn(() => ({
@@ -81,6 +94,7 @@ module.exports = {
     requestMultiple: jest.fn(async () => ({})),
   },
   NativeEventEmitter: jest.fn(() => shopifyCheckoutKitEventEmitter),
+  UIManager,
   requireNativeComponent,
   codegenNativeComponent,
   TurboModuleRegistry: {

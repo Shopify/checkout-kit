@@ -82,7 +82,6 @@ function CartScreen(): React.JSX.Element {
           // protocol events through `useShopifyEventHandlers` (or an
           // equivalent) just like the SDK lifecycle ones above.
           [CheckoutProtocol.start]: checkout => {
-            // eslint-disable-next-line no-console
             console.log('[Cart - Protocol.ec.start]', checkout);
           },
         },
@@ -175,6 +174,14 @@ function CartScreen(): React.JSX.Element {
                   AcceleratedCheckoutWallet.shopPay,
                 ]}
                 cornerRadius={cornerRadius}
+                events={{
+                  [CheckoutProtocol.start]: checkout => {
+                    console.log(
+                      '[Cart - AcceleratedCheckoutButtons Protocol.ec.start]',
+                      checkout,
+                    );
+                  },
+                }}
               />
 
               <Pressable
