@@ -39,14 +39,19 @@ jobs:
         with:
           distribution: zulu
           java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Cache turbo build setup
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: platforms/react-native/.turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
+          cache: gradle
+          cache-dependency-path: |
+            platforms/android/**/*.gradle*
+            platforms/android/**/gradle-wrapper.properties
+            platforms/android/gradle.properties
+            platforms/react-native/package.json
+            platforms/react-native/pnpm-lock.yaml
+            platforms/react-native/sample/package.json
+            platforms/react-native/sample/android/**/*.gradle*
+            platforms/react-native/sample/android/**/gradle-wrapper.properties
+            platforms/react-native/sample/android/gradle.properties
+            platforms/react-native/modules/@shopify/checkout-kit-react-native/android/**/*.gradle*
+            platforms/react-native/modules/@shopify/checkout-kit-react-native/android/gradle.properties
 
       - name: Run Android tests
         timeout-minutes: 20
