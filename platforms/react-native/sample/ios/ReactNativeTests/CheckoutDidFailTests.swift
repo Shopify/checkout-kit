@@ -40,7 +40,6 @@ class CheckoutDidFailTests: XCTestCase {
     }
 
     private func resetShopifyCheckoutKitDefaults() {
-        ShopifyCheckoutSheetKit.configuration.preloading = Configuration.Preloading(enabled: true)
         ShopifyCheckoutSheetKit.configuration.colorScheme = .automatic
     }
 

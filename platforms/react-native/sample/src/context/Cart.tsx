@@ -8,7 +8,6 @@ import React, {
 } from 'react';
 import {Alert} from 'react-native';
 import {atom, useAtom} from 'jotai';
-import {useShopifyCheckout} from '@shopify/checkout-kit-react-native';
 import useShopify from '../hooks/useShopify';
 import {useConfig} from './Config';
 import {useAuth} from './Auth';
@@ -48,7 +47,6 @@ const cartIdState = atom<Context['cartId']>(defaultCartId);
 const totalQuantityState = atom<Context['totalQuantity']>(defaultTotalQuantity);
 
 export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
-  const shopify = useShopifyCheckout();
   // Reuse the same cart ID for the lifetime of the app
   const [checkoutURL, setCheckoutURL] = useAtom(checkoutURLState);
   // Reuse the same cart ID for the lifetime of the app
@@ -110,18 +108,6 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
     }
   }, [cartId, fetchCart, setTotalQuantity]);
 
-  const preloadCheckout = useCallback(
-    (checkoutURL: string) => {
-      if (checkoutURL) {
-        const config = shopify.getConfig();
-        if (config?.preloading) {
-          shopify.preload(checkoutURL);
-        }
-      }
-    },
-    [shopify],
-  );
-
   const addToCart = useCallback(
     async (variantId: string) => {
       let id = cartId;
@@ -173,10 +159,6 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       setCheckoutURL(data.cartLinesAdd.cart.checkoutUrl);
       setTotalQuantity(data.cartLinesAdd.cart.totalQuantity);
 
-      if (data.cartLinesAdd.cart.checkoutUrl) {
-        await preloadCheckout(data.cartLinesAdd.cart.checkoutUrl);
-      }
-
       if (id) {
         fetchCart({
           variables: {
@@ -194,7 +176,6 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       createCart,
       setCartId,
       fetchCart,
-      preloadCheckout,
       getValidAccessToken,
       isAuthenticated,
     ],
@@ -218,10 +199,6 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       setCheckoutURL(data.cartLinesRemove.cart.checkoutUrl);
       setTotalQuantity(data.cartLinesRemove.cart.totalQuantity);
 
-      if (checkoutURL) {
-        await preloadCheckout(checkoutURL);
-      }
-
       if (cartId) {
         await fetchCart({
           variables: {
@@ -237,8 +214,6 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       removeLineItems,
       setCheckoutURL,
       setTotalQuantity,
-      checkoutURL,
-      preloadCheckout,
       fetchCart,
     ],
   );

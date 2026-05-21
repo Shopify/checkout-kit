@@ -133,7 +133,7 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
     }
 
     @objc func invalidateCache() {
-        invalidate()
+        // Retained for compatibility with the generated native module interface.
     }
 
     @objc func present(_ checkoutURL: String) {
@@ -146,9 +146,7 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
         }
     }
 
-    @objc func preload(_ checkoutURL: String) {
-        // Public native preload support is not exposed by the local iOS SDK.
-    }
+    @objc func preload(_: String) {}
 
     private func getColorScheme(_ colorScheme: String) -> Configuration.ColorScheme {
         switch colorScheme {
@@ -171,10 +169,6 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
 
         if let title = configuration["title"] as? String {
             ShopifyCheckoutKit.configuration.title = title
-        }
-
-        if let preloading = configuration["preloading"] as? Bool {
-            ShopifyCheckoutKit.configuration.preloading.enabled = preloading
         }
 
         if let colorScheme = configuration["colorScheme"] as? String {
@@ -205,7 +199,6 @@ class RCTShopifyCheckoutKit: RCTEventEmitter {
     @objc func getConfig() -> NSDictionary {
         return [
             "title": ShopifyCheckoutKit.configuration.title,
-            "preloading": ShopifyCheckoutKit.configuration.preloading.enabled,
             "colorScheme": ShopifyCheckoutKit.configuration.colorScheme.rawValue,
             "tintColor": ShopifyCheckoutKit.configuration.tintColor,
             "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,

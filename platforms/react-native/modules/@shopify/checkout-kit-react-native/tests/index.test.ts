@@ -113,29 +113,6 @@ describe('ShopifyCheckoutKit', () => {
     });
   });
 
-  describe('preload', () => {
-    it('calls `preload` with a checkout URL', () => {
-      const instance = new ShopifyCheckout();
-      instance.preload(checkoutUrl);
-      expect(
-        NativeModule.preload,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        NativeModule.preload,
-      ).toHaveBeenCalledWith(checkoutUrl);
-    });
-  });
-
-  describe('invalidate', () => {
-    it('calls `invalidateCache`', () => {
-      const instance = new ShopifyCheckout();
-      instance.invalidate();
-      expect(
-        NativeModule.invalidateCache,
-      ).toHaveBeenCalledTimes(1);
-    });
-  });
-
   describe('present', () => {
     it('calls `present` with a checkout URL', () => {
       const instance = new ShopifyCheckout();
@@ -163,7 +140,6 @@ describe('ShopifyCheckoutKit', () => {
     it('returns the parsed config from the Native Module', () => {
       const instance = new ShopifyCheckout();
       expect(instance.getConfig()).toStrictEqual({
-        preloading: true,
         colorScheme: ColorScheme.automatic,
         logLevel: LogLevel.error,
       });

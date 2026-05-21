@@ -112,10 +112,6 @@ export interface AndroidAutomaticColors {
 
 interface CommonConfiguration {
   /**
-   * Enable/disable preloading for checkout. This option must be enabled for `.preload()` to work as expected.
-   */
-  preloading?: boolean;
-  /**
    * Sets the title of the Checkout sheet.
    *
    * * Important: This will only modify the Checkout Sheet on iOS, not Android.
@@ -282,15 +278,6 @@ export interface ShopifyCheckoutKit {
    * The version number of the Shopify Checkout SDK.
    */
   readonly version: string;
-  /**
-   * Preload the checkout for faster presentation.
-   */
-  preload(checkoutURL: string): void;
-
-  /**
-   * Invalidate preload cache.
-   */
-  invalidate(): void;
   /**
    * Present the checkout.
    */

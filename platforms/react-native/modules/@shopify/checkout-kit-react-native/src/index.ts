@@ -125,21 +125,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Invalidates the checkout that was cached using preload
-   */
-  public invalidate(): void {
-    RNShopifyCheckoutKit.invalidateCache();
-  }
-
-  /**
-   * Preloads checkout for a given URL to improve performance
-   * @param checkoutUrl The URL of the checkout to preload
-   */
-  public preload(checkoutUrl: string): void {
-    RNShopifyCheckoutKit.preload(checkoutUrl);
-  }
-
-  /**
    * Presents the checkout sheet for a given checkout URL
    * @param checkoutUrl The URL of the checkout to display
    */
@@ -395,7 +380,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * literal unions and TypeScript enums collapse to plain `string` at the
    * bridge boundary. On the JS side consumers expect the typed `ColorScheme`
    * and `LogLevel` enums, so we coerce those two fields here. The rest of
-   * the payload (preloading, title, nested colors) passes through unchanged.
+   * the rest of the payload passes through unchanged.
    */
   private coerceConfigurationResult(
     raw: ReturnType<typeof RNShopifyCheckoutKit.getConfig>,
