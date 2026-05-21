@@ -338,10 +338,10 @@ class EmbeddedCheckoutProtocolTest {
     // region ec.start
 
     @Test
-    fun `ec start shows progress bar`() {
+    fun `ec start hides progress bar`() {
         ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}""")
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-        verify(mockListener).onCheckoutViewLoadStarted()
+        verify(mockListener).onCheckoutViewLoadComplete()
     }
 
     @Test
