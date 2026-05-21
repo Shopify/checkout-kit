@@ -4,10 +4,10 @@
 import ApolloAPI
 
 extension Storefront.Objects {
-    /// An auto-generated type for paginating through multiple Collections.
-    static let CollectionConnection = ApolloAPI.Object(
-        typename: "CollectionConnection",
-        implementedInterfaces: [],
-        keyFields: nil
-    )
+  /// An auto-generated type for paginating through multiple Collections.
+  nonisolated static let CollectionConnection = ApolloAPI.Object(
+    typename: "CollectionConnection",
+    implementedInterfaces: [],
+    keyFields: nil
+  )
 }

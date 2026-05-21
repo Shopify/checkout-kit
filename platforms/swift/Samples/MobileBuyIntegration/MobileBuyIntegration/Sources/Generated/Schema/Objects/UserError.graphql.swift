@@ -4,10 +4,10 @@
 import ApolloAPI
 
 extension Storefront.Objects {
-    /// Represents an error in the input of a mutation.
-    static let UserError = ApolloAPI.Object(
-        typename: "UserError",
-        implementedInterfaces: [Storefront.Interfaces.DisplayableError.self],
-        keyFields: nil
-    )
+  /// Represents an error in the input of a mutation.
+  nonisolated static let UserError = ApolloAPI.Object(
+    typename: "UserError",
+    implementedInterfaces: [Storefront.Interfaces.DisplayableError.self],
+    keyFields: nil
+  )
 }

@@ -4,10 +4,10 @@
 import ApolloAPI
 
 extension Storefront.Objects {
-    /// An error that occurs during the execution of `MetafieldsSet`.
-    static let MetafieldsSetUserError = ApolloAPI.Object(
-        typename: "MetafieldsSetUserError",
-        implementedInterfaces: [Storefront.Interfaces.DisplayableError.self],
-        keyFields: nil
-    )
+  /// An error that occurs during the execution of `MetafieldsSet`.
+  nonisolated static let MetafieldsSetUserError = ApolloAPI.Object(
+    typename: "MetafieldsSetUserError",
+    implementedInterfaces: [Storefront.Interfaces.DisplayableError.self],
+    keyFields: nil
+  )
 }

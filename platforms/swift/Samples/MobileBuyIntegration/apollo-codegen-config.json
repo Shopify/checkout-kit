@@ -14,7 +14,7 @@
       }
     },
     "schemaTypes" : {
-      "path" : "./MobileBuyIntegration/Generated",
+      "path" : "./MobileBuyIntegration/Sources/Generated",
       "moduleType" : {
         "embeddedInTarget" : {
           "name" : "MobileBuyIntegration"

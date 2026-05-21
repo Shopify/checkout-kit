@@ -4,10 +4,10 @@
 import ApolloAPI
 
 extension Storefront.Objects {
-    /// A company's main point of contact.
-    static let CompanyContact = ApolloAPI.Object(
-        typename: "CompanyContact",
-        implementedInterfaces: [Storefront.Interfaces.Node.self],
-        keyFields: nil
-    )
+  /// A company's main point of contact.
+  static let CompanyContact = ApolloAPI.Object(
+    typename: "CompanyContact",
+    implementedInterfaces: [Storefront.Interfaces.Node.self],
+    keyFields: nil
+  )
 }

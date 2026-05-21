@@ -4,10 +4,10 @@
 import ApolloAPI
 
 extension Storefront.Objects {
-    /// A redirect on the online store.
-    static let UrlRedirect = ApolloAPI.Object(
-        typename: "UrlRedirect",
-        implementedInterfaces: [Storefront.Interfaces.Node.self],
-        keyFields: nil
-    )
+  /// A redirect on the online store.
+  nonisolated static let UrlRedirect = ApolloAPI.Object(
+    typename: "UrlRedirect",
+    implementedInterfaces: [Storefront.Interfaces.Node.self],
+    keyFields: nil
+  )
 }
