@@ -111,9 +111,9 @@ internal class EmbeddedCheckoutProtocol(
         )
 
     private fun handleStart(message: String) {
-        log.d(LOG_TAG, "Handling $METHOD_START: showing progress bar and bubbling up.")
+        log.d(LOG_TAG, "Handling $METHOD_START: hiding progress bar and bubbling up.")
         onMainThread {
-            view.getListener().onCheckoutViewLoadStarted()
+            view.getListener().onCheckoutViewLoadComplete()
             client?.process(message)
         }
     }
