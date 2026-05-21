@@ -39,6 +39,19 @@ jobs:
         with:
           distribution: zulu
           java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+          cache-dependency-path: |
+            platforms/android/**/*.gradle*
+            platforms/android/**/gradle-wrapper.properties
+            platforms/android/gradle.properties
+            platforms/react-native/package.json
+            platforms/react-native/pnpm-lock.yaml
+            platforms/react-native/sample/package.json
+            platforms/react-native/sample/android/**/*.gradle*
+            platforms/react-native/sample/android/**/gradle-wrapper.properties
+            platforms/react-native/sample/android/gradle.properties
+            platforms/react-native/modules/@shopify/checkout-kit-react-native/android/**/*.gradle*
+            platforms/react-native/modules/@shopify/checkout-kit-react-native/android/gradle.properties
 
       - name: Build Android sample
         timeout-minutes: 20
