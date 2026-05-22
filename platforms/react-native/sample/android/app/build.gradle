@@ -155,7 +155,7 @@ android {
 
 def useLocalSdk = (System.getenv("USE_LOCAL_SDK") ?: "0") == "1"
 def shopifySdkArtifact = useLocalSdk
-    ? "com.shopify:checkout-kit:1.0.0"
+    ? "com.shopify:checkout-kit:4.0.0-alpha.1"
     : "com.shopify:checkout-kit:0.0.0"
 
 dependencies {

@@ -67,7 +67,7 @@ The flag is opt-in because the in-repo SDKs change as we develop. Default publis
 
 ### How it works
 
-- **Android**: every `--local` invocation runs `scripts/publish_android_snapshot`, which publishes `com.shopify:checkout-kit:1.0.0` to `~/.m2/` via the lib's own Gradle wrapper. The sample's `build.gradle` declares `mavenLocal()` first in the repository order, so the freshly-published AAR is picked up before falling through to Maven Central.
+- **Android**: every `--local` invocation runs `scripts/publish_android_snapshot`, which publishes the current local `com.shopify:checkout-kit` version to `~/.m2/` via the lib's own Gradle wrapper. The sample's `build.gradle` declares `mavenLocal()` first in the repository order, so the freshly-published AAR is picked up before falling through to Maven Central.
 - **iOS**: with `--local`, the Podfile injects `pod "ShopifyCheckoutKit", :path => "../../../../"` (the repo root, where `ShopifyCheckoutKit.podspec` lives). CocoaPods reads Swift sources from `platforms/swift/` directly.
 
 Internally `--local` exports `USE_LOCAL_SDK=1` before invoking the underlying tool. Setting the env var directly works too:

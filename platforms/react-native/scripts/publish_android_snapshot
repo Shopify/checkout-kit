@@ -11,4 +11,4 @@ ANDROID_SDK_PATH="$SCRIPT_DIR/../../android"
 
 cd "$ANDROID_SDK_PATH"
 ./gradlew :lib:publishToMavenLocal -q
-echo "publish_android_snapshot: published com.shopify:checkout-kit:1.0.0 to ~/.m2/"
+echo "publish_android_snapshot: published com.shopify:checkout-kit:4.0.0-alpha.1 to ~/.m2/"
