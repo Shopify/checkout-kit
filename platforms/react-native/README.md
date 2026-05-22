@@ -4,6 +4,12 @@
 
 <img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/156492b7-5a64-43d2-b574-2e8f29ed8780" />
 
+> [!WARNING]
+> **Alpha — early preview.** This software is an early preview and is **not**
+> production-ready. Stability is not guaranteed, and breaking changes may
+> occur in any release. Published under the `next` dist-tag — see
+> [Installation](#1-installation).
+
 **Shopify Checkout Kit** is a Native Module that enables React Native apps
 to provide the world’s highest converting, customizable, one-page checkout
 within the app. The presented experience is a fully-featured checkout that

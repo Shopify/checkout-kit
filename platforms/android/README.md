@@ -6,6 +6,11 @@
 
 <img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/1f1d7351-1715-4165-874e-c1f2195bcb20" />
 
+> [!WARNING]
+> **Alpha — early preview.** This software is an early preview and is **not**
+> production-ready. Stability is not guaranteed, and breaking changes may
+> occur in any release. See [Getting Started](#getting-started).
+
 **Shopify's Checkout Kit for Android** is a library that enables Android apps to provide the world's highest converting, customizable, one-page checkout within an app. The presented experience is a fully-featured checkout that preserves all of the store customizations: Checkout UI extensions, Functions, and more. It also provides idiomatic defaults such as support for light and dark mode, and convenient developer APIs to embed, customize and follow the lifecycle of the checkout experience. Check out our developer blog to [learn how Checkout Kit is built](https://www.shopify.com/partners/blog/mobile-checkout-sdks-for-ios-and-android).
 
 **Note**: This library was previously published as `com.shopify:checkout-sheet-kit`. It has been renamed to `com.shopify:checkout-kit`. Update your Gradle/Maven dependency if upgrading from an older version.
