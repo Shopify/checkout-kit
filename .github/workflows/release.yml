@@ -15,12 +15,12 @@ on:
         required: true
         type: string
       dry-run:
-        description: Validate and print the release plan, but do not create a release or dispatch publishing.
+        description: Dry run
         required: false
         type: boolean
         default: true
       draft:
-        description: Create a draft GitHub Release for human review. Publish the draft manually to start publishing.
+        description: Draft release
         required: false
         type: boolean
         default: true
@@ -81,14 +81,14 @@ jobs:
 
       - name: Print release plan
         env:
-          DRY_RUN: ${{ inputs.dry-run }}
+          DRY_RUN: ${{ inputs['dry-run'] && 'true' || 'false' }}
           DISPLAY_PLATFORM: ${{ steps.release.outputs.display_platform }}
           VERSION: ${{ steps.release.outputs.version }}
           TAG: ${{ steps.release.outputs.tag }}
           RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
-          DRAFT: ${{ inputs.draft }}
+          DRAFT: ${{ inputs.draft && 'true' || 'false' }}
         run: |
           set -euo pipefail
           echo "Release plan:"
@@ -99,7 +99,7 @@ jobs:
           echo "  Prerelease: ${PRERELEASE}"
           echo "  Publish workflow: ${PUBLISH_WORKFLOW}"
           echo "  Dry run: ${DRY_RUN}"
-          echo "  Draft: ${DRAFT}"
+          echo "  Draft release: ${DRAFT}"
           if [ "$DRY_RUN" = "false" ] && [ "$DRAFT" = "true" ]; then
             echo "  Publish dispatch: skipped until the draft release is manually published"
           elif [ "$DRY_RUN" = "false" ]; then
@@ -107,12 +107,12 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        if: ${{ !inputs.dry-run }}
+        if: ${{ !inputs['dry-run'] }}
         env:
           TAG: ${{ steps.release.outputs.tag }}
           RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
-          DRAFT: ${{ inputs.draft }}
+          DRAFT: ${{ inputs.draft && 'true' || 'false' }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -131,7 +131,7 @@ jobs:
           gh release create "${args[@]}"
 
       - name: Dispatch publish workflow
-        if: ${{ !inputs.dry-run && !inputs.draft }}
+        if: ${{ !inputs['dry-run'] && !inputs.draft }}
         env:
           TAG: ${{ steps.release.outputs.tag }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
@@ -143,6 +143,8 @@ jobs:
 
       - name: Summary
         env:
+          DRY_RUN: ${{ inputs['dry-run'] && 'true' || 'false' }}
+          DRAFT: ${{ inputs.draft && 'true' || 'false' }}
           DISPLAY_PLATFORM: ${{ steps.release.outputs.display_platform }}
           VERSION: ${{ steps.release.outputs.version }}
           TAG: ${{ steps.release.outputs.tag }}
@@ -152,8 +154,8 @@ jobs:
           cat >> "$GITHUB_STEP_SUMMARY" <<SUMMARY
           ## Release plan
 
-          - Dry run: `${{ inputs.dry-run }}`
-          - Draft: `${{ inputs.draft }}`
+          - Dry run: `${DRY_RUN}`
+          - Draft release: `${DRAFT}`
           - Platform: ${DISPLAY_PLATFORM}
           - Version: ${VERSION}
           - Tag: \`${TAG}\`
