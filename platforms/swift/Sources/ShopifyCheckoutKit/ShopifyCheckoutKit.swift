@@ -27,7 +27,7 @@
 import UIKit
 
 /// The version of the `ShopifyCheckoutKit` library.
-public let version = "3.8.0"
+public let version = "1.0.0-alpha.1"
 
 /// The configuration options for the `ShopifyCheckoutKit` library.
 public var configuration = Configuration() {

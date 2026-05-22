@@ -31,7 +31,7 @@ class UserAgentTests: XCTestCase {
         )
         XCTAssertEqual(
             acceleratedCheckoutsUA,
-            "ShopifyCheckoutKit/3.8.0 (iOS;Swift \(SwiftVersion.current!)) AcceleratedCheckouts"
+            "ShopifyCheckoutKit/1.0.0-alpha.1 (iOS;Swift \(SwiftVersion.current!)) AcceleratedCheckouts"
         )
     }
 
@@ -42,7 +42,7 @@ class UserAgentTests: XCTestCase {
         )
         XCTAssertEqual(
             acceleratedCheckoutsUA,
-            "ShopifyCheckoutKit/3.8.0 (iOS;Swift \(SwiftVersion.current!)) ReactNative AcceleratedCheckouts"
+            "ShopifyCheckoutKit/1.0.0-alpha.1 (iOS;Swift \(SwiftVersion.current!)) ReactNative AcceleratedCheckouts"
         )
     }
 
@@ -53,14 +53,14 @@ class UserAgentTests: XCTestCase {
         )
         XCTAssertEqual(
             acceleratedCheckoutsUA,
-            "ShopifyCheckoutKit/3.8.0 (iOS;Swift \(SwiftVersion.current!)) ReactNative/0.74.5 AcceleratedCheckouts"
+            "ShopifyCheckoutKit/1.0.0-alpha.1 (iOS;Swift \(SwiftVersion.current!)) ReactNative/0.74.5 AcceleratedCheckouts"
         )
     }
 
     func test_string_withoutEntryPoint_shouldReturnBasicUserAgent() {
         let checkoutKitUA = UserAgent.string()
         XCTAssertEqual(
-            checkoutKitUA, "ShopifyCheckoutKit/3.8.0 (iOS;Swift \(SwiftVersion.current!))"
+            checkoutKitUA, "ShopifyCheckoutKit/1.0.0-alpha.1 (iOS;Swift \(SwiftVersion.current!))"
         )
     }
 }

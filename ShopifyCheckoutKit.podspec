@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.version = "3.8.0"
+  s.version = "1.0.0-alpha.1"
 
   s.name    = "ShopifyCheckoutKit"
   s.summary = "Enables Swift apps to embed the Shopify's highest converting, customizable, one-page checkout."
