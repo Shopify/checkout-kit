@@ -3,6 +3,11 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/Shopify/checkout-kit/blob/main/LICENSE) [![Swift Package Manager compatible](https://img.shields.io/badge/Swift%20Package%20Manager-compatible-2ebb4e.svg?style=flat)](https://swift.org/package-manager/) [![GitHub Release](https://img.shields.io/github/release/shopify/checkout-kit.svg?style=flat)]()
 <img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
 
+> [!WARNING]
+> **Alpha — early preview.** This software is an early preview and is **not**
+> production-ready. Stability is not guaranteed, and breaking changes may
+> occur in any release. See [Getting Started](#getting-started).
+
 **Shopify Checkout Kit** is a Swift Package library that enables Swift apps to provide the world’s highest converting, customizable, one-page checkout within the app. The presented experience is a fully-featured checkout that preserves all of the store customizations: Checkout UI extensions, Functions, branding, and more. It also provides platform idiomatic defaults such as support for light and dark mode, and convenient developer APIs to embed, customize, and follow the lifecycle of the checkout experience. Check out our blog to [learn how and why we built the Checkout Kit](https://www.shopify.com/partners/blog/mobile-checkout-sdks-for-ios-and-android).
 
 - [Requirements](#requirements)

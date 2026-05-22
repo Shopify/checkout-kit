@@ -14,6 +14,11 @@ Shopify's **Checkout Kit** lets native mobile apps embed Shopify's one-page chec
 
 </div>
 
+> [!WARNING]
+> **Alpha — early preview.** This software is an early preview and is **not**
+> production-ready. Stability is not guaranteed, and breaking changes may
+> occur in any release. See [Packages in this repo](#packages-in-this-repo).
+
 ## Documentation
 
 This respository houses the implementation of Checkout Kit, use it to check implementation or open issues if you find a bug.
