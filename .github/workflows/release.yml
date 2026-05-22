@@ -85,6 +85,7 @@ jobs:
           DISPLAY_PLATFORM: ${{ steps.release.outputs.display_platform }}
           VERSION: ${{ steps.release.outputs.version }}
           TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
           DRAFT: ${{ inputs.draft }}
@@ -94,6 +95,7 @@ jobs:
           echo "  Platform: ${DISPLAY_PLATFORM}"
           echo "  Version: ${VERSION}"
           echo "  Tag: ${TAG}"
+          echo "  Title: ${RELEASE_TITLE}"
           echo "  Prerelease: ${PRERELEASE}"
           echo "  Publish workflow: ${PUBLISH_WORKFLOW}"
           echo "  Dry run: ${DRY_RUN}"
@@ -108,13 +110,14 @@ jobs:
         if: ${{ !inputs.dry-run }}
         env:
           TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
           DRAFT: ${{ inputs.draft }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
-          args=("$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes)
+          args=("$TAG" --target "$GITHUB_SHA" --title "$RELEASE_TITLE" --generate-notes)
           if [ "$DRAFT" = "true" ]; then
             args+=(--draft)
           fi
@@ -143,6 +146,7 @@ jobs:
           DISPLAY_PLATFORM: ${{ steps.release.outputs.display_platform }}
           VERSION: ${{ steps.release.outputs.version }}
           TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<SUMMARY
@@ -153,5 +157,6 @@ jobs:
           - Platform: ${DISPLAY_PLATFORM}
           - Version: ${VERSION}
           - Tag: \`${TAG}\`
+          - Title: ${RELEASE_TITLE}
           - Publish workflow: \`${PUBLISH_WORKFLOW}\`
           SUMMARY
