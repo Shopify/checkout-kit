@@ -70,7 +70,10 @@ type ConfigurationResultSpec = {
 };
 
 export interface Spec extends TurboModule {
-  present(checkoutUrl: string): void;
+  present(
+    checkoutUrl: string,
+    dispatch: ((envelopeJson: string) => void) | null,
+  ): void;
   dismiss(): void;
   setConfig(configuration: ConfigurationSpec): void;
   getConfig(): ConfigurationResultSpec;
@@ -86,12 +89,18 @@ export interface Spec extends TurboModule {
   ): boolean;
   isAcceleratedCheckoutAvailable(): boolean;
   isApplePayAvailable(): boolean;
-  initiateGeolocationRequest(allow: boolean): void;
+  respondToGeolocationRequest(allow: boolean): void;
   addListener(eventName: string): void;
   removeListeners(count: number): void;
-  getConstants(): {version: string};
+  getConstants(): {
+    version: string;
+    /**
+     * SDK lifecycle event types the native dispatcher may emit. Compared
+     * against the JS-side canonical list at construction time; a mismatch
+     * indicates the host app needs a native rebuild.
+     */
+    dispatchEventTypes: string[];
+  };
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>(
-  'ShopifyCheckoutKit',
-);
+export default TurboModuleRegistry.getEnforcing<Spec>('ShopifyCheckoutKit');

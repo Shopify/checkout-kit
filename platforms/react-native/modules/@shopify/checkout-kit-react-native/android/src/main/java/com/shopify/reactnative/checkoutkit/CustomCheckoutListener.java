@@ -23,7 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 package com.shopify.reactnative.checkoutkit;
 
-import android.content.Context;
 import android.util.Log;
 import android.webkit.GeolocationPermissions;
 
@@ -31,25 +30,28 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.shopify.checkoutkit.*;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.facebook.react.bridge.WritableNativeMap;
-import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.Callback;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class CustomCheckoutListener extends DefaultCheckoutListener {
-  private final ReactApplicationContext reactContext;
+  private static final String TAG = "ShopifyCheckoutKit";
+
   private final ObjectMapper mapper = new ObjectMapper();
+
+  @Nullable
+  private Callback dispatchCallback;
 
   // Geolocation-specific variables
 
   private String geolocationOrigin;
   private GeolocationPermissions.Callback geolocationCallback;
 
-  public CustomCheckoutListener(Context context, ReactApplicationContext reactContext) {
-    this.reactContext = reactContext;
+  public CustomCheckoutListener(@Nullable Callback dispatch) {
+    this.dispatchCallback = dispatch;
   }
 
   // Public methods
@@ -62,36 +64,44 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     }
   }
 
+  public void release() {
+    dispatchCallback = null;
+    geolocationCallback = null;
+    geolocationOrigin = null;
+  }
+
   // Lifecycle events
 
   /**
-   * This method is called when the checkout sheet webpage requests geolocation
-   * permissions.
+   * Called when the checkout sheet's webpage requests geolocation
+   * permissions. The platform callback is stored in memory; the dispatcher
+   * is invoked with a `geolocationRequest` envelope so JS can either route
+   * to a per-call handler or run the default permission flow.
    *
-   * Since the app needs to request permissions first before granting, we store
-   * the callback and origin in memory and emit a "geolocationRequest" event to
-   * the app. The app will then request the necessary geolocation permissions
-   * and invoke the native callback with the result.
-   *
-   * @param origin   - The origin of the request
-   * @param callback - The callback to invoke when the app requests permissions
+   * Multi-shot — the same checkout sheet may request geolocation multiple
+   * times during a single `present()` call, so the dispatcher is not
+   * nulled after invocation.
    */
   @Override
   public void onGeolocationPermissionsShowPrompt(@NonNull String origin,
       @NonNull GeolocationPermissions.Callback callback) {
 
-    // Store the callback and origin in memory. The kit will wait for the app to
-    // request permissions first before granting.
     this.geolocationCallback = callback;
     this.geolocationOrigin = origin;
 
-    // Emit a "geolocationRequest" event to the app.
+    if (dispatchCallback == null) {
+      // Multi-shot geolocation requests can in principle arrive after a
+      // terminal event has nulled the dispatcher. Log so the silence is
+      // observable rather than mystifying.
+      Log.w(TAG, "Dropping geolocationRequest \u2014 dispatcher already released by a terminal event.");
+      return;
+    }
     try {
-      Map<String, Object> event = new HashMap<>();
-      event.put("origin", origin);
-      sendEventWithStringData("geolocationRequest", mapper.writeValueAsString(event));
+      Map<String, Object> payload = new HashMap<>();
+      payload.put("origin", origin);
+      dispatchCallback.invoke(buildEnvelope(DispatchEventTypes.GEOLOCATION_REQUEST, payload));
     } catch (IOException e) {
-      Log.e("ShopifyCheckoutKit", "Error emitting \"geolocationRequest\" event", e);
+      Log.e(TAG, "Error emitting \"geolocationRequest\" event", e);
     }
   }
 
@@ -99,27 +109,52 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   public void onGeolocationPermissionsHidePrompt() {
     super.onGeolocationPermissionsHidePrompt();
 
-    // Reset the geolocation callback and origin when the prompt is hidden.
     this.geolocationCallback = null;
     this.geolocationOrigin = null;
   }
 
   @Override
   public void onCheckoutFailed(CheckoutException checkoutError) {
+    Callback dispatch = dispatchCallback;
+    if (dispatch == null) {
+      release();
+      return;
+    }
     try {
-      String data = mapper.writeValueAsString(populateErrorDetails(checkoutError));
-      sendEventWithStringData("error", data);
+      dispatch.invoke(buildEnvelope(DispatchEventTypes.FAIL, populateErrorDetails(checkoutError)));
     } catch (IOException e) {
-      Log.e("ShopifyCheckoutKit", "Error processing checkout failed event", e);
+      Log.e(TAG, "Error processing checkout failed event", e);
+    } finally {
+      release();
     }
   }
 
   @Override
   public void onCheckoutCanceled() {
-    sendEvent("close", null);
+    Callback dispatch = dispatchCallback;
+    if (dispatch == null) {
+      release();
+      return;
+    }
+    try {
+      dispatch.invoke(buildEnvelope(DispatchEventTypes.CLOSE, null));
+    } catch (IOException e) {
+      Log.e(TAG, "Error processing checkout canceled event", e);
+    } finally {
+      release();
+    }
   }
 
   // Private
+
+  private String buildEnvelope(String type, @Nullable Object payload) throws IOException {
+    ObjectNode envelope = mapper.createObjectNode();
+    envelope.put("type", type);
+    if (payload != null) {
+      envelope.set("payload", mapper.valueToTree(payload));
+    }
+    return mapper.writeValueAsString(envelope);
+  }
 
   private Map<String, Object> populateErrorDetails(CheckoutException checkoutError) {
     Map<String, Object> errorMap = new HashMap();
@@ -150,15 +185,4 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     }
   }
 
-  private void sendEvent(String eventName, @Nullable WritableNativeMap params) {
-    reactContext
-        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-        .emit(eventName, params);
-  }
-
-  private void sendEventWithStringData(String name, String data) {
-    reactContext
-        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-        .emit(name, data);
-  }
 }

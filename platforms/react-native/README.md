@@ -43,8 +43,7 @@ experiences.
   - [When to preload](#when-to-preload)
   - [Cache invalidation](#cache-invalidation)
 - [Checkout lifecycle](#checkout-lifecycle)
-  - [`addEventListener(eventName, callback)`](#addeventlistenereventname-callback)
-  - [`removeEventListeners(eventName)`](#removeeventlistenerseventname)
+  - [SDK callbacks on `present()`](#sdk-callbacks-on-present)
 - [Identity \& customer accounts](#identity--customer-accounts)
   - [Cart: buyer bag, identity, and preferences](#cart-buyer-bag-identity-and-preferences)
     - [Multipass](#multipass)
@@ -590,60 +589,36 @@ Should you wish to manually clear the preload cache, there is a `ShopifyCheckout
 
 ## Checkout lifecycle
 
-There are currently 3 checkout events exposed through the Native Module. You can
-subscribe to these events using `addEventListener` and `removeEventListeners`
-methods - available on both the context provider as well as the class instance.
+Lifecycle callbacks are passed per-call to `present()`. The bridge holds the
+handles for the duration of that one presentation and releases them on
+terminal events; nothing needs to be subscribed or torn down explicitly.
 
-| Name        | Callback                                  | Description                                                  |
-| ----------- | ----------------------------------------- | ------------------------------------------------------------ |
-| `close`     | `() => void`                              | Fired when the checkout has been closed.                     |
-| `completed` | `(event: CheckoutCompletedEvent) => void` | Fired when the checkout has been successfully completed.     |
-| `error`     | `(error: {message: string}) => void`      | Fired when a checkout exception has been raised.             |
-
-### `addEventListener(eventName, callback)`
-
-Subscribing to an event returns an `EmitterSubscription` object, which contains
-a `remove()` function to unsubscribe. Here's an example of how you might create
-an event listener in a React `useEffect`, ensuring to remove it on unmount.
+### SDK callbacks on `present()`
 
 ```tsx
-// Using hooks
-const shopifyCheckout = useShopifyCheckout();
-
-useEffect(() => {
-  const close = shopifyCheckout.addEventListener('close', () => {
-    // Do something on checkout close
-  });
-
-  const completed = shopifyCheckout.addEventListener(
-    'completed',
-    (event: CheckoutCompletedEvent) => {
-      // Lookup order on checkout completion
-      const orderId = event.orderDetails.id;
-    },
-  );
-
-  const error = shopifyCheckout.addEventListener(
-    'error',
-    (error: CheckoutError) => {
-      // Do something on checkout error
-      // console.log(error.message)
-    },
-  );
-
-  return () => {
-    // It is important to clear the subscription on unmount to prevent memory leaks
-    close?.remove();
-    completed?.remove();
-    error?.remove();
-  };
-}, [shopifyCheckout]);
+shopify.present(checkoutUrl, {
+  onClose: () => {
+    // The sheet was dismissed without a terminal error
+  },
+  onFail: (error: CheckoutException) => {
+    // A terminal error occurred — inspect `error.code`, `error.message`, etc.
+  },
+});
 ```
 
-### `removeEventListeners(eventName)`
+| Name                   | Callback                                   | Fires                                                                                                            |
+| ---------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `onClose`              | `() => void`                               | Once, when the buyer dismisses the sheet without a terminal error.                                               |
+| `onFail`               | `(error: CheckoutException) => void`       | Once, when the checkout terminates with an error.                                                                |
+| `onGeolocationRequest` | `(event: GeolocationRequestEvent) => void` | Android only. Fired each time the webview requests geolocation permissions. See [Opting out of the default behavior](#opting-out-of-the-default-behavior). |
 
-On the rare occasion that you want to remove all event listeners for a given
-`eventName`, you can use the `removeEventListeners(eventName)` method.
+`onClose` and `onFail` are mutually exclusive — exactly one of them fires
+per `present(...)` call, after which both handles are released.
+
+> Protocol-level callbacks (`start`, `complete`, `error` on the protocol
+> client) are not part of this section and will land in a follow-up release
+> alongside a `<CheckoutSheet>` component. Checkout completion is not
+> currently surfaced through the per-call callbacks.
 
 ## Identity & customer accounts
 
@@ -756,16 +731,17 @@ Android differs to iOS in that permission requests must be handled in two places
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
 
-The Checkout Kit native module will emit a `geolocationRequest` event when the webview requests geolocation
-information. By default, the kit will listen for this event and request access to both coarse and fine access when
-invoked.
+When the webview requests geolocation information, the Checkout Kit native
+module surfaces it to JS so the app can respond. By default, the kit handles
+the request itself and asks for both coarse and fine access on the buyer's
+behalf.
 
 The geolocation request flow follows this sequence:
 
 1. When checkout needs location data (e.g., to show nearby pickup points), it triggers a geolocation request.
-2. The native module emits a `geolocationRequest` event.
-3. If using default behavior, the module automatically handles the Android runtime permission request.
-4. The result is passed back to checkout, which then proceeds to show relevant pickup points if permission was granted.
+2. If you've passed an `onGeolocationRequest` callback to `present()`, that callback is invoked. Request or check Android permissions, then call `event.respond(allow)`.
+3. Otherwise, with `features.handleGeolocationRequests: true` (the default), the module automatically handles the Android runtime permission request.
+4. The response is passed back to checkout, which then proceeds to show relevant pickup points if permission was granted.
 
 > [!NOTE]
 > If the user denies location permissions, the checkout will still function but will not be able to show nearby pickup points. Users can manually enter their location instead.
@@ -775,16 +751,44 @@ The geolocation request flow follows this sequence:
 > [!NOTE]
 > This section is only applicable for Android.
 
-In order to opt-out of the default permission handling, you can set `features.handleGeolocationRequests` to `false`
-when you instantiate the `ShopifyCheckout` class.
+There are two ways to customize Android geolocation handling, depending on
+whether you want to override the behavior for one presentation or disable the
+fallback globally.
 
-If you're using the sheet programmatically, you can do so by specifying a `features` object as the second argument:
+**Per-call override.** Pass an `onGeolocationRequest` callback to
+`present()`. When set, the callback fires instead of the default handler
+for that one presentation; the consumer is responsible for resolving
+permissions and calling `event.respond(allow)`:
+
+```tsx
+shopify.present(checkoutUrl, {
+  onGeolocationRequest: async (event: GeolocationRequestEvent) => {
+    const coarse = 'android.permission.ACCESS_COARSE_LOCATION';
+    const fine = 'android.permission.ACCESS_FINE_LOCATION';
+
+    const results = await PermissionsAndroid.requestMultiple([coarse, fine]);
+    const granted =
+      results[coarse] === 'granted' || results[fine] === 'granted';
+
+    event.respond(granted);
+  },
+});
+```
+
+`event.respond(...)` resolves checkout's pending WebView geolocation request.
+It does not request OS permissions by itself.
+
+**Process-wide default-handler opt-out.** Set
+`features.handleGeolocationRequests` to `false` when you instantiate the
+`ShopifyCheckout` class to disable the default handler entirely. When this is
+set, pass `onGeolocationRequest` to any `present()` call that may need
+geolocation; otherwise the checkout geolocation request will not be resolved.
 
 ```tsx
 const shopifyCheckout = new ShopifyCheckout(config, {handleGeolocationRequests: false});
 ```
 
-If you're using the context provider, you can pass the same `features` object as a prop to the `ShopifyCheckoutProvider` component:
+If you're using the context provider, pass the same `features` object as a prop:
 
 ```tsx
 <ShopifyCheckoutProvider configuration={config} features={{handleGeolocationRequests: false}}>
@@ -792,34 +796,11 @@ If you're using the context provider, you can pass the same `features` object as
 </ShopifyCheckoutProvider>
 ```
 
-When opting out, you'll need to implement your own permission handling logic and communicate the result back to the checkout sheet. This can be useful if you want to:
+Custom permission handling lets you:
 
 - Customize the permission request UI/UX
 - Coordinate location permissions with other app features
 - Implement custom fallback behavior when permissions are denied
-
-The steps here to implement your own logic are to:
-
-1. Listen for the `geolocationRequest`
-2. Request the desired permissions
-3. Invoke the native callback by calling `initiateGeolocationRequest` with the permission status
-
-```tsx
-// Listen for "geolocationRequest" events
-shopify.addEventListener('geolocationRequest', async (event: GeolocationRequestEvent) => {
-  const coarse = 'android.permission.ACCESS_COARSE_LOCATION';
-  const fine = 'android.permission.ACCESS_FINE_LOCATION';
-
-  // Request one or many permissions at once
-  const results = await PermissionsAndroid.requestMultiple([coarse, fine]);
-
-  // Check the permission status results
-  const permissionGranted = results[coarse] === 'granted' || results[fine] === 'granted';
-
-  // Dispatch an event to the native module to invoke the native callback with the permission status
-  shopify.initiateGeolocationRequest(permissionGranted);
-})
-```
 
 ---
 

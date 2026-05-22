@@ -4,7 +4,6 @@
 
 ```ts
 
-import type { EmitterSubscription } from 'react-native';
 import type { PropsWithChildren } from 'react';
 import { default as React_2 } from 'react';
 
@@ -135,19 +134,6 @@ export enum CheckoutErrorCode {
 }
 
 // @public (undocumented)
-export type CheckoutEvent = 'close' | 'error' | 'geolocationRequest';
-
-// Warning: (ae-forgotten-export) The symbol "CloseEventCallback" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "CheckoutExceptionCallback" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "GeolocationRequestEventCallback" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export type CheckoutEventCallback =
-| CloseEventCallback
-| CheckoutExceptionCallback
-| GeolocationRequestEventCallback;
-
-// @public (undocumented)
 export type CheckoutException =
 | CheckoutClientError
 | CheckoutExpiredError
@@ -218,6 +204,11 @@ export type Configuration = CommonConfiguration & {
 export class ConfigurationError extends GenericErrorWithCode {}
 
 // @public
+export class DispatchEventParityError extends Error {
+    constructor(message: string);
+}
+
+// @public
 export interface Features {
     handleGeolocationRequests: boolean;
 }
@@ -243,8 +234,8 @@ export class GenericError {
 
 // @public (undocumented)
 export interface GeolocationRequestEvent {
-    // (undocumented)
     origin: string;
+    respond: (allow: boolean) => void;
 }
 
 // @public (undocumented)
@@ -268,6 +259,13 @@ export class LifecycleEventParseError extends Error {
 export enum LogLevel {
     debug = 'debug',
     error = 'error',
+}
+
+// @public
+export interface PresentCallbacks {
+    onClose?: () => void;
+    onFail?: (error: CheckoutException) => void;
+    onGeolocationRequest?: (event: GeolocationRequestEvent) => void;
 }
 
 // @public (undocumented)
@@ -295,14 +293,11 @@ export class ShopifyCheckout implements ShopifyCheckoutKit {
     constructor(configuration?: Configuration, features?: Partial<Features>);
     // (undocumented)
     get acceleratedCheckoutsReady(): boolean;
-    addEventListener(event: CheckoutEvent, callback: CheckoutEventCallback): EmitterSubscription | undefined;
     configureAcceleratedCheckouts(config: AcceleratedCheckoutConfiguration): boolean;
     dismiss(): void;
     getConfig(): Configuration;
-    initiateGeolocationRequest(allow: boolean): Promise<void>;
     isAcceleratedCheckoutAvailable(): boolean;
-    present(checkoutUrl: string): void;
-    removeEventListeners(event: CheckoutEvent): void;
+    present(checkoutUrl: string, callbacks?: PresentCallbacks): void;
     setConfig(configuration: Configuration): void;
     teardown(): void;
     // (undocumented)
@@ -321,9 +316,9 @@ export function useShopifyCheckout(): Context;
 
 // Warnings were encountered during analysis:
 //
-// lib/typescript/src/_types/index.d.ts:149:11 - (ae-forgotten-export) The symbol "IosColors" needs to be exported by the entry point index.d.ts
-// lib/typescript/src/_types/index.d.ts:150:11 - (ae-forgotten-export) The symbol "AndroidColors" needs to be exported by the entry point index.d.ts
-// lib/typescript/src/_types/index.d.ts:163:11 - (ae-forgotten-export) The symbol "AndroidAutomaticColors" needs to be exported by the entry point index.d.ts
+// lib/typescript/src/_types/index.d.ts:148:11 - (ae-forgotten-export) The symbol "IosColors" needs to be exported by the entry point index.d.ts
+// lib/typescript/src/_types/index.d.ts:149:11 - (ae-forgotten-export) The symbol "AndroidColors" needs to be exported by the entry point index.d.ts
+// lib/typescript/src/_types/index.d.ts:162:11 - (ae-forgotten-export) The symbol "AndroidAutomaticColors" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

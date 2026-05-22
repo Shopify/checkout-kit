@@ -25,6 +25,8 @@ package com.shopify.reactnative.checkoutkit;
 
 import android.app.Activity;
 import androidx.activity.ComponentActivity;
+import androidx.annotation.Nullable;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Arguments;
@@ -63,6 +65,9 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   protected Map<String, Object> getTypedExportedConstants() {
     final Map<String, Object> constants = new HashMap<>();
     constants.put("version", ShopifyCheckoutKit.version);
+    // Exposed so the JS layer can verify the SDK lifecycle event set
+    // it was built against matches what this native module emits.
+    constants.put("dispatchEventTypes", DispatchEventTypes.ALL);
     return constants;
   }
 
@@ -77,22 +82,34 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL) {
+  public void present(String checkoutURL, @Nullable Callback dispatch) {
+    releaseCheckoutListener();
+
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      checkoutListener = new CustomCheckoutListener(currentActivity, this.reactContext);
+      CustomCheckoutListener listener = new CustomCheckoutListener(dispatch);
+      checkoutListener = listener;
       currentActivity.runOnUiThread(() -> {
         checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
-            checkoutListener);
+            listener);
       });
     }
   }
 
   @ReactMethod
   public void dismiss() {
+    releaseCheckoutListener();
+
     if (checkoutSheet != null) {
       checkoutSheet.dismiss();
       checkoutSheet = null;
+    }
+  }
+
+  private void releaseCheckoutListener() {
+    if (checkoutListener != null) {
+      checkoutListener.release();
+      checkoutListener = null;
     }
   }
 
@@ -168,7 +185,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void initiateGeolocationRequest(boolean allow) {
+  public void respondToGeolocationRequest(boolean allow) {
     if (checkoutListener != null) {
       checkoutListener.invokeGeolocationCallback(allow);
     }

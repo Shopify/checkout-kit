@@ -21,23 +21,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import {NativeEventEmitter, PermissionsAndroid, Platform} from 'react-native';
-import type {
-  EmitterSubscription,
-  EventSubscription,
-  PermissionStatus,
-} from 'react-native';
+import {PermissionsAndroid, Platform} from 'react-native';
+import type {PermissionStatus} from 'react-native';
 import RNShopifyCheckoutKit from './specs/NativeShopifyCheckoutKit';
 import {ShopifyCheckoutProvider, useShopifyCheckout} from './context';
 import {ApplePayContactField, ColorScheme, LogLevel} from './index.d';
+import {
+  DispatchEventParityError,
+  isSdkLifecycleEventType,
+  verifyDispatchEventParity,
+  type SdkLifecycleEventType,
+} from './dispatch-events';
 import type {
   AcceleratedCheckoutConfiguration,
-  CheckoutEvent,
-  CheckoutEventCallback,
   Configuration,
   Features,
   GeolocationRequestEvent,
-  Maybe,
+  PresentCallbacks,
   ShopifyCheckoutKit,
 } from './index.d';
 import {AcceleratedCheckoutWallet} from './index.d';
@@ -52,7 +52,10 @@ import {
   GenericError,
 } from './errors.d';
 import {CheckoutErrorCode} from './errors.d';
-import {ApplePayLabel, ApplePayStyle} from './components/AcceleratedCheckoutButtons';
+import {
+  ApplePayLabel,
+  ApplePayStyle,
+} from './components/AcceleratedCheckoutButtons';
 import type {
   AcceleratedCheckoutButtonsProps,
   RenderStateChangeEvent,
@@ -72,18 +75,14 @@ const colorSchemeValues: ReadonlySet<string> = new Set(
 const logLevelValues: ReadonlySet<string> = new Set(Object.values(LogLevel));
 
 class ShopifyCheckout implements ShopifyCheckoutKit {
-  private static eventEmitter: NativeEventEmitter = new NativeEventEmitter(
-    RNShopifyCheckoutKit,
-  );
-
   private features: Features;
-  private geolocationCallback: Maybe<EventSubscription>;
 
   private _acceleratedCheckoutsReady = false;
 
   // TurboModule constants are immutable for the lifetime of the process —
   // capture once so `version` (and any future constants) can be read without
-  // re-crossing the JSI boundary on every access.
+  // re-crossing the JSI boundary on every access. Reading them here is also
+  // the moment we verify that the JS and native dispatch contracts agree.
   private readonly constants = RNShopifyCheckoutKit.getConstants();
 
   public get acceleratedCheckoutsReady(): boolean {
@@ -103,17 +102,15 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     configuration?: Configuration,
     features: Partial<Features> = defaultFeatures,
   ) {
+    // Fail fast if the bundled native module disagrees with this JS
+    // package about which SDK lifecycle events exist. Memoised, so this
+    // is a one-time cost per JS process.
+    verifyDispatchEventParity(this.constants.dispatchEventTypes);
+
     this.features = {...defaultFeatures, ...features};
 
     if (configuration != null) {
       this.setConfig(configuration);
-    }
-
-    if (
-      Platform.OS === 'android' &&
-      this.featureEnabled('handleGeolocationRequests')
-    ) {
-      this.subscribeToGeolocationRequestPrompts();
     }
   }
 
@@ -125,11 +122,16 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Presents the checkout sheet for a given checkout URL
+   * Presents the checkout sheet for a given checkout URL.
+   *
+   * Exactly one of `callbacks.onClose` or `callbacks.onFail` fires per
+   * call, after which the native bridge releases both handles.
+   *
    * @param checkoutUrl The URL of the checkout to display
+   * @param callbacks Optional per-call SDK callbacks
    */
-  public present(checkoutUrl: string): void {
-    RNShopifyCheckoutKit.present(checkoutUrl);
+  public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
+    RNShopifyCheckoutKit.present(checkoutUrl, this.buildDispatcher(callbacks));
   }
 
   /**
@@ -154,52 +156,11 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Adds an event listener for checkout events
-   * @param event The type of event to listen for
-   * @param callback Function to be called when the event occurs
-   * @returns An EmitterSubscription that can be used to remove the listener
+   * Cleans up resources and event listeners used by the checkout sheet.
+   * Currently a no-op — retained as part of the public API for forward
+   * compatibility with future protocol-client subscriptions.
    */
-  public addEventListener(
-    event: CheckoutEvent,
-    callback: CheckoutEventCallback,
-  ): EmitterSubscription | undefined {
-    let eventCallback;
-
-    switch (event) {
-      case 'error':
-        eventCallback = this.interceptEventEmission(
-          'error',
-          callback,
-          this.parseCheckoutError,
-        );
-        break;
-      case 'geolocationRequest':
-        eventCallback = this.interceptEventEmission(
-          'geolocationRequest',
-          callback,
-        );
-        break;
-      default:
-        eventCallback = callback;
-    }
-
-    return ShopifyCheckout.eventEmitter.addListener(event, eventCallback);
-  }
-
-  /**
-   * Removes all event listeners for a specific event type
-   * @param event The type of event to remove listeners for
-   */
-  public removeEventListeners(event: CheckoutEvent) {
-    ShopifyCheckout.eventEmitter.removeAllListeners(event);
-  }
-
-  /**
-   * Cleans up resources and event listeners used by the checkout sheet
-   */
-  public teardown() {
-    this.geolocationCallback?.remove();
-  }
+  public teardown() {}
 
   /**
    * Configure AcceleratedCheckouts for Shop Pay and Apple Pay buttons
@@ -245,16 +206,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     }
 
     return RNShopifyCheckoutKit.isAcceleratedCheckoutAvailable();
-  }
-
-  /**
-   * Initiates a geolocation request for Android devices
-   * Only needed if features.handleGeolocationRequests is false
-   */
-  public async initiateGeolocationRequest(allow: boolean) {
-    if (Platform.OS === 'android') {
-      RNShopifyCheckoutKit.initiateGeolocationRequest?.(allow);
-    }
   }
 
   // --- private
@@ -338,17 +289,132 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Sets up geolocation request handling for Android devices
+   * Resolves the pending Android WebView geolocation permission request.
+   * This does not request OS location permissions; callers should check
+   * or request Android permissions before responding.
    */
-  private subscribeToGeolocationRequestPrompts() {
-    this.geolocationCallback = this.addEventListener(
-      'geolocationRequest',
-      async () => {
-        const coarseOrFineGrainAccessGranted = await this.requestGeolocation();
+  private respondToGeolocationRequest(allow: boolean): void {
+    if (Platform.OS === 'android') {
+      RNShopifyCheckoutKit.respondToGeolocationRequest?.(allow);
+    }
+  }
 
-        this.initiateGeolocationRequest(coarseOrFineGrainAccessGranted);
-      },
-    );
+  /**
+   * Builds the single per-call dispatcher passed to the native bridge.
+   * Returns null when there is nothing for the bridge to deliver back —
+   * no user callbacks and no default-handler responsibilities — so the
+   * native side can skip serializing envelopes.
+   */
+  private buildDispatcher(
+    callbacks: PresentCallbacks | undefined,
+  ): ((envelopeJson: string) => void) | null {
+    const needsDefaultGeolocation =
+      Platform.OS === 'android' &&
+      this.featureEnabled('handleGeolocationRequests');
+
+    if (!callbacks && !needsDefaultGeolocation) {
+      return null;
+    }
+
+    return (envelopeJson: string) => {
+      let envelope: unknown;
+      try {
+        envelope = JSON.parse(envelopeJson);
+      } catch {
+        logParseError('envelope is not valid JSON', envelopeJson);
+        return;
+      }
+
+      if (!isPlainObject(envelope) || typeof envelope.type !== 'string') {
+        logParseError(
+          'envelope is missing a string `type` discriminator',
+          envelopeJson,
+        );
+        return;
+      }
+
+      const {type, payload} = envelope;
+
+      if (isSdkLifecycleEventType(type)) {
+        this.routeSdkLifecycleEvent(
+          type,
+          payload,
+          envelopeJson,
+          callbacks,
+          needsDefaultGeolocation,
+        );
+        return;
+      }
+
+      // Loud default. The parity check at construction time should have
+      // already caught a native/JS mismatch — hitting this branch means
+      // either the bundled native module emitted something we do not
+      // recognise, or we are missing a handler for a future event.
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[ShopifyCheckoutKit] Ignoring dispatch envelope with unknown type "${type}". ` +
+          'The native module emitted an event the JS layer does not know how to handle. ' +
+          'Confirm both sides are on compatible versions.',
+      );
+    };
+  }
+
+  /**
+   * Routes a validated SDK lifecycle envelope to the matching user
+   * callback (or the default Android geolocation handler). Payload
+   * shapes are validated per case before invoking consumer code so a
+   * native-side regression surfaces as a `LifecycleEventParseError`
+   * with the offending raw envelope attached.
+   */
+  private routeSdkLifecycleEvent(
+    type: SdkLifecycleEventType,
+    payload: unknown,
+    envelopeJson: string,
+    callbacks: PresentCallbacks | undefined,
+    needsDefaultGeolocation: boolean,
+  ): void {
+    switch (type) {
+      case 'close':
+        callbacks?.onClose?.();
+        return;
+      case 'fail': {
+        const failPayload = validateFailPayload(payload);
+        if (failPayload == null) {
+          logParseError('`fail` envelope payload is malformed', envelopeJson);
+          return;
+        }
+        callbacks?.onFail?.(this.parseCheckoutError(failPayload));
+        return;
+      }
+      case 'geolocationRequest': {
+        const geoPayload = validateGeolocationRequestPayload(payload);
+        if (geoPayload == null) {
+          logParseError(
+            '`geolocationRequest` envelope payload is malformed',
+            envelopeJson,
+          );
+          return;
+        }
+        if (callbacks?.onGeolocationRequest) {
+          callbacks.onGeolocationRequest({
+            ...geoPayload,
+            respond: allow => this.respondToGeolocationRequest(allow),
+          });
+        } else if (needsDefaultGeolocation) {
+          this.handleDefaultGeolocationRequest();
+        }
+        return;
+      }
+    }
+  }
+
+  /**
+   * Default Android geolocation handler — requests platform permissions
+   * and forwards the resolved grant state back to the native SDK.
+   */
+  private async handleDefaultGeolocationRequest() {
+    const allowed = await this.requestGeolocation();
+    this.respondToGeolocationRequest(allowed);
   }
 
   /**
@@ -434,51 +500,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
         return new GenericError(exception);
     }
   }
-
-  /**
-   * Handles event emission parsing and transformation
-   * @param event The type of event being intercepted
-   * @param callback The callback to execute with the parsed data
-   * @param transformData Optional function to transform the event data
-   * @returns Function that handles the event emission
-   */
-  private interceptEventEmission(
-    event: CheckoutEvent,
-    callback: CheckoutEventCallback,
-    transformData?: (data: any) => any,
-  ): (eventData: string | typeof callback) => void {
-    return (eventData: string | typeof callback): void => {
-      try {
-        if (typeof eventData === 'string') {
-          try {
-            let parsed = JSON.parse(eventData);
-            parsed = transformData?.(parsed) ?? parsed;
-            callback(parsed);
-          } catch (error) {
-            const parseError = new LifecycleEventParseError(
-              `Failed to parse "${event}" event data: Invalid JSON`,
-              {
-                cause: 'Invalid JSON',
-              },
-            );
-            // eslint-disable-next-line no-console
-            console.error(parseError, eventData);
-          }
-        } else if (eventData && typeof eventData === 'object') {
-          callback(transformData?.(eventData) ?? eventData);
-        }
-      } catch (error) {
-        const parseError = new LifecycleEventParseError(
-          `Failed to parse "${event}" event data`,
-          {
-            cause: 'Unknown',
-          },
-        );
-        // eslint-disable-next-line no-console
-        console.error(parseError);
-      }
-    };
-  }
 }
 
 export class LifecycleEventParseError extends Error {
@@ -492,6 +513,48 @@ export class LifecycleEventParseError extends Error {
   }
 }
 
+// --- internal helpers ---
+
+type GeolocationRequestPayload = Pick<GeolocationRequestEvent, 'origin'>;
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Narrow validator for `fail` envelope payloads. Only confirms the
+ * shape the JS dispatcher relies on — full coercion happens later in
+ * `parseCheckoutError`. Returns `null` on shape mismatch so the caller
+ * can log a `LifecycleEventParseError` instead of crashing user code.
+ */
+function validateFailPayload(payload: unknown): CheckoutNativeError | null {
+  if (!isPlainObject(payload)) return null;
+  if (typeof payload.__typename !== 'string') return null;
+  if (typeof payload.message !== 'string') return null;
+  if (typeof payload.code !== 'string') return null;
+  if ('statusCode' in payload && typeof payload.statusCode !== 'number') {
+    return null;
+  }
+  return payload as unknown as CheckoutNativeError;
+}
+
+function validateGeolocationRequestPayload(
+  payload: unknown,
+): GeolocationRequestPayload | null {
+  if (!isPlainObject(payload)) return null;
+  if (typeof payload.origin !== 'string') return null;
+  return {origin: payload.origin};
+}
+
+function logParseError(detail: string, raw: string): void {
+  const err = new LifecycleEventParseError(
+    `Failed to handle present() dispatcher envelope: ${detail}`,
+    {cause: detail},
+  );
+  // eslint-disable-next-line no-console
+  console.error(err, raw);
+}
+
 // API
 export {
   AcceleratedCheckoutWallet,
@@ -499,6 +562,7 @@ export {
   ApplePayLabel,
   ApplePayStyle,
   ColorScheme,
+  DispatchEventParityError,
   LogLevel,
   ShopifyCheckout,
   ShopifyCheckoutProvider,
@@ -521,12 +585,11 @@ export {
 export type {
   AcceleratedCheckoutButtonsProps,
   AcceleratedCheckoutConfiguration,
-  CheckoutEvent,
-  CheckoutEventCallback,
   CheckoutException,
   Configuration,
   Features,
   GeolocationRequestEvent,
+  PresentCallbacks,
   RenderStateChangeEvent,
 };
 

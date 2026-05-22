@@ -18,10 +18,32 @@ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
-#import <React/RCTBridgeModule.h>
-#import <React/RCTViewManager.h>
-#import <React/RCTUIManager.h>
-#import <React/RCTBridge.h>
+package com.shopify.reactnative.checkoutkit;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Canonical list of SDK lifecycle event types emitted by the
+ * per-{@code present()} dispatcher.
+ *
+ * Mirrors {@code SDK_LIFECYCLE_EVENT_TYPES} in the JS package and
+ * {@code DispatchEventType} on iOS. Exposed to JS via
+ * {@code getTypedExportedConstants()} so the JS layer can verify the
+ * two sides agree at construction time.
+ */
+public final class DispatchEventTypes {
+  public static final String CLOSE = "close";
+  public static final String FAIL = "fail";
+  public static final String GEOLOCATION_REQUEST = "geolocationRequest";
+
+  public static final List<String> ALL = Collections.unmodifiableList(
+      Arrays.asList(CLOSE, FAIL, GEOLOCATION_REQUEST));
+
+  private DispatchEventTypes() {}
+}

@@ -23,25 +23,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 import React, {useCallback, useMemo, useRef, useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
-import {type EmitterSubscription} from 'react-native';
 import {ShopifyCheckout} from './index';
-import type {Features} from './index.d';
-import type {
-  AddEventListener,
-  RemoveEventListeners,
-  CheckoutEvent,
-  Configuration,
-} from './index.d';
+import type {Configuration, Features, PresentCallbacks} from './index.d';
 
 type Maybe<T> = T | undefined;
 
 interface Context {
   acceleratedCheckoutsAvailable: boolean;
-  addEventListener: AddEventListener;
   getConfig: () => Configuration | undefined;
   setConfig: (config: Configuration) => void;
-  removeEventListeners: RemoveEventListeners;
-  present: (checkoutUrl: string) => void;
+  present: (checkoutUrl: string, callbacks?: PresentCallbacks) => void;
   dismiss: () => void;
   version: Maybe<string>;
 }
@@ -78,8 +69,8 @@ export function ShopifyCheckoutProvider({
       // eslint-disable-next-line no-console
       console.warn(
         '[ShopifyCheckoutKit] Providing accessToken with contactFields (email / phoneNumber) is deprecated and will become an error in v4.' +
-        'When the user is authenticated with Customer Accounts, provide accessToken' +
-        'When the user is otherwise authenticated, provide email/phoneNumber.',
+          'When the user is authenticated with Customer Accounts, provide accessToken' +
+          'When the user is otherwise authenticated, provide email/phoneNumber.',
       );
     }
 
@@ -89,22 +80,14 @@ export function ShopifyCheckoutProvider({
     );
   }, [configuration]);
 
-  const addEventListener: AddEventListener = useCallback(
-    (eventName, callback): EmitterSubscription | undefined => {
-      return instance.current?.addEventListener(eventName, callback);
+  const present = useCallback(
+    (checkoutUrl: string, callbacks?: PresentCallbacks) => {
+      if (checkoutUrl) {
+        instance.current?.present(checkoutUrl, callbacks);
+      }
     },
     [],
   );
-
-  const removeEventListeners = useCallback((eventName: CheckoutEvent) => {
-    instance.current?.removeEventListeners(eventName);
-  }, []);
-
-  const present = useCallback((checkoutUrl: string) => {
-    if (checkoutUrl) {
-      instance.current?.present(checkoutUrl);
-    }
-  }, []);
 
   const dismiss = useCallback(() => {
     instance.current?.dismiss();
@@ -121,23 +104,13 @@ export function ShopifyCheckoutProvider({
   const context = useMemo((): Context => {
     return {
       acceleratedCheckoutsAvailable,
-      addEventListener,
       dismiss,
       setConfig,
       getConfig,
       present,
-      removeEventListeners,
       version: instance.current?.version,
     };
-  }, [
-    acceleratedCheckoutsAvailable,
-    addEventListener,
-    dismiss,
-    removeEventListeners,
-    getConfig,
-    setConfig,
-    present,
-  ]);
+  }, [acceleratedCheckoutsAvailable, dismiss, getConfig, setConfig, present]);
 
   return (
     <ShopifyCheckoutContext.Provider value={context}>

@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 
 import {
+  DispatchEventParityError,
   LifecycleEventParseError,
   ShopifyCheckout,
   CheckoutErrorCode,
@@ -19,6 +20,7 @@ import {
   type Configuration,
   type AcceleratedCheckoutConfiguration,
 } from '../src';
+import {__resetDispatchEventParityForTests} from '../src/dispatch-events';
 import type {ApplePayContactField} from '../src/index.d';
 import {TurboModuleRegistry, PermissionsAndroid, Platform} from 'react-native';
 
@@ -38,6 +40,16 @@ global.console = {
   error: jest.fn(),
   warn: jest.fn(),
 };
+
+beforeEach(() => {
+  // Parity verification is memoised per-process; reset it so each test
+  // exercises a fresh check against whatever mock constants are in play.
+  __resetDispatchEventParityForTests();
+  NativeModule.getConstants.mockReturnValue({
+    version: '0.7.0',
+    dispatchEventTypes: ['close', 'fail', 'geolocationRequest'],
+  });
+});
 
 describe('Exports', () => {
   describe('AcceleratedCheckoutWallet enum', () => {
@@ -63,10 +75,21 @@ describe('Exports', () => {
   });
 });
 
-describe('ShopifyCheckoutKit', () => {
-  // @ts-expect-error "eventEmitter is private"
-  const eventEmitter = ShopifyCheckout.eventEmitter;
+type Dispatch = (envelopeJson: string) => void;
 
+function lastDispatch(): Dispatch {
+  const dispatch = NativeModule.present.mock.calls[
+    NativeModule.present.mock.calls.length - 1
+  ][1] as Dispatch | null;
+  if (!dispatch) {
+    throw new Error(
+      'Expected the last present() call to receive a non-null dispatcher',
+    );
+  }
+  return dispatch;
+}
+
+describe('ShopifyCheckoutKit', () => {
   afterEach(() => {
     NativeModule.setConfig.mockReset();
     jest.clearAllMocks();
@@ -75,16 +98,12 @@ describe('ShopifyCheckoutKit', () => {
   describe('instantiation', () => {
     it('calls `setConfig` with the specified config on instantiation', () => {
       new ShopifyCheckout(config);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(config);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
     });
 
     it('does not call `setConfig` if no config was specified on instantiation', () => {
       new ShopifyCheckout();
-      expect(
-        NativeModule.setConfig,
-      ).not.toHaveBeenCalled();
+      expect(NativeModule.setConfig).not.toHaveBeenCalled();
     });
   });
 
@@ -92,12 +111,8 @@ describe('ShopifyCheckoutKit', () => {
     it('calls the `setConfig` on the Native Module', () => {
       const instance = new ShopifyCheckout();
       instance.setConfig(config);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(config);
+      expect(NativeModule.setConfig).toHaveBeenCalledTimes(1);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
     });
 
     it('calls `setConfig` with logLevel configuration', () => {
@@ -107,61 +122,45 @@ describe('ShopifyCheckoutKit', () => {
         logLevel: LogLevel.debug,
       };
       instance.setConfig(configWithLogLevel);
-      expect(
-        NativeModule.setConfig,
-      ).toHaveBeenCalledWith(configWithLogLevel);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithLogLevel);
     });
   });
 
   describe('present', () => {
-    it('calls `present` with a checkout URL', () => {
+    it('calls `present` with a null dispatcher when no callbacks are provided on iOS', () => {
+      Platform.OS = 'ios';
       const instance = new ShopifyCheckout();
       instance.present(checkoutUrl);
-      expect(
-        NativeModule.present,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        NativeModule.present,
-      ).toHaveBeenCalledWith(checkoutUrl);
+      expect(NativeModule.present).toHaveBeenCalledTimes(1);
+      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, null);
     });
-  });
 
-  describe('dismiss', () => {
-    it('calls `dismiss`', () => {
+    it('calls `present` with a dispatcher when callbacks are provided', () => {
       const instance = new ShopifyCheckout();
-      instance.dismiss();
-      expect(
-        NativeModule.dismiss,
-      ).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('getConfig', () => {
-    it('returns the parsed config from the Native Module', () => {
-      const instance = new ShopifyCheckout();
-      expect(instance.getConfig()).toStrictEqual({
-        colorScheme: ColorScheme.automatic,
-        logLevel: LogLevel.error,
-      });
-      expect(
-        NativeModule.getConfig,
-      ).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('addEventListener', () => {
-    it('creates a new event listener for a specific event', () => {
-      const instance = new ShopifyCheckout();
-      const eventName = 'close';
-      const callback = jest.fn();
-      instance.addEventListener(eventName, callback);
-      expect(eventEmitter.addListener).toHaveBeenCalledWith(
-        eventName,
-        callback,
+      instance.present(checkoutUrl, {onClose: jest.fn()});
+      expect(NativeModule.present).toHaveBeenCalledWith(
+        checkoutUrl,
+        expect.any(Function),
       );
     });
 
-    describe('Error Event', () => {
+    it('invokes `onClose` when the dispatcher receives a close envelope', () => {
+      const instance = new ShopifyCheckout();
+      const onClose = jest.fn();
+      instance.present(checkoutUrl, {onClose});
+      lastDispatch()(JSON.stringify({type: 'close'}));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores a close envelope when no `onClose` handler was provided', () => {
+      const instance = new ShopifyCheckout();
+      instance.present(checkoutUrl, {onFail: jest.fn()});
+      expect(() =>
+        lastDispatch()(JSON.stringify({type: 'close'})),
+      ).not.toThrow();
+    });
+
+    describe('onFail callback', () => {
       const internalError = {
         __typename: CheckoutNativeErrorType.InternalError,
         message: 'Something went wrong',
@@ -200,7 +199,7 @@ describe('ShopifyCheckoutKit', () => {
         {error: networkError, constructor: CheckoutHTTPError},
         {error: expiredError, constructor: CheckoutExpiredError},
       ])(
-        `correctly parses error $error`,
+        `parses the fail envelope payload into a typed CheckoutException ($error.__typename)`,
         ({
           error,
           constructor,
@@ -209,19 +208,10 @@ describe('ShopifyCheckoutKit', () => {
           constructor: new (...args: any[]) => any;
         }) => {
           const instance = new ShopifyCheckout();
-          const eventName = 'error';
-          const callback = jest.fn();
-          instance.addEventListener(eventName, callback);
-          NativeModule.addEventListener(
-            eventName,
-            callback,
-          );
-          expect(eventEmitter.addListener).toHaveBeenCalledWith(
-            'error',
-            expect.any(Function),
-          );
-          eventEmitter.emit('error', error);
-          const calledWith = callback.mock.calls[0][0];
+          const onFail = jest.fn();
+          instance.present(checkoutUrl, {onFail});
+          lastDispatch()(JSON.stringify({type: 'fail', payload: error}));
+          const calledWith = onFail.mock.calls[0][0];
           expect(calledWith).toBeInstanceOf(constructor);
           expect(calledWith).not.toHaveProperty('__typename');
           expect(calledWith).toHaveProperty('code');
@@ -229,51 +219,201 @@ describe('ShopifyCheckoutKit', () => {
         },
       );
 
-      it('returns an unknown generic error if the error cannot be parsed', () => {
+      it('falls back to GenericError when the payload has an unrecognised __typename', () => {
         const instance = new ShopifyCheckout();
-        const eventName = 'error';
-        const callback = jest.fn();
-        instance.addEventListener(eventName, callback);
-        NativeModule.addEventListener(
-          eventName,
-          callback,
-        );
+        const onFail = jest.fn();
+        instance.present(checkoutUrl, {onFail});
+        // Native always emits the three core fields; an unfamiliar
+        // `__typename` should still flow through as GenericError.
         const error = {
-          __typename: 'UnknownError',
+          __typename: 'SomeNewErrorType',
           message: 'Something went wrong',
+          code: CheckoutErrorCode.unknown,
         };
-        expect(eventEmitter.addListener).toHaveBeenCalledWith(
-          'error',
-          expect.any(Function),
-        );
-        eventEmitter.emit('error', error);
-        const calledWith = callback.mock.calls[0][0];
+        lastDispatch()(JSON.stringify({type: 'fail', payload: error}));
+        const calledWith = onFail.mock.calls[0][0];
         expect(calledWith).toBeInstanceOf(GenericError);
-        expect(callback).toHaveBeenCalledWith(new GenericError(error as any));
+      });
+
+      it('ignores a fail envelope when no `onFail` handler was provided', () => {
+        const instance = new ShopifyCheckout();
+        const onClose = jest.fn();
+        instance.present(checkoutUrl, {onClose});
+        expect(() =>
+          lastDispatch()(
+            JSON.stringify({type: 'fail', payload: internalError}),
+          ),
+        ).not.toThrow();
+      });
+    });
+
+    describe('onGeolocationRequest callback', () => {
+      it('parses the geolocationRequest envelope payload and surfaces the typed event', () => {
+        const instance = new ShopifyCheckout();
+        const onGeolocationRequest = jest.fn();
+        instance.present(checkoutUrl, {onGeolocationRequest});
+        lastDispatch()(
+          JSON.stringify({
+            type: 'geolocationRequest',
+            payload: {origin: 'https://shopify.com'},
+          }),
+        );
+        expect(onGeolocationRequest).toHaveBeenCalledWith({
+          origin: 'https://shopify.com',
+          respond: expect.any(Function),
+        });
+      });
+    });
+
+    describe('envelope parsing', () => {
+      it('logs a LifecycleEventParseError when the envelope is invalid JSON', () => {
+        const instance = new ShopifyCheckout();
+        const onClose = jest.fn();
+        instance.present(checkoutUrl, {onClose});
+        lastDispatch()('not-json');
+        expect(onClose).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+          expect.any(LifecycleEventParseError),
+          'not-json',
+        );
+      });
+
+      it('warns via console.warn for envelopes with unknown `type` values', () => {
+        const instance = new ShopifyCheckout();
+        const onClose = jest.fn();
+        const onFail = jest.fn();
+        instance.present(checkoutUrl, {onClose, onFail});
+        expect(() =>
+          lastDispatch()(JSON.stringify({type: 'unknown', payload: {}})),
+        ).not.toThrow();
+        expect(onClose).not.toHaveBeenCalled();
+        expect(onFail).not.toHaveBeenCalled();
+        expect(console.warn).toHaveBeenCalledWith(
+          expect.stringContaining('unknown type "unknown"'),
+        );
+      });
+
+      it('logs a LifecycleEventParseError when the envelope is missing a string `type`', () => {
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl, {onClose: jest.fn()});
+        lastDispatch()(JSON.stringify({payload: {}}));
+        expect(console.error).toHaveBeenCalledWith(
+          expect.any(LifecycleEventParseError),
+          expect.any(String),
+        );
+      });
+
+      it('logs a LifecycleEventParseError when a `fail` envelope payload is malformed', () => {
+        const instance = new ShopifyCheckout();
+        const onFail = jest.fn();
+        instance.present(checkoutUrl, {onFail});
+        lastDispatch()(
+          JSON.stringify({type: 'fail', payload: {message: 'no typename'}}),
+        );
+        expect(onFail).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+          expect.any(LifecycleEventParseError),
+          expect.any(String),
+        );
+      });
+
+      it('logs a LifecycleEventParseError when a `geolocationRequest` envelope payload is malformed', () => {
+        const instance = new ShopifyCheckout();
+        const onGeolocationRequest = jest.fn();
+        instance.present(checkoutUrl, {onGeolocationRequest});
+        lastDispatch()(
+          JSON.stringify({type: 'geolocationRequest', payload: {}}),
+        );
+        expect(onGeolocationRequest).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+          expect.any(LifecycleEventParseError),
+          expect.any(String),
+        );
+      });
+    });
+
+    describe('SDK lifecycle event parity', () => {
+      it('throws DispatchEventParityError when native reports an extra event', () => {
+        NativeModule.getConstants.mockReturnValue({
+          version: '0.7.0',
+          dispatchEventTypes: [
+            'close',
+            'fail',
+            'geolocationRequest',
+            'newFutureEvent',
+          ],
+        });
+        expect(() => new ShopifyCheckout()).toThrow(DispatchEventParityError);
+      });
+
+      it('throws DispatchEventParityError when native reports a missing event', () => {
+        NativeModule.getConstants.mockReturnValue({
+          version: '0.7.0',
+          dispatchEventTypes: ['close', 'fail'],
+        });
+        expect(() => new ShopifyCheckout()).toThrow(DispatchEventParityError);
+      });
+
+      it('throws DispatchEventParityError when native does not report the constant at all', () => {
+        NativeModule.getConstants.mockReturnValue({version: '0.7.0'} as any);
+        expect(() => new ShopifyCheckout()).toThrow(DispatchEventParityError);
+      });
+
+      it('accepts the canonical native list regardless of order', () => {
+        NativeModule.getConstants.mockReturnValue({
+          version: '0.7.0',
+          dispatchEventTypes: ['geolocationRequest', 'fail', 'close'],
+        });
+        expect(() => new ShopifyCheckout()).not.toThrow();
+      });
+
+      it('only verifies once per JS process — a second instance reuses the cached result', () => {
+        new ShopifyCheckout();
+        const firstCallCount = NativeModule.getConstants.mock.calls.length;
+
+        // Mutate the native list after the first verification has been
+        // cached. A second instance must NOT re-throw — verification is
+        // memoised by design (the value is process-immutable on real
+        // TurboModules).
+        NativeModule.getConstants.mockReturnValue({
+          version: '0.7.0',
+          dispatchEventTypes: ['close'],
+        });
+        expect(() => new ShopifyCheckout()).not.toThrow();
+        expect(NativeModule.getConstants.mock.calls.length).toBeGreaterThan(
+          firstCallCount,
+        );
       });
     });
   });
 
-  describe('removeEventListeners', () => {
-    it('Removes all listeners for a specific event', () => {
+  describe('dismiss', () => {
+    it('calls `dismiss`', () => {
       const instance = new ShopifyCheckout();
-      instance.addEventListener('close', () => {});
-      instance.addEventListener('close', () => {});
-      instance.removeEventListeners('close');
-      expect(eventEmitter.removeAllListeners).toHaveBeenCalledWith('close');
+      instance.dismiss();
+      expect(NativeModule.dismiss).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getConfig', () => {
+    it('returns the parsed config from the Native Module', () => {
+      const instance = new ShopifyCheckout();
+      expect(instance.getConfig()).toStrictEqual({
+        colorScheme: ColorScheme.automatic,
+        logLevel: LogLevel.error,
+      });
+      expect(NativeModule.getConfig).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('Geolocation', () => {
-    const defaultConfig = {};
+    const geolocationEnvelope = JSON.stringify({
+      type: 'geolocationRequest',
+      payload: {origin: 'https://shopify.com'},
+    });
 
-    async function emitGeolocationRequest() {
-      await new Promise<void>(resolve => {
-        eventEmitter.emit('geolocationRequest', {
-          origin: 'https://shopify.com',
-        });
-        setTimeout(resolve);
-      });
+    async function flush() {
+      await new Promise<void>(resolve => setTimeout(resolve));
     }
 
     describe('Android', () => {
@@ -287,24 +427,21 @@ describe('ShopifyCheckoutKit', () => {
         Platform.OS = originalPlatform;
       });
 
-      it('subscribes to geolocation requests on Android when feature is enabled', () => {
-        new ShopifyCheckout(defaultConfig);
-
-        expect(eventEmitter.addListener).toHaveBeenCalledWith(
-          'geolocationRequest',
+      it('passes a dispatcher when the default handler is enabled, even without callbacks', () => {
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl);
+        expect(NativeModule.present).toHaveBeenCalledWith(
+          checkoutUrl,
           expect.any(Function),
         );
       });
 
-      it('does not subscribe to geolocation requests when feature is disabled', () => {
-        new ShopifyCheckout(defaultConfig, {
+      it('passes a null dispatcher when no callbacks and the default handler is disabled', () => {
+        const instance = new ShopifyCheckout(undefined, {
           handleGeolocationRequests: false,
         });
-
-        expect(eventEmitter.addListener).not.toHaveBeenCalledWith(
-          'geolocationRequest',
-          expect.any(Function),
-        );
+        instance.present(checkoutUrl);
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, null);
       });
 
       it('handles geolocation permission grant correctly', async () => {
@@ -319,17 +456,18 @@ describe('ShopifyCheckoutKit', () => {
           }
         ).mockResolvedValue(mockPermissions);
 
-        new ShopifyCheckout();
-
-        await emitGeolocationRequest();
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl);
+        lastDispatch()(geolocationEnvelope);
+        await flush();
 
         expect(PermissionsAndroid.requestMultiple).toHaveBeenCalledWith([
           'android.permission.ACCESS_COARSE_LOCATION',
           'android.permission.ACCESS_FINE_LOCATION',
         ]);
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).toHaveBeenCalledWith(true);
+        expect(NativeModule.respondToGeolocationRequest).toHaveBeenCalledWith(
+          true,
+        );
       });
 
       it('handles geolocation permission denial correctly', async () => {
@@ -344,31 +482,59 @@ describe('ShopifyCheckoutKit', () => {
           }
         ).mockResolvedValue(mockPermissions);
 
-        new ShopifyCheckout();
-
-        await emitGeolocationRequest();
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl);
+        lastDispatch()(geolocationEnvelope);
+        await flush();
 
         expect(PermissionsAndroid.requestMultiple).toHaveBeenCalledWith([
           'android.permission.ACCESS_COARSE_LOCATION',
           'android.permission.ACCESS_FINE_LOCATION',
         ]);
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).toHaveBeenCalledWith(false);
+        expect(NativeModule.respondToGeolocationRequest).toHaveBeenCalledWith(
+          false,
+        );
       });
 
-      it('cleans up geolocation callback on teardown', () => {
-        const sheet = new ShopifyCheckout();
-        const mockRemove = jest.fn();
+      it('prefers a per-call `onGeolocationRequest` handler over the default handler', async () => {
+        const instance = new ShopifyCheckout();
+        const onGeolocationRequest = jest.fn();
+        instance.present(checkoutUrl, {onGeolocationRequest});
+        lastDispatch()(geolocationEnvelope);
+        await flush();
 
-        // @ts-expect-error
-        sheet.geolocationCallback = {
-          remove: mockRemove,
-        };
+        expect(onGeolocationRequest).toHaveBeenCalledWith({
+          origin: 'https://shopify.com',
+          respond: expect.any(Function),
+        });
+        expect(PermissionsAndroid.requestMultiple).not.toHaveBeenCalled();
+        expect(NativeModule.respondToGeolocationRequest).not.toHaveBeenCalled();
+      });
 
-        sheet.teardown();
+      it('responds to the pending native geolocation request from the event', () => {
+        const instance = new ShopifyCheckout();
+        const onGeolocationRequest = jest.fn();
+        instance.present(checkoutUrl, {onGeolocationRequest});
+        lastDispatch()(geolocationEnvelope);
 
-        expect(mockRemove).toHaveBeenCalled();
+        const event = onGeolocationRequest.mock.calls[0][0];
+        event.respond(true);
+
+        expect(NativeModule.respondToGeolocationRequest).toHaveBeenCalledWith(
+          true,
+        );
+      });
+
+      it('does not run the default handler when the feature is disabled', async () => {
+        const instance = new ShopifyCheckout(undefined, {
+          handleGeolocationRequests: false,
+        });
+        instance.present(checkoutUrl, {onClose: jest.fn()});
+        lastDispatch()(geolocationEnvelope);
+        await flush();
+
+        expect(PermissionsAndroid.requestMultiple).not.toHaveBeenCalled();
+        expect(NativeModule.respondToGeolocationRequest).not.toHaveBeenCalled();
       });
     });
 
@@ -383,23 +549,20 @@ describe('ShopifyCheckoutKit', () => {
         Platform.OS = originalPlatform;
       });
 
-      it('does not subscribe to geolocation requests', () => {
-        new ShopifyCheckout();
-
-        expect(eventEmitter.addListener).not.toHaveBeenCalledWith(
-          'geolocationRequest',
-          expect.any(Function),
-        );
+      it('passes a null dispatcher by default — no default geolocation handling on iOS', () => {
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl);
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, null);
       });
 
-      it('does not call the native function, even if an event is emitted', async () => {
-        new ShopifyCheckout();
+      it('does not run the default geolocation handler on iOS even if dispatcher fires', async () => {
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl, {onClose: jest.fn()});
+        lastDispatch()(geolocationEnvelope);
+        await flush();
 
-        await emitGeolocationRequest();
-
-        expect(
-          NativeModule.initiateGeolocationRequest,
-        ).not.toHaveBeenCalled();
+        expect(PermissionsAndroid.requestMultiple).not.toHaveBeenCalled();
+        expect(NativeModule.respondToGeolocationRequest).not.toHaveBeenCalled();
       });
 
       it('tears down gracefully', () => {
@@ -510,9 +673,7 @@ describe('ShopifyCheckoutKit', () => {
           instance.configureAcceleratedCheckouts(acceleratedConfig);
 
         expect(result).toBe(true);
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',
@@ -534,9 +695,7 @@ describe('ShopifyCheckoutKit', () => {
 
         instance.configureAcceleratedCheckouts(minimalConfig);
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           null,
@@ -569,9 +728,9 @@ describe('ShopifyCheckoutKit', () => {
         };
         const expectedError = new Error('`storefrontDomain` is required');
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -587,9 +746,9 @@ describe('ShopifyCheckoutKit', () => {
 
         const expectedError = new Error('`storefrontAccessToken` is required');
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -612,9 +771,9 @@ describe('ShopifyCheckoutKit', () => {
           '`wallets.applePay.merchantIdentifier` is required',
         );
 
-        expect(
-          instance.configureAcceleratedCheckouts(invalidConfig),
-        ).toBe(false);
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
         expect(console.error).toHaveBeenCalledWith(
           '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
           expectedError,
@@ -698,9 +857,7 @@ describe('ShopifyCheckoutKit', () => {
           },
         });
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',
@@ -726,9 +883,7 @@ describe('ShopifyCheckoutKit', () => {
           },
         });
 
-        expect(
-          NativeModule.configureAcceleratedCheckouts,
-        ).toHaveBeenCalledWith(
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
           'test-shop.myshopify.com',
           'shpat_test_token',
           'test@example.com',
