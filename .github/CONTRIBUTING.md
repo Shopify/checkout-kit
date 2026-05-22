@@ -83,16 +83,19 @@ When `dev swift api check` fails, it prints both the unified diff and a `swift-a
 Open a pull request with the following changes:
 
 1. Bump the package version in `platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`.
-2. Bump the podspec version in `ShopifyCheckoutKit.podspec` (at the repo root).
-3. Add an entry to the top of `platforms/swift/CHANGELOG.md`.
+2. Bump the metadata version in `platforms/swift/Sources/ShopifyCheckoutKit/MetaData.swift`.
+3. Bump the podspec version in `ShopifyCheckoutKit.podspec` (at the repo root).
+4. Add an entry to the top of `platforms/swift/CHANGELOG.md`.
 
-Once merged, draft a release on GitHub:
+All Swift version declarations must match exactly. Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
-1. Create a tag with the bare semver name (e.g. `3.8.1`) — Swift releases use bare semver so SwiftPM consumers can resolve them with `from:` constraints.
-2. Use the same tag as the release name.
-3. Document the changes since the previous release in the description.
-4. Check "Set as the latest release".
-5. Click "Publish release". This kicks off the [Swift publish workflow](../../actions/workflows/swift-publish.yml) which publishes the new version to CocoaPods.
+Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
+
+1. Select `iOS` as the platform.
+2. Enter the expected version. The workflow reads the SDK version from the checked-in files and fails if the typed version does not match.
+3. Leave `dry-run` enabled first to review the release plan.
+4. Rerun with `dry-run` disabled. By default this creates a draft GitHub Release with the bare semver tag (e.g. `3.8.1`) for human review.
+5. Publish the draft release when ready. Publishing the draft kicks off the [Swift publish workflow](../../actions/workflows/swift-publish.yml), which publishes the new version to CocoaPods.
 
 ---
 
@@ -131,13 +134,15 @@ Open a pull request with the following changes:
 1. Bump the `versionName` in `platforms/android/lib/build.gradle`.
 2. Add an entry to the top of `platforms/android/CHANGELOG.md`.
 
-Once merged, draft a release on GitHub:
+Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
-1. Create a tag prefixed with `android/` (e.g. `android/3.0.1`) — Android releases use the `android/` prefix so the Maven publish workflow can distinguish them from Swift releases.
-2. Use the same tag as the release name.
-3. Document the changes since the previous release in the description.
-4. Check "Set as the latest release".
-5. Click "Publish release". This kicks off the [Android publish workflow](../../actions/workflows/android-publish.yml). **A manual approval by a maintainer is required before publication to Maven Central.**
+Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
+
+1. Select `Android` as the platform.
+2. Enter the expected version. The workflow reads the SDK version from `platforms/android/lib/build.gradle` and fails if the typed version does not match.
+3. Leave `dry-run` enabled first to review the release plan.
+4. Rerun with `dry-run` disabled. By default this creates a draft GitHub Release with the `android/`-prefixed tag (e.g. `android/3.0.1`) for human review.
+5. Publish the draft release when ready. Publishing the draft kicks off the [Android publish workflow](../../actions/workflows/android-publish.yml). **A manual approval by a maintainer is required before publication to Maven Central.**
 
 ---
 
