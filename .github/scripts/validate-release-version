@@ -57,6 +57,7 @@ case "$PLATFORM_INPUT" in
   iOS|ios|swift|Swift)
     PLATFORM="ios"
     DISPLAY_PLATFORM="iOS"
+    RELEASE_TITLE_PREFIX="Swift"
     TAG_PREFIX=""
     PUBLISH_WORKFLOW="swift-publish.yml"
 
@@ -75,6 +76,7 @@ case "$PLATFORM_INPUT" in
   Android|android)
     PLATFORM="android"
     DISPLAY_PLATFORM="Android"
+    RELEASE_TITLE_PREFIX="Android"
     TAG_PREFIX="android/"
     PUBLISH_WORKFLOW="android-publish.yml"
 
@@ -99,6 +101,7 @@ if [ -n "$EXPECTED_VERSION" ] && [ "$EXPECTED_VERSION" != "$VERSION" ]; then
 fi
 
 TAG="${TAG_PREFIX}${VERSION}"
+RELEASE_TITLE="[${RELEASE_TITLE_PREFIX}] ${VERSION}"
 
 if [ -n "$EXPECTED_TAG" ] && [ "$EXPECTED_TAG" != "$TAG" ]; then
   echo "::error::Git tag '$EXPECTED_TAG' does not match ${DISPLAY_PLATFORM} SDK version '$VERSION'. Expected tag '$TAG'." >&2
@@ -116,6 +119,7 @@ fi
   echo "display_platform=$DISPLAY_PLATFORM"
   echo "version=$VERSION"
   echo "tag=$TAG"
+  echo "release_title=$RELEASE_TITLE"
   echo "publish_workflow=$PUBLISH_WORKFLOW"
   echo "prerelease=$PRERELEASE"
 }
