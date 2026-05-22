@@ -15,7 +15,7 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 ## Where to make changes
 
-- Library source: `lib/src/main/java/com/shopify/checkoutkit/`. Flat package at the top level with a few subpackages (`errorevents/`, `lifecycleevents/`).
+- Library source: `lib/src/main/java/com/shopify/checkoutkit/`. Flat package at the top level, including generated protocol models.
 - Library tests: `lib/src/test/java/com/shopify/checkoutkit/`. "No test, no merge" is a listed reject criterion in the repo-root `.github/CONTRIBUTING.md`.
 - Java interop is a first-class concern — the library is commonly consumed from Java code. `lib/src/test/java/com/shopify/checkoutkit/InteropTest.java` exercises the public API from Java specifically; treat breakage there as a consumer-facing issue.
 
@@ -23,9 +23,9 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 - **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, present).
 - **`CheckoutDialog.kt`** — the dialog that hosts the WebView, including the progress indicator and checkout error coordination.
-- **`CheckoutWebView.kt`** — primary WebView. Instruments page loads; routes bridge messages.
-- **`BaseWebView.kt`** — abstract base class. Any new WebView variant must extend this so shared configuration (JS interface name, user agent suffix, client handling) is consistent.
-- **`CheckoutBridge.kt`** — the JS ↔ native bridge. `SCHEMA_VERSION` is a cross-boundary contract with the web checkout team; bumping it requires coordination with them.
+- **`CheckoutWebView.kt`** — primary WebView. Instruments page loads and attaches the ECP JavaScript interface.
+- **`BaseWebView.kt`** — abstract base class. Any new WebView variant must extend this so shared configuration (user agent suffix, WebChromeClient hooks, navigation error handling) is consistent.
+- **`EmbeddedCheckoutProtocol.kt`** — the Embedded Checkout Protocol JavaScript interface. Handles `ec.ready`, ECP notifications, and request/response delegations.
 - **`Configuration.kt`** — runtime config container (color scheme, log level).
 - **`CheckoutListener.kt`** + **`DefaultCheckoutListener`** — consumer-implemented lifecycle interface (failure, cancellation, permission prompts, file chooser). Changes here are consumer API changes.
 - **`CheckoutPresentation.kt`** — Kotlin-first builder for per-presentation callbacks (`onFail`, `onCancel`, browser/system hooks, ECP `connect(...)`). Builds a `DefaultCheckoutListener` internally.
@@ -93,5 +93,4 @@ Publishing goes through GitHub Releases → the repo-root `.github/workflows/and
 
 - **Library Kotlin version pin.** Consumer compatibility floor; any migration is a deliberate major-version decision.
 - **`minSdk` / JVM target.** Same story.
-- **`CheckoutBridge.SCHEMA_VERSION`.** Cross-team contract with the web checkout — changing it without coordination breaks the bridge.
 - **`-Xexplicit-api=strict`.** Removing this would let implicit public declarations ship; keeping it is a consumer-protection invariant.

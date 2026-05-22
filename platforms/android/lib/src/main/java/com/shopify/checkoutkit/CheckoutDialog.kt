@@ -6,12 +6,8 @@ import android.content.res.Configuration.UI_MODE_NIGHT_MASK
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Color
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.view.MenuItem
-import android.view.View.GONE
 import android.view.View.INVISIBLE
-import android.view.View.VISIBLE
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
@@ -151,14 +147,6 @@ internal class CheckoutDialog(
         }
     }
 
-    private fun toggleHeader(modalVisible: Boolean) {
-        Handler(Looper.getMainLooper()).post {
-            log.d(LOG_TAG, "Toggling header based on modal visibility state. Modal visible: $modalVisible.")
-            findViewById<Toolbar>(R.id.checkoutKitHeader).visibility = if (modalVisible) GONE else VISIBLE
-            findViewById<ProgressBar>(R.id.progressBar).visibility = if (modalVisible) GONE else INVISIBLE
-        }
-    }
-
     private fun updateProgressBarPercentage(percentage: Int) {
         log.d(LOG_TAG, "Updating progress bar percentage, $percentage.")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -182,7 +170,6 @@ internal class CheckoutDialog(
     private fun webViewListener(): CheckoutWebViewListener {
         return CheckoutWebViewListener(
             listener = checkoutListener,
-            toggleHeader = ::toggleHeader,
             closeCheckoutDialogWithError = ::closeCheckoutDialogWithError,
             setProgressBarVisibility = ::setProgressBarVisibility,
             updateProgressBarPercentage = ::updateProgressBarPercentage,

@@ -11,22 +11,14 @@ import android.webkit.WebView
 
 /**
  * Internal wrapper around the consumer-provided CheckoutListener. Handles dialog-internal
- * behavior (progress bar, modal header toggling, error close) and delegates the rest to
- * the listener.
+ * behavior (progress bar and error close) and delegates the rest to the listener.
  */
 internal class CheckoutWebViewListener(
     private val listener: CheckoutListener,
-    private val toggleHeader: (Boolean) -> Unit = {},
     private val closeCheckoutDialogWithError: (CheckoutException) -> Unit = {},
     private val setProgressBarVisibility: (Int) -> Unit = {},
     private val updateProgressBarPercentage: (Int) -> Unit = {},
 ) {
-    fun onCheckoutViewModalToggled(modalVisible: Boolean) {
-        onMainThread {
-            toggleHeader(modalVisible)
-        }
-    }
-
     fun onCheckoutViewFailedWithError(error: CheckoutException) {
         onMainThread {
             closeCheckoutDialogWithError(error)

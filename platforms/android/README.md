@@ -346,18 +346,9 @@ recreate the cart, retry later, or show an error state in the host app.
 
 | Exception Class                | Error Code                     | Description                                                                  | Recommendation                                                                              |
 | ------------------------------ | ------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `ConfigurationException`       | 'storefront_password_required' | Access to checkout is password protected.                                    | We are working on ways to enable the Checkout Kit for usage with password protected stores. |
-| `ConfigurationException`       | 'unknown'                      | Other configuration issue, see error details for more info.                  | Resolve the configuration issue in the error message.                                       |
 | `CheckoutExpiredException`     | 'cart_expired'                 | The cart or checkout is no longer available.                                 | Create a new cart and open a new checkout URL.                                              |
-| `CheckoutExpiredException`     | 'cart_completed'               | The cart associated with the checkout has completed checkout.                | Create new cart and open a new checkout URL.                                                |
-| `CheckoutExpiredException`     | 'invalid_cart'                 | The cart associated with the checkout is invalid (e.g. empty).               | Create a new cart and open a new checkout URL.                                              |
-| `CheckoutKitException`    | 'error_receiving_message'      | Checkout Kit failed to receive a message from checkout.                      | Handle as a checkout failure in the host app.                                               |
-| `CheckoutKitException`    | 'error_sending_message'        | Checkout Kit failed to send a message to checkout.                           | Handle as a checkout failure in the host app.                                               |
-| `CheckoutKitException`    | 'render_process_gone'          | The render process for the checkout WebView is gone.                         | Handle as a checkout failure in the host app.                                               |
-| `CheckoutKitException`    | 'unknown'                      | An error in Checkout Kit has occurred, see error details for more info.      | Handle as a checkout failure in the host app.                                               |
+| `CheckoutKitException`         | 'render_process_gone'          | The render process for the checkout WebView is gone.                         | Handle as a checkout failure in the host app.                                               |
 | `HttpException`                | 'http_error'                   | An unexpected server error has been encountered.                             | Handle as a checkout failure in the host app.                                               |
-| `ClientException`              | 'client_error'                 | An unhandled client error was encountered.                                   | Handle as a checkout failure in the host app.                                               |
-| `CheckoutUnavailableException` | 'unknown'                      | Checkout is unavailable for another reason, see error details for more info. | Handle as a checkout failure in the host app.                                               |
 
 #### Exception Hierarchy
 
@@ -366,31 +357,23 @@ recreate the cart, retry later, or show an error state in the host app.
 title: Checkout Kit Exception Hierarchy
 ---
 classDiagram
-    CheckoutException <|-- ConfigurationException
     CheckoutException <|-- CheckoutExpiredException
     CheckoutException <|-- CheckoutKitException
     CheckoutException <|-- CheckoutUnavailableException
     CheckoutUnavailableException <|-- HttpException
-    CheckoutUnavailableException <|-- ClientException
 
     <<Abstract>> CheckoutException
     CheckoutException : +String errorDescription
     CheckoutException : +String errorCode
-    class ConfigurationException{
-        note: "Store or checkout configuration issues."
-    }
     class CheckoutExpiredException{
-        note: "Expired or invalid carts/checkouts."
+        note: "Expired checkouts."
     }
     class CheckoutUnavailableException{
-        note: "Unexpected errors."
+        note: "Base class for availability failures."
     }
     class HttpException{
         note: "Unexpected Http response"
         +int statusCode
-    }
-    class ClientException{
-        note: "Unexpected client/web error"
     }
     class CheckoutKitException{
         note: "Error in Checkout Kit code"
