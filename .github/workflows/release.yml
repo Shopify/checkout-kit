@@ -1,0 +1,157 @@
+name: Release package
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to release
+        required: true
+        type: choice
+        options:
+          - iOS
+          - Android
+      version:
+        description: Expected SDK version. Must match the checked-in SDK version for the selected platform.
+        required: true
+        type: string
+      dry-run:
+        description: Validate and print the release plan, but do not create a release or dispatch publishing.
+        required: false
+        type: boolean
+        default: true
+      draft:
+        description: Create a draft GitHub Release for human review. Publish the draft manually to start publishing.
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: release-${{ inputs.platform }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release ${{ inputs.platform }} ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Validate requested release
+        id: release
+        env:
+          PLATFORM: ${{ inputs.platform }}
+          EXPECTED_VERSION: ${{ inputs.version }}
+        run: .github/scripts/validate-release-version "$PLATFORM" "$EXPECTED_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Require main branch for stable releases
+        if: steps.release.outputs.prerelease == 'false' && github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error::Stable releases must be created from the main branch. Current ref: $REF"
+          exit 1
+
+      - name: Check tag and release do not already exist
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "::error::Tag '${TAG}' already exists. Refusing to create a duplicate release."
+            exit 1
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::GitHub Release '${TAG}' already exists."
+            exit 1
+          fi
+
+          echo "::notice::Tag '${TAG}' and release '${TAG}' do not exist yet."
+
+      - name: Print release plan
+        env:
+          DRY_RUN: ${{ inputs.dry-run }}
+          DISPLAY_PLATFORM: ${{ steps.release.outputs.display_platform }}
+          VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
+          DRAFT: ${{ inputs.draft }}
+        run: |
+          set -euo pipefail
+          echo "Release plan:"
+          echo "  Platform: ${DISPLAY_PLATFORM}"
+          echo "  Version: ${VERSION}"
+          echo "  Tag: ${TAG}"
+          echo "  Prerelease: ${PRERELEASE}"
+          echo "  Publish workflow: ${PUBLISH_WORKFLOW}"
+          echo "  Dry run: ${DRY_RUN}"
+          echo "  Draft: ${DRAFT}"
+          if [ "$DRY_RUN" = "false" ] && [ "$DRAFT" = "true" ]; then
+            echo "  Publish dispatch: skipped until the draft release is manually published"
+          elif [ "$DRY_RUN" = "false" ]; then
+            echo "  Publish dispatch: ${PUBLISH_WORKFLOW} will be dispatched after release creation"
+          fi
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry-run }}
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          DRAFT: ${{ inputs.draft }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          args=("$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes)
+          if [ "$DRAFT" = "true" ]; then
+            args+=(--draft)
+          fi
+
+          if [ "$PRERELEASE" = "true" ]; then
+            args+=(--prerelease --latest=false)
+          elif [ "$DRAFT" = "false" ]; then
+            args+=(--latest)
+          fi
+
+          gh release create "${args[@]}"
+
+      - name: Dispatch publish workflow
+        if: ${{ !inputs.dry-run && !inputs.draft }}
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run "$PUBLISH_WORKFLOW" --ref "$TAG"
+          echo "::notice::Dispatched ${PUBLISH_WORKFLOW} at ${TAG}."
+
+      - name: Summary
+        env:
+          DISPLAY_PLATFORM: ${{ steps.release.outputs.display_platform }}
+          VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
+          PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<SUMMARY
+          ## Release plan
+
+          - Dry run: `${{ inputs.dry-run }}`
+          - Draft: `${{ inputs.draft }}`
+          - Platform: ${DISPLAY_PLATFORM}
+          - Version: ${VERSION}
+          - Tag: \`${TAG}\`
+          - Publish workflow: \`${PUBLISH_WORKFLOW}\`
+          SUMMARY

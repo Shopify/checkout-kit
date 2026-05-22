@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'USAGE'
+Usage: validate-release-version <platform> [expected-version] [expected-tag]
+
+Validates the selected SDK's checked-in version declarations, optional user
+version input, optional git tag, and prints GitHub Actions outputs to stdout.
+
+Platforms: iOS, Android
+USAGE
+}
+
+if [ "$#" -lt 1 ] || [ "$#" -gt 3 ]; then
+  usage
+  exit 2
+fi
+
+PLATFORM_INPUT="$1"
+EXPECTED_VERSION="${2:-}"
+EXPECTED_TAG="${3:-}"
+
+SEMVER_REGEX='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$'
+
+extract_first_match() {
+  local file="$1"
+  local regex="$2"
+  local value
+
+  if [ ! -f "$file" ]; then
+    echo "::error file=$file::Version source file does not exist." >&2
+    exit 1
+  fi
+
+  value=$(sed -nE "$regex" "$file" | head -n 1)
+  if [ -z "$value" ]; then
+    echo "::error file=$file::Could not extract version." >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$value"
+}
+
+check_same_version() {
+  local expected="$1"
+  local file="$2"
+  local actual="$3"
+
+  if [ "$actual" != "$expected" ]; then
+    echo "::error file=$file::Version '$actual' does not match source version '$expected'." >&2
+    exit 1
+  fi
+}
+
+case "$PLATFORM_INPUT" in
+  iOS|ios|swift|Swift)
+    PLATFORM="ios"
+    DISPLAY_PLATFORM="iOS"
+    TAG_PREFIX=""
+    PUBLISH_WORKFLOW="swift-publish.yml"
+
+    PODSPEC_FILE="ShopifyCheckoutKit.podspec"
+    SWIFT_VERSION_FILE="platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift"
+    SWIFT_METADATA_FILE="platforms/swift/Sources/ShopifyCheckoutKit/MetaData.swift"
+
+    VERSION=$(extract_first_match "$PODSPEC_FILE" 's/^[[:space:]]*s\.version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p')
+    SWIFT_VERSION=$(extract_first_match "$SWIFT_VERSION_FILE" 's/^[[:space:]]*public[[:space:]]+let[[:space:]]+version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p')
+    SWIFT_METADATA_VERSION=$(extract_first_match "$SWIFT_METADATA_FILE" 's/^[[:space:]]*package[[:space:]]+static[[:space:]]+let[[:space:]]+version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p')
+
+    check_same_version "$VERSION" "$SWIFT_VERSION_FILE" "$SWIFT_VERSION"
+    check_same_version "$VERSION" "$SWIFT_METADATA_FILE" "$SWIFT_METADATA_VERSION"
+    ;;
+
+  Android|android)
+    PLATFORM="android"
+    DISPLAY_PLATFORM="Android"
+    TAG_PREFIX="android/"
+    PUBLISH_WORKFLOW="android-publish.yml"
+
+    ANDROID_VERSION_FILE="platforms/android/lib/build.gradle"
+    VERSION=$(extract_first_match "$ANDROID_VERSION_FILE" 's/^[[:space:]]*def[[:space:]]+versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p')
+    ;;
+
+  *)
+    echo "::error::Unsupported platform '$PLATFORM_INPUT'. Expected one of: iOS, Android." >&2
+    exit 1
+    ;;
+esac
+
+if [[ ! "$VERSION" =~ $SEMVER_REGEX ]]; then
+  echo "::error::${DISPLAY_PLATFORM} SDK version '$VERSION' is invalid. Expected X.Y.Z or X.Y.Z-{alpha|beta|rc}.N." >&2
+  exit 1
+fi
+
+if [ -n "$EXPECTED_VERSION" ] && [ "$EXPECTED_VERSION" != "$VERSION" ]; then
+  echo "::error::Requested version '$EXPECTED_VERSION' does not match ${DISPLAY_PLATFORM} SDK version '$VERSION'. Bump the SDK version in a PR first, or rerun with '$VERSION'." >&2
+  exit 1
+fi
+
+TAG="${TAG_PREFIX}${VERSION}"
+
+if [ -n "$EXPECTED_TAG" ] && [ "$EXPECTED_TAG" != "$TAG" ]; then
+  echo "::error::Git tag '$EXPECTED_TAG' does not match ${DISPLAY_PLATFORM} SDK version '$VERSION'. Expected tag '$TAG'." >&2
+  exit 1
+fi
+
+if [[ "$VERSION" == *-* ]]; then
+  PRERELEASE="true"
+else
+  PRERELEASE="false"
+fi
+
+{
+  echo "platform=$PLATFORM"
+  echo "display_platform=$DISPLAY_PLATFORM"
+  echo "version=$VERSION"
+  echo "tag=$TAG"
+  echo "publish_workflow=$PUBLISH_WORKFLOW"
+  echo "prerelease=$PRERELEASE"
+}
+
+echo "✓ ${DISPLAY_PLATFORM} version '$VERSION' validates and maps to tag '$TAG'." >&2
