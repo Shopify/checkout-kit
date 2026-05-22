@@ -26,7 +26,7 @@ internal object ExternalUriLauncher {
             Result.Launched
         } catch (e: ActivityNotFoundException) {
             Result.Rejected(reason = e.message ?: "No activity resolves $uri")
-        } catch (e: Exception) {
+        } catch (e: SecurityException) {
             Result.Rejected(reason = e.message)
         }
     }
