@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ucp.dev/schemas/shopping/types/message_info.json",
+  "$id": "https://ucp.dev/schemas/common/types/message_info.json",
   "title": "Message Info",
   "type": "object",
   "required": [
@@ -18,8 +18,7 @@
       "description": "RFC 9535 JSONPath to the component the message refers to."
     },
     "code": {
-      "type": "string",
-      "description": "Info code for programmatic handling."
+      "$ref": "info_code.json"
     },
     "content_type": {
       "type": "string",

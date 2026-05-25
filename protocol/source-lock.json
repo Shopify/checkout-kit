@@ -8,8 +8,88 @@
       "upstream": "source/schemas/capability.json"
     },
     {
+      "local": "protocol/schemas/common/identity_linking.json",
+      "upstream": "source/schemas/common/identity_linking.json"
+    },
+    {
+      "local": "protocol/schemas/common/loyalty.json",
+      "upstream": "source/schemas/common/loyalty.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/amount.json",
+      "upstream": "source/schemas/common/types/amount.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/description.json",
+      "upstream": "source/schemas/common/types/description.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/error_code.json",
+      "upstream": "source/schemas/common/types/error_code.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/error_response.json",
+      "upstream": "source/schemas/common/types/error_response.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/info_code.json",
+      "upstream": "source/schemas/common/types/info_code.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/link.json",
+      "upstream": "source/schemas/common/types/link.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/media.json",
+      "upstream": "source/schemas/common/types/media.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/message.json",
+      "upstream": "source/schemas/common/types/message.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/message_error.json",
+      "upstream": "source/schemas/common/types/message_error.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/message_info.json",
+      "upstream": "source/schemas/common/types/message_info.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/message_warning.json",
+      "upstream": "source/schemas/common/types/message_warning.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/pagination.json",
+      "upstream": "source/schemas/common/types/pagination.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/postal_address.json",
+      "upstream": "source/schemas/common/types/postal_address.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/price.json",
+      "upstream": "source/schemas/common/types/price.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/reverse_domain_name.json",
+      "upstream": "source/schemas/common/types/reverse_domain_name.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/signed_amount.json",
+      "upstream": "source/schemas/common/types/signed_amount.json"
+    },
+    {
+      "local": "protocol/schemas/common/types/warning_code.json",
+      "upstream": "source/schemas/common/types/warning_code.json"
+    },
+    {
       "local": "protocol/schemas/payment_handler.json",
       "upstream": "source/schemas/payment_handler.json"
+    },
+    {
+      "local": "protocol/schemas/profile.json",
+      "upstream": "source/schemas/profile.json"
     },
     {
       "local": "protocol/schemas/service.json",
@@ -26,6 +106,14 @@
     {
       "local": "protocol/schemas/shopping/cart.json",
       "upstream": "source/schemas/shopping/cart.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/catalog_lookup.json",
+      "upstream": "source/schemas/shopping/catalog_lookup.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/catalog_search.json",
+      "upstream": "source/schemas/shopping/catalog_search.json"
     },
     {
       "local": "protocol/schemas/shopping/checkout.json",
@@ -48,6 +136,10 @@
       "upstream": "source/schemas/shopping/payment.json"
     },
     {
+      "local": "protocol/schemas/shopping/split_payments.json",
+      "upstream": "source/schemas/shopping/split_payments.json"
+    },
+    {
       "local": "protocol/schemas/shopping/types/account_info.json",
       "upstream": "source/schemas/shopping/types/account_info.json"
     },
@@ -56,8 +148,8 @@
       "upstream": "source/schemas/shopping/types/adjustment.json"
     },
     {
-      "local": "protocol/schemas/shopping/types/amount.json",
-      "upstream": "source/schemas/shopping/types/amount.json"
+      "local": "protocol/schemas/shopping/types/attribution.json",
+      "upstream": "source/schemas/shopping/types/attribution.json"
     },
     {
       "local": "protocol/schemas/shopping/types/available_payment_instrument.json",
@@ -72,6 +164,10 @@
       "upstream": "source/schemas/shopping/types/business_fulfillment_config.json"
     },
     {
+      "local": "protocol/schemas/shopping/types/business_split_payments_config.json",
+      "upstream": "source/schemas/shopping/types/business_split_payments_config.json"
+    },
+    {
       "local": "protocol/schemas/shopping/types/buyer.json",
       "upstream": "source/schemas/shopping/types/buyer.json"
     },
@@ -84,16 +180,16 @@
       "upstream": "source/schemas/shopping/types/card_payment_instrument.json"
     },
     {
+      "local": "protocol/schemas/shopping/types/category.json",
+      "upstream": "source/schemas/shopping/types/category.json"
+    },
+    {
       "local": "protocol/schemas/shopping/types/context.json",
       "upstream": "source/schemas/shopping/types/context.json"
     },
     {
-      "local": "protocol/schemas/shopping/types/error_code.json",
-      "upstream": "source/schemas/shopping/types/error_code.json"
-    },
-    {
-      "local": "protocol/schemas/shopping/types/error_response.json",
-      "upstream": "source/schemas/shopping/types/error_response.json"
+      "local": "protocol/schemas/shopping/types/detail_option_value.json",
+      "upstream": "source/schemas/shopping/types/detail_option_value.json"
     },
     {
       "local": "protocol/schemas/shopping/types/expectation.json",
@@ -128,6 +224,14 @@
       "upstream": "source/schemas/shopping/types/fulfillment_option.json"
     },
     {
+      "local": "protocol/schemas/shopping/types/input_correlation.json",
+      "upstream": "source/schemas/shopping/types/input_correlation.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/instrument_group.json",
+      "upstream": "source/schemas/shopping/types/instrument_group.json"
+    },
+    {
       "local": "protocol/schemas/shopping/types/item.json",
       "upstream": "source/schemas/shopping/types/item.json"
     },
@@ -136,28 +240,12 @@
       "upstream": "source/schemas/shopping/types/line_item.json"
     },
     {
-      "local": "protocol/schemas/shopping/types/link.json",
-      "upstream": "source/schemas/shopping/types/link.json"
-    },
-    {
       "local": "protocol/schemas/shopping/types/merchant_fulfillment_config.json",
       "upstream": "source/schemas/shopping/types/merchant_fulfillment_config.json"
     },
     {
-      "local": "protocol/schemas/shopping/types/message.json",
-      "upstream": "source/schemas/shopping/types/message.json"
-    },
-    {
-      "local": "protocol/schemas/shopping/types/message_error.json",
-      "upstream": "source/schemas/shopping/types/message_error.json"
-    },
-    {
-      "local": "protocol/schemas/shopping/types/message_info.json",
-      "upstream": "source/schemas/shopping/types/message_info.json"
-    },
-    {
-      "local": "protocol/schemas/shopping/types/message_warning.json",
-      "upstream": "source/schemas/shopping/types/message_warning.json"
+      "local": "protocol/schemas/shopping/types/option_value.json",
+      "upstream": "source/schemas/shopping/types/option_value.json"
     },
     {
       "local": "protocol/schemas/shopping/types/order_confirmation.json",
@@ -184,16 +272,36 @@
       "upstream": "source/schemas/shopping/types/platform_fulfillment_config.json"
     },
     {
-      "local": "protocol/schemas/shopping/types/postal_address.json",
-      "upstream": "source/schemas/shopping/types/postal_address.json"
+      "local": "protocol/schemas/shopping/types/price_filter.json",
+      "upstream": "source/schemas/shopping/types/price_filter.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/price_range.json",
+      "upstream": "source/schemas/shopping/types/price_range.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/product.json",
+      "upstream": "source/schemas/shopping/types/product.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/product_option.json",
+      "upstream": "source/schemas/shopping/types/product_option.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/rating.json",
+      "upstream": "source/schemas/shopping/types/rating.json"
     },
     {
       "local": "protocol/schemas/shopping/types/retail_location.json",
       "upstream": "source/schemas/shopping/types/retail_location.json"
     },
     {
-      "local": "protocol/schemas/shopping/types/reverse_domain_name.json",
-      "upstream": "source/schemas/shopping/types/reverse_domain_name.json"
+      "local": "protocol/schemas/shopping/types/search_filters.json",
+      "upstream": "source/schemas/shopping/types/search_filters.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/selected_option.json",
+      "upstream": "source/schemas/shopping/types/selected_option.json"
     },
     {
       "local": "protocol/schemas/shopping/types/shipping_destination.json",
@@ -202,10 +310,6 @@
     {
       "local": "protocol/schemas/shopping/types/signals.json",
       "upstream": "source/schemas/shopping/types/signals.json"
-    },
-    {
-      "local": "protocol/schemas/shopping/types/signed_amount.json",
-      "upstream": "source/schemas/shopping/types/signed_amount.json"
     },
     {
       "local": "protocol/schemas/shopping/types/token_credential.json",
@@ -220,8 +324,28 @@
       "upstream": "source/schemas/shopping/types/totals.json"
     },
     {
+      "local": "protocol/schemas/shopping/types/variant.json",
+      "upstream": "source/schemas/shopping/types/variant.json"
+    },
+    {
+      "local": "protocol/schemas/transports/a2a_message.json",
+      "upstream": "source/schemas/transports/a2a_message.json"
+    },
+    {
       "local": "protocol/schemas/transports/embedded_config.json",
       "upstream": "source/schemas/transports/embedded_config.json"
+    },
+    {
+      "local": "protocol/schemas/transports/embedded_message.json",
+      "upstream": "source/schemas/transports/embedded_message.json"
+    },
+    {
+      "local": "protocol/schemas/transports/jsonrpc.json",
+      "upstream": "source/schemas/transports/jsonrpc.json"
+    },
+    {
+      "local": "protocol/schemas/transports/mcp_tool_call.json",
+      "upstream": "source/schemas/transports/mcp_tool_call.json"
     },
     {
       "local": "protocol/schemas/ucp.json",
