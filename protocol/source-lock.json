@@ -1,0 +1,235 @@
+{
+  "protocolVersion": "2026-04-08",
+  "upstreamRepository": "Universal-Commerce-Protocol/ucp",
+  "upstreamCommit": "e627e4c9c84b5a9b54fa19c7e0c2231e78c00d8e",
+  "files": [
+    {
+      "local": "protocol/schemas/capability.json",
+      "upstream": "source/schemas/capability.json"
+    },
+    {
+      "local": "protocol/schemas/payment_handler.json",
+      "upstream": "source/schemas/payment_handler.json"
+    },
+    {
+      "local": "protocol/schemas/service.json",
+      "upstream": "source/schemas/service.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/ap2_mandate.json",
+      "upstream": "source/schemas/shopping/ap2_mandate.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/buyer_consent.json",
+      "upstream": "source/schemas/shopping/buyer_consent.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/cart.json",
+      "upstream": "source/schemas/shopping/cart.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/checkout.json",
+      "upstream": "source/schemas/shopping/checkout.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/discount.json",
+      "upstream": "source/schemas/shopping/discount.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/fulfillment.json",
+      "upstream": "source/schemas/shopping/fulfillment.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/order.json",
+      "upstream": "source/schemas/shopping/order.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/payment.json",
+      "upstream": "source/schemas/shopping/payment.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/account_info.json",
+      "upstream": "source/schemas/shopping/types/account_info.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/adjustment.json",
+      "upstream": "source/schemas/shopping/types/adjustment.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/amount.json",
+      "upstream": "source/schemas/shopping/types/amount.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/available_payment_instrument.json",
+      "upstream": "source/schemas/shopping/types/available_payment_instrument.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/binding.json",
+      "upstream": "source/schemas/shopping/types/binding.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/business_fulfillment_config.json",
+      "upstream": "source/schemas/shopping/types/business_fulfillment_config.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/buyer.json",
+      "upstream": "source/schemas/shopping/types/buyer.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/card_credential.json",
+      "upstream": "source/schemas/shopping/types/card_credential.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/card_payment_instrument.json",
+      "upstream": "source/schemas/shopping/types/card_payment_instrument.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/context.json",
+      "upstream": "source/schemas/shopping/types/context.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/error_code.json",
+      "upstream": "source/schemas/shopping/types/error_code.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/error_response.json",
+      "upstream": "source/schemas/shopping/types/error_response.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/expectation.json",
+      "upstream": "source/schemas/shopping/types/expectation.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/fulfillment.json",
+      "upstream": "source/schemas/shopping/types/fulfillment.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/fulfillment_available_method.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_available_method.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/fulfillment_destination.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_destination.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/fulfillment_event.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_event.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/fulfillment_group.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_group.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/fulfillment_method.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_method.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/fulfillment_option.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_option.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/item.json",
+      "upstream": "source/schemas/shopping/types/item.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/line_item.json",
+      "upstream": "source/schemas/shopping/types/line_item.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/link.json",
+      "upstream": "source/schemas/shopping/types/link.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/merchant_fulfillment_config.json",
+      "upstream": "source/schemas/shopping/types/merchant_fulfillment_config.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/message.json",
+      "upstream": "source/schemas/shopping/types/message.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/message_error.json",
+      "upstream": "source/schemas/shopping/types/message_error.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/message_info.json",
+      "upstream": "source/schemas/shopping/types/message_info.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/message_warning.json",
+      "upstream": "source/schemas/shopping/types/message_warning.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/order_confirmation.json",
+      "upstream": "source/schemas/shopping/types/order_confirmation.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/order_line_item.json",
+      "upstream": "source/schemas/shopping/types/order_line_item.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/payment_credential.json",
+      "upstream": "source/schemas/shopping/types/payment_credential.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/payment_identity.json",
+      "upstream": "source/schemas/shopping/types/payment_identity.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/payment_instrument.json",
+      "upstream": "source/schemas/shopping/types/payment_instrument.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/platform_fulfillment_config.json",
+      "upstream": "source/schemas/shopping/types/platform_fulfillment_config.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/postal_address.json",
+      "upstream": "source/schemas/shopping/types/postal_address.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/retail_location.json",
+      "upstream": "source/schemas/shopping/types/retail_location.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/reverse_domain_name.json",
+      "upstream": "source/schemas/shopping/types/reverse_domain_name.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/shipping_destination.json",
+      "upstream": "source/schemas/shopping/types/shipping_destination.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/signals.json",
+      "upstream": "source/schemas/shopping/types/signals.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/signed_amount.json",
+      "upstream": "source/schemas/shopping/types/signed_amount.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/token_credential.json",
+      "upstream": "source/schemas/shopping/types/token_credential.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/total.json",
+      "upstream": "source/schemas/shopping/types/total.json"
+    },
+    {
+      "local": "protocol/schemas/shopping/types/totals.json",
+      "upstream": "source/schemas/shopping/types/totals.json"
+    },
+    {
+      "local": "protocol/schemas/transports/embedded_config.json",
+      "upstream": "source/schemas/transports/embedded_config.json"
+    },
+    {
+      "local": "protocol/schemas/ucp.json",
+      "upstream": "source/schemas/ucp.json"
+    },
+    {
+      "local": "protocol/services/shopping/embedded.openrpc.json",
+      "upstream": "source/services/shopping/embedded.openrpc.json"
+    }
+  ]
+}
