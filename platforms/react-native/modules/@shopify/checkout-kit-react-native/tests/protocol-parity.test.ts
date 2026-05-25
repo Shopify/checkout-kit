@@ -21,6 +21,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-export * from './embedded-checkout';
-export * from './generated/Models';
-export * from './notifications';
+import type {
+  Checkout,
+  EmbeddedCheckoutPublicNotificationMethod,
+  ErrorResponse,
+} from '@shopify/checkout-kit-protocol';
+
+describe('protocol type parity', () => {
+  it('can type check React Native against generated protocol models', () => {
+    const method: EmbeddedCheckoutPublicNotificationMethod = 'ec.start';
+    const checkout: Checkout = {
+      id: 'chk_1',
+      currency: 'USD',
+      status: 'incomplete',
+      lineItems: [],
+      links: [],
+      totals: [],
+      ucp: {
+        paymentHandlers: {},
+        version: '2026-04-08',
+      },
+    };
+    const error: ErrorResponse = {
+      ucp: {
+        version: '2026-04-08',
+        status: 'error',
+      },
+      messages: [
+        {
+          type: 'error',
+          code: 'unknown_error',
+          content: 'Something went wrong.',
+          severity: 'unrecoverable',
+        },
+      ],
+    };
+
+    expect(method).toBe('ec.start');
+    expect(checkout.id).toBe('chk_1');
+    expect(error.ucp.status).toBe('error');
+  });
+});

@@ -13,6 +13,27 @@ class CheckoutProtocolTest {
     // region NotificationDescriptor
 
     @Test
+    fun `public notification descriptors match supported embedded checkout methods`() {
+        assertThat(
+            listOf(
+                CheckoutProtocol.start.method,
+                CheckoutProtocol.complete.method,
+                CheckoutProtocol.error.method,
+                CheckoutProtocol.lineItemsChange.method,
+                CheckoutProtocol.totalsChange.method,
+                CheckoutProtocol.messagesChange.method,
+            )
+        ).containsExactly(
+            "ec.start",
+            "ec.complete",
+            "ec.error",
+            "ec.line_items.change",
+            "ec.totals.change",
+            "ec.messages.change",
+        )
+    }
+
+    @Test
     fun `start descriptor has correct method`() {
         assertThat(CheckoutProtocol.start.method).isEqualTo("ec.start")
     }
@@ -33,6 +54,11 @@ class CheckoutProtocolTest {
     }
 
     @Test
+    fun `totalsChange descriptor has correct method`() {
+        assertThat(CheckoutProtocol.totalsChange.method).isEqualTo("ec.totals.change")
+    }
+
+    @Test
     fun `buyerChange descriptor has correct method`() {
         assertThat(CheckoutProtocol.buyerChange.method).isEqualTo("ec.buyer.change")
     }
@@ -40,6 +66,15 @@ class CheckoutProtocolTest {
     @Test
     fun `error descriptor has correct method`() {
         assertThat(CheckoutProtocol.error.method).isEqualTo("ec.error")
+    }
+
+    // endregion
+
+    // region DelegationDescriptor
+
+    @Test
+    fun `windowOpen descriptor has correct method`() {
+        assertThat(CheckoutProtocol.windowOpen.method).isEqualTo("ec.window.open_request")
     }
 
     // endregion
@@ -175,8 +210,8 @@ class CheckoutProtocolTest {
     // region SPEC_VERSION
 
     @Test
-    fun `SPEC_VERSION is non-empty`() {
-        assertThat(CheckoutProtocol.SPEC_VERSION).isNotEmpty()
+    fun `SPEC_VERSION matches embedded checkout snapshot`() {
+        assertThat(CheckoutProtocol.SPEC_VERSION).isEqualTo("2026-04-08")
     }
 
     // endregion

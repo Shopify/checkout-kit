@@ -12,6 +12,24 @@ struct DescriptorTests {
 
     @Suite("Notifications")
     struct Notifications {
+        @Test func publicNotificationMethods() {
+            #expect([
+                CheckoutProtocol.start.method,
+                CheckoutProtocol.complete.method,
+                CheckoutProtocol.error.method,
+                CheckoutProtocol.lineItemsChange.method,
+                CheckoutProtocol.totalsChange.method,
+                CheckoutProtocol.messagesChange.method,
+            ] == [
+                "ec.start",
+                "ec.complete",
+                "ec.error",
+                "ec.line_items.change",
+                "ec.totals.change",
+                "ec.messages.change",
+            ])
+        }
+
         @Test func startMethod() {
             #expect(CheckoutProtocol.start.method == "ec.start")
         }
@@ -38,6 +56,18 @@ struct DescriptorTests {
 
         @Test func errorMethod() {
             #expect(CheckoutProtocol.error.method == "ec.error")
+        }
+    }
+
+    @Suite("Delegations")
+    struct Delegations {
+        @Test func defaultDelegations() {
+            #expect(CheckoutProtocol.defaultDelegations == ["window.open"])
+        }
+
+        @Test func windowOpenDescriptor() {
+            #expect(CheckoutProtocol.windowOpen.method == "ec.window.open_request")
+            #expect(CheckoutProtocol.windowOpen.delegation == "window.open")
         }
     }
 }
