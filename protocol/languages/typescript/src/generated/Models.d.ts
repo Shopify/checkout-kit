@@ -1,33 +1,10 @@
 /**
- * Unit price in ISO 4217 minor units.
- *
- * Monetary amount in the currency's minor unit as defined by ISO 4217. Refer to the
- * currency's exponent to determine minor-to-major ratio (e.g., 2 for USD, 0 for JPY, 3 for
- * KWD).
- */
-export type Amount = number;
-/**
- * Error code identifying the type of error. Standard errors are defined in specification
- * (see examples), and have standardized semantics; freeform codes are permitted.
- */
-export type ErrorCode = string;
-/**
- * Reverse-domain identifier used for collision-safe namespacing of capabilities, services,
- * handlers, eligibility claims, and extension-contributed keys. Must contain at least two
- * dot-separated segments (e.g., 'dev.ucp.shopping.checkout', 'com.example.loyalty_gold').
- */
-export type ReverseDomainName = string;
-/**
- * Monetary amount in the currency's minor unit as defined by ISO 4217. Refer to the
- * currency's exponent to determine minor-to-major ratio (e.g., 2 for USD, 0 for JPY, 3 for
- * KWD). May be negative — the sign is intrinsic to the value (e.g., discounts are negative,
- * charges are positive).
- */
-export type SignedAmount = number;
-/**
  * Base checkout schema. Extensions compose onto this using allOf.
  */
 export interface Checkout {
+    attribution?: {
+        [key: string]: string;
+    };
     /**
      * Representation of the buyer.
      */
@@ -59,11 +36,11 @@ export interface Checkout {
      * Links to be displayed by the platform (Privacy Policy, TOS). Mandatory for legal
      * compliance.
      */
-    links: LinkElement[];
+    links: Link[];
     /**
      * List of messages with error and info about the checkout session state.
      */
-    messages?: MessageElement[];
+    messages?: Message[];
     /**
      * Details about an order created for this checkout session.
      */
@@ -226,7 +203,7 @@ export interface LineItemTotal {
     type: string;
     [property: string]: any;
 }
-export interface LinkElement {
+export interface Link {
     /**
      * Optional display text for the link. When provided, use this instead of generating from
      * type.
@@ -244,16 +221,38 @@ export interface LinkElement {
     url: string;
     [property: string]: any;
 }
+export interface MessageError {
+    code: string;
+    content: string;
+    contentType?: ContentType;
+    path?: string;
+    severity: Severity;
+    type: StatusEnum;
+    [property: string]: any;
+}
+export interface MessageInfo {
+    code?: string;
+    content: string;
+    contentType?: ContentType;
+    path?: string;
+    type: "info";
+    [property: string]: any;
+}
+export interface MessageWarning {
+    code: string;
+    content: string;
+    contentType?: ContentType;
+    imageUrl?: string;
+    path?: string;
+    presentation?: string;
+    type: "warning";
+    url?: string;
+    [property: string]: any;
+}
 /**
  * Container for error, warning, or info messages.
  */
-export interface MessageElement {
-    /**
-     * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
-     * fulfillment_changed, age_restricted, etc.).
-     *
-     * Info code for programmatic handling.
-     */
+export interface Message {
     code?: string;
     /**
      * Human-readable message.
@@ -360,7 +359,7 @@ export interface PaymentSelectedPaymentInstrument {
     /**
      * The billing address associated with this payment method.
      */
-    billingAddress?: BillingAddressObject;
+    billingAddress?: PostalAddress;
     credential?: CredentialObject;
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -396,7 +395,7 @@ export interface PaymentSelectedPaymentInstrument {
  *
  * Physical address of the location.
  */
-export interface BillingAddressObject {
+export interface PostalAddress {
     /**
      * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
      * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -703,6 +702,99 @@ export type Transport = "rest" | "mcp" | "a2a" | "embedded";
  */
 export type UcpCheckoutResponseSchemaStatus = "success" | "error";
 /**
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface ErrorResponse {
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages: Message[];
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: ErrorResponseUcp;
+}
+/**
+ * UCP protocol metadata. Status MUST be 'error' for error response.
+ *
+ * UCP metadata with status 'error'. Use for response branches that carry error
+ * information.
+ *
+ * Base UCP metadata with shared properties for all schema types.
+ */
+export interface ErrorResponseUcp {
+    /**
+     * Capability registry keyed by reverse-domain name.
+     */
+    capabilities?: {
+        [key: string]: CapabilityResponseSchema[];
+    };
+    /**
+     * Payment handler registry keyed by reverse-domain name.
+     */
+    paymentHandlers?: {
+        [key: string]: PaymentHandlerResponseSchema[];
+    };
+    /**
+     * Service registry keyed by reverse-domain name.
+     */
+    services?: {
+        [key: string]: UcpOrderResponseSchemaService[];
+    };
+    /**
+     * Application-level status of the UCP operation.
+     */
+    status: StatusEnum;
+    version: string;
+    [property: string]: any;
+}
+/**
+ * Shared foundation for all UCP entities.
+ */
+export interface UcpOrderResponseSchemaService {
+    /**
+     * Entity-specific configuration. Structure defined by each entity's schema.
+     */
+    config?: {
+        [key: string]: any;
+    };
+    /**
+     * Unique identifier for this entity instance. Used to disambiguate when multiple instances
+     * exist.
+     */
+    id?: string;
+    /**
+     * URL to JSON Schema defining this entity's structure and payloads.
+     */
+    schema?: string;
+    /**
+     * URL to human-readable specification document.
+     */
+    spec?: string;
+    /**
+     * Entity version in YYYY-MM-DD format.
+     */
+    version: string;
+    /**
+     * Endpoint URL for this transport binding.
+     */
+    endpoint?: string;
+    /**
+     * Transport protocol for this service binding.
+     */
+    transport: Transport;
+    [property: string]: any;
+}
+/**
+ * Application-level status of the UCP operation.
+ */
+export type StatusEnum = "error";
+/**
  * Non-sensitive backend identifiers for linking.
  */
 export interface PaymentAccountInfo {
@@ -851,6 +943,41 @@ export interface BusinessFulfillmentConfigAllowsMultiDestination {
      */
     shipping?: boolean;
 }
+/**
+ * Business-level configuration for split payments. Declaring the capability means multiple
+ * payment instruments are supported; this config declares which combinations are valid.
+ */
+export interface BusinessSplitPaymentsConfig {
+    /**
+     * Array of valid instrument combinations. Each combination is an array of instrument
+     * groups. A payment is valid if it matches any combination.
+     */
+    allowedCombinations: Array<AllowedCombinationElement[]>;
+    [property: string]: any;
+}
+/**
+ * A single valid combination: an array of instrument groups that together define the
+ * constraints. All groups must be satisfied (AND logic).
+ *
+ * A constraint within an allowed combination that defines which instrument types can fill
+ * this group and how many are permitted.
+ */
+export interface AllowedCombinationElement {
+    /**
+     * Maximum number of instruments allowed from this group. Defaults to 1. MUST be greater
+     * than or equal to `min`.
+     */
+    max?: number;
+    /**
+     * Minimum number of instruments required from this group. Defaults to 0 (optional).
+     */
+    min?: number;
+    /**
+     * Instrument types accepted by this group (OR logic). Any listed type qualifies.
+     */
+    types: string[];
+    [property: string]: any;
+}
 export interface Buyer {
     /**
      * Email of the buyer.
@@ -886,7 +1013,7 @@ export interface CardCredential {
      *
      * The credential type identifier for card credentials.
      */
-    type: TypeEnum;
+    type: ErrorCode;
     /**
      * The type of card number. Network tokens are preferred with fallback to FPAN. See PCI
      * Scope for more details.
@@ -928,10 +1055,22 @@ export interface CardCredential {
  */
 export type CardNumberType = "fpan" | "network_token" | "dpan";
 /**
- * Error code identifying the type of error. Standard errors are defined in specification
- * (see examples), and have standardized semantics; freeform codes are permitted.
+ * URL-style parameter value, encoded as a string. Numeric or boolean values MUST be
+ * string-encoded as they would be in a URL query string.
+ *
+ * Error code identifying the type of error. Standard errors are defined in capability
+ * specifications (see examples) and have standardized semantics; freeform codes are
+ * permitted.
+ *
+ * Warning code identifying the type of warning. Standard codes are defined in capability
+ * specifications (see examples) and have standardized semantics; freeform codes are
+ * permitted.
+ *
+ * Info code identifying the type of informational message. Standard codes are defined in
+ * capability specifications (see examples) and have standardized semantics; freeform codes
+ * are permitted.
  */
-export type TypeEnum = "card";
+export type ErrorCode = "card";
 /**
  * A basic card payment instrument with visible card details. Can be inherited by a
  * handler's instrument schema to define handler-specific display details or more complex
@@ -944,7 +1083,7 @@ export interface CardPaymentInstrument {
     /**
      * The billing address associated with this payment method.
      */
-    billingAddress?: BillingAddressObject;
+    billingAddress?: PostalAddress;
     credential?: CredentialObject;
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -968,7 +1107,7 @@ export interface CardPaymentInstrument {
      *
      * Indicates this is a card payment instrument.
      */
-    type: TypeEnum;
+    type: ErrorCode;
     [property: string]: any;
 }
 /**
@@ -1004,6 +1143,20 @@ export interface Display {
      * Last 4 digits of the card number.
      */
     lastDigits?: string;
+    [property: string]: any;
+}
+/**
+ * A product category with optional taxonomy identifier.
+ */
+export interface Category {
+    /**
+     * Source taxonomy. Well-known values: `google_product_category`, `shopify`, `merchant`.
+     */
+    taxonomy?: string;
+    /**
+     * Category value or path (e.g., 'Apparel > Shirts', '1604').
+     */
+    value: string;
     [property: string]: any;
 }
 /**
@@ -1069,98 +1222,32 @@ export interface Context {
     [property: string]: any;
 }
 /**
- * Generic error response when business logic prevents resource creation or failed to
- * retrieve resource. Used when no valid resource can be established.
- */
-export interface ErrorResponse {
-    /**
-     * URL for buyer handoff or session recovery.
-     */
-    continueUrl?: string;
-    /**
-     * Array of messages describing why the operation failed.
-     */
-    messages: MessageElement[];
-    /**
-     * UCP protocol metadata. Status MUST be 'error' for error response.
-     */
-    ucp: ErrorResponseUcp;
-}
-/**
- * UCP protocol metadata. Status MUST be 'error' for error response.
+ * An option value with availability signals relative to the current selections. Used in
+ * get_product responses where selected context exists.
  *
- * UCP metadata with status 'error'. Use for response branches that carry error
- * information.
- *
- * Base UCP metadata with shared properties for all schema types.
+ * A selectable value for a product option.
  */
-export interface ErrorResponseUcp {
+export interface DetailOptionValue {
     /**
-     * Capability registry keyed by reverse-domain name.
+     * Whether a variant matching this value and the current option selections is purchasable.
      */
-    capabilities?: {
-        [key: string]: CapabilityResponseSchema[];
-    };
+    available?: boolean;
     /**
-     * Payment handler registry keyed by reverse-domain name.
+     * Whether a variant matching this value and the current option selections exists in the
+     * catalog.
      */
-    paymentHandlers?: {
-        [key: string]: PaymentHandlerResponseSchema[];
-    };
+    exists?: boolean;
     /**
-     * Service registry keyed by reverse-domain name.
-     */
-    services?: {
-        [key: string]: UcpOrderResponseSchemaService[];
-    };
-    /**
-     * Application-level status of the UCP operation.
-     */
-    status: StatusEnum;
-    version: string;
-    [property: string]: any;
-}
-/**
- * Shared foundation for all UCP entities.
- */
-export interface UcpOrderResponseSchemaService {
-    /**
-     * Entity-specific configuration. Structure defined by each entity's schema.
-     */
-    config?: {
-        [key: string]: any;
-    };
-    /**
-     * Unique identifier for this entity instance. Used to disambiguate when multiple instances
-     * exist.
+     * Optional server-assigned identifier for this option value. When present in a
+     * selected_option, the server SHOULD use it for matching instead of label.
      */
     id?: string;
     /**
-     * URL to JSON Schema defining this entity's structure and payloads.
+     * Display text for this option value (e.g., 'Small', 'Blue').
      */
-    schema?: string;
-    /**
-     * URL to human-readable specification document.
-     */
-    spec?: string;
-    /**
-     * Entity version in YYYY-MM-DD format.
-     */
-    version: string;
-    /**
-     * Endpoint URL for this transport binding.
-     */
-    endpoint?: string;
-    /**
-     * Transport protocol for this service binding.
-     */
-    transport: Transport;
+    label: string;
     [property: string]: any;
 }
-/**
- * Application-level status of the UCP operation.
- */
-export type StatusEnum = "error";
 /**
  * Buyer-facing fulfillment expectation representing logical groupings of items (e.g.,
  * 'package'). Can be split, merged, or adjusted post-order to set buyer expectations for
@@ -1174,7 +1261,7 @@ export interface Expectation {
     /**
      * Delivery destination address.
      */
-    destination: BillingAddressObject;
+    destination: PostalAddress;
     /**
      * When this expectation can be fulfilled: 'now' or ISO 8601 timestamp for future date
      * (backorder, pre-order).
@@ -1210,9 +1297,23 @@ export interface ExpectationLineItem {
  */
 export type MethodType = "shipping" | "pickup" | "digital";
 /**
+ * Container for fulfillment methods and availability.
+ */
+export interface Fulfillment {
+    /**
+     * Inventory availability hints.
+     */
+    availableMethods?: AvailableMethodElement[];
+    /**
+     * Fulfillment methods for cart items.
+     */
+    methods?: MethodElement[];
+    [property: string]: any;
+}
+/**
  * Inventory availability hint for a fulfillment method type.
  */
-export interface FulfillmentAvailableMethod {
+export interface AvailableMethodElement {
     /**
      * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
      */
@@ -1232,190 +1333,9 @@ export interface FulfillmentAvailableMethod {
     [property: string]: any;
 }
 /**
- * A destination for fulfillment.
- *
- * Shipping destination.
- *
- * The billing address associated with this payment method.
- *
- * Delivery destination address.
- *
- * Physical address of the location.
- *
- * A pickup location (retail store, locker, etc.).
- */
-export interface FulfillmentDestination {
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
-     */
-    addressCountry?: string;
-    /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
-     */
-    addressLocality?: string;
-    /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
-     */
-    addressRegion?: string;
-    /**
-     * An address extension such as an apartment number, C/O or alternative name.
-     */
-    extendedAddress?: string;
-    /**
-     * Optional. First name of the contact associated with the address.
-     */
-    firstName?: string;
-    /**
-     * Optional. Last name of the contact associated with the address.
-     */
-    lastName?: string;
-    /**
-     * Optional. Phone number of the contact associated with the address.
-     */
-    phoneNumber?: string;
-    /**
-     * The postal code. For example, 94043.
-     */
-    postalCode?: string;
-    /**
-     * The street address.
-     */
-    streetAddress?: string;
-    /**
-     * ID specific to this shipping destination.
-     *
-     * Unique location identifier.
-     */
-    id: string;
-    /**
-     * Physical address of the location.
-     */
-    address?: BillingAddressObject;
-    /**
-     * Location name (e.g., store name).
-     */
-    name?: string;
-    [property: string]: any;
-}
-/**
- * Append-only fulfillment event representing an actual shipment. References line items by
- * ID.
- */
-export interface FulfillmentEvent {
-    /**
-     * Carrier name (e.g., 'FedEx', 'USPS').
-     */
-    carrier?: string;
-    /**
-     * Human-readable description of the shipment status or delivery information (e.g.,
-     * 'Delivered to front door', 'Out for delivery').
-     */
-    description?: string;
-    /**
-     * Fulfillment event identifier.
-     */
-    id: string;
-    /**
-     * Which line items and quantities are fulfilled in this event.
-     */
-    lineItems: FulfillmentEventLineItem[];
-    /**
-     * RFC 3339 timestamp when this fulfillment event occurred.
-     */
-    occurredAt: string;
-    /**
-     * Carrier tracking number (required if type != processing).
-     */
-    trackingNumber?: string;
-    /**
-     * URL to track this shipment (required if type != processing).
-     */
-    trackingUrl?: string;
-    /**
-     * Fulfillment event type. Common values include: processing (preparing to ship), shipped
-     * (handed to carrier), in_transit (in delivery network), delivered (received by buyer),
-     * failed_attempt (delivery attempt failed), canceled (fulfillment canceled), undeliverable
-     * (cannot be delivered), returned_to_sender (returned to merchant).
-     */
-    type: string;
-    [property: string]: any;
-}
-export interface FulfillmentEventLineItem {
-    /**
-     * Line item ID reference.
-     */
-    id: string;
-    /**
-     * Quantity fulfilled in this event.
-     */
-    quantity: number;
-    [property: string]: any;
-}
-/**
- * A merchant-generated package/group of line items with fulfillment options.
- */
-export interface FulfillmentGroup {
-    /**
-     * Group identifier for referencing merchant-generated groups in updates.
-     */
-    id: string;
-    /**
-     * Line item IDs included in this group/package.
-     */
-    lineItemIds: string[];
-    /**
-     * Available fulfillment options for this group.
-     */
-    options?: OptionElement[];
-    /**
-     * ID of the selected fulfillment option for this group.
-     */
-    selectedOptionId?: null | string;
-    [property: string]: any;
-}
-/**
- * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
- */
-export interface OptionElement {
-    /**
-     * Carrier name (for shipping).
-     */
-    carrier?: string;
-    /**
-     * Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
-     */
-    description?: string;
-    /**
-     * Earliest fulfillment date.
-     */
-    earliestFulfillmentTime?: string;
-    /**
-     * Unique fulfillment option identifier.
-     */
-    id: string;
-    /**
-     * Latest fulfillment date.
-     */
-    latestFulfillmentTime?: string;
-    /**
-     * Short label (e.g., 'Express Shipping', 'Curbside Pickup').
-     */
-    title: string;
-    /**
-     * Fulfillment option totals breakdown.
-     */
-    totals: LineItemTotal[];
-    [property: string]: any;
-}
-/**
  * A fulfillment method (shipping or pickup) with destinations and groups.
  */
-export interface FulfillmentMethod {
+export interface MethodElement {
     /**
      * Available destinations. For shipping: addresses. For pickup: retail locations.
      */
@@ -1507,7 +1427,7 @@ export interface FulfillmentDestinationElement {
     /**
      * Physical address of the location.
      */
-    address?: BillingAddressObject;
+    address?: PostalAddress;
     /**
      * Location name (e.g., store name).
      */
@@ -1534,6 +1454,240 @@ export interface GroupElement {
      * ID of the selected fulfillment option for this group.
      */
     selectedOptionId?: null | string;
+    [property: string]: any;
+}
+/**
+ * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
+ */
+export interface OptionElement {
+    /**
+     * Carrier name (for shipping).
+     */
+    carrier?: string;
+    /**
+     * Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
+     */
+    description?: string;
+    /**
+     * Earliest fulfillment date.
+     */
+    earliestFulfillmentTime?: string;
+    /**
+     * Unique fulfillment option identifier.
+     */
+    id: string;
+    /**
+     * Latest fulfillment date.
+     */
+    latestFulfillmentTime?: string;
+    /**
+     * Short label (e.g., 'Express Shipping', 'Curbside Pickup').
+     */
+    title: string;
+    /**
+     * Fulfillment option totals breakdown.
+     */
+    totals: LineItemTotal[];
+    [property: string]: any;
+}
+/**
+ * Inventory availability hint for a fulfillment method type.
+ */
+export interface FulfillmentAvailableMethod {
+    /**
+     * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
+     */
+    description?: string;
+    /**
+     * 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
+     */
+    fulfillableOn?: null | string;
+    /**
+     * Line items available for this fulfillment method.
+     */
+    lineItemIds: string[];
+    /**
+     * Fulfillment method type this availability applies to.
+     */
+    type: TypeElement;
+    [property: string]: any;
+}
+/**
+ * A destination for fulfillment.
+ *
+ * Shipping destination.
+ *
+ * The billing address associated with this payment method.
+ *
+ * Delivery destination address.
+ *
+ * Physical address of the location.
+ *
+ * A pickup location (retail store, locker, etc.).
+ */
+export interface FulfillmentDestination {
+    /**
+     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+     * full country name such as "Singapore" can also be used.
+     */
+    addressCountry?: string;
+    /**
+     * The locality in which the street address is, and which is in the region. For example,
+     * Mountain View.
+     */
+    addressLocality?: string;
+    /**
+     * The region in which the locality is, and which is in the country. Required for applicable
+     * countries (i.e. state in US, province in CA). For example, California or another
+     * appropriate first-level Administrative division.
+     */
+    addressRegion?: string;
+    /**
+     * An address extension such as an apartment number, C/O or alternative name.
+     */
+    extendedAddress?: string;
+    /**
+     * Optional. First name of the contact associated with the address.
+     */
+    firstName?: string;
+    /**
+     * Optional. Last name of the contact associated with the address.
+     */
+    lastName?: string;
+    /**
+     * Optional. Phone number of the contact associated with the address.
+     */
+    phoneNumber?: string;
+    /**
+     * The postal code. For example, 94043.
+     */
+    postalCode?: string;
+    /**
+     * The street address.
+     */
+    streetAddress?: string;
+    /**
+     * ID specific to this shipping destination.
+     *
+     * Unique location identifier.
+     */
+    id: string;
+    /**
+     * Physical address of the location.
+     */
+    address?: PostalAddress;
+    /**
+     * Location name (e.g., store name).
+     */
+    name?: string;
+    [property: string]: any;
+}
+/**
+ * Append-only fulfillment event representing an actual shipment. References line items by
+ * ID.
+ */
+export interface FulfillmentEvent {
+    /**
+     * Carrier name (e.g., 'FedEx', 'USPS').
+     */
+    carrier?: string;
+    /**
+     * Human-readable description of the shipment status or delivery information (e.g.,
+     * 'Delivered to front door', 'Out for delivery').
+     */
+    description?: string;
+    /**
+     * Fulfillment event identifier.
+     */
+    id: string;
+    /**
+     * Which line items and quantities are fulfilled in this event.
+     */
+    lineItems: FulfillmentEventLineItem[];
+    /**
+     * RFC 3339 timestamp when this fulfillment event occurred.
+     */
+    occurredAt: string;
+    /**
+     * Carrier tracking number (required if type != processing).
+     */
+    trackingNumber?: string;
+    /**
+     * URL to track this shipment (required if type != processing).
+     */
+    trackingUrl?: string;
+    /**
+     * Fulfillment event type. Common values include: processing (preparing to ship), shipped
+     * (handed to carrier), in_transit (in delivery network), delivered (received by buyer),
+     * failed_attempt (delivery attempt failed), canceled (fulfillment canceled), undeliverable
+     * (cannot be delivered), returned_to_sender (returned to merchant).
+     */
+    type: string;
+    [property: string]: any;
+}
+export interface FulfillmentEventLineItem {
+    /**
+     * Line item ID reference.
+     */
+    id: string;
+    /**
+     * Quantity fulfilled in this event.
+     */
+    quantity: number;
+    [property: string]: any;
+}
+/**
+ * A merchant-generated package/group of line items with fulfillment options.
+ */
+export interface FulfillmentGroup {
+    /**
+     * Group identifier for referencing merchant-generated groups in updates.
+     */
+    id: string;
+    /**
+     * Line item IDs included in this group/package.
+     */
+    lineItemIds: string[];
+    /**
+     * Available fulfillment options for this group.
+     */
+    options?: OptionElement[];
+    /**
+     * ID of the selected fulfillment option for this group.
+     */
+    selectedOptionId?: null | string;
+    [property: string]: any;
+}
+/**
+ * A fulfillment method (shipping or pickup) with destinations and groups.
+ */
+export interface FulfillmentMethod {
+    /**
+     * Available destinations. For shipping: addresses. For pickup: retail locations.
+     */
+    destinations?: FulfillmentDestinationElement[];
+    /**
+     * Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
+     * choose shipping method.
+     */
+    groups?: GroupElement[];
+    /**
+     * Unique fulfillment method identifier.
+     */
+    id: string;
+    /**
+     * Line item IDs fulfilled via this method.
+     */
+    lineItemIds: string[];
+    /**
+     * ID of the selected destination.
+     */
+    selectedDestinationId?: null | string;
+    /**
+     * Fulfillment method type.
+     */
+    type: TypeElement;
     [property: string]: any;
 }
 /**
@@ -1571,70 +1725,40 @@ export interface FulfillmentOption {
     [property: string]: any;
 }
 /**
- * Container for fulfillment methods and availability.
+ * Maps a request identifier to the variant it resolved to, with match semantics.
  */
-export interface Fulfillment {
+export interface InputCorrelation {
     /**
-     * Inventory availability hints.
-     */
-    availableMethods?: AvailableMethodElement[];
-    /**
-     * Fulfillment methods for cart items.
-     */
-    methods?: MethodElement[];
-    [property: string]: any;
-}
-/**
- * Inventory availability hint for a fulfillment method type.
- */
-export interface AvailableMethodElement {
-    /**
-     * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
-     */
-    description?: string;
-    /**
-     * 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
-     */
-    fulfillableOn?: null | string;
-    /**
-     * Line items available for this fulfillment method.
-     */
-    lineItemIds: string[];
-    /**
-     * Fulfillment method type this availability applies to.
-     */
-    type: TypeElement;
-    [property: string]: any;
-}
-/**
- * A fulfillment method (shipping or pickup) with destinations and groups.
- */
-export interface MethodElement {
-    /**
-     * Available destinations. For shipping: addresses. For pickup: retail locations.
-     */
-    destinations?: FulfillmentDestinationElement[];
-    /**
-     * Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
-     * choose shipping method.
-     */
-    groups?: GroupElement[];
-    /**
-     * Unique fulfillment method identifier.
+     * The identifier from the lookup request that resolved to this variant.
      */
     id: string;
     /**
-     * Line item IDs fulfilled via this method.
+     * How the request identifier resolved to this variant. Well-known values: `exact` (input
+     * directly identifies this variant, e.g., variant ID, SKU), `featured` (server selected
+     * this variant as representative, e.g., product ID resolved to best match). Businesses MAY
+     * implement and provide additional resolution strategies.
      */
-    lineItemIds: string[];
+    match?: string;
+    [property: string]: any;
+}
+/**
+ * A constraint within an allowed combination that defines which instrument types can fill
+ * this group and how many are permitted.
+ */
+export interface InstrumentGroup {
     /**
-     * ID of the selected destination.
+     * Maximum number of instruments allowed from this group. Defaults to 1. MUST be greater
+     * than or equal to `min`.
      */
-    selectedDestinationId?: null | string;
+    max?: number;
     /**
-     * Fulfillment method type.
+     * Minimum number of instruments required from this group. Defaults to 0 (optional).
      */
-    type: TypeElement;
+    min?: number;
+    /**
+     * Instrument types accepted by this group (OR logic). Any listed type qualifies.
+     */
+    types: string[];
     [property: string]: any;
 }
 export interface Item {
@@ -1677,24 +1801,6 @@ export interface LineItem {
     totals: LineItemTotal[];
     [property: string]: any;
 }
-export interface Link {
-    /**
-     * Optional display text for the link. When provided, use this instead of generating from
-     * type.
-     */
-    title?: string;
-    /**
-     * Type of link. Well-known values: `privacy_policy`, `terms_of_service`, `refund_policy`,
-     * `shipping_policy`, `faq`. Consumers SHOULD handle unknown values gracefully by displaying
-     * them using the `title` field or omitting the link.
-     */
-    type: string;
-    /**
-     * The actual URL pointing to the content to be displayed.
-     */
-    url: string;
-    [property: string]: any;
-}
 /**
  * Merchant's fulfillment configuration.
  */
@@ -1722,156 +1828,19 @@ export interface MerchantFulfillmentConfigAllowsMultiDestination {
      */
     shipping?: boolean;
 }
-export interface MessageError {
-    code: string;
-    /**
-     * Human-readable message.
-     */
-    content: string;
-    /**
-     * Content format, default = plain.
-     */
-    contentType?: ContentType;
-    /**
-     * RFC 9535 JSONPath to the component the message refers to (e.g., $.items[1]).
-     */
-    path?: string;
-    /**
-     * Reflects the resource state and recommended action. 'recoverable': platform can resolve
-     * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
-     * information their API doesn't support collecting programmatically (checkout incomplete).
-     * 'requires_buyer_review': buyer must authorize before order placement due to policy,
-     * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
-     * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
-     * 'status: requires_escalation'.
-     */
-    severity: Severity;
-    /**
-     * Message type discriminator.
-     */
-    type: StatusEnum;
-    [property: string]: any;
-}
-export interface MessageInfo {
-    /**
-     * Info code for programmatic handling.
-     */
-    code?: string;
-    /**
-     * Human-readable message.
-     */
-    content: string;
-    /**
-     * Content format, default = plain.
-     */
-    contentType?: ContentType;
-    /**
-     * RFC 9535 JSONPath to the component the message refers to.
-     */
-    path?: string;
-    /**
-     * Message type discriminator.
-     */
-    type: MessageInfoType;
-    [property: string]: any;
-}
-export type MessageInfoType = "info";
-export interface MessageWarning {
-    /**
-     * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
-     * fulfillment_changed, age_restricted, etc.).
-     */
-    code: string;
-    /**
-     * Human-readable warning message that MUST be displayed.
-     */
-    content: string;
-    /**
-     * Content format, default = plain.
-     */
-    contentType?: ContentType;
-    /**
-     * URL to a required visual element (e.g., warning symbol, energy class label).
-     */
-    imageUrl?: string;
-    /**
-     * JSONPath (RFC 9535) to related field (e.g., $.line_items[0]).
-     */
-    path?: string;
-    /**
-     * Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
-     * dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
-     * component, MUST NOT hide or auto-dismiss. See specification for full contract.
-     */
-    presentation?: string;
-    /**
-     * Message type discriminator.
-     */
-    type: MessageWarningType;
-    /**
-     * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
-     */
-    url?: string;
-    [property: string]: any;
-}
-export type MessageWarningType = "warning";
 /**
- * Container for error, warning, or info messages.
+ * A selectable value for a product option.
  */
-export interface Message {
+export interface OptionValue {
     /**
-     * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
-     * fulfillment_changed, age_restricted, etc.).
-     *
-     * Info code for programmatic handling.
+     * Optional server-assigned identifier for this option value. When present in a
+     * selected_option, the server SHOULD use it for matching instead of label.
      */
-    code?: string;
+    id?: string;
     /**
-     * Human-readable message.
-     *
-     * Human-readable warning message that MUST be displayed.
+     * Display text for this option value (e.g., 'Small', 'Blue').
      */
-    content: string;
-    /**
-     * Content format, default = plain.
-     */
-    contentType?: ContentType;
-    /**
-     * RFC 9535 JSONPath to the component the message refers to (e.g., $.items[1]).
-     *
-     * JSONPath (RFC 9535) to related field (e.g., $.line_items[0]).
-     *
-     * RFC 9535 JSONPath to the component the message refers to.
-     */
-    path?: string;
-    /**
-     * Reflects the resource state and recommended action. 'recoverable': platform can resolve
-     * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
-     * information their API doesn't support collecting programmatically (checkout incomplete).
-     * 'requires_buyer_review': buyer must authorize before order placement due to policy,
-     * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
-     * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
-     * 'status: requires_escalation'.
-     */
-    severity?: Severity;
-    /**
-     * Message type discriminator.
-     */
-    type: MessageType;
-    /**
-     * URL to a required visual element (e.g., warning symbol, energy class label).
-     */
-    imageUrl?: string;
-    /**
-     * Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
-     * dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
-     * component, MUST NOT hide or auto-dismiss. See specification for full contract.
-     */
-    presentation?: string;
-    /**
-     * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
-     */
-    url?: string;
+    label: string;
     [property: string]: any;
 }
 /**
@@ -1976,7 +1945,7 @@ export interface PaymentInstrument {
     /**
      * The billing address associated with this payment method.
      */
-    billingAddress?: BillingAddressObject;
+    billingAddress?: PostalAddress;
     credential?: CredentialObject;
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -2011,48 +1980,486 @@ export interface PlatformFulfillmentConfig {
     supportsMultiGroup?: boolean;
     [property: string]: any;
 }
-export interface PostalAddress {
+/**
+ * Price range filter denominated in context.currency. When context.currency matches the
+ * presentment currency, businesses apply the filter directly. When it differs, businesses
+ * SHOULD convert filter values to the presentment currency before applying; if conversion
+ * is not supported, businesses MAY ignore the filter and SHOULD indicate this via a
+ * message. When context.currency is absent, filter denomination is ambiguous and businesses
+ * MAY ignore it.
+ */
+export interface PriceFilter {
     /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
+     * Maximum price in ISO 4217 minor units.
      */
-    addressCountry?: string;
+    max?: number;
     /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
+     * Minimum price in ISO 4217 minor units.
      */
-    addressLocality?: string;
+    min?: number;
+    [property: string]: any;
+}
+/**
+ * A price range representing minimum and maximum values (e.g., across product variants).
+ */
+export interface PriceRange {
     /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
+     * Maximum price in the range.
      */
-    addressRegion?: string;
+    max: Price;
     /**
-     * An address extension such as an apartment number, C/O or alternative name.
+     * Minimum price in the range.
      */
-    extendedAddress?: string;
+    min: Price;
+    [property: string]: any;
+}
+/**
+ * Maximum price in the range.
+ *
+ * Price with explicit currency.
+ *
+ * Minimum price in the range.
+ *
+ * List price before discounts (for strikethrough display).
+ *
+ * Current selling price.
+ */
+export interface Price {
     /**
-     * Optional. First name of the contact associated with the address.
+     * Amount in ISO 4217 minor units. Use 0 for free items.
      */
-    firstName?: string;
+    amount: number;
     /**
-     * Optional. Last name of the contact associated with the address.
+     * ISO 4217 currency code (e.g., 'USD', 'EUR', 'GBP').
      */
-    lastName?: string;
+    currency: string;
+    [property: string]: any;
+}
+/**
+ * A product in the catalog with variants and options.
+ */
+export interface Product {
     /**
-     * Optional. Phone number of the contact associated with the address.
+     * Product categories with optional taxonomy identifiers.
      */
-    phoneNumber?: string;
+    categories?: CategoryElement[];
     /**
-     * The postal code. For example, 94043.
+     * Product description in one or more formats.
      */
-    postalCode?: string;
+    description: Description;
     /**
-     * The street address.
+     * URL-safe slug for SEO-friendly URLs (e.g., 'blue-runner-pro'). Use id for stable API
+     * references.
      */
-    streetAddress?: string;
+    handle?: string;
+    /**
+     * Global ID (GID) uniquely identifying this product.
+     */
+    id: string;
+    /**
+     * List price range before discounts (for strikethrough display).
+     */
+    listPriceRange?: ListPriceRangeObject;
+    /**
+     * Product media (images, videos, 3D models). First item is the featured media for listings.
+     */
+    media?: Media[];
+    /**
+     * Business-defined custom data extending the standard product model.
+     */
+    metadata?: {
+        [key: string]: any;
+    };
+    /**
+     * Product options (Size, Color, etc.).
+     */
+    options?: OptionObject[];
+    /**
+     * Price range across all variants.
+     */
+    priceRange: ListPriceRangeObject;
+    /**
+     * Aggregate product rating.
+     */
+    rating?: RatingObject;
+    /**
+     * Product tags for categorization and search.
+     */
+    tags?: string[];
+    /**
+     * Product title.
+     */
+    title: string;
+    /**
+     * Canonical product page URL.
+     */
+    url?: string;
+    /**
+     * Purchasable variants of this product. First item is the featured variant for listings.
+     */
+    variants: VariantElement[];
+    [property: string]: any;
+}
+/**
+ * A product category with optional taxonomy identifier.
+ */
+export interface CategoryElement {
+    /**
+     * Source taxonomy. Well-known values: `google_product_category`, `shopify`, `merchant`.
+     */
+    taxonomy?: string;
+    /**
+     * Category value or path (e.g., 'Apparel > Shirts', '1604').
+     */
+    value: string;
+    [property: string]: any;
+}
+/**
+ * Product description in one or more formats.
+ *
+ * Description content in one or more formats. At least one format must be provided.
+ *
+ * Variant description in one or more formats.
+ */
+export interface Description {
+    /**
+     * HTML-formatted content. Security: Platforms MUST sanitize before rendering—strip scripts,
+     * event handlers, and untrusted elements. Treat all rich text as untrusted input.
+     */
+    html?: string;
+    /**
+     * Markdown-formatted content.
+     */
+    markdown?: string;
+    /**
+     * Plain text content.
+     */
+    plain?: string;
+    [property: string]: any;
+}
+/**
+ * List price range before discounts (for strikethrough display).
+ *
+ * A price range representing minimum and maximum values (e.g., across product variants).
+ *
+ * Price range across all variants.
+ */
+export interface ListPriceRangeObject {
+    /**
+     * Maximum price in the range.
+     */
+    max: Price;
+    /**
+     * Minimum price in the range.
+     */
+    min: Price;
+    [property: string]: any;
+}
+/**
+ * Media item (image, video, etc.).
+ */
+export interface Media {
+    /**
+     * Accessibility text describing the media.
+     */
+    altText?: string;
+    /**
+     * Height in pixels (for images/video).
+     */
+    height?: number;
+    /**
+     * Media type. Well-known values: `image`, `video`, `model_3d`.
+     */
+    type: string;
+    /**
+     * URL to the media resource.
+     */
+    url: string;
+    /**
+     * Width in pixels (for images/video).
+     */
+    width?: number;
+    [property: string]: any;
+}
+/**
+ * A product option such as size, color, or material.
+ */
+export interface OptionObject {
+    /**
+     * Option name (e.g., 'Size', 'Color').
+     */
+    name: string;
+    /**
+     * Available values for this option.
+     */
+    values: ValueElement[];
+    [property: string]: any;
+}
+/**
+ * A selectable value for a product option.
+ */
+export interface ValueElement {
+    /**
+     * Optional server-assigned identifier for this option value. When present in a
+     * selected_option, the server SHOULD use it for matching instead of label.
+     */
+    id?: string;
+    /**
+     * Display text for this option value (e.g., 'Small', 'Blue').
+     */
+    label: string;
+    [property: string]: any;
+}
+/**
+ * Aggregate product rating.
+ *
+ * Product rating aggregate.
+ *
+ * Variant rating.
+ */
+export interface RatingObject {
+    /**
+     * Number of reviews contributing to the rating.
+     */
+    count?: number;
+    /**
+     * Maximum value on the rating scale (e.g., 5 for 5-star).
+     */
+    scaleMax: number;
+    /**
+     * Minimum value on the rating scale (e.g., 1 for 1-5 stars).
+     */
+    scaleMin?: number;
+    /**
+     * Average rating value.
+     */
+    value: number;
+    [property: string]: any;
+}
+/**
+ * A purchasable variant of a product with specific option selections.
+ */
+export interface VariantElement {
+    /**
+     * Variant availability for purchase.
+     */
+    availability?: VariantAvailability;
+    /**
+     * Industry-standard product identifiers for cross-reference and correlation.
+     */
+    barcodes?: VariantBarcode[];
+    /**
+     * Variant categories with optional taxonomy identifiers.
+     */
+    categories?: CategoryElement[];
+    /**
+     * Variant description in one or more formats.
+     */
+    description: Description;
+    /**
+     * URL-safe variant handle/slug.
+     */
+    handle?: string;
+    /**
+     * Global ID (GID) uniquely identifying this variant. Used as item.id in checkout.
+     */
+    id: string;
+    /**
+     * List price before discounts (for strikethrough display).
+     */
+    listPrice?: Price;
+    /**
+     * Variant media (images, videos, 3D models). First item is the featured media for listings.
+     */
+    media?: Media[];
+    /**
+     * Business-defined custom data extending the standard variant model.
+     */
+    metadata?: {
+        [key: string]: any;
+    };
+    /**
+     * Option values that define this variant (e.g., Color: Blue, Size: Large).
+     */
+    options?: VariantOption[];
+    /**
+     * Current selling price.
+     */
+    price: Price;
+    /**
+     * Variant rating.
+     */
+    rating?: RatingObject;
+    /**
+     * Optional seller context for this variant.
+     */
+    seller?: VariantSeller;
+    /**
+     * Business-assigned identifier for inventory and fulfillment.
+     */
+    sku?: string;
+    /**
+     * Variant tags for categorization and search.
+     */
+    tags?: string[];
+    /**
+     * Variant display title (e.g., 'Blue / Large').
+     */
+    title: string;
+    /**
+     * Price per standard unit of measurement. MAY be omitted when unit pricing does not apply.
+     */
+    unitPrice?: VariantUnitPrice;
+    /**
+     * Canonical variant page URL.
+     */
+    url?: string;
+    [property: string]: any;
+}
+/**
+ * Variant availability for purchase.
+ */
+export interface VariantAvailability {
+    /**
+     * Whether this variant can be purchased. See status for fulfillment details.
+     */
+    available?: boolean;
+    /**
+     * Qualifies available with fulfillment state. Well-known values: `in_stock`, `backorder`,
+     * `preorder`, `out_of_stock`, `discontinued`.
+     */
+    status?: string;
+    [property: string]: any;
+}
+export interface VariantBarcode {
+    /**
+     * Barcode standard. Well-known values: UPC, EAN, ISBN, GTIN, JAN.
+     */
+    type: string;
+    /**
+     * Barcode value.
+     */
+    value: string;
+    [property: string]: any;
+}
+/**
+ * A specific option selection on a variant (e.g., Size: Large).
+ */
+export interface VariantOption {
+    /**
+     * Optional option value identifier from option_value.id. When present, the server SHOULD
+     * use it for matching; name and label remain required for display.
+     */
+    id?: string;
+    /**
+     * Selected option label (e.g., 'Large').
+     */
+    label: string;
+    /**
+     * Option name (e.g., 'Size').
+     */
+    name: string;
+    [property: string]: any;
+}
+/**
+ * Optional seller context for this variant.
+ */
+export interface VariantSeller {
+    /**
+     * Seller policy and information links.
+     */
+    links?: Link[];
+    /**
+     * Seller display name.
+     */
+    name?: string;
+    [property: string]: any;
+}
+/**
+ * Price per standard unit of measurement. MAY be omitted when unit pricing does not apply.
+ */
+export interface VariantUnitPrice {
+    /**
+     * Unit price in ISO 4217 minor units. Business MUST return precomputed unit price value:
+     * (variant.price / measure.value) * reference.value.
+     */
+    amount: number;
+    /**
+     * ISO 4217 currency code.
+     */
+    currency: string;
+    /**
+     * Product quantity in packaging (e.g., 750ml bottle).
+     */
+    measure: PurpleMeasure;
+    /**
+     * Denominator for unit price display (e.g., per 100ml, per 1kg).
+     */
+    reference: PurpleReference;
+    [property: string]: any;
+}
+/**
+ * Product quantity in packaging (e.g., 750ml bottle).
+ */
+export interface PurpleMeasure {
+    /**
+     * Unit of measurement.
+     */
+    unit: string;
+    /**
+     * Package quantity.
+     */
+    value: number;
+    [property: string]: any;
+}
+/**
+ * Denominator for unit price display (e.g., per 100ml, per 1kg).
+ */
+export interface PurpleReference {
+    /**
+     * Unit of measurement.
+     */
+    unit: string;
+    /**
+     * Reference quantity.
+     */
+    value: number;
+    [property: string]: any;
+}
+/**
+ * A product option such as size, color, or material.
+ */
+export interface ProductOption {
+    /**
+     * Option name (e.g., 'Size', 'Color').
+     */
+    name: string;
+    /**
+     * Available values for this option.
+     */
+    values: ValueElement[];
+    [property: string]: any;
+}
+/**
+ * Product rating aggregate.
+ */
+export interface Rating {
+    /**
+     * Number of reviews contributing to the rating.
+     */
+    count?: number;
+    /**
+     * Maximum value on the rating scale (e.g., 5 for 5-star).
+     */
+    scaleMax: number;
+    /**
+     * Minimum value on the rating scale (e.g., 1 for 1-5 stars).
+     */
+    scaleMin?: number;
+    /**
+     * Average rating value.
+     */
+    value: number;
     [property: string]: any;
 }
 /**
@@ -2062,13 +2469,65 @@ export interface RetailLocation {
     /**
      * Physical address of the location.
      */
-    address?: BillingAddressObject;
+    address?: PostalAddress;
     /**
      * Unique location identifier.
      */
     id: string;
     /**
      * Location name (e.g., store name).
+     */
+    name: string;
+    [property: string]: any;
+}
+/**
+ * Filter criteria to narrow search results. All specified filters combine with AND logic.
+ */
+export interface SearchFilters {
+    /**
+     * Filter by product categories (OR logic — matches products in any listed categories).
+     * Values match against the value field in product category entries. Valid values can be
+     * discovered from the categories field in search results, merchant documentation, or
+     * standard taxonomies that businesses may align with.
+     */
+    categories?: string[];
+    price?: PriceObject;
+    [property: string]: any;
+}
+/**
+ * Price range filter denominated in context.currency. When context.currency matches the
+ * presentment currency, businesses apply the filter directly. When it differs, businesses
+ * SHOULD convert filter values to the presentment currency before applying; if conversion
+ * is not supported, businesses MAY ignore the filter and SHOULD indicate this via a
+ * message. When context.currency is absent, filter denomination is ambiguous and businesses
+ * MAY ignore it.
+ */
+export interface PriceObject {
+    /**
+     * Maximum price in ISO 4217 minor units.
+     */
+    max?: number;
+    /**
+     * Minimum price in ISO 4217 minor units.
+     */
+    min?: number;
+    [property: string]: any;
+}
+/**
+ * A specific option selection on a variant (e.g., Size: Large).
+ */
+export interface SelectedOption {
+    /**
+     * Optional option value identifier from option_value.id. When present, the server SHOULD
+     * use it for matching; name and label remain required for display.
+     */
+    id?: string;
+    /**
+     * Selected option label (e.g., 'Large').
+     */
+    label: string;
+    /**
+     * Option name (e.g., 'Size').
      */
     name: string;
     [property: string]: any;
@@ -2223,6 +2682,177 @@ export interface TotalLineObject {
     [property: string]: any;
 }
 /**
+ * A purchasable variant of a product with specific option selections.
+ */
+export interface Variant {
+    /**
+     * Variant availability for purchase.
+     */
+    availability?: VariantAvailabilityObject;
+    /**
+     * Industry-standard product identifiers for cross-reference and correlation.
+     */
+    barcodes?: VariantBarcodeObject[];
+    /**
+     * Variant categories with optional taxonomy identifiers.
+     */
+    categories?: CategoryElement[];
+    /**
+     * Variant description in one or more formats.
+     */
+    description: Description;
+    /**
+     * URL-safe variant handle/slug.
+     */
+    handle?: string;
+    /**
+     * Global ID (GID) uniquely identifying this variant. Used as item.id in checkout.
+     */
+    id: string;
+    /**
+     * List price before discounts (for strikethrough display).
+     */
+    listPrice?: Price;
+    /**
+     * Variant media (images, videos, 3D models). First item is the featured media for listings.
+     */
+    media?: Media[];
+    /**
+     * Business-defined custom data extending the standard variant model.
+     */
+    metadata?: {
+        [key: string]: any;
+    };
+    /**
+     * Option values that define this variant (e.g., Color: Blue, Size: Large).
+     */
+    options?: VariantOption[];
+    /**
+     * Current selling price.
+     */
+    price: Price;
+    /**
+     * Variant rating.
+     */
+    rating?: RatingObject;
+    /**
+     * Optional seller context for this variant.
+     */
+    seller?: VariantSellerObject;
+    /**
+     * Business-assigned identifier for inventory and fulfillment.
+     */
+    sku?: string;
+    /**
+     * Variant tags for categorization and search.
+     */
+    tags?: string[];
+    /**
+     * Variant display title (e.g., 'Blue / Large').
+     */
+    title: string;
+    /**
+     * Price per standard unit of measurement. MAY be omitted when unit pricing does not apply.
+     */
+    unitPrice?: VariantUnitPriceObject;
+    /**
+     * Canonical variant page URL.
+     */
+    url?: string;
+    [property: string]: any;
+}
+/**
+ * Variant availability for purchase.
+ */
+export interface VariantAvailabilityObject {
+    /**
+     * Whether this variant can be purchased. See status for fulfillment details.
+     */
+    available?: boolean;
+    /**
+     * Qualifies available with fulfillment state. Well-known values: `in_stock`, `backorder`,
+     * `preorder`, `out_of_stock`, `discontinued`.
+     */
+    status?: string;
+    [property: string]: any;
+}
+export interface VariantBarcodeObject {
+    /**
+     * Barcode standard. Well-known values: UPC, EAN, ISBN, GTIN, JAN.
+     */
+    type: string;
+    /**
+     * Barcode value.
+     */
+    value: string;
+    [property: string]: any;
+}
+/**
+ * Optional seller context for this variant.
+ */
+export interface VariantSellerObject {
+    /**
+     * Seller policy and information links.
+     */
+    links?: Link[];
+    /**
+     * Seller display name.
+     */
+    name?: string;
+    [property: string]: any;
+}
+/**
+ * Price per standard unit of measurement. MAY be omitted when unit pricing does not apply.
+ */
+export interface VariantUnitPriceObject {
+    /**
+     * Unit price in ISO 4217 minor units. Business MUST return precomputed unit price value:
+     * (variant.price / measure.value) * reference.value.
+     */
+    amount: number;
+    /**
+     * ISO 4217 currency code.
+     */
+    currency: string;
+    /**
+     * Product quantity in packaging (e.g., 750ml bottle).
+     */
+    measure: FluffyMeasure;
+    /**
+     * Denominator for unit price display (e.g., per 100ml, per 1kg).
+     */
+    reference: FluffyReference;
+    [property: string]: any;
+}
+/**
+ * Product quantity in packaging (e.g., 750ml bottle).
+ */
+export interface FluffyMeasure {
+    /**
+     * Unit of measurement.
+     */
+    unit: string;
+    /**
+     * Package quantity.
+     */
+    value: number;
+    [property: string]: any;
+}
+/**
+ * Denominator for unit price display (e.g., per 100ml, per 1kg).
+ */
+export interface FluffyReference {
+    /**
+     * Unit of measurement.
+     */
+    unit: string;
+    /**
+     * Reference quantity.
+     */
+    value: number;
+    [property: string]: any;
+}
+/**
  * Payment configuration containing handlers.
  */
 export interface Payment {
@@ -2243,6 +2873,13 @@ export interface Order {
      * independently of fulfillment.
      */
     adjustments?: AdjustmentElement[];
+    /**
+     * Snapshot of the attribution associated with the originating checkout. Read-only on the
+     * order.
+     */
+    attribution?: {
+        [key: string]: string;
+    };
     /**
      * Associated checkout ID for reconciliation.
      */
@@ -2271,7 +2908,7 @@ export interface Order {
      * Business outcome messages (errors, warnings, informational). Present when the business
      * needs to communicate status or issues to the platform.
      */
-    messages?: MessageElement[];
+    messages?: Message[];
     /**
      * Permalink to access the order on merchant site.
      */
@@ -2416,7 +3053,7 @@ export interface ExpectationElement {
     /**
      * Delivery destination address.
      */
-    destination: BillingAddressObject;
+    destination: PostalAddress;
     /**
      * When this expectation can be fulfilled: 'now' or ISO 8601 timestamp for future date
      * (backorder, pre-order).
@@ -2548,7 +3185,7 @@ export interface InstrumentsChangeResult {
     /**
      * Array of messages describing why the operation failed.
      */
-    messages?: MessageElement[];
+    messages?: Message[];
     [property: string]: any;
 }
 /**
@@ -2584,7 +3221,7 @@ export interface PurpleSelectedPaymentInstrument {
     /**
      * The billing address associated with this payment method.
      */
-    billingAddress?: BillingAddressObject;
+    billingAddress?: PostalAddress;
     credential?: CredentialObject;
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -2800,7 +3437,7 @@ export interface CredentialResult {
     /**
      * Array of messages describing why the operation failed.
      */
-    messages?: MessageElement[];
+    messages?: Message[];
     [property: string]: any;
 }
 /**
@@ -2823,32 +3460,42 @@ export interface CredentialPayment {
 export declare class Convert {
     static toCheckout(json: string): Checkout;
     static checkoutToJson(value: Checkout): string;
+    static toErrorResponse(json: string): ErrorResponse;
+    static errorResponseToJson(value: ErrorResponse): string;
     static toPaymentAccountInfo(json: string): PaymentAccountInfo;
     static paymentAccountInfoToJson(value: PaymentAccountInfo): string;
     static toAdjustment(json: string): Adjustment;
     static adjustmentToJson(value: Adjustment): string;
-    static toAmount(json: string): number;
-    static amountToJson(value: number): string;
+    static toAttribution(json: string): {
+        [key: string]: string;
+    };
+    static attributionToJson(value: {
+        [key: string]: string;
+    }): string;
     static toAvailablePaymentInstrument(json: string): AvailablePaymentInstrument;
     static availablePaymentInstrumentToJson(value: AvailablePaymentInstrument): string;
     static toBinding(json: string): TokenBinding;
     static bindingToJson(value: TokenBinding): string;
     static toBusinessFulfillmentConfig(json: string): BusinessFulfillmentConfig;
     static businessFulfillmentConfigToJson(value: BusinessFulfillmentConfig): string;
+    static toBusinessSplitPaymentsConfig(json: string): BusinessSplitPaymentsConfig;
+    static businessSplitPaymentsConfigToJson(value: BusinessSplitPaymentsConfig): string;
     static toBuyer(json: string): Buyer;
     static buyerToJson(value: Buyer): string;
     static toCardCredential(json: string): CardCredential;
     static cardCredentialToJson(value: CardCredential): string;
     static toCardPaymentInstrument(json: string): CardPaymentInstrument;
     static cardPaymentInstrumentToJson(value: CardPaymentInstrument): string;
+    static toCategory(json: string): Category;
+    static categoryToJson(value: Category): string;
     static toContext(json: string): Context;
     static contextToJson(value: Context): string;
-    static toErrorCode(json: string): string;
-    static errorCodeToJson(value: string): string;
-    static toErrorResponse(json: string): ErrorResponse;
-    static errorResponseToJson(value: ErrorResponse): string;
+    static toDetailOptionValue(json: string): DetailOptionValue;
+    static detailOptionValueToJson(value: DetailOptionValue): string;
     static toExpectation(json: string): Expectation;
     static expectationToJson(value: Expectation): string;
+    static toFulfillment(json: string): Fulfillment;
+    static fulfillmentToJson(value: Fulfillment): string;
     static toFulfillmentAvailableMethod(json: string): FulfillmentAvailableMethod;
     static fulfillmentAvailableMethodToJson(value: FulfillmentAvailableMethod): string;
     static toFulfillmentDestination(json: string): FulfillmentDestination;
@@ -2861,24 +3508,18 @@ export declare class Convert {
     static fulfillmentMethodToJson(value: FulfillmentMethod): string;
     static toFulfillmentOption(json: string): FulfillmentOption;
     static fulfillmentOptionToJson(value: FulfillmentOption): string;
-    static toFulfillment(json: string): Fulfillment;
-    static fulfillmentToJson(value: Fulfillment): string;
+    static toInputCorrelation(json: string): InputCorrelation;
+    static inputCorrelationToJson(value: InputCorrelation): string;
+    static toInstrumentGroup(json: string): InstrumentGroup;
+    static instrumentGroupToJson(value: InstrumentGroup): string;
     static toItem(json: string): Item;
     static itemToJson(value: Item): string;
     static toLineItem(json: string): LineItem;
     static lineItemToJson(value: LineItem): string;
-    static toLink(json: string): Link;
-    static linkToJson(value: Link): string;
     static toMerchantFulfillmentConfig(json: string): MerchantFulfillmentConfig;
     static merchantFulfillmentConfigToJson(value: MerchantFulfillmentConfig): string;
-    static toMessageError(json: string): MessageError;
-    static messageErrorToJson(value: MessageError): string;
-    static toMessageInfo(json: string): MessageInfo;
-    static messageInfoToJson(value: MessageInfo): string;
-    static toMessageWarning(json: string): MessageWarning;
-    static messageWarningToJson(value: MessageWarning): string;
-    static toMessage(json: string): Message;
-    static messageToJson(value: Message): string;
+    static toOptionValue(json: string): OptionValue;
+    static optionValueToJson(value: OptionValue): string;
     static toOrderConfirmation(json: string): OrderConfirmation;
     static orderConfirmationToJson(value: OrderConfirmation): string;
     static toOrderLineItem(json: string): OrderLineItem;
@@ -2891,24 +3532,34 @@ export declare class Convert {
     static paymentInstrumentToJson(value: PaymentInstrument): string;
     static toPlatformFulfillmentConfig(json: string): PlatformFulfillmentConfig;
     static platformFulfillmentConfigToJson(value: PlatformFulfillmentConfig): string;
-    static toPostalAddress(json: string): PostalAddress;
-    static postalAddressToJson(value: PostalAddress): string;
+    static toPriceFilter(json: string): PriceFilter;
+    static priceFilterToJson(value: PriceFilter): string;
+    static toPriceRange(json: string): PriceRange;
+    static priceRangeToJson(value: PriceRange): string;
+    static toProduct(json: string): Product;
+    static productToJson(value: Product): string;
+    static toProductOption(json: string): ProductOption;
+    static productOptionToJson(value: ProductOption): string;
+    static toRating(json: string): Rating;
+    static ratingToJson(value: Rating): string;
     static toRetailLocation(json: string): RetailLocation;
     static retailLocationToJson(value: RetailLocation): string;
-    static toReverseDomainName(json: string): string;
-    static reverseDomainNameToJson(value: string): string;
+    static toSearchFilters(json: string): SearchFilters;
+    static searchFiltersToJson(value: SearchFilters): string;
+    static toSelectedOption(json: string): SelectedOption;
+    static selectedOptionToJson(value: SelectedOption): string;
     static toShippingDestination(json: string): ShippingDestination;
     static shippingDestinationToJson(value: ShippingDestination): string;
     static toSignals(json: string): Signals;
     static signalsToJson(value: Signals): string;
-    static toSignedAmount(json: string): number;
-    static signedAmountToJson(value: number): string;
     static toTokenCredential(json: string): TokenCredential;
     static tokenCredentialToJson(value: TokenCredential): string;
     static toTotal(json: string): Total;
     static totalToJson(value: Total): string;
     static toTotals(json: string): Totals[];
     static totalsToJson(value: Totals[]): string;
+    static toVariant(json: string): Variant;
+    static variantToJson(value: Variant): string;
     static toPayment(json: string): Payment;
     static paymentToJson(value: Payment): string;
     static toOrder(json: string): Order;
