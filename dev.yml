@@ -96,6 +96,12 @@ commands:
         kotlin|swift|typescript|ts) ./protocol/scripts/generate_models.sh --lang "$1" ;;
         *) echo "Usage: dev codegen <kotlin|swift|typescript>"; exit 1 ;;
       esac
+  protocol:
+    desc: "Protocol maintenance commands"
+    subcommands:
+      check-upstream:
+        desc: "Compare vendored UCP snapshot files against upstream"
+        run: ./protocol/scripts/check_ucp_snapshot.sh "$@"
   apollo:
     subcommands:
       download_schema:
