@@ -11,6 +11,10 @@
 .dev/
 .mint
 
+# Node / pnpm
+node_modules/
+.pnpm-store/
+
 # Swift / Xcode / SwiftPM
 .build/
 .swiftpm/
