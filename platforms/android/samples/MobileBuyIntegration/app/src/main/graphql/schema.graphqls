@@ -145,7 +145,7 @@ type Article implements HasMetafields & Node & OnlineStorePublishable & Trackabl
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -308,7 +308,7 @@ type Blog implements HasMetafields & Node & OnlineStorePublishable {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -419,15 +419,15 @@ type Cart implements HasMetafields & Node {
     reverse: Boolean = false,
     """
     Whether to include [carrier-calculated delivery rates](https://help.shopify.com/en/manual/shipping/setting-up-and-managing-your-shipping/enabling-shipping-carriers) in the response.
-    
+
     By default, only static shipping rates are returned. This argument requires mandatory usage of the [`@defer` directive](https://shopify.dev/docs/api/storefront#directives).
-    
+
     For more information, refer to [fetching carrier-calculated rates for the cart using `@defer`](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/defer#fetching-carrier-calculated-rates-for-the-cart-using-defer).
     """
     withCarrierRates: Boolean = false
   ): CartDeliveryGroupConnection!
   "The discounts that have been applied to the entire cart."
-  discountAllocations: [CartDiscountAllocation!]!
+  discountAllocations: [CartDiscountAllocation!]! @deprecated(reason: "Use `cart.lines[].discountAllocations(lineLevelOnly: false)` and `cart.deliveryGroups[].discountAllocations` instead.")
   "The case-insensitive discount codes that the customer added at checkout."
   discountCodes: [CartDiscountCode!]!
   "The estimated costs that the buyer will pay at checkout. The estimated costs are subject to change and changes will be reflected at checkout. The `estimatedCost` field uses the `buyerIdentity` field to determine [international pricing](https://shopify.dev/custom-storefronts/internationalization/international-pricing)."
@@ -458,7 +458,7 @@ type Cart implements HasMetafields & Node {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -484,7 +484,7 @@ A discount allocation [that applies automatically](https://help.shopify.com/manu
 """
 type CartAutomaticDiscountAllocation implements CartDiscountAllocation {
   "The discount that have been applied on the cart line."
-  discountApplication: CartDiscountApplication!
+  discountApplication: CartDiscountApplication! @deprecated(reason: "Use `sourceDiscountApplication` instead.")
   "The discounted amount that has been applied to the cart line."
   discountedAmount: MoneyV2!
   "The type of line that the discount is applicable towards."
@@ -515,7 +515,7 @@ type CartBuyerIdentity {
   An ordered set of delivery addresses tied to the buyer that is interacting with the cart.
   The rank of the preferences is determined by the order of the addresses in the array. Preferences
   can be used to populate relevant fields in the checkout flow.
-  
+
   As of the `2025-01` release, `buyerIdentity.deliveryAddressPreferences` is deprecated.
   Delivery addresses are now part of the `CartDelivery` object and managed with three new mutations:
   - `cartDeliveryAddressAdd`
@@ -560,7 +560,7 @@ type CartCodeDiscountAllocation implements CartDiscountAllocation {
   "The code used to apply the discount."
   code: String!
   "The discount that have been applied on the cart line."
-  discountApplication: CartDiscountApplication!
+  discountApplication: CartDiscountApplication! @deprecated(reason: "Use `sourceDiscountApplication` instead.")
   "The discounted amount that has been applied to the cart line."
   discountedAmount: MoneyV2!
   "The type of line that the discount is applicable towards."
@@ -647,7 +647,7 @@ type CartCreatePayload {
 "The discounts automatically applied to the cart line based on prerequisites that have been met."
 type CartCustomDiscountAllocation implements CartDiscountAllocation {
   "The discount that have been applied on the cart line."
-  discountApplication: CartDiscountApplication!
+  discountApplication: CartDiscountApplication! @deprecated(reason: "Use `sourceDiscountApplication` instead.")
   "The discounted amount that has been applied to the cart line."
   discountedAmount: MoneyV2!
   "The type of line that the discount is applicable towards."
@@ -679,7 +679,7 @@ type CartDeliveryAddress {
   company: String
   """
   The two-letter code for the country of the address.
-  
+
   For example, US.
   """
   countryCode: String
@@ -704,13 +704,13 @@ type CartDeliveryAddress {
   name: String
   """
   A unique phone number for the customer.
-  
+
   Formatted using E.164 standard. For example, _+16135551111_.
   """
   phone: String
   """
   The alphanumeric code for the region.
-  
+
   For example, ON.
   """
   provinceCode: String
@@ -757,7 +757,7 @@ type CartDeliveryAddressesUpdatePayload {
 type CartDeliveryCoordinatesPreference {
   """
   The two-letter code for the country of the preferred location.
-  
+
   For example, US.
   """
   countryCode: CountryCode!
@@ -836,7 +836,7 @@ type CartDeliveryOption {
   title: String
 }
 """
-A set of preferences tied to the buyer interacting with the cart. Preferences are used to prefill fields in at checkout to streamline information collection. 
+A set of preferences tied to the buyer interacting with the cart. Preferences are used to prefill fields in at checkout to streamline information collection.
 Preferences are not synced back to the cart if they are overwritten.
 """
 type CartDeliveryPreference {
@@ -1068,7 +1068,7 @@ type CartPaymentUpdatePayload {
   warnings: [CartWarning!]!
 }
 """
-A set of preferences tied to the buyer interacting with the cart. Preferences are used to prefill fields in at checkout to streamline information collection. 
+A set of preferences tied to the buyer interacting with the cart. Preferences are used to prefill fields in at checkout to streamline information collection.
 Preferences are not synced back to the cart if they are overwritten.
 """
 type CartPreferences {
@@ -1202,7 +1202,7 @@ type Collection implements HasMetafields & Node & OnlineStorePublishable & Track
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -1225,7 +1225,7 @@ type Collection implements HasMetafields & Node & OnlineStorePublishable & Track
     sortKey: ProductCollectionSortKeys = COLLECTION_DEFAULT,
     """
     Returns a subset of products matching all product filters.
-    
+
     The input must not contain more than `250` values.
     """
     filters: [ProductFilter!]
@@ -1325,7 +1325,7 @@ type Company implements HasMetafields & Node {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -1373,7 +1373,7 @@ type CompanyLocation implements HasMetafields & Node {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -1428,7 +1428,11 @@ type Count {
   "Precision of count, how exact is the value."
   precision: CountPrecision!
 }
-"A country."
+"""
+A country with localization settings for a storefront. Includes the country's currency, available languages, default language, and unit system (metric or imperial).
+
+Access countries through the [localization](https://shopify.dev/docs/api/storefront/current/queries/localization) query, which returns both the list of available countries and the currently active country. Use the [`@inContext`](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/in-context) directive to change the active country context.
+"""
 type Country {
   "The languages available for the country."
   availableLanguages: [Language!]!
@@ -1504,7 +1508,7 @@ type Customer implements HasMetafields {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -1823,7 +1827,7 @@ type FilterValue {
   image: MediaImage
   """
   An input object that can be used to filter by this value on the parent field.
-  
+
   The value is provided as a helper for building dynamic filtering UI. For
   example, if you have a list of selected `FilterValue` objects, you can combine
   their respective `input` values to use in a subsequent query.
@@ -1935,7 +1939,7 @@ type Image {
   id: ID
   """
   The location of the original image as a URL.
-  
+
   If there are any existing transformations in the original source URL, they will remain and not be stripped.
   """
   originalSrc: URL! @deprecated(reason: "Use `url` instead.")
@@ -1943,15 +1947,15 @@ type Image {
   src: URL! @deprecated(reason: "Use `url` instead.")
   """
   The ThumbHash of the image.
-  
+
   Useful to display placeholder images while the original image is loading.
-  
+
   See https://evanw.github.io/thumbhash/ for details on how to use it.
   """
   thumbhash: String
   """
   The location of the transformed image as a URL.
-  
+
   All transformation arguments are considered "best-effort". If they can be applied to an image, they will be.
   Otherwise any transformations which an image type doesn't support will be ignored.
   """
@@ -1969,11 +1973,11 @@ type Image {
   ): URL! @deprecated(reason: "Use `url(transform:)` instead")
   """
   The location of the image as a URL.
-  
+
   If no transform options are specified, then the original image will be preserved including any pre-applied transforms.
-  
+
   All transformation options are considered "best-effort". Any transformation that the original image type doesn't support will be ignored.
-  
+
   If you need multiple variations of the same image, then you can use [GraphQL aliases](https://graphql.org/learn/queries/#aliases).
   """
   url(
@@ -2015,7 +2019,11 @@ type InContextAnnotationType {
   kind: String!
   name: String!
 }
-"A language."
+"""
+A language available for a localized storefront experience. Provides the language name in both its native form (endonym) and translated into the current language, along with its [`LanguageCode`](https://shopify.dev/docs/api/storefront/current/enums/LanguageCode).
+
+Returned by the [`Localization`](https://shopify.dev/docs/api/storefront/current/objects/Localization) and [`Country`](https://shopify.dev/docs/api/storefront/current/objects/Country) objects to indicate available and active languages. Pass the `isoCode` to the [`@inContext`](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/in-context) directive to retrieve translated content in that language.
+"""
 type Language {
   "The name of the language in the language itself. If the language uses capitalization, it is capitalized for a mid-sentence position."
   endonymName: String!
@@ -2042,7 +2050,7 @@ type Localization {
   market: Market! @deprecated(reason: "This `market` field will be removed in a future version of the API.")
 }
 """
-A physical store location where product inventory is held and that supports in-store pickup. Provides the location's name, address, and geographic coordinates for proximity-based sorting. Use with [`StoreAvailability`](https://shopify.dev/docs/api/storefront/current/objects/StoreAvailability) to show customers where a [`ProductVariant`](https://shopify.dev/docs/api/storefront/current/objects/ProductVariant) is available for pickup. 
+A physical store location where product inventory is held and that supports in-store pickup. Provides the location's name, address, and geographic coordinates for proximity-based sorting. Use with [`StoreAvailability`](https://shopify.dev/docs/api/storefront/current/objects/StoreAvailability) to show customers where a [`ProductVariant`](https://shopify.dev/docs/api/storefront/current/objects/ProductVariant) is available for pickup.
 
 Learn more about [supporting local pickup on storefronts](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/products-collections/local-pickup).
 """
@@ -2062,7 +2070,7 @@ type Location implements HasMetafields & Node {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -2141,13 +2149,13 @@ type MailingAddress implements Node {
   country: String
   """
   The two-letter code for the country of the address.
-  
+
   For example, US.
   """
   countryCode: String @deprecated(reason: "Use `countryCodeV2` instead.")
   """
   The two-letter code for the country of the address.
-  
+
   For example, US.
   """
   countryCodeV2: CountryCode
@@ -2174,7 +2182,7 @@ type MailingAddress implements Node {
   name: String
   """
   A unique phone number for the customer.
-  
+
   Formatted using E.164 standard. For example, _+16135551111_.
   """
   phone: String
@@ -2182,7 +2190,7 @@ type MailingAddress implements Node {
   province: String
   """
   The alphanumeric code for the region.
-  
+
   For example, ON.
   """
   provinceCode: String
@@ -2226,7 +2234,11 @@ type ManualDiscountApplication implements DiscountApplication {
   "The value of the discount application."
   value: PricingValue!
 }
-"A group of one or more regions of the world that a merchant is targeting for sales. To learn more about markets, refer to [the Shopify Markets conceptual overview](/docs/apps/markets)."
+"""
+An audience of buyers that a merchant targets for sales. Audiences can include geographic regions, company locations, and retail locations. Markets enable localized shopping experiences with region-specific languages, currencies, and pricing.
+
+Each market has a unique [`handle`](https://shopify.dev/docs/api/storefront/current/objects/Market#field-Market.fields.handle) for identification and supports custom data through [`metafields`](https://shopify.dev/docs/api/storefront/current/objects/Metafield). Learn more about [building localized experiences with Shopify Markets](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/markets).
+"""
 type Market implements HasMetafields & Node {
   """
   A human-readable unique string for the market automatically generated from its title.
@@ -2245,7 +2257,7 @@ type Market implements HasMetafields & Node {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -2354,6 +2366,8 @@ type Metafield implements Node {
   id: ID!
   "The unique identifier for the metafield within its namespace."
   key: String!
+  "Whether the metafield's type is a list type. Returns `true` for types like `list.color` or `list.single_line_text_field`."
+  list: Boolean!
   "The container for a group of metafields that the metafield is associated with."
   namespace: String!
   "The type of resource that the metafield is attached to."
@@ -2550,7 +2564,7 @@ type Mutation {
   cartAttributesUpdate(
     """
     An array of key-value pairs that contains additional information about the cart.
-    
+
     The input must not contain more than `250` values.
     """
     attributes: [AttributeInput!]!,
@@ -2566,7 +2580,7 @@ type Mutation {
   ): CartBillingAddressUpdatePayload
   """
   Updates the buyer identity on a [`Cart`](https://shopify.dev/docs/api/storefront/current/objects/Cart), including contact information, location, and checkout preferences. The buyer's country determines [international pricing](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/markets/international-pricing) and should match their shipping address.
-  
+
   Use this mutation to associate a logged-in customer via access token, set a B2B company location, or configure checkout preferences like delivery method. Preferences prefill checkout fields but don't sync back to the cart if overwritten at checkout.
   """
   cartBuyerIdentityUpdate(
@@ -2586,7 +2600,7 @@ type Mutation {
   ): CartClonePayload
   """
   Creates a new [`Cart`](https://shopify.dev/docs/api/storefront/current/objects/Cart) for a buyer session. You can optionally initialize the cart with merchandise lines, discount codes, gift card codes, buyer identity for international pricing, and custom attributes.
-  
+
   The returned cart includes a `checkoutUrl` that directs the buyer to complete their purchase.
   """
   cartCreate(
@@ -2601,7 +2615,7 @@ type Mutation {
     cartId: ID!,
     """
     A list of delivery addresses to add to the cart.
-    
+
     The input must not contain more than `250` values.
     """
     addresses: [CartSelectableAddressInput!]!
@@ -2614,14 +2628,14 @@ type Mutation {
     cartId: ID!,
     """
     A list of delivery addresses by handle to remove from the cart.
-    
+
     The input must not contain more than `250` values.
     """
     addressIds: [ID!]!
   ): CartDeliveryAddressesRemovePayload
   """
   Replaces all delivery addresses on a [`Cart`](https://shopify.dev/docs/api/storefront/current/objects/Cart) with a new set of addresses in a single operation. Unlike [`cartDeliveryAddressesUpdate`](https://shopify.dev/docs/api/storefront/current/mutations/cartDeliveryAddressesUpdate), which modifies existing addresses, this mutation removes all current addresses and sets the provided list as the new delivery addresses.
-  
+
   One address can be marked as selected, and each address can be flagged for one-time use or configured with a specific validation strategy.
   """
   cartDeliveryAddressesReplace(
@@ -2629,7 +2643,7 @@ type Mutation {
     cartId: ID!,
     """
     A list of delivery addresses to replace on the cart.
-    
+
     The input must not contain more than `250` values.
     """
     addresses: [CartSelectableAddressInput!]!
@@ -2642,14 +2656,14 @@ type Mutation {
     cartId: ID!,
     """
     The delivery addresses to update.
-    
+
     The input must not contain more than `250` values.
     """
     addresses: [CartSelectableAddressUpdateInput!]!
   ): CartDeliveryAddressesUpdatePayload
   """
   Updates the discount codes applied to a [`Cart`](https://shopify.dev/docs/api/storefront/current/objects/Cart). This mutation replaces all existing discount codes with the provided list, so pass an empty array to remove all codes. Discount codes are case-insensitive.
-  
+
   After updating, check each [`CartDiscountCode`](https://shopify.dev/docs/api/storefront/current/objects/CartDiscountCode) in the cart's [`discountCodes`](https://shopify.dev/docs/api/storefront/current/objects/Cart#field-Cart.fields.discountCodes) field to see whether the code is applicable to the cart's current contents.
   """
   cartDiscountCodesUpdate(
@@ -2657,14 +2671,14 @@ type Mutation {
     cartId: ID!,
     """
     The case-insensitive discount codes that the customer added at checkout.
-    
+
     The input must not contain more than `250` values.
     """
     discountCodes: [String!]!
   ): CartDiscountCodesUpdatePayload
   """
   Adds gift card codes to a [`Cart`](https://shopify.dev/docs/api/storefront/current/objects/Cart) without replacing any codes already applied. Gift card codes are case-insensitive.
-  
+
   To replace all gift card codes instead of adding to them, use [`cartGiftCardCodesUpdate`](https://shopify.dev/docs/api/storefront/current/mutations/cartGiftCardCodesUpdate).
   """
   cartGiftCardCodesAdd(
@@ -2672,7 +2686,7 @@ type Mutation {
     cartId: ID!,
     """
     The case-insensitive gift card codes to add.
-    
+
     The input must not contain more than `250` values.
     """
     giftCardCodes: [String!]!
@@ -2685,7 +2699,7 @@ type Mutation {
     cartId: ID!,
     """
     The gift cards to remove.
-    
+
     The input must not contain more than `250` values.
     """
     appliedGiftCardIds: [ID!]!
@@ -2698,14 +2712,14 @@ type Mutation {
     cartId: ID!,
     """
     The case-insensitive gift card codes.
-    
+
     The input must not contain more than `250` values.
     """
     giftCardCodes: [String!]!
   ): CartGiftCardCodesUpdatePayload
   """
   Adds one or more merchandise lines to an existing [`Cart`](https://shopify.dev/docs/api/storefront/current/objects/Cart). Each line specifies the [product variant](https://shopify.dev/docs/api/storefront/current/objects/ProductVariant) to purchase. Quantity defaults to `1` if not provided.
-  
+
   You can add up to 250 lines in a single request. Use [`CartLineInput`](https://shopify.dev/docs/api/storefront/current/input-objects/CartLineInput) to configure each line's merchandise, quantity, selling plan, custom attributes, and any parent relationships for nested line items such as warranties or add-ons.
   """
   cartLinesAdd(
@@ -2713,7 +2727,7 @@ type Mutation {
     cartId: ID!,
     """
     A list of merchandise lines to add to the cart.
-    
+
     The input must not contain more than `250` values.
     """
     lines: [CartLineInput!]!
@@ -2726,14 +2740,14 @@ type Mutation {
     cartId: ID!,
     """
     The merchandise line IDs to remove.
-    
+
     The input must not contain more than `250` values.
     """
     lineIds: [ID!]!
   ): CartLinesRemovePayload
   """
   Updates one or more merchandise lines on a [`Cart`](https://shopify.dev/docs/api/storefront/current/objects/Cart). You can modify the quantity, swap the merchandise, change custom attributes, or update the selling plan for each line. You can update a maximum of 250 lines per request.
-  
+
   Omitting the [`attributes`](https://shopify.dev/docs/api/storefront/current/mutations/cartLinesUpdate#arguments-lines.fields.attributes) field or setting it to null preserves existing line attributes. Pass an empty array to clear all attributes from a line.
   """
   cartLinesUpdate(
@@ -2741,14 +2755,14 @@ type Mutation {
     cartId: ID!,
     """
     The merchandise lines to update.
-    
+
     The input must not contain more than `250` values.
     """
     lines: [CartLineUpdateInput!]!
   ): CartLinesUpdatePayload
   """
   Deletes a cart metafield.
-  
+
   > Note:
   > This mutation won't trigger [Shopify Functions](https://shopify.dev/docs/api/functions). The changes won't be available to Shopify Functions until the buyer goes to checkout or performs another cart interaction that triggers the functions.
   """
@@ -2758,16 +2772,16 @@ type Mutation {
   ): CartMetafieldDeletePayload
   """
   Sets [`Metafield`](https://shopify.dev/docs/api/storefront/current/objects/Metafield) values on a cart, creating new metafields or updating existing ones. Accepts up to 25 metafields per request.
-  
+
   Cart metafields can automatically copy to order metafields when an order is created, if there's a matching order metafield definition with the [cart to order copyable](https://shopify.dev/docs/apps/build/metafields/use-metafield-capabilities#cart-to-order-copyable) capability enabled.
-  
+
   > Note:
   > This mutation doesn't trigger [Shopify Functions](https://shopify.dev/docs/api/functions). Changes aren't available to Shopify Functions until the buyer goes to checkout or performs another cart interaction that triggers the functions.
   """
   cartMetafieldsSet(
     """
     The list of Cart metafield values to set. Maximum of 25.
-    
+
     The input must not contain more than `250` values.
     """
     metafields: [CartMetafieldsSetInput!]!
@@ -2800,7 +2814,7 @@ type Mutation {
   ): CartRemovePersonalDataPayload
   """
   Updates the selected delivery option for one or more [`CartDeliveryGroup`](https://shopify.dev/docs/api/storefront/current/objects/CartDeliveryGroup) objects in a cart. Each delivery group represents items shipping to a specific address and offers multiple delivery options with different costs and methods.
-  
+
   Use this mutation when a customer chooses their preferred shipping method during checkout. The [`deliveryOptionHandle`](https://shopify.dev/docs/api/storefront/current/input-objects/CartSelectedDeliveryOptionInput#field-CartSelectedDeliveryOptionInput.fields.deliveryOptionHandle) identifies which [`CartDeliveryOption`](https://shopify.dev/docs/api/storefront/current/objects/CartDeliveryOption) to select for each delivery group.
   """
   cartSelectedDeliveryOptionsUpdate(
@@ -2808,7 +2822,7 @@ type Mutation {
     cartId: ID!,
     """
     The selected delivery options.
-    
+
     The input must not contain more than `250` values.
     """
     selectedDeliveryOptions: [CartSelectedDeliveryOptionInput!]!
@@ -2825,11 +2839,11 @@ type Mutation {
   ): CartSubmitForCompletionPayload
   """
   For legacy customer accounts only.
-  
+
   Creates a [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken) using the customer's email and password. The access token is required to read or modify the [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer) object, such as updating account information or managing addresses.
-  
+
   The token has an expiration time. Use [`customerAccessTokenRenew`](https://shopify.dev/docs/api/storefront/current/mutations/customerAccessTokenRenew) to extend the token before it expires, or create a new token if it's already expired.
-  
+
   > Caution:
   > This mutation handles customer credentials. Always transmit requests over HTTPS and never log or expose the password.
   """
@@ -2839,9 +2853,9 @@ type Mutation {
   ): CustomerAccessTokenCreatePayload
   """
   Creates a [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken) using a [multipass token](https://shopify.dev/docs/api/multipass) instead of email and password. This enables single sign-on for customers who authenticate through an external system.
-  
+
   If the customer doesn't exist in Shopify, then a new customer record is created automatically. If the customer exists but the record is disabled, then the customer record is re-enabled.
-  
+
   > Caution:
   > Multipass tokens are only valid for 15 minutes and can only be used once. Generate tokens on-the-fly when needed rather than in advance.
   """
@@ -2851,7 +2865,7 @@ type Mutation {
   ): CustomerAccessTokenCreateWithMultipassPayload
   """
   Permanently destroys a [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken). Use this mutation when a customer explicitly signs out or when you need to revoke the token. Use [`customerAccessTokenCreate`](https://shopify.dev/docs/api/storefront/current/mutations/customerAccessTokenCreate) to generate a new token with the customer's credentials.
-  
+
   > Caution:
   > This action is irreversible. The customer needs to sign in again to obtain a new access token.
   """
@@ -2861,9 +2875,9 @@ type Mutation {
   ): CustomerAccessTokenDeletePayload
   """
   Extends the validity of a [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken) before it expires. The renewed token maintains authenticated access to customer operations.
-  
+
   Renewal must happen before the token's [`expiresAt`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken#field-CustomerAccessToken.fields.expiresAt) time. If a token has already expired, then use [`customerAccessTokenCreate`](https://shopify.dev/docs/api/storefront/current/mutations/customerAccessTokenCreate) to generate a new token with the customer's credentials.
-  
+
   > Caution:
   > Store access tokens securely. Never store tokens in plain text or insecure locations, and avoid exposing them in URLs or logs.
   """
@@ -2873,9 +2887,9 @@ type Mutation {
   ): CustomerAccessTokenRenewPayload
   """
   Activates a customer account using an activation token received from the [`customerCreate`](https://shopify.dev/docs/api/storefront/current/mutations/customerCreate) mutation. The customer sets their password during activation and receives a [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken) for authenticated access.
-  
+
   For a simpler approach that doesn't require parsing the activation URL, use [`customerActivateByUrl`](https://shopify.dev/docs/api/storefront/current/mutations/customerActivateByUrl) instead.
-  
+
   > Caution:
   > This mutation handles customer credentials. Always use HTTPS and never log or expose the password or access token.
   """
@@ -2887,7 +2901,7 @@ type Mutation {
   ): CustomerActivatePayload
   """
   Activates a customer account using the full activation URL from the [`customerCreate`](https://shopify.dev/docs/api/storefront/current/mutations/customerCreate) mutation. This approach simplifies activation by accepting the complete URL directly, eliminating the need to parse it for the customer ID and activation token. Returns a [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken) for authenticating subsequent requests.
-  
+
   > Caution:
   > Store the returned access token securely. It grants access to the customer's account data.
   """
@@ -2898,8 +2912,8 @@ type Mutation {
     password: String!
   ): CustomerActivateByUrlPayload
   """
-  Creates a new [`MailingAddress`](https://shopify.dev/docs/api/storefront/current/objects/MailingAddress) for a [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer). Use the customer's [access token](https://shopify.dev/docs/api/storefront/current/mutations/customerAddressCreate#arguments-customerAccessToken) to identify them. Successful creation returns the new address. 
-  
+  Creates a new [`MailingAddress`](https://shopify.dev/docs/api/storefront/current/objects/MailingAddress) for a [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer). Use the customer's [access token](https://shopify.dev/docs/api/storefront/current/mutations/customerAddressCreate#arguments-customerAccessToken) to identify them. Successful creation returns the new address.
+
   Each customer can have multiple addresses.
   """
   customerAddressCreate(
@@ -2910,7 +2924,7 @@ type Mutation {
   ): CustomerAddressCreatePayload
   """
   Permanently deletes a specific [`MailingAddress`](https://shopify.dev/docs/api/storefront/current/objects/MailingAddress) for a [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer). Requires a valid [customer access token](https://shopify.dev/docs/api/storefront/current/mutations/customerAddressDelete#arguments-customerAccessToken) to authenticate the request.
-  
+
   > Caution:
   > This action is irreversible. You can't recover the deleted address.
   """
@@ -2922,7 +2936,7 @@ type Mutation {
   ): CustomerAddressDeletePayload
   """
   Updates an existing [`MailingAddress`](https://shopify.dev/docs/api/storefront/current/objects/MailingAddress) for a [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer). Requires a [customer access token](https://shopify.dev/docs/api/storefront/current/mutations/customerAddressUpdate#arguments-customerAccessToken) to identify the customer, an ID to specify which address to modify, and an [`address`](https://shopify.dev/docs/api/storefront/current/input-objects/MailingAddressInput) with the updated fields.
-  
+
   Successful update returns the updated [`MailingAddress`](https://shopify.dev/docs/api/storefront/current/objects/MailingAddress).
   """
   customerAddressUpdate(
@@ -2935,7 +2949,7 @@ type Mutation {
   ): CustomerAddressUpdatePayload
   """
   Creates a new [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer) account with the provided contact information and login credentials. The customer can then sign in for things such as accessing their account, viewing order history, and managing saved addresses.
-  
+
   > Caution:
   > This mutation creates customer credentials. Ensure passwords are collected securely and never logged or exposed in client-side code.
   """
@@ -2954,9 +2968,9 @@ type Mutation {
   ): CustomerDefaultAddressUpdatePayload
   """
   Sends a reset password email to the customer. The email contains a reset password URL and token that you can pass to the [`customerResetByUrl`](https://shopify.dev/docs/api/storefront/current/mutations/customerResetByUrl) or [`customerReset`](https://shopify.dev/docs/api/storefront/current/mutations/customerReset) mutation to reset the customer's password.
-  
+
   This mutation is throttled by IP. With private access, you can provide a [`Shopify-Storefront-Buyer-IP` header](https://shopify.dev/docs/api/usage/authentication#optional-ip-header) instead of the request IP. The header is case-sensitive.
-  
+
   > Caution:
   > Ensure the value provided to `Shopify-Storefront-Buyer-IP` is trusted. Unthrottled access to this mutation presents a security risk.
   """
@@ -2966,9 +2980,9 @@ type Mutation {
   ): CustomerRecoverPayload
   """
   Resets a customer's password using the reset token from a password recovery email. On success, returns the updated [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer) and a new [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken) for immediate authentication.
-  
+
   Use the [`customerRecover`](https://shopify.dev/docs/api/storefront/current/mutations/customerRecover) mutation to send the password recovery email that provides the reset token. Alternatively, use [`customerResetByUrl`](https://shopify.dev/docs/api/storefront/current/mutations/customerResetByUrl) if you have the full reset URL instead of the customer ID and token.
-  
+
   > Caution:
   > This mutation handles sensitive customer credentials. Validate password requirements on the client before submission.
   """
@@ -2980,9 +2994,9 @@ type Mutation {
   ): CustomerResetPayload
   """
   Resets a customer's password using the reset URL from a password recovery email. The reset URL is generated by the [`customerRecover`](https://shopify.dev/docs/api/storefront/current/mutations/customerRecover) mutation.
-  
+
   On success, returns the updated [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer) and a new [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken) for immediate authentication.
-  
+
   > Caution:
   > This mutation handles customer credentials. Ensure the new password is transmitted securely and never logged or exposed in client-side code.
   """
@@ -2994,9 +3008,9 @@ type Mutation {
   ): CustomerResetByUrlPayload
   """
   Updates a [customer's](https://shopify.dev/docs/api/storefront/current/objects/Customer) personal information such as name, password, and marketing preferences. Requires a valid [`CustomerAccessToken`](https://shopify.dev/docs/api/storefront/current/objects/CustomerAccessToken) to authenticate the customer making the update.
-  
+
   If the customer's password is updated, then all previous access tokens become invalid. The mutation returns a new access token in the payload to maintain the customer's session.
-  
+
   > Caution:
   > Password changes invalidate all existing access tokens. Ensure your app handles the new token returned in the response to avoid logging the customer out.
   """
@@ -3008,9 +3022,9 @@ type Mutation {
   ): CustomerUpdatePayload
   """
   Creates a [Shop Pay payment request session](https://shopify.dev/docs/api/storefront/current/objects/ShopPayPaymentRequestSession) for processing payments. The session includes a checkout URL where customers complete their purchase and a token for subsequent operations like submitting the payment.
-  
+
   The `sourceIdentifier` must be unique across all orders to ensure accurate reconciliation.
-  
+
   For a complete integration guide including the JavaScript SDK setup and checkout flow, refer to the [Shop Component API documentation](https://shopify.dev/docs/api/commerce-components/pay). For implementation steps, see the [development journey guide](https://shopify.dev/docs/api/commerce-components/pay/development-journey). For common error scenarios, see the [troubleshooting guide](https://shopify.dev/docs/api/commerce-components/pay/troubleshooting-guide).
   """
   shopPayPaymentRequestSessionCreate(
@@ -3021,9 +3035,9 @@ type Mutation {
   ): ShopPayPaymentRequestSessionCreatePayload
   """
   Finalizes a [Shop Pay payment request session](https://shopify.dev/docs/api/storefront/current/objects/ShopPayPaymentRequestSession). Call this mutation after creating a session with [`shopPayPaymentRequestSessionCreate`](https://shopify.dev/docs/api/storefront/current/mutations/shopPayPaymentRequestSessionCreate).
-  
+
   The [`idempotencyKey`](https://shopify.dev/docs/api/storefront/current/mutations/shopPayPaymentRequestSessionSubmit#arguments-idempotencyKey) argument ensures the payment transaction occurs only once, preventing duplicate charges. On success, returns a [`ShopPayPaymentRequestReceipt`](https://shopify.dev/docs/api/storefront/current/objects/ShopPayPaymentRequestReceipt) with the processing status and a receipt token.
-  
+
   For a complete integration guide including the JavaScript SDK setup and checkout flow, refer to the [Shop Component API documentation](https://shopify.dev/docs/api/commerce-components/pay). For implementation steps, see the [development journey guide](https://shopify.dev/docs/api/commerce-components/pay/development-journey). For common error scenarios, see the [troubleshooting guide](https://shopify.dev/docs/api/commerce-components/pay/troubleshooting-guide).
   """
   shopPayPaymentRequestSessionSubmit(
@@ -3110,7 +3124,7 @@ type Order implements HasMetafields & Node {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -3256,7 +3270,7 @@ type Page implements HasMetafields & Node & OnlineStorePublishable & Trackable {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -3372,18 +3386,18 @@ type Product implements HasMetafields & Node & OnlineStorePublishable & Trackabl
   """
   A list of variants whose selected options differ with the provided selected options by one, ordered by variant id.
   If selected options are not provided, adjacent variants to the first available variant is returned.
-  
+
   Note that this field returns an array of variants. In most cases, the number of variants in this array will be low.
   However, with a low number of options and a high number of values per option, the number of variants returned
   here can be high. In such cases, it recommended to avoid using this field.
-  
+
   This list of variants can be used in combination with the `options` field to build a rich variant picker that
   includes variant availability or other variant information.
   """
   adjacentVariants(
     """
     The input fields used for a selected option.
-    
+
     The input must not contain more than `250` values.
     """
     selectedOptions: [SelectedOptionInput!],
@@ -3427,65 +3441,65 @@ type Product implements HasMetafields & Node & OnlineStorePublishable & Trackabl
   """
   An encoded string containing all option value combinations
   with a corresponding variant that is currently available for sale.
-  
+
   Integers represent option and values:
   [0,1] represents option_value at array index 0 for the option at array index 0
-  
+
   `:`, `,`, ` ` and `-` are control characters.
   `:` indicates a new option. ex: 0:1 indicates value 0 for the option in position 1, value 1 for the option in position 2.
   `,` indicates the end of a repeated prefix, mulitple consecutive commas indicate the end of multiple repeated prefixes.
   ` ` indicates a gap in the sequence of option values. ex: 0 4 indicates option values in position 0 and 4 are present.
   `-` indicates a continuous range of option values. ex: 0 1-3 4
-  
+
   Decoding process:
-  
+
   Example options: [Size, Color, Material]
   Example values: [[Small, Medium, Large], [Red, Blue], [Cotton, Wool]]
   Example encoded string: "0:0:0,1:0-1,,1:0:0-1,1:1,,2:0:1,1:0,,"
-  
+
   Step 1: Expand ranges into the numbers they represent: "0:0:0,1:0 1,,1:0:0 1,1:1,,2:0:1,1:0,,"
   Step 2: Expand repeated prefixes: "0:0:0,0:1:0 1,1:0:0 1,1:1:1,2:0:1,2:1:0,"
   Step 3: Expand shared prefixes so data is encoded as a string: "0:0:0,0:1:0,0:1:1,1:0:0,1:0:1,1:1:1,2:0:1,2:1:0,"
   Step 4: Map to options + option values to determine existing variants:
-  
+
   [Small, Red, Cotton] (0:0:0), [Small, Blue, Cotton] (0:1:0), [Small, Blue, Wool] (0:1:1),
   [Medium, Red, Cotton] (1:0:0), [Medium, Red, Wool] (1:0:1), [Medium, Blue, Wool] (1:1:1),
   [Large, Red, Wool] (2:0:1), [Large, Blue, Cotton] (2:1:0).
-  
+
   """
   encodedVariantAvailability: String
   """
   An encoded string containing all option value combinations with a corresponding variant.
-  
+
   Integers represent option and values:
   [0,1] represents option_value at array index 0 for the option at array index 0
-  
+
   `:`, `,`, ` ` and `-` are control characters.
   `:` indicates a new option. ex: 0:1 indicates value 0 for the option in position 1, value 1 for the option in position 2.
   `,` indicates the end of a repeated prefix, mulitple consecutive commas indicate the end of multiple repeated prefixes.
   ` ` indicates a gap in the sequence of option values. ex: 0 4 indicates option values in position 0 and 4 are present.
   `-` indicates a continuous range of option values. ex: 0 1-3 4
-  
+
   Decoding process:
-  
+
   Example options: [Size, Color, Material]
   Example values: [[Small, Medium, Large], [Red, Blue], [Cotton, Wool]]
   Example encoded string: "0:0:0,1:0-1,,1:0:0-1,1:1,,2:0:1,1:0,,"
-  
+
   Step 1: Expand ranges into the numbers they represent: "0:0:0,1:0 1,,1:0:0 1,1:1,,2:0:1,1:0,,"
   Step 2: Expand repeated prefixes: "0:0:0,0:1:0 1,1:0:0 1,1:1:1,2:0:1,2:1:0,"
   Step 3: Expand shared prefixes so data is encoded as a string: "0:0:0,0:1:0,0:1:1,1:0:0,1:0:1,1:1:1,2:0:1,2:1:0,"
   Step 4: Map to options + option values to determine existing variants:
-  
+
   [Small, Red, Cotton] (0:0:0), [Small, Blue, Cotton] (0:1:0), [Small, Blue, Wool] (0:1:1),
   [Medium, Red, Cotton] (1:0:0), [Medium, Red, Wool] (1:0:1), [Medium, Blue, Wool] (1:1:1),
   [Large, Red, Wool] (2:0:1), [Large, Blue, Cotton] (2:1:0).
-  
+
   """
   encodedVariantExistence: String
   """
   The featured image for the product.
-  
+
   This field is functionally equivalent to `images(first: 1)`.
   """
   featuredImage: Image
@@ -3540,7 +3554,7 @@ type Product implements HasMetafields & Node & OnlineStorePublishable & Trackabl
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -3572,14 +3586,14 @@ type Product implements HasMetafields & Node & OnlineStorePublishable & Trackabl
   requiresSellingPlan: Boolean!
   """
   Find an active product variant based on selected options, availability or the first variant.
-  
+
   All arguments are optional. If no selected options are provided, the first available variant is returned.
   If no variants are available, the first variant is returned.
   """
   selectedOrFirstAvailableVariant(
     """
     The input fields used for a selected option.
-    
+
     The input must not contain more than `250` values.
     """
     selectedOptions: [SelectedOptionInput!],
@@ -3640,7 +3654,7 @@ type Product implements HasMetafields & Node & OnlineStorePublishable & Trackabl
   variantBySelectedOptions(
     """
     The input fields used for a selected option.
-    
+
     The input must not contain more than `250` values.
     """
     selectedOptions: [SelectedOptionInput!]!,
@@ -3719,7 +3733,7 @@ type ProductOptionValue implements Node {
   """
   The product variant that combines this option value with the
   lowest-position option values for all other options.
-  
+
   This field will always return a variant, provided a variant including this option value exists.
   """
   firstSelectableVariant: ProductVariant
@@ -3807,7 +3821,7 @@ type ProductVariant implements HasMetafields & Node {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -3988,7 +4002,7 @@ type QuantityRule {
   """
   The value that specifies the quantity increment between minimum and maximum of the rule.
   Only quantities divisible by this value will be considered valid.
-  
+
   The increment must be lower than or equal to the minimum and the maximum, and both minimum and maximum
   must be divisible by this value.
   """
@@ -4021,7 +4035,7 @@ type QueryRoot {
   ): Article
   """
   Returns a paginated list of [`Article`](https://shopify.dev/docs/api/storefront/current/objects/Article) objects from the shop's [`Blog`](https://shopify.dev/docs/api/storefront/current/objects/Blog) objects. Each article is a blog post containing content, author information, tags, and optional images.
-  
+
   Use the `query` argument to filter results by author, blog title, tags, or date fields. Sort results using the `sortKey` argument and reverse them with the `reverse` argument.
   """
   articles(
@@ -4097,7 +4111,7 @@ type QueryRoot {
   ): BlogConnection!
   """
   Returns a [`Cart`](https://shopify.dev/docs/api/storefront/current/objects/Cart) by its ID. The cart contains the merchandise lines a buyer intends to purchase, along with estimated costs, applied discounts, gift cards, and delivery options.
-  
+
   Use the [`checkoutUrl`](https://shopify.dev/docs/api/storefront/latest/queries/cart#returns-Cart.fields.checkoutUrl) field to redirect buyers to Shopify's web checkout when they're ready to complete their purchase. For more information, refer to [Manage a cart with the Storefront API](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/cart/manage).
   """
   cart(
@@ -4156,7 +4170,7 @@ type QueryRoot {
   ): CollectionConnection!
   """
   Retrieves the [`Customer`](https://shopify.dev/docs/api/storefront/current/objects/Customer) associated with the provided access token. Use the [`customerAccessTokenCreate`](https://shopify.dev/docs/api/storefront/current/mutations/customerAccessTokenCreate) mutation to obtain an access token using legacy customer account authentication (email and password).
-  
+
   The returned customer includes data such as contact information, [addresses](https://shopify.dev/docs/api/storefront/current/objects/MailingAddress), [orders](https://shopify.dev/docs/api/storefront/current/objects/Order), and [custom data](https://shopify.dev/docs/apps/build/custom-data) associated with the customer.
   """
   customer(
@@ -4165,15 +4179,15 @@ type QueryRoot {
   ): Customer
   """
   Returns the shop's localization settings. Use this query to build [country and language selectors](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/markets) for your storefront.
-  
+
   The [`country`](https://shopify.dev/docs/api/storefront/latest/queries/localization#returns-Localization.fields.country) and [`language`](https://shopify.dev/docs/api/storefront/latest/queries/localization#returns-Localization.fields.language) fields reflect the active localized experience. To change the context, use the [`@inContext`](https://shopify.dev/docs/api/storefront#directives) directive with your desired country or language code.
   """
   localization: Localization!
   """
   Returns shop locations that support in-store pickup. Use the `near` argument with [`GeoCoordinateInput`](https://shopify.dev/docs/api/storefront/current/input-objects/GeoCoordinateInput) to sort results by proximity to the customer's location.
-  
+
   When sorting by distance, set `sortKey` to [`DISTANCE`](https://shopify.dev/docs/api/storefront/current/queries/locations#arguments-sortKey.enums.DISTANCE) and provide coordinates using the [`near`](https://shopify.dev/docs/api/storefront/current/queries/locations#arguments-near) argument.
-  
+
   Learn more about [supporting local pickup on storefronts](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/products-collections/local-pickup).
   """
   locations(
@@ -4194,7 +4208,7 @@ type QueryRoot {
   ): LocationConnection!
   """
   Retrieves a [`Menu`](https://shopify.dev/docs/api/storefront/current/objects/Menu) by its handle. Menus are [hierarchical navigation structures](https://help.shopify.com/manual/online-store/menus-and-links) that merchants configure for their storefront, such as header and footer navigation.
-  
+
   Each menu contains [`MenuItem`](https://shopify.dev/docs/api/storefront/current/objects/MenuItem) objects that can nest up to three levels deep, with each item linking to [collections](https://shopify.dev/docs/api/storefront/current/objects/Collection), [products](https://shopify.dev/docs/api/storefront/current/objects/Product), [pages](https://shopify.dev/docs/api/storefront/current/objects/Page), [blogs](https://shopify.dev/docs/api/storefront/current/objects/Blog), or external URLs.
   """
   menu(
@@ -4203,7 +4217,7 @@ type QueryRoot {
   ): Menu
   """
   Retrieves a single [`Metaobject`](https://shopify.dev/docs/api/storefront/current/objects/Metaobject) by either its [`global ID`](https://shopify.dev/docs/api/storefront/current/queries/metaobject#arguments-id) or its [`handle`](https://shopify.dev/docs/api/storefront/current/queries/metaobject#arguments-handle).
-  
+
   > Note:
   > When using the handle, you must also provide the metaobject type because handles are only unique within a type.
   """
@@ -4215,7 +4229,7 @@ type QueryRoot {
   ): Metaobject
   """
   Returns a paginated list of [`Metaobject`](https://shopify.dev/docs/api/storefront/current/objects/Metaobject) entries for a specific type. Metaobjects are [custom data structures](https://shopify.dev/docs/apps/build/metaobjects) that extend Shopify's data model with merchant-defined or app-defined content like size charts, product highlights, or custom sections.
-  
+
   The required `type` argument specifies which metaobject type to retrieve. You can sort results by `id` or `updated_at` using the `sortKey` argument.
   """
   metaobjects(
@@ -4238,7 +4252,7 @@ type QueryRoot {
   ): MetaobjectConnection!
   """
   Retrieves any object that implements the [`Node`](https://shopify.dev/docs/api/storefront/current/interfaces/Node) interface by its globally-unique ID. Use inline fragments to access type-specific fields on the returned object.
-  
+
   This query follows the [Relay specification](https://relay.dev/graphql/objectidentification.htm#sec-Node-Interface) and is commonly used for refetching objects when you have their ID but need updated data.
   """
   node(
@@ -4247,20 +4261,20 @@ type QueryRoot {
   ): Node
   """
   Retrieves multiple objects by their global IDs in a single request. Any object that implements the [`Node`](https://shopify.dev/docs/api/storefront/current/interfaces/Node) interface can be fetched, including [products](https://shopify.dev/docs/api/storefront/current/objects/Product), [collections](https://shopify.dev/docs/api/storefront/current/objects/Collection), and [pages](https://shopify.dev/docs/api/storefront/current/objects/Page).
-  
+
   Use inline fragments to access type-specific fields on the returned objects. The input accepts up to 250 IDs.
   """
   nodes(
     """
     The IDs of the Nodes to return.
-    
+
     The input must not contain more than `250` values.
     """
     ids: [ID!]!
   ): [Node]!
   """
   Retrieves a [`Page`](https://shopify.dev/docs/api/storefront/current/objects/Page) by its [`handle`](https://shopify.dev/docs/api/storefront/current/queries/page#arguments-handle) or [`id`](https://shopify.dev/docs/api/storefront/current/queries/page#arguments-id). Pages are static content pages that merchants display outside their product catalog, such as "About Us," "Contact," or policy pages.
-  
+
   The returned page includes information such as the [HTML body content](https://shopify.dev/docs/api/storefront/current/queries/page#returns-Page.fields.body), [`SEO`](https://shopify.dev/docs/api/storefront/current/objects/SEO) information, and any associated [`Metafield`](https://shopify.dev/docs/api/storefront/current/objects/Metafield) objects.
   """
   page(
@@ -4308,7 +4322,7 @@ type QueryRoot {
   paymentSettings: PaymentSettings!
   """
   Returns suggested results as customers type in a search field, enabling type-ahead search experiences. The query matches [products](https://shopify.dev/docs/api/storefront/current/objects/Product), [collections](https://shopify.dev/docs/api/storefront/current/objects/Collection), [pages](https://shopify.dev/docs/api/storefront/current/objects/Page), and [articles](https://shopify.dev/docs/api/storefront/current/objects/Article) based on partial search terms, and also provides [search query suggestions](https://shopify.dev/docs/api/storefront/current/objects/SearchQuerySuggestion) to help customers refine their search.
-  
+
   You can filter results by resource type and limit the quantity. The [`limitScope`](https://shopify.dev/docs/api/storefront/current/queries/predictiveSearch#arguments-limitScope) argument controls whether limits apply across all result types or per type. Use [`unavailableProducts`](https://shopify.dev/docs/api/storefront/current/queries/predictiveSearch#arguments-unavailableProducts) to control how out-of-stock products appear in results.
   """
   predictiveSearch(
@@ -4320,13 +4334,13 @@ type QueryRoot {
     query: String!,
     """
     Specifies the list of resource fields to use for search. The default fields searched on are TITLE, PRODUCT_TYPE, VARIANT_TITLE, and VENDOR. For the best search experience, you should search on the default field set.
-    
+
     The input must not contain more than `250` values.
     """
     searchableFields: [SearchableField!],
     """
     The types of resources to search for.
-    
+
     The input must not contain more than `250` values.
     """
     types: [PredictiveSearchType!],
@@ -4355,7 +4369,7 @@ type QueryRoot {
   ): Product @deprecated(reason: "Use `product` instead.")
   """
   Returns recommended products for a given product, identified by either ID or handle. Use the [`intent`](https://shopify.dev/docs/api/storefront/current/enums/ProductRecommendationIntent) argument to control the recommendation strategy.
-  
+
   Shopify [auto-generates related recommendations](https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations) based on sales data, product descriptions, and collection relationships. Complementary recommendations require [manual configuration](https://help.shopify.com/manual/online-store/storefront-search/search-and-discovery-recommendations) through the Shopify Search & Discovery app. Returns up to ten [`Product`](https://shopify.dev/docs/api/storefront/current/objects/Product) objects.
   """
   productRecommendations(
@@ -4382,7 +4396,7 @@ type QueryRoot {
   ): StringConnection!
   """
   Returns a paginated list of the shop's [products](https://shopify.dev/docs/api/storefront/current/objects/Product).
-  
+
   For full-text storefront search, use the [`search`](https://shopify.dev/docs/api/storefront/current/queries/search) query instead.
   """
   products(
@@ -4421,7 +4435,7 @@ type QueryRoot {
   publicApiVersions: [ApiVersion!]!
   """
   Returns paginated search results for [`Product`](https://shopify.dev/docs/api/storefront/current/objects/Product), [`Page`](https://shopify.dev/docs/api/storefront/current/objects/Page), and [`Article`](https://shopify.dev/docs/api/storefront/current/objects/Article) resources based on a query string. Results are sorted by relevance by default.
-  
+
   The response includes the total result count and available product filters for building [faceted search interfaces](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/products-collections/filter-products). Use the [`prefix`](https://shopify.dev/docs/api/storefront/current/enums/SearchPrefixQueryType) argument to enable partial word matching on the last search term, allowing queries like "winter snow" to match "snowboard" or "snowshoe".
   """
   search(
@@ -4443,13 +4457,13 @@ type QueryRoot {
     prefix: SearchPrefixQueryType,
     """
     Returns a subset of products matching all product filters.
-    
+
     The input must not contain more than `250` values.
     """
     productFilters: [ProductFilter!],
     """
     The types of resources to search for.
-    
+
     The input must not contain more than `250` values.
     """
     types: [SearchType!],
@@ -4458,13 +4472,13 @@ type QueryRoot {
   ): SearchResultItemConnection!
   """
   Returns the [`Shop`](https://shopify.dev/docs/api/storefront/current/objects/Shop) associated with the storefront access token. The `Shop` object provides general store information such as the shop name, description, and primary domain.
-  
+
   Use this query to access data like store policies, [`PaymentSettings`](https://shopify.dev/docs/api/storefront/current/objects/PaymentSettings), [`Brand`](https://shopify.dev/docs/api/storefront/current/objects/Brand) configuration, and shipping destinations. It also exposes [`ShopPayInstallmentsPricing`](https://shopify.dev/docs/api/storefront/current/objects/ShopPayInstallmentsPricing) and [`SocialLoginProvider`](https://shopify.dev/docs/api/storefront/current/objects/SocialLoginProvider) options for customer accounts.
   """
   shop: Shop!
   """
   Returns sitemap data for a specific resource type, enabling headless storefronts to generate XML sitemaps for search engine optimization. The query provides a page count and paginated access to resources like [`Product`](https://shopify.dev/docs/api/storefront/current/objects/Product), [`Collection`](https://shopify.dev/docs/api/storefront/current/objects/Collection), [`Page`](https://shopify.dev/docs/api/storefront/current/objects/Page), and [`Blog`](https://shopify.dev/docs/api/storefront/current/objects/Blog) objects.
-  
+
   When paginating through resources, the number of items per page varies from 0 to 250, and empty pages can occur without indicating the end of results. Always check [`hasNextPage`](https://shopify.dev/docs/api/storefront/current/objects/PaginatedSitemapResources#field-PaginatedSitemapResources.fields.hasNextPage) to determine if more pages are available.
   """
   sitemap(
@@ -4592,7 +4606,7 @@ type SellingPlan implements HasMetafields {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -4796,6 +4810,8 @@ Access store policies such as privacy, refund, shipping, and terms of service vi
 type Shop implements HasMetafields & Node {
   "The shop's branding configuration."
   brand: Brand
+  "The shop's contact information."
+  contactInformation: ShopPolicy
   "Translations for customer accounts."
   customerAccountTranslations: [Translation!]
   "The URL for the customer account (only present if shop has a customer account vanity domain)."
@@ -4804,6 +4820,8 @@ type Shop implements HasMetafields & Node {
   description: String
   "A globally-unique ID."
   id: ID!
+  "The shop's legal notice."
+  legalNotice: ShopPolicy
   "A [custom field](https://shopify.dev/docs/apps/build/custom-data), including its `namespace` and `key`, that's associated with a Shopify resource for the purposes of adding and storing additional information."
   metafield(
     "The container the metafield belongs to. If omitted, the app-reserved namespace will be used."
@@ -4815,7 +4833,7 @@ type Shop implements HasMetafields & Node {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -4842,6 +4860,8 @@ type Shop implements HasMetafields & Node {
   socialLoginProviders: [SocialLoginProvider!]!
   "The shop’s subscription policy."
   subscriptionPolicy: ShopPolicyWithDefault
+  "The shop's terms of sale."
+  termsOfSale: ShopPolicy
   "The shop’s terms of service."
   termsOfService: ShopPolicy
 }
@@ -5091,7 +5111,7 @@ type Sitemap {
   pagesCount: Count
   """
   A list of sitemap's resources for a given type.
-  
+
   Important Notes:
     - The number of items per page varies from 0 to 250.
     - Empty pages (0 items) may occur and do not necessarily indicate the end of results.
@@ -5144,7 +5164,7 @@ type SocialLoginProvider {
 """
 Inventory information for a product variant at a physical store location that offers local pickup. Includes stock availability, quantity on hand, and estimated pickup readiness time.
 
-Local pickup must be [enabled in the store's shipping settings](https://help.shopify.com/manual/shipping/setting-up-and-managing-your-shipping/local-methods/local-pickup) for this data to be returned. Results can be sorted by proximity to a customer's location using the `near` argument on the [`ProductVariant.storeAvailability`](https://shopify.dev/docs/api/storefront/current/objects/ProductVariant#field-ProductVariant.fields.storeAvailability) connection. 
+Local pickup must be [enabled in the store's shipping settings](https://help.shopify.com/manual/shipping/setting-up-and-managing-your-shipping/local-methods/local-pickup) for this data to be returned. Results can be sorted by proximity to a customer's location using the `near` argument on the [`ProductVariant.storeAvailability`](https://shopify.dev/docs/api/storefront/current/objects/ProductVariant#field-ProductVariant.fields.storeAvailability) connection.
 
 Learn more about [supporting local pickup on storefronts](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/products-collections/local-pickup).
 """
@@ -5393,7 +5413,7 @@ Tracks how a discount distributes across [cart lines](https://shopify.dev/docs/a
 """
 interface CartDiscountAllocation {
   "The discount that have been applied on the cart line."
-  discountApplication: CartDiscountApplication!
+  discountApplication: CartDiscountApplication! @deprecated(reason: "Use `sourceDiscountApplication` instead.")
   "The discounted amount that has been applied to the cart line."
   discountedAmount: MoneyV2!
   "The type of line that the discount is applicable towards."
@@ -5438,7 +5458,7 @@ interface HasMetafields {
   metafields(
     """
     The list of metafields to retrieve by namespace and key.
-    
+
     The input must not contain more than `250` values.
     """
     identifiers: [HasMetafieldsIdentifier!]!
@@ -5612,6 +5632,8 @@ enum CartErrorCode {
   INVALID_MERCHANDISE_LINE
   "Item cannot be purchased as configured."
   MERCHANDISE_NOT_APPLICABLE
+  "An error occurred while processing cart transformations."
+  MERCHANDISE_LINE_TRANSFORMERS_RUN_ERROR
   "Missing discount code."
   MISSING_DISCOUNT_CODE
   "Missing note."
@@ -6778,7 +6800,11 @@ enum ImageContentType {
   "A WEBP image."
   WEBP
 }
-"Language codes supported by Shopify."
+"""
+Supported languages for retrieving translated storefront content. Pass a language code to the [`@inContext`](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/in-context) directive to return product titles, descriptions, and other translatable fields in that language.
+
+The [`Localization`](https://shopify.dev/docs/api/storefront/current/objects/Localization) object provides the list of available languages for the active country, and each [`Country`](https://shopify.dev/docs/api/storefront/current/objects/Country) in [`availableCountries`](https://shopify.dev/docs/api/storefront/current/objects/Localization#field-Localization.fields.availableCountries) includes its own available languages.
+"""
 enum LanguageCode {
   "Afrikaans."
   AF
@@ -7199,7 +7225,7 @@ enum OrderFinancialStatus {
   REFUNDED
 }
 """
-The aggregated fulfillment status of an [`Order`](https://shopify.dev/docs/api/storefront/current/objects/Order), summarizing the state of all line items. Used for display purposes. 
+The aggregated fulfillment status of an [`Order`](https://shopify.dev/docs/api/storefront/current/objects/Order), summarizing the state of all line items. Used for display purposes.
 
 Statuses range from unfulfilled to fully fulfilled, with intermediate states such as in progress and on hold.
 
@@ -7351,7 +7377,7 @@ enum ProductRecommendationIntent {
   COMPLEMENTARY
 }
 """
-Sorting options for the [`products`](https://shopify.dev/docs/api/storefront/current/queries/products) query. Supports sorting products by criteria such as best-selling and price, and by product attributes such as type, and vendor. 
+Sorting options for the [`products`](https://shopify.dev/docs/api/storefront/current/queries/products) query. Supports sorting products by criteria such as best-selling and price, and by product attributes such as type, and vendor.
 
 > Note: Use the [`RELEVANCE`](https://shopify.dev/docs/api/storefront/current/enums/ProductSortKeys#enums-RELEVANCE) key only when a search query is specified.
 """
@@ -7810,7 +7836,7 @@ input CartDeliveryAddressInput {
   lastName: String
   """
   A unique phone number for the customer.
-  
+
   Formatted using E.164 standard. For example, _+16135551111_.
   """
   phone: String
@@ -7827,7 +7853,7 @@ input CartDeliveryCoordinatesPreferenceInput {
   longitude: Float!
   """
   The two-letter code for the country of the preferred location.
-  
+
   For example, US.
   """
   countryCode: CountryCode!
@@ -7836,7 +7862,7 @@ input CartDeliveryCoordinatesPreferenceInput {
 input CartDeliveryInput {
   """
   Selectable addresses to present to the buyer on the cart.
-  
+
   The input must not contain more than `250` values.
   """
   addresses: [CartSelectableAddressInput!]
@@ -7845,14 +7871,14 @@ input CartDeliveryInput {
 input CartDeliveryPreferenceInput {
   """
   The preferred delivery methods such as shipping, local pickup or through pickup points.
-  
+
   The input must not contain more than `250` values.
   """
   deliveryMethod: [PreferenceDeliveryMethodType!]
   """
   The pickup handle prefills checkout fields with the location for either local pickup or pickup points delivery methods.
   It accepts both location ID for local pickup and external IDs for pickup points.
-  
+
   The input must not contain more than `250` values.
   """
   pickupHandle: [String!]
@@ -7887,25 +7913,25 @@ Accepts merchandise lines, discount codes, gift card codes, and a note. You can 
 input CartInput {
   """
   An array of key-value pairs that contains additional information about the cart.
-  
+
   The input must not contain more than `250` values.
   """
   attributes: [AttributeInput!]
   """
   A list of merchandise lines to add to the cart.
-  
+
   The input must not contain more than `250` values.
   """
   lines: [CartLineInput!]
   """
   The case-insensitive discount codes that the customer added at checkout.
-  
+
   The input must not contain more than `250` values.
   """
   discountCodes: [String!]
   """
   The case-insensitive gift card codes.
-  
+
   The input must not contain more than `250` values.
   """
   giftCardCodes: [String!]
@@ -7923,7 +7949,7 @@ input CartInput {
   delivery: CartDeliveryInput
   """
   The metafields to associate with this cart.
-  
+
   The input must not contain more than `250` values.
   """
   metafields: [CartInputMetafieldInput!]
@@ -7954,7 +7980,7 @@ Used by the [`cartCreate`](https://shopify.dev/docs/api/storefront/current/mutat
 input CartLineInput {
   """
   An array of key-value pairs that contains additional information about the merchandise line.
-  
+
   The input must not contain more than `250` values.
   """
   attributes: [AttributeInput!]
@@ -7988,7 +8014,7 @@ input CartLineUpdateInput {
   merchandiseId: ID
   """
   An array of key-value pairs that contains additional information about the merchandise line.
-  
+
   The input must not contain more than `250` values.
   """
   attributes: [AttributeInput!]
@@ -8009,7 +8035,10 @@ input CartMetafieldDeleteInput {
 input CartMetafieldsSetInput {
   "The ID of the cart resource."
   ownerId: ID!
-  "The key name of the cart metafield."
+  """
+  The key name of the cart metafield. This can either be a composite key (`namespace.key`) or a simple key
+  that relies on the default app-reserved namespace.
+  """
   key: String!
   """
   The data to store in the cart metafield. The data is always stored as a string, regardless of the metafield's type.
@@ -8053,7 +8082,7 @@ input CartPreferencesInput {
   """
   Wallet preferences are used to populate relevant payment fields in the checkout flow.
   Accepted value: `["shop_pay"]`.
-  
+
   The input must not contain more than `250` values.
   """
   wallet: [String!]
@@ -8144,7 +8173,7 @@ input CustomerCreateInput {
   email: String!
   """
   A unique phone number for the customer.
-  
+
   Formatted using E.164 standard. For example, _+16135551111_.
   """
   phone: String
@@ -8175,7 +8204,7 @@ input CustomerUpdateInput {
   email: String
   """
   A unique phone number for the customer.
-  
+
   Formatted using E.164 standard. For example, _+16135551111_. To remove the phone number, specify `null`.
   """
   phone: String
@@ -8285,7 +8314,7 @@ input MailingAddressInput {
   lastName: String
   """
   A unique phone number for the customer.
-  
+
   Formatted using E.164 standard. For example, _+16135551111_.
   """
   phone: String
@@ -8401,19 +8430,19 @@ input ShopPayPaymentRequestImageInput {
 input ShopPayPaymentRequestInput {
   """
   The discount codes for the payment request.
-  
+
   The input must not contain more than `250` values.
   """
   discountCodes: [String!]
   """
   The line items for the payment request.
-  
+
   The input must not contain more than `250` values.
   """
   lineItems: [ShopPayPaymentRequestLineItemInput!]
   """
   The shipping lines for the payment request.
-  
+
   The input must not contain more than `250` values.
   """
   shippingLines: [ShopPayPaymentRequestShippingLineInput!]
@@ -8423,7 +8452,7 @@ input ShopPayPaymentRequestInput {
   subtotal: MoneyInput!
   """
   The discounts for the payment request order.
-  
+
   The input must not contain more than `250` values.
   """
   discounts: [ShopPayPaymentRequestDiscountInput!]
@@ -8433,7 +8462,7 @@ input ShopPayPaymentRequestInput {
   totalTax: MoneyInput
   """
   The delivery methods for the payment request.
-  
+
   The input must not contain more than `250` values.
   """
   deliveryMethods: [ShopPayPaymentRequestDeliveryMethodInput!]
@@ -8464,7 +8493,7 @@ input ShopPayPaymentRequestLineItemInput {
   finalLinePrice: MoneyInput
   """
   The line discounts for the line item.
-  
+
   The input must not contain more than `250` values.
   """
   lineDiscounts: [ShopPayPaymentRequestDiscountInput!]
@@ -8474,7 +8503,7 @@ input ShopPayPaymentRequestLineItemInput {
   finalItemPrice: MoneyInput
   """
   The item discounts for the line item.
-  
+
   The input must not contain more than `250` values.
   """
   itemDiscounts: [ShopPayPaymentRequestDiscountInput!]
@@ -8492,7 +8521,7 @@ input ShopPayPaymentRequestShippingLineInput {
 input ShopPayPaymentRequestTotalShippingPriceInput {
   """
   The discounts for the shipping total.
-  
+
   The input must not contain more than `250` values.
   """
   discounts: [ShopPayPaymentRequestDiscountInput!]

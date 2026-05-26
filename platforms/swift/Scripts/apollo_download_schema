@@ -28,7 +28,7 @@ download_schema() {
   fi
   if [ -z "$API_VERSION" ] || [ "$API_VERSION" = "null" ]; then
     echo "❌ API_VERSION is not set. Check your Storefront.xcconfig file."
-    echo "   Add API_VERSION = 2025-07 to your Storefront.xcconfig"
+    echo "   Add API_VERSION = 2026-04 to your Storefront.xcconfig"
     exit 1
   fi
 

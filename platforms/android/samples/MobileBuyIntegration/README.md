@@ -77,7 +77,7 @@ Edit `.env`:
 ```text
 STOREFRONT_DOMAIN=your-store.myshopify.com
 STOREFRONT_ACCESS_TOKEN=your-token
-API_VERSION=2025-07
+API_VERSION=2026-04
 ```
 
 Optional values enable Customer Account API and buyer identity demo flows:

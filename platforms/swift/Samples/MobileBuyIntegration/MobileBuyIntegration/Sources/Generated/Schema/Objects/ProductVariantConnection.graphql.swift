@@ -4,10 +4,10 @@
 import ApolloAPI
 
 extension Storefront.Objects {
-    /// An auto-generated type for paginating through multiple ProductVariants.
-    static let ProductVariantConnection = ApolloAPI.Object(
-        typename: "ProductVariantConnection",
-        implementedInterfaces: [],
-        keyFields: nil
-    )
+  /// An auto-generated type for paginating through multiple ProductVariants.
+  nonisolated static let ProductVariantConnection = ApolloAPI.Object(
+    typename: "ProductVariantConnection",
+    implementedInterfaces: [],
+    keyFields: nil
+  )
 }

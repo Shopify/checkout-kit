@@ -42,7 +42,7 @@ final class InfoDictionary: Sendable {
             fatalError("Missing required configuration. Check your info.plist.")
         }
 
-        let apiVersion = infoPlist["API_VERSION"] as? String ?? "2025-07"
+        let apiVersion = infoPlist["API_VERSION"] as? String ?? "2026-04"
 
         self.apiVersion = apiVersion
         self.address1 = address1

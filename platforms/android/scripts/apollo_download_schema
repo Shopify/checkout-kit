@@ -24,7 +24,7 @@ npx -y dotenv-cli -e .env -- sh -c '
   fi
   if [ -z "$VERSION" ]; then
     echo "❌ API_VERSION is not set. Check your .env file."
-    echo "   Add API_VERSION=2025-07 to your .env"
+    echo "   Add API_VERSION=2026-04 to your .env"
     exit 1
   fi
 

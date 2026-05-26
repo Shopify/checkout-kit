@@ -1,6 +1,8 @@
 package com.shopify.checkout_kit_mobile_buy_integration_sample.common.client
 
 import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.ApolloResponse
+import com.apollographql.apollo.api.Operation
 import com.apollographql.apollo.api.Optional
 import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.CartCreateMutation
 import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.CartLinesAddMutation
@@ -25,47 +27,61 @@ class StorefrontApiClient(
                 cursor = Optional.presentIfNotNull(cursor),
             )
         ).execute()
-        return response.dataOrThrow()
+        return response.dataOrThrowWithErrors()
     }
 
     suspend fun fetchProduct(productId: String, numVariants: Int): FetchProductQuery.Data {
         val response = apollo.query(
             FetchProductQuery(productId = productId, numVariants = numVariants)
         ).execute()
-        return response.dataOrThrow()
+        return response.dataOrThrowWithErrors()
     }
 
     suspend fun fetchCollections(numCollections: Int, numProducts: Int): FetchCollectionsQuery.Data {
         val response = apollo.query(
             FetchCollectionsQuery(numCollections = numCollections, numProducts = numProducts)
         ).execute()
-        return response.dataOrThrow()
+        return response.dataOrThrowWithErrors()
     }
 
     suspend fun fetchCollection(handle: String, numProducts: Int): FetchCollectionQuery.Data {
         val response = apollo.query(
             FetchCollectionQuery(handle = handle, numProducts = numProducts)
         ).execute()
-        return response.dataOrThrow()
+        return response.dataOrThrowWithErrors()
     }
 
     suspend fun createCart(input: CartInput): CartCreateMutation.Data {
         val response = apollo.mutation(CartCreateMutation(input = input)).execute()
-        return response.dataOrThrow()
+        return response.dataOrThrowWithErrors()
     }
 
     suspend fun cartLinesAdd(cartId: String, lines: List<CartLineInput>): CartLinesAddMutation.Data {
         val response = apollo.mutation(CartLinesAddMutation(cartId = cartId, lines = lines)).execute()
-        return response.dataOrThrow()
+        return response.dataOrThrowWithErrors()
     }
 
     suspend fun cartLinesUpdate(cartId: String, lines: List<CartLineUpdateInput>): CartLinesUpdateMutation.Data {
         val response = apollo.mutation(CartLinesUpdateMutation(cartId = cartId, lines = lines)).execute()
-        return response.dataOrThrow()
+        return response.dataOrThrowWithErrors()
     }
 
     suspend fun cartLinesRemove(cartId: String, lineIds: List<String>): CartLinesRemoveMutation.Data {
         val response = apollo.mutation(CartLinesRemoveMutation(cartId = cartId, lineIds = lineIds)).execute()
-        return response.dataOrThrow()
+        return response.dataOrThrowWithErrors()
+    }
+
+    private fun <D : Operation.Data> ApolloResponse<D>.dataOrThrowWithErrors(): D {
+        if (data == null) {
+            val storefrontErrors = errors
+                ?.joinToString(separator = "; ") { error -> error.message }
+                ?.takeIf { errorMessages -> errorMessages.isNotBlank() }
+
+            if (storefrontErrors != null) {
+                throw RuntimeException("Storefront API error: $storefrontErrors")
+            }
+        }
+
+        return dataOrThrow()
     }
 }
