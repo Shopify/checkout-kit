@@ -43,7 +43,7 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 - **`-Xexplicit-api=strict`** is on (`lib/build.gradle`). Every public class, method, field, and property must have an explicit visibility modifier. "Accidentally public" is not a thing here. This is a consumer-protection rule — if you see a public-by-default declaration, it was deliberate.
 - **Max line length: 140** (detekt-enforced). Detekt config: `lib/detekt.config.yml`.
 - **Library JVM target: 1.8.** Intentional for consumer compatibility; don't raise without a major-version discussion.
-- **Library Kotlin version is pinned.** The `lib/build.gradle` plugin version and any `apiVersion` / `languageVersion` settings exist to keep consumer compatibility stable. A Kotlin major-version migration is a planned major-version event, not a casual dep bump.
+- **Library Kotlin `apiVersion` / `languageVersion` are pinned at 2.0.** Set in `lib/build.gradle` so the AAR's bytecode stays consumable by Kotlin 2.0+ projects even though the compiler itself is on a newer 2.x. Bumping this pin is the consumer-facing breaking change, not bumping the compiler - treat it as a planned major-version event.
 - **Prefer generated protocol models.** Before adding hand-written protocol DTOs, check the generated models in `lib/src/main/java/com/shopify/checkoutkit/Models.kt` and the OpenRPC schema. Use generated UCP/ECP types for wire payloads; reserve local DTOs for Android-internal transport helpers that are not represented in the schema.
 
 ## Public API surface
@@ -91,6 +91,6 @@ Publishing goes through GitHub Releases → the repo-root `.github/workflows/and
 
 ## Things not to touch without discussion
 
-- **Library Kotlin version pin.** Consumer compatibility floor; any migration is a deliberate major-version decision.
+- **Library Kotlin `apiVersion` / `languageVersion` pin (2.0).** Consumer compatibility floor; raising it is a deliberate major-version decision. The compiler version itself is not the lever.
 - **`minSdk` / JVM target.** Same story.
 - **`-Xexplicit-api=strict`.** Removing this would let implicit public declarations ship; keeping it is a consumer-protection invariant.
