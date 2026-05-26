@@ -68,7 +68,7 @@ experiences.
 
 - **React Native** - Minimum version `0.76` (v4+) / `0.70` (v3 and earlier)
 - **iOS** - Minimum version iOS 13
-- **Android** - Minimum Java 11 & Android SDK version `23`
+- **Android** - Minimum Java 11 & Android SDK version `24`
 
 ## Version Compatibility
 
@@ -108,7 +108,7 @@ npm install @shopify/checkout-kit-react-native
 ### 2. Minimum Android requirements
 
 Check the `minSdkVersion` property in your `android/build.gradle` file is at
-least `23`.
+least `24`.
 
 ```diff
 // android/build.gradle
@@ -116,7 +116,7 @@ buildscript {
     ext {
         buildToolsVersion = "33.0.0"
 -       minSdkVersion = 21
-+       minSdkVersion = 23
++       minSdkVersion = 24
         compileSdkVersion = 33
         targetSdkVersion = 33
     }
