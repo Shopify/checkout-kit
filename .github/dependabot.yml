@@ -23,9 +23,14 @@ updates:
     cooldown:
       default-days: 7
     ignore:
-      # Keep Kotlin on 1.9.x for compatibility
+      # Keep Kotlin compiler/plugin updates on 2.x unless the consumer floor is
+      # deliberately re-evaluated.
       - dependency-name: "org.jetbrains.kotlin.*"
-        versions: [">=2.0.0"]
+        versions: [">=3.0.0"]
+      # Keep the published stdlib dependency aligned with the Kotlin API/language
+      # consumer floor, not the newer compiler used to build the AAR.
+      - dependency-name: "org.jetbrains.kotlin:kotlin-stdlib"
+        versions: [">=2.1.0"]
       # Keep kotlinx-serialization on 1.7.x while the library's Kotlin API/language
       # consumer floor is pinned to 2.0.
       - dependency-name: "org.jetbrains.kotlinx:kotlinx-serialization-json"
@@ -48,9 +53,14 @@ updates:
     ignore:
       # The sample includes the Android library as :lib, so library dependencies can
       # appear in this Dependabot scan too.
-      # Keep Kotlin on 1.9.x for compatibility
+      # Keep Kotlin compiler/plugin updates on 2.x unless the consumer floor is
+      # deliberately re-evaluated.
       - dependency-name: "org.jetbrains.kotlin.*"
-        versions: [">=2.0.0"]
+        versions: [">=3.0.0"]
+      # Keep the published stdlib dependency aligned with the Kotlin API/language
+      # consumer floor, not the newer compiler used to build the AAR.
+      - dependency-name: "org.jetbrains.kotlin:kotlin-stdlib"
+        versions: [">=2.1.0"]
       # Keep kotlinx-serialization on 1.7.x while the library's Kotlin API/language
       # consumer floor is pinned to 2.0.
       - dependency-name: "org.jetbrains.kotlinx:kotlinx-serialization-json"
