@@ -1,120 +1,93 @@
 # Shopify Checkout Kit - Android
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](/LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](../../LICENSE)
 ![Tests](https://github.com/Shopify/checkout-kit/actions/workflows/test.yml/badge.svg?branch=main)
-[![GitHub Release](https://img.shields.io/github/release/shopify/checkout-kit.svg?style=flat)]()
 
-<img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/1f1d7351-1715-4165-874e-c1f2195bcb20" />
+<img width="3200" height="800" alt="Checkout Kit" src="https://github.com/user-attachments/assets/1f1d7351-1715-4165-874e-c1f2195bcb20" />
 
 > [!WARNING]
-> **Alpha — early preview.** This software is an early preview and is **not**
-> production-ready. Stability is not guaranteed, and breaking changes may
-> occur in any release. See [Getting Started](#getting-started).
+> **Alpha - early preview.** This software is an early preview and is **not**
+> production-ready. The first Checkout Kit for Android alpha is `4.0.0-alpha.1`.
+> Stability is not guaranteed, and breaking changes may occur in any release.
 
-**Shopify's Checkout Kit for Android** is a library that enables Android apps to provide the world's highest converting, customizable, one-page checkout within an app. The presented experience is a fully-featured checkout that preserves all of the store customizations: Checkout UI extensions, Functions, and more. It also provides idiomatic defaults such as support for light and dark mode, and convenient developer APIs to embed, customize and follow the lifecycle of the checkout experience. Check out our developer blog to [learn how Checkout Kit is built](https://www.shopify.com/partners/blog/mobile-checkout-sdks-for-ios-and-android).
+**Checkout Kit for Android** lets Android apps present Shopify checkout in a native dialog while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods.
 
-**Note**: This library was previously published as `com.shopify:checkout-sheet-kit`. It has been renamed to `com.shopify:checkout-kit`. Update your Gradle/Maven dependency if upgrading from an older version.
+> [!NOTE]
+> This package was previously published as `com.shopify:checkout-sheet-kit`. New integrations should use `com.shopify:checkout-kit`.
 
 - [Requirements](#requirements)
-- [Getting Started](#getting-started)
+- [Install](#install)
   - [Gradle](#gradle)
   - [Maven](#maven)
-- [Basic Usage](#basic-usage)
-- [Configuration](#configuration)
-  - [Color Scheme](#color-scheme)
-  - [Log Level](#log-level)
-  - [Checkout Dialog Title](#checkout-dialog-title)
-- [Monitoring the lifecycle of a checkout session](#monitoring-the-lifecycle-of-a-checkout-session)
+- [Get a checkout URL](#get-a-checkout-url)
+- [Present checkout](#present-checkout)
+- [Configure checkout](#configure-checkout)
+  - [Color schemes](#color-schemes)
+  - [Title localization](#title-localization)
+  - [Current configuration](#current-configuration)
+- [Checkout lifecycle](#checkout-lifecycle)
   - [Error handling](#error-handling)
-    - [`CheckoutException`](#checkoutexception)
-    - [Exception Hierarchy](#exception-hierarchy)
-- [Integrating identity \& customer accounts](#integrating-identity--customer-accounts)
-  - [Cart: buyer bag, identity, and preferences](#cart-buyer-bag-identity-and-preferences)
-  - [Multipass](#multipass)
-  - [Shop Pay](#shop-pay)
-  - [Customer Account API](#customer-account-api)
+- [Browser and system callbacks](#browser-and-system-callbacks)
+- [Authentication and buyer identity](#authentication-and-buyer-identity)
+- [Offsite payments and links](#offsite-payments-and-links)
+- [Troubleshooting](#troubleshooting)
+- [Samples](#samples)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Requirements
 
 - JDK 17+
-- Android minSdk 23+
-- Android compileSdk 35+
-- Chrome >= 80
+- Android `minSdk` 23+
+- Android `compileSdk` 35+ for consuming apps. This repository currently builds the library with `compileSdk` 36.
 
-## Getting Started
+## Install
 
-The SDK is an [open source Android library](https://central.sonatype.com/artifact/com.shopify/checkout-kit). As a quick start, see
-[sample projects](samples/README.md) or use one of the following ways to integrate the SDK into
-your project:
+For alpha testing, install the exact version shown below. The first Checkout Kit for Android alpha is `4.0.0-alpha.1`.
 
 ### Gradle
 
 ```groovy
-implementation "com.shopify:checkout-kit:4.0.0-alpha.1"
+dependencies {
+    implementation "com.shopify:checkout-kit:4.0.0-alpha.1"
+}
 ```
 
 ### Maven
 
 ```xml
-
 <dependency>
-   <groupId>com.shopify</groupId>
-   <artifactId>checkout-kit</artifactId>
-   <version>4.0.0-alpha.1</version>
+  <groupId>com.shopify</groupId>
+  <artifactId>checkout-kit</artifactId>
+  <version>4.0.0-alpha.1</version>
 </dependency>
 ```
 
-## Basic Usage
+## Get a checkout URL
 
-Once the SDK has been added as a dependency, you can import the library:
+Checkout Kit presents a standard Shopify checkout URL. The common flow is:
+
+1. Create or update a cart with the [Storefront GraphQL API](https://shopify.dev/docs/api/storefront), for example with [`cartCreate`](https://shopify.dev/docs/api/storefront/2026-04/mutations/cartCreate) and related cart mutations.
+2. Read the cart's [`checkoutUrl`](https://shopify.dev/docs/api/storefront/2026-04/objects/Cart#field-cart-checkouturl).
+3. Pass that URL, or a [cart permalink](https://help.shopify.com/en/manual/products/details/cart-permalink), to Checkout Kit.
+
+You can use any GraphQL client. The sample app uses Apollo Kotlin and is a complete reference for a modern Storefront API cart flow.
+
+For production use, see the [Storefront API GraphiQL Explorer](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started) for schema exploration and the [`cartCreate`](https://shopify.dev/docs/api/storefront/2026-04/mutations/cartCreate) mutation reference for the full input shape, including buyer identity, attributes, discount codes, delivery addresses, and delivery options.
+
+## Present checkout
+
+Use the Kotlin builder when presenting from a `ComponentActivity`:
 
 ```kotlin
 import com.shopify.checkoutkit.ShopifyCheckoutKit
-```
 
-To present a checkout to the buyer, your application must first obtain a checkout URL.
-The most common way is to use the [Storefront GraphQL API](https://shopify.dev/docs/api/storefront)
-to assemble a cart (via `cartCreate` and related update mutations) and load the
-[`checkoutUrl`](https://shopify.dev/docs/api/storefront/latest/objects/Cart#field-cart-checkouturl). Alternatively, a [cart permalink](https://help.shopify.com/en/manual/products/details/cart-permalink) can be provided.
-You can use any GraphQL client to obtain a checkout URL and we recommend
-Shopify's [Mobile Buy SDK for Android](https://github.com/Shopify/mobile-buy-sdk-android) to
-simplify the development workflow:
-
-```kotlin
-
-val client = GraphClient.build(
-    context = applicationContext,
-    shopDomain = "yourshop.myshopify.com",
-    accessToken = "<storefront access token>"
-)
-
-val cartQuery = Storefront.query { query ->
-    query.cart(ID(id)) {
-        it.checkoutUrl()
-    }
-}
-
-client.queryGraph(cartQuery).enqueue {
-    if (it is GraphCallResult.Success) {
-        val checkoutUrl = it.response.data?.cart?.checkoutUrl
-    }
-}
-```
-
-The `checkoutUrl` object is a standard web checkout URL that can be opened in any browser.
-To present a native checkout dialog in your Android application, provide
-the `checkoutUrl` alongside optional runtime configuration settings to the `present(checkoutUrl)`
-function provided by the SDK:
-
-```kotlin
-fun presentCheckout() {
-    val checkoutUrl = cart.checkoutUrl
-    ShopifyCheckoutKit.present(checkoutUrl, context) {
+fun presentCheckout(checkoutUrl: String, activity: ComponentActivity) {
+    ShopifyCheckoutKit.present(checkoutUrl, activity) {
         onFail { error ->
             handleCheckoutError(error)
         }
+
         onCancel {
             resetCheckoutUi()
         }
@@ -122,326 +95,252 @@ fun presentCheckout() {
 }
 ```
 
-> [!NOTE]
-> Pass the standard `checkoutUrl` returned by Storefront API or a cart permalink.
-> Checkout Kit adds the required UCP query parameters automatically when it loads checkout,
-> so you do not need to rewrite the URL yourself.
+Checkout Kit adds the required checkout protocol parameters when checkout loads.
 
-If you also want typed Embedded Checkout Protocol (ECP) callbacks, connect a
-`CheckoutProtocol.Client` inside the same Kotlin builder:
+For Java integrations or shared listener implementations, extend `DefaultCheckoutListener`:
 
 ```kotlin
-val checkoutProtocolClient = CheckoutProtocol.Client()
-    .on(CheckoutProtocol.start) { checkout ->
-        // Checkout is ready and interactive.
-    }
-    .on(CheckoutProtocol.complete) { checkout ->
-        // Typed checkout payload emitted when checkout completes.
-        navigateToConfirmation(checkout)
+val listener = object : DefaultCheckoutListener() {
+    override fun onCheckoutFailed(error: CheckoutException) {
+        handleCheckoutError(error)
     }
 
-ShopifyCheckoutKit.present(checkoutUrl, activity) {
-    connect(checkoutProtocolClient)
+    override fun onCheckoutCanceled() {
+        resetCheckoutUi()
+    }
 }
+
+ShopifyCheckoutKit.present(checkoutUrl, activity, listener)
 ```
 
-## Configuration
+The `present` call returns a `CheckoutKitDialog?`. Keep it if you need to dismiss the dialog programmatically:
 
-The SDK provides a way to customize the presented checkout experience via
-the `ShopifyCheckoutKit.configure` function.
+```kotlin
+val checkoutDialog = ShopifyCheckoutKit.present(checkoutUrl, activity) {
+    onCancel { resetCheckoutUi() }
+}
 
-### Color Scheme
+checkoutDialog?.dismiss()
+```
 
-By default, the SDK will match the user's device color appearance. This behavior can be customized
-via the `colorScheme` property:
+## Configure checkout
+
+Configure global presentation defaults before presenting checkout:
 
 ```kotlin
 ShopifyCheckoutKit.configure {
-    // [Default] Automatically toggle idiomatic light and dark themes based on device preference.
     it.colorScheme = ColorScheme.Automatic()
-
-    // Force idiomatic light color scheme
-    it.colorScheme = ColorScheme.Light()
-
-    // Force idiomatic dark color scheme
-    it.colorScheme = ColorScheme.Dark()
-
-    // Force web theme, as rendered by a mobile browser
-    it.colorScheme = ColorScheme.Web()
-
-    // Force web theme, passing colors for the modal header and background
-    it.colorScheme = ColorScheme.Web(
-        Colors(
-            webViewBackground = Color.ResourceId(R.color.web_view_background),
-            headerFont = Color.ResourceId(R.color.header_font),
-            headerBackground = Color.ResourceId(R.color.header_background),
-            progressIndicator = Color.ResourceId(R.color.progress_indicator),
-        )
-    )
+    it.logLevel = LogLevel.ERROR
 }
 ```
 
-> [!Tip]
-> Colors can also be specified in sRGB format (e.g. `Color.SRGB(-0xff0001)`) and can also be overridden for Light/Dark/Automatic themes, (see example below)
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `colorScheme` | `ColorScheme.Automatic()` | Use device appearance, force `Light` or `Dark`, or use `Web` to match web checkout branding. |
+| `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
 
-```kotlin
-val automatic = ColorScheme.Automatic(
-    lightColors = Colors(
-        headerBackground = Color.ResourceId(R.color.headerLight),
-        headerFont = Color.ResourceId(R.color.headerFontLight),
-        webViewBackground = Color.ResourceId(R.color.webViewBgLight),
-        progressIndicator = Color.ResourceId(R.color.indicatorLight),
-    ),
-    darkColors = Colors(
-        headerBackground = Color.ResourceId(R.color.headerDark),
-        headerFont = Color.ResourceId(R.color.headerFontDark,
-        webViewBackground = Color.ResourceId(R.color.webViewBgDark),
-        progressIndicator = Color.ResourceId(R.color.indicatorDark),
-    )
-)
-```
-
-**Close Icon Customization**
-
-The close icon in the checkout dialog header can be customized using the `customize` method for an ergonomic API:
+### Color schemes
 
 ```kotlin
 ShopifyCheckoutKit.configure {
-    it.colorScheme = ColorScheme.Light().customize {
-        // Option 1: Just tint the default close icon
-        closeIconTint = Color.ResourceId(R.color.my_custom_tint_color)
-
-        // Option 2: Use a completely custom drawable
-        closeIcon = DrawableResource(R.drawable.my_custom_close_icon)
-    }
+    it.colorScheme = ColorScheme.Light()
+    it.colorScheme = ColorScheme.Dark()
+    it.colorScheme = ColorScheme.Web()
+    it.colorScheme = ColorScheme.Automatic()
 }
 ```
 
-For automatic theme switching, you can provide different customizations for light and dark modes:
+Customize native colors with resource IDs or sRGB integers:
 
 ```kotlin
 ShopifyCheckoutKit.configure {
     it.colorScheme = ColorScheme.Automatic().customize(
         light = {
-            closeIconTint = Color.ResourceId(R.color.light_tint)
+            headerBackground = Color.ResourceId(R.color.checkout_header_light)
+            headerFont = Color.ResourceId(R.color.checkout_header_text_light)
+            webViewBackground = Color.ResourceId(R.color.checkout_background_light)
+            progressIndicator = Color.ResourceId(R.color.checkout_progress_light)
+            closeIconTint = Color.ResourceId(R.color.checkout_close_light)
         },
         dark = {
-            closeIconTint = Color.ResourceId(R.color.dark_tint)
-        }
+            headerBackground = Color.ResourceId(R.color.checkout_header_dark)
+            headerFont = Color.ResourceId(R.color.checkout_header_text_dark)
+            webViewBackground = Color.ResourceId(R.color.checkout_background_dark)
+            progressIndicator = Color.ResourceId(R.color.checkout_progress_dark)
+            closeIconTint = Color.ResourceId(R.color.checkout_close_dark)
+        },
     )
 }
 ```
 
-> [!Note]
-> If both `closeIcon` and `closeIconTint` are provided, the custom drawable (`closeIcon`) takes precedence and the tint is ignored.
-
-The colors that can be modified are:
-
-- headerBackground - Used to customize the background of the app bar on the dialog,
-- headerFont - Used to customize the font color of the header text within in the app bar,
-- webViewBackground - Used to customize the background color of the WebView,
-- progressIndicator - Used to customize the color of the progress indicator shown when checkout is loading.
-- closeIcon - Used to provide a completely custom close icon drawable
-- closeIconTint - Used to tint the default close icon with a custom color
-
-The current configuration can be obtained by calling `ShopifyCheckoutKit.getConfiguration()`.
-
-### Log Level
-
-Enable additional debug logs via the `logLevel` configuration option.
+If both `closeIcon` and `closeIconTint` are set, the custom drawable takes precedence:
 
 ```kotlin
 ShopifyCheckoutKit.configure {
-    it.logLevel = LogLevel.DEBUG
+    it.colorScheme = ColorScheme.Light().customize {
+        closeIcon = DrawableResource(R.drawable.ic_checkout_close)
+    }
 }
 ```
 
-### Checkout Dialog Title
+### Title localization
 
-To customize the title of the Dialog that the checkout WebView is displayed within, or to provide different values for the various locales your app supports, override the `checkout_web_view_title` String resource in your application, e.g:
+Override `checkout_web_view_title` in your app resources:
 
 ```xml
-<string name="checkout_web_view_title">Buy Now!</string>
+<resources>
+  <string name="checkout_web_view_title">Buy now</string>
+</resources>
 ```
 
-## Monitoring the lifecycle of a checkout session
-
-For Kotlin integrations, use `CheckoutProtocol.Client` to observe typed checkout notifications
-such as `ec.start`, `ec.complete`, and the incremental checkout state updates. The same
-`present(...)` builder can wire fail/cancel callbacks plus optional browser/system hooks:
+### Current configuration
 
 ```kotlin
+val configuration = ShopifyCheckoutKit.getConfiguration()
+```
+
+## Checkout lifecycle
+
+Use `onFail` and `onCancel` for checkout outcomes handled by your app. Use `CheckoutProtocol.Client` for typed checkout state, including completion. These descriptors wrap checkout protocol messages defined in the [protocol schema](../../protocol/services/shopping/embedded.openrpc.json).
+
+```kotlin
+import com.shopify.checkoutkit.CheckoutProtocol
+
+val protocolClient = CheckoutProtocol.Client()
+    .on(CheckoutProtocol.start) { checkout ->
+        // Checkout is loaded and interactive.
+    }
+    .on(CheckoutProtocol.complete) { checkout ->
+        // The order was completed. Clear or refresh the local cart.
+    }
+    .on(CheckoutProtocol.totalsChange) { checkout ->
+        // React to updated totals.
+    }
+    .on(CheckoutProtocol.lineItemsChange) { checkout ->
+        // React to line item changes.
+    }
+    .on(CheckoutProtocol.messagesChange) { checkout ->
+        // React to checkout messages.
+    }
+
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
-    connect(
-        CheckoutProtocol.Client()
-            .on(CheckoutProtocol.start) { checkout ->
-                // Observe typed checkout notifications.
-            }
-            .on(CheckoutProtocol.complete) { checkout ->
-                // Handle successful checkout completion.
-            }
-    )
-
-    onShowFileChooser { webView, filePathCallback, fileChooserParams ->
-        // Return true if the host app handled the chooser request.
-        false
-    }
-
-    onGeolocationPermissionsShowPrompt { origin, callback ->
-        // Called to tell the client to show a geolocation permissions prompt as a geolocation
-        // request has been made. Invoked for example if a customer uses `Use my location`
-        // for pickup points.
-    }
-
-    onGeolocationPermissionsHidePrompt {
-        // Called to tell the client to hide the geolocation permissions prompt.
-    }
-
-    onPermissionRequest { permissionRequest ->
-        // Called when a web permission has been requested, e.g. to access the camera.
-    }
+    connect(protocolClient)
+    onFail { error -> handleCheckoutError(error) }
+    onCancel { resetCheckoutUi() }
 }
 ```
 
-If you prefer a reusable object, or are integrating from Java, extend
-`DefaultCheckoutListener` and pass it to the existing `present(...)` overload:
+`ec.window.open_request` is handled by your registered `CheckoutProtocol.windowOpen` handler if you provide one. Otherwise, Checkout Kit falls back to its default Android intent behavior.
 
-```kotlin
-val listener = object : DefaultCheckoutListener() {
-    override fun onShowFileChooser(
-        webView: WebView,
-        filePathCallback: ValueCallback<Array<Uri>>,
-        fileChooserParams: FileChooserParams,
-    ): Boolean {
-        return activity.onShowFileChooser(filePathCallback, fileChooserParams)
-    }
-
-    override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
-        activity.onGeolocationPermissionsShowPrompt(origin, callback)
-    }
-
-    override fun onGeolocationPermissionsHidePrompt() {
-        activity.onGeolocationPermissionsHidePrompt()
-    }
-
-    override fun onPermissionRequest(permissionRequest: PermissionRequest) {
-        // Grant, deny, or proxy requested web permissions.
-    }
-}
-
-ShopifyCheckoutKit.present(checkoutUrl, context, listener)
-```
-
-> [!Note]
-> The `DefaultCheckoutListener` overload remains available for reusable or Java-facing
-> integrations and provides default implementations for optional browser/system callbacks.
+The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed checkout protocol messages.
 
 ### Error handling
 
-Checkout failures are delivered to `onFail { ... }` or `onCheckoutFailed(...)` as
-`CheckoutException` values. Inspect the exception type and error code to decide whether to
-recreate the cart, retry later, or show an error state in the host app.
+Checkout failures are delivered as `CheckoutException` values. Checkout web error events are mapped to `ConfigurationException`, `CheckoutExpiredException`, or `ClientException`; register `CheckoutProtocol.error` separately if you need to observe `ec.error` messages.
 
-#### `CheckoutException`
+| Exception | Common code | Meaning | Recommended handling |
+| --- | --- | --- | --- |
+| `ConfigurationException` | `storefront_password_required` | Checkout is password protected or otherwise blocked by configuration. | Treat as fatal for this session. |
+| `CheckoutExpiredException` | `cart_expired` | The cart or checkout session expired. | Create a new cart and present a fresh `checkoutUrl`. |
+| `CheckoutExpiredException` | `cart_completed` | The cart already completed checkout. | Clear the local cart and fetch a new one. |
+| `CheckoutExpiredException` | `invalid_cart` | The cart is invalid or empty. | Rebuild the cart before presenting checkout. |
+| `HttpException` | `http_error` | Checkout returned an unexpected HTTP response. | Treat as fatal for this attempt; retry with a fresh URL if appropriate. |
+| `ClientException` | `client_error` | Checkout could not load for a client-side reason. | Show a recoverable error and log details. |
+| `CheckoutKitException` | `error_receiving_message`, `error_sending_message`, `render_process_gone`, `unknown` | Checkout Kit encountered an SDK or WebView issue. | Log details and open an issue if it persists. |
 
-| Exception Class                | Error Code                     | Description                                                                  | Recommendation                                                                              |
-| ------------------------------ | ------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `CheckoutExpiredException`     | 'cart_expired'                 | The cart or checkout is no longer available.                                 | Create a new cart and open a new checkout URL.                                              |
-| `CheckoutKitException`         | 'render_process_gone'          | The render process for the checkout WebView is gone.                         | Handle as a checkout failure in the host app.                                               |
-| `HttpException`                | 'http_error'                   | An unexpected server error has been encountered.                             | Handle as a checkout failure in the host app.                                               |
+## Browser and system callbacks
 
-#### Exception Hierarchy
+Android apps must decide how to handle file choosers, web permissions, and geolocation prompts requested by checkout.
 
-```mermaid
----
-title: Checkout Kit Exception Hierarchy
----
-classDiagram
-    CheckoutException <|-- CheckoutExpiredException
-    CheckoutException <|-- CheckoutKitException
-    CheckoutException <|-- CheckoutUnavailableException
-    CheckoutUnavailableException <|-- HttpException
-
-    <<Abstract>> CheckoutException
-    CheckoutException : +String errorDescription
-    CheckoutException : +String errorCode
-    class CheckoutExpiredException{
-        note: "Expired checkouts."
+```kotlin
+ShopifyCheckoutKit.present(checkoutUrl, activity) {
+    onShowFileChooser { webView, filePathCallback, fileChooserParams ->
+        // Launch your ActivityResultContract and return true if handled.
+        false
     }
-    class CheckoutUnavailableException{
-        note: "Base class for availability failures."
+
+    onPermissionRequest { permissionRequest ->
+        // Grant, deny, or proxy web permissions such as camera access.
     }
-    class HttpException{
-        note: "Unexpected Http response"
-        +int statusCode
+
+    onGeolocationPermissionsShowPrompt { origin, callback ->
+        // Request Android location permission, then invoke callback.invoke(...).
     }
-    class CheckoutKitException{
-        note: "Error in Checkout Kit code"
+
+    onGeolocationPermissionsHidePrompt {
+        // Hide any visible geolocation prompt.
     }
-```
-
-## Integrating identity & customer accounts
-
-Buyer-aware checkout experience reduces friction and increases conversion. Depending on the context
-of the buyer (guest or signed-in), knowledge of buyer preferences, or account/identity system, the
-application can use one of the following methods to initialize personalized and contextualized buyer
-experience.
-
-### Cart: buyer bag, identity, and preferences
-
-In addition to specifying the line items, the Cart can include buyer identity (name, email, address,
-etc.), and delivery and payment preferences:
-see [guide](https://shopify.dev/docs/custom-storefronts/building-with-the-storefront-api/cart/manage).
-Included information will be used to present pre-filled and pre-selected choices to the buyer within
-checkout.
-
-### Multipass
-
-[Shopify Plus](https://help.shopify.com/en/manual/intro-to-shopify/pricing-plans/plans-features/shopify-plus-plan)
-merchants
-using [Classic Customer Accounts](https://help.shopify.com/en/manual/customers/customer-accounts/classic-customer-accounts)
-can use [Multipass](https://shopify.dev/docs/api/multipass) to integrate an external identity system
-and initialize a buyer-aware checkout session.
-
-```json
-{
-  "email": "<Customer's email address>",
-  "created_at": "<Current timestamp in ISO8601 encoding>",
-  "remote_ip": "<Client IP address>",
-  "return_to": "<Checkout URL obtained from Storefront API>",
-  ...
 }
 ```
 
-1. Follow the [Multipass documentation](https://shopify.dev/docs/api/multipass) to create a
-   multipass
-   URL and set the `'return_to'` to be the obtained `checkoutUrl`
-2. Provide the Multipass URL to `ShopifyCheckoutKit.present()`.
+Declare location permissions if checkout uses pickup points or "Use my location":
 
-> [!Important]
-> the above JSON omits useful customer attributes that should be provided where possible and
-> encryption and signing should be done server-side to ensure Multipass keys are kept secret.
+```xml
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+```
 
-### Shop Pay
+## Authentication and buyer identity
 
-To initialize accelerated Shop Pay checkout, the cart can set a
-[walletPreference](https://shopify.dev/docs/api/storefront/latest/mutations/cartBuyerIdentityUpdate#field-cartbuyeridentityinput-walletpreferences)
-to 'shop_pay'. The sign-in state of the buyer is app-local and the buyer will be prompted to sign in
-to their Shop account on their first checkout, and their sign-in state will be remembered for future
-checkout sessions.
+Checkout Kit does not create carts or authenticate buyers. Add buyer context to the cart before presenting checkout:
 
-### Customer Account API
+- Use the Customer Account API to obtain a customer access token and attach it through cart buyer identity.
+- Use Storefront API cart buyer identity fields to prefill email, phone, country, and language.
+- Use Storefront API cart delivery mutations to add delivery addresses and select delivery options.
+- Use `walletPreferences: [shop_pay]` when you want checkout to prefer Shop Pay.
+- Use Multipass for Shopify Plus stores that use Classic Customer Accounts. Generate Multipass tokens server-side and set `return_to` to the checkout URL.
 
-The Customer Account API allows you to authenticate buyers and provide a personalized checkout experience.
-For detailed implementation instructions, see our [Customer Account API Authentication Guide](https://shopify.dev/docs/storefronts/headless/mobile-apps/checkout-kit/authenticate-checkouts).
+Keep Multipass secrets out of client-side code.
 
----
+## Offsite payments and links
+
+Some payment providers redirect buyers to external banking apps or web pages. Configure Android App Links or deep links so buyers can return to your app after those flows complete.
+
+Checkout Kit opens external HTTPS links, `mailto:`, `tel:`, and custom-scheme links through Android intents. Make sure your app has:
+
+- Intent filters for the storefront links it owns.
+- Fallback behavior for links that no installed app can open.
+- A routing path for checkout URLs, cart URLs, and post-checkout confirmation URLs.
+
+## Troubleshooting
+
+- Use `LogLevel.DEBUG` while integrating.
+- If checkout reports an expired, completed, or invalid cart, create a fresh cart and use its new `checkoutUrl`.
+- If checkout cannot access camera, file upload, or location features, check your manifest permissions and runtime permission flow.
+- If offsite payment redirects do not return to your app, verify App Links/deep link intent filters and domain association.
+- Password-protected storefronts return `storefront_password_required` and are not supported by Checkout Kit.
+
+## Samples
+
+See [samples](samples/README.md). `MobileBuyIntegration` demonstrates an Apollo Kotlin Storefront API cart flow, checkout presentation, typed protocol lifecycle events, file chooser handling, geolocation callbacks, and Customer Account API sign-in.
 
 ## Contributing
 
-We welcome code contributions, feature requests, and reporting of issues. Please
-see [guidelines and instructions](.github/CONTRIBUTING.md).
+See [CONTRIBUTING](../../.github/CONTRIBUTING.md).
+
+Useful checks before opening an Android change:
+
+```sh
+cd platforms/android
+./gradlew :lib:build
+./gradlew clean test --console=plain
+./gradlew detekt lintRelease
+```
+
+For sample app changes, run:
+
+```sh
+cd platforms/android/samples/MobileBuyIntegration
+./gradlew build
+```
+
+For public API changes, run:
+
+```sh
+cd platforms/android
+./gradlew :lib:apiCheck
+```
 
 ## License
 
-Shopify's Checkout Kit is provided under an [MIT License](LICENSE).
+Checkout Kit is available under the [MIT license](../../LICENSE).
