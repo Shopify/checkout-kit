@@ -15,7 +15,7 @@ def versionName = "4.0.0-alpha.1"
 
 ext {
     app_compat_version = '1.7.1'
-    kotlin_stdlib_version = '2.0.21'
+    kotlin_stdlib_version = '2.3.21'
     kotlin_serialization_version = '1.7.3'
 
     androidx_test_version = '1.7.0'
