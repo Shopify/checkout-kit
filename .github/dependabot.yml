@@ -26,9 +26,10 @@ updates:
       # Keep Kotlin on 1.9.x for compatibility
       - dependency-name: "org.jetbrains.kotlin.*"
         versions: [">=2.0.0"]
-      # Keep kotlinx-serialization on 1.6.x (compatible with Kotlin 1.9.x)
+      # Keep kotlinx-serialization on 1.7.x while the library's Kotlin API/language
+      # consumer floor is pinned to 2.0.
       - dependency-name: "org.jetbrains.kotlinx:kotlinx-serialization-json"
-        versions: [">=1.7.0"]
+        versions: [">=1.8.0"]
       # Keep Mockito on 4.x (requires JVM 1.8)
       - dependency-name: "org.mockito*:*"
         versions: [">=5.0.0"]
@@ -50,9 +51,10 @@ updates:
       # Keep Kotlin on 1.9.x for compatibility
       - dependency-name: "org.jetbrains.kotlin.*"
         versions: [">=2.0.0"]
-      # Keep kotlinx-serialization on 1.6.x (compatible with Kotlin 1.9.x)
+      # Keep kotlinx-serialization on 1.7.x while the library's Kotlin API/language
+      # consumer floor is pinned to 2.0.
       - dependency-name: "org.jetbrains.kotlinx:kotlinx-serialization-json"
-        versions: [">=1.7.0"]
+        versions: [">=1.8.0"]
       # Keep Mockito on 4.x (requires JVM 1.8)
       - dependency-name: "org.mockito*:*"
         versions: [">=5.0.0"]
