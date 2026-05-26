@@ -1,86 +1,105 @@
-# ShopifyCheckoutProtocol — Swift SDK
+# ShopifyCheckoutProtocol - Swift
 
-Swift library for the Universal Commerce Protocol (UCP) embedded checkout specification.
+`ShopifyCheckoutProtocol` is the Swift client for UCP-backed checkout messages emitted by Shopify checkout. Checkout Kit uses it to decode lifecycle notifications such as checkout start, completion, totals changes, line item changes, checkout messages, and checkout errors.
+
+See the [UCP shopping embedded protocol schema](../../services/shopping/embedded.openrpc.json) for method and payload definitions.
+
+Most apps consume this product through the root Checkout Kit Swift package.
 
 ## Requirements
 
-- Swift 6.0+
+- Swift Package Manager with Swift tools 5.9+
+- iOS 13.0+ or macOS 10.15+
 
-## Installation
+## Install
 
-### Swift Package Manager (Package.swift)
-
-Add the dependency to your `Package.swift`:
+Add the Checkout Kit repository:
 
 ```swift
 dependencies: [
-    .package(url: "<REPO_URL>", from: "1.0.0")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.1")
 ]
 ```
 
-Then add `ShopifyCheckoutProtocol` to your target's dependencies:
+Then add `ShopifyCheckoutProtocol` to your target:
 
 ```swift
 .target(
-    name: "YourTarget",
-    dependencies: ["ShopifyCheckoutProtocol"]
+  name: "YourTarget",
+  dependencies: ["ShopifyCheckoutProtocol"]
 )
 ```
 
-### Xcode
-
-1. Open your project in Xcode
-2. Go to **File > Add Package Dependencies...**
-3. Enter the repository URL: `<REPO_URL>`
-4. Click **Add Package**
+For local protocol development, this directory also contains a standalone `Package.swift`.
 
 ## Usage
 
 ```swift
 import ShopifyCheckoutProtocol
+
+let client = CheckoutProtocol.Client()
+  .on(CheckoutProtocol.start) { checkout in
+    print("Checkout started: \(checkout.id)")
+  }
+  .on(CheckoutProtocol.complete) { checkout in
+    print("Checkout completed: \(checkout.order?.id ?? "unknown")")
+  }
+  .on(CheckoutProtocol.totalsChange) { checkout in
+    print("Totals changed: \(checkout.totals)")
+  }
 ```
 
-### Bridging with checkout-sheet-kit-swift
+## Connect to Checkout Kit
 
-If you use [`checkout-sheet-kit-swift`](https://github.com/Shopify/checkout-sheet-kit-swift), add a retroactive conformance to bridge `CheckoutProtocol.Client` with the kit's `CheckoutCommunicationProtocol`:
+Checkout Kit's Swift SDK accepts `CheckoutProtocol.Client` anywhere it accepts `CheckoutCommunicationProtocol`.
+
+### UIKit
 
 ```swift
-extension CheckoutProtocol.Client: @retroactive CheckoutCommunicationProtocol {}
+import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
+
+ShopifyCheckoutKit.present(
+  checkout: checkoutURL,
+  from: viewController,
+  delegate: checkoutDelegate,
+  client: client
+)
 ```
 
-### Creating a Client
-
-`CheckoutProtocol.Client` uses a fluent API to register event handlers:
+### SwiftUI
 
 ```swift
-private let client = CheckoutProtocol.Client()
-    .on(CheckoutProtocol.start) { checkout in
-        print("Checkout started: \(checkout.id)")
-    }
-    .on(CheckoutProtocol.complete) { checkout in
-        print("Checkout completed: \(checkout.order?.id ?? "unknown")")
-    }
+ShopifyCheckout(checkout: checkoutURL)
+  .connect(client)
 ```
 
-### Connecting to Accelerated Checkout Buttons
-
-Pass the client to `AcceleratedCheckoutButtons` using the `.connect()` modifier. Note that some event handlers like `.onFail` and `.onCancel` remain on the button view itself:
+### Accelerated checkout buttons
 
 ```swift
 AcceleratedCheckoutButtons(cartID: cartID)
-    .onFail { error in
-        print("SDK error: \(error)")
-    }
-    .onCancel {
-        print("Sheet cancelled")
-    }
-    .connect(client)
+  .connect(client)
 ```
 
-### Presenting with ShopifyCheckoutSheetKit
+The button-specific `onFail`, `onCancel`, and `onRenderStateChange` handlers remain on `AcceleratedCheckoutButtons`.
 
-Pass the client when presenting a checkout sheet:
+## Supported notifications
 
-```swift
-ShopifyCheckoutSheetKit.present(checkout: checkoutURL, delegate: client)
-```
+Public notification descriptors include:
+
+- `CheckoutProtocol.start`
+- `CheckoutProtocol.complete`
+- `CheckoutProtocol.error`
+- `CheckoutProtocol.lineItemsChange`
+- `CheckoutProtocol.messagesChange`
+- `CheckoutProtocol.totalsChange`
+
+Use these for app behavior such as clearing local carts after completion, updating analytics, or logging checkout messages.
+
+## Supported delegations
+
+Public delegation descriptors include:
+
+- `CheckoutProtocol.windowOpen`
+
+Use this to handle `ec.window.open_request` when your app needs custom routing for checkout link requests.

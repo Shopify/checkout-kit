@@ -1,620 +1,420 @@
 # Shopify Checkout Kit - Swift
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/Shopify/checkout-kit/blob/main/LICENSE) [![Swift Package Manager compatible](https://img.shields.io/badge/Swift%20Package%20Manager-compatible-2ebb4e.svg?style=flat)](https://swift.org/package-manager/) [![GitHub Release](https://img.shields.io/github/release/shopify/checkout-kit.svg?style=flat)]()
-<img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
+[![MIT License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](../../LICENSE)
+[![Swift Package Manager compatible](https://img.shields.io/badge/Swift%20Package%20Manager-compatible-2ebb4e.svg?style=flat)](https://swift.org/package-manager/)
+
+<img width="3200" height="800" alt="Checkout Kit" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
 
 > [!WARNING]
-> **Alpha — early preview.** This software is an early preview and is **not**
-> production-ready. Stability is not guaranteed, and breaking changes may
-> occur in any release. See [Getting Started](#getting-started).
+> **Alpha - early preview.** This software is an early preview and is **not**
+> production-ready. The first Checkout Kit for Swift alpha is `4.0.0-alpha.1`.
+> Stability is not guaranteed, and breaking changes may occur in any release.
 
-**Shopify Checkout Kit** is a Swift Package library that enables Swift apps to provide the world’s highest converting, customizable, one-page checkout within the app. The presented experience is a fully-featured checkout that preserves all of the store customizations: Checkout UI extensions, Functions, branding, and more. It also provides platform idiomatic defaults such as support for light and dark mode, and convenient developer APIs to embed, customize, and follow the lifecycle of the checkout experience. Check out our blog to [learn how and why we built the Checkout Kit](https://www.shopify.com/partners/blog/mobile-checkout-sdks-for-ios-and-android).
+**Checkout Kit for Swift** lets iOS apps present Shopify checkout in a native sheet while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods. The Swift package also includes `ShopifyAcceleratedCheckouts`, a SwiftUI library for rendering Shop Pay and Apple Pay buttons on iOS 16+.
 
 - [Requirements](#requirements)
-- [Getting Started](#getting-started)
-  - [Package.swift](#packageswift)
-  - [Xcode](#xcode)
+- [Install](#install)
+  - [Swift Package Manager](#swift-package-manager)
   - [CocoaPods](#cocoapods)
-- [Programmatic Usage](#programmatic-usage)
-- [SwiftUI Usage](#swiftui-usage)
-- [Configuration](#configuration)
-  - [`colorScheme`](#colorscheme)
-  - [`tintColor`](#tintcolor)
-  - [`backgroundColor`](#backgroundcolor)
-  - [`title`](#title)
-  - [`closeButtonTintColor`](#closebuttontintcolor)
-  - [SwiftUI Configuration](#swiftui-configuration)
-- [Monitoring the lifecycle of a checkout session](#monitoring-the-lifecycle-of-a-checkout-session)
-- [Error handling](#error-handling)
-  - [`CheckoutError`](#checkouterror)
-- [Integrating identity \& customer accounts](#integrating-identity--customer-accounts)
-  - [Cart: buyer bag, identity, and preferences](#cart-buyer-bag-identity-and-preferences)
-  - [Multipass](#multipass)
-  - [Shop Pay](#shop-pay)
-  - [Customer Account API](#customer-account-api)
-- [Offsite Payments](#offsite-payments)
+- [Get a checkout URL](#get-a-checkout-url)
+- [Present checkout](#present-checkout)
+  - [UIKit](#uikit)
+  - [SwiftUI](#swiftui)
+- [Configure checkout](#configure-checkout)
+  - [Current configuration](#current-configuration)
+- [Checkout lifecycle](#checkout-lifecycle)
+  - [Error handling](#error-handling)
+- [Authentication and buyer identity](#authentication-and-buyer-identity)
+- [Offsite payments and links](#offsite-payments-and-links)
+- [Geolocation and pickup points](#geolocation-and-pickup-points)
 - [Accelerated Checkouts](#accelerated-checkouts)
   - [Prerequisites](#prerequisites)
-  - [Install the package](#install-the-package)
-  - [Configure the integration](#configure-the-integration)
-  - [Render accelerated checkout buttons](#render-accelerated-checkout-buttons)
-    - [Customize wallet options](#customize-wallet-options)
-    - [Modify the Apple Pay button label](#modify-the-apple-pay-button-label)
-    - [Customize the Apple Pay button style](#customize-the-apple-pay-button-style)
-    - [Customize button corners](#customize-button-corners)
-  - [Handle loading, errors, and lifecycle events](#handle-loading-errors-and-lifecycle-events)
-  - [Troubleshooting](#troubleshooting)
-- [Explore the sample apps](#explore-the-sample-apps)
+  - [Configure accelerated checkouts](#configure-accelerated-checkouts)
+  - [Render buttons](#render-buttons)
+- [Troubleshooting](#troubleshooting)
+- [Samples](#samples)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Requirements
 
-- Swift 5.7+
-- iOS 13.0+ for Checkout Kit, iOS 16+ for Accelerated Checkouts
+- Swift Package Manager with Swift tools 5.9+
+- iOS 13.0+ for `ShopifyCheckoutKit`
+- iOS 16.0+ for `ShopifyAcceleratedCheckouts`
+- A checkout URL from `cart.checkoutUrl` or a cart permalink
 
-## Getting Started
+## Install
 
-The SDK is an open-source [Swift Package library](https://www.swift.org/package-manager/). As a quick start, see [sample projects](Samples/README.md) or use one of the following ways to integrate the SDK into your project:
+The first Checkout Kit for Swift alpha is `4.0.0-alpha.1`. For alpha testing, use that exact version until a stable `4.x` release is available.
 
-### Package.swift
+### Swift Package Manager
+
+Add the repository from Xcode with **File > Add Package Dependencies...**:
+
+```text
+https://github.com/Shopify/checkout-kit
+```
+
+Or add it to `Package.swift`:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", from: "3")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.1")
 ]
 ```
 
-### Xcode
+Then add the products you need to your app target:
 
-1. Open your Xcode project
-2. Navigate to `File` > `Add Package Dependencies...`
-3. Enter `https://github.com/Shopify/checkout-kit` into the search box
-4. Click `Add Package`
-
-For more details on managing Swift Package dependencies in Xcode, please see [Apple's documentation](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app).
+```swift
+.target(
+  name: "YourApp",
+  dependencies: [
+    "ShopifyCheckoutKit",
+    "ShopifyCheckoutProtocol",
+    "ShopifyAcceleratedCheckouts" // Only needed for accelerated checkout buttons.
+  ]
+)
+```
 
 ### CocoaPods
 
 ```ruby
-pod "ShopifyCheckoutKit", "~> 3"
+pod "ShopifyCheckoutKit", "4.0.0-alpha.1"
+
+# Optional: Shop Pay and Apple Pay accelerated checkout buttons.
+pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0-alpha.1"
 ```
 
-For more information on CocoaPods, please see their [getting started guide](https://guides.cocoapods.org/using/getting-started.html).
+## Get a checkout URL
 
-## Programmatic Usage
+Checkout Kit presents a standard Shopify checkout URL. The common flow is:
 
-Once the SDK has been added as a dependency, you can import the library:
+1. Create or update a cart with the [Storefront GraphQL API](https://shopify.dev/docs/api/storefront), for example with [`cartCreate`](https://shopify.dev/docs/api/storefront/2026-04/mutations/cartCreate) and related cart mutations.
+2. Read the cart's [`checkoutUrl`](https://shopify.dev/docs/api/storefront/2026-04/objects/Cart#field-cart-checkouturl).
+3. Pass that URL, or a [cart permalink](https://help.shopify.com/en/manual/products/details/cart-permalink), to Checkout Kit.
+
+You can use any GraphQL client. The sample app uses Apollo iOS and is a complete reference for a modern Storefront API integration.
+
+For production use, see the [Storefront API GraphiQL Explorer](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started) for schema exploration and the [`cartCreate`](https://shopify.dev/docs/api/storefront/2026-04/mutations/cartCreate) mutation reference for the full input shape, including buyer identity, attributes, discount codes, and delivery preferences.
+
+## Present checkout
+
+### UIKit
 
 ```swift
 import ShopifyCheckoutKit
-```
-
-To present a checkout to the buyer, your application must first obtain a checkout URL. The most common way is to use the [Storefront GraphQL API](https://shopify.dev/docs/api/storefront) to assemble a cart (via `cartCreate` and related update mutations) and load the [`checkoutUrl`](https://shopify.dev/docs/api/storefront/2023-10/objects/Cart#field-cart-checkouturl). Alternatively, a [cart permalink](https://help.shopify.com/en/manual/products/details/cart-permalink) can be provided. You can use any GraphQL client to obtain a checkout URL and we recommend Shopify's [Mobile Buy SDK for iOS](https://github.com/Shopify/mobile-buy-sdk-ios) to simplify the development workflow:
-
-```swift
-import Buy
-
-let client = Graph.Client(
-  shopDomain: "yourshop.myshopify.com",
-  apiKey: "<storefront access token>"
-)
-
-let query = Storefront.buildQuery { $0
-  .cart(id: "myCartId") { $0
-    .checkoutUrl()
-  }
-}
-
-let task = client.queryGraphWith(query) { response, error in
-  let checkoutURL = response?.cart.checkoutUrl
-}
-task.resume()
-```
-
-The `checkoutURL` object is a standard web checkout URL that can be opened in any browser. To present a native checkout sheet in your application, provide the `checkoutURL` alongside optional runtime configuration settings to the `present(checkout:)` function provided by the SDK:
-
-```swift
 import UIKit
-import ShopifyCheckoutKit
 
-class MyViewController: UIViewController {
-  func presentCheckout() {
-    let checkoutURL: URL = // from cart object
-    ShopifyCheckoutKit.present(checkout: checkoutURL, from: self, delegate: self)
+final class CartViewController: UIViewController, CheckoutDelegate {
+  func presentCheckout(checkoutURL: URL) {
+    ShopifyCheckoutKit.present(
+      checkout: checkoutURL,
+      from: self,
+      delegate: self
+    )
+  }
+
+  func checkoutDidCancel() {
+    // The buyer closed checkout.
+  }
+
+  func checkoutDidFail(error: CheckoutError) {
+    // Show an error state, retry with a fresh cart, or log the SDK error.
   }
 }
 ```
 
-## SwiftUI Usage
+### SwiftUI
 
 ```swift
-import SwiftUI
 import ShopifyCheckoutKit
+import SwiftUI
 
-struct ContentView: View {
-  @State var isPresented = false
-  @State var checkoutURL: URL?
+struct CartView: View {
+  @State private var isPresented = false
+  let checkoutURL: URL
 
   var body: some View {
     Button("Checkout") {
       isPresented = true
     }
     .sheet(isPresented: $isPresented) {
-      if let url = checkoutURL {
-        ShopifyCheckout(checkout: url)
-           /// Configuration
-           .title("Checkout")
-           .colorScheme(.automatic)
-           .tintColor(.blue)
-           .backgroundColor(.white)
-           .closeButtonTintColor(.red)
-
-           /// Lifecycle events
-           .onCancel {
-             isPresented = false
-           }
-           .onFail { error in
-             handleError(error)
-           }
-           .edgesIgnoringSafeArea(.all)
-      }
-    }
-  }
-}
-```
-
-## Configuration
-
-The SDK provides a way to customize the presented checkout experience via the `ShopifyCheckoutKit.configuration` object.
-
-### `colorScheme`
-
-By default, the SDK will match the user's device color appearance. This behavior can be customized via the `colorScheme` property:
-
-```swift
-// [Default] Automatically toggle idiomatic light and dark themes based on device preference (`UITraitCollection`)
-ShopifyCheckoutKit.configuration.colorScheme = .automatic
-
-// Force idiomatic light color scheme
-ShopifyCheckoutKit.configuration.colorScheme = .light
-
-// Force idiomatic dark color scheme
-ShopifyCheckoutKit.configuration.colorScheme = .dark
-
-// Force web theme, as rendered by a mobile browser
-ShopifyCheckoutKit.configuration.colorScheme = .web
-```
-
-### `tintColor`
-
-If the checkout session is not ready and being initialized, a progress bar is shown and can be customized via the `tintColor` property:
-
-```swift
-// Use a custom UI color
-ShopifyCheckoutKit.configuration.tintColor = UIColor(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
-
-// Use a system color
-ShopifyCheckoutKit.configuration.tintColor = .systemBlue
-```
-
-### `backgroundColor`
-
-While the checkout session is being initialized, the background color of the view can be customized via the `backgroundColor` property:
-
-```swift
-// Use a custom UI color
-ShopifyCheckoutKit.configuration.backgroundColor = UIColor(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
-
-// Use a system color
-ShopifyCheckoutKit.configuration.backgroundColor = .systemBackground
-```
-
-### `title`
-
-By default, the Checkout Kit will look for a `shopify_checkout_kit_title` key in a `Localizable.xcstrings` file to set the sheet title, otherwise it will fallback to "Checkout" across all locales.
-
-The title of the sheet can be customized by either setting a value for the `shopify_checkout_kit_title` key in the `Localizable.xcstrings` file for your application or by configuring the `title` property of the `ShopifyCheckoutKit.configuration` object manually.
-
-```swift
-// Hardcoded title, applicable to all languages
-ShopifyCheckoutKit.configuration.title = "Custom title"
-```
-
-Here is an example of a `Localizable.xcstrings` containing translations for 2 locales - `en` and `fr`.
-
-```json
-{
-  "sourceLanguage": "en",
-  "strings": {
-    "shopify_checkout_kit_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Checkout"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Caisse"
-          }
+      ShopifyCheckout(checkout: checkoutURL)
+        .title("Checkout")
+        .colorScheme(.automatic)
+        .tintColor(.systemBlue)
+        .backgroundColor(.systemBackground)
+        .closeButtonTintColor(nil)
+        .onCancel {
+          isPresented = false
         }
-      }
+        .onFail { error in
+          handleCheckoutError(error)
+        }
+        .ignoresSafeArea()
     }
   }
 }
 ```
 
-### `closeButtonTintColor`
+Checkout Kit adds the required UCP query parameters automatically when it loads checkout.
 
-The color of the close button in the navigation bar can be customized via the `closeButtonTintColor` property. When set to a custom color, the close button will use a custom SF Symbol (`xmark.circle.fill`) with the specified tint color. When set to `nil` (default), the standard system close button appearance is used.
+## Configure checkout
 
-```swift
-// Use a custom UI color
-ShopifyCheckoutKit.configuration.closeButtonTintColor = UIColor(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
-
-// Use a system color
-ShopifyCheckoutKit.configuration.closeButtonTintColor = .systemRed
-```
-
-### SwiftUI Configuration
-
-Similarly, configuration modifiers are available to set the configuration of your checkout when using SwiftUI:
+Configure global presentation defaults before presenting checkout:
 
 ```swift
-ShopifyCheckout(checkout: checkoutURL)
-  .title("Checkout")
-  .colorScheme(.automatic)
-  .tintColor(.blue)
-  .backgroundColor(.black)
-  .closeButtonTintColor(.red)
-```
+import ShopifyCheckoutKit
 
-## Monitoring the lifecycle of a checkout session
-
-You can use the `CheckoutDelegate` protocol to register callbacks for lifecycle events the host app needs to react to:
-
-```swift
-extension MyViewController: CheckoutDelegate {
-  func checkoutDidCancel() {
-    // Called when the checkout was canceled by the buyer.
-    // Use this to call `dismiss(animated:)`, etc.
-  }
-
-  func checkoutDidFail(error: CheckoutError) {
-    // Called when the checkout encountered an error and has been aborted. The callback
-    // provides a `CheckoutError` enum, with one of the following cases:
-
-    // Internal error: exception within the Checkout SDK code.
-    // Inspect the underlying error to identify the problem.
-    case sdkError(underlying: Swift.Error)
-
-    // Checkout cannot be initiated or completed, e.g. due to network or server-side error.
-    // The provided message describes the error and may be logged and presented to the buyer.
-    case checkoutUnavailable(message: String, code: CheckoutUnavailable)
-
-    // Checkout session associated with the provided checkoutURL is no longer available.
-    // The provided message describes the error and may be logged and presented to the buyer.
-    case checkoutExpired(message: String, code: CheckoutErrorCode)
-  }
+ShopifyCheckoutKit.configure {
+  $0.colorScheme = .automatic
+  $0.tintColor = .systemBlue
+  $0.backgroundColor = .systemBackground
+  $0.closeButtonTintColor = nil
+  $0.logLevel = .error
 }
 ```
 
-Completion events and other in-checkout messages flow through `CheckoutCommunicationProtocol` (UCP) — register handlers on a `CheckoutProtocol.Client` and pass it to `present(checkout:from:delegate:client:)`. See `Samples/MobileBuyIntegration` for a full example.
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `colorScheme` | `.automatic` | Use device appearance, force `.light` or `.dark`, or use `.web` to match web checkout branding. |
+| `tintColor` | Shopify blue | Progress indicator color while checkout initializes. |
+| `backgroundColor` | `.systemBackground` | Background behind the web view while checkout initializes. |
+| `title` | Localized `shopify_checkout_kit_title` or `Checkout` | Navigation title for the checkout sheet. |
+| `closeButtonTintColor` | `nil` | Optional tint for the close button. |
+| `logLevel` | `.error` | SDK logging verbosity. Use `.debug` or `.all` during integration. |
 
-## Error handling
+To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.
 
-Errors are forwarded to `checkoutDidFail(error:)`. The dialog dismisses after the delegate is invoked.
-
-### `CheckoutError`
-
-| Type                                                            | Description                                | Recommendation                                                                              |
-| --------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `.checkoutUnavailable(message: "Forbidden")`                    | Access to checkout is forbidden.           | Treat as fatal for this session.                                                            |
-| `.checkoutUnavailable(message: "Internal Server Error")`        | An internal server error occurred.         | Likely ephemeral — retry by opening a fresh checkout URL.                                   |
-| `.checkoutUnavailable(message: "Storefront password required")` | Access to checkout is password restricted. | We are working on ways to enable the Checkout Kit for usage with password protected stores. |
-| `.checkoutExpired(message: "Checkout already completed")`       | The checkout has already been completed    | If this is incorrect, create a new cart and open a new checkout URL.                        |
-| `.checkoutExpired(message: "Cart is empty")`                    | The cart session has expired.              | Create a new cart and open a new checkout URL.                                              |
-| `.sdkError(underlying:)`                                        | An error was thrown internally.            | Please open an issue in this repo with as much detail as possible.                          |
-
-## Integrating identity & customer accounts
-
-Buyer-aware checkout experience reduces friction and increases conversion. Depending on the context of the buyer (guest or signed-in), knowledge of buyer preferences, or account/identity system, the application can use one of the following methods to initialize a personalized and contextualized buyer experience.
-
-### Cart: buyer bag, identity, and preferences
-
-In addition to specifying the line items, the Cart can include buyer identity (name, email, address, etc.), and delivery and payment preferences: see [guide](https://shopify.dev/docs/custom-storefronts/building-with-the-storefront-api/cart/manage). Included information will be used to present pre-filled and pre-selected choices to the buyer within checkout.
-
-### Multipass
-
-[Shopify Plus](https://help.shopify.com/en/manual/intro-to-shopify/pricing-plans/plans-features/shopify-plus-plan) merchants using [Classic Customer Accounts](https://help.shopify.com/en/manual/customers/customer-accounts/classic-customer-accounts) can use [Multipass](https://shopify.dev/docs/api/multipass) ([API documentation](https://shopify.dev/docs/api/multipass)) to integrate an external identity system and initialize a buyer-aware checkout session.
-
-```json
-{
-  "email": "<Customer's email address>",
-  "created_at": "<Current timestamp in ISO8601 encoding>",
-  "remote_ip": "<Client IP address>",
-  "return_to": "<Checkout URL obtained from Storefront API>"
-}
-```
-
-1. Follow the [Multipass documentation](https://shopify.dev/docs/api/multipass) to create a Multipass URL and set `return_to` to be the obtained `checkoutUrl`
-2. Provide the Multipass URL to `present(checkout:)`
-
-> [!IMPORTANT]
-> The above JSON omits useful customer attributes that should be provided where possible and encryption and signing should be done server-side to ensure Multipass keys are kept secret.
-
-> [!NOTE]
-> Multipass tokens are single-use. If a request containing a multipass URL fails, generate a fresh token before re-opening checkout.
-
-### Shop Pay
-
-To initialize accelerated Shop Pay checkout, the cart can set a [walletPreference](https://shopify.dev/docs/api/storefront/latest/mutations/cartBuyerIdentityUpdate#field-cartbuyeridentityinput-walletpreferences) to 'shop_pay'. The sign-in state of the buyer is app-local. The buyer will be prompted to sign in to their Shop account on their first checkout, and their sign-in state will be remembered for future checkout sessions.
-
-### Customer Account API
-
-The Customer Account API allows you to authenticate buyers and provide a personalized checkout experience.
-For detailed implementation instructions, see our [Customer Account API Authentication Guide](https://shopify.dev/docs/storefronts/headless/mobile-apps/checkout-kit/authenticate-checkouts).
-
-## Offsite Payments
-
-Certain payment providers finalize transactions by redirecting customers to external banking apps. To enhance the user experience for your buyers, you can set up your storefront to support Universal Links on iOS, allowing customers to be redirected back to your app once the payment is completed.
-
-See the [Universal Links guide](https://github.com/Shopify/checkout-kit/blob/main/platforms/swift/documentation/universal_links.md) for information on how to get started with adding support for Offsite Payments in your app.
-
-External links opened from within checkout (HTTPS, deep links, `mailto:`, `tel:`) are forwarded to `UIApplication.shared.open(_:)` by the kit, so universal links and Offsite Payments redirects route back to your app automatically once the rest of the universal-links setup is in place.
-
-## Accelerated Checkouts
-
-Accelerated checkout buttons surface Apple Pay and Shop Pay options earlier in the buyer journey so more orders complete without leaving your app. For an end-to-end walkthrough see the [`ShopifyAcceleratedCheckoutsApp` sample](Samples/ShopifyAcceleratedCheckoutsApp).
-
-### Prerequisites
-
-- iOS 16 or later
-- The `write_cart_wallet_payments` access scope ([request access](https://www.appsheet.com/start/1ff317b6-2da1-4f39-b041-c01cfada6098))
-- Apple Pay payment processing certificates ([setup guide](https://shopify.dev/docs/storefronts/mobile/create-apple-payment-processing-certificates))
-- A device configured for Apple Pay ([Apple setup instructions](https://developer.apple.com/documentation/passkit/setting-up-apple-pay))
-
-### Install the package
-
-Update your package manifest to import `ShopifyAcceleratedCheckouts` alongside `ShopifyCheckoutKit`.
+### Current configuration
 
 ```swift
-dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", from: "3.8.0")
-]
+let configuration = ShopifyCheckoutKit.configuration
 ```
 
-Then add the product to your target dependencies:
+## Checkout lifecycle
+
+`CheckoutDelegate` reports native presentation outcomes:
+
+- `checkoutDidCancel()` fires when the buyer closes the checkout sheet.
+- `checkoutDidFail(error:)` fires when checkout cannot continue.
+
+Typed checkout state, including completion, flows through `ShopifyCheckoutProtocol`.
 
 ```swift
-.target(
-    name: "YourApp",
-    dependencies: ["ShopifyAcceleratedCheckouts"]
+import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
+
+let client = CheckoutProtocol.Client()
+  .on(CheckoutProtocol.start) { checkout in
+    // Checkout is loaded and interactive.
+  }
+  .on(CheckoutProtocol.complete) { checkout in
+    // The order was completed. Clear or refresh the local cart.
+  }
+  .on(CheckoutProtocol.totalsChange) { checkout in
+    // React to updated totals.
+  }
+  .on(CheckoutProtocol.lineItemsChange) { checkout in
+    // React to line item changes.
+  }
+  .on(CheckoutProtocol.messagesChange) { checkout in
+    // React to checkout messages.
+  }
+
+ShopifyCheckoutKit.present(
+  checkout: checkoutURL,
+  from: viewController,
+  delegate: checkoutDelegate,
+  client: client
 )
 ```
 
-### Configure the integration
+For SwiftUI, attach the same client with `.connect(client)`.
 
-Create a configuration object that connects the accelerated checkout buttons to your storefront. Provide the domain, Storefront API access token, and optionally the current customer.
+```swift
+ShopifyCheckout(checkout: checkoutURL)
+  .connect(client)
+```
+
+The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed checkout messages.
+See the [UCP shopping embedded protocol schema](../../protocol/services/shopping/embedded.openrpc.json) for method and payload definitions.
+Kit-owned link delegations such as `window.open` are offered to your connected protocol client first and fall back to Checkout Kit's default handler if unhandled.
+
+### Error handling
+
+`CheckoutError` covers SDK and native presentation failures. Checkout-originated `ec.error` notifications are available separately through `CheckoutProtocol.error` on the protocol client.
+
+| Error | Meaning | Recommended handling |
+| --- | --- | --- |
+| `.checkoutExpired(code: .cartExpired)` | The cart or checkout session expired. | Create a new cart and present a fresh `checkoutUrl`. |
+| `.checkoutExpired(code: .cartCompleted)` | The cart already completed checkout. | Clear the local cart and fetch a new one. |
+| `.checkoutExpired(code: .invalidCart)` | The cart is invalid or empty. | Rebuild the cart before presenting checkout. |
+| `.checkoutUnavailable(code: .httpError)` | Checkout returned an unexpected HTTP response. | Treat as fatal for this attempt; retry with a fresh URL if appropriate. |
+| `.checkoutUnavailable(code: .clientError)` | Checkout could not load for a client-side reason. | Show a recoverable error and log details. |
+| `.sdkError(underlying:)` | Checkout Kit encountered an internal SDK error. | Log the error and open an issue if it persists. |
+
+Password-protected storefronts return `storefront_password_required` and are not supported by Checkout Kit.
+
+## Authentication and buyer identity
+
+Checkout Kit does not create carts or authenticate buyers. Add buyer context to the cart before presenting checkout:
+
+- Use Storefront API cart buyer identity fields for customer and contact context such as email, phone, country, language, customer access tokens, and wallet preferences.
+- Use cart delivery inputs and the current cart delivery mutations for delivery addresses, selected delivery options, and pickup preferences.
+- Use the Customer Account API to obtain a customer access token and attach it through cart buyer identity.
+- For Shopify Plus stores that use Classic Customer Accounts, generate Multipass tokens server-side and set `return_to` to the checkout URL.
+
+Keep Multipass secrets out of client-side code.
+
+## Offsite payments and links
+
+Some payment providers redirect buyers to external banking apps or web pages. Configure Universal Links so buyers can return to your app after those flows complete:
+
+- Use a custom storefront domain. `*.myshopify.com` domains do not serve `apple-app-site-association` files.
+- Enable Associated Domains in your app entitlements.
+- Configure the iOS Buy SDK / Storefront API app settings in the Shopify admin.
+- Route incoming checkout URLs back to Checkout Kit and route order status or thank-you URLs to your own confirmation flow.
+
+See [Universal Links](documentation/universal_links.md) for setup and testing details.
+
+Checkout Kit forwards external HTTPS links, deep links, `mailto:`, and `tel:` links to `UIApplication.shared.open(_:)`.
+
+## Geolocation and pickup points
+
+iOS handles checkout geolocation permission prompts through the system prompt. If your checkout uses pickup points or "Use my location", add a location usage description to your app:
+
+```xml
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Your location is used to find pickup points near you.</string>
+```
+
+## Accelerated Checkouts
+
+`ShopifyAcceleratedCheckouts` renders Shop Pay and Apple Pay buttons before the buyer opens the full checkout sheet. It supports cart-based and product-variant-based entry points on iOS 16+.
+
+### Prerequisites
+
+- iOS 16.0+
+- Storefront API token with the `write_cart_wallet_payments` scope
+- Apple Pay merchant identifier and payment processing certificate
+- A device or simulator configuration that can display Apple Pay
+
+### Configure accelerated checkouts
+
+Create shared configuration objects and inject them into your SwiftUI hierarchy:
+
+```swift
+import ShopifyAcceleratedCheckouts
+import SwiftUI
+
+@main
+struct YourApp: App {
+  private let checkoutConfig = ShopifyAcceleratedCheckouts.Configuration(
+    storefrontDomain: "your-shop.myshopify.com",
+    storefrontAccessToken: "<storefront access token>",
+    customer: nil
+  )
+
+  private let applePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+    merchantIdentifier: "merchant.com.yourcompany",
+    contactFields: [.email, .phone],
+    supportedShippingCountries: ["US", "CA"]
+  )
+
+  var body: some Scene {
+    WindowGroup {
+      ContentView()
+        .environmentObject(checkoutConfig)
+        .environmentObject(applePayConfig)
+    }
+  }
+}
+```
+
+Use one customer mode at a time:
+
+```swift
+// Authenticated buyer.
+ShopifyAcceleratedCheckouts.Customer(customerAccessToken: customerAccessToken)
+
+// Guest or explicit contact override.
+ShopifyAcceleratedCheckouts.Customer(
+  email: "buyer@example.com",
+  phoneNumber: "15555555555"
+)
+```
+
+`contactFields` is required by the current Swift API. Include `.email` when the shop requires customer accounts and `.phone` when the shop requires phone numbers for shipping.
+
+### Render buttons
 
 ```swift
 import ShopifyAcceleratedCheckouts
 
-// For authenticated customers (logged in with Shopify account)
-let configuration = ShopifyAcceleratedCheckouts.Configuration(
-    storefrontDomain: "your-shop.myshopify.com",
-    storefrontAccessToken: "your-storefront-access-token",
-    customer: ShopifyAcceleratedCheckouts.Customer(
-        customerAccessToken: "customer-access-token"
-    )
-)
-
-// For guest customers (or explicit contact override)
-let configuration = ShopifyAcceleratedCheckouts.Configuration(
-    storefrontDomain: "your-shop.myshopify.com",
-    storefrontAccessToken: "your-storefront-access-token",
-    customer: ShopifyAcceleratedCheckouts.Customer(
-        email: "customer@example.com",
-        phoneNumber: "0123456789"
-    )
-)
+AcceleratedCheckoutButtons(cartID: cartID)
+  .wallets([.shopPay, .applePay])
+  .applePayLabel(.buy)
+  .applePayStyle(.automatic)
+  .cornerRadius(8)
+  .onRenderStateChange { state in
+    // loading, rendered, or error(reason:)
+  }
+  .onFail { error in
+    // Handle checkout failure.
+  }
+  .onCancel {
+    // The buyer canceled the accelerated checkout flow.
+  }
+  .connect(client)
 ```
 
-> [!WARNING]
-> Do not provide both `customerAccessToken` and `email`/`phoneNumber` together. For authenticated customers, email and phone are fetched automatically from the Shopify account.
-
-> [!TIP]
-> Pass `nil` for `customer` when the buyer is anonymous, and update the configuration later when their details are known.
-
-> [!NOTE]
-> When using the cart ID flow, if customer contact information exists in both `config.customer` and the cart's `buyerIdentity`, the `config.customer` values take precedence.
-
-Configure Apple Pay with your merchant identifier, required contact fields, and any shipping restrictions.
+You can also render buttons for a single product variant:
 
 ```swift
-let applePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-    merchantIdentifier: "merchant.com.yourcompany",
-    contactFields: [.email, .phone]
+AcceleratedCheckoutButtons(
+  variantID: "gid://shopify/ProductVariant/...",
+  quantity: 1
 )
 ```
 
-Use the `contactFields` parameter to request specific details from the buyer's Apple Pay sheet. Provide any
-combination of `.email` and `.phone`. If you omit the parameter (or pass an empty array), Apple Pay still prompts for an
-email address unless it already has one for the buyer (for example, when you supply `customer.email`).
+Use `CheckoutProtocol.Client` through `.connect(client)` to observe checkout completion and state changes. Clear or refresh the cart when `CheckoutProtocol.complete` fires to avoid reusing an expired cart ID.
 
-```swift
-// Require only an email address
-let applePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-    merchantIdentifier: "merchant.com.yourcompany",
-    contactFields: [.email]
-)
+## Troubleshooting
 
-// Require only a phone number
-let applePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-    merchantIdentifier: "merchant.com.yourcompany",
-    contactFields: [.phone]
-)
+- Use `ShopifyCheckoutKit.configuration.logLevel = .debug` or `ShopifyAcceleratedCheckouts.logLevel = .debug` while integrating.
+- If checkout reports an expired, completed, or invalid cart, create a fresh cart and use its new `checkoutUrl`.
+- If Apple Pay dismisses immediately, verify the merchant ID, entitlements, payment processing certificate, and device wallet setup.
+- If Universal Links do not open the app, verify the associated domain entitlement and the `/.well-known/apple-app-site-association` file on your custom storefront domain.
 
-// Default behaviour: Apple Pay prompts for email unless it already has one
-let applePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-    merchantIdentifier: "merchant.com.yourcompany"
-)
-```
+## Samples
 
-If you need to limit shipping destinations, pass ISO 3166-1 alpha-2 country codes to `supportedShippingCountries`.
-Leave the parameter as `nil` (the default) to accept all countries and only restrict shipping when Apple Pay cannot
-technically support a destination.
+See [Samples](Samples/README.md):
 
-```swift
-// Allow shipping to the United States and Canada only
-let applePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-    merchantIdentifier: "merchant.com.yourcompany",
-    contactFields: [.email, .phone],
-    supportedShippingCountries: ["US", "CA"]
-)
-```
-
-Inject both configuration objects into your SwiftUI hierarchy so every `AcceleratedCheckoutButtons` instance can read them:
-
-```swift
-@main
-struct MyApp: App {
-    let configuration = ShopifyAcceleratedCheckouts.Configuration(...)
-    let applePayConfig = ShopifyAcceleratedCheckouts.ApplePayConfiguration(...)
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(configuration)
-                .environmentObject(applePayConfig)
-        }
-    }
-}
-```
-
-If you are building a UIKit surface, wrap the SwiftUI buttons with a `UIHostingController` and provide the same environment objects before adding the view to your hierarchy.
-
-### Render accelerated checkout buttons
-
-Use `AcceleratedCheckoutButtons` to attach accelerated checkout calls-to-action to product or cart surfaces once you have a valid cart ID or product variant ID from the Storefront API. Guard the component with `#available(iOS 16.0, *)` if your app still supports older OS versions.
-
-```swift
-if #available(iOS 16.0, *) {
-    AcceleratedCheckoutButtons(cartID: cartID)
-        .wallets([..shopPay, .applePay])
-}
-```
-
-#### Customize wallet options
-
-Accelerated checkout buttons display every available wallet by default. Use `.wallets(_:)` to show a subset or adjust the
-order shoppers see them in.
-
-```swift
-// Display only Shop Pay
-AcceleratedCheckoutButtons(cartID: cartID)
-    .wallets([.shopPay])
-
-// Display Shop Pay first, then Apple Pay
-AcceleratedCheckoutButtons(cartID: cartID)
-    .wallets([.shopPay, .applePay])
-```
-
-#### Modify the Apple Pay button label
-
-Use `.applePayLabel(_:)` to map to the native `PayWithApplePayButtonLabel` values. The default is `.plain`.
-
-```swift
-AcceleratedCheckoutButtons(cartID: cartID)
-    .applePayLabel(.buy)
-```
-
-#### Customize the Apple Pay button style
-
-Use `.applePayStyle(_:)` to set the color style of the Apple Pay button. The modifier accepts a `PayWithApplePayButtonStyle` value. The default is `.automatic`, which adapts to the current appearance (light/dark mode).
-
-```swift
-AcceleratedCheckoutButtons(cartID: cartID)
-    .applePayStyle(.whiteOutline)
-```
-
-#### Customize button corners
-
-The `.cornerRadius(_:)` modifier lets you match the buttons to other calls-to-action in your app. Buttons default to an
-8 pt radius.
-
-```swift
-// Pill-shaped buttons
-AcceleratedCheckoutButtons(cartID: cartID)
-    .cornerRadius(16)
-
-// Square buttons
-AcceleratedCheckoutButtons(cartID: cartID)
-    .cornerRadius(0)
-```
-
-For custom layouts, compose the buttons inside your own SwiftUI view and reuse that view across surfaces.
-
-### Handle loading, errors, and lifecycle events
-
-Listen for render state changes so you can display matching loading or error UI and only show the buttons when they are ready.
-
-```swift
-@State private var renderState: RenderState = .loading
-
-var body: some View {
-    if case .loading = renderState {
-        ProgressView()
-    }
-
-    if case .error = renderState {
-        ErrorStateView()
-    }
-
-    AcceleratedCheckoutButtons(cartID: cartID)
-        .onRenderStateChange { state in
-            renderState = state
-        }
-}
-```
-
-Attach lifecycle handlers to respond when buyers finish, cancel, or encounter an error. Clearing the cart after a successful accelerated checkout prevents reuse of an expired cart ID.
-
-```swift
-AcceleratedCheckoutButtons(cartID: cartID)
-    .onComplete { _ in
-        cartManager.clearCart()
-    }
-    .onFail { error in
-        logger.error("Accelerated checkout failed: \(error)")
-    }
-    .onCancel {
-        analytics.track(.acceleratedCheckoutCancelled)
-    }
-    .onClickLink { url in
-        UIApplication.shared.open(url)
-    }
-```
-
-### Troubleshooting
-
-- Increase verbosity during development with `ShopifyAcceleratedCheckouts.logLevel = .all` and `ShopifyCheckoutKit.configuration.logLevel = .all`.
-- If the Apple Pay sheet dismisses immediately, verify your merchant ID configuration in the Apple Developer portal and Xcode signing settings.
-
----
-
-## Explore the sample apps
-
-See the [Samples](Samples) directory for a handful of sample iOS applications and a guide to get started.
+- `MobileBuyIntegration` demonstrates a Storefront API cart flow, buyer identity modes, Customer Account API, checkout presentation, and protocol events.
+- `ShopifyAcceleratedCheckoutsApp` demonstrates Shop Pay and Apple Pay accelerated checkout buttons.
 
 ## Contributing
 
-We welcome code contributions, feature requests, and reporting of issues. Please see [guidelines and instructions](.github/CONTRIBUTING.md).
+See [CONTRIBUTING](../../.github/CONTRIBUTING.md).
+
+Useful checks before opening a Swift change:
+
+```sh
+cd platforms/swift
+./Scripts/xcode_run build ShopifyCheckoutKit
+./Scripts/xcode_run build ShopifyAcceleratedCheckouts
+./Scripts/xcode_run test ShopifyCheckoutKit-Package
+./Scripts/lint
+```
+
+For sample app changes, run:
+
+```sh
+cd platforms/swift
+./Scripts/build_samples
+```
 
 ## License
 
-Shopify's Checkout Kit is provided under an [MIT License](LICENSE).
+Checkout Kit is available under the [MIT license](../../LICENSE).
