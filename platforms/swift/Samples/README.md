@@ -1,44 +1,63 @@
-# Sample Project
+# Swift Samples
 
-This directory contains a sample project that implements the `ShopifyCheckoutKit` library.
+This directory contains iOS sample apps for Checkout Kit.
 
-The project directory contains a `Storefront.xcconfig.example` file. Simply rename it to `Storefront.xcconfig` and update the contained values to match your Shopify storefront.
+| Sample | Purpose |
+| --- | --- |
+| `MobileBuyIntegration` | Storefront API cart flow with Apollo iOS, checkout presentation, buyer identity modes, Customer Account API sign-in, and protocol lifecycle events. |
+| `ShopifyAcceleratedCheckoutsApp` | SwiftUI Shop Pay and Apple Pay accelerated checkout buttons. |
 
----
+## Prerequisites
+
+- Xcode with Swift Package Manager support
+- A Shopify store with a Storefront API access token
+- Optional Customer Account API app configuration for authenticated buyer flows
+- Optional Apple Pay merchant identifier and payment processing certificate for accelerated checkout
 
 ## MobileBuyIntegration
 
-This project demonstrates how to use the [Mobile Buy SDK](https://github.com/Shopify/mobile-buy-sdk-ios) in conjunction with the `ShopifyCheckoutKit` library.
+From `platforms/swift`:
 
-### Getting Started
-
-1. Copy the example config file:
 ```sh
-cp Samples/MobileBuyIntegration/Storefront.xcconfig.example Samples/MobileBuyIntegration/Storefront.xcconfig
+cp Samples/MobileBuyIntegration/Storefront.xcconfig.example \
+  Samples/MobileBuyIntegration/Storefront.xcconfig
 ```
-2. Fill in `STOREFRONT_DOMAIN` and other keys in `Storefront.xcconfig` with your store values.
-3. Build & run — entitlements are auto-generated via a build PreAction (no manual script step needed).
 
-### Troubleshooting
+Fill in:
 
-If the build PreAction fails, Xcode will show **"exited with status code 1"**. Click that line to open the build log — the script output at the bottom will indicate the issue.
+- `STOREFRONT_DOMAIN`
+- `STOREFRONT_ACCESS_TOKEN`
+- `API_VERSION`
+- Optional Customer Account API values
+- Optional demo buyer identity values
 
-| Build Log Output | Cause | Fix |
-|------------------|-------|-----|
-| `grep: Storefront.xcconfig: No such file or directory` | `Storefront.xcconfig` file is missing | Copy `.xcconfig.example` to `Storefront.xcconfig` and fill in values |
-| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank | Set your store's domain in the config |
-| Associated domains not working at runtime | Domain value is incorrect | Verify domain matches your Shopify store (no `https://` prefix) |
+Open `Samples/Samples.xcworkspace` or `Samples/MobileBuyIntegration/MobileBuyIntegration.xcodeproj` in Xcode, then build and run the `MobileBuyIntegration` scheme.
 
----
+The project generates associated-domain entitlements from `Storefront.xcconfig` during the Xcode build pre-action.
 
 ## ShopifyAcceleratedCheckoutsApp
 
-This project demonstrates integrating Shopify's Accelerated Checkouts, an all in one solution to accelerated checkouts via Apple Pay and Shop Pay. 
+From `platforms/swift`:
 
-To get started:
-
-1. Copy the settings file:
 ```sh
-cp Samples/ShopifyAcceleratedCheckouts/Storefront.xcconfig.example Samples/ShopifyAcceleratedCheckouts/Storefront.xcconfig
+cp Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig.example \
+  Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig
 ```
-2. Modify each of the keys in `Storefront.xcconfig` to match the value in your store settings.
+
+Fill in:
+
+- `STOREFRONT_DOMAIN`
+- `STOREFRONT_ACCESS_TOKEN`
+- `API_VERSION`
+
+Open `Samples/Samples.xcworkspace` or `Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.xcodeproj` in Xcode, then build and run the `ShopifyAcceleratedCheckoutsApp` scheme.
+
+## Troubleshooting
+
+If the build pre-action fails, Xcode usually shows `exited with status code 1`. Open the build log and check the script output.
+
+| Build log output | Cause | Fix |
+| --- | --- | --- |
+| `grep: Storefront.xcconfig: No such file or directory` | The sample config file is missing. | Copy `.xcconfig.example` to `Storefront.xcconfig`. |
+| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `STOREFRONT_DOMAIN` is blank. | Set your shop domain without `https://`. |
+| Associated domains do not work at runtime | Domain or app association is wrong. | Verify your custom storefront domain, app ID, and Universal Links setup. |

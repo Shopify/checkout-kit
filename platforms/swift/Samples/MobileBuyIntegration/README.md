@@ -1,154 +1,138 @@
 # MobileBuyIntegration Sample App
 
-A sample iOS app demonstrating how to integrate [Checkout Kit](../../README.md) with the Shopify Storefront API using [Apollo iOS](https://github.com/apollographql/apollo-ios).
+This sample demonstrates how to integrate Checkout Kit with the Shopify Storefront API using Apollo iOS.
+
+## What it covers
+
+- Product listing from the Storefront API
+- Cart create, add, update, and fetch operations
+- `cart.checkoutUrl` presentation with `ShopifyCheckoutKit`
+- Checkout lifecycle and completion through `CheckoutProtocol.Client`
+- Buyer identity demo data for checkout prefill
+- Customer Account API sign-in and customer access token cart identity
+- Universal Links entitlement generation for checkout/offsite-payment returns
 
 ## Architecture
 
-The app uses **Apollo GraphQL** for all Storefront API communication. GraphQL operations are defined as `.graphql` files, and Apollo's code generation tool produces type-safe Swift code from them.
+The app uses Apollo iOS for Storefront API communication. GraphQL operations are defined as `.graphql` files, and Apollo's code generation tool produces type-safe Swift code from them.
 
-### Storefront API layer
-
-```
+```text
 MobileBuyIntegration/
-├── GraphQL/                          # Source of truth — you edit these
-│   ├── Queries/
-│   │   ├── GetProducts.graphql           # Product listing query
-│   │   ├── CartQuery.graphql             # Fetch cart by ID
-│   │   ├── CartFragment.graphql          # Reusable cart fields
-│   │   ├── CartLineFragment.graphql      # Cart line item fields
-│   │   ├── CartDeliveryGroupFragment.graphql
-│   │   └── CartUserErrorFragment.graphql
-│   └── Mutations/
-│       ├── CartCreate.graphql            # Create a new cart
-│       ├── CartLinesAdd.graphql          # Add items to cart
-│       └── CartLinesUpdate.graphql       # Update item quantities
-│
-├── Generated/                        # Auto-generated — do not edit
-│   ├── Storefront.graphql.swift          # Namespace & schema metadata
-│   ├── Fragments/                        # Swift types for each fragment
-│   ├── Operations/
-│   │   ├── Mutations/                    # CartCreateMutation, CartLinesAddMutation, etc.
-│   │   └── Queries/                      # GetProductsQuery, GetCartQuery
-│   └── Schema/
-│       ├── Enums/                        # CountryCode, CurrencyCode, LanguageCode, etc.
-│       ├── InputObjects/                 # CartInput, CartLineInput, etc.
-│       ├── Objects/                      # Cart, Product, MoneyV2, etc.
-│       ├── Interfaces/                   # BaseCartLine, Node
-│       └── Unions/                       # Merchandise
-│
-├── Network.swift                     # Apollo client setup + auth interceptor
-├── CartManager.swift                 # Cart state management (uses Apollo mutations)
-└── ...
+|-- MobileBuyIntegration/
+|   |-- Sources/
+|   |   |-- Api/                         Source of truth - edit these files
+|   |   |   |-- Queries/
+|   |   |   |   |-- GetProducts.graphql    Product listing query
+|   |   |   |   |-- CartQuery.graphql      Fetch cart by ID
+|   |   |   |   |-- CartFragment.graphql   Reusable cart fields
+|   |   |   |   |-- CartLineFragment.graphql
+|   |   |   |   |-- CartDeliveryGroupFragment.graphql
+|   |   |   |   `-- CartUserErrorFragment.graphql
+|   |   |   |-- Mutations/
+|   |   |   |   |-- CartCreate.graphql     Create a new cart
+|   |   |   |   |-- CartLinesAdd.graphql   Add items to cart
+|   |   |   |   `-- CartLinesUpdate.graphql
+|   |   |   |-- Network.swift            Apollo client setup and auth interceptor
+|   |   |   `-- StorefrontClient.swift   Cart input and buyer identity mapping
+|   |   |-- Generated/                   Apollo-generated Swift types
+|   |   |   |-- Storefront.graphql.swift  Namespace and schema metadata
+|   |   |   |-- Fragments/                Swift fragment types
+|   |   |   |-- Operations/
+|   |   |   |   |-- Mutations/              CartCreateMutation, CartLinesAddMutation, etc.
+|   |   |   |   `-- Queries/               GetProductsQuery, GetCartQuery
+|   |   |   `-- Schema/                   Enums, input objects, objects, interfaces, unions
+|   |   |-- App/                         App configuration, cart state, and checkout coordination
+|   |   |   |-- AppConfiguration.swift    Values loaded from Storefront.xcconfig
+|   |   |   |-- CartManager.swift         Cart create, add, update, and fetch operations
+|   |   |   |-- CheckoutCoordinator.swift Checkout presentation
+|   |   |   `-- CartResettingCheckoutDelegate.swift
+|   |   `-- Scenes/                      SwiftUI screens
+|-- Scripts/
+|   `-- generate_entitlements.sh         Universal Links entitlement generation
+`-- Storefront.xcconfig                  Local store configuration, not checked in
 ```
 
-**`GraphQL/`** contains the `.graphql` files you write and maintain. These define which fields the app fetches from the Storefront API.
-
-**`Generated/`** contains Swift code produced by Apollo's code generation tool. These files should not be edited by hand — they are regenerated from the `.graphql` files and the schema.
+Do not edit files in `Generated/` by hand. Update `.graphql` files and regenerate Apollo types instead.
 
 ### How it works
 
-1. `Network.swift` creates a shared `ApolloClient` that points at the store's Storefront API endpoint and attaches the access token via an interceptor.
-2. `CartManager.swift` and `ProductView.swift` call `Network.shared.apollo.perform(mutation:)` / `.fetch(query:)` using the generated operation types (e.g. `Storefront.CartCreateMutation`, `Storefront.GetProductsQuery`).
-3. Responses are automatically decoded into the generated Swift types, giving you compile-time safety on every field access.
+1. `Network.swift` creates an `ApolloClient` that points at the configured Storefront API endpoint and attaches the Storefront access token.
+2. `StorefrontClient.swift` and `CartManager.swift` call Apollo using generated operation types such as `Storefront.CartCreateMutation` and `Storefront.GetCartQuery`.
+3. `CheckoutCoordinator.swift` presents `cart.checkoutUrl` with `ShopifyCheckoutKit`, while `CheckoutProtocolClient.swift` handles typed checkout lifecycle events.
+4. Apollo decodes responses into generated Swift types, so schema or operation changes surface as compile errors.
 
 ## Setup
 
-1. Copy the config template and fill in your store credentials:
+From `platforms/swift`:
 
-   ```bash
-   cp Storefront.xcconfig.example Storefront.xcconfig
-   ```
+```sh
+cp Samples/MobileBuyIntegration/Storefront.xcconfig.example \
+  Samples/MobileBuyIntegration/Storefront.xcconfig
+```
 
-   Then edit `Storefront.xcconfig` with your values:
+Edit `Storefront.xcconfig`:
 
-   ```
-   STOREFRONT_DOMAIN = your-store.myshopify.com
-   STOREFRONT_ACCESS_TOKEN = your-token
-   API_VERSION = 2025-07
-   ```
+```text
+STOREFRONT_DOMAIN = your-store.myshopify.com
+STOREFRONT_ACCESS_TOKEN = your-token
+API_VERSION = 2025-07
+```
 
-2. Open the project in Xcode and let SPM resolve the Apollo dependency.
+Optional values enable Customer Account API and buyer identity demo flows:
 
-3. Build and run.
+```text
+CUSTOMER_ACCOUNT_API_CLIENT_ID = your-client-id
+CUSTOMER_ACCOUNT_API_SHOP_ID = your-shop-id
+EMAIL = test.buyer@example.com
+PHONE = +16135550123
+```
+
+Open the project in Xcode, let Swift Package Manager resolve dependencies, then build and run.
 
 ## Updating the Storefront API version
 
-When you want to target a newer Storefront API version (e.g. to access new fields or features), follow these steps:
+1. Update `API_VERSION` in `Storefront.xcconfig`.
+2. Download the schema with Rover. This introspects your store's Storefront API and writes `schema.<version>.graphqls` into the sample app directory.
 
-### 1. Update the API version
+   ```sh
+   rover graph introspect \
+     "https://$STOREFRONT_DOMAIN/api/$API_VERSION/graphql" \
+     --header="X-Shopify-Storefront-Access-Token: $STOREFRONT_ACCESS_TOKEN" \
+     --output "schema.$API_VERSION.graphqls"
+   ```
 
-Edit your `Storefront.xcconfig` and change the `API_VERSION` value:
+3. Update `.graphql` operations if the schema changed. For example, add a product field to `MobileBuyIntegration/Sources/Api/Queries/GetProducts.graphql` before regenerating types:
 
-```
-API_VERSION = 2025-10
-```
+   ```graphql
+   query GetProducts(...) {
+     products(first: $first) {
+       nodes {
+         id
+         title
+         myNewField
+       }
+     }
+   }
+   ```
 
-### 2. Download the new schema
+4. Regenerate Swift types with the Apollo iOS CLI and this sample's `apollo-codegen-config.json`. This reads the schema and `.graphql` files, then regenerates Swift code in `MobileBuyIntegration/Sources/Generated/`.
 
-The schema defines what types and fields are available in the API. Run from the **repo root** (`checkout-kit/`):
+   ```sh
+   ./apollo-ios-cli generate --path apollo-codegen-config.json
+   ```
 
-```bash
-dev apollo download_schema mobile-buy
-```
-
-This introspects your store's Storefront API at the configured version and writes a `schema.<version>.graphqls` file into the sample app directory.
-
-> If this is your first time, you may need to install the Apollo CLI first. In Xcode, right-click the project in the navigator and select **Install CLI** from the Apollo menu. Alternatively, download the binary from the [Apollo iOS releases](https://github.com/apollographql/apollo-ios/releases) page and place it at `Samples/MobileBuyIntegration/apollo-ios-cli`.
-
-### 3. Update your GraphQL operations (if needed)
-
-If the new API version introduces fields you want to use, or deprecates fields you currently use, edit the `.graphql` files in `MobileBuyIntegration/GraphQL/`.
-
-For example, to add a new field to products:
-
-```graphql
-# MobileBuyIntegration/GraphQL/Queries/GetProducts.graphql
-query GetProducts(...) {
-  products(first: $first) {
-    nodes {
-      id
-      title
-      myNewField    # <-- add new fields here
-      ...
-    }
-  }
-}
-```
-
-### 4. Run code generation
-
-From the **repo root**:
-
-```bash
-dev apollo codegen mobile-buy
-```
-
-This reads the schema + your `.graphql` files and regenerates the Swift code in `Generated/`. The command also runs `dev swift fix` to auto-format the output.
-
-### 5. Build and fix any issues
-
-Build the project in Xcode. If the new schema removed or renamed fields, you'll get compile errors pointing you to the exact lines that need updating.
-
-## Dev commands reference
-
-All commands are run from the **repo root** (`checkout-kit/`):
-
-| Command | Description |
-|---------|-------------|
-| `dev apollo download_schema mobile-buy` | Download the Storefront API schema for this sample app |
-| `dev apollo codegen mobile-buy` | Regenerate Swift types from `.graphql` files |
-| `dev apollo codegen all` | Regenerate for all sample apps |
-| `dev swift style` | Run SwiftLint + SwiftFormat checks |
-| `dev swift fix` | Auto-fix lint/format issues |
-| `dev swift build samples` | Build all sample apps |
+5. Build in Xcode and fix any compile errors from schema changes.
 
 ## Key files
 
 | File | Purpose |
-|------|---------|
-| `schema.graphqls` | Storefront API schema (downloaded, not hand-written) |
-| `apollo-codegen-config.json` | Apollo codegen configuration |
-| `apollo-ios-cli` | Apollo CLI binary (not checked into git) |
-| `Storefront.xcconfig` | Store credentials + API version (not checked into git) |
-| `Network.swift` | Apollo client setup, auth interceptor |
-| `CartManager.swift` | Cart state, create/add/update operations |
+| --- | --- |
+| `Storefront.xcconfig` | Store credentials, API version, Customer Account API values, and demo buyer identity. |
+| `schema.<version>.graphqls` | Storefront API schema downloaded with the Apollo iOS CLI. |
+| `apollo-codegen-config.json` | Apollo code generation configuration. |
+| `MobileBuyIntegration/Sources/Api/Network.swift` | Apollo client setup and authentication interceptor. |
+| `MobileBuyIntegration/Sources/Api/StorefrontClient.swift` | Cart input creation and buyer identity mapping. |
+| `MobileBuyIntegration/Sources/App/CartManager.swift` | Cart state and Storefront API mutations. |
+| `MobileBuyIntegration/Sources/App/CheckoutCoordinator.swift` | Checkout presentation. |
+| `MobileBuyIntegration/Sources/CheckoutProtocolClient.swift` | Typed checkout lifecycle handlers. |
+| `Scripts/generate_entitlements.sh` | Generates Associated Domains entitlements for checkout and offsite-payment return links. |
