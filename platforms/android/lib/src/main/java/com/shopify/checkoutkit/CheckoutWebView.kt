@@ -12,13 +12,12 @@ import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = null) :
     BaseWebView(context, attributeSet) {
 
-    private val checkoutBridge = CheckoutBridge(CheckoutWebViewListener(NoopCheckoutListener()))
+    private var listener = CheckoutWebViewListener(NoopCheckoutListener())
     private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocol(this)
     private var loadComplete = false
 
     init {
         webViewClient = CheckoutWebViewClient()
-        addJavascriptInterface(checkoutBridge, JAVASCRIPT_INTERFACE_NAME)
         addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocol.INTERFACE_NAME)
         settings.userAgentString = "${settings.userAgentString} ${userAgentSuffix()}"
     }
@@ -27,7 +26,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
     fun setListener(listener: CheckoutWebViewListener) {
         log.d(LOG_TAG, "Setting listener $listener.")
-        checkoutBridge.setListener(listener)
+        this.listener = listener
     }
 
     fun setClient(client: CheckoutCommunicationClient?) {
@@ -36,20 +35,18 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     }
 
     override fun getListener(): CheckoutWebViewListener {
-        return checkoutBridge.getListener()
+        return listener
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         log.d(LOG_TAG, "Attached to window. Adding JavaScript interfaces.")
-        addJavascriptInterface(checkoutBridge, JAVASCRIPT_INTERFACE_NAME)
         addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocol.INTERFACE_NAME)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         log.d(LOG_TAG, "Detached from window. Removing JavaScript interfaces.")
-        removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME)
         removeJavascriptInterface(EmbeddedCheckoutProtocol.INTERFACE_NAME)
     }
 
@@ -66,7 +63,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
             log.d(LOG_TAG, "onPageStarted called $url.")
-            checkoutBridge.getListener().onCheckoutViewLoadStarted()
+            getListener().onCheckoutViewLoadStarted()
         }
 
         override fun onPageFinished(view: WebView, url: String) {
@@ -95,6 +92,5 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
     companion object {
         private const val LOG_TAG = "CheckoutWebView"
-        private const val JAVASCRIPT_INTERFACE_NAME = "android"
     }
 }
