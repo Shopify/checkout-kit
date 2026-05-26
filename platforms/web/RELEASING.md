@@ -65,7 +65,7 @@ Click through and approve.
 Once approved, the workflow:
 
 1. Validates the tag's version matches `package.json`
-2. Runs the full pipeline (lint, test, build, publint, license headers)
+2. Runs the full pipeline (lint, test, build, publint)
 3. Packs the tarball and prints its contents
 4. Publishes to npm with the appropriate dist-tag and SLSA provenance
 

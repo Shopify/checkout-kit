@@ -39,7 +39,6 @@ jobs:
               - 'platforms/android/**'
               - 'protocol/**'
               - '.github/workflows/android-test.yml'
-              - '.github/workflows/android-license-headers.yml'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             swift:
@@ -65,7 +64,6 @@ jobs:
               - '.github/workflows/rn-test-ios.yml'
               - '.github/workflows/rn-build-android.yml'
               - '.github/workflows/rn-build-ios.yml'
-              - '.github/workflows/rn-license-headers.yml'
               - '.github/workflows/rn-check-packed-files.yml'
               - '.github/workflows/rn-lint.yml'
               - '.github/workflows/breaking-changes.yml'
@@ -73,7 +71,6 @@ jobs:
             web:
               - 'platforms/web/**'
               - '.github/workflows/web.yml'
-              - '.github/workflows/web-license-headers.yml'
               - '.github/actions/setup/**'
               - '.github/workflows/ci.yml'
 
@@ -82,12 +79,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.android == 'true'
     uses: ./.github/workflows/android-test.yml
-
-  android-license-headers:
-    name: Android
-    needs: changes
-    if: needs.changes.outputs.android == 'true'
-    uses: ./.github/workflows/android-license-headers.yml
 
   swift-test-package:
     name: Swift
@@ -140,12 +131,6 @@ jobs:
     if: needs.changes.outputs.reactNative == 'true'
     uses: ./.github/workflows/rn-build-ios.yml
 
-  rn-license-headers:
-    name: React Native
-    needs: changes
-    if: needs.changes.outputs.reactNative == 'true'
-    uses: ./.github/workflows/rn-license-headers.yml
-
   rn-check-packed-files:
     name: React Native
     needs: changes
@@ -166,12 +151,6 @@ jobs:
       contents: read
       pull-requests: write
     uses: ./.github/workflows/web.yml
-
-  web-license-headers:
-    name: Web
-    needs: changes
-    if: needs.changes.outputs.web == 'true'
-    uses: ./.github/workflows/web-license-headers.yml
 
   breaking-changes:
     name: Breaking Changes
@@ -195,7 +174,6 @@ jobs:
     needs:
       - changes
       - android-test
-      - android-license-headers
       - swift-test-package
       - swift-build-samples
       - swift-lint
@@ -204,11 +182,9 @@ jobs:
       - rn-test-ios
       - rn-build-android
       - rn-build-ios
-      - rn-license-headers
       - rn-check-packed-files
       - rn-lint
       - web
-      - web-license-headers
       - breaking-changes
     runs-on: ubuntu-latest
     steps:

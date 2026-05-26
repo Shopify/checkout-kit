@@ -42,7 +42,6 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 - **`-Xexplicit-api=strict`** is on (`lib/build.gradle`). Every public class, method, field, and property must have an explicit visibility modifier. "Accidentally public" is not a thing here. This is a consumer-protection rule — if you see a public-by-default declaration, it was deliberate.
 - **Max line length: 140** (detekt-enforced). Detekt config: `lib/detekt.config.yml`.
-- **MIT license header required on every new source file.** Format: copy the top comment of any existing `.kt` or `.java` file in `lib/src/main` or `lib/src/test`. Enforced in CI via the repo-root `scripts/check_license_headers.rb`.
 - **Library JVM target: 1.8.** Intentional for consumer compatibility; don't raise without a major-version discussion.
 - **Library Kotlin version is pinned.** The `lib/build.gradle` plugin version and any `apiVersion` / `languageVersion` settings exist to keep consumer compatibility stable. A Kotlin major-version migration is a planned major-version event, not a casual dep bump.
 - **Prefer generated protocol models.** Before adding hand-written protocol DTOs, check the generated models in `lib/src/main/java/com/shopify/checkoutkit/Models.kt` and the OpenRPC schema. Use generated UCP/ECP types for wire payloads; reserve local DTOs for Android-internal transport helpers that are not represented in the schema.

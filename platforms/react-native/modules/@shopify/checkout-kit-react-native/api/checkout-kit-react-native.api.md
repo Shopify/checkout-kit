@@ -316,9 +316,9 @@ export function useShopifyCheckout(): Context;
 
 // Warnings were encountered during analysis:
 //
-// lib/typescript/src/_types/index.d.ts:148:11 - (ae-forgotten-export) The symbol "IosColors" needs to be exported by the entry point index.d.ts
-// lib/typescript/src/_types/index.d.ts:149:11 - (ae-forgotten-export) The symbol "AndroidColors" needs to be exported by the entry point index.d.ts
-// lib/typescript/src/_types/index.d.ts:162:11 - (ae-forgotten-export) The symbol "AndroidAutomaticColors" needs to be exported by the entry point index.d.ts
+// lib/typescript/src/_types/index.d.ts:125:11 - (ae-forgotten-export) The symbol "IosColors" needs to be exported by the entry point index.d.ts
+// lib/typescript/src/_types/index.d.ts:126:11 - (ae-forgotten-export) The symbol "AndroidColors" needs to be exported by the entry point index.d.ts
+// lib/typescript/src/_types/index.d.ts:139:11 - (ae-forgotten-export) The symbol "AndroidAutomaticColors" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
