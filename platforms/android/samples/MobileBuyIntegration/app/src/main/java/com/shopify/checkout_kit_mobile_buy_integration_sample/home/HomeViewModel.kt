@@ -26,18 +26,21 @@ class HomeViewModel(
     fun fetchHomePageData() = viewModelScope.launch {
         try {
             Timber.i("Fetching home page data")
-            val collections = productCollectionRepository.getProductCollections(
+            productCollectionRepository.observeProductCollections(
                 numberOfCollections = NUM_COLLECTIONS,
                 numberOfProductsPerCollection = NUM_PRODUCTS_PER_COLLECTION
-            )
-            Timber.i("Home page data fetched, retrieved ${collections.size} collections")
-            _uiState.value = HomeUIState.Loaded(
-                productCollections = collections,
-            )
+            ).collect { collections ->
+                Timber.i("Home page data emitted ${collections.size} collections")
+                _uiState.value = HomeUIState.Loaded(
+                    productCollections = collections,
+                )
+            }
         } catch (e: Exception) {
             Timber.e("Failed to fetch collections $e")
             SnackbarController.sendEvent(SnackbarEvent(R.string.collections_failed_to_load))
-            _uiState.value = HomeUIState.Error(e.message ?: "Unknown")
+            if (_uiState.value !is HomeUIState.Loaded) {
+                _uiState.value = HomeUIState.Error(e.message ?: "Unknown")
+            }
         }
     }
 

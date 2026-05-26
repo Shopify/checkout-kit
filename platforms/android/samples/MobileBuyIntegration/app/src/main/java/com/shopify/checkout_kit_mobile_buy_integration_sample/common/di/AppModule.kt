@@ -3,12 +3,13 @@ package com.shopify.checkout_kit_mobile_buy_integration_sample.common.di
 import android.app.Application
 import androidx.room.Room
 import com.apollographql.apollo.ApolloClient
-import com.apollographql.apollo.cache.normalized.api.MemoryCacheFactory
-import com.apollographql.apollo.cache.normalized.normalizedCache
+import com.apollographql.cache.normalized.api.CacheKey
+import com.apollographql.cache.normalized.memory.MemoryCacheFactory
 import com.shopify.checkout_kit_mobile_buy_integration_sample.BuildConfig
 import com.shopify.checkout_kit_mobile_buy_integration_sample.cart.CartViewModel
 import com.shopify.checkout_kit_mobile_buy_integration_sample.cart.data.CartRepository
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.client.StorefrontApiClient
+import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.cache.Cache.cache
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs.LogDatabase
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs.Logger
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs.MIGRATION_1_2
@@ -76,7 +77,10 @@ val appModules = module {
     single {
         ApolloClient.Builder()
             .serverUrl("https://${BuildConfig.storefrontDomain}/api/${BuildConfig.storefrontApiVersion}/graphql.json")
-            .normalizedCache(MemoryCacheFactory(maxSizeBytes = 10 * 1024 * 1024))
+            .cache(
+                normalizedCacheFactory = MemoryCacheFactory(maxSizeBytes = 10 * 1024 * 1024),
+                keyScope = CacheKey.Scope.SERVICE,
+            )
             .addHttpHeader("X-Shopify-Storefront-Access-Token", BuildConfig.storefrontAccessToken)
             .build()
     }
