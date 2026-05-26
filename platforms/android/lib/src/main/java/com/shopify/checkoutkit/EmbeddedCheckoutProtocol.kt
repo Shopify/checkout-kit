@@ -4,15 +4,15 @@ import android.content.Context
 import android.webkit.JavascriptInterface
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
@@ -53,16 +53,14 @@ internal class EmbeddedCheckoutProtocol(
                 request.method == METHOD_COMPLETE -> handleComplete(message)
                 else -> handleClientMessage(request.method, message)
             }
-        } catch (e: Exception) {
+        } catch (e: SerializationException) {
             log.d(LOG_TAG, "Failed to decode ECP message: $e  raw=$message")
             sendError(null, CODE_PARSE_ERROR, "Parse error")
         }
     }
 
     private fun handleReady(request: EcpRequest) {
-        val checkoutAcceptedDelegations = request.params?.jsonObject?.get("delegate")?.jsonArray
-            ?.mapNotNull { it.jsonPrimitive.contentOrNull }
-            ?: emptyList()
+        val checkoutAcceptedDelegations = checkoutAcceptedDelegations(request.params)
         val negotiatedDelegations = checkoutAcceptedDelegations.filter { it in KIT_SUPPORTED_DELEGATIONS }
         log.d(
             LOG_TAG,
@@ -73,6 +71,20 @@ internal class EmbeddedCheckoutProtocol(
         )
         sendResult(request.id, ucpReadyResult(negotiatedDelegations))
     }
+
+    private fun checkoutAcceptedDelegations(params: JsonElement?): List<String> = when (params) {
+        null -> emptyList()
+        !is JsonObject -> throw SerializationException("$METHOD_READY params must be an object")
+        else -> params["delegate"]?.let(::delegationStrings) ?: emptyList()
+    }
+
+    private fun delegationStrings(delegate: JsonElement): List<String> {
+        val delegateArray = delegate as? JsonArray ?: throw SerializationException("$METHOD_READY delegate must be an array")
+        return delegateArray.mapNotNull(::delegationStringOrNull)
+    }
+
+    private fun delegationStringOrNull(delegate: JsonElement): String? =
+        (delegate as? JsonPrimitive)?.contentOrNull
 
     private fun ucpReadyResult(negotiatedDelegations: List<String>): String =
         decoder.encodeToString(

@@ -104,6 +104,18 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
+    fun `ec ready ignores null and non-string delegate values`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage(
+                """{"jsonrpc":"2.0","method":"ec.ready","id":"r2","params":{"delegate":["window.open",null,{}]}}"""
+            )
+        }
+        assertThat(js).contains("\"delegate\":[\"window.open\"]")
+        assertThat(js).contains("\"status\":\"success\"")
+        assertThat(js).doesNotContain("\"error\"")
+    }
+
+    @Test
     fun `ec ready omits delegate field when no supported delegations requested`() {
         val js = captureEvaluatedJs {
             ecp.postMessage(
@@ -444,6 +456,24 @@ class EmbeddedCheckoutProtocolTest {
     fun `message missing method field sends parse error`() {
         val js = captureEvaluatedJs {
             ecp.postMessage("""{"jsonrpc":"2.0","id":"12"}""")
+        }
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32700")
+    }
+
+    @Test
+    fun `ec ready with non-object params sends parse error`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"13","params":[]}""")
+        }
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32700")
+    }
+
+    @Test
+    fun `ec ready with non-array delegate sends parse error`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"14","params":{"delegate":{}}}""")
         }
         assertThat(js).contains("\"error\"")
         assertThat(js).contains("-32700")

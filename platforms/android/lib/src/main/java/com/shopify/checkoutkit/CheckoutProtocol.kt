@@ -5,16 +5,17 @@ import android.os.Looper
 import androidx.core.net.toUri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import java.util.concurrent.CountDownLatch
@@ -48,10 +49,10 @@ public object CheckoutProtocol {
     public val error: NotificationDescriptor<ErrorResponse> = NotificationDescriptor(
         method = "ec.error",
         decode = { params ->
-            params?.jsonObject?.get("error")?.let {
+            (params as? JsonObject)?.get("error")?.let {
                 try {
                     json.decodeFromJsonElement<ErrorResponse>(it)
-                } catch (e: Exception) {
+                } catch (e: SerializationException) {
                     log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ec.error params: $e  raw=$it")
                     null
                 }
@@ -65,7 +66,7 @@ public object CheckoutProtocol {
     public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult> = DelegationDescriptor(
         method = "ec.window.open_request",
         decode = { params ->
-            params?.jsonObject?.get("url")?.jsonPrimitive?.contentOrNull
+            ((params as? JsonObject)?.get("url") as? JsonPrimitive)?.contentOrNull
                 ?.takeIf { it.isNotBlank() }
                 ?.let { runCatching { it.toUri() }.getOrNull() }
                 ?.let(::WindowOpenRequest)
@@ -77,10 +78,10 @@ public object CheckoutProtocol {
         NotificationDescriptor(
             method = method,
             decode = { params ->
-                params?.jsonObject?.get("checkout")?.let {
+                (params as? JsonObject)?.get("checkout")?.let {
                     try {
                         json.decodeFromJsonElement<Checkout>(it)
-                    } catch (e: Exception) {
+                    } catch (e: SerializationException) {
                         log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode $method checkout payload: $e  raw=$it")
                         null
                     }
@@ -157,16 +158,19 @@ public object CheckoutProtocol {
         ): Client = Client(handlers, delegations + (descriptor.method to Delegation.Typed(descriptor, handler)))
 
         /** Called by [EmbeddedCheckoutProtocol] for every delegated EC message. */
-        override fun process(message: String): String? {
-            return try {
-                val request = json.decodeFromString<EcpRequest>(message)
-                delegations[request.method]?.let { return it.dispatch(request) }
-                dispatchNotification(request)
-                null
-            } catch (e: Exception) {
-                log.d(LOG_TAG, "Error processing ECP message in typed client: $e")
-                null
+        override fun process(message: String): String? =
+            decodeRequest(message)?.let { request ->
+                delegations[request.method]?.dispatch(request) ?: run {
+                    dispatchNotification(request)
+                    null
+                }
             }
+
+        private fun decodeRequest(message: String): EcpRequest? = try {
+            json.decodeFromString<EcpRequest>(message)
+        } catch (e: SerializationException) {
+            log.d(LOG_TAG, "Error processing ECP message in typed client: $e")
+            null
         }
 
         /**
@@ -206,7 +210,9 @@ public object CheckoutProtocol {
             private val handler: (P) -> R,
         ) : Delegation() {
             override fun dispatch(request: EcpRequest): String {
-                val payload = runCatching { descriptor.decode(request.params) }.getOrElse { e ->
+                val payload = try {
+                    descriptor.decode(request.params)
+                } catch (e: SerializationException) {
                     log.d(LOG_TAG, "Decode failed for ${request.method}: $e")
                     null
                 } ?: return jsonRpcError(
