@@ -348,7 +348,9 @@ class CheckoutDialogTest {
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         val webView = dialog.currentWebView()
         webView.loadUrl("https://shopify.com/checkouts/c/abc/step2")
-        shadowOf(webView).setCanGoBack(true)
+        // ShadowWebView doesn't auto-track loadUrl in history; push two entries so canGoBack() returns true.
+        shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc")
+        shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc/step2")
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         dialog.onBackPressedDispatcher.onBackPressed()
@@ -368,7 +370,8 @@ class CheckoutDialogTest {
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         val webView = dialog.currentWebView()
         webView.loadUrl("https://shopify.com/cn-12345/thank-you")
-        shadowOf(webView).setCanGoBack(true)
+        shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc")
+        shadowOf(webView).pushEntryToHistory("https://shopify.com/cn-12345/thank-you")
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         dialog.onBackPressedDispatcher.onBackPressed()

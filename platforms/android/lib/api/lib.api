@@ -1091,8 +1091,6 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun component1 ()Lcom/shopify/checkoutkit/ColorScheme;
 	public final fun component2 ()Lcom/shopify/checkoutkit/Platform;
 	public final fun component3 ()Lcom/shopify/checkoutkit/LogLevel;
-	public final fun copy (Lcom/shopify/checkoutkit/ColorScheme;Lcom/shopify/checkoutkit/Platform;Lcom/shopify/checkoutkit/LogLevel;)Lcom/shopify/checkoutkit/Configuration;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Configuration;Lcom/shopify/checkoutkit/ColorScheme;Lcom/shopify/checkoutkit/Platform;Lcom/shopify/checkoutkit/LogLevel;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Configuration;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getColorScheme ()Lcom/shopify/checkoutkit/ColorScheme;
 	public final fun getLogLevel ()Lcom/shopify/checkoutkit/LogLevel;
