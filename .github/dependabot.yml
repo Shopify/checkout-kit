@@ -10,7 +10,7 @@ updates:
   - package-ecosystem: swift
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
     cooldown:
       default-days: 7
 
@@ -18,7 +18,7 @@ updates:
   - package-ecosystem: gradle
     directory: "/platforms/android"
     schedule:
-      interval: daily
+      interval: weekly
     open-pull-requests-limit: 10
     cooldown:
       default-days: 7
@@ -46,7 +46,7 @@ updates:
   - package-ecosystem: gradle
     directory: "/platforms/android/samples/MobileBuyIntegration"
     schedule:
-      interval: daily
+      interval: weekly
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
@@ -80,7 +80,7 @@ updates:
   - package-ecosystem: npm
     directory: "/platforms/react-native"
     schedule:
-      interval: daily
+      interval: weekly
     cooldown:
       default-days: 7
     ignore:
@@ -93,7 +93,7 @@ updates:
   - package-ecosystem: npm
     directory: "/platforms/react-native/modules/@shopify/checkout-kit-react-native"
     schedule:
-      interval: daily
+      interval: weekly
     cooldown:
       default-days: 7
     ignore:
@@ -106,7 +106,7 @@ updates:
   - package-ecosystem: npm
     directory: "/platforms/react-native/sample"
     schedule:
-      interval: daily
+      interval: weekly
     cooldown:
       default-days: 7
     ignore:
@@ -118,7 +118,7 @@ updates:
   - package-ecosystem: bundler
     directory: "/platforms/react-native/sample"
     schedule:
-      interval: daily
+      interval: weekly
     cooldown:
       default-days: 7
     ignore:
@@ -131,7 +131,7 @@ updates:
   - package-ecosystem: npm
     directory: "/platforms/web"
     schedule:
-      interval: daily
+      interval: weekly
     cooldown:
       default-days: 7
     ignore:
