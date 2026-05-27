@@ -17,7 +17,6 @@ import {
   AcceleratedCheckoutButtons,
   ApplePayLabel,
   AcceleratedCheckoutWallet,
-  CheckoutProtocol,
 } from '@shopify/checkout-kit-react-native';
 import {useConfig} from '../context/Config';
 import useShopify from '../hooks/useShopify';
@@ -26,7 +25,10 @@ import type {Colors} from '../context/Theme';
 import {useTheme} from '../context/Theme';
 import {useCart} from '../context/Cart';
 import {currency} from '../utils';
-import {useShopifyEventHandlers} from '../hooks/useCheckoutEventHandlers';
+import {
+  useShopifyEventHandlers,
+  useShopifyProtocolEventHandlers,
+} from '../hooks/useCheckoutEventHandlers';
 
 function CartScreen(): React.JSX.Element {
   const ShopifyCheckout = useShopifyCheckout();
@@ -40,9 +42,16 @@ function CartScreen(): React.JSX.Element {
   // `ShopifyCheckout.present()` sheet would log under the
   // `AcceleratedCheckoutButtons` namespace and confuse anyone debugging.
   const sheetEventHandlers = useShopifyEventHandlers('Cart - CheckoutSheet');
+  const sheetProtocolEventHandlers = useShopifyProtocolEventHandlers(
+    'Cart - CheckoutSheet Protocol',
+  );
   const acceleratedCheckoutEventHandlers = useShopifyEventHandlers(
     'Cart - AcceleratedCheckoutButtons',
   );
+  const acceleratedCheckoutProtocolEventHandlers =
+    useShopifyProtocolEventHandlers(
+      'Cart - AcceleratedCheckoutButtons Protocol',
+    );
 
   const [fetchCart, {data, loading, error}] = queries.cart;
 
@@ -76,15 +85,7 @@ function CartScreen(): React.JSX.Element {
           onClose: () => sheetEventHandlers.onCancel?.(),
           onFail: error => sheetEventHandlers.onFail?.(error),
         },
-        {
-          // First UCP protocol event surfaced end-to-end. Logging only —
-          // once we're satisfied the relay is wired correctly we'll route
-          // protocol events through `useShopifyEventHandlers` (or an
-          // equivalent) just like the SDK lifecycle ones above.
-          [CheckoutProtocol.start]: checkout => {
-            console.log('[Cart - Protocol.ec.start]', checkout);
-          },
-        },
+        sheetProtocolEventHandlers,
       );
     }
   };
@@ -174,14 +175,7 @@ function CartScreen(): React.JSX.Element {
                   AcceleratedCheckoutWallet.shopPay,
                 ]}
                 cornerRadius={cornerRadius}
-                events={{
-                  [CheckoutProtocol.start]: checkout => {
-                    console.log(
-                      '[Cart - AcceleratedCheckoutButtons Protocol.ec.start]',
-                      checkout,
-                    );
-                  },
-                }}
+                events={acceleratedCheckoutProtocolEventHandlers}
               />
 
               <Pressable

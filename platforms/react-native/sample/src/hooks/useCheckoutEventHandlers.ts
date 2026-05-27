@@ -1,10 +1,10 @@
-import {useMemo} from 'react';
-
 import {createDebugLogger} from '../utils';
 
-import type {
-  CheckoutException,
-  RenderStateChangeEvent,
+import {
+  CheckoutProtocol,
+  type CheckoutException,
+  type ProtocolHandlers,
+  type RenderStateChangeEvent,
 } from '@shopify/checkout-kit-react-native';
 import {Linking} from 'react-native';
 
@@ -15,26 +15,40 @@ interface EventHandlers {
   onClickLink?: (url: string) => void;
 }
 
-export function useShopifyEventHandlers(name?: string): EventHandlers {
-  return useMemo(() => {
-    const log = createDebugLogger(name ?? '');
-    return {
-      onFail: error => {
-        log('onFail', error);
-      },
-      onCancel: () => {
-        log('onCancel');
-      },
-      onRenderStateChange: event => {
-        log('onRenderStateChange', event);
-      },
-      onClickLink: async url => {
-        log('onClickLink', url);
+export function useShopifyProtocolEventHandlers(name?: string): ProtocolHandlers {
+  const log = createDebugLogger(name ?? '');
 
-        if (await Linking.canOpenURL(url)) {
-          await Linking.openURL(url);
-        }
-      },
+  // Keep the sample subscribed to every public protocol event automatically.
+  // When CheckoutProtocol grows, Object.values(...) includes the new method and
+  // the sample starts logging it without needing a hand-written handler update.
+  return Object.values(CheckoutProtocol).reduce<
+    Record<string, (payload: unknown) => void>
+  >((handlers, method) => {
+    handlers[method] = payload => {
+      log(method, payload);
     };
-  }, [name]);
+    return handlers;
+  }, {}) as ProtocolHandlers;
+}
+
+export function useShopifyEventHandlers(name?: string): EventHandlers {
+  const log = createDebugLogger(name ?? '');
+  return {
+    onFail: error => {
+      log('onFail', error);
+    },
+    onCancel: () => {
+      log('onCancel');
+    },
+    onRenderStateChange: event => {
+      log('onRenderStateChange', event);
+    },
+    onClickLink: async url => {
+      log('onClickLink', url);
+
+      if (await Linking.canOpenURL(url)) {
+        await Linking.openURL(url);
+      }
+    },
+  };
 }

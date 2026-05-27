@@ -14,6 +14,7 @@ export {
 export type {
   Checkout,
   CheckoutProtocolPayloads,
+  ErrorResponse,
   ProtocolHandlers,
 } from './protocol';
 

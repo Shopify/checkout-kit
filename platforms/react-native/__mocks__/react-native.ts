@@ -56,7 +56,14 @@ const UIManager = {
     if (name === 'RCTAcceleratedCheckoutButtons') {
       return {
         Constants: {
-          checkoutProtocolEventTypes: ['ec.start'],
+          checkoutProtocolEventTypes: [
+            'ec.complete',
+            'ec.error',
+            'ec.line_items.change',
+            'ec.messages.change',
+            'ec.start',
+            'ec.totals.change',
+          ],
         },
       };
     }

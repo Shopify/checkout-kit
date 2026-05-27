@@ -28,6 +28,21 @@ beforeEach(() => {
   Platform.OS = 'ios';
 });
 
+const wireCheckout = {
+  id: 'checkout-id',
+  currency: 'USD',
+  line_items: [],
+  links: [],
+  status: 'incomplete',
+  totals: [],
+  ucp: {
+    version: '2026-04-08',
+    payment_handlers: {
+      loyalty_gold: [],
+    },
+  },
+};
+
 describe('AcceleratedCheckoutButtons', () => {
   describe('iOS Platform', () => {
     beforeEach(() => {
@@ -127,17 +142,26 @@ describe('AcceleratedCheckoutButtons', () => {
       );
 
       const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      const checkout = {id: 'checkout-id'};
       nativeComponent.props.onDispatch({
         nativeEvent: {
           value: JSON.stringify({
             type: CheckoutProtocol.start,
-            payload: checkout,
+            payload: wireCheckout,
           }),
         },
       });
 
-      expect(onStart).toHaveBeenCalledWith(checkout);
+      expect(onStart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'checkout-id',
+          lineItems: [],
+          ucp: expect.objectContaining({
+            paymentHandlers: {
+              loyalty_gold: [],
+            },
+          }),
+        }),
+      );
     });
 
     it('does not throw when native protocol dispatch is malformed', () => {

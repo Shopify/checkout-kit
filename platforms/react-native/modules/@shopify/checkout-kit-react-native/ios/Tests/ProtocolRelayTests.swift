@@ -49,6 +49,53 @@ struct ProtocolRelayTests {
     }
 
     @MainActor
+    @Test func relayDispatchesEnvelopeForEveryPublicCheckoutStateEvent() async throws {
+        let methods = [
+            "ec.complete",
+            "ec.line_items.change",
+            "ec.messages.change",
+            "ec.start",
+            "ec.totals.change"
+        ]
+
+        for method in methods {
+            var captured: String?
+            let client = makeRelayClient(
+                subscribedMethods: [method],
+                dispatch: { json in captured = json }
+            )
+
+            _ = await client.process(checkoutNotificationFixture(method: method))
+
+            let json = try #require(captured)
+            let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+            #expect(parsed["type"] as? String == method)
+            let payload = try #require(parsed["payload"] as? [String: Any])
+            #expect(payload["id"] as? String == "checkout-123")
+        }
+    }
+
+    @MainActor
+    @Test func relayDispatchesEnvelopeOnEcError() async throws {
+        var captured: String?
+        let client = makeRelayClient(
+            subscribedMethods: ["ec.error"],
+            dispatch: { json in captured = json }
+        )
+
+        _ = await client.process(ecErrorNotificationFixture)
+
+        let json = try #require(captured)
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        #expect(parsed["type"] as? String == "ec.error")
+        let payload = try #require(parsed["payload"] as? [String: Any])
+        let messages = try #require(payload["messages"] as? [[String: Any]])
+        #expect(messages.first?["content"] as? String == "Something went wrong")
+        let ucp = try #require(payload["ucp"] as? [String: Any])
+        #expect(ucp["status"] as? String == "error")
+    }
+
+    @MainActor
     @Test func relayIgnoresMethodsNotInSubscribedList() async throws {
         var captured: String?
         let client = makeRelayClient(
@@ -70,6 +117,13 @@ private struct SnakePayload: Codable {
         case continueURL = "continue_url"
         case lineItems = "line_items"
     }
+}
+
+private func checkoutNotificationFixture(method: String) -> String {
+    ecStartNotificationFixture.replacingOccurrences(
+        of: "\"method\": \"ec.start\"",
+        with: "\"method\": \"\(method)\""
+    )
 }
 
 private let ecStartNotificationFixture = #"""
@@ -107,6 +161,28 @@ private let ecStartNotificationFixture = #"""
       ],
       "links": [
         {"type": "privacy_policy", "url": "https://example.com/privacy"}
+      ]
+    }
+  }
+}
+"""#
+
+private let ecErrorNotificationFixture = #"""
+{
+  "jsonrpc": "2.0",
+  "method": "ec.error",
+  "params": {
+    "error": {
+      "ucp": {
+        "version": "2026-04-08",
+        "status": "error"
+      },
+      "messages": [
+        {
+          "type": "error",
+          "content": "Something went wrong",
+          "severity": "recoverable"
+        }
       ]
     }
   }

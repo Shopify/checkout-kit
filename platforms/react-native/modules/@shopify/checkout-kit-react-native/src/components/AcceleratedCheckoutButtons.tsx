@@ -1,7 +1,12 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {Platform, UIManager} from 'react-native';
 import type {AcceleratedCheckoutWallet, CheckoutException} from '..';
-import {CheckoutProtocol, type ProtocolHandlers} from '../protocol';
+import {
+  CheckoutProtocol,
+  decodeProtocolPayload,
+  type CheckoutProtocolPayloads,
+  type ProtocolHandlers,
+} from '../protocol';
 import RCTAcceleratedCheckoutButtons from '../specs/RCTAcceleratedCheckoutButtonsNativeComponent';
 
 export enum RenderState {
@@ -92,7 +97,7 @@ interface CommonAcceleratedCheckoutButtonsProps {
   /**
    * Checkout Protocol event handlers scoped to this button instance.
    *
-   * Currently supports CheckoutProtocol.start.
+   * Supports all public Checkout Protocol notification events.
    */
   events?: ProtocolHandlers;
 
@@ -414,10 +419,11 @@ function routeProtocolDispatchEnvelope(
     return;
   }
 
-  const handler = (events as Record<
-    string,
-    ((payload: unknown) => void) | undefined
-  > | undefined)?.[envelope.type];
+  const handler = (
+    events as
+      | Record<string, ((payload: unknown) => void) | undefined>
+      | undefined
+  )?.[envelope.type];
 
   if (handler == null) {
     return;
@@ -431,7 +437,28 @@ function routeProtocolDispatchEnvelope(
     return;
   }
 
-  handler(envelope.payload);
+  let decodedPayload:
+    | CheckoutProtocolPayloads[keyof CheckoutProtocolPayloads]
+    | undefined;
+  try {
+    decodedPayload = decodeProtocolPayload(envelope.type, envelope.payload);
+  } catch (error) {
+    logDispatchError(
+      `protocol envelope "${envelope.type}" payload failed schema conversion: ${String(error)}`,
+      envelopeJson,
+    );
+    return;
+  }
+
+  if (decodedPayload == null) {
+    logDispatchError(
+      `protocol envelope "${envelope.type}" has no registered decoder`,
+      envelopeJson,
+    );
+    return;
+  }
+
+  handler(decodedPayload);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

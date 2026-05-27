@@ -5,6 +5,9 @@
 ```ts
 
 import { Checkout } from '@shopify/checkout-kit-protocol';
+import { CheckoutProtocol } from '@shopify/checkout-kit-protocol';
+import { CheckoutProtocolPayloads } from '@shopify/checkout-kit-protocol';
+import { ErrorResponse } from '@shopify/checkout-kit-protocol';
 import type { PropsWithChildren } from 'react';
 import { default as React_2 } from 'react';
 
@@ -181,16 +184,9 @@ export enum CheckoutNativeErrorType {
     UnknownError = "UnknownError"
 }
 
-// @public (undocumented)
-export const CheckoutProtocol: {
-    readonly start: "ec.start";
-};
+export { CheckoutProtocol }
 
-// @public (undocumented)
-export interface CheckoutProtocolPayloads {
-    // (undocumented)
-    'ec.start': Checkout;
-}
+export { CheckoutProtocolPayloads }
 
 // @public (undocumented)
 export enum ColorScheme {
@@ -234,6 +230,8 @@ export class ConfigurationError extends GenericErrorWithCode {
 export class DispatchEventParityError extends Error {
     constructor(message: string);
 }
+
+export { ErrorResponse }
 
 // @public
 export interface Features {
