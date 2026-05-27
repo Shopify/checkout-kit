@@ -1,6 +1,7 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {Platform} from 'react-native';
+import {Platform, UIManager} from 'react-native';
 import type {AcceleratedCheckoutWallet, CheckoutException} from '..';
+import {CheckoutProtocol, type ProtocolHandlers} from '../protocol';
 import RCTAcceleratedCheckoutButtons from '../specs/RCTAcceleratedCheckoutButtonsNativeComponent';
 
 export enum RenderState {
@@ -89,6 +90,13 @@ interface CommonAcceleratedCheckoutButtonsProps {
   onRenderStateChange?: (event: RenderStateChangeEvent) => void;
 
   /**
+   * Checkout Protocol event handlers scoped to this button instance.
+   *
+   * Currently supports CheckoutProtocol.start.
+   */
+  events?: ProtocolHandlers;
+
+  /**
    * Called when a link is clicked within the checkout
    */
   onClickLink?: (url: string) => void;
@@ -139,6 +147,13 @@ export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) &
  */
 
 const defaultStyles = {flex: 1};
+const nativeComponentName = 'RCTAcceleratedCheckoutButtons';
+const protocolEventTypesConstant = 'checkoutProtocolEventTypes';
+const checkoutProtocolEventTypeValues = Object.values(CheckoutProtocol);
+const checkoutProtocolEventTypes: ReadonlySet<string> = new Set(
+  checkoutProtocolEventTypeValues,
+);
+let verifiedProtocolEventParitySignature: string | undefined;
 
 export const AcceleratedCheckoutButtons: React.FC<
   AcceleratedCheckoutButtonsProps
@@ -151,6 +166,7 @@ export const AcceleratedCheckoutButtons: React.FC<
   onCancel,
   onRenderStateChange,
   onClickLink,
+  events,
   ...props
 }) => {
   const isCart = isCartProps(props);
@@ -196,6 +212,19 @@ export const AcceleratedCheckoutButtons: React.FC<
       }
     },
     [onClickLink],
+  );
+
+  const handleDispatch = useCallback(
+    (event: {nativeEvent: unknown}) => {
+      const nativeEvent = event.nativeEvent as {value?: unknown};
+      if (typeof nativeEvent?.value !== 'string') {
+        logDispatchError('dispatch event is missing a string `value`');
+        return;
+      }
+
+      routeProtocolDispatchEnvelope(nativeEvent.value, events);
+    },
+    [events],
   );
 
   const handleSizeChange = useCallback(
@@ -245,6 +274,8 @@ export const AcceleratedCheckoutButtons: React.FC<
     }
   }
 
+  verifyProtocolEventParity();
+
   return (
     <RCTAcceleratedCheckoutButtons
       testID="accelerated-checkout-buttons"
@@ -258,6 +289,7 @@ export const AcceleratedCheckoutButtons: React.FC<
       onCancel={handleCancel}
       onRenderStateChange={handleRenderStateChange}
       onClickLink={handleClickLink}
+      onDispatch={handleDispatch}
       onSizeChange={handleSizeChange}
     />
   );
@@ -292,4 +324,146 @@ function isVariantProps(
   props: AcceleratedCheckoutButtonsProps,
 ): props is VariantProps {
   return 'variantId' in props && 'quantity' in props && props.quantity > 0;
+}
+
+function verifyProtocolEventParity(): void {
+  const nativeTypes = getNativeProtocolEventTypes();
+  const signature = buildProtocolEventParitySignature(nativeTypes);
+  if (verifiedProtocolEventParitySignature === signature) return;
+
+  verifiedProtocolEventParitySignature = signature;
+
+  if (!Array.isArray(nativeTypes)) {
+    logProtocolEventParityWarning(
+      `native view manager did not report a \`${protocolEventTypesConstant}\` array. ` +
+        'The bundled native component is likely older than this JS package.',
+    );
+    return;
+  }
+
+  const jsSet = new Set<string>(checkoutProtocolEventTypeValues);
+  const nativeSet = new Set<string>(nativeTypes);
+
+  const missingFromJs = [...nativeSet].filter(t => !jsSet.has(t)).sort();
+  const missingFromNative = [...jsSet].filter(t => !nativeSet.has(t)).sort();
+
+  if (missingFromJs.length === 0 && missingFromNative.length === 0) {
+    return;
+  }
+
+  const lines = [
+    `js     = [${[...jsSet].sort().join(', ')}]`,
+    `native = [${[...nativeSet].sort().join(', ')}]`,
+  ];
+  if (missingFromJs.length > 0) {
+    lines.push(`events missing from js:     ${missingFromJs.join(', ')}`);
+  }
+  if (missingFromNative.length > 0) {
+    lines.push(`events missing from native: ${missingFromNative.join(', ')}`);
+  }
+
+  logProtocolEventParityWarning(lines.join('\n  '));
+}
+
+function buildProtocolEventParitySignature(
+  nativeTypes: readonly string[] | undefined | null,
+): string {
+  return JSON.stringify({
+    js: [...checkoutProtocolEventTypeValues].sort(),
+    native: Array.isArray(nativeTypes) ? [...nativeTypes].sort() : nativeTypes,
+  });
+}
+
+function getNativeProtocolEventTypes(): readonly string[] | undefined | null {
+  const viewManagerConfig = UIManager.getViewManagerConfig?.(
+    nativeComponentName,
+  ) as
+    | {
+        Constants?: Record<string, unknown>;
+      }
+    | undefined;
+
+  return viewManagerConfig?.Constants?.[protocolEventTypesConstant] as
+    | readonly string[]
+    | undefined
+    | null;
+}
+
+function routeProtocolDispatchEnvelope(
+  envelopeJson: string,
+  events: ProtocolHandlers | undefined,
+): void {
+  let envelope: unknown;
+  try {
+    envelope = JSON.parse(envelopeJson);
+  } catch {
+    logDispatchError('dispatch envelope is not valid JSON', envelopeJson);
+    return;
+  }
+
+  if (!isPlainObject(envelope) || typeof envelope.type !== 'string') {
+    logDispatchError(
+      'dispatch envelope is missing a string `type` discriminator',
+      envelopeJson,
+    );
+    return;
+  }
+
+  if (!checkoutProtocolEventTypes.has(envelope.type)) {
+    logUnknownDispatchType(envelope.type);
+    return;
+  }
+
+  const handler = (events as Record<
+    string,
+    ((payload: unknown) => void) | undefined
+  > | undefined)?.[envelope.type];
+
+  if (handler == null) {
+    return;
+  }
+
+  if (!isPlainObject(envelope.payload)) {
+    logDispatchError(
+      `protocol envelope "${envelope.type}" payload is not an object`,
+      envelopeJson,
+    );
+    return;
+  }
+
+  handler(envelope.payload);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function logUnknownDispatchType(type: string): void {
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[ShopifyAcceleratedCheckouts] Ignoring protocol dispatch envelope with unknown type "${type}". ` +
+      'Native emitted a Checkout Protocol event this JS package does not know how to handle. ' +
+      'Confirm native and JS package versions are compatible.',
+  );
+}
+
+function logProtocolEventParityWarning(detail: string): void {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[ShopifyAcceleratedCheckouts] Checkout Protocol event list out of sync between JS ' +
+      'and native. Rebuild your host app so the bundled native component matches ' +
+      `this version of '@shopify/checkout-kit-react-native'.\n  ${detail}`,
+  );
+}
+
+function logDispatchError(detail: string, raw?: string): void {
+  const message = `[ShopifyAcceleratedCheckouts] Failed to handle protocol dispatch: ${detail}`;
+  if (raw == null) {
+    // eslint-disable-next-line no-console
+    console.error(message);
+    return;
+  }
+
+  // eslint-disable-next-line no-console
+  console.error(message, raw);
 }

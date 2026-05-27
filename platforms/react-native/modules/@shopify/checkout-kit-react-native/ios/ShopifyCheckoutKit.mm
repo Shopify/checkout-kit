@@ -129,6 +129,11 @@ RCT_EXPORT_VIEW_PROPERTY(onRenderStateChange, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onClickLink, RCTBubblingEventBlock)
 
 /**
+ * Emitted when a subscribed Checkout Protocol event fires. Payload contains { value } where value is a JSON envelope.
+ */
+RCT_EXPORT_VIEW_PROPERTY(onDispatch, RCTDirectEventBlock)
+
+/**
  * Emitted when the intrinsic height of the native view changes. Payload contains { height }.
  */
 RCT_EXPORT_VIEW_PROPERTY(onSizeChange, RCTDirectEventBlock)

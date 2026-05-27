@@ -19,6 +19,7 @@ type RenderStateChangeEvent = Readonly<{
 }>;
 
 type ClickLinkEvent = Readonly<{url: string}>;
+type DispatchEvent = Readonly<{value: string}>;
 type SizeChangeEvent = Readonly<{height: Double}>;
 
 type CheckoutIdentifierSpec = Readonly<{
@@ -37,6 +38,7 @@ interface NativeProps extends ViewProps {
   onCancel?: BubblingEventHandler<null>;
   onRenderStateChange?: BubblingEventHandler<RenderStateChangeEvent>;
   onClickLink?: BubblingEventHandler<ClickLinkEvent>;
+  onDispatch?: DirectEventHandler<DispatchEvent>;
   onSizeChange?: DirectEventHandler<SizeChangeEvent>;
 }
 

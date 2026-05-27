@@ -1,10 +1,11 @@
 import React from 'react';
 import {render, act} from '@testing-library/react-native';
-import {Platform} from 'react-native';
+import {Platform, UIManager} from 'react-native';
 import {
   AcceleratedCheckoutButtons,
   AcceleratedCheckoutWallet,
   ApplePayStyle,
+  CheckoutProtocol,
   RenderState,
 } from '../src';
 
@@ -112,6 +113,103 @@ describe('AcceleratedCheckoutButtons', () => {
         AcceleratedCheckoutWallet.shopPay,
       ]);
       expect(nativeComponent.props.applePayStyle).toBe(ApplePayStyle.black);
+    });
+
+    it('routes native protocol dispatch envelopes to event handlers', () => {
+      const onStart = jest.fn();
+      const {getByTestId} = render(
+        <AcceleratedCheckoutButtons
+          cartId={'gid://shopify/Cart/123'}
+          events={{
+            [CheckoutProtocol.start]: onStart,
+          }}
+        />,
+      );
+
+      const nativeComponent = getByTestId('accelerated-checkout-buttons');
+      const checkout = {id: 'checkout-id'};
+      nativeComponent.props.onDispatch({
+        nativeEvent: {
+          value: JSON.stringify({
+            type: CheckoutProtocol.start,
+            payload: checkout,
+          }),
+        },
+      });
+
+      expect(onStart).toHaveBeenCalledWith(checkout);
+    });
+
+    it('does not throw when native protocol dispatch is malformed', () => {
+      const onStart = jest.fn();
+      const {getByTestId} = render(
+        <AcceleratedCheckoutButtons
+          cartId={'gid://shopify/Cart/123'}
+          events={{
+            [CheckoutProtocol.start]: onStart,
+          }}
+        />,
+      );
+
+      const nativeComponent = getByTestId('accelerated-checkout-buttons');
+      expect(() => {
+        nativeComponent.props.onDispatch({nativeEvent: {value: 'not json'}});
+      }).not.toThrow();
+      expect(onStart).not.toHaveBeenCalled();
+    });
+
+    it('warns when native reports an unknown protocol event', () => {
+      const warn = jest.spyOn(global.console, 'warn').mockImplementation();
+      const getViewManagerConfig = UIManager.getViewManagerConfig as jest.Mock;
+      const defaultImplementation = getViewManagerConfig.getMockImplementation();
+      getViewManagerConfig.mockImplementation((name: string) => {
+        if (name === 'RCTAcceleratedCheckoutButtons') {
+          return {
+            Constants: {
+              checkoutProtocolEventTypes: [
+                CheckoutProtocol.start,
+                'ec.future.event',
+              ],
+            },
+          };
+        }
+        return null;
+      });
+
+      render(<AcceleratedCheckoutButtons cartId={'gid://shopify/Cart/123'} />);
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'events missing from js:     ec.future.event',
+        ),
+      );
+
+      getViewManagerConfig.mockImplementation(defaultImplementation);
+      warn.mockRestore();
+    });
+
+    it('warns when native emits an unknown protocol event', () => {
+      const warn = jest.spyOn(global.console, 'warn').mockImplementation();
+      const {getByTestId} = render(
+        <AcceleratedCheckoutButtons cartId={'gid://shopify/Cart/123'} />,
+      );
+
+      const nativeComponent = getByTestId('accelerated-checkout-buttons');
+      nativeComponent.props.onDispatch({
+        nativeEvent: {
+          value: JSON.stringify({
+            type: 'ec.future.event',
+            payload: {},
+          }),
+        },
+      });
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Ignoring protocol dispatch envelope with unknown type "ec.future.event"',
+        ),
+      );
+      warn.mockRestore();
     });
 
     it.each([0, -1, -2, Number.NaN])(
