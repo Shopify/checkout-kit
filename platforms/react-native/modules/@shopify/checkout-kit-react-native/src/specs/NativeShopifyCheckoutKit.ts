@@ -1,4 +1,4 @@
-import type {TurboModule} from 'react-native';
+import type {CodegenTypes, TurboModule} from 'react-native';
 import {TurboModuleRegistry} from 'react-native';
 
 type IosColorsSpec = {
@@ -47,9 +47,11 @@ type ConfigurationResultSpec = {
 };
 
 export interface Spec extends TurboModule {
+  readonly onDispatch: CodegenTypes.EventEmitter<string>;
+
   present(
     checkoutUrl: string,
-    dispatch: ((envelopeJson: string) => void) | null,
+    subscribedMethods: string[],
   ): void;
   dismiss(): void;
   setConfig(configuration: ConfigurationSpec): void;

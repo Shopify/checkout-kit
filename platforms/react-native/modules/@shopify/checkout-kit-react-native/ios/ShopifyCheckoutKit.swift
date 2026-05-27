@@ -25,13 +25,6 @@ class RCTShopifyCheckoutKit: NSObject {
     private var acceleratedCheckoutsApplePayConfiguration: Any?
     private var defaultLogLevel: LogLevel = .error
 
-    /// Per-call dispatcher passed in from JS. Holds onto an
-    /// `RCTResponseSenderBlock` for the duration of one `present()` call;
-    /// nulled on the first terminal SDK lifecycle event so a single
-    /// presentation can only ever fire `close` or `fail` once. Matches
-    /// the Android `CustomCheckoutListener.dispatchCallback` lifecycle.
-    private var pendingDispatchCallback: RCTResponseSenderBlock?
-
     @objc var methodQueue: DispatchQueue {
         return DispatchQueue.main
     }
@@ -89,7 +82,6 @@ class RCTShopifyCheckoutKit: NSObject {
 
     @objc func dismiss() {
         DispatchQueue.main.async {
-            self.pendingDispatchCallback = nil
             self.checkoutSheet?.dismiss(animated: true)
             self.checkoutSheet = nil
         }
@@ -99,17 +91,30 @@ class RCTShopifyCheckoutKit: NSObject {
         // Retained for compatibility with the generated native module interface.
     }
 
-    @objc func present(_ checkoutURL: String, dispatch: RCTResponseSenderBlock?) {
+    @objc func present(_ checkoutURL: String, subscribedMethods: [String]) {
         DispatchQueue.main.async {
-            self.pendingDispatchCallback = nil
+            guard let url = URL(string: checkoutURL),
+                  let viewController = self.getCurrentViewController() else { return }
 
-            guard let url = URL(string: checkoutURL), let viewController = self.getCurrentViewController() else {
-                return
-            }
+            // Protocol relay: forwards UCP messages from native to the JS
+            // dispatch event stream.
+            let client = makeRelayClient(
+                subscribedMethods: subscribedMethods,
+                dispatch: { [weak self] json in
+                    self?.emitDispatchEvent(json)
+                }
+            )
 
-            self.pendingDispatchCallback = dispatch
-            let view = CheckoutViewController(checkout: url, delegate: self)
-            viewController.present(view, animated: true)
+            // `delegate: self` wires the SDK lifecycle events (close/fail)
+            // into the same JS dispatcher; `client:` wires the UCP
+            // protocol event stream. They are independent inputs feeding
+            // the same outbound envelope channel.
+            let view = ShopifyCheckoutKit.present(
+                checkout: url,
+                from: viewController,
+                delegate: self,
+                client: client
+            )
             self.checkoutSheet = view
         }
     }
@@ -279,12 +284,9 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
     /// without a terminal error. Mirrors
     /// `CustomCheckoutListener.onCheckoutCanceled()` on Android.
     ///
-    /// Unlike Android — where the dialog handles its own dismissal before
-    /// notifying the listener — the iOS SDK invokes this delegate from
-    /// `CheckoutWebViewController.@IBAction close()` and `presentationControllerDidDismiss`
-    /// without dismissing the presented view controller itself. Without
-    /// the explicit `dismiss(animated:)` below, tapping the X in the
-    /// sheet header fires `onClose` to JS but leaves the sheet visible.
+    /// The iOS SDK dismisses the presented checkout when the buyer taps
+    /// the close button; this wrapper also clears its local reference so
+    /// future presentations start from a clean state.
     func checkoutDidCancel() {
         emitDispatchEnvelope(type: .close, payload: nil)
         dismissCheckoutSheet()
@@ -320,18 +322,13 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
 // MARK: - Dispatch envelope helpers
 
 private extension RCTShopifyCheckoutKit {
-    /// Builds a `{ "type": ..., "payload": ... }` envelope and forwards
-    /// it to the pending JS dispatcher. SDK lifecycle envelopes are
-    /// single-shot: the callback is released after emission so the same
-    /// presentation can only fire one terminal event.
-    func emitDispatchEnvelope(type: DispatchEventType, payload: [String: Any]?) {
-        guard let dispatch = pendingDispatchCallback else { return }
-        // Single-shot for SDK lifecycle events — release before invoking
-        // so a delegate callback that re-enters this code path (e.g. via
-        // a synchronous JS callback that triggers `dismiss()`) cannot
-        // emit a second envelope on the same handle.
-        pendingDispatchCallback = nil
+    func emitDispatchEvent(_ json: String) {
+        perform(NSSelectorFromString("emitOnDispatchFromSwift:"), with: json)
+    }
 
+    /// Builds a `{ "type": ..., "payload": ... }` envelope and forwards
+    /// it to the JS dispatch event stream.
+    func emitDispatchEnvelope(type: DispatchEventType, payload: [String: Any]?) {
         var envelope: [String: Any] = ["type": type.rawValue]
         if let payload {
             envelope["payload"] = payload
@@ -343,7 +340,7 @@ private extension RCTShopifyCheckoutKit {
                 NSLog("[ShopifyCheckoutKit] Failed to encode dispatch envelope for \(type.rawValue): non-UTF8 result")
                 return
             }
-            dispatch([json])
+            emitDispatchEvent(json)
         } catch {
             NSLog("[ShopifyCheckoutKit] Failed to serialize dispatch envelope for \(type.rawValue): \(error)")
         }

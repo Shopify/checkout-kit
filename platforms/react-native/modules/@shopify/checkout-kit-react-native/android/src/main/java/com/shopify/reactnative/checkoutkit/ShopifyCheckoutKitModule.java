@@ -2,8 +2,6 @@ package com.shopify.reactnative.checkoutkit;
 
 import android.app.Activity;
 import androidx.activity.ComponentActivity;
-import androidx.annotation.Nullable;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Arguments;
@@ -13,7 +11,9 @@ import com.facebook.react.bridge.WritableMap;
 import com.shopify.checkoutkit.NativeShopifyCheckoutKitSpec;
 import com.shopify.checkoutkit.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -21,16 +21,12 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   public static Configuration checkoutConfig = new Configuration();
 
-  private final ReactApplicationContext reactContext;
-
   private CheckoutKitDialog checkoutSheet;
 
   private CustomCheckoutListener checkoutListener;
 
   public ShopifyCheckoutKitModule(ReactApplicationContext reactContext) {
     super(reactContext);
-
-    this.reactContext = reactContext;
 
     ShopifyCheckoutKit.configure(configuration -> {
       configuration.setPlatform(new Platform.ReactNative());
@@ -59,16 +55,30 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL, @Nullable Callback dispatch) {
+  public void present(String checkoutURL, ReadableArray subscribedMethods) {
     releaseCheckoutListener();
 
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
+      DispatchHandle dispatch = new DispatchHandle(json -> emitOnDispatch(json));
       CustomCheckoutListener listener = new CustomCheckoutListener(dispatch);
       checkoutListener = listener;
+
+      List<String> methods = new ArrayList<>();
+      for (int i = 0; i < subscribedMethods.size(); i++) {
+        String method = subscribedMethods.getString(i);
+        if (method != null) {
+          methods.add(method);
+        }
+      }
+      CheckoutProtocol.Client client = ProtocolRelay.makeClient(methods, dispatch);
+
       currentActivity.runOnUiThread(() -> {
+        if (checkoutListener != listener) {
+          return;
+        }
         checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
-            listener);
+            listener, client);
       });
     }
   }

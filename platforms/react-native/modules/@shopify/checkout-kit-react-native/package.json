@@ -53,9 +53,11 @@
     "react": "*",
     "react-native": "*"
   },
+  "dependencies": {
+    "@shopify/checkout-kit-protocol": "workspace:*"
+  },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.58.7",
-    "@shopify/checkout-kit-protocol": "workspace:*",
     "react-native-builder-bob": "^0.23.2",
     "typescript": "^5.9.2"
   },

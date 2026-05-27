@@ -3,6 +3,7 @@ const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
 const root = path.resolve(__dirname);
 const sample = path.resolve(root, 'sample');
+const protocol = path.resolve(root, '../../protocol/languages/typescript');
 
 /**
  * Metro configuration
@@ -13,7 +14,7 @@ const sample = path.resolve(root, 'sample');
 const config = mergeConfig(getDefaultConfig(__dirname), {
   projectRoot: sample,
 
-  watchFolders: [root],
+  watchFolders: [root, protocol],
 
   resolver: {
     resolveRequest: (context, moduleName, platform) => {
@@ -46,6 +47,8 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
         'modules',
         '@shopify/checkout-kit-react-native',
       ),
+      '@shopify/checkout-kit-protocol': protocol,
+      '@babel/runtime': path.resolve(root, 'node_modules', '@babel/runtime'),
     },
   },
 

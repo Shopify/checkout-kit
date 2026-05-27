@@ -157,7 +157,6 @@ case "$LANG" in
     quicktype \
       --lang ts \
       --src-lang schema \
-      --just-types \
       --prefer-unions \
       --nice-property-names \
       --acronym-style camel \
@@ -179,7 +178,32 @@ case "$LANG" in
       "${OUTPUT}"
 
 
-    echo "Generated ${OUTPUT}"
+    # API Extractor consumers require dependency entry points to resolve to
+    # declaration files. Runtime converter output is not valid declaration syntax,
+    # so emit declarations from the generated TypeScript source.
+    DECLARATION_OUTPUT="${OUTPUT%.ts}.d.ts"
+    TSC_BIN="${REPO_ROOT}/platforms/react-native/node_modules/typescript/bin/tsc"
+    if [[ -f "${TSC_BIN}" ]]; then
+      node "${TSC_BIN}" \
+        --declaration \
+        --emitDeclarationOnly \
+        --noEmit false \
+        --rootDir "${REPO_ROOT}/protocol/languages/typescript/src" \
+        --declarationDir "${REPO_ROOT}/protocol/languages/typescript/src" \
+        --pretty false \
+        "${OUTPUT}"
+    else
+      tsc \
+        --declaration \
+        --emitDeclarationOnly \
+        --noEmit false \
+        --rootDir "${REPO_ROOT}/protocol/languages/typescript/src" \
+        --declarationDir "${REPO_ROOT}/protocol/languages/typescript/src" \
+        --pretty false \
+        "${OUTPUT}"
+    fi
+
+    echo "Generated ${OUTPUT} and ${DECLARATION_OUTPUT}"
     ;;
 
   *)

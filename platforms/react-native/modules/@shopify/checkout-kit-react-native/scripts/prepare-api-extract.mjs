@@ -3,8 +3,8 @@
 // can analyze it.
 //
 // The module source uses hand-written ambient declaration files (for example,
-// `src/index.d.ts` and `src/errors.d.ts`) that runtime sources import via paths
-// like `'./index.d'`. tsc preserves those literals when emitting `.d.ts` for the runtime
+// `src/index.d.ts`) that runtime sources import via paths like `'./index.d'`.
+// tsc preserves those literals when emitting `.d.ts` for the runtime
 // modules, but the declaration sources themselves are NOT copied into the output
 // tree. The result is that `lib/typescript/src/index.d.ts` imports from
 // `'./index.d'`, which TypeScript module resolution resolves back to the same file
@@ -14,7 +14,7 @@
 // a non-colliding name (e.g. `src/_types/index.d.ts`) and rewrites the imports in
 // the compiled outputs to point at the relocated files.
 
-import {readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync, statSync} from 'node:fs';
+import {readFileSync, writeFileSync, mkdirSync, readdirSync, statSync} from 'node:fs';
 import {dirname, join, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -45,7 +45,8 @@ function relocateDeclarations() {
     for (const name of DECLARATION_BASENAMES) {
         const source = join(SRC_DIR, `${name}.d.ts`);
         const target = join(RELOCATED_DIR, `${name}.d.ts`);
-        copyFileSync(source, target);
+        const contents = readFileSync(source, 'utf8').replace(/(['"])\.\//g, '$1../');
+        writeFileSync(target, contents);
     }
 }
 

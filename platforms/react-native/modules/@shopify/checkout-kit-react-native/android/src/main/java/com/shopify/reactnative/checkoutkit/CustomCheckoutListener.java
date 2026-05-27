@@ -7,7 +7,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.shopify.checkoutkit.*;
-import com.facebook.react.bridge.Callback;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
@@ -19,16 +18,19 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
 
   private final ObjectMapper mapper = new ObjectMapper();
 
-  @Nullable
-  private Callback dispatchCallback;
+  private final DispatchHandle dispatch;
 
   // Geolocation-specific variables
 
   private String geolocationOrigin;
   private GeolocationPermissions.Callback geolocationCallback;
 
-  public CustomCheckoutListener(@Nullable Callback dispatch) {
-    this.dispatchCallback = dispatch;
+  public CustomCheckoutListener(@NonNull DispatchCallback dispatch) {
+    this(new DispatchHandle(dispatch));
+  }
+
+  public CustomCheckoutListener(@NonNull DispatchHandle dispatch) {
+    this.dispatch = dispatch;
   }
 
   // Public methods
@@ -42,7 +44,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   }
 
   public void release() {
-    dispatchCallback = null;
+    dispatch.release();
     geolocationCallback = null;
     geolocationOrigin = null;
   }
@@ -63,20 +65,21 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   public void onGeolocationPermissionsShowPrompt(@NonNull String origin,
       @NonNull GeolocationPermissions.Callback callback) {
 
+    if (dispatch.isReleased()) {
+      // Multi-shot geolocation requests can in principle arrive after a
+      // terminal event or explicit dismiss has released the dispatcher. Log
+      // so the silence is observable rather than mystifying.
+      Log.w(TAG, "Dropping geolocationRequest — dispatcher already released.");
+      return;
+    }
+
     this.geolocationCallback = callback;
     this.geolocationOrigin = origin;
 
-    if (dispatchCallback == null) {
-      // Multi-shot geolocation requests can in principle arrive after a
-      // terminal event has nulled the dispatcher. Log so the silence is
-      // observable rather than mystifying.
-      Log.w(TAG, "Dropping geolocationRequest \u2014 dispatcher already released by a terminal event.");
-      return;
-    }
     try {
       Map<String, Object> payload = new HashMap<>();
       payload.put("origin", origin);
-      dispatchCallback.invoke(buildEnvelope(DispatchEventTypes.GEOLOCATION_REQUEST, payload));
+      dispatch.invoke(buildEnvelope(DispatchEventTypes.GEOLOCATION_REQUEST, payload));
     } catch (IOException e) {
       Log.e(TAG, "Error emitting \"geolocationRequest\" event", e);
     }
@@ -92,9 +95,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
 
   @Override
   public void onCheckoutFailed(CheckoutException checkoutError) {
-    Callback dispatch = dispatchCallback;
-    if (dispatch == null) {
-      release();
+    if (dispatch.isReleased()) {
       return;
     }
     try {
@@ -108,9 +109,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
 
   @Override
   public void onCheckoutCanceled() {
-    Callback dispatch = dispatchCallback;
-    if (dispatch == null) {
-      release();
+    if (dispatch.isReleased()) {
       return;
     }
     try {

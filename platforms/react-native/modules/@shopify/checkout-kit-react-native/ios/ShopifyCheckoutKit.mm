@@ -1,6 +1,7 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTViewManager.h>
 #import <RNShopifyCheckoutKitSpec/RNShopifyCheckoutKitSpec.h>
+#import <objc/runtime.h>
 
 // Registers the Swift module class (ShopifyCheckoutKit.swift) with the RN
 // runtime under the name 'RCTShopifyCheckoutKit', extending the codegen
@@ -17,7 +18,41 @@
 RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration)
 
 RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
-                  dispatch:(RCTResponseSenderBlock)dispatch)
+                  subscribedMethods:(NSArray *)subscribedMethods)
+
+@end
+
+static const void *RCTShopifyCheckoutKitEventEmitterCallbackKey =
+    &RCTShopifyCheckoutKitEventEmitterCallbackKey;
+
+// Swift cannot directly subclass/import the codegen-generated
+// NativeShopifyCheckoutKitSpecBase in this CocoaPods setup. The TurboModule
+// runtime still calls `setEventEmitterCallback:` on the module instance, so this
+// Objective-C++ category stores that generated callback and exposes a small
+// selector Swift can call to emit the typed `onDispatch` event.
+@implementation RCTShopifyCheckoutKit (DispatchEmitter)
+
+- (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper
+{
+  objc_setAssociatedObject(
+      self,
+      RCTShopifyCheckoutKitEventEmitterCallbackKey,
+      eventEmitterCallbackWrapper,
+      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (void)emitOnDispatchFromSwift:(NSString *)value
+{
+  EventEmitterCallbackWrapper *eventEmitterCallbackWrapper =
+      (EventEmitterCallbackWrapper *)objc_getAssociatedObject(
+          self, RCTShopifyCheckoutKitEventEmitterCallbackKey);
+
+  if (eventEmitterCallbackWrapper == nil) {
+    return;
+  }
+
+  eventEmitterCallbackWrapper->_eventEmitterCallback("onDispatch", value);
+}
 
 @end
 

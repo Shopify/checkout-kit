@@ -280,24 +280,44 @@ class ShopifyCheckoutKitTests: XCTestCase {
     XCTAssertEqual(result?["logLevel"] as? String, "error")
   }
 
-  func testFailedPresentReleasesPendingDispatchCallback() {
+  func testFailedPresentDoesNotRetainCheckoutSheet() {
     let presentAttemptCompleted = expectation(description: "present attempt completed")
-    var dispatchCount = 0
 
-    shopifyCheckoutKit.present("", dispatch: { _ in
-      dispatchCount += 1
-    })
+    shopifyCheckoutKit.present("", subscribedMethods: [])
 
     DispatchQueue.main.async {
-      self.shopifyCheckoutKit.checkoutDidCancel()
-      XCTAssertEqual(dispatchCount, 0)
+      XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
       presentAttemptCompleted.fulfill()
     }
 
     wait(for: [presentAttemptCompleted], timeout: 1)
   }
 
-    // TODO: re-enable terminal-event tests (checkoutDidComplete, checkoutDidCancel, checkoutDidFail)
-    // once the iOS CheckoutDelegate lands upstream — parallels Android's
-    // DefaultCheckoutListener.onCheckoutCanceled / onCheckoutFailed.
+  func testCheckoutDidCancelDismissesCheckoutSheetFromRCTWrapper() {
+    let dismissCompleted = expectation(description: "checkout sheet dismissed")
+    let checkoutSheet = DismissTrackingViewController()
+    shopifyCheckoutKit.checkoutSheet = checkoutSheet
+
+    shopifyCheckoutKit.checkoutDidCancel()
+
+    DispatchQueue.main.async {
+      XCTAssertTrue(checkoutSheet.dismissCalled)
+      XCTAssertTrue(checkoutSheet.dismissAnimated)
+      XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
+      dismissCompleted.fulfill()
+    }
+
+    wait(for: [dismissCompleted], timeout: 1)
+  }
+}
+
+private final class DismissTrackingViewController: UIViewController {
+  var dismissCalled = false
+  var dismissAnimated = false
+
+  override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+    dismissCalled = true
+    dismissAnimated = flag
+    completion?()
+  }
 }
