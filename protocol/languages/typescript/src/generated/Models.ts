@@ -2702,7 +2702,7 @@ export interface InstrumentsChangePayment {
     /**
      * Available payment instruments.
      */
-    instruments?: PurpleSelectedPaymentInstrument[];
+    instruments?: InstrumentsChangeSelectedPaymentInstrument[];
     /**
      * ID of the selected payment instrument.
      */
@@ -2716,7 +2716,7 @@ export interface InstrumentsChangePayment {
  * The base definition for any payment instrument. It links the instrument to a specific
  * payment handler.
  */
-export interface PurpleSelectedPaymentInstrument {
+export interface InstrumentsChangeSelectedPaymentInstrument {
     /**
      * The billing address associated with this payment method.
      */
@@ -2770,7 +2770,7 @@ export interface InstrumentsChangeResultUcp {
     /**
      * Service registry keyed by reverse-domain name.
      */
-    services?: { [key: string]: PurpleService[] };
+    services?: { [key: string]: InstrumentsChangeService[] };
     /**
      * Application-level status of the UCP operation.
      */
@@ -2871,7 +2871,7 @@ export interface PaymentHandlerAvailableInstrument {
 /**
  * Shared foundation for all UCP entities.
  */
-export interface PurpleService {
+export interface InstrumentsChangeService {
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -2945,7 +2945,7 @@ export interface CredentialPayment {
     /**
      * Available payment instruments.
      */
-    instruments?: PurpleSelectedPaymentInstrument[];
+    instruments?: InstrumentsChangeSelectedPaymentInstrument[];
     [property: string]: any;
 }
 

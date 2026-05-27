@@ -19,7 +19,11 @@ if [[ -z "$LANG" ]]; then
 fi
 
 TEMP_SCHEMAS=()
-cleanup() { rm -f "${TEMP_SCHEMAS[@]}"; }
+cleanup() {
+  if (( ${#TEMP_SCHEMAS[@]} > 0 )); then
+    rm -f "${TEMP_SCHEMAS[@]}"
+  fi
+}
 trap cleanup EXIT
 
 # quicktype generates non-deterministic color-based names (e.g. PurplePayment, FluffyPayment)
@@ -81,6 +85,10 @@ case "$LANG" in
       --package "com.shopify.checkoutkit" \
       -o "${OUTPUT}"
 
+    # Remove quicktype's usage preamble so generated Android sources start at
+    # the package declaration, matching the rest of the library source layout.
+    sed -i '' '1,/^package /{/^package /!d;}' "${OUTPUT}"
+
     # Post-process for -Xexplicit-api=strict: every top-level and member declaration that
     # is part of the public API surface needs an explicit 'public' modifier.
     #
@@ -111,11 +119,26 @@ case "$LANG" in
       -e 's/ColorScheme\.serializer()/EmbeddedColorScheme.serializer()/g' \
       "${OUTPUT}"
 
+    # Normalize quicktype fallback names. Kotlin quicktype appends "Class" when
+    # a referenced schema collides with a top-level schema name; TypeScript uses
+    # "Object" for the same cases, so use that spelling consistently here.
+    # Color-based names are quicktype collision fallbacks and are not stable API.
+    sed -i '' -E \
+      -e 's/[[:<:]]([A-Za-z][A-Za-z0-9]*)Class[[:>:]]/\1Object/g' \
+      -e 's/[[:<:]]PurpleSelectedPaymentInstrument[[:>:]]/InstrumentsChangeSelectedPaymentInstrument/g' \
+      -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
+      "${OUTPUT}"
+
     # quicktype emits `typealias Totals = JsonArray<TotalElement>`, but
     # kotlinx.serialization.json.JsonArray is not generic. Rewrite to a plain List.
     sed -i '' \
       -e 's/typealias Totals = JsonArray<TotalElement>/typealias Totals = List<TotalElement>/' \
       "${OUTPUT}"
+
+    # quicktype renders Extends as a sealed class, but the wire shape is either
+    # a string or an array of strings. Keep the explicit serializer so both
+    # shapes round-trip as JSON primitives instead of sealed-class objects.
+    perl -0pi -e 's{@Serializable\npublic sealed class Extends \{\n    public class StringArrayValue\(public val value: List<String>\) : Extends\(\)\n    public class StringValue\(public val value: String\)            : Extends\(\)\n\}}{@Serializable(with = ExtendsSerializer::class)\npublic sealed class Extends {\n    public class StringArrayValue(public val value: List<String>) : Extends()\n    public class StringValue(public val value: String)            : Extends()\n}\n\ninternal object ExtendsSerializer : KSerializer<Extends> {\n    override val descriptor: SerialDescriptor =\n        buildClassSerialDescriptor("com.shopify.checkoutkit.Extends")\n\n    override fun deserialize(decoder: Decoder): Extends {\n        val input = decoder as? JsonDecoder\n            ?: throw SerializationException("Extends can only be deserialized from JSON")\n        return when (val element = input.decodeJsonElement()) {\n            is JsonPrimitive -> Extends.StringValue(element.content)\n            is JsonArray -> Extends.StringArrayValue(\n                element.map {\n                    (it as? JsonPrimitive)?.content\n                        ?: throw SerializationException("Extends array element not a primitive: \$it")\n                }\n            )\n            else -> throw SerializationException("Unexpected Extends shape: \$element")\n        }\n    }\n\n    override fun serialize(encoder: Encoder, value: Extends) {\n        val output = encoder as? JsonEncoder\n            ?: throw SerializationException("Extends can only be serialized to JSON")\n        val element: JsonElement = when (value) {\n            is Extends.StringValue -> JsonPrimitive(value.value)\n            is Extends.StringArrayValue -> JsonArray(value.value.map { JsonPrimitive(it) })\n        }\n        output.encodeJsonElement(element)\n    }\n}}s' "${OUTPUT}"
 
 
     echo "Generated ${OUTPUT}"
@@ -147,7 +170,6 @@ case "$LANG" in
       -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
       "${OUTPUT}"
 
-
     echo "Generated ${OUTPUT}"
     ;;
 
@@ -175,6 +197,8 @@ case "$LANG" in
       -e 's/^type /export type /' \
       -e 's/[[:<:]]Binding[[:>:]]/TokenBinding/g' \
       -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
+      -e 's/[[:<:]]PurpleSelectedPaymentInstrument[[:>:]]/InstrumentsChangeSelectedPaymentInstrument/g' \
+      -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
       "${OUTPUT}"
 
 

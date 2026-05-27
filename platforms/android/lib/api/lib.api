@@ -107,13 +107,13 @@ public final class com/shopify/checkoutkit/AdjustmentLineItem$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/AdjustmentLineItemClass {
-	public static final field Companion Lcom/shopify/checkoutkit/AdjustmentLineItemClass$Companion;
+public final class com/shopify/checkoutkit/AdjustmentLineItemObject {
+	public static final field Companion Lcom/shopify/checkoutkit/AdjustmentLineItemObject$Companion;
 	public fun <init> (Ljava/lang/String;J)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()J
-	public final fun copy (Ljava/lang/String;J)Lcom/shopify/checkoutkit/AdjustmentLineItemClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/AdjustmentLineItemClass;Ljava/lang/String;JILjava/lang/Object;)Lcom/shopify/checkoutkit/AdjustmentLineItemClass;
+	public final fun copy (Ljava/lang/String;J)Lcom/shopify/checkoutkit/AdjustmentLineItemObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/AdjustmentLineItemObject;Ljava/lang/String;JILjava/lang/Object;)Lcom/shopify/checkoutkit/AdjustmentLineItemObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getId ()Ljava/lang/String;
 	public final fun getQuantity ()J
@@ -121,18 +121,18 @@ public final class com/shopify/checkoutkit/AdjustmentLineItemClass {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/AdjustmentLineItemClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/AdjustmentLineItemClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/AdjustmentLineItemObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/AdjustmentLineItemObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/AdjustmentLineItemClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/AdjustmentLineItemObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/AdjustmentLineItemClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/AdjustmentLineItemObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/AdjustmentLineItemClass$Companion {
+public final class com/shopify/checkoutkit/AdjustmentLineItemObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -215,8 +215,8 @@ public final class com/shopify/checkoutkit/AvailablePaymentInstrument$Companion 
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/BillingAddressClass {
-	public static final field Companion Lcom/shopify/checkoutkit/BillingAddressClass$Companion;
+public final class com/shopify/checkoutkit/BillingAddressObject {
+	public static final field Companion Lcom/shopify/checkoutkit/BillingAddressObject$Companion;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -229,8 +229,8 @@ public final class com/shopify/checkoutkit/BillingAddressClass {
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Ljava/lang/String;
 	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/BillingAddressClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/BillingAddressObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/BillingAddressObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAddressCountry ()Ljava/lang/String;
 	public final fun getAddressLocality ()Ljava/lang/String;
@@ -245,18 +245,18 @@ public final class com/shopify/checkoutkit/BillingAddressClass {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/BillingAddressClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/BillingAddressClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/BillingAddressObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/BillingAddressObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/BillingAddressObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/BillingAddressClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/BillingAddressObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/BillingAddressClass$Companion {
+public final class com/shopify/checkoutkit/BillingAddressObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -365,8 +365,8 @@ public final class com/shopify/checkoutkit/Buyer$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/BuyerClass {
-	public static final field Companion Lcom/shopify/checkoutkit/BuyerClass$Companion;
+public final class com/shopify/checkoutkit/BuyerObject {
+	public static final field Companion Lcom/shopify/checkoutkit/BuyerObject$Companion;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -374,8 +374,8 @@ public final class com/shopify/checkoutkit/BuyerClass {
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/BuyerClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/BuyerClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/BuyerClass;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/BuyerObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/BuyerObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/BuyerObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEmail ()Ljava/lang/String;
 	public final fun getFirstName ()Ljava/lang/String;
@@ -385,18 +385,18 @@ public final class com/shopify/checkoutkit/BuyerClass {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/BuyerClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/BuyerClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/BuyerObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/BuyerObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/BuyerClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/BuyerObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/BuyerClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/BuyerObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/BuyerClass$Companion {
+public final class com/shopify/checkoutkit/BuyerObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -537,19 +537,19 @@ public final class com/shopify/checkoutkit/CardNumberType$Companion {
 
 public final class com/shopify/checkoutkit/CardPaymentInstrument {
 	public static final field Companion Lcom/shopify/checkoutkit/CardPaymentInstrument$Companion;
-	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lcom/shopify/checkoutkit/Display;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/TypeEnum;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lcom/shopify/checkoutkit/Display;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/TypeEnum;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressClass;
-	public final fun component2 ()Lcom/shopify/checkoutkit/CredentialClass;
+	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lcom/shopify/checkoutkit/Display;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/TypeEnum;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lcom/shopify/checkoutkit/Display;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/TypeEnum;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressObject;
+	public final fun component2 ()Lcom/shopify/checkoutkit/CredentialObject;
 	public final fun component3 ()Lcom/shopify/checkoutkit/Display;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Lcom/shopify/checkoutkit/TypeEnum;
-	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lcom/shopify/checkoutkit/Display;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/TypeEnum;)Lcom/shopify/checkoutkit/CardPaymentInstrument;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CardPaymentInstrument;Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lcom/shopify/checkoutkit/Display;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/TypeEnum;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CardPaymentInstrument;
+	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lcom/shopify/checkoutkit/Display;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/TypeEnum;)Lcom/shopify/checkoutkit/CardPaymentInstrument;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CardPaymentInstrument;Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lcom/shopify/checkoutkit/Display;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/TypeEnum;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CardPaymentInstrument;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBillingAddress ()Lcom/shopify/checkoutkit/BillingAddressClass;
-	public final fun getCredential ()Lcom/shopify/checkoutkit/CredentialClass;
+	public final fun getBillingAddress ()Lcom/shopify/checkoutkit/BillingAddressObject;
+	public final fun getCredential ()Lcom/shopify/checkoutkit/CredentialObject;
 	public final fun getDisplay ()Lcom/shopify/checkoutkit/Display;
 	public final fun getHandlerID ()Ljava/lang/String;
 	public final fun getId ()Ljava/lang/String;
@@ -575,16 +575,16 @@ public final class com/shopify/checkoutkit/CardPaymentInstrument$Companion {
 
 public final class com/shopify/checkoutkit/Checkout {
 	public static final field Companion Lcom/shopify/checkoutkit/Checkout$Companion;
-	public fun <init> (Lcom/shopify/checkoutkit/BuyerClass;Lcom/shopify/checkoutkit/ContextClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/checkoutkit/OrderClass;Lcom/shopify/checkoutkit/PaymentClass;Lcom/shopify/checkoutkit/SignalsClass;Lcom/shopify/checkoutkit/CheckoutStatus;Ljava/util/List;Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/BuyerClass;Lcom/shopify/checkoutkit/ContextClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/checkoutkit/OrderClass;Lcom/shopify/checkoutkit/PaymentClass;Lcom/shopify/checkoutkit/SignalsClass;Lcom/shopify/checkoutkit/CheckoutStatus;Ljava/util/List;Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/shopify/checkoutkit/BuyerClass;
-	public final fun component10 ()Lcom/shopify/checkoutkit/OrderClass;
-	public final fun component11 ()Lcom/shopify/checkoutkit/PaymentClass;
-	public final fun component12 ()Lcom/shopify/checkoutkit/SignalsClass;
+	public fun <init> (Lcom/shopify/checkoutkit/BuyerObject;Lcom/shopify/checkoutkit/ContextObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/checkoutkit/OrderObject;Lcom/shopify/checkoutkit/PaymentObject;Lcom/shopify/checkoutkit/SignalsObject;Lcom/shopify/checkoutkit/CheckoutStatus;Ljava/util/List;Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/BuyerObject;Lcom/shopify/checkoutkit/ContextObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/checkoutkit/OrderObject;Lcom/shopify/checkoutkit/PaymentObject;Lcom/shopify/checkoutkit/SignalsObject;Lcom/shopify/checkoutkit/CheckoutStatus;Ljava/util/List;Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/BuyerObject;
+	public final fun component10 ()Lcom/shopify/checkoutkit/OrderObject;
+	public final fun component11 ()Lcom/shopify/checkoutkit/PaymentObject;
+	public final fun component12 ()Lcom/shopify/checkoutkit/SignalsObject;
 	public final fun component13 ()Lcom/shopify/checkoutkit/CheckoutStatus;
 	public final fun component14 ()Ljava/util/List;
 	public final fun component15 ()Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;
-	public final fun component2 ()Lcom/shopify/checkoutkit/ContextClass;
+	public final fun component2 ()Lcom/shopify/checkoutkit/ContextObject;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/lang/String;
@@ -592,11 +592,11 @@ public final class com/shopify/checkoutkit/Checkout {
 	public final fun component7 ()Ljava/util/List;
 	public final fun component8 ()Ljava/util/List;
 	public final fun component9 ()Ljava/util/List;
-	public final fun copy (Lcom/shopify/checkoutkit/BuyerClass;Lcom/shopify/checkoutkit/ContextClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/checkoutkit/OrderClass;Lcom/shopify/checkoutkit/PaymentClass;Lcom/shopify/checkoutkit/SignalsClass;Lcom/shopify/checkoutkit/CheckoutStatus;Ljava/util/List;Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;)Lcom/shopify/checkoutkit/Checkout;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Checkout;Lcom/shopify/checkoutkit/BuyerClass;Lcom/shopify/checkoutkit/ContextClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/checkoutkit/OrderClass;Lcom/shopify/checkoutkit/PaymentClass;Lcom/shopify/checkoutkit/SignalsClass;Lcom/shopify/checkoutkit/CheckoutStatus;Ljava/util/List;Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Checkout;
+	public final fun copy (Lcom/shopify/checkoutkit/BuyerObject;Lcom/shopify/checkoutkit/ContextObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/checkoutkit/OrderObject;Lcom/shopify/checkoutkit/PaymentObject;Lcom/shopify/checkoutkit/SignalsObject;Lcom/shopify/checkoutkit/CheckoutStatus;Ljava/util/List;Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;)Lcom/shopify/checkoutkit/Checkout;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Checkout;Lcom/shopify/checkoutkit/BuyerObject;Lcom/shopify/checkoutkit/ContextObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/checkoutkit/OrderObject;Lcom/shopify/checkoutkit/PaymentObject;Lcom/shopify/checkoutkit/SignalsObject;Lcom/shopify/checkoutkit/CheckoutStatus;Ljava/util/List;Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Checkout;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBuyer ()Lcom/shopify/checkoutkit/BuyerClass;
-	public final fun getContext ()Lcom/shopify/checkoutkit/ContextClass;
+	public final fun getBuyer ()Lcom/shopify/checkoutkit/BuyerObject;
+	public final fun getContext ()Lcom/shopify/checkoutkit/ContextObject;
 	public final fun getContinueURL ()Ljava/lang/String;
 	public final fun getCurrency ()Ljava/lang/String;
 	public final fun getExpiresAt ()Ljava/lang/String;
@@ -604,9 +604,9 @@ public final class com/shopify/checkoutkit/Checkout {
 	public final fun getLineItems ()Ljava/util/List;
 	public final fun getLinks ()Ljava/util/List;
 	public final fun getMessages ()Ljava/util/List;
-	public final fun getOrder ()Lcom/shopify/checkoutkit/OrderClass;
-	public final fun getPayment ()Lcom/shopify/checkoutkit/PaymentClass;
-	public final fun getSignals ()Lcom/shopify/checkoutkit/SignalsClass;
+	public final fun getOrder ()Lcom/shopify/checkoutkit/OrderObject;
+	public final fun getPayment ()Lcom/shopify/checkoutkit/PaymentObject;
+	public final fun getSignals ()Lcom/shopify/checkoutkit/SignalsObject;
 	public final fun getStatus ()Lcom/shopify/checkoutkit/CheckoutStatus;
 	public final fun getTotals ()Ljava/util/List;
 	public final fun getUcp ()Lcom/shopify/checkoutkit/UCPCheckoutResponseSchema;
@@ -681,18 +681,18 @@ public final class com/shopify/checkoutkit/CheckoutKitException$Companion {
 
 public final class com/shopify/checkoutkit/CheckoutLineItem {
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutLineItem$Companion;
-	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;JLjava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;JLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;JLjava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;JLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/shopify/checkoutkit/ItemClass;
+	public final fun component2 ()Lcom/shopify/checkoutkit/ItemObject;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()J
 	public final fun component5 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;JLjava/util/List;)Lcom/shopify/checkoutkit/CheckoutLineItem;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutLineItem;Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutLineItem;
+	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;JLjava/util/List;)Lcom/shopify/checkoutkit/CheckoutLineItem;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutLineItem;Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutLineItem;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getId ()Ljava/lang/String;
-	public final fun getItem ()Lcom/shopify/checkoutkit/ItemClass;
+	public final fun getItem ()Lcom/shopify/checkoutkit/ItemObject;
 	public final fun getParentID ()Ljava/lang/String;
 	public final fun getQuantity ()J
 	public final fun getTotals ()Ljava/util/List;
@@ -1174,8 +1174,8 @@ public final class com/shopify/checkoutkit/Context$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/ContextClass {
-	public static final field Companion Lcom/shopify/checkoutkit/ContextClass$Companion;
+public final class com/shopify/checkoutkit/ContextObject {
+	public static final field Companion Lcom/shopify/checkoutkit/ContextObject$Companion;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -1186,8 +1186,8 @@ public final class com/shopify/checkoutkit/ContextClass {
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/ContextClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ContextClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/ContextClass;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/ContextObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ContextObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/ContextObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAddressCountry ()Ljava/lang/String;
 	public final fun getAddressRegion ()Ljava/lang/String;
@@ -1200,18 +1200,18 @@ public final class com/shopify/checkoutkit/ContextClass {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/ContextClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/ContextClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/ContextObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/ContextObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/ContextClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/ContextObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/ContextClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/ContextObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/ContextClass$Companion {
+public final class com/shopify/checkoutkit/ContextObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -1244,30 +1244,30 @@ public final class com/shopify/checkoutkit/CredentialCheckout$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/CredentialClass {
-	public static final field Companion Lcom/shopify/checkoutkit/CredentialClass$Companion;
+public final class com/shopify/checkoutkit/CredentialObject {
+	public static final field Companion Lcom/shopify/checkoutkit/CredentialObject$Companion;
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lcom/shopify/checkoutkit/CredentialClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CredentialClass;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CredentialClass;
+	public final fun copy (Ljava/lang/String;)Lcom/shopify/checkoutkit/CredentialObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CredentialObject;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CredentialObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getType ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/CredentialClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/CredentialClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/CredentialObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/CredentialObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/CredentialClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/CredentialObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/CredentialClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/CredentialObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/CredentialClass$Companion {
+public final class com/shopify/checkoutkit/CredentialObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -1598,19 +1598,19 @@ public final class com/shopify/checkoutkit/EventLineItem$Companion {
 
 public final class com/shopify/checkoutkit/Expectation {
 	public static final field Companion Lcom/shopify/checkoutkit/Expectation$Companion;
-	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun component2 ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Lcom/shopify/checkoutkit/MethodType;
-	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;)Lcom/shopify/checkoutkit/Expectation;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Expectation;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Expectation;
+	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;)Lcom/shopify/checkoutkit/Expectation;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Expectation;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Expectation;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDescription ()Ljava/lang/String;
-	public final fun getDestination ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun getDestination ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun getFulfillableOn ()Ljava/lang/String;
 	public final fun getId ()Ljava/lang/String;
 	public final fun getLineItems ()Ljava/util/List;
@@ -1636,19 +1636,19 @@ public final class com/shopify/checkoutkit/Expectation$Companion {
 
 public final class com/shopify/checkoutkit/ExpectationElement {
 	public static final field Companion Lcom/shopify/checkoutkit/ExpectationElement$Companion;
-	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun component2 ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Lcom/shopify/checkoutkit/MethodType;
-	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;)Lcom/shopify/checkoutkit/ExpectationElement;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ExpectationElement;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;ILjava/lang/Object;)Lcom/shopify/checkoutkit/ExpectationElement;
+	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;)Lcom/shopify/checkoutkit/ExpectationElement;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ExpectationElement;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/MethodType;ILjava/lang/Object;)Lcom/shopify/checkoutkit/ExpectationElement;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDescription ()Ljava/lang/String;
-	public final fun getDestination ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun getDestination ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun getFulfillableOn ()Ljava/lang/String;
 	public final fun getId ()Ljava/lang/String;
 	public final fun getLineItems ()Ljava/util/List;
@@ -1701,13 +1701,13 @@ public final class com/shopify/checkoutkit/ExpectationLineItem$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/ExpectationLineItemClass {
-	public static final field Companion Lcom/shopify/checkoutkit/ExpectationLineItemClass$Companion;
+public final class com/shopify/checkoutkit/ExpectationLineItemObject {
+	public static final field Companion Lcom/shopify/checkoutkit/ExpectationLineItemObject$Companion;
 	public fun <init> (Ljava/lang/String;J)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()J
-	public final fun copy (Ljava/lang/String;J)Lcom/shopify/checkoutkit/ExpectationLineItemClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ExpectationLineItemClass;Ljava/lang/String;JILjava/lang/Object;)Lcom/shopify/checkoutkit/ExpectationLineItemClass;
+	public final fun copy (Ljava/lang/String;J)Lcom/shopify/checkoutkit/ExpectationLineItemObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ExpectationLineItemObject;Ljava/lang/String;JILjava/lang/Object;)Lcom/shopify/checkoutkit/ExpectationLineItemObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getId ()Ljava/lang/String;
 	public final fun getQuantity ()J
@@ -1715,18 +1715,18 @@ public final class com/shopify/checkoutkit/ExpectationLineItemClass {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/ExpectationLineItemClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/ExpectationLineItemClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/ExpectationLineItemObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/ExpectationLineItemObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/ExpectationLineItemClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/ExpectationLineItemObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/ExpectationLineItemClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/ExpectationLineItemObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/ExpectationLineItemClass$Companion {
+public final class com/shopify/checkoutkit/ExpectationLineItemObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -1813,44 +1813,13 @@ public final class com/shopify/checkoutkit/FulfillmentAvailableMethod$Companion 
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/FulfillmentClass {
-	public static final field Companion Lcom/shopify/checkoutkit/FulfillmentClass$Companion;
-	public fun <init> ()V
-	public fun <init> (Ljava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun component2 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;Ljava/util/List;)Lcom/shopify/checkoutkit/FulfillmentClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/FulfillmentClass;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/FulfillmentClass;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getEvents ()Ljava/util/List;
-	public final fun getExpectations ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final synthetic class com/shopify/checkoutkit/FulfillmentClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/FulfillmentClass$$serializer;
-	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/FulfillmentClass;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/FulfillmentClass;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/FulfillmentClass$Companion {
-	public final fun serializer ()Lkotlinx/serialization/KSerializer;
-}
-
 public final class com/shopify/checkoutkit/FulfillmentDestination {
 	public static final field Companion Lcom/shopify/checkoutkit/FulfillmentDestination$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component10 ()Ljava/lang/String;
-	public final fun component11 ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun component11 ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun component12 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
@@ -1860,10 +1829,10 @@ public final class com/shopify/checkoutkit/FulfillmentDestination {
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Ljava/lang/String;
 	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;)Lcom/shopify/checkoutkit/FulfillmentDestination;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/FulfillmentDestination;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/FulfillmentDestination;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;)Lcom/shopify/checkoutkit/FulfillmentDestination;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/FulfillmentDestination;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/FulfillmentDestination;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAddress ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun getAddress ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun getAddressCountry ()Ljava/lang/String;
 	public final fun getAddressLocality ()Ljava/lang/String;
 	public final fun getAddressRegion ()Ljava/lang/String;
@@ -1896,11 +1865,11 @@ public final class com/shopify/checkoutkit/FulfillmentDestination$Companion {
 
 public final class com/shopify/checkoutkit/FulfillmentDestinationElement {
 	public static final field Companion Lcom/shopify/checkoutkit/FulfillmentDestinationElement$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component10 ()Ljava/lang/String;
-	public final fun component11 ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun component11 ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun component12 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
@@ -1910,10 +1879,10 @@ public final class com/shopify/checkoutkit/FulfillmentDestinationElement {
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Ljava/lang/String;
 	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;)Lcom/shopify/checkoutkit/FulfillmentDestinationElement;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/FulfillmentDestinationElement;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/FulfillmentDestinationElement;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;)Lcom/shopify/checkoutkit/FulfillmentDestinationElement;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/FulfillmentDestinationElement;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/FulfillmentDestinationElement;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAddress ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun getAddress ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun getAddressCountry ()Ljava/lang/String;
 	public final fun getAddressLocality ()Ljava/lang/String;
 	public final fun getAddressRegion ()Ljava/lang/String;
@@ -2087,6 +2056,37 @@ public final class com/shopify/checkoutkit/FulfillmentMethod$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class com/shopify/checkoutkit/FulfillmentObject {
+	public static final field Companion Lcom/shopify/checkoutkit/FulfillmentObject$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;)Lcom/shopify/checkoutkit/FulfillmentObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/FulfillmentObject;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/FulfillmentObject;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvents ()Ljava/util/List;
+	public final fun getExpectations ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/checkoutkit/FulfillmentObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/FulfillmentObject$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/FulfillmentObject;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/FulfillmentObject;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/FulfillmentObject$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class com/shopify/checkoutkit/FulfillmentOption {
 	public static final field Companion Lcom/shopify/checkoutkit/FulfillmentOption$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
@@ -2168,30 +2168,30 @@ public final class com/shopify/checkoutkit/HttpException : com/shopify/checkoutk
 	public final fun getStatusCode ()I
 }
 
-public final class com/shopify/checkoutkit/IdentityClass {
-	public static final field Companion Lcom/shopify/checkoutkit/IdentityClass$Companion;
+public final class com/shopify/checkoutkit/IdentityObject {
+	public static final field Companion Lcom/shopify/checkoutkit/IdentityObject$Companion;
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lcom/shopify/checkoutkit/IdentityClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/IdentityClass;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/IdentityClass;
+	public final fun copy (Ljava/lang/String;)Lcom/shopify/checkoutkit/IdentityObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/IdentityObject;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/IdentityObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAccessToken ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/IdentityClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/IdentityClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/IdentityObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/IdentityObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/IdentityClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/IdentityObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/IdentityClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/IdentityObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/IdentityClass$Companion {
+public final class com/shopify/checkoutkit/IdentityObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -2325,6 +2325,86 @@ public final class com/shopify/checkoutkit/InstrumentsChangeResultUcp$Companion 
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class com/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument {
+	public static final field Companion Lcom/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument$Companion;
+	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressObject;
+	public final fun component2 ()Lcom/shopify/checkoutkit/CredentialObject;
+	public final fun component3 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/Boolean;
+	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument;Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBillingAddress ()Lcom/shopify/checkoutkit/BillingAddressObject;
+	public final fun getCredential ()Lcom/shopify/checkoutkit/CredentialObject;
+	public final fun getDisplay ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getHandlerID ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getSelected ()Ljava/lang/Boolean;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/InstrumentsChangeSelectedPaymentInstrument$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/InstrumentsChangeService {
+	public static final field Companion Lcom/shopify/checkoutkit/InstrumentsChangeService$Companion;
+	public fun <init> (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/Transport;)V
+	public synthetic fun <init> (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/Transport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Lcom/shopify/checkoutkit/Transport;
+	public final fun copy (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/Transport;)Lcom/shopify/checkoutkit/InstrumentsChangeService;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/InstrumentsChangeService;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/Transport;ILjava/lang/Object;)Lcom/shopify/checkoutkit/InstrumentsChangeService;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfig ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getEndpoint ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getSchema ()Ljava/lang/String;
+	public final fun getSpec ()Ljava/lang/String;
+	public final fun getTransport ()Lcom/shopify/checkoutkit/Transport;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/checkoutkit/InstrumentsChangeService$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/InstrumentsChangeService$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/InstrumentsChangeService;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/InstrumentsChangeService;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/InstrumentsChangeService$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class com/shopify/checkoutkit/Item {
 	public static final field Companion Lcom/shopify/checkoutkit/Item$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)V
@@ -2359,16 +2439,16 @@ public final class com/shopify/checkoutkit/Item$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/ItemClass {
-	public static final field Companion Lcom/shopify/checkoutkit/ItemClass$Companion;
+public final class com/shopify/checkoutkit/ItemObject {
+	public static final field Companion Lcom/shopify/checkoutkit/ItemObject$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()J
 	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)Lcom/shopify/checkoutkit/ItemClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/ItemClass;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)Lcom/shopify/checkoutkit/ItemObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/ItemObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getId ()Ljava/lang/String;
 	public final fun getImageURL ()Ljava/lang/String;
@@ -2378,35 +2458,35 @@ public final class com/shopify/checkoutkit/ItemClass {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/ItemClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/ItemClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/ItemObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/ItemObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/ItemClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/ItemObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/ItemClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/ItemObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/ItemClass$Companion {
+public final class com/shopify/checkoutkit/ItemObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
 public final class com/shopify/checkoutkit/LineItem {
 	public static final field Companion Lcom/shopify/checkoutkit/LineItem$Companion;
-	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;JLjava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;JLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;JLjava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;JLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/shopify/checkoutkit/ItemClass;
+	public final fun component2 ()Lcom/shopify/checkoutkit/ItemObject;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()J
 	public final fun component5 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;JLjava/util/List;)Lcom/shopify/checkoutkit/LineItem;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/LineItem;Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/LineItem;
+	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;JLjava/util/List;)Lcom/shopify/checkoutkit/LineItem;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/LineItem;Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/LineItem;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getId ()Ljava/lang/String;
-	public final fun getItem ()Lcom/shopify/checkoutkit/ItemClass;
+	public final fun getItem ()Lcom/shopify/checkoutkit/ItemObject;
 	public final fun getParentID ()Ljava/lang/String;
 	public final fun getQuantity ()J
 	public final fun getTotals ()Ljava/util/List;
@@ -2431,19 +2511,19 @@ public final class com/shopify/checkoutkit/LineItem$Companion {
 
 public final class com/shopify/checkoutkit/LineItemElement {
 	public static final field Companion Lcom/shopify/checkoutkit/LineItemElement$Companion;
-	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Lcom/shopify/checkoutkit/LineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Lcom/shopify/checkoutkit/LineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Lcom/shopify/checkoutkit/LineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Lcom/shopify/checkoutkit/LineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/shopify/checkoutkit/ItemClass;
+	public final fun component2 ()Lcom/shopify/checkoutkit/ItemObject;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Lcom/shopify/checkoutkit/LineItemQuantity;
 	public final fun component5 ()Lcom/shopify/checkoutkit/OrderLineItemStatus;
 	public final fun component6 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Lcom/shopify/checkoutkit/LineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;)Lcom/shopify/checkoutkit/LineItemElement;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/LineItemElement;Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Lcom/shopify/checkoutkit/LineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/LineItemElement;
+	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Lcom/shopify/checkoutkit/LineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;)Lcom/shopify/checkoutkit/LineItemElement;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/LineItemElement;Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Lcom/shopify/checkoutkit/LineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/LineItemElement;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getId ()Ljava/lang/String;
-	public final fun getItem ()Lcom/shopify/checkoutkit/ItemClass;
+	public final fun getItem ()Lcom/shopify/checkoutkit/ItemObject;
 	public final fun getParentID ()Ljava/lang/String;
 	public final fun getQuantity ()Lcom/shopify/checkoutkit/LineItemQuantity;
 	public final fun getStatus ()Lcom/shopify/checkoutkit/OrderLineItemStatus;
@@ -3018,26 +3098,26 @@ public final class com/shopify/checkoutkit/OptionElement$Companion {
 
 public final class com/shopify/checkoutkit/Order {
 	public static final field Companion Lcom/shopify/checkoutkit/Order$Companion;
-	public fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/FulfillmentClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/UCPOrderResponseSchema;)V
-	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/FulfillmentClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/UCPOrderResponseSchema;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/FulfillmentObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/UCPOrderResponseSchema;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/FulfillmentObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/UCPOrderResponseSchema;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun component10 ()Ljava/util/List;
 	public final fun component11 ()Lcom/shopify/checkoutkit/UCPOrderResponseSchema;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Lcom/shopify/checkoutkit/FulfillmentClass;
+	public final fun component4 ()Lcom/shopify/checkoutkit/FulfillmentObject;
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Ljava/util/List;
 	public final fun component8 ()Ljava/util/List;
 	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/FulfillmentClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/UCPOrderResponseSchema;)Lcom/shopify/checkoutkit/Order;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Order;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/FulfillmentClass;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/UCPOrderResponseSchema;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Order;
+	public final fun copy (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/FulfillmentObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/UCPOrderResponseSchema;)Lcom/shopify/checkoutkit/Order;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Order;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/FulfillmentObject;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Lcom/shopify/checkoutkit/UCPOrderResponseSchema;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Order;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAdjustments ()Ljava/util/List;
 	public final fun getCheckoutID ()Ljava/lang/String;
 	public final fun getCurrency ()Ljava/lang/String;
-	public final fun getFulfillment ()Lcom/shopify/checkoutkit/FulfillmentClass;
+	public final fun getFulfillment ()Lcom/shopify/checkoutkit/FulfillmentObject;
 	public final fun getId ()Ljava/lang/String;
 	public final fun getLabel ()Ljava/lang/String;
 	public final fun getLineItems ()Ljava/util/List;
@@ -3061,38 +3141,6 @@ public final synthetic class com/shopify/checkoutkit/Order$$serializer : kotlinx
 }
 
 public final class com/shopify/checkoutkit/Order$Companion {
-	public final fun serializer ()Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/OrderClass {
-	public static final field Companion Lcom/shopify/checkoutkit/OrderClass$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/OrderClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/OrderClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/OrderClass;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getId ()Ljava/lang/String;
-	public final fun getLabel ()Ljava/lang/String;
-	public final fun getPermalinkURL ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final synthetic class com/shopify/checkoutkit/OrderClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/OrderClass$$serializer;
-	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/OrderClass;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/OrderClass;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/OrderClass$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -3130,19 +3178,19 @@ public final class com/shopify/checkoutkit/OrderConfirmation$Companion {
 
 public final class com/shopify/checkoutkit/OrderLineItem {
 	public static final field Companion Lcom/shopify/checkoutkit/OrderLineItem$Companion;
-	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Lcom/shopify/checkoutkit/OrderLineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Lcom/shopify/checkoutkit/OrderLineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Lcom/shopify/checkoutkit/OrderLineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Lcom/shopify/checkoutkit/OrderLineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/shopify/checkoutkit/ItemClass;
+	public final fun component2 ()Lcom/shopify/checkoutkit/ItemObject;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Lcom/shopify/checkoutkit/OrderLineItemQuantity;
 	public final fun component5 ()Lcom/shopify/checkoutkit/OrderLineItemStatus;
 	public final fun component6 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Lcom/shopify/checkoutkit/OrderLineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;)Lcom/shopify/checkoutkit/OrderLineItem;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/OrderLineItem;Ljava/lang/String;Lcom/shopify/checkoutkit/ItemClass;Ljava/lang/String;Lcom/shopify/checkoutkit/OrderLineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/OrderLineItem;
+	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Lcom/shopify/checkoutkit/OrderLineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;)Lcom/shopify/checkoutkit/OrderLineItem;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/OrderLineItem;Ljava/lang/String;Lcom/shopify/checkoutkit/ItemObject;Ljava/lang/String;Lcom/shopify/checkoutkit/OrderLineItemQuantity;Lcom/shopify/checkoutkit/OrderLineItemStatus;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/OrderLineItem;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getId ()Ljava/lang/String;
-	public final fun getItem ()Lcom/shopify/checkoutkit/ItemClass;
+	public final fun getItem ()Lcom/shopify/checkoutkit/ItemObject;
 	public final fun getParentID ()Ljava/lang/String;
 	public final fun getQuantity ()Lcom/shopify/checkoutkit/OrderLineItemQuantity;
 	public final fun getStatus ()Lcom/shopify/checkoutkit/OrderLineItemStatus;
@@ -3214,6 +3262,38 @@ public final class com/shopify/checkoutkit/OrderLineItemStatus$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class com/shopify/checkoutkit/OrderObject {
+	public static final field Companion Lcom/shopify/checkoutkit/OrderObject$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/OrderObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/OrderObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/OrderObject;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getPermalinkURL ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/checkoutkit/OrderObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/OrderObject$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/OrderObject;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/OrderObject;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/OrderObject$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class com/shopify/checkoutkit/Payment {
 	public static final field Companion Lcom/shopify/checkoutkit/Payment$Companion;
 	public fun <init> ()V
@@ -3269,35 +3349,6 @@ public final synthetic class com/shopify/checkoutkit/PaymentAccountInfo$$seriali
 }
 
 public final class com/shopify/checkoutkit/PaymentAccountInfo$Companion {
-	public final fun serializer ()Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/PaymentClass {
-	public static final field Companion Lcom/shopify/checkoutkit/PaymentClass$Companion;
-	public fun <init> ()V
-	public fun <init> (Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;)Lcom/shopify/checkoutkit/PaymentClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PaymentClass;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PaymentClass;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getInstruments ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final synthetic class com/shopify/checkoutkit/PaymentClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/PaymentClass$$serializer;
-	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/PaymentClass;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/PaymentClass;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/PaymentClass$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -3493,19 +3544,19 @@ public final class com/shopify/checkoutkit/PaymentIdentity$Companion {
 
 public final class com/shopify/checkoutkit/PaymentInstrument {
 	public static final field Companion Lcom/shopify/checkoutkit/PaymentInstrument$Companion;
-	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressClass;
-	public final fun component2 ()Lcom/shopify/checkoutkit/CredentialClass;
+	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressObject;
+	public final fun component2 ()Lcom/shopify/checkoutkit/CredentialObject;
 	public final fun component3 ()Lkotlinx/serialization/json/JsonObject;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Ljava/lang/String;
-	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/PaymentInstrument;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PaymentInstrument;Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PaymentInstrument;
+	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/PaymentInstrument;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PaymentInstrument;Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PaymentInstrument;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBillingAddress ()Lcom/shopify/checkoutkit/BillingAddressClass;
-	public final fun getCredential ()Lcom/shopify/checkoutkit/CredentialClass;
+	public final fun getBillingAddress ()Lcom/shopify/checkoutkit/BillingAddressObject;
+	public final fun getCredential ()Lcom/shopify/checkoutkit/CredentialObject;
 	public final fun getDisplay ()Lkotlinx/serialization/json/JsonObject;
 	public final fun getHandlerID ()Ljava/lang/String;
 	public final fun getId ()Ljava/lang/String;
@@ -3529,22 +3580,51 @@ public final class com/shopify/checkoutkit/PaymentInstrument$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class com/shopify/checkoutkit/PaymentObject {
+	public static final field Companion Lcom/shopify/checkoutkit/PaymentObject$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/shopify/checkoutkit/PaymentObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PaymentObject;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PaymentObject;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstruments ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/checkoutkit/PaymentObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/PaymentObject$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/PaymentObject;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/PaymentObject;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/PaymentObject$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class com/shopify/checkoutkit/PaymentSelectedPaymentInstrument {
 	public static final field Companion Lcom/shopify/checkoutkit/PaymentSelectedPaymentInstrument$Companion;
-	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressClass;
-	public final fun component2 ()Lcom/shopify/checkoutkit/CredentialClass;
+	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressObject;
+	public final fun component2 ()Lcom/shopify/checkoutkit/CredentialObject;
 	public final fun component3 ()Lkotlinx/serialization/json/JsonObject;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Ljava/lang/Boolean;
-	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/shopify/checkoutkit/PaymentSelectedPaymentInstrument;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PaymentSelectedPaymentInstrument;Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PaymentSelectedPaymentInstrument;
+	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/shopify/checkoutkit/PaymentSelectedPaymentInstrument;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PaymentSelectedPaymentInstrument;Lcom/shopify/checkoutkit/BillingAddressObject;Lcom/shopify/checkoutkit/CredentialObject;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PaymentSelectedPaymentInstrument;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBillingAddress ()Lcom/shopify/checkoutkit/BillingAddressClass;
-	public final fun getCredential ()Lcom/shopify/checkoutkit/CredentialClass;
+	public final fun getBillingAddress ()Lcom/shopify/checkoutkit/BillingAddressObject;
+	public final fun getCredential ()Lcom/shopify/checkoutkit/CredentialObject;
 	public final fun getDisplay ()Lkotlinx/serialization/json/JsonObject;
 	public final fun getHandlerID ()Ljava/lang/String;
 	public final fun getId ()Ljava/lang/String;
@@ -3656,97 +3736,17 @@ public final class com/shopify/checkoutkit/PostalAddress$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/PurpleSelectedPaymentInstrument {
-	public static final field Companion Lcom/shopify/checkoutkit/PurpleSelectedPaymentInstrument$Companion;
-	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressClass;
-	public final fun component2 ()Lcom/shopify/checkoutkit/CredentialClass;
-	public final fun component3 ()Lkotlinx/serialization/json/JsonObject;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun component7 ()Ljava/lang/Boolean;
-	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/shopify/checkoutkit/PurpleSelectedPaymentInstrument;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PurpleSelectedPaymentInstrument;Lcom/shopify/checkoutkit/BillingAddressClass;Lcom/shopify/checkoutkit/CredentialClass;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PurpleSelectedPaymentInstrument;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBillingAddress ()Lcom/shopify/checkoutkit/BillingAddressClass;
-	public final fun getCredential ()Lcom/shopify/checkoutkit/CredentialClass;
-	public final fun getDisplay ()Lkotlinx/serialization/json/JsonObject;
-	public final fun getHandlerID ()Ljava/lang/String;
-	public final fun getId ()Ljava/lang/String;
-	public final fun getSelected ()Ljava/lang/Boolean;
-	public final fun getType ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final synthetic class com/shopify/checkoutkit/PurpleSelectedPaymentInstrument$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/PurpleSelectedPaymentInstrument$$serializer;
-	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/PurpleSelectedPaymentInstrument;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/PurpleSelectedPaymentInstrument;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/PurpleSelectedPaymentInstrument$Companion {
-	public final fun serializer ()Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/PurpleService {
-	public static final field Companion Lcom/shopify/checkoutkit/PurpleService$Companion;
-	public fun <init> (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/Transport;)V
-	public synthetic fun <init> (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/Transport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lkotlinx/serialization/json/JsonObject;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun component7 ()Lcom/shopify/checkoutkit/Transport;
-	public final fun copy (Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/Transport;)Lcom/shopify/checkoutkit/PurpleService;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PurpleService;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/checkoutkit/Transport;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PurpleService;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getConfig ()Lkotlinx/serialization/json/JsonObject;
-	public final fun getEndpoint ()Ljava/lang/String;
-	public final fun getId ()Ljava/lang/String;
-	public final fun getSchema ()Ljava/lang/String;
-	public final fun getSpec ()Ljava/lang/String;
-	public final fun getTransport ()Lcom/shopify/checkoutkit/Transport;
-	public final fun getVersion ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final synthetic class com/shopify/checkoutkit/PurpleService$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/PurpleService$$serializer;
-	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/PurpleService;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/PurpleService;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/PurpleService$Companion {
-	public final fun serializer ()Lkotlinx/serialization/KSerializer;
-}
-
 public final class com/shopify/checkoutkit/RetailLocation {
 	public static final field Companion Lcom/shopify/checkoutkit/RetailLocation$Companion;
-	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/RetailLocation;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/RetailLocation;Lcom/shopify/checkoutkit/BillingAddressClass;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/RetailLocation;
+	public final fun copy (Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/RetailLocation;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/RetailLocation;Lcom/shopify/checkoutkit/BillingAddressObject;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/RetailLocation;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAddress ()Lcom/shopify/checkoutkit/BillingAddressClass;
+	public final fun getAddress ()Lcom/shopify/checkoutkit/BillingAddressObject;
 	public final fun getId ()Ljava/lang/String;
 	public final fun getName ()Ljava/lang/String;
 	public fun hashCode ()I
@@ -3912,15 +3912,15 @@ public final class com/shopify/checkoutkit/Signals$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/SignalsClass {
-	public static final field Companion Lcom/shopify/checkoutkit/SignalsClass$Companion;
+public final class com/shopify/checkoutkit/SignalsObject {
+	public static final field Companion Lcom/shopify/checkoutkit/SignalsObject$Companion;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/SignalsClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/SignalsClass;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/SignalsClass;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/SignalsObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/SignalsObject;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/SignalsObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDevUcpBuyerIP ()Ljava/lang/String;
 	public final fun getDevUcpUserAgent ()Ljava/lang/String;
@@ -3928,18 +3928,18 @@ public final class com/shopify/checkoutkit/SignalsClass {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/SignalsClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/SignalsClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/SignalsObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/SignalsObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/SignalsClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/SignalsObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/SignalsClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/SignalsObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/SignalsClass$Companion {
+public final class com/shopify/checkoutkit/SignalsObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -3958,15 +3958,15 @@ public final class com/shopify/checkoutkit/StatusEnum$Companion {
 
 public final class com/shopify/checkoutkit/TokenBinding {
 	public static final field Companion Lcom/shopify/checkoutkit/TokenBinding$Companion;
-	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/IdentityClass;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/IdentityClass;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/IdentityObject;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/IdentityObject;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/shopify/checkoutkit/IdentityClass;
-	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/IdentityClass;)Lcom/shopify/checkoutkit/TokenBinding;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/TokenBinding;Ljava/lang/String;Lcom/shopify/checkoutkit/IdentityClass;ILjava/lang/Object;)Lcom/shopify/checkoutkit/TokenBinding;
+	public final fun component2 ()Lcom/shopify/checkoutkit/IdentityObject;
+	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/IdentityObject;)Lcom/shopify/checkoutkit/TokenBinding;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/TokenBinding;Ljava/lang/String;Lcom/shopify/checkoutkit/IdentityObject;ILjava/lang/Object;)Lcom/shopify/checkoutkit/TokenBinding;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCheckoutID ()Ljava/lang/String;
-	public final fun getIdentity ()Lcom/shopify/checkoutkit/IdentityClass;
+	public final fun getIdentity ()Lcom/shopify/checkoutkit/IdentityObject;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -4110,13 +4110,13 @@ public final class com/shopify/checkoutkit/TotalLine$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/TotalLineClass {
-	public static final field Companion Lcom/shopify/checkoutkit/TotalLineClass$Companion;
+public final class com/shopify/checkoutkit/TotalLineObject {
+	public static final field Companion Lcom/shopify/checkoutkit/TotalLineObject$Companion;
 	public fun <init> (JLjava/lang/String;)V
 	public final fun component1 ()J
 	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (JLjava/lang/String;)Lcom/shopify/checkoutkit/TotalLineClass;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/TotalLineClass;JLjava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/TotalLineClass;
+	public final fun copy (JLjava/lang/String;)Lcom/shopify/checkoutkit/TotalLineObject;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/TotalLineObject;JLjava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/TotalLineObject;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAmount ()J
 	public final fun getDisplayText ()Ljava/lang/String;
@@ -4124,18 +4124,18 @@ public final class com/shopify/checkoutkit/TotalLineClass {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final synthetic class com/shopify/checkoutkit/TotalLineClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/TotalLineClass$$serializer;
+public final synthetic class com/shopify/checkoutkit/TotalLineObject$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/TotalLineObject$$serializer;
 	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/TotalLineClass;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/TotalLineObject;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
 	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/TotalLineClass;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/TotalLineObject;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/TotalLineClass$Companion {
+public final class com/shopify/checkoutkit/TotalLineObject$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 

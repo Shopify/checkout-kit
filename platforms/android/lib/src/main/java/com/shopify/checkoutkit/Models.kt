@@ -19,9 +19,9 @@ public data class Checkout (
     /**
      * Representation of the buyer.
      */
-    public val buyer: BuyerClass? = null,
+    public val buyer: BuyerObject? = null,
 
-    public val context: ContextClass? = null,
+    public val context: ContextObject? = null,
 
     /**
      * URL for checkout handoff and session recovery. MUST be provided when status is
@@ -67,10 +67,10 @@ public data class Checkout (
     /**
      * Details about an order created for this checkout session.
      */
-    public val order: OrderClass? = null,
+    public val order: OrderObject? = null,
 
-    public val payment: PaymentClass? = null,
-    public val signals: SignalsClass? = null,
+    public val payment: PaymentObject? = null,
+    public val signals: SignalsObject? = null,
 
     /**
      * Checkout state indicating the current phase and required action. See Checkout Status
@@ -90,7 +90,7 @@ public data class Checkout (
  * Representation of the buyer.
  */
 @Serializable
-public data class BuyerClass (
+public data class BuyerObject (
     /**
      * Email of the buyer.
      */
@@ -126,7 +126,7 @@ public data class BuyerClass (
  * address, billing address) supersedes context.
  */
 @Serializable
-public data class ContextClass (
+public data class ContextObject (
     /**
      * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
      * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -193,7 +193,7 @@ public data class ContextClass (
 @Serializable
 public data class CheckoutLineItem (
     public val id: String,
-    public val item: ItemClass,
+    public val item: ItemObject,
 
     /**
      * Parent line item identifier for any nested structures.
@@ -216,7 +216,7 @@ public data class CheckoutLineItem (
  * Product data (id, title, price, image_url).
  */
 @Serializable
-public data class ItemClass (
+public data class ItemObject (
     /**
      * The product identifier, often the SKU, required to resolve the product details associated
      * with this line item. Should be recognized by both the Platform, and the Business.
@@ -391,7 +391,7 @@ public enum class MessageType(public val value: String) {
  * Order details available at the time of checkout completion.
  */
 @Serializable
-public data class OrderClass (
+public data class OrderObject (
     /**
      * Unique order identifier.
      */
@@ -413,7 +413,7 @@ public data class OrderClass (
  * Payment configuration containing handlers.
  */
 @Serializable
-public data class PaymentClass (
+public data class PaymentObject (
     /**
      * The payment instruments available for this payment. Each instrument is associated with a
      * specific handler via the handler_id field. Handlers can extend the base
@@ -434,9 +434,9 @@ public data class PaymentSelectedPaymentInstrument (
      * The billing address associated with this payment method.
      */
     @SerialName("billing_address")
-    public val billingAddress: BillingAddressClass? = null,
+    public val billingAddress: BillingAddressObject? = null,
 
-    public val credential: CredentialClass? = null,
+    public val credential: CredentialObject? = null,
 
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -476,7 +476,7 @@ public data class PaymentSelectedPaymentInstrument (
  * Physical address of the location.
  */
 @Serializable
-public data class BillingAddressClass (
+public data class BillingAddressObject (
     /**
      * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
      * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -541,7 +541,7 @@ public data class BillingAddressClass (
  * The base definition for any payment credential. Handlers define specific credential types.
  */
 @Serializable
-public data class CredentialClass (
+public data class CredentialObject (
     /**
      * The credential type discriminator. Specific schemas will constrain this to a constant
      * value.
@@ -557,7 +557,7 @@ public data class CredentialClass (
  * extensions contribute to the shared namespace.
  */
 @Serializable
-public data class SignalsClass (
+public data class SignalsObject (
     /**
      * Client's IP address (IPv4 or IPv6).
      */
@@ -1017,7 +1017,7 @@ public data class TokenBinding (
      * participant (e.g., agent tokenizing for merchant). Omit when the authenticated caller is
      * the binding target.
      */
-    public val identity: IdentityClass? = null
+    public val identity: IdentityObject? = null
 )
 
 /**
@@ -1029,7 +1029,7 @@ public data class TokenBinding (
  * participant who tokens should be bound to.
  */
 @Serializable
-public data class IdentityClass (
+public data class IdentityObject (
     /**
      * Unique identifier for this participant, obtained during onboarding with the tokenizer.
      */
@@ -1207,9 +1207,9 @@ public data class CardPaymentInstrument (
      * The billing address associated with this payment method.
      */
     @SerialName("billing_address")
-    public val billingAddress: BillingAddressClass? = null,
+    public val billingAddress: BillingAddressObject? = null,
 
-    public val credential: CredentialClass? = null,
+    public val credential: CredentialObject? = null,
 
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -1479,7 +1479,7 @@ public data class Expectation (
     /**
      * Delivery destination address.
      */
-    public val destination: BillingAddressClass,
+    public val destination: BillingAddressObject,
 
     /**
      * When this expectation can be fulfilled: 'now' or ISO 8601 timestamp for future date
@@ -1641,7 +1641,7 @@ public data class FulfillmentDestination (
     /**
      * Physical address of the location.
      */
-    public val address: BillingAddressClass? = null,
+    public val address: BillingAddressObject? = null,
 
     /**
      * Location name (e.g., store name).
@@ -1911,7 +1911,7 @@ public data class FulfillmentDestinationElement (
     /**
      * Physical address of the location.
      */
-    public val address: BillingAddressClass? = null,
+    public val address: BillingAddressObject? = null,
 
     /**
      * Location name (e.g., store name).
@@ -2105,7 +2105,7 @@ public data class Item (
 @Serializable
 public data class LineItem (
     public val id: String,
-    public val item: ItemClass,
+    public val item: ItemObject,
 
     /**
      * Parent line item identifier for any nested structures.
@@ -2405,7 +2405,7 @@ public data class OrderLineItem (
     /**
      * Product data (id, title, price, image_url).
      */
-    public val item: ItemClass,
+    public val item: ItemObject,
 
     /**
      * Parent line item identifier for any nested structures.
@@ -2501,9 +2501,9 @@ public data class PaymentInstrument (
      * The billing address associated with this payment method.
      */
     @SerialName("billing_address")
-    public val billingAddress: BillingAddressClass? = null,
+    public val billingAddress: BillingAddressObject? = null,
 
-    public val credential: CredentialClass? = null,
+    public val credential: CredentialObject? = null,
 
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -2612,7 +2612,7 @@ public data class RetailLocation (
     /**
      * Physical address of the location.
      */
-    public val address: BillingAddressClass? = null,
+    public val address: BillingAddressObject? = null,
 
     /**
      * Unique location identifier.
@@ -2794,14 +2794,14 @@ public data class TotalElement (
      * Optional itemized breakdown. The parent entry is always rendered; lines are
      * supplementary. Sum of line amounts MUST equal the parent entry amount.
      */
-    public val lines: List<TotalLineClass>? = null
+    public val lines: List<TotalLineObject>? = null
 )
 
 /**
  * Sub-line entry. Additional metadata MAY be included.
  */
 @Serializable
-public data class TotalLineClass (
+public data class TotalLineObject (
     public val amount: Long,
 
     /**
@@ -2849,7 +2849,7 @@ public data class Order (
     /**
      * Fulfillment data: buyer expectations and what actually happened.
      */
-    public val fulfillment: FulfillmentClass,
+    public val fulfillment: FulfillmentObject,
 
     /**
      * Unique order identifier.
@@ -2908,7 +2908,7 @@ public data class AdjustmentElement (
      * Which line items and quantities are affected (optional).
      */
     @SerialName("line_items")
-    public val lineItems: List<AdjustmentLineItemClass>? = null,
+    public val lineItems: List<AdjustmentLineItemObject>? = null,
 
     /**
      * RFC 3339 timestamp when this adjustment occurred.
@@ -2936,7 +2936,7 @@ public data class AdjustmentElement (
 )
 
 @Serializable
-public data class AdjustmentLineItemClass (
+public data class AdjustmentLineItemObject (
     /**
      * Line item ID reference.
      */
@@ -2953,7 +2953,7 @@ public data class AdjustmentLineItemClass (
  * Fulfillment data: buyer expectations and what actually happened.
  */
 @Serializable
-public data class FulfillmentClass (
+public data class FulfillmentObject (
     /**
      * Append-only event log of actual shipments. Each event references line items by ID.
      */
@@ -3049,7 +3049,7 @@ public data class ExpectationElement (
     /**
      * Delivery destination address.
      */
-    public val destination: BillingAddressClass,
+    public val destination: BillingAddressObject,
 
     /**
      * When this expectation can be fulfilled: 'now' or ISO 8601 timestamp for future date
@@ -3067,7 +3067,7 @@ public data class ExpectationElement (
      * Which line items and quantities are in this expectation.
      */
     @SerialName("line_items")
-    public val lineItems: List<ExpectationLineItemClass>,
+    public val lineItems: List<ExpectationLineItemObject>,
 
     /**
      * Delivery method type (shipping, pickup, digital).
@@ -3077,7 +3077,7 @@ public data class ExpectationElement (
 )
 
 @Serializable
-public data class ExpectationLineItemClass (
+public data class ExpectationLineItemObject (
     /**
      * Line item ID reference.
      */
@@ -3099,7 +3099,7 @@ public data class LineItemElement (
     /**
      * Product data (id, title, price, image_url).
      */
-    public val item: ItemClass,
+    public val item: ItemObject,
 
     /**
      * Parent line item identifier for any nested structures.
@@ -3226,7 +3226,7 @@ public data class InstrumentsChangePayment (
     /**
      * Available payment instruments.
      */
-    public val instruments: List<PurpleSelectedPaymentInstrument>? = null,
+    public val instruments: List<InstrumentsChangeSelectedPaymentInstrument>? = null,
 
     /**
      * ID of the selected payment instrument.
@@ -3242,14 +3242,14 @@ public data class InstrumentsChangePayment (
  * payment handler.
  */
 @Serializable
-public data class PurpleSelectedPaymentInstrument (
+public data class InstrumentsChangeSelectedPaymentInstrument (
     /**
      * The billing address associated with this payment method.
      */
     @SerialName("billing_address")
-    public val billingAddress: BillingAddressClass? = null,
+    public val billingAddress: BillingAddressObject? = null,
 
-    public val credential: CredentialClass? = null,
+    public val credential: CredentialObject? = null,
 
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -3307,7 +3307,7 @@ public data class InstrumentsChangeResultUcp (
     /**
      * Service registry keyed by reverse-domain name.
      */
-    public val services: Map<String, List<PurpleService>>? = null,
+    public val services: Map<String, List<InstrumentsChangeService>>? = null,
 
     /**
      * Application-level status of the UCP operation.
@@ -3422,7 +3422,7 @@ public data class PaymentHandlerAvailableInstrument (
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class PurpleService (
+public data class InstrumentsChangeService (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -3506,5 +3506,5 @@ public data class CredentialPayment (
     /**
      * Available payment instruments.
      */
-    public val instruments: List<PurpleSelectedPaymentInstrument>? = null
+    public val instruments: List<InstrumentsChangeSelectedPaymentInstrument>? = null
 )
