@@ -18,7 +18,7 @@ struct ProtocolRelayTests {
 
         let payloadDict = try #require(parsed["payload"] as? [String: Any])
         #expect(payloadDict["continue_url"] as? String == "https://example.com")
-        #expect(payloadDict["line_items"] as? [Any] != nil)
+        #expect(payloadDict["line_items"] is [Any])
         #expect(payloadDict["continueUrl"] == nil)
         #expect(payloadDict["lineItems"] == nil)
     }
@@ -96,7 +96,7 @@ struct ProtocolRelayTests {
     }
 
     @MainActor
-    @Test func relayIgnoresMethodsNotInSubscribedList() async throws {
+    @Test func relayIgnoresMethodsNotInSubscribedList() async {
         var captured: String?
         let client = makeRelayClient(
             subscribedMethods: [],

@@ -36,4 +36,7 @@ nesting:
   type_level:
     warning: 2
 
+excluded:
+  - modules/@shopify/checkout-kit-react-native/ios/.build
+
 reporter: "xcode"

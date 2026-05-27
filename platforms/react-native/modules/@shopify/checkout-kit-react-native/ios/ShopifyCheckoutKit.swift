@@ -247,7 +247,7 @@ class RCTShopifyCheckoutKit: NSObject {
         return NSNumber(value: available)
     }
 
-    @objc func respondToGeolocationRequest(_ allow: Bool) {
+    @objc func respondToGeolocationRequest(_: Bool) {
         // No-op on iOS — geolocation permission is handled natively
     }
 
@@ -321,14 +321,14 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
 
 // MARK: - Dispatch envelope helpers
 
-private extension RCTShopifyCheckoutKit {
-    func emitDispatchEvent(_ json: String) {
+extension RCTShopifyCheckoutKit {
+    private func emitDispatchEvent(_ json: String) {
         perform(NSSelectorFromString("emitOnDispatchFromSwift:"), with: json)
     }
 
     /// Builds a `{ "type": ..., "payload": ... }` envelope and forwards
     /// it to the JS dispatch event stream.
-    func emitDispatchEnvelope(type: DispatchEventType, payload: [String: Any]?) {
+    private func emitDispatchEnvelope(type: DispatchEventType, payload: [String: Any]?) {
         var envelope: [String: Any] = ["type": type.rawValue]
         if let payload {
             envelope["payload"] = payload
@@ -350,7 +350,7 @@ private extension RCTShopifyCheckoutKit {
     /// shape the JS dispatcher expects. Field names match Android's
     /// `CustomCheckoutListener.populateErrorDetails` so the JS-side
     /// `parseCheckoutError` works identically on both platforms.
-    static func errorPayload(from error: CheckoutError) -> [String: Any] {
+    fileprivate static func errorPayload(from error: CheckoutError) -> [String: Any] {
         switch error {
         case let .sdkError(underlying):
             return [
