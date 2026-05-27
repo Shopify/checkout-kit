@@ -163,9 +163,8 @@ case "$LANG" in
       --sendable \
       --src-lang schema \
       --src "${SPEC_DIR}/checkout.json" \
-      --src "${SPEC_DIR}/types/"*.json \
-      --src "${SPEC_DIR}/payment.json" \
       --src "${SPEC_DIR}/order.json" \
+      --src "${SPEC_DIR}/types/error_response.json" \
       --src "${SPEC_DIR}/instruments_change_result.json" \
       --src "${SPEC_DIR}/credential_result.json" \
       -o "${OUTPUT}"
@@ -181,8 +180,8 @@ case "$LANG" in
       -e 's/[[:<:]]PurpleSelectedPaymentInstrument[[:>:]]/InstrumentsChangeSelectedPaymentInstrument/g' \
       -e 's/[[:<:]]PurpleStatus[[:>:]]/StatusEnum/g' \
       -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
-      -e 's/public let type: Type/public let type: MessageType/' \
-      -e 's/public enum Type/public enum MessageType/' \
+      -e 's/[[:<:]]TypeEnum[[:>:]]/MessageType/g' \
+      -e 's/[[:<:]]MessageTypeEnum[[:>:]]/MessageType/g' \
       "${OUTPUT}"
 
     echo "Generated ${OUTPUT}"
