@@ -26,14 +26,16 @@ class ProductCollectionViewModel(
     fun fetchCollection(handle: String) = viewModelScope.launch {
         Timber.i("Fetching collection with handle: $handle")
         try {
-            val collection = productCollectionRepository.getProductCollection(handle, numberOfProducts = 10)
-
-            Timber.i("Fetching collection complete")
-            _uiState.value = ProductCollectionUIState.Loaded(productCollection = collection)
+            productCollectionRepository.observeProductCollection(handle, numberOfProducts = 10).collect { collection ->
+                Timber.i("Fetching collection emitted")
+                _uiState.value = ProductCollectionUIState.Loaded(productCollection = collection)
+            }
         } catch (e: Exception) {
             Timber.e("Fetching collection failed $e")
             SnackbarController.sendEvent(SnackbarEvent(R.string.collection_failed_to_load))
-            _uiState.value = ProductCollectionUIState.Error("Failed to fetch collection")
+            if (_uiState.value !is ProductCollectionUIState.Loaded) {
+                _uiState.value = ProductCollectionUIState.Error("Failed to fetch collection")
+            }
         }
     }
 

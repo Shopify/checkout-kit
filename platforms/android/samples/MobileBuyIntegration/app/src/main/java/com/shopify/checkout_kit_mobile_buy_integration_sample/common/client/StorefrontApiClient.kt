@@ -4,6 +4,8 @@ import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.ApolloResponse
 import com.apollographql.apollo.api.Operation
 import com.apollographql.apollo.api.Optional
+import com.apollographql.cache.normalized.FetchPolicy
+import com.apollographql.cache.normalized.fetchPolicy
 import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.CartCreateMutation
 import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.CartLinesAddMutation
 import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.CartLinesRemoveMutation
@@ -15,40 +17,50 @@ import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.FetchProdu
 import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.type.CartInput
 import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.type.CartLineInput
 import com.shopify.checkout_kit_mobile_buy_integration_sample.graphql.type.CartLineUpdateInput
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.transform
 
 class StorefrontApiClient(
     private val apollo: ApolloClient,
 ) {
-    suspend fun fetchProducts(numProducts: Int, numVariants: Int, cursor: String? = null): FetchProductsQuery.Data {
-        val response = apollo.query(
+    fun fetchProducts(numProducts: Int, numVariants: Int, cursor: String? = null): Flow<FetchProductsQuery.Data> {
+        return apollo.query(
             FetchProductsQuery(
                 numProducts = numProducts,
                 numVariants = numVariants,
                 cursor = Optional.presentIfNotNull(cursor),
             )
-        ).execute()
-        return response.dataOrThrowWithErrors()
+        )
+            .fetchPolicy(FetchPolicy.CacheAndNetwork)
+            .toFlow()
+            .emitDataOrFinalError()
     }
 
-    suspend fun fetchProduct(productId: String, numVariants: Int): FetchProductQuery.Data {
-        val response = apollo.query(
+    fun fetchProduct(productId: String, numVariants: Int): Flow<FetchProductQuery.Data> {
+        return apollo.query(
             FetchProductQuery(productId = productId, numVariants = numVariants)
-        ).execute()
-        return response.dataOrThrowWithErrors()
+        )
+            .fetchPolicy(FetchPolicy.CacheAndNetwork)
+            .toFlow()
+            .emitDataOrFinalError()
     }
 
-    suspend fun fetchCollections(numCollections: Int, numProducts: Int): FetchCollectionsQuery.Data {
-        val response = apollo.query(
+    fun fetchCollections(numCollections: Int, numProducts: Int): Flow<FetchCollectionsQuery.Data> {
+        return apollo.query(
             FetchCollectionsQuery(numCollections = numCollections, numProducts = numProducts)
-        ).execute()
-        return response.dataOrThrowWithErrors()
+        )
+            .fetchPolicy(FetchPolicy.CacheAndNetwork)
+            .toFlow()
+            .emitDataOrFinalError()
     }
 
-    suspend fun fetchCollection(handle: String, numProducts: Int): FetchCollectionQuery.Data {
-        val response = apollo.query(
+    fun fetchCollection(handle: String, numProducts: Int): Flow<FetchCollectionQuery.Data> {
+        return apollo.query(
             FetchCollectionQuery(handle = handle, numProducts = numProducts)
-        ).execute()
-        return response.dataOrThrowWithErrors()
+        )
+            .fetchPolicy(FetchPolicy.CacheAndNetwork)
+            .toFlow()
+            .emitDataOrFinalError()
     }
 
     suspend fun createCart(input: CartInput): CartCreateMutation.Data {
@@ -83,5 +95,22 @@ class StorefrontApiClient(
         }
 
         return dataOrThrow()
+    }
+
+    /**
+     * CacheAndNetwork queries can emit an initial cache response before the network response arrives.
+     * When the cache is empty, that first response has no data and is not final, so throwing immediately
+     * would prevent the network result from being observed. Emit any available cached or network data,
+     * and only surface Apollo/Storefront errors once Apollo marks the response as final.
+     */
+    private fun <D : Operation.Data> Flow<ApolloResponse<D>>.emitDataOrFinalError(): Flow<D> {
+        return transform { response ->
+            val data = response.data
+            if (data != null) {
+                emit(data)
+            } else if (response.isLast) {
+                response.dataOrThrowWithErrors()
+            }
+        }
     }
 }

@@ -43,20 +43,31 @@ class ProductViewModel(
     fun fetchProduct(productId: String) = viewModelScope.launch {
         Timber.i("Fetching product with id $productId")
         try {
-            val product = productRepository.getProduct(productId)
-            Timber.i("Fetching product complete $product")
-            val selectedVariant = product.variants.first()
-            _uiState.value = ProductUIState.Loaded(
-                product = product,
-                selectedVariant = selectedVariant,
-                availableOptions = buildAvailableOptions(product, selectedVariant),
-                isAddingToCart = false,
-                addQuantityAmount = 1
-            )
+            productRepository.observeProduct(productId).collect { product ->
+                Timber.i("Fetching product emitted $product")
+                updateLoadedProduct(product)
+            }
         } catch (e: Exception) {
             Timber.e("Fetching product failed $e")
-            _uiState.value = ProductUIState.Error(e.message ?: "Unknown error")
+            if (_uiState.value !is ProductUIState.Loaded) {
+                _uiState.value = ProductUIState.Error(e.message ?: "Unknown error")
+            }
         }
+    }
+
+    private fun updateLoadedProduct(product: Product) {
+        val currentState = _uiState.value as? ProductUIState.Loaded
+        val selectedVariant = currentState?.selectedVariant?.let { currentVariant ->
+            product.variants.find { variant -> variant.id == currentVariant.id }
+        } ?: product.variants.first()
+
+        _uiState.value = ProductUIState.Loaded(
+            product = product,
+            selectedVariant = selectedVariant,
+            availableOptions = buildAvailableOptions(product, selectedVariant),
+            isAddingToCart = currentState?.isAddingToCart ?: false,
+            addQuantityAmount = currentState?.addQuantityAmount ?: 1
+        )
     }
 
     // Select a new variant option (e.g. size = large)

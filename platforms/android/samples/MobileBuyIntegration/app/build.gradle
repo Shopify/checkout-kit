@@ -121,7 +121,7 @@ dependencies {
 
     // Apollo GraphQL client for the Shopify Storefront API
     implementation "com.apollographql.apollo:apollo-runtime:$apollo_version"
-    implementation "com.apollographql.apollo:apollo-normalized-cache:$apollo_version"
+    implementation "com.apollographql.cache:normalized-cache:$apollo_cache_version"
 
     // Image loading library
     implementation "io.coil-kt:coil-compose:$coil_version"
@@ -140,5 +140,7 @@ apollo {
     service("storefront") {
         packageName.set("com.shopify.checkout_kit_mobile_buy_integration_sample.graphql")
         srcDir("src/main/graphql")
+        plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:$apollo_cache_version")
+        pluginArgument("com.apollographql.cache.packageName", packageName.get())
     }
 }
