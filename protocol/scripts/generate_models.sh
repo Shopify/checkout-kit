@@ -26,10 +26,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# quicktype generates non-deterministic color-based names (e.g. PurplePayment, FluffyPayment)
-# when inline objects collide with existing type names. Injecting "title" fields into the
-# extracted result schemas gives quicktype deterministic naming hints.
-#
 # We also rewrite $ref paths from "../../schemas/shopping/" to "" so that refs resolve
 # correctly when the temp file is placed alongside the main schemas in SPEC_DIR. The
 # openrpc doc's `components` section is copied into the temp file so internal
@@ -39,22 +35,20 @@ extract_result_schema() {
   local output_file="$2"
   local root_title="$3"
   local checkout_title="$4"
-  local payment_title="$5"
+  local payment_schema="$5"
   jq --arg method "$method_name" \
     --arg root_title "$root_title" \
     --arg checkout_title "$checkout_title" \
-    --arg payment_title "$payment_title" \
+    --argjson payment_schema "$payment_schema" \
     '
       . as $root
       | .methods[] | select(.name == $method) | .result.schema
       | .title = $root_title
-      | .properties.checkout.title = $checkout_title
-      | .properties.checkout.properties.payment.title = $payment_title
       | walk(if type == "object" and has("$ref") then
           .["$ref"] |= gsub("../../schemas/shopping/"; "")
         else . end)
-      | .properties.checkout.properties.payment.properties.instruments =
-          {"$ref": "payment.json#/properties/instruments"}
+      | .oneOf[0].properties.checkout.title = $checkout_title
+      | .oneOf[0].properties.checkout.properties.payment = $payment_schema
       | . + { components: $root.components }
     ' \
     "${SERVICES_DIR}/embedded.openrpc.json" > "$output_file"
@@ -63,11 +57,30 @@ extract_result_schema() {
 
 extract_result_schema "ec.payment.instruments_change_request" \
   "${SPEC_DIR}/instruments_change_result.json" \
-  "InstrumentsChangeResult" "InstrumentsChangeCheckout" "InstrumentsChangePayment"
+  "InstrumentsChangeResult" \
+  "InstrumentsChangeCheckout" \
+  '{
+    "title": "InstrumentsChangePayment",
+    "description": "Payment instruments with selected instrument ID.",
+    "allOf": [
+      { "$ref": "checkout.json#/properties/payment" },
+      {
+        "type": "object",
+        "properties": {
+          "selected_instrument_id": {
+            "type": "string",
+            "description": "ID of the selected payment instrument."
+          }
+        }
+      }
+    ]
+  }'
 
 extract_result_schema "ec.payment.credential_request" \
   "${SPEC_DIR}/credential_result.json" \
-  "CredentialResult" "CredentialCheckout" "CredentialPayment"
+  "CredentialResult" \
+  "CredentialCheckout" \
+  '{ "$ref": "checkout.json#/properties/payment" }'
 
 case "$LANG" in
   kotlin)
@@ -77,9 +90,8 @@ case "$LANG" in
       --src-lang schema \
       --framework kotlinx \
       --src "${SPEC_DIR}/checkout.json" \
-      --src "${SPEC_DIR}/types/"*.json \
-      --src "${SPEC_DIR}/payment.json" \
       --src "${SPEC_DIR}/order.json" \
+      --src "${SPEC_DIR}/types/error_response.json" \
       --src "${SPEC_DIR}/instruments_change_result.json" \
       --src "${SPEC_DIR}/credential_result.json" \
       --package "com.shopify.checkoutkit" \
@@ -119,14 +131,12 @@ case "$LANG" in
       -e 's/ColorScheme\.serializer()/EmbeddedColorScheme.serializer()/g' \
       "${OUTPUT}"
 
-    # Normalize quicktype fallback names. Kotlin quicktype appends "Class" when
-    # a referenced schema collides with a top-level schema name; TypeScript uses
-    # "Object" for the same cases, so use that spelling consistently here.
-    # Color-based names are quicktype collision fallbacks and are not stable API.
+    # Normalize the remaining exact quicktype color fallbacks produced by UCP result unions.
     sed -i '' -E \
-      -e 's/[[:<:]]([A-Za-z][A-Za-z0-9]*)Class[[:>:]]/\1Object/g' \
-      -e 's/[[:<:]]PurpleSelectedPaymentInstrument[[:>:]]/InstrumentsChangeSelectedPaymentInstrument/g' \
+      -e 's/[[:<:]]PurpleStatus[[:>:]]/StatusEnum/g' \
       -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
+      -e 's/public val type: Type,/public val type: MessageType,/' \
+      -e 's/public enum class Type\(/public enum class MessageType(/' \
       "${OUTPUT}"
 
     # quicktype emits `typealias Totals = JsonArray<TotalElement>`, but
@@ -168,6 +178,11 @@ case "$LANG" in
     sed -i '' -E \
       -e 's/[[:<:]]Binding[[:>:]]/TokenBinding/g' \
       -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
+      -e 's/[[:<:]]PurpleSelectedPaymentInstrument[[:>:]]/InstrumentsChangeSelectedPaymentInstrument/g' \
+      -e 's/[[:<:]]PurpleStatus[[:>:]]/StatusEnum/g' \
+      -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
+      -e 's/public let type: Type/public let type: MessageType/' \
+      -e 's/public enum Type/public enum MessageType/' \
       "${OUTPUT}"
 
     echo "Generated ${OUTPUT}"
@@ -184,9 +199,8 @@ case "$LANG" in
       --acronym-style camel \
       --no-date-times \
       --src "${SPEC_DIR}/checkout.json" \
-      --src "${SPEC_DIR}/types/"*.json \
-      --src "${SPEC_DIR}/payment.json" \
       --src "${SPEC_DIR}/order.json" \
+      --src "${SPEC_DIR}/types/error_response.json" \
       --src "${SPEC_DIR}/instruments_change_result.json" \
       --src "${SPEC_DIR}/credential_result.json" \
       -o "${OUTPUT}"
@@ -197,8 +211,10 @@ case "$LANG" in
       -e 's/^type /export type /' \
       -e 's/[[:<:]]Binding[[:>:]]/TokenBinding/g' \
       -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
-      -e 's/[[:<:]]PurpleSelectedPaymentInstrument[[:>:]]/InstrumentsChangeSelectedPaymentInstrument/g' \
+      -e 's/[[:<:]]PurpleStatus[[:>:]]/StatusEnum/g' \
       -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
+      -e 's/type: Type;/type: MessageType;/' \
+      -e 's/export type Type =/export type MessageType =/' \
       "${OUTPUT}"
 
 
