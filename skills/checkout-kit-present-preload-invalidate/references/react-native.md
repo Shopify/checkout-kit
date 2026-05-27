@@ -1,20 +1,20 @@
 # React Native
 
-Use this as the intended wrapper shape. Check the installed React Native package before copying names directly.
+Use the current React Native package names. Preload/invalidate APIs may vary while the alpha line settles, so confirm the installed package exposes the exact methods before copying this sample.
 
 ```tsx
-import { useEffect, useRef } from "react";
+import {useEffect, useRef} from 'react';
 import {
-  ShopifyCheckoutSheetProvider,
-  useShopifyCheckoutSheet,
-} from "@shopify/checkout-kit";
-import { useDebounce } from "./useDebounce";
+  ShopifyCheckoutProvider,
+  useShopifyCheckout,
+} from '@shopify/checkout-kit-react-native';
+import {useDebounce} from './useDebounce';
 
 function AppWithCheckoutProvider() {
   return (
-    <ShopifyCheckoutSheetProvider config={{}}>
+    <ShopifyCheckoutProvider configuration={{}}>
       <CartScreen />
-    </ShopifyCheckoutSheetProvider>
+    </ShopifyCheckoutProvider>
   );
 }
 
@@ -26,7 +26,7 @@ function CartScreen({
   customerId,
   currencyCode,
 }) {
-  const shopifyCheckout = useShopifyCheckoutSheet();
+  const shopifyCheckout = useShopifyCheckout();
   const preloadedCheckoutUrlRef = useRef<string | null>(null);
 
   useDebounce(
@@ -36,7 +36,7 @@ function CartScreen({
         preloadedCheckoutUrlRef.current = checkoutUrl;
       }
     },
-    [checkoutUrl, buyerLikelyToCheckoutSoon],
+    [checkoutUrl, buyerLikelyToCheckoutSoon, shopifyCheckout],
     300,
   );
 
@@ -64,3 +64,5 @@ function CartScreen({
   }, [shopId, customerId, currencyCode, shopifyCheckout]);
 }
 ```
+
+Treat preload as a hint. When the buyer taps checkout, call `present(checkoutUrl)` with the latest checkout URL; do not wait for or require preload.

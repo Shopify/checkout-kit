@@ -1,5 +1,7 @@
 # Android
 
+Preload/invalidate APIs may vary while the alpha line settles, so confirm the installed Android SDK exposes the exact methods before copying this sample.
+
 ```kotlin
 import androidx.lifecycle.lifecycleScope
 import com.shopify.checkoutkit.ShopifyCheckoutKit
@@ -20,11 +22,14 @@ fun onCartStateSettled(checkoutUrl: String) {
 }
 
 fun onCheckoutTapped(checkoutUrl: String) {
-    ShopifyCheckoutKit.present(
-        checkoutUrl = checkoutUrl,
-        context = activity,
-        checkoutEventProcessor = checkoutEventProcessor,
-    )
+    ShopifyCheckoutKit.present(checkoutUrl, activity) {
+        onFail { error ->
+            renderCheckoutError(error)
+        }
+        onCancel {
+            handleCheckoutCancel()
+        }
+    }
 }
 
 fun onCheckoutAffectingStateChanged(freshCheckoutUrl: String, cartOrBuyerChanged: Boolean) {
@@ -43,3 +48,5 @@ fun onSessionBoundaryChanged() {
     preloadedCheckoutUrl = null
 }
 ```
+
+Treat preload as a hint. When the buyer taps checkout, call `present(checkoutUrl, activity)` with the latest checkout URL; do not wait for or require preload.

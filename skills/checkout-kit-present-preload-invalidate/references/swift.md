@@ -1,5 +1,7 @@
 # Swift
 
+Preload/invalidate APIs may vary while the alpha line settles, so confirm the installed Swift SDK exposes the exact methods before copying this sample.
+
 ```swift
 import ShopifyCheckoutKit
 import UIKit
@@ -17,7 +19,11 @@ func onCartStateSettled(checkoutURL: URL) {
 }
 
 func onCheckoutTapped(checkoutURL: URL, from viewController: UIViewController) {
-    ShopifyCheckoutKit.present(checkout: checkoutURL, from: viewController, delegate: checkoutDelegate)
+    ShopifyCheckoutKit.present(
+        checkout: checkoutURL,
+        from: viewController,
+        delegate: checkoutDelegate
+    )
 }
 
 func onCheckoutAffectingStateChanged(freshCheckoutURL: URL, cartOrBuyerChanged: Bool) {
@@ -36,3 +42,5 @@ func onSessionBoundaryChanged() {
     preloadedCheckoutURL = nil
 }
 ```
+
+Treat preload as a hint. When the buyer taps checkout, call `present(checkout:from:)` with the latest checkout URL; do not wait for or require preload.

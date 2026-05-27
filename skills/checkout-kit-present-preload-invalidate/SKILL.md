@@ -1,21 +1,26 @@
 ---
 name: checkout-kit-present-preload-invalidate
-description: Use when implementing or reviewing Checkout Kit present, preload, and invalidate behavior across platforms, especially when deciding when to preload after cart changes and when to clear cached checkout state.
+description: Use when implementing or reviewing Checkout Kit presentation, preload timing, or invalidate behavior, especially around cart changes, buyer/session changes, and stale checkout state.
+license: MIT
 ---
 
 # Present, Preload, and Invalidate Checkout
 
-Use this skill when the user is wiring Checkout Kit into a cart or checkout flow, improving checkout performance, or debugging stale checkout state.
+Use this skill when wiring checkout into a cart flow, improving checkout startup performance, or debugging stale checkout state.
 
-## Start with local truth
+## Read first
 
-Read these local files before suggesting code:
+- `README.md` and the target platform README.
+- `references/guide.md` for decision rules and review checks.
+- Target platform sample: `references/swift.md`, `references/android.md`, or `references/react-native.md`.
 
-- `README.md` for current package and docs links.
-- The target platform README: `platforms/swift/README.md`, `platforms/android/README.md`, or `platforms/react-native/README.md`.
+## Read when needed
+
 - Sample apps for realistic cart and checkout wiring.
-- The platform source for exact function names and configuration shape.
-- `references/guide.md` for lifecycle rules, platform-neutral flow, and review checklist.
-- The platform sample for the target app: `references/swift.md`, `references/android.md`, or `references/react-native.md`.
+- Platform source for exact alpha API names and configuration shape.
 
-Prefer local source over memory. Use Shopify docs only to confirm current public guidance: https://shopify.dev/docs/storefronts/mobile
+## Gotchas
+
+- Do not gate `present` on preload success. When the buyer taps checkout, call `present` with the latest checkout URL even if preload never ran or is still in flight.
+- Preload only on buyer intent or settled checkout-affecting state.
+- Invalidate on stale checkout, cart/session boundaries, or privacy-sensitive state changes.

@@ -1,39 +1,49 @@
 # Lifecycle Events Guide
 
-## Core Model
+## Event sources
 
-Lifecycle handling should connect checkout state changes to app-owned side effects: navigation, confirmation screens, loading UI, cart refreshes, external URL handling, and error UI.
+Checkout Kit has two lifecycle event sources:
 
-Prefer protocol notifications where the platform exposes them. Keep legacy callbacks only when the platform still requires them or when the protocol does not expose the event needed by the app.
+1. **Native presentation callbacks** are native/ambient SDK events. They cover sheet/dialog presentation outcomes such as cancellation, close/dismissal, native SDK failure, network/webview failures, or host platform requests. They are not messages from checkout and are not part of Checkout Protocol communication.
+2. **Checkout Protocol events** flow through `CheckoutProtocol.Client`, the UCP-backed bidirectional communication layer between the checkout web instance and the native host. Use protocol handlers for checkout-originated notifications and request/response delegations.
 
-## Protocol Events
+Do not treat root SDK callbacks and protocol events as interchangeable. Use native callbacks for presentation outcomes; use Checkout Protocol handlers when the checkout web instance communicates with the host app.
 
-Use protocol events as the source of truth when available:
+Check the target platform README/source before suggesting a handler; not every protocol method is public on every platform.
 
-- `ec.ready`: handshake and delegated capability discovery.
-- `ec.start`: checkout is visible and interactive enough for host UI transitions.
-- `ec.complete`: checkout completed; navigate or refresh order state.
-- `ec.messages.change`: checkout warnings, errors, and informational messages changed.
-- `ec.line_items.change`: line items changed.
-- `ec.buyer.change`: buyer details changed.
-- `ec.payment.change`: payment state changed.
-- `ec.window.open_request`: checkout requests that the host open an external URL.
+## Public checkout protocol events
 
-Do not assume every legacy callback has a one-to-one replacement. If a callback mixed several concerns, split it into protocol handlers and app-owned state transitions.
+Common public Checkout Protocol notifications:
 
-## Platform Samples
+- `ec.start`: checkout web instance has started. Usually no host action is needed unless the app has its own pre-checkout loading shell.
+- `ec.complete`: checkout completed in the web instance. Common host action: clear or refresh app cart state. Do not navigate to a confirmation screen unless the app owns that flow; checkout normally handles confirmation inside the web instance.
+- `ec.messages.change`: checkout messages changed. Listen only when the app has a concrete need outside checkout UI.
+- `ec.line_items.change`: line items changed. Listen only when app state outside checkout must react.
+- `ec.totals.change`: totals changed. Listen only when app state outside checkout must react.
+- `ec.error`: checkout-originated protocol error. Log/report it or show app-owned fallback UI when appropriate.
 
-Read the platform file for the target app:
+The generated protocol model may include more events, such as buyer or payment changes. Suggest them only when the target SDK publicly exposes them.
 
-- `references/swift.md`
-- `references/android.md`
-- `references/react-native.md`
+## Window open delegation
 
-## Review Checklist
+`ec.window.open_request` is a Checkout Protocol request/response delegation for external URLs. Swift and Android expose it as `CheckoutProtocol.windowOpen`; the current React Native wrapper does not expose it in public `ProtocolHandlers` for `present(...)`.
 
-- Completion handling navigates or refreshes state exactly once.
-- Cancellation and failure paths restore the host UI and preserve cart state.
-- External links are handled intentionally.
-- Protocol handlers update app state without duplicating legacy callback side effects.
-- Web pixel events are not relayed to the native layer.
-- Event payload handling does not assume personally identifiable information is present.
+Checkout Kit has a smart default: when the app does **not** register a `windowOpen` handler, the SDK attempts to open the URL with the platform default mechanism, which may resolve a deep link, another app, or the browser.
+
+If the app registers a `windowOpen` handler, that smart default does not run for that request. The app developer becomes responsible for opening the URL with the desired platform mechanism or returning a rejection. Do not register `windowOpen` just to observe URLs.
+
+## Platform wiring
+
+- `references/swift.md`: native `CheckoutDelegate`/SwiftUI callbacks plus `CheckoutProtocol.Client`.
+- `references/android.md`: native presentation builder callbacks plus `CheckoutProtocol.Client`.
+- `references/react-native.md`: native callbacks as the second `present()` argument, protocol handlers as the third argument.
+
+## Review checklist
+
+- Native callbacks and Checkout Protocol handlers are not duplicated.
+- Completion handling clears or refreshes app cart state at most once.
+- Cancellation/failure restores host UI and preserves cart state where appropriate.
+- External links are handled intentionally; custom `windowOpen` handlers open the URL or reject the request.
+- Protocol handlers are registered only for app-owned side effects.
+- Web pixel events are not relayed to native code; remove mobile-app forwarding and rely on checkout/web pixel relay to analytics partners.
+- Payload handling accounts for PII being gated behind authentication.
