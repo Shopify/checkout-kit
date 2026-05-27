@@ -1,0 +1,34 @@
+name: Protocol Codegen Drift
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
+
+      - name: Regenerate protocol models
+        run: |
+          export PATH="${GITHUB_WORKSPACE}/platforms/react-native/node_modules/.bin:${PATH}"
+          ./protocol/scripts/generate_models.sh --lang kotlin
+          ./protocol/scripts/generate_models.sh --lang swift
+          ./protocol/scripts/generate_models.sh --lang typescript
+
+      - name: Check generated files are current
+        run: git diff --exit-code

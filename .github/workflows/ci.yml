@@ -27,6 +27,7 @@ jobs:
       android: ${{ steps.filter.outputs.android }}
       swift: ${{ steps.filter.outputs.swift }}
       reactNative: ${{ steps.filter.outputs.reactNative }}
+      protocolCodegen: ${{ steps.filter.outputs.protocolCodegen }}
       web: ${{ steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -67,6 +68,13 @@ jobs:
               - '.github/workflows/rn-check-packed-files.yml'
               - '.github/workflows/rn-lint.yml'
               - '.github/workflows/breaking-changes.yml'
+              - '.github/workflows/ci.yml'
+            protocolCodegen:
+              - 'protocol/**'
+              - 'platforms/react-native/package.json'
+              - 'platforms/react-native/pnpm-lock.yaml'
+              - '.github/actions/setup/**'
+              - '.github/workflows/protocol-codegen.yml'
               - '.github/workflows/ci.yml'
             web:
               - 'platforms/web/**'
@@ -143,6 +151,12 @@ jobs:
     if: needs.changes.outputs.reactNative == 'true'
     uses: ./.github/workflows/rn-lint.yml
 
+  protocol-codegen:
+    name: Protocol
+    needs: changes
+    if: needs.changes.outputs.protocolCodegen == 'true'
+    uses: ./.github/workflows/protocol-codegen.yml
+
   web:
     name: Web
     needs: changes
@@ -184,6 +198,7 @@ jobs:
       - rn-build-ios
       - rn-check-packed-files
       - rn-lint
+      - protocol-codegen
       - web
       - breaking-changes
     runs-on: ubuntu-latest
