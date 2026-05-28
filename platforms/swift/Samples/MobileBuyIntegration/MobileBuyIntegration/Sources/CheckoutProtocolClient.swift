@@ -46,6 +46,11 @@ extension CheckoutProtocol.Client {
                 }
 
                 let safari = SFSafariViewController(url: request.url)
+
+                // By default, the view controller opens full screen from right to left.
+                safari.modalPresentationStyle = .pageSheet
+                safari.modalTransitionStyle = .coverVertical
+
                 presenter.present(safari, animated: true)
                 return .success
             }

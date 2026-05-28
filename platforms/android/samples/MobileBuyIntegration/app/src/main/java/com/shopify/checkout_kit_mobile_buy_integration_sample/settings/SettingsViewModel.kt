@@ -7,6 +7,7 @@ import com.shopify.checkout_kit_mobile_buy_integration_sample.common.withCustomC
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.authentication.data.CustomerRepository
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.data.Settings
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.data.SettingsRepository
+import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.ColorScheme
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,10 @@ class SettingsViewModel(
 
     fun setBuyerIdentityDemoEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setBuyerIdentityDemoEnabled(enabled)
+    }
+
+    fun setWindowOpenHandler(handler: WindowOpenHandler) = viewModelScope.launch {
+        settingsRepository.setWindowOpenHandler(handler)
     }
 
     fun logout() = viewModelScope.launch {

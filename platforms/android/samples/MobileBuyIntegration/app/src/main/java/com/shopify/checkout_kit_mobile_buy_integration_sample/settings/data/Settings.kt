@@ -4,5 +4,6 @@ import com.shopify.checkoutkit.ColorScheme
 
 data class Settings(
     val colorScheme: ColorScheme,
-    val buyerIdentityDemoEnabled: Boolean
+    val buyerIdentityDemoEnabled: Boolean,
+    val windowOpenHandler: WindowOpenHandler,
 )
