@@ -78,7 +78,7 @@ USE_LOCAL_SDK=1 dev rn android
 
 ### CI
 
-CI uses the default (published) path naturally — no special flag handling. As defense-in-depth, the build wiring still ignores `USE_LOCAL_SDK=1` when the `CI` env var is set (GitHub Actions sets `CI=true` automatically).
+CI uses the default (published) path naturally — no special flag handling. Keep `USE_LOCAL_SDK=1` scoped to local development or explicit validation against unreleased native SDK changes.
 
 ### Gotchas
 

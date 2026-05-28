@@ -9,10 +9,6 @@ permissions:
 
 env:
   JAVA_VERSION: '22'
-  # TODO: remove once ShopifyCheckoutKit is published to CocoaPods trunk and
-  # Maven Central. Tracks the new pod/AAR name introduced by the
-  # ShopifyCheckoutSheetKit → ShopifyCheckoutKit rename.
-  USE_LOCAL_SDK: "1"
 
 jobs:
   build-android:
