@@ -25,7 +25,10 @@ class PreferencesManager(private val context: Context) {
         val buyerIdentityDemoEnabled = preferences[BUYER_IDENTITY] ?: false
         val checkoutPreloadingEnabled = preferences[CHECKOUT_PRELOADING] ?: true
         val windowOpenHandler = preferences[WINDOW_OPEN_HANDLER]?.let { value ->
-            runCatching { WindowOpenHandler.valueOf(value) }.getOrNull()
+            when (value) {
+                "CustomTabs" -> WindowOpenHandler.Default
+                else -> runCatching { WindowOpenHandler.valueOf(value) }.getOrNull()
+            }
         } ?: WindowOpenHandler.Default
 
         UserPreferences(

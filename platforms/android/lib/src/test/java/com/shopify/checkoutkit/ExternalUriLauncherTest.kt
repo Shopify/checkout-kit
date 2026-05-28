@@ -38,12 +38,21 @@ import org.robolectric.RobolectricTestRunner
 class ExternalUriLauncherTest {
 
     @Test
-    fun `launch rejects when startActivity throws security exception`() {
+    fun `launch external app rejects when startActivity throws security exception`() {
         val context = mock<Context>()
         doThrow(SecurityException("blocked")).whenever(context).startActivity(any<Intent>())
 
-        val result = ExternalUriLauncher.launch(context, Uri.parse("https://example.com"))
+        val result = ExternalUriLauncher.launchExternalApp(context, Uri.parse("https://example.com"))
 
         assertThat(result).isEqualTo(ExternalUriLauncher.Result.Rejected(reason = "blocked"))
+    }
+
+    @Test
+    fun `launch uses external app for non-web schemes`() {
+        val context = mock<Context>()
+
+        val result = ExternalUriLauncher.launch(context, Uri.parse("mailto:help@example.com"))
+
+        assertThat(result).isEqualTo(ExternalUriLauncher.Result.Launched)
     }
 }

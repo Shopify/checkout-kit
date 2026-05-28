@@ -4,14 +4,13 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 
 /**
- * Single point of entry for launching an external `ACTION_VIEW` Intent.
+ * Single point of entry for launching URLs outside the checkout WebView.
  *
- * Used by both [CheckoutWebView.shouldOverrideUrlLoading] (for `mailto:` / `tel:` / custom-scheme
- * deep links intercepted during navigation) and the default `ec.window.open_request` handler.
- * Centralizing the resolver check and `startActivity` failure handling keeps the two paths from
- * drifting apart.
+ * Web links use Android Custom Tabs so buyers stay in an in-app browser surface by default.
+ * Contact links and custom-scheme deep links use an external `ACTION_VIEW` intent.
  */
 internal object ExternalUriLauncher {
     sealed class Result {
@@ -20,6 +19,28 @@ internal object ExternalUriLauncher {
     }
 
     fun launch(context: Context, uri: Uri): Result {
+        if (!uri.isWebLink()) {
+            return launchExternalApp(context, uri)
+        }
+        return launchCustomTab(context, uri)
+    }
+
+    fun launchExternalApp(context: Context, uri: Uri): Result {
+        return launchIntent(context, uri)
+    }
+
+    private fun launchCustomTab(context: Context, uri: Uri): Result {
+        return try {
+            CustomTabsIntent.Builder().build().launchUrl(context, uri)
+            Result.Launched
+        } catch (e: ActivityNotFoundException) {
+            Result.Rejected(reason = e.message ?: "No activity resolves $uri")
+        } catch (e: SecurityException) {
+            Result.Rejected(reason = e.message)
+        }
+    }
+
+    private fun launchIntent(context: Context, uri: Uri): Result {
         val intent = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return try {
             context.startActivity(intent)

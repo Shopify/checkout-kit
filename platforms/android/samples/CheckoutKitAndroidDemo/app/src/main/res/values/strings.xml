@@ -24,10 +24,10 @@
     <string name="color_scheme_web" translatable="false">Web</string>
 
     <string name="window_open_handler" translatable="false">Window open handler</string>
-    <string name="window_open_handler_default" translatable="false">Default (Intent.ACTION_VIEW)</string>
-    <string name="window_open_handler_custom_tabs" translatable="false">Custom Tabs</string>
-    <string name="window_open_handler_default_description" translatable="false">Use Checkout Kit default Android intent handling</string>
-    <string name="window_open_handler_custom_tabs_description" translatable="false">Open checkout links in Android Custom Tabs</string>
+    <string name="window_open_handler_default" translatable="false">Default (Custom Tabs)</string>
+    <string name="window_open_handler_external_app" translatable="false">External app</string>
+    <string name="window_open_handler_default_description" translatable="false">Use Checkout Kit default Custom Tabs handling</string>
+    <string name="window_open_handler_external_app_description" translatable="false">Open checkout links with Android intent handling</string>
 
     <string name="sample_app_version" translatable="false">Sample app version</string>
     <string name="sdk_version" translatable="false">Checkout Kit version</string>

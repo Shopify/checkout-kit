@@ -1,6 +1,7 @@
 #if !COCOAPODS
     import ShopifyCheckoutProtocol
 #endif
+import SafariServices
 import UIKit
 import WebKit
 
@@ -204,6 +205,17 @@ protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidFailWithError(error: CheckoutError)
 }
 
+protocol ExternalURLHandling: Sendable {
+    @MainActor func open(_ url: URL) async -> Bool
+}
+
+struct UIApplicationExternalURLHandler: ExternalURLHandling {
+    @MainActor
+    func open(_ url: URL) async -> Bool {
+        await UIApplication.shared.openURL(url)
+    }
+}
+
 @MainActor
 class CheckoutWebView: WKWebView {
     static let preloadCache = PreloadCache()
@@ -218,14 +230,16 @@ class CheckoutWebView: WKWebView {
     private var bridgeRegistration: ScriptMessageHandlerRegistration?
 
     var client: (any CheckoutCommunicationProtocol)?
+    var externalURLHandler: any ExternalURLHandling = UIApplicationExternalURLHandler()
 
     var canOpenExternalURL: (URL) -> Bool = { UIApplication.shared.canOpenURL($0) }
 
     var openExternalURL: (URL) -> Void = { UIApplication.shared.open($0) }
 
     /// Kit-owned client that handles delegations and kit-mandated notifications. Currently:
-    ///   - `window.open` - falls back to `UIApplication.shared.open(...)` after a
-    ///     `canOpenURL` check (consumers may still override via their own client).
+    ///   - `window.open` - opens web URLs in `SFSafariViewController` so buyers stay in an
+    ///     in-app browser surface, and routes non-web URLs through `externalURLHandler`
+    ///     (consumers may still override via their own client).
     ///   - `ec.error` - when the payload carries `severity: "unrecoverable"`, dismiss
     ///     the kit via `viewDelegate`. Per UCP spec, `unrecoverable` means no valid
     ///     resource exists to act on, so consumers don't have to wire dismissal in
@@ -234,11 +248,22 @@ class CheckoutWebView: WKWebView {
         .on(CheckoutProtocol.complete) { _ in
             CheckoutWebView.invalidate(disconnect: false)
         }
-        .on(CheckoutProtocol.windowOpen) { request in
-            guard self.canOpenExternalURL(request.url) else {
-                return .rejected(reason: "canOpenURL returned false")
+        .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
+            let scheme = request.url.scheme?.lowercased()
+            guard scheme == "http" || scheme == "https" else {
+                let didOpen = await externalURLHandler.open(request.url)
+                return didOpen ? .success : .rejected(reason: "UIApplication.open returned false")
             }
-            self.openExternalURL(request.url)
+
+            guard let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController() else {
+                return .rejected(reason: "no presenter available")
+            }
+
+            let safari = SFSafariViewController(url: request.url)
+            safari.modalPresentationStyle = .pageSheet
+            safari.modalTransitionStyle = .coverVertical
+            presenter.present(safari, animated: true)
+
             return .success
         }
         .on(CheckoutProtocol.error) { [weak self] payload in
@@ -477,6 +502,42 @@ extension CheckoutWebView: WKScriptMessageHandler {
                 await checkoutBridge.sendResponse(self, messageBody: response)
             }
         }
+    }
+}
+
+extension UIApplication {
+    var foregroundActiveWindow: UIWindow? {
+        let activeScenes = connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive }
+
+        if #available(iOS 15.0, *) {
+            return activeScenes.compactMap(\.keyWindow).first
+        } else {
+            return activeScenes.flatMap(\.windows).first { $0.isKeyWindow }
+        }
+    }
+
+    func openURL(_ url: URL) async -> Bool {
+        await withCheckedContinuation { continuation in
+            open(url, options: [:]) { didOpen in
+                continuation.resume(returning: didOpen)
+            }
+        }
+    }
+}
+
+extension UIWindow {
+    func topMostViewController() -> UIViewController? {
+        guard var topController = rootViewController else {
+            return nil
+        }
+
+        while let presentedViewController = topController.presentedViewController {
+            topController = presentedViewController
+        }
+
+        return topController
     }
 }
 
