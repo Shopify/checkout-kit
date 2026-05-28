@@ -9,7 +9,5 @@ for arg in "$@"; do
 done
 
 cd sample/ios
-bundle install
-bundle exec pod repo update
-bundle exec pod cache clean --all
+bundle check || bundle install
 bundle exec pod install --repo-update

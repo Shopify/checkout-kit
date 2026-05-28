@@ -5,17 +5,16 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 args=()
-use_local=0
+pod_install_args=()
 for arg in "$@"; do
   if [ "$arg" = "--local" ]; then
-    use_local=1
+    export USE_LOCAL_SDK=1
+    pod_install_args+=("--local")
   else
     args+=("$arg")
   fi
 done
 
-if [ "$use_local" = "1" ]; then
-  (cd "$SCRIPT_DIR/../.." && pnpm run pod-install -- --local)
-fi
+(cd "$SCRIPT_DIR/../.." && pnpm run pod-install -- "${pod_install_args[@]}")
 
 exec react-native run-ios "${args[@]}"

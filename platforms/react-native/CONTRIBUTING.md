@@ -82,7 +82,7 @@ CI uses the default (published) path naturally — no special flag handling. As 
 
 ### Gotchas
 
-- **iOS**: re-run `dev rn pod-install --local` (or drop the flag) after switching modes — CocoaPods caches resolution.
+- **iOS**: `dev rn ios` runs `pod install` before launching, so dropping or adding `--local` will re-resolve the pods as needed. You can still run `dev rn pod-install [--local]` directly when you only want to refresh pods.
 - **Android (CLI)**: covered automatically by the publish script — every `--local` run re-publishes the AAR before building.
 - **Android (Android Studio)**: when running the sample via Android Studio's Run button after editing `platforms/android/lib/src/**`, run `platforms/react-native/scripts/publish_android_snapshot` once manually (with `USE_LOCAL_SDK=1`) or run `dev rn android --local` from a terminal to refresh `~/.m2/`.
 - The flag affects **only the RN build**. The standalone Swift and Android SDK builds (`dev android build`, `swift build`, etc.) are unaffected.

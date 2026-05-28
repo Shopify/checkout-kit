@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "android": "bash ./scripts/android",
-    "clean": "rm -rf node_modules ios/build ios/pods vendor",
+    "clean": "rm -rf node_modules ios/build ios/Pods vendor",
     "clean:android": "(cd android && ./gradlew clean)",
     "build:android": "bash ./scripts/build_android",
     "release:android": "bash ./scripts/release_android",
