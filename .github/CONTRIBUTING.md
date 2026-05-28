@@ -86,6 +86,7 @@ Open a pull request with the following changes:
 2. Bump the metadata version in `platforms/swift/Sources/ShopifyCheckoutKit/MetaData.swift`.
 3. Bump the podspec version in `ShopifyCheckoutKit.podspec` (at the repo root).
 4. Add an entry to the top of `platforms/swift/CHANGELOG.md`.
+5. If the React Native package should consume this Swift SDK release, update `checkoutKit.nativeSdkVersions.ios` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the same version.
 
 All Swift version declarations must match exactly. Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
@@ -133,6 +134,7 @@ Open a pull request with the following changes:
 
 1. Bump the `versionName` in `platforms/android/lib/build.gradle`.
 2. Add an entry to the top of `platforms/android/CHANGELOG.md`.
+3. If the React Native package should consume this Android SDK release, update `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the same version.
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
@@ -147,6 +149,21 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 ---
 
 ## React Native (`platforms/react-native/`)
+
+### Native SDK dependency versions
+
+The React Native package reads its published native SDK dependency versions from `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`:
+
+```json
+"checkoutKit": {
+  "nativeSdkVersions": {
+    "ios": "4.0.0-alpha.1",
+    "android": "4.0.0-alpha.1"
+  }
+}
+```
+
+When updating the Swift or Android SDK version that React Native should consume, update the matching `checkoutKit.nativeSdkVersions` entry in this package file. These values drive `RNShopifyCheckoutKit.podspec` for iOS and the module/sample Gradle dependencies for Android, so they must stay aligned with the published native SDK versions used by the React Native release.
 
 ### Public API surface
 

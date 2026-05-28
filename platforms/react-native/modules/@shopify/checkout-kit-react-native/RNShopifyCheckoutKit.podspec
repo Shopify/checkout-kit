@@ -1,6 +1,9 @@
 require "json"
 
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
+ios_native_sdk_version = package.dig("checkoutKit", "nativeSdkVersions", "ios")
+
+raise "checkoutKit.nativeSdkVersions.ios is required in package.json" if ios_native_sdk_version.to_s.empty?
 
 Pod::Spec.new do |s|
   s.name         = "RNShopifyCheckoutKit"
@@ -28,8 +31,8 @@ Pod::Spec.new do |s|
     s.dependency "ShopifyCheckoutKit"
     s.dependency "ShopifyCheckoutKit/AcceleratedCheckouts"
   else
-    s.dependency "ShopifyCheckoutKit", "~> 0.0.0"
-    s.dependency "ShopifyCheckoutKit/AcceleratedCheckouts", "~> 0.0.0"
+    s.dependency "ShopifyCheckoutKit", "~> #{ios_native_sdk_version}"
+    s.dependency "ShopifyCheckoutKit/AcceleratedCheckouts", "~> #{ios_native_sdk_version}"
   end
 
   install_modules_dependencies(s)

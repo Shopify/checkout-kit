@@ -17,6 +17,12 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
+  "checkoutKit": {
+    "nativeSdkVersions": {
+      "ios": "4.0.0-alpha.1",
+      "android": "4.0.0-alpha.1"
+    }
+  },
   "scripts": {
     "clean": "rm -rf lib",
     "build": "bob build",
