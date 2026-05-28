@@ -158,6 +158,68 @@ class CheckoutProtocolTest {
     }
 
     @Test
+    fun `checkout model decodes extension fields`() {
+        val checkout = Json.decodeFromString<Checkout>(
+            """
+            {
+              "id": "checkout-123",
+              "currency": "USD",
+              "discounts": {
+                "codes": ["SUMMER20"],
+                "applied": [
+                  {
+                    "amount": 500,
+                    "code": "SUMMER20",
+                    "method": "across",
+                    "title": "Summer sale",
+                    "allocations": [
+                      {
+                        "amount": 500,
+                        "path": "${'$'}.line_items[0]"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "fulfillment": {
+                "available_methods": [
+                  {
+                    "line_item_ids": ["li-1"],
+                    "type": "shipping"
+                  }
+                ],
+                "methods": [
+                  {
+                    "id": "pickup-main",
+                    "line_item_ids": ["li-1"],
+                    "type": "pickup"
+                  }
+                ]
+              },
+              "line_items": [],
+              "links": [],
+              "status": "incomplete",
+              "totals": [],
+              "ucp": {
+                "payment_handlers": {},
+                "version": "2026-04-08"
+              }
+            }
+            """.trimIndent(),
+        )
+
+        assertThat(checkout.discounts?.codes).containsExactly("SUMMER20")
+        assertThat(checkout.discounts?.applied?.get(0)?.method).isEqualTo(DiscountMethod.Across)
+        assertThat(checkout.discounts?.applied?.get(0)?.allocations?.get(0)?.path)
+            .isEqualTo("\$.line_items[0]")
+        assertThat(checkout.fulfillment?.availableMethods?.get(0)?.type)
+            .isEqualTo(FulfillmentMethodType.Shipping)
+        assertThat(checkout.fulfillment?.methods?.get(0)?.id).isEqualTo("pickup-main")
+        assertThat(checkout.fulfillment?.methods?.get(0)?.type)
+            .isEqualTo(FulfillmentMethodType.Pickup)
+    }
+
+    @Test
     fun `order line item decodes quantity model`() {
         val lineItem = Json.decodeFromString<OrderLineItem>(
             """

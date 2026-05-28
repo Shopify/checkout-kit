@@ -147,6 +147,64 @@ describe('CheckoutProtocol', () => {
       ]);
     });
 
+    it('decodes checkout extension fields through the generated runtime converter', () => {
+      const decoded = decodeProtocolPayload(CheckoutProtocol.start, {
+        id: 'checkout-123',
+        currency: 'USD',
+        discounts: {
+          codes: ['SUMMER20'],
+          applied: [
+            {
+              amount: 500,
+              code: 'SUMMER20',
+              method: 'across',
+              title: 'Summer sale',
+              allocations: [
+                {
+                  amount: 500,
+                  path: '$.line_items[0]',
+                },
+              ],
+            },
+          ],
+        },
+        fulfillment: {
+          available_methods: [
+            {
+              line_item_ids: ['li-1'],
+              type: 'shipping',
+            },
+          ],
+          methods: [
+            {
+              id: 'pickup-main',
+              line_item_ids: ['li-1'],
+              type: 'pickup',
+            },
+          ],
+        },
+        line_items: [],
+        links: [],
+        status: 'incomplete',
+        totals: [],
+        ucp: {
+          payment_handlers: {},
+          version: '2026-04-08',
+        },
+      });
+
+      expect(decoded?.discounts?.codes).toEqual(['SUMMER20']);
+      expect(decoded?.discounts?.applied?.[0]?.method).toBe('across');
+      expect(decoded?.discounts?.applied?.[0]?.allocations?.[0]?.path).toBe(
+        '$.line_items[0]',
+      );
+      expect(decoded?.fulfillment?.availableMethods?.[0]?.type).toBe(
+        'shipping',
+      );
+      expect(decoded?.fulfillment?.methods?.[0]?.id).toBe('pickup-main');
+      expect(decoded?.fulfillment?.methods?.[0]?.type).toBe('pickup');
+    });
+
     it('decodes order line item quantity through the generated runtime converter', () => {
       const decoded = Convert.toOrder(
         JSON.stringify({
