@@ -24,6 +24,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
+@Suppress("LargeClass")
 @RunWith(RobolectricTestRunner::class)
 class EmbeddedCheckoutProtocolBridgeTest {
 
