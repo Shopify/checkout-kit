@@ -99,15 +99,15 @@ if [[ "$VERBOSE" == "false" ]]; then
 	QUIET_FLAG="--quiet"
 fi
 
-if [[ "$MODE" == "fix" ]]; then
-	$SWIFTLINT lint --fix --no-cache $QUIET_FLAG
-fi
-
 # SwiftLint doesn't report errors when running in fix mode
 # Running again in strict mode to ensure no errors are missed.
 # Run from the directory containing .swiftlint.yml so its `included:` paths
 # resolve consistently.
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [[ "$MODE" == "fix" ]]; then
+	(cd "$PROJECT_ROOT" && $SWIFTLINT lint --fix --no-cache $QUIET_FLAG)
+fi
+
 (cd "$PROJECT_ROOT" && $SWIFTLINT lint --strict --no-cache $QUIET_FLAG)
 LINT_STATUS=$?
 
