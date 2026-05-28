@@ -18,6 +18,7 @@ import com.shopify.checkout_kit_mobile_buy_integration_sample.common.logs.Logger
 import com.shopify.checkout_kit_mobile_buy_integration_sample.common.navigation.Screen
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.PreferencesManager
 import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.authentication.data.CustomerRepository
+import com.shopify.checkout_kit_mobile_buy_integration_sample.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.Checkout
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.CheckoutException
@@ -46,6 +47,7 @@ class CartViewModel(
     val loadingState: StateFlow<Boolean> = _loadingState
 
     private var demoBuyerIdentityEnabled = false
+    private var windowOpenHandler = WindowOpenHandler.Default
 
     init {
         // clear cart when buyer identity demo setting toggled
@@ -55,6 +57,7 @@ class CartViewModel(
                     clearCart()
                     demoBuyerIdentityEnabled = it.buyerIdentityDemoEnabled
                 }
+                windowOpenHandler = it.windowOpenHandler
             }
         }
     }
@@ -117,7 +120,7 @@ class CartViewModel(
                     mainActivity.onGeolocationPermissionsHidePrompt()
                 }
             }
-            connect(buildCommunicationClient(navController, activity))
+            connect(buildCommunicationClient(navController, activity, windowOpenHandler))
         }
     }
 
@@ -159,8 +162,9 @@ class CartViewModel(
     private fun buildCommunicationClient(
         navController: NavController,
         activity: ComponentActivity,
-    ): CheckoutProtocol.Client =
-        CheckoutProtocol.Client()
+        windowOpenHandler: WindowOpenHandler,
+    ): CheckoutProtocol.Client {
+        val base = CheckoutProtocol.Client()
             .on(CheckoutProtocol.start) { Timber.i("ECP ec.start: $it") }
             .on(CheckoutProtocol.complete) { checkout ->
                 Timber.i("ECP ec.complete: $checkout")
@@ -170,7 +174,10 @@ class CartViewModel(
             .on(CheckoutProtocol.totalsChange) { Timber.i("ECP ec.totals.change: $it") }
             .on(CheckoutProtocol.lineItemsChange) { Timber.i("ECP ec.line_items.change: $it") }
             .on(CheckoutProtocol.messagesChange) { Timber.i("ECP ec.messages.change: $it") }
-            .on(CheckoutProtocol.windowOpen) { request ->
+
+        return when (windowOpenHandler) {
+            WindowOpenHandler.Default -> base
+            WindowOpenHandler.CustomTabs -> base.on(CheckoutProtocol.windowOpen) { request ->
                 val scheme = request.url.scheme?.lowercase()
                 Timber.i("ECP ec.window.open_request ($scheme): ${request.url}")
                 if (scheme != "http" && scheme != "https") {
@@ -185,6 +192,8 @@ class CartViewModel(
                     }
                 }
             }
+        }
+    }
 
     private fun performCartLinesAdd(cartId: ID, variantId: ID, quantity: Int, onComplete: OnComplete) = viewModelScope.launch {
         Timber.i("Adding cart lines to existing cart: $cartId, variant: $variantId, and $quantity")

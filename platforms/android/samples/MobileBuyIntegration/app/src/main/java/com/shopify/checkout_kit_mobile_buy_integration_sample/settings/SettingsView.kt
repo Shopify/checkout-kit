@@ -102,6 +102,11 @@ fun SettingsView(
                     setSelected = settingsViewModel::setColorScheme
                 )
 
+                WindowOpenHandlerSection(
+                    selected = uiState.settings.windowOpenHandler,
+                    setSelected = settingsViewModel::setWindowOpenHandler
+                )
+
                 Version(
                     title = stringResource(id = R.string.sdk_version),
                     version = uiState.sdkVersion,

@@ -17,6 +17,7 @@ class SettingsRepository(
             Settings(
                 colorScheme = preferences.colorScheme,
                 buyerIdentityDemoEnabled = preferences.buyerIdentityDemoEnabled,
+                windowOpenHandler = preferences.windowOpenHandler,
             )
         }
     }
@@ -34,5 +35,9 @@ class SettingsRepository(
      */
     suspend fun setBuyerIdentityDemoEnabled(enabled: Boolean) {
         preferencesManager.setBuyerIdentityDemoEnabled(enabled)
+    }
+
+    suspend fun setWindowOpenHandler(handler: WindowOpenHandler) {
+        preferencesManager.setWindowOpenHandler(handler)
     }
 }
