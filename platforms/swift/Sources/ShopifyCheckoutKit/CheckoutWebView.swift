@@ -162,24 +162,24 @@ extension CheckoutWebView: WKScriptMessageHandler {
     /// SFSafariViewController and non-web URLs with UIApplication.
     var defaultsClient: CheckoutProtocol.Client {
         CheckoutProtocol.Client()
-        .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
-            let scheme = request.url.scheme?.lowercased()
-            guard scheme == "http" || scheme == "https" else {
-                let didOpen = await externalURLHandler.open(request.url)
-                return didOpen ? .success : .rejected(reason: "UIApplication.open returned false")
+            .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
+                let scheme = request.url.scheme?.lowercased()
+                guard scheme == "http" || scheme == "https" else {
+                    let didOpen = await externalURLHandler.open(request.url)
+                    return didOpen ? .success : .rejected(reason: "UIApplication.open returned false")
+                }
+
+                guard let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController() else {
+                    return .rejected(reason: "no presenter available")
+                }
+
+                let safari = SFSafariViewController(url: request.url)
+                safari.modalPresentationStyle = .pageSheet
+                safari.modalTransitionStyle = .coverVertical
+                presenter.present(safari, animated: true)
+
+                return .success
             }
-
-            guard let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController() else {
-                return .rejected(reason: "no presenter available")
-            }
-
-            let safari = SFSafariViewController(url: request.url)
-            safari.modalPresentationStyle = .pageSheet
-            safari.modalTransitionStyle = .coverVertical
-            presenter.present(safari, animated: true)
-
-            return .success
-        }
     }
 }
 
