@@ -214,6 +214,8 @@ case "$LANG" in
       -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
       -e 's/type: Type;/type: MessageType;/' \
       -e 's/export type Type =/export type MessageType =/' \
+      -e 's/r[(]"Type"[)]/r("MessageType")/g' \
+      -e 's/"Type": \[/"MessageType": [/g' \
       "${OUTPUT}"
 
 
