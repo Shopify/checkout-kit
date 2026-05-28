@@ -59,6 +59,18 @@ Maestro itself is a system CLI, not an npm dependency. Install once with:
 curl -fsSL "https://get.maestro.mobile.dev" | bash
 ```
 
+To run multiple local flows sequentially from the repository root, use:
+
+```
+./e2e/run_maestro_local
+./e2e/run_maestro_local --trials 10
+./e2e/run_maestro_local --target android --trials 25
+```
+
+The local wrapper assumes the selected sample apps are already built/launched
+and any required dev servers are running. It writes per-target logs under
+`/tmp/checkout-kit-e2e-maestro` by default.
+
 To pin the native Android runner to a specific emulator, set
 `MAESTRO_ANDROID_UDID`:
 

@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+ALL_TARGETS=(rn-ios rn-android swift-ios android)
+TARGETS=("${ALL_TARGETS[@]}")
+TARGETS_SET=0
+TRIALS=1
+CONTINUE_ON_FAILURE=0
+RUN_ROOT="${E2E_MAESTRO_LOCAL_LOG_DIR:-${TMPDIR:-/tmp}/checkout-kit-e2e-maestro}"
+RUN_DIR=""
+
+usage() {
+  cat <<'EOF'
+Usage: ./e2e/run_maestro_local [options]
+
+Runs local Maestro e2e flows sequentially from the correct platform folders.
+Build and launch the selected sample apps first.
+
+Options:
+  --target <name>          Target to run: all, rn-ios, rn-android, swift-ios, android.
+                           Can be passed more than once.
+  --trials <count>         Number of times to run the selected targets. Default: 1.
+  --continue-on-failure    Keep running remaining targets/trials after a failure.
+  --log-dir <path>         Directory root for logs. Default: /tmp/checkout-kit-e2e-maestro.
+  --help                   Show this help.
+
+Examples:
+  ./e2e/run_maestro_local
+  ./e2e/run_maestro_local --trials 10
+  ./e2e/run_maestro_local --target android --trials 25
+EOF
+}
+
+is_supported_target() {
+  local target="$1"
+  local supported
+
+  for supported in "${ALL_TARGETS[@]}"; do
+    if [[ "${target}" == "${supported}" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+add_target() {
+  local target="$1"
+
+  if [[ "${target}" == "all" ]]; then
+    TARGETS=("${ALL_TARGETS[@]}")
+    TARGETS_SET=1
+    return
+  fi
+
+  if ! is_supported_target "${target}"; then
+    echo "Unsupported target: ${target}" >&2
+    usage >&2
+    exit 2
+  fi
+
+  if [[ "${TARGETS_SET}" == "0" ]]; then
+    TARGETS=()
+    TARGETS_SET=1
+  fi
+
+  TARGETS+=("${target}")
+}
+
+require_value() {
+  local option="$1"
+  local value="${2:-}"
+
+  if [[ -z "${value}" || "${value}" == --* ]]; then
+    echo "${option} requires a value." >&2
+    exit 2
+  fi
+}
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --target)
+      require_value "$1" "${2:-}"
+      add_target "$2"
+      shift 2
+      ;;
+    --trials)
+      require_value "$1" "${2:-}"
+      TRIALS="$2"
+      shift 2
+      ;;
+    --continue-on-failure)
+      CONTINUE_ON_FAILURE=1
+      shift
+      ;;
+    --log-dir)
+      require_value "$1" "${2:-}"
+      RUN_ROOT="$2"
+      shift 2
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if ! [[ "${TRIALS}" =~ ^[1-9][0-9]*$ ]]; then
+  echo "--trials must be a positive integer." >&2
+  exit 2
+fi
+
+target_workdir() {
+  case "$1" in
+    rn-ios | rn-android)
+      printf "%s/platforms/react-native\n" "${REPO_ROOT}"
+      ;;
+    swift-ios)
+      printf "%s/platforms/swift\n" "${REPO_ROOT}"
+      ;;
+    android)
+      printf "%s/platforms/android\n" "${REPO_ROOT}"
+      ;;
+  esac
+}
+
+target_command() {
+  case "$1" in
+    rn-ios)
+      printf "pnpm e2e:ios\n"
+      ;;
+    rn-android)
+      printf "pnpm e2e:android\n"
+      ;;
+    swift-ios)
+      printf "./Scripts/e2e_maestro_ios\n"
+      ;;
+    android)
+      printf "./scripts/e2e_maestro_android\n"
+      ;;
+  esac
+}
+
+run_target() {
+  local trial="$1"
+  local target="$2"
+  local workdir
+  local command
+  local log_file
+  local status
+
+  workdir="$(target_workdir "${target}")"
+  command="$(target_command "${target}")"
+  log_file="${RUN_DIR}/trial-${trial}-${target}.log"
+
+  echo
+  echo "==> Trial ${trial}/${TRIALS}: ${target}"
+  echo "    Workdir: ${workdir}"
+  echo "    Command: ${command}"
+  echo "    Log: ${log_file}"
+
+  set +e
+  (
+    cd "${workdir}" || exit 1
+    eval "${command}"
+  ) 2>&1 | tee "${log_file}"
+  status="${PIPESTATUS[0]}"
+  set -u
+
+  if [[ "${status}" == "0" ]]; then
+    echo "PASS ${target} trial ${trial}"
+  else
+    echo "FAIL ${target} trial ${trial} exited ${status}"
+  fi
+
+  return "${status}"
+}
+
+main() {
+  local timestamp
+  local trial
+  local target
+  local failures=0
+  local start_seconds
+  local end_seconds
+
+  timestamp="$(date +%Y%m%d-%H%M%S)"
+  RUN_DIR="${RUN_ROOT}/${timestamp}"
+  mkdir -p "${RUN_DIR}"
+
+  echo "Repo: ${REPO_ROOT}"
+  echo "Targets: ${TARGETS[*]}"
+  echo "Trials: ${TRIALS}"
+  echo "Continue on failure: ${CONTINUE_ON_FAILURE}"
+  echo "Log directory: ${RUN_DIR}"
+  echo
+  echo "Assumption: selected sample apps are already built/launched and any required dev servers are running."
+
+  start_seconds="$(date +%s)"
+
+  for ((trial = 1; trial <= TRIALS; trial++)); do
+    for target in "${TARGETS[@]}"; do
+      if ! run_target "${trial}" "${target}"; then
+        failures=$((failures + 1))
+
+        if [[ "${CONTINUE_ON_FAILURE}" != "1" ]]; then
+          echo
+          echo "Stopping after first failure. Use --continue-on-failure to run the remaining targets."
+          echo "Logs: ${RUN_DIR}"
+          exit 1
+        fi
+      fi
+    done
+  done
+
+  end_seconds="$(date +%s)"
+
+  echo
+  echo "Completed in $((end_seconds - start_seconds))s"
+  echo "Failures: ${failures}"
+  echo "Logs: ${RUN_DIR}"
+
+  if [[ "${failures}" != "0" ]]; then
+    exit 1
+  fi
+}
+
+main
