@@ -695,18 +695,9 @@ See the
 for information on how to get started with adding support for Offsite Payments
 in your app.
 
-It is crucial for your app to be configured to handle URL clicks during the
-checkout process effectively. By default, the kit includes the following
-delegate method to manage these interactions. This code ensures that external
-links, such as HTTPS and deep-links, are opened correctly by iOS.
-
-```swift
-public func checkoutDidClickLink(url: URL) {
-  if UIApplication.shared.canOpenURL(url) {
-    UIApplication.shared.open(url)
-  }
-}
-```
+Checkout Kit opens delegated web links in `SFSafariViewController` on iOS and
+Android Custom Tabs on Android by default. Non-web links open through the
+platform's native app opener.
 
 ## Pickup points / Pickup in store
 

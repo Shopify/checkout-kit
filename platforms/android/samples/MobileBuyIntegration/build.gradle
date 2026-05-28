@@ -4,7 +4,6 @@ buildscript {
         apollo_version = '5.0.0'
         apollo_cache_version = '1.0.3'
         app_compat_version = '1.7.1'
-        browser_version = '1.10.0'
         compose_ui_version = '1.10.6'
         coil_version = '2.7.0'
         core_version = '1.18.0'

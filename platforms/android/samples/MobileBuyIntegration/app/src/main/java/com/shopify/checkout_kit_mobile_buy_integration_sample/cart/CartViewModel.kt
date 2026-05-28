@@ -1,9 +1,9 @@
 package com.shopify.checkout_kit_mobile_buy_integration_sample.cart
 
 import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -177,19 +177,18 @@ class CartViewModel(
 
         return when (windowOpenHandler) {
             WindowOpenHandler.Default -> base
-            WindowOpenHandler.CustomTabs -> base.on(CheckoutProtocol.windowOpen) { request ->
+            WindowOpenHandler.ExternalApp -> base.on(CheckoutProtocol.windowOpen) { request ->
                 val scheme = request.url.scheme?.lowercase()
                 Timber.i("ECP ec.window.open_request ($scheme): ${request.url}")
-                if (scheme != "http" && scheme != "https") {
-                    WindowOpenResult.Rejected(reason = "unsupported URL scheme: $scheme")
-                } else {
-                    try {
-                        CustomTabsIntent.Builder().build().launchUrl(activity, request.url)
-                        WindowOpenResult.Success
-                    } catch (e: ActivityNotFoundException) {
-                        Timber.w(e, "No activity resolved ${request.url}")
-                        WindowOpenResult.Rejected(reason = "no activity resolved URL")
-                    }
+                try {
+                    activity.startActivity(Intent(Intent.ACTION_VIEW, request.url))
+                    WindowOpenResult.Success
+                } catch (e: ActivityNotFoundException) {
+                    Timber.w(e, "No activity resolved ${request.url}")
+                    WindowOpenResult.Rejected(reason = "no activity resolved URL")
+                } catch (e: SecurityException) {
+                    Timber.w(e, "Blocked from opening ${request.url}")
+                    WindowOpenResult.Rejected(reason = e.message)
                 }
             }
         }

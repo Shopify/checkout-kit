@@ -120,8 +120,8 @@ internal class EmbeddedCheckoutProtocol(
      *
      * Tries the merchant's [client] first — if they registered a handler via
      * `.on(CheckoutProtocol.windowOpen) { ... }`, their response wins. Otherwise
-     * falls back to the kit-owned [defaultClient], which launches the URL via
-     * `Intent.ACTION_VIEW` (see [defaultDelegationClient]).
+     * falls back to the kit-owned [defaultClient], which opens web URLs in
+     * Android Custom Tabs (see [defaultDelegationClient]).
      */
     private fun handleWindowOpenRequest(message: String) {
         log.d(LOG_TAG, "Handling $METHOD_WINDOW_OPEN_REQUEST")
@@ -204,9 +204,9 @@ internal class EmbeddedCheckoutProtocol(
         /**
          * The kit's default [CheckoutProtocol.windowOpen] handler.
          *
-         * Mirrors Swift's `defaultsClient`: launches the URI via `Intent.ACTION_VIEW`
-         * if any activity resolves it, otherwise returns [WindowOpenResult.Rejected]
-         * with `window_open_rejected_error` semantics.
+         * Mirrors Swift's `defaultsClient`: opens web URLs in a kit-owned in-app browser
+         * surface by default, otherwise returns [WindowOpenResult.Rejected] with
+         * `window_open_rejected_error` semantics.
          */
         internal fun defaultDelegationClient(context: Context): CheckoutProtocol.Client =
             CheckoutProtocol.Client().on(CheckoutProtocol.windowOpen) { request ->

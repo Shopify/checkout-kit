@@ -1,6 +1,7 @@
 #if !COCOAPODS
     import ShopifyCheckoutProtocol
 #endif
+import SafariServices
 import UIKit
 import WebKit
 
@@ -8,6 +9,17 @@ protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidStartNavigation()
     func checkoutViewDidFinishNavigation()
     func checkoutViewDidFailWithError(error: CheckoutError)
+}
+
+protocol ExternalURLHandling: Sendable {
+    @MainActor func open(_ url: URL) async -> Bool
+}
+
+struct UIApplicationExternalURLHandler: ExternalURLHandling {
+    @MainActor
+    func open(_ url: URL) async -> Bool {
+        await UIApplication.shared.openURL(url)
+    }
 }
 
 class CheckoutWebView: WKWebView {
@@ -18,6 +30,7 @@ class CheckoutWebView: WKWebView {
     var isBridgeAttached = false
 
     var client: (any CheckoutCommunicationProtocol)?
+    var externalURLHandler: any ExternalURLHandling = UIApplicationExternalURLHandler()
 
     static func `for`(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
         OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString)")
@@ -138,23 +151,72 @@ extension CheckoutWebView: WKScriptMessageHandler {
                 return
             }
 
-            if let response = await CheckoutWebView.defaultsClient.process(body) {
+            if let response = await defaultsClient.process(body) {
                 checkoutBridge.sendResponse(self, messageBody: response)
             }
         }
     }
 
     /// Kit-owned client that handles delegations the consumer did not register.
-    /// Today the only default is `window.open`, which falls back to
-    /// `UIApplication.shared.open(...)` after a `canOpenURL` check.
-    static let defaultsClient = CheckoutProtocol.Client()
-        .on(CheckoutProtocol.windowOpen) { request in
-            guard UIApplication.shared.canOpenURL(request.url) else {
-                return .rejected(reason: "canOpenURL returned false")
+    /// Today the only default is `window.open`, which opens web URLs in
+    /// SFSafariViewController and non-web URLs with UIApplication.
+    var defaultsClient: CheckoutProtocol.Client {
+        CheckoutProtocol.Client()
+        .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
+            let scheme = request.url.scheme?.lowercased()
+            guard scheme == "http" || scheme == "https" else {
+                let didOpen = await externalURLHandler.open(request.url)
+                return didOpen ? .success : .rejected(reason: "UIApplication.open returned false")
             }
-            UIApplication.shared.open(request.url)
+
+            guard let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController() else {
+                return .rejected(reason: "no presenter available")
+            }
+
+            let safari = SFSafariViewController(url: request.url)
+            safari.modalPresentationStyle = .pageSheet
+            safari.modalTransitionStyle = .coverVertical
+            presenter.present(safari, animated: true)
+
             return .success
         }
+    }
+}
+
+extension UIApplication {
+    var foregroundActiveWindow: UIWindow? {
+        let activeScenes = connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive }
+
+        if #available(iOS 15.0, *) {
+            return activeScenes.compactMap(\.keyWindow).first
+        } else {
+            return activeScenes.flatMap(\.windows).first { $0.isKeyWindow }
+        }
+    }
+
+    func openURL(_ url: URL) async -> Bool {
+        await withCheckedContinuation { continuation in
+            open(url, options: [:]) { didOpen in
+                continuation.resume(returning: didOpen)
+            }
+        }
+    }
+}
+
+extension UIWindow {
+    func topMostViewController() -> UIViewController? {
+        guard var topController = rootViewController else {
+            return nil
+        }
+
+        while let presentedViewController = topController.presentedViewController {
+            topController = presentedViewController
+        }
+
+        return topController
+    }
 }
 
 extension CheckoutWebView: WKNavigationDelegate {
@@ -171,14 +233,11 @@ extension CheckoutWebView: WKNavigationDelegate {
         // 	- Deep links on offsite payment sites
         //
         if CheckoutURL(from: url).isDeepLink() {
-            if UIApplication.shared.canOpenURL(url) {
-                UIApplication.shared.open(url)
-                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - allowed")
-                return decisionHandler(.allow)
-            } else {
-                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - rejected")
-                return decisionHandler(.cancel)
+            UIApplication.shared.open(url, options: [:]) { didOpen in
+                let result = didOpen ? "opened by native application controller" : "native application controller rejected"
+                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - \(result)")
             }
+            return decisionHandler(.cancel)
         }
 
         decisionHandler(.allow)

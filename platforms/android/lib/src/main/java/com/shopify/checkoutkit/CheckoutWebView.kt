@@ -80,7 +80,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
             val uri = request?.url
             if (uri == null || (!uri.isContactLink() && !uri.isDeepLink())) return false
 
-            when (val result = ExternalUriLauncher.launch(context, uri)) {
+            when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
                 is ExternalUriLauncher.Result.Launched ->
                     log.d(LOG_TAG, "Deep link intercepted: $uri — allowed")
                 is ExternalUriLauncher.Result.Rejected ->

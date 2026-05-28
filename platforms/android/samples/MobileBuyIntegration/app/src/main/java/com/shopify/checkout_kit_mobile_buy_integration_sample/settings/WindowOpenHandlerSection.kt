@@ -51,8 +51,8 @@ fun WindowOpenHandlerSection(
             )
 
             WindowOpenHandlerOption(
-                handler = WindowOpenHandler.CustomTabs,
-                description = stringResource(id = R.string.window_open_handler_custom_tabs_description),
+                handler = WindowOpenHandler.ExternalApp,
+                description = stringResource(id = R.string.window_open_handler_external_app_description),
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
@@ -96,5 +96,5 @@ fun WindowOpenHandlerOption(
 private val WindowOpenHandler.title: Int
     get() = when (this) {
         WindowOpenHandler.Default -> R.string.window_open_handler_default
-        WindowOpenHandler.CustomTabs -> R.string.window_open_handler_custom_tabs
+        WindowOpenHandler.ExternalApp -> R.string.window_open_handler_external_app
     }

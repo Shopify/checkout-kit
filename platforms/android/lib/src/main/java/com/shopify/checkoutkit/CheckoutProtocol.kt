@@ -298,7 +298,7 @@ public data class WindowOpenRequest internal constructor(public val url: Uri)
 /**
  * Outcome a [CheckoutProtocol.windowOpen] handler returns to the checkout page.
  *
- * [Success] indicates the URL was opened externally.
+ * [Success] indicates the URL was opened.
  * [Rejected] indicates the URL could not be (or was deliberately not) opened — the
  * page receives a UCP `window_open_rejected_error` envelope and may surface a
  * fallback message to the buyer.
