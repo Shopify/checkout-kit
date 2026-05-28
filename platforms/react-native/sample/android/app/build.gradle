@@ -153,10 +153,15 @@ android {
   }
 }
 
-def useLocalSdk = (System.getenv("USE_LOCAL_SDK") ?: "0") == "1"
-def shopifySdkArtifact = useLocalSdk
-    ? "com.shopify:checkout-kit:4.0.0-alpha.1"
-    : "com.shopify:checkout-kit:0.0.0"
+def checkoutKitPackageJsonFile = rootProject.file("../../modules/@shopify/checkout-kit-react-native/package.json")
+def checkoutKitPackageJson = new groovy.json.JsonSlurper().parse(checkoutKitPackageJsonFile)
+def shopifySdkVersion = checkoutKitPackageJson.checkoutKit?.nativeSdkVersions?.android as String
+
+if (shopifySdkVersion == null || shopifySdkVersion.trim().isEmpty()) {
+  throw new GradleException("checkoutKit.nativeSdkVersions.android is required in ${checkoutKitPackageJsonFile}")
+}
+
+def shopifySdkArtifact = "com.shopify:checkout-kit:$shopifySdkVersion"
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
