@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch
  */
 public object CheckoutProtocol {
 
-    public const val specVersion: String = "2026-04-08"
+    public const val SPEC_VERSION: String = "2026-04-08"
 
     // Notifications — checkout carries the full current state
     public val start: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.start")
@@ -92,12 +92,12 @@ public object CheckoutProtocol {
     private fun encodeWindowOpenResult(result: WindowOpenResult): JsonObject = when (result) {
         is WindowOpenResult.Success ->
             json.encodeToJsonElement(
-                WindowOpenSuccessDto(UcpEnvelope(specVersion, "success"))
+                WindowOpenSuccessDto(UcpEnvelope(SPEC_VERSION, "success"))
             ).jsonObject
         is WindowOpenResult.Rejected ->
             json.encodeToJsonElement(
                 WindowOpenErrorDto(
-                    ucp = UcpEnvelope(specVersion, "error"),
+                    ucp = UcpEnvelope(SPEC_VERSION, "error"),
                     messages = listOf(
                         UcpMessage(
                             type = "error",
@@ -203,7 +203,7 @@ public object CheckoutProtocol {
 
     private sealed class Delegation {
         abstract fun dispatch(request: EcpRequest): String
-        abstract fun invokeRaw(payload: Any): Any?
+        abstract fun invokeRaw(payload: Any): Any
 
         class Typed<P : Any, R : Any>(
             private val descriptor: DelegationDescriptor<P, R>,
@@ -225,7 +225,7 @@ public object CheckoutProtocol {
             }
 
             @Suppress("UNCHECKED_CAST")
-            override fun invokeRaw(payload: Any): Any? = handler(payload as P)
+            override fun invokeRaw(payload: Any): Any = handler(payload as P)
         }
     }
 
@@ -293,6 +293,7 @@ public class DelegationDescriptor<P : Any, R : Any> internal constructor(
 )
 
 /** Payload delivered with the [CheckoutProtocol.windowOpen] delegation. */
+@ConsistentCopyVisibility
 public data class WindowOpenRequest internal constructor(public val url: Uri)
 
 /**

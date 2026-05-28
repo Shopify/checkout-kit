@@ -6,7 +6,6 @@ import android.graphics.Color.TRANSPARENT
 import android.net.Uri
 import android.os.Build
 import android.util.AttributeSet
-import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -85,7 +84,7 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
         requestDisallowInterceptTouchEvent(true)
         setBackgroundColor(TRANSPARENT)
         layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
-        id = View.generateViewId()
+        id = generateViewId()
     }
 
     internal fun handleBackPressed(): Boolean {

@@ -53,12 +53,12 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     fun loadCheckout(url: String) {
         log.d(LOG_TAG, "Loading checkout with url $url.")
         Handler(Looper.getMainLooper()).post {
-            val ecpUrl = url.appendEcpParams(specVersion = CheckoutProtocol.specVersion)
+            val ecpUrl = url.appendEcpParams(specVersion = CheckoutProtocol.SPEC_VERSION)
             loadUrl(ecpUrl)
         }
     }
 
-    inner class CheckoutWebViewClient : BaseWebView.BaseWebViewClient() {
+    inner class CheckoutWebViewClient : BaseWebViewClient() {
 
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)

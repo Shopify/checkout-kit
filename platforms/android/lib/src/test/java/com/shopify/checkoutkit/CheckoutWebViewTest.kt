@@ -205,7 +205,7 @@ class CheckoutWebViewTest {
         view.loadCheckout("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
-        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_version=${CheckoutProtocol.specVersion}")
+        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_version=${CheckoutProtocol.SPEC_VERSION}")
     }
 
     @Test
@@ -216,7 +216,7 @@ class CheckoutWebViewTest {
 
         val loadedUrl = shadowOf(view).lastLoadedUrl
         assertThat(loadedUrl).contains("foo=bar")
-        assertThat(loadedUrl).contains("ec_version=${CheckoutProtocol.specVersion}")
+        assertThat(loadedUrl).contains("ec_version=${CheckoutProtocol.SPEC_VERSION}")
     }
 
     @Test

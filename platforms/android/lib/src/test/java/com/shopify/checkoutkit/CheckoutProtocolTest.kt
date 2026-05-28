@@ -172,11 +172,11 @@ class CheckoutProtocolTest {
 
     // endregion
 
-    // region specVersion
+    // region SPEC_VERSION
 
     @Test
-    fun `specVersion is non-empty`() {
-        assertThat(CheckoutProtocol.specVersion).isNotEmpty()
+    fun `SPEC_VERSION is non-empty`() {
+        assertThat(CheckoutProtocol.SPEC_VERSION).isNotEmpty()
     }
 
     // endregion

@@ -1,3 +1,4 @@
+import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
@@ -144,7 +145,7 @@ detekt {
 }
 
 // Models.kt is generated from UCP JSON Schemas — exclude it from static analysis.
-tasks.withType(io.gitlab.arturbosch.detekt.Detekt).configureEach {
+tasks.withType(Detekt).configureEach {
     exclude('**/Models.kt')
 }
 

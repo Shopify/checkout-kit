@@ -736,7 +736,7 @@ public final class com/shopify/checkoutkit/CheckoutPresentation {
 
 public final class com/shopify/checkoutkit/CheckoutProtocol {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutProtocol;
-	public static final field specVersion Ljava/lang/String;
+	public static final field SPEC_VERSION Ljava/lang/String;
 	public final fun getComplete ()Lcom/shopify/checkoutkit/NotificationDescriptor;
 	public final fun getError ()Lcom/shopify/checkoutkit/NotificationDescriptor;
 	public final fun getLineItemsChange ()Lcom/shopify/checkoutkit/NotificationDescriptor;
@@ -4310,8 +4310,6 @@ public final class com/shopify/checkoutkit/UCPOrderResponseSchemaService$Compani
 
 public final class com/shopify/checkoutkit/WindowOpenRequest {
 	public final fun component1 ()Landroid/net/Uri;
-	public final fun copy (Landroid/net/Uri;)Lcom/shopify/checkoutkit/WindowOpenRequest;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/WindowOpenRequest;Landroid/net/Uri;ILjava/lang/Object;)Lcom/shopify/checkoutkit/WindowOpenRequest;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getUrl ()Landroid/net/Uri;
 	public fun hashCode ()I
