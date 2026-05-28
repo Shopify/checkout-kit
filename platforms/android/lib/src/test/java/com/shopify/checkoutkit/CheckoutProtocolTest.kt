@@ -1,6 +1,8 @@
 package com.shopify.checkoutkit
 
 import android.os.Looper
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -135,6 +137,69 @@ class CheckoutProtocolTest {
         assertThat(received?.messages?.get(1)?.code).isEqualTo("session_expired")
         assertThat(received?.messages?.get(1)?.severity).isEqualTo(Severity.Recoverable)
         assertThat(received?.continueURL).isEqualTo("https://example.com/retry")
+    }
+
+    @Test
+    fun `message model decodes all message types`() {
+        val cases = listOf(
+            "error" to MessageType.Error,
+            "warning" to MessageType.Warning,
+            "info" to MessageType.Info,
+        )
+
+        cases.forEach { (wireValue, expected) ->
+            val message = Json.decodeFromString<Message>(
+                """{"content":"$wireValue message","type":"$wireValue"}""",
+            )
+
+            assertThat(message.content).isEqualTo("$wireValue message")
+            assertThat(message.type).isEqualTo(expected)
+        }
+    }
+
+    @Test
+    fun `order line item decodes quantity model`() {
+        val lineItem = Json.decodeFromString<OrderLineItem>(
+            """
+            {
+              "id": "li-1",
+              "item": {
+                "id": "sku-1",
+                "price": 1000,
+                "title": "Socks"
+              },
+              "quantity": {
+                "fulfilled": 1,
+                "original": 2,
+                "total": 2
+              },
+              "status": "partial",
+              "totals": []
+            }
+            """.trimIndent(),
+        )
+        val quantity: LineItemQuantity = lineItem.quantity
+
+        assertThat(quantity.fulfilled).isEqualTo(1L)
+        assertThat(quantity.original).isEqualTo(2L)
+        assertThat(quantity.total).isEqualTo(2L)
+        assertThat(lineItem.status).isEqualTo(LineItemStatus.Partial)
+    }
+
+    @Test
+    fun `embedded transport config decodes color schemes`() {
+        val config = Json.decodeFromString<EmbeddedTransportConfig>(
+            """
+            {
+              "color_scheme": ["light", "dark"],
+              "delegate": ["window.open"]
+            }
+            """.trimIndent(),
+        )
+        val colorScheme: List<EmbeddedColorScheme>? = config.colorScheme
+
+        assertThat(colorScheme).containsExactly(EmbeddedColorScheme.Light, EmbeddedColorScheme.Dark)
+        assertThat(config.delegate).containsExactly("window.open")
     }
 
     @Test

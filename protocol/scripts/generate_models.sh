@@ -2,7 +2,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SPEC_DIR="${REPO_ROOT}/protocol/schemas/shopping"
+SCHEMA_WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-schemas.XXXXXX")"
+SCHEMA_ROOT="${SCHEMA_WORK_DIR}/schemas"
+SPEC_DIR="${SCHEMA_ROOT}/shopping"
 SERVICES_DIR="${REPO_ROOT}/protocol/services/shopping"
 
 LANG=""
@@ -18,13 +20,95 @@ if [[ -z "$LANG" ]]; then
   exit 1
 fi
 
-TEMP_SCHEMAS=()
 cleanup() {
-  if (( ${#TEMP_SCHEMAS[@]} > 0 )); then
-    rm -f "${TEMP_SCHEMAS[@]}"
-  fi
+  rm -rf "${SCHEMA_WORK_DIR}"
 }
 trap cleanup EXIT
+
+cp -R "${REPO_ROOT}/protocol/schemas" "${SCHEMA_ROOT}"
+
+# Build checkout models from the base checkout schema plus checkout extension
+# fields that checkout-web emits in the primary checkout snapshot/change
+# notifications. The imported public schemas stay unchanged; this temp schema
+# only gives quicktype the full checkout shape we expose through the SDKs.
+jq '
+  .properties.fulfillment = {
+    "title": "CheckoutFulfillment",
+    "allOf": [
+      { "$ref": "fulfillment.json#/$defs/fulfillment" }
+    ],
+    "description": "Fulfillment details.",
+    "ucp_request": {
+      "create": "optional",
+      "update": "optional",
+      "complete": "omit"
+    }
+  } |
+  .properties.discounts = {
+    "$ref": "discount.json#/$defs/discounts_object",
+    "ucp_request": {
+      "create": "optional",
+      "update": "optional",
+      "complete": "omit"
+    }
+  } |
+  .properties.payment.title = "Payment"
+' \
+  "${SPEC_DIR}/checkout.json" > "${SCHEMA_WORK_DIR}/checkout.json"
+mv "${SCHEMA_WORK_DIR}/checkout.json" "${SPEC_DIR}/checkout.json"
+
+jq '.properties.fulfillment.title = "Fulfillment"' \
+  "${SPEC_DIR}/order.json" > "${SCHEMA_WORK_DIR}/order.json"
+mv "${SCHEMA_WORK_DIR}/order.json" "${SPEC_DIR}/order.json"
+
+# The public schemas are imported inputs, so keep naming hints local to codegen.
+# quicktype otherwise collapses order_line_item.quantity to a generic Quantity.
+jq '.properties.quantity.title = "LineItemQuantity"' \
+  "${SPEC_DIR}/types/order_line_item.json" > "${SCHEMA_WORK_DIR}/order_line_item.json"
+mv "${SCHEMA_WORK_DIR}/order_line_item.json" "${SPEC_DIR}/types/order_line_item.json"
+
+# Preserve the existing shared line-item total model name after checkout
+# fulfillment adds another reference from fulfillment option totals.
+jq '.title = "LineItemTotal"' \
+  "${SPEC_DIR}/types/total.json" > "${SCHEMA_WORK_DIR}/total.json"
+mv "${SCHEMA_WORK_DIR}/total.json" "${SPEC_DIR}/types/total.json"
+
+jq '.items.title = "CheckoutTotal"' \
+  "${SPEC_DIR}/types/totals.json" > "${SCHEMA_WORK_DIR}/totals.json"
+mv "${SCHEMA_WORK_DIR}/totals.json" "${SPEC_DIR}/types/totals.json"
+
+jq '.properties.color_scheme.items.title = "EmbeddedColorScheme"' \
+  "${SCHEMA_ROOT}/transports/embedded_config.json" > "${SCHEMA_WORK_DIR}/embedded_config.json"
+mv "${SCHEMA_WORK_DIR}/embedded_config.json" "${SCHEMA_ROOT}/transports/embedded_config.json"
+
+# Message discriminators are defined across the message variant schemas. Give each
+# variant the same local title so quicktype emits a single MessageType symbol.
+for message_schema in message_error message_warning message_info; do
+  jq '.properties.type.title = "MessageType"' \
+    "${SPEC_DIR}/types/${message_schema}.json" > "${SCHEMA_WORK_DIR}/${message_schema}.json"
+  mv "${SCHEMA_WORK_DIR}/${message_schema}.json" "${SPEC_DIR}/types/${message_schema}.json"
+done
+
+# Extension schemas bring in repeated generic property names like `type` and
+# `method`; add local titles so generated model symbols stay domain-specific.
+jq '
+  ."$defs".discounts_object.title = "CheckoutDiscounts" |
+  ."$defs".applied_discount.title = "AppliedDiscount" |
+  ."$defs".applied_discount.properties.method.title = "DiscountMethod" |
+  ."$defs".allocation.title = "DiscountAllocation"
+' \
+  "${SPEC_DIR}/discount.json" > "${SCHEMA_WORK_DIR}/discount.json"
+mv "${SCHEMA_WORK_DIR}/discount.json" "${SPEC_DIR}/discount.json"
+
+for fulfillment_schema in fulfillment_available_method fulfillment_method; do
+  jq '.properties.type.title = "FulfillmentMethodType"' \
+    "${SPEC_DIR}/types/${fulfillment_schema}.json" > "${SCHEMA_WORK_DIR}/${fulfillment_schema}.json"
+  mv "${SCHEMA_WORK_DIR}/${fulfillment_schema}.json" "${SPEC_DIR}/types/${fulfillment_schema}.json"
+done
+
+jq '.title = "CheckoutFulfillment"' \
+  "${SPEC_DIR}/types/fulfillment.json" > "${SCHEMA_WORK_DIR}/fulfillment.json"
+mv "${SCHEMA_WORK_DIR}/fulfillment.json" "${SPEC_DIR}/types/fulfillment.json"
 
 # We also rewrite $ref paths from "../../schemas/shopping/" to "" so that refs resolve
 # correctly when the temp file is placed alongside the main schemas in SPEC_DIR. The
@@ -47,12 +131,13 @@ extract_result_schema() {
       | walk(if type == "object" and has("$ref") then
           .["$ref"] |= gsub("../../schemas/shopping/"; "")
         else . end)
-      | .oneOf[0].properties.checkout.title = $checkout_title
-      | .oneOf[0].properties.checkout.properties.payment = $payment_schema
+      | (.oneOf[] | select(.properties.checkout? != null).properties.checkout) |= (
+          .title = $checkout_title
+          | .properties.payment = $payment_schema
+        )
       | . + { components: $root.components }
     ' \
     "${SERVICES_DIR}/embedded.openrpc.json" > "$output_file"
-  TEMP_SCHEMAS+=("$output_file")
 }
 
 extract_result_schema "ec.payment.instruments_change_request" \
@@ -82,6 +167,25 @@ extract_result_schema "ec.payment.credential_request" \
   "CredentialCheckout" \
   '{ "$ref": "checkout.json#/properties/payment" }'
 
+normalize_quicktype_fallbacks() {
+  # These two names resist schema title hints because they arise from inline
+  # object collisions inside result schema oneOf branches. Add new entries here
+  # if quicktype emits color-name fallbacks after a schema change.
+  perl -0pi -e 's/\bPurpleStatus\b/StatusEnum/g; s/\bPurpleService\b/InstrumentsChangeService/g' "$1"
+}
+
+assert_no_quicktype_fallbacks() {
+  local output="$1"
+  local matches
+  matches="$(perl -ne 'while (/\b(?:Purple|Fluffy|Tentacled|Sticky|Indigo|Magenta)\w+/g) { print "$&\n" }' "${output}" | sort -u)"
+
+  if [[ -n "${matches}" ]]; then
+    echo "ERROR: Unexpected quicktype color-name fallback detected in ${output}" >&2
+    printf '%s\n' "${matches}" >&2
+    exit 1
+  fi
+}
+
 case "$LANG" in
   kotlin)
     OUTPUT="${REPO_ROOT}/platforms/android/lib/src/main/java/com/shopify/checkoutkit/Models.kt"
@@ -99,56 +203,38 @@ case "$LANG" in
 
     # Remove quicktype's usage preamble so generated Android sources start at
     # the package declaration, matching the rest of the library source layout.
-    sed -i '' '1,/^package /{/^package /!d;}' "${OUTPUT}"
+    perl -0pi -e 's/\A.*?(?=^package )//ms' "${OUTPUT}"
 
     # Post-process for -Xexplicit-api=strict: every top-level and member declaration that
     # is part of the public API surface needs an explicit 'public' modifier.
     #
-    # quicktype Kotlin does not support --access-level, so we add 'public' via sed.
+    # quicktype Kotlin does not support --access-level, so we add 'public'
+    # after generation.
     # Patterns: top-level classes/aliases, 4-space-indented constructor properties,
     # inner classes inside sealed classes, and inline constructor params in enum/sealed.
-    sed -i '' \
-      -e 's/^data class /public data class /' \
-      -e 's/^sealed class /public sealed class /' \
-      -e 's/^enum class /public enum class /' \
-      -e 's/^typealias /public typealias /' \
-      -e 's/^    class /    public class /' \
-      -e 's/^    val /    public val /' \
-      -e 's/(val value: /(public val value: /' \
-      "${OUTPUT}"
+    perl -0pi -e '
+      s/^data class /public data class /mg;
+      s/^sealed class /public sealed class /mg;
+      s/^enum class /public enum class /mg;
+      s/^typealias /public typealias /mg;
+      s/^    class /    public class /mg;
+      s/^    val /    public val /mg;
+      s/\(val value: /\(public val value: /g;
+    ' "${OUTPUT}"
 
-    # Rename types that conflict with platform or Kotlin stdlib names.
-    # quicktype emits 'data class Binding (' (with space before paren).
-    # Apply the same renames in Swift and React Native generators for consistency.
-    # ColorScheme is renamed to avoid collision with the hand-written sealed class
-    # in ColorScheme.kt used by the dialog-based checkout presentation API.
-    sed -i '' \
-      -e 's/public data class Binding (/public data class TokenBinding (/' \
-      -e 's/: Binding$/: TokenBinding/' \
-      -e 's/Binding\.serializer()/TokenBinding.serializer()/' \
-      -e 's/public enum class ColorScheme(/public enum class EmbeddedColorScheme(/' \
-      -e 's/List<ColorScheme>/List<EmbeddedColorScheme>/g' \
-      -e 's/ColorScheme\.serializer()/EmbeddedColorScheme.serializer()/g' \
-      "${OUTPUT}"
-
-    # Normalize the remaining exact quicktype color fallbacks produced by UCP result unions.
-    sed -i '' -E \
-      -e 's/[[:<:]]PurpleStatus[[:>:]]/StatusEnum/g' \
-      -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
-      -e 's/public val type: Type,/public val type: MessageType,/' \
-      -e 's/public enum class Type\(/public enum class MessageType(/' \
-      "${OUTPUT}"
-
-    # quicktype emits `typealias Totals = JsonArray<TotalElement>`, but
-    # kotlinx.serialization.json.JsonArray is not generic. Rewrite to a plain List.
-    sed -i '' \
-      -e 's/typealias Totals = JsonArray<TotalElement>/typealias Totals = List<TotalElement>/' \
-      "${OUTPUT}"
+    # Normalize remaining exact quicktype fallback names.
+    normalize_quicktype_fallbacks "${OUTPUT}"
+    assert_no_quicktype_fallbacks "${OUTPUT}"
 
     # quicktype renders Extends as a sealed class, but the wire shape is either
-    # a string or an array of strings. Keep the explicit serializer so both
-    # shapes round-trip as JSON primitives instead of sealed-class objects.
-    perl -0pi -e 's{@Serializable\npublic sealed class Extends \{\n    public class StringArrayValue\(public val value: List<String>\) : Extends\(\)\n    public class StringValue\(public val value: String\)            : Extends\(\)\n\}}{@Serializable(with = ExtendsSerializer::class)\npublic sealed class Extends {\n    public class StringArrayValue(public val value: List<String>) : Extends()\n    public class StringValue(public val value: String)            : Extends()\n}\n\ninternal object ExtendsSerializer : KSerializer<Extends> {\n    override val descriptor: SerialDescriptor =\n        buildClassSerialDescriptor("com.shopify.checkoutkit.Extends")\n\n    override fun deserialize(decoder: Decoder): Extends {\n        val input = decoder as? JsonDecoder\n            ?: throw SerializationException("Extends can only be deserialized from JSON")\n        return when (val element = input.decodeJsonElement()) {\n            is JsonPrimitive -> Extends.StringValue(element.content)\n            is JsonArray -> Extends.StringArrayValue(\n                element.map {\n                    (it as? JsonPrimitive)?.content\n                        ?: throw SerializationException("Extends array element not a primitive: \$it")\n                }\n            )\n            else -> throw SerializationException("Unexpected Extends shape: \$element")\n        }\n    }\n\n    override fun serialize(encoder: Encoder, value: Extends) {\n        val output = encoder as? JsonEncoder\n            ?: throw SerializationException("Extends can only be serialized to JSON")\n        val element: JsonElement = when (value) {\n            is Extends.StringValue -> JsonPrimitive(value.value)\n            is Extends.StringArrayValue -> JsonArray(value.value.map { JsonPrimitive(it) })\n        }\n        output.encodeJsonElement(element)\n    }\n}}s' "${OUTPUT}"
+    # a string or an array of strings. Use the hand-written serializer in
+    # ExtendsSerializer.kt without depending on quicktype's sealed-class body.
+    perl -0pi -e 's/@Serializable(\s+public sealed class Extends\b)/@Serializable(with = ExtendsSerializer::class)$1/' "${OUTPUT}"
+
+    if ! grep -q '@Serializable(with = ExtendsSerializer::class)' "${OUTPUT}"; then
+      echo "ERROR: ExtendsSerializer injection failed; quicktype Extends output may have changed" >&2
+      exit 1
+    fi
 
 
     echo "Generated ${OUTPUT}"
@@ -169,20 +255,9 @@ case "$LANG" in
       --src "${SPEC_DIR}/credential_result.json" \
       -o "${OUTPUT}"
 
-    # Rename types that conflict with platform or Swift stdlib names.
-    # Apply the same renames as in the Kotlin generator for consistency.
-    # Use BSD word-boundary anchors so all identifier sites match — quicktype
-    # emits `struct Binding:` (no whitespace before `:`), which previous
-    # space-anchored patterns missed.
-    sed -i '' -E \
-      -e 's/[[:<:]]Binding[[:>:]]/TokenBinding/g' \
-      -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
-      -e 's/[[:<:]]PurpleSelectedPaymentInstrument[[:>:]]/InstrumentsChangeSelectedPaymentInstrument/g' \
-      -e 's/[[:<:]]PurpleStatus[[:>:]]/StatusEnum/g' \
-      -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
-      -e 's/[[:<:]]TypeEnum[[:>:]]/MessageType/g' \
-      -e 's/[[:<:]]MessageTypeEnum[[:>:]]/MessageType/g' \
-      "${OUTPUT}"
+    # Normalize remaining exact quicktype fallback names.
+    normalize_quicktype_fallbacks "${OUTPUT}"
+    assert_no_quicktype_fallbacks "${OUTPUT}"
 
     echo "Generated ${OUTPUT}"
     ;;
@@ -206,18 +281,9 @@ case "$LANG" in
 
     # Keep all schema-derived aliases available to package consumers, and apply
     # the cross-platform generated model renames used by Swift and Kotlin.
-    sed -i '' -E \
-      -e 's/^type /export type /' \
-      -e 's/[[:<:]]Binding[[:>:]]/TokenBinding/g' \
-      -e 's/[[:<:]]ColorScheme[[:>:]]/EmbeddedColorScheme/g' \
-      -e 's/[[:<:]]PurpleStatus[[:>:]]/StatusEnum/g' \
-      -e 's/[[:<:]]PurpleService[[:>:]]/InstrumentsChangeService/g' \
-      -e 's/type: Type;/type: MessageType;/' \
-      -e 's/export type Type =/export type MessageType =/' \
-      -e 's/r[(]"Type"[)]/r("MessageType")/g' \
-      -e 's/"Type": \[/"MessageType": [/g' \
-      "${OUTPUT}"
-
+    perl -0pi -e 's/^type /export type /mg' "${OUTPUT}"
+    normalize_quicktype_fallbacks "${OUTPUT}"
+    assert_no_quicktype_fallbacks "${OUTPUT}"
 
     node "${REPO_ROOT}/protocol/scripts/generate_typescript_notifications.mjs"
 

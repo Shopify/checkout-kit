@@ -38174,14 +38174,14 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Quantity",
-                "printedName": "ShopifyCheckoutProtocol.Quantity",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                "name": "LineItemQuantity",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol13OrderLineItemV8quantityAA8QuantityVvp",
-            "mangledName": "$s23ShopifyCheckoutProtocol13OrderLineItemV8quantityAA8QuantityVvp",
+            "usr": "s:23ShopifyCheckoutProtocol13OrderLineItemV8quantityAA0eF8QuantityVvp",
+            "mangledName": "$s23ShopifyCheckoutProtocol13OrderLineItemV8quantityAA0eF8QuantityVvp",
             "moduleName": "ShopifyCheckoutProtocol",
             "declAttributes": [
               "HasStorage"
@@ -38196,14 +38196,14 @@
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "Quantity",
-                    "printedName": "ShopifyCheckoutProtocol.Quantity",
-                    "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                    "name": "LineItemQuantity",
+                    "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                    "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol13OrderLineItemV8quantityAA8QuantityVvg",
-                "mangledName": "$s23ShopifyCheckoutProtocol13OrderLineItemV8quantityAA8QuantityVvg",
+                "usr": "s:23ShopifyCheckoutProtocol13OrderLineItemV8quantityAA0eF8QuantityVvg",
+                "mangledName": "$s23ShopifyCheckoutProtocol13OrderLineItemV8quantityAA0eF8QuantityVvg",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "implicit": true,
                 "declAttributes": [
@@ -38938,9 +38938,9 @@
               },
               {
                 "kind": "TypeNominal",
-                "name": "Quantity",
-                "printedName": "ShopifyCheckoutProtocol.Quantity",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                "name": "LineItemQuantity",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
               },
               {
                 "kind": "TypeNominal",
@@ -38964,8 +38964,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:23ShopifyCheckoutProtocol13OrderLineItemV2id4item8parentID8quantity6status6totalsACSS_AA0F0VSSSgAA8QuantityVAA0eF6StatusOSayAA0eF5TotalVGtcfc",
-            "mangledName": "$s23ShopifyCheckoutProtocol13OrderLineItemV2id4item8parentID8quantity6status6totalsACSS_AA0F0VSSSgAA8QuantityVAA0eF6StatusOSayAA0eF5TotalVGtcfc",
+            "usr": "s:23ShopifyCheckoutProtocol13OrderLineItemV2id4item8parentID8quantity6status6totalsACSS_AA0F0VSSSgAA0eF8QuantityVAA0eF6StatusOSayAA0eF5TotalVGtcfc",
+            "mangledName": "$s23ShopifyCheckoutProtocol13OrderLineItemV2id4item8parentID8quantity6status6totalsACSS_AA0F0VSSSgAA0eF8QuantityVAA0eF6StatusOSayAA0eF5TotalVGtcfc",
             "moduleName": "ShopifyCheckoutProtocol",
             "init_kind": "Designated"
           },
@@ -39172,13 +39172,13 @@
               {
                 "kind": "TypeNominal",
                 "name": "Optional",
-                "printedName": "ShopifyCheckoutProtocol.Quantity?",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity?",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "Quantity",
-                    "printedName": "ShopifyCheckoutProtocol.Quantity",
-                    "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                    "name": "LineItemQuantity",
+                    "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                    "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
                   }
                 ],
                 "hasDefaultArg": true,
@@ -39224,8 +39224,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:23ShopifyCheckoutProtocol13OrderLineItemV4with2id4item8parentID8quantity6status6totalsACSSSg_AA0F0VSgAKSgAA8QuantityVSgAA0eF6StatusOSgSayAA0eF5TotalVGSgtF",
-            "mangledName": "$s23ShopifyCheckoutProtocol13OrderLineItemV4with2id4item8parentID8quantity6status6totalsACSSSg_AA0F0VSgAKSgAA8QuantityVSgAA0eF6StatusOSgSayAA0eF5TotalVGSgtF",
+            "usr": "s:23ShopifyCheckoutProtocol13OrderLineItemV4with2id4item8parentID8quantity6status6totalsACSSSg_AA0F0VSgAKSgAA0eF8QuantityVSgAA0eF6StatusOSgSayAA0eF5TotalVGSgtF",
+            "mangledName": "$s23ShopifyCheckoutProtocol13OrderLineItemV4with2id4item8parentID8quantity6status6totalsACSSSg_AA0F0VSgAKSgAA0eF8QuantityVSgAA0eF6StatusOSgSayAA0eF5TotalVGSgtF",
             "moduleName": "ShopifyCheckoutProtocol",
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
@@ -39337,8 +39337,8 @@
       },
       {
         "kind": "TypeDecl",
-        "name": "Quantity",
-        "printedName": "Quantity",
+        "name": "LineItemQuantity",
+        "printedName": "LineItemQuantity",
         "children": [
           {
             "kind": "Var",
@@ -39353,8 +39353,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV9fulfilledSivp",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV9fulfilledSivp",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV9fulfilledSivp",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV9fulfilledSivp",
             "moduleName": "ShopifyCheckoutProtocol",
             "declAttributes": [
               "HasStorage"
@@ -39375,8 +39375,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV9fulfilledSivg",
-                "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV9fulfilledSivg",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV9fulfilledSivg",
+                "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV9fulfilledSivg",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "implicit": true,
                 "declAttributes": [
@@ -39407,8 +39407,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV8originalSiSgvp",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV8originalSiSgvp",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV8originalSiSgvp",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV8originalSiSgvp",
             "moduleName": "ShopifyCheckoutProtocol",
             "declAttributes": [
               "HasStorage"
@@ -39437,8 +39437,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV8originalSiSgvg",
-                "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV8originalSiSgvg",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV8originalSiSgvg",
+                "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV8originalSiSgvg",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "implicit": true,
                 "declAttributes": [
@@ -39461,8 +39461,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV5totalSivp",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV5totalSivp",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV5totalSivp",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV5totalSivp",
             "moduleName": "ShopifyCheckoutProtocol",
             "declAttributes": [
               "HasStorage"
@@ -39483,8 +39483,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV5totalSivg",
-                "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV5totalSivg",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV5totalSivg",
+                "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV5totalSivg",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "implicit": true,
                 "declAttributes": [
@@ -39501,9 +39501,9 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Quantity",
-                "printedName": "ShopifyCheckoutProtocol.Quantity",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                "name": "LineItemQuantity",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
               },
               {
                 "kind": "TypeNominal",
@@ -39533,8 +39533,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV9fulfilled8original5totalACSi_SiSgSitcfc",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV9fulfilled8original5totalACSi_SiSgSitcfc",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV9fulfilled8original5totalACSi_SiSgSitcfc",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV9fulfilled8original5totalACSi_SiSgSitcfc",
             "moduleName": "ShopifyCheckoutProtocol",
             "init_kind": "Designated"
           },
@@ -39556,8 +39556,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV6encode2toys7Encoder_p_tKF",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV6encode2toys7Encoder_p_tKF",
             "moduleName": "ShopifyCheckoutProtocol",
             "implicit": true,
             "throwing": true,
@@ -39570,9 +39570,9 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Quantity",
-                "printedName": "ShopifyCheckoutProtocol.Quantity",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                "name": "LineItemQuantity",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
               },
               {
                 "kind": "TypeNominal",
@@ -39582,8 +39582,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV4fromACs7Decoder_p_tKcfc",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV4fromACs7Decoder_p_tKcfc",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV4fromACs7Decoder_p_tKcfc",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV4fromACs7Decoder_p_tKcfc",
             "moduleName": "ShopifyCheckoutProtocol",
             "implicit": true,
             "throwing": true,
@@ -39596,9 +39596,9 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Quantity",
-                "printedName": "ShopifyCheckoutProtocol.Quantity",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                "name": "LineItemQuantity",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
               },
               {
                 "kind": "TypeNominal",
@@ -39608,8 +39608,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV4dataAC10Foundation4DataV_tKcfc",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV4dataAC10Foundation4DataV_tKcfc",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV4dataAC10Foundation4DataV_tKcfc",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV4dataAC10Foundation4DataV_tKcfc",
             "moduleName": "ShopifyCheckoutProtocol",
             "isFromExtension": true,
             "throwing": true,
@@ -39622,9 +39622,9 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Quantity",
-                "printedName": "ShopifyCheckoutProtocol.Quantity",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                "name": "LineItemQuantity",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
               },
               {
                 "kind": "TypeNominal",
@@ -39641,8 +39641,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
             "moduleName": "ShopifyCheckoutProtocol",
             "isFromExtension": true,
             "throwing": true,
@@ -39655,9 +39655,9 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Quantity",
-                "printedName": "ShopifyCheckoutProtocol.Quantity",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                "name": "LineItemQuantity",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
               },
               {
                 "kind": "TypeNominal",
@@ -39667,8 +39667,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV7fromURLAC10Foundation0F0V_tKcfc",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV7fromURLAC10Foundation0F0V_tKcfc",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV7fromURLAC10Foundation0H0V_tKcfc",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV7fromURLAC10Foundation0H0V_tKcfc",
             "moduleName": "ShopifyCheckoutProtocol",
             "isFromExtension": true,
             "throwing": true,
@@ -39681,9 +39681,9 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Quantity",
-                "printedName": "ShopifyCheckoutProtocol.Quantity",
-                "usr": "s:23ShopifyCheckoutProtocol8QuantityV"
+                "name": "LineItemQuantity",
+                "printedName": "ShopifyCheckoutProtocol.LineItemQuantity",
+                "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV"
               },
               {
                 "kind": "TypeNominal",
@@ -39740,8 +39740,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV4with9fulfilled8original5totalACSiSg_AHSgAHtF",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV4with9fulfilled8original5totalACSiSg_AHSgAHtF",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV4with9fulfilled8original5totalACSiSg_AHSgAHtF",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV4with9fulfilled8original5totalACSiSg_AHSgAHtF",
             "moduleName": "ShopifyCheckoutProtocol",
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
@@ -39759,8 +39759,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV8jsonData10Foundation0F0VyKF",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV8jsonData10Foundation0F0VyKF",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV8jsonData10Foundation0H0VyKF",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV8jsonData10Foundation0H0VyKF",
             "moduleName": "ShopifyCheckoutProtocol",
             "isFromExtension": true,
             "throwing": true,
@@ -39794,8 +39794,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:23ShopifyCheckoutProtocol8QuantityV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
-            "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
+            "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
+            "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
             "moduleName": "ShopifyCheckoutProtocol",
             "isFromExtension": true,
             "throwing": true,
@@ -39803,8 +39803,8 @@
           }
         ],
         "declKind": "Struct",
-        "usr": "s:23ShopifyCheckoutProtocol8QuantityV",
-        "mangledName": "$s23ShopifyCheckoutProtocol8QuantityV",
+        "usr": "s:23ShopifyCheckoutProtocol16LineItemQuantityV",
+        "mangledName": "$s23ShopifyCheckoutProtocol16LineItemQuantityV",
         "moduleName": "ShopifyCheckoutProtocol",
         "conformances": [
           {

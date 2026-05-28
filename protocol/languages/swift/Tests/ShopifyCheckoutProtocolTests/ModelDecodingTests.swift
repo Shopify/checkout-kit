@@ -38,6 +38,65 @@ struct ModelDecodingTests {
         #expect(lineItem.item.title == "Test Product")
         #expect(lineItem.item.price == 2999)
     }
+
+    @Test func decodesAllMessageTypes() throws {
+        let cases: [(wireValue: String, expected: MessageType)] = [
+            ("error", .error),
+            ("warning", .warning),
+            ("info", .info),
+        ]
+
+        for testCase in cases {
+            let json = """
+            {"content":"\(testCase.wireValue) message","type":"\(testCase.wireValue)"}
+            """
+            let message = try JSONDecoder().decode(Message.self, from: Data(json.utf8))
+
+            #expect(message.content == "\(testCase.wireValue) message")
+            #expect(message.type == testCase.expected)
+        }
+    }
+
+    @Test func decodesOrderLineItemQuantity() throws {
+        let json = """
+        {
+          "id": "li-1",
+          "item": {
+            "id": "sku-1",
+            "price": 1000,
+            "title": "Socks"
+          },
+          "quantity": {
+            "fulfilled": 1,
+            "original": 2,
+            "total": 2
+          },
+          "status": "partial",
+          "totals": []
+        }
+        """
+        let lineItem = try JSONDecoder().decode(OrderLineItem.self, from: Data(json.utf8))
+        let quantity: LineItemQuantity = lineItem.quantity
+
+        #expect(quantity.fulfilled == 1)
+        #expect(quantity.original == 2)
+        #expect(quantity.total == 2)
+        #expect(lineItem.status == .partial)
+    }
+
+    @Test func decodesEmbeddedColorSchemes() throws {
+        let json = """
+        {
+          "color_scheme": ["light", "dark"],
+          "delegate": ["window.open"]
+        }
+        """
+        let config = try JSONDecoder().decode(EmbeddedTransportConfig.self, from: Data(json.utf8))
+        let colorScheme: [EmbeddedColorScheme]? = config.colorScheme
+
+        #expect(colorScheme == [.light, .dark])
+        #expect(config.delegate == ["window.open"])
+    }
 }
 
 private func fixtureString(_ name: String) throws -> String {

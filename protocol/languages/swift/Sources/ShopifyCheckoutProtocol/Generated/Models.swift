@@ -21,8 +21,11 @@ public struct Checkout: Codable, Sendable {
     /// ISO 4217 currency code reflecting the merchant's market determination. Derived from
     /// address, context, and geo IP—buyers provide signals, merchants determine currency.
     public let currency: String
+    public let discounts: CheckoutDiscounts?
     /// RFC 3339 expiry timestamp. Default TTL is 6 hours from creation if not sent.
     public let expiresAt: Date?
+    /// Fulfillment details.
+    public let fulfillment: CheckoutFulfillment?
     /// Unique identifier of the checkout session.
     public let id: String
     /// List of line items being checked out.
@@ -46,19 +49,21 @@ public struct Checkout: Codable, Sendable {
     public enum CodingKeys: String, CodingKey {
         case buyer, context
         case continueURL = "continue_url"
-        case currency
+        case currency, discounts
         case expiresAt = "expires_at"
-        case id
+        case fulfillment, id
         case lineItems = "line_items"
         case links, messages, order, payment, signals, status, totals, ucp
     }
 
-    public init(buyer: Buyer?, context: Context?, continueURL: String?, currency: String, expiresAt: Date?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: Signals?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
+    public init(buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: Signals?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
         self.buyer = buyer
         self.context = context
         self.continueURL = continueURL
         self.currency = currency
+        self.discounts = discounts
         self.expiresAt = expiresAt
+        self.fulfillment = fulfillment
         self.id = id
         self.lineItems = lineItems
         self.links = links
@@ -95,7 +100,9 @@ public extension Checkout {
         context: Context?? = nil,
         continueURL: String?? = nil,
         currency: String? = nil,
+        discounts: CheckoutDiscounts?? = nil,
         expiresAt: Date?? = nil,
+        fulfillment: CheckoutFulfillment?? = nil,
         id: String? = nil,
         lineItems: [LineItem]? = nil,
         links: [Link]? = nil,
@@ -112,7 +119,9 @@ public extension Checkout {
             context: context ?? self.context,
             continueURL: continueURL ?? self.continueURL,
             currency: currency ?? self.currency,
+            discounts: discounts ?? self.discounts,
             expiresAt: expiresAt ?? self.expiresAt,
+            fulfillment: fulfillment ?? self.fulfillment,
             id: id ?? self.id,
             lineItems: lineItems ?? self.lineItems,
             links: links ?? self.links,
@@ -314,6 +323,871 @@ public extension Context {
     }
 }
 
+/// Discount codes input and applied discounts output.
+// MARK: - CheckoutDiscounts
+public struct CheckoutDiscounts: Codable, Sendable {
+    /// Discounts successfully applied (code-based and automatic).
+    public let applied: [AppliedDiscount]?
+    /// Discount codes to apply. Case-insensitive. Replaces previously submitted codes. Send
+    /// empty array to clear.
+    public let codes: [String]?
+
+    public init(applied: [AppliedDiscount]?, codes: [String]?) {
+        self.applied = applied
+        self.codes = codes
+    }
+}
+
+// MARK: CheckoutDiscounts convenience initializers and mutators
+
+public extension CheckoutDiscounts {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(CheckoutDiscounts.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        applied: [AppliedDiscount]?? = nil,
+        codes: [String]?? = nil
+    ) -> CheckoutDiscounts {
+        return CheckoutDiscounts(
+            applied: applied ?? self.applied,
+            codes: codes ?? self.codes
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// A discount that was successfully applied.
+// MARK: - AppliedDiscount
+public struct AppliedDiscount: Codable, Sendable {
+    /// Breakdown of where this discount was allocated. Sum of allocation amounts equals total
+    /// amount.
+    public let allocations: [DiscountAllocation]?
+    /// Total discount amount in ISO 4217 minor units.
+    public let amount: Int
+    /// True if applied automatically by merchant rules (no code required).
+    public let automatic: Bool?
+    /// The discount code. Omitted for automatic discounts.
+    public let code: String?
+    /// The eligibility claim accepted by the Business for this discount. Corresponds to a value
+    /// from context.eligibility. Omitted for code-based and non-eligibility automatic discounts.
+    public let eligibility: String?
+    /// Allocation method. 'each' = applied independently per item. 'across' = split
+    /// proportionally by value.
+    public let method: DiscountMethod?
+    /// Stacking order for discount calculation. Lower numbers applied first (1 = first).
+    public let priority: Int?
+    /// True if this discount requires additional verification.
+    public let provisional: Bool?
+    /// Human-readable discount name (e.g., 'Summer Sale 20% Off').
+    public let title: String
+
+    public init(allocations: [DiscountAllocation]?, amount: Int, automatic: Bool?, code: String?, eligibility: String?, method: DiscountMethod?, priority: Int?, provisional: Bool?, title: String) {
+        self.allocations = allocations
+        self.amount = amount
+        self.automatic = automatic
+        self.code = code
+        self.eligibility = eligibility
+        self.method = method
+        self.priority = priority
+        self.provisional = provisional
+        self.title = title
+    }
+}
+
+// MARK: AppliedDiscount convenience initializers and mutators
+
+public extension AppliedDiscount {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AppliedDiscount.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        allocations: [DiscountAllocation]?? = nil,
+        amount: Int? = nil,
+        automatic: Bool?? = nil,
+        code: String?? = nil,
+        eligibility: String?? = nil,
+        method: DiscountMethod?? = nil,
+        priority: Int?? = nil,
+        provisional: Bool?? = nil,
+        title: String? = nil
+    ) -> AppliedDiscount {
+        return AppliedDiscount(
+            allocations: allocations ?? self.allocations,
+            amount: amount ?? self.amount,
+            automatic: automatic ?? self.automatic,
+            code: code ?? self.code,
+            eligibility: eligibility ?? self.eligibility,
+            method: method ?? self.method,
+            priority: priority ?? self.priority,
+            provisional: provisional ?? self.provisional,
+            title: title ?? self.title
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Breakdown of how a discount amount was allocated to a specific target.
+// MARK: - DiscountAllocation
+public struct DiscountAllocation: Codable, Sendable {
+    /// Amount allocated to this target in ISO 4217 minor units.
+    public let amount: Int
+    /// JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals.shipping').
+    public let path: String
+
+    public init(amount: Int, path: String) {
+        self.amount = amount
+        self.path = path
+    }
+}
+
+// MARK: DiscountAllocation convenience initializers and mutators
+
+public extension DiscountAllocation {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(DiscountAllocation.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        amount: Int? = nil,
+        path: String? = nil
+    ) -> DiscountAllocation {
+        return DiscountAllocation(
+            amount: amount ?? self.amount,
+            path: path ?? self.path
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Allocation method. 'each' = applied independently per item. 'across' = split
+/// proportionally by value.
+public enum DiscountMethod: String, Codable, Sendable {
+    case across = "across"
+    case each = "each"
+}
+
+/// Fulfillment details.
+///
+/// Container for fulfillment methods and availability.
+// MARK: - CheckoutFulfillment
+public struct CheckoutFulfillment: Codable, Sendable {
+    /// Inventory availability hints.
+    public let availableMethods: [FulfillmentAvailableMethod]?
+    /// Fulfillment methods for cart items.
+    public let methods: [FulfillmentMethod]?
+
+    public enum CodingKeys: String, CodingKey {
+        case availableMethods = "available_methods"
+        case methods
+    }
+
+    public init(availableMethods: [FulfillmentAvailableMethod]?, methods: [FulfillmentMethod]?) {
+        self.availableMethods = availableMethods
+        self.methods = methods
+    }
+}
+
+// MARK: CheckoutFulfillment convenience initializers and mutators
+
+public extension CheckoutFulfillment {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(CheckoutFulfillment.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        availableMethods: [FulfillmentAvailableMethod]?? = nil,
+        methods: [FulfillmentMethod]?? = nil
+    ) -> CheckoutFulfillment {
+        return CheckoutFulfillment(
+            availableMethods: availableMethods ?? self.availableMethods,
+            methods: methods ?? self.methods
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Inventory availability hint for a fulfillment method type.
+// MARK: - FulfillmentAvailableMethod
+public struct FulfillmentAvailableMethod: Codable, Sendable {
+    /// Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
+    public let description: String?
+    /// 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
+    public let fulfillableOn: String?
+    /// Line items available for this fulfillment method.
+    public let lineItemIDS: [String]
+    /// Fulfillment method type this availability applies to.
+    public let type: FulfillmentMethodType
+
+    public enum CodingKeys: String, CodingKey {
+        case description
+        case fulfillableOn = "fulfillable_on"
+        case lineItemIDS = "line_item_ids"
+        case type
+    }
+
+    public init(description: String?, fulfillableOn: String?, lineItemIDS: [String], type: FulfillmentMethodType) {
+        self.description = description
+        self.fulfillableOn = fulfillableOn
+        self.lineItemIDS = lineItemIDS
+        self.type = type
+    }
+}
+
+// MARK: FulfillmentAvailableMethod convenience initializers and mutators
+
+public extension FulfillmentAvailableMethod {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(FulfillmentAvailableMethod.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        description: String?? = nil,
+        fulfillableOn: String?? = nil,
+        lineItemIDS: [String]? = nil,
+        type: FulfillmentMethodType? = nil
+    ) -> FulfillmentAvailableMethod {
+        return FulfillmentAvailableMethod(
+            description: description ?? self.description,
+            fulfillableOn: fulfillableOn ?? self.fulfillableOn,
+            lineItemIDS: lineItemIDS ?? self.lineItemIDS,
+            type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Fulfillment method type this availability applies to.
+///
+/// Fulfillment method type.
+public enum FulfillmentMethodType: String, Codable, Sendable {
+    case pickup = "pickup"
+    case shipping = "shipping"
+}
+
+/// A fulfillment method (shipping or pickup) with destinations and groups.
+// MARK: - FulfillmentMethod
+public struct FulfillmentMethod: Codable, Sendable {
+    /// Available destinations. For shipping: addresses. For pickup: retail locations.
+    public let destinations: [FulfillmentDestination]?
+    /// Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
+    /// choose shipping method.
+    public let groups: [FulfillmentGroup]?
+    /// Unique fulfillment method identifier.
+    public let id: String
+    /// Line item IDs fulfilled via this method.
+    public let lineItemIDS: [String]
+    /// ID of the selected destination.
+    public let selectedDestinationID: String?
+    /// Fulfillment method type.
+    public let type: FulfillmentMethodType
+
+    public enum CodingKeys: String, CodingKey {
+        case destinations, groups, id
+        case lineItemIDS = "line_item_ids"
+        case selectedDestinationID = "selected_destination_id"
+        case type
+    }
+
+    public init(destinations: [FulfillmentDestination]?, groups: [FulfillmentGroup]?, id: String, lineItemIDS: [String], selectedDestinationID: String?, type: FulfillmentMethodType) {
+        self.destinations = destinations
+        self.groups = groups
+        self.id = id
+        self.lineItemIDS = lineItemIDS
+        self.selectedDestinationID = selectedDestinationID
+        self.type = type
+    }
+}
+
+// MARK: FulfillmentMethod convenience initializers and mutators
+
+public extension FulfillmentMethod {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(FulfillmentMethod.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        destinations: [FulfillmentDestination]?? = nil,
+        groups: [FulfillmentGroup]?? = nil,
+        id: String? = nil,
+        lineItemIDS: [String]? = nil,
+        selectedDestinationID: String?? = nil,
+        type: FulfillmentMethodType? = nil
+    ) -> FulfillmentMethod {
+        return FulfillmentMethod(
+            destinations: destinations ?? self.destinations,
+            groups: groups ?? self.groups,
+            id: id ?? self.id,
+            lineItemIDS: lineItemIDS ?? self.lineItemIDS,
+            selectedDestinationID: selectedDestinationID ?? self.selectedDestinationID,
+            type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// A destination for fulfillment.
+///
+/// Shipping destination.
+///
+/// Physical address of the location.
+///
+/// The billing address associated with this payment method.
+///
+/// Delivery destination address.
+///
+/// A pickup location (retail store, locker, etc.).
+// MARK: - FulfillmentDestination
+public struct FulfillmentDestination: Codable, Sendable {
+    /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+    /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+    /// full country name such as "Singapore" can also be used.
+    public let addressCountry: String?
+    /// The locality in which the street address is, and which is in the region. For example,
+    /// Mountain View.
+    public let addressLocality: String?
+    /// The region in which the locality is, and which is in the country. Required for applicable
+    /// countries (i.e. state in US, province in CA). For example, California or another
+    /// appropriate first-level Administrative division.
+    public let addressRegion: String?
+    /// An address extension such as an apartment number, C/O or alternative name.
+    public let extendedAddress: String?
+    /// Optional. First name of the contact associated with the address.
+    public let firstName: String?
+    /// Optional. Last name of the contact associated with the address.
+    public let lastName: String?
+    /// Optional. Phone number of the contact associated with the address.
+    public let phoneNumber: String?
+    /// The postal code. For example, 94043.
+    public let postalCode: String?
+    /// The street address.
+    public let streetAddress: String?
+    /// ID specific to this shipping destination.
+    ///
+    /// Unique location identifier.
+    public let id: String
+    /// Physical address of the location.
+    public let address: PostalAddress?
+    /// Location name (e.g., store name).
+    public let name: String?
+
+    public enum CodingKeys: String, CodingKey {
+        case addressCountry = "address_country"
+        case addressLocality = "address_locality"
+        case addressRegion = "address_region"
+        case extendedAddress = "extended_address"
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case phoneNumber = "phone_number"
+        case postalCode = "postal_code"
+        case streetAddress = "street_address"
+        case id, address, name
+    }
+
+    public init(addressCountry: String?, addressLocality: String?, addressRegion: String?, extendedAddress: String?, firstName: String?, lastName: String?, phoneNumber: String?, postalCode: String?, streetAddress: String?, id: String, address: PostalAddress?, name: String?) {
+        self.addressCountry = addressCountry
+        self.addressLocality = addressLocality
+        self.addressRegion = addressRegion
+        self.extendedAddress = extendedAddress
+        self.firstName = firstName
+        self.lastName = lastName
+        self.phoneNumber = phoneNumber
+        self.postalCode = postalCode
+        self.streetAddress = streetAddress
+        self.id = id
+        self.address = address
+        self.name = name
+    }
+}
+
+// MARK: FulfillmentDestination convenience initializers and mutators
+
+public extension FulfillmentDestination {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(FulfillmentDestination.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        addressCountry: String?? = nil,
+        addressLocality: String?? = nil,
+        addressRegion: String?? = nil,
+        extendedAddress: String?? = nil,
+        firstName: String?? = nil,
+        lastName: String?? = nil,
+        phoneNumber: String?? = nil,
+        postalCode: String?? = nil,
+        streetAddress: String?? = nil,
+        id: String? = nil,
+        address: PostalAddress?? = nil,
+        name: String?? = nil
+    ) -> FulfillmentDestination {
+        return FulfillmentDestination(
+            addressCountry: addressCountry ?? self.addressCountry,
+            addressLocality: addressLocality ?? self.addressLocality,
+            addressRegion: addressRegion ?? self.addressRegion,
+            extendedAddress: extendedAddress ?? self.extendedAddress,
+            firstName: firstName ?? self.firstName,
+            lastName: lastName ?? self.lastName,
+            phoneNumber: phoneNumber ?? self.phoneNumber,
+            postalCode: postalCode ?? self.postalCode,
+            streetAddress: streetAddress ?? self.streetAddress,
+            id: id ?? self.id,
+            address: address ?? self.address,
+            name: name ?? self.name
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Physical address of the location.
+///
+/// The billing address associated with this payment method.
+///
+/// Delivery destination address.
+// MARK: - PostalAddress
+public struct PostalAddress: Codable, Sendable {
+    /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+    /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+    /// full country name such as "Singapore" can also be used.
+    public let addressCountry: String?
+    /// The locality in which the street address is, and which is in the region. For example,
+    /// Mountain View.
+    public let addressLocality: String?
+    /// The region in which the locality is, and which is in the country. Required for applicable
+    /// countries (i.e. state in US, province in CA). For example, California or another
+    /// appropriate first-level Administrative division.
+    public let addressRegion: String?
+    /// An address extension such as an apartment number, C/O or alternative name.
+    public let extendedAddress: String?
+    /// Optional. First name of the contact associated with the address.
+    public let firstName: String?
+    /// Optional. Last name of the contact associated with the address.
+    public let lastName: String?
+    /// Optional. Phone number of the contact associated with the address.
+    public let phoneNumber: String?
+    /// The postal code. For example, 94043.
+    public let postalCode: String?
+    /// The street address.
+    public let streetAddress: String?
+
+    public enum CodingKeys: String, CodingKey {
+        case addressCountry = "address_country"
+        case addressLocality = "address_locality"
+        case addressRegion = "address_region"
+        case extendedAddress = "extended_address"
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case phoneNumber = "phone_number"
+        case postalCode = "postal_code"
+        case streetAddress = "street_address"
+    }
+
+    public init(addressCountry: String?, addressLocality: String?, addressRegion: String?, extendedAddress: String?, firstName: String?, lastName: String?, phoneNumber: String?, postalCode: String?, streetAddress: String?) {
+        self.addressCountry = addressCountry
+        self.addressLocality = addressLocality
+        self.addressRegion = addressRegion
+        self.extendedAddress = extendedAddress
+        self.firstName = firstName
+        self.lastName = lastName
+        self.phoneNumber = phoneNumber
+        self.postalCode = postalCode
+        self.streetAddress = streetAddress
+    }
+}
+
+// MARK: PostalAddress convenience initializers and mutators
+
+public extension PostalAddress {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PostalAddress.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        addressCountry: String?? = nil,
+        addressLocality: String?? = nil,
+        addressRegion: String?? = nil,
+        extendedAddress: String?? = nil,
+        firstName: String?? = nil,
+        lastName: String?? = nil,
+        phoneNumber: String?? = nil,
+        postalCode: String?? = nil,
+        streetAddress: String?? = nil
+    ) -> PostalAddress {
+        return PostalAddress(
+            addressCountry: addressCountry ?? self.addressCountry,
+            addressLocality: addressLocality ?? self.addressLocality,
+            addressRegion: addressRegion ?? self.addressRegion,
+            extendedAddress: extendedAddress ?? self.extendedAddress,
+            firstName: firstName ?? self.firstName,
+            lastName: lastName ?? self.lastName,
+            phoneNumber: phoneNumber ?? self.phoneNumber,
+            postalCode: postalCode ?? self.postalCode,
+            streetAddress: streetAddress ?? self.streetAddress
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// A merchant-generated package/group of line items with fulfillment options.
+// MARK: - FulfillmentGroup
+public struct FulfillmentGroup: Codable, Sendable {
+    /// Group identifier for referencing merchant-generated groups in updates.
+    public let id: String
+    /// Line item IDs included in this group/package.
+    public let lineItemIDS: [String]
+    /// Available fulfillment options for this group.
+    public let options: [FulfillmentOption]?
+    /// ID of the selected fulfillment option for this group.
+    public let selectedOptionID: String?
+
+    public enum CodingKeys: String, CodingKey {
+        case id
+        case lineItemIDS = "line_item_ids"
+        case options
+        case selectedOptionID = "selected_option_id"
+    }
+
+    public init(id: String, lineItemIDS: [String], options: [FulfillmentOption]?, selectedOptionID: String?) {
+        self.id = id
+        self.lineItemIDS = lineItemIDS
+        self.options = options
+        self.selectedOptionID = selectedOptionID
+    }
+}
+
+// MARK: FulfillmentGroup convenience initializers and mutators
+
+public extension FulfillmentGroup {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(FulfillmentGroup.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        id: String? = nil,
+        lineItemIDS: [String]? = nil,
+        options: [FulfillmentOption]?? = nil,
+        selectedOptionID: String?? = nil
+    ) -> FulfillmentGroup {
+        return FulfillmentGroup(
+            id: id ?? self.id,
+            lineItemIDS: lineItemIDS ?? self.lineItemIDS,
+            options: options ?? self.options,
+            selectedOptionID: selectedOptionID ?? self.selectedOptionID
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
+// MARK: - FulfillmentOption
+public struct FulfillmentOption: Codable, Sendable {
+    /// Carrier name (for shipping).
+    public let carrier: String?
+    /// Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
+    public let description: String?
+    /// Earliest fulfillment date.
+    public let earliestFulfillmentTime: Date?
+    /// Unique fulfillment option identifier.
+    public let id: String
+    /// Latest fulfillment date.
+    public let latestFulfillmentTime: Date?
+    /// Short label (e.g., 'Express Shipping', 'Curbside Pickup').
+    public let title: String
+    /// Fulfillment option totals breakdown.
+    public let totals: [LineItemTotal]
+
+    public enum CodingKeys: String, CodingKey {
+        case carrier, description
+        case earliestFulfillmentTime = "earliest_fulfillment_time"
+        case id
+        case latestFulfillmentTime = "latest_fulfillment_time"
+        case title, totals
+    }
+
+    public init(carrier: String?, description: String?, earliestFulfillmentTime: Date?, id: String, latestFulfillmentTime: Date?, title: String, totals: [LineItemTotal]) {
+        self.carrier = carrier
+        self.description = description
+        self.earliestFulfillmentTime = earliestFulfillmentTime
+        self.id = id
+        self.latestFulfillmentTime = latestFulfillmentTime
+        self.title = title
+        self.totals = totals
+    }
+}
+
+// MARK: FulfillmentOption convenience initializers and mutators
+
+public extension FulfillmentOption {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(FulfillmentOption.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        carrier: String?? = nil,
+        description: String?? = nil,
+        earliestFulfillmentTime: Date?? = nil,
+        id: String? = nil,
+        latestFulfillmentTime: Date?? = nil,
+        title: String? = nil,
+        totals: [LineItemTotal]? = nil
+    ) -> FulfillmentOption {
+        return FulfillmentOption(
+            carrier: carrier ?? self.carrier,
+            description: description ?? self.description,
+            earliestFulfillmentTime: earliestFulfillmentTime ?? self.earliestFulfillmentTime,
+            id: id ?? self.id,
+            latestFulfillmentTime: latestFulfillmentTime ?? self.latestFulfillmentTime,
+            title: title ?? self.title,
+            totals: totals ?? self.totals
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// A cost breakdown entry with a category, amount, and optional display text.
+// MARK: - LineItemTotal
+public struct LineItemTotal: Codable, Sendable {
+    public let amount: Int
+    /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
+    /// 'Delivery').
+    public let displayText: String?
+    /// Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+    /// fee, total. Businesses MAY use additional values.
+    public let type: String
+
+    public enum CodingKeys: String, CodingKey {
+        case amount
+        case displayText = "display_text"
+        case type
+    }
+
+    public init(amount: Int, displayText: String?, type: String) {
+        self.amount = amount
+        self.displayText = displayText
+        self.type = type
+    }
+}
+
+// MARK: LineItemTotal convenience initializers and mutators
+
+public extension LineItemTotal {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(LineItemTotal.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        amount: Int? = nil,
+        displayText: String?? = nil,
+        type: String? = nil
+    ) -> LineItemTotal {
+        return LineItemTotal(
+            amount: amount ?? self.amount,
+            displayText: displayText ?? self.displayText,
+            type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
 /// Line item object. Expected to use the currency of the parent object.
 // MARK: - LineItem
 public struct LineItem: Codable, Sendable {
@@ -440,69 +1314,6 @@ public extension Item {
             imageURL: imageURL ?? self.imageURL,
             price: price ?? self.price,
             title: title ?? self.title
-        )
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
-
-/// A cost breakdown entry with a category, amount, and optional display text.
-// MARK: - LineItemTotal
-public struct LineItemTotal: Codable, Sendable {
-    public let amount: Int
-    /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
-    /// 'Delivery').
-    public let displayText: String?
-    /// Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
-    /// fee, total. Businesses MAY use additional values.
-    public let type: String
-
-    public enum CodingKeys: String, CodingKey {
-        case amount
-        case displayText = "display_text"
-        case type
-    }
-
-    public init(amount: Int, displayText: String?, type: String) {
-        self.amount = amount
-        self.displayText = displayText
-        self.type = type
-    }
-}
-
-// MARK: LineItemTotal convenience initializers and mutators
-
-public extension LineItemTotal {
-    init(data: Data) throws {
-        self = try newJSONDecoder().decode(LineItemTotal.self, from: data)
-    }
-
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
-        }
-        try self.init(data: data)
-    }
-
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func with(
-        amount: Int? = nil,
-        displayText: String?? = nil,
-        type: String? = nil
-    ) -> LineItemTotal {
-        return LineItemTotal(
-            amount: amount ?? self.amount,
-            displayText: displayText ?? self.displayText,
-            type: type ?? self.type
         )
     }
 
@@ -897,111 +1708,6 @@ public extension SelectedPaymentInstrument {
             id: id ?? self.id,
             type: type ?? self.type,
             selected: selected ?? self.selected
-        )
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
-
-/// The billing address associated with this payment method.
-///
-/// Delivery destination address.
-// MARK: - PostalAddress
-public struct PostalAddress: Codable, Sendable {
-    /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-    /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-    /// full country name such as "Singapore" can also be used.
-    public let addressCountry: String?
-    /// The locality in which the street address is, and which is in the region. For example,
-    /// Mountain View.
-    public let addressLocality: String?
-    /// The region in which the locality is, and which is in the country. Required for applicable
-    /// countries (i.e. state in US, province in CA). For example, California or another
-    /// appropriate first-level Administrative division.
-    public let addressRegion: String?
-    /// An address extension such as an apartment number, C/O or alternative name.
-    public let extendedAddress: String?
-    /// Optional. First name of the contact associated with the address.
-    public let firstName: String?
-    /// Optional. Last name of the contact associated with the address.
-    public let lastName: String?
-    /// Optional. Phone number of the contact associated with the address.
-    public let phoneNumber: String?
-    /// The postal code. For example, 94043.
-    public let postalCode: String?
-    /// The street address.
-    public let streetAddress: String?
-
-    public enum CodingKeys: String, CodingKey {
-        case addressCountry = "address_country"
-        case addressLocality = "address_locality"
-        case addressRegion = "address_region"
-        case extendedAddress = "extended_address"
-        case firstName = "first_name"
-        case lastName = "last_name"
-        case phoneNumber = "phone_number"
-        case postalCode = "postal_code"
-        case streetAddress = "street_address"
-    }
-
-    public init(addressCountry: String?, addressLocality: String?, addressRegion: String?, extendedAddress: String?, firstName: String?, lastName: String?, phoneNumber: String?, postalCode: String?, streetAddress: String?) {
-        self.addressCountry = addressCountry
-        self.addressLocality = addressLocality
-        self.addressRegion = addressRegion
-        self.extendedAddress = extendedAddress
-        self.firstName = firstName
-        self.lastName = lastName
-        self.phoneNumber = phoneNumber
-        self.postalCode = postalCode
-        self.streetAddress = streetAddress
-    }
-}
-
-// MARK: PostalAddress convenience initializers and mutators
-
-public extension PostalAddress {
-    init(data: Data) throws {
-        self = try newJSONDecoder().decode(PostalAddress.self, from: data)
-    }
-
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
-        }
-        try self.init(data: data)
-    }
-
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func with(
-        addressCountry: String?? = nil,
-        addressLocality: String?? = nil,
-        addressRegion: String?? = nil,
-        extendedAddress: String?? = nil,
-        firstName: String?? = nil,
-        lastName: String?? = nil,
-        phoneNumber: String?? = nil,
-        postalCode: String?? = nil,
-        streetAddress: String?? = nil
-    ) -> PostalAddress {
-        return PostalAddress(
-            addressCountry: addressCountry ?? self.addressCountry,
-            addressLocality: addressLocality ?? self.addressLocality,
-            addressRegion: addressRegion ?? self.addressRegion,
-            extendedAddress: extendedAddress ?? self.extendedAddress,
-            firstName: firstName ?? self.firstName,
-            lastName: lastName ?? self.lastName,
-            phoneNumber: phoneNumber ?? self.phoneNumber,
-            postalCode: postalCode ?? self.postalCode,
-            streetAddress: streetAddress ?? self.streetAddress
         )
     }
 
@@ -2333,7 +3039,7 @@ public struct OrderLineItem: Codable, Sendable {
     /// Parent line item identifier for any nested structures.
     public let parentID: String?
     /// Quantity tracking for the line item.
-    public let quantity: Quantity
+    public let quantity: LineItemQuantity
     /// Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
     /// quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
     /// quantity.fulfilled > 0, otherwise processing.
@@ -2347,7 +3053,7 @@ public struct OrderLineItem: Codable, Sendable {
         case quantity, status, totals
     }
 
-    public init(id: String, item: Item, parentID: String?, quantity: Quantity, status: LineItemStatus, totals: [LineItemTotal]) {
+    public init(id: String, item: Item, parentID: String?, quantity: LineItemQuantity, status: LineItemStatus, totals: [LineItemTotal]) {
         self.id = id
         self.item = item
         self.parentID = parentID
@@ -2379,7 +3085,7 @@ public extension OrderLineItem {
         id: String? = nil,
         item: Item? = nil,
         parentID: String?? = nil,
-        quantity: Quantity? = nil,
+        quantity: LineItemQuantity? = nil,
         status: LineItemStatus? = nil,
         totals: [LineItemTotal]? = nil
     ) -> OrderLineItem {
@@ -2403,8 +3109,8 @@ public extension OrderLineItem {
 }
 
 /// Quantity tracking for the line item.
-// MARK: - Quantity
-public struct Quantity: Codable, Sendable {
+// MARK: - LineItemQuantity
+public struct LineItemQuantity: Codable, Sendable {
     /// Quantity fulfilled so far.
     public let fulfilled: Int
     /// Quantity from the original checkout.
@@ -2420,11 +3126,11 @@ public struct Quantity: Codable, Sendable {
     }
 }
 
-// MARK: Quantity convenience initializers and mutators
+// MARK: LineItemQuantity convenience initializers and mutators
 
-public extension Quantity {
+public extension LineItemQuantity {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(Quantity.self, from: data)
+        self = try newJSONDecoder().decode(LineItemQuantity.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -2442,8 +3148,8 @@ public extension Quantity {
         fulfilled: Int? = nil,
         original: Int?? = nil,
         total: Int? = nil
-    ) -> Quantity {
-        return Quantity(
+    ) -> LineItemQuantity {
+        return LineItemQuantity(
             fulfilled: fulfilled ?? self.fulfilled,
             original: original ?? self.original,
             total: total ?? self.total

@@ -1,53 +1,10 @@
 // To parse this data:
 //
-//   import { Convert, Checkout, PaymentAccountInfo, Adjustment, AvailablePaymentInstrument, TokenBinding, BusinessFulfillmentConfig, Buyer, CardCredential, CardPaymentInstrument, Context, ErrorResponse, Expectation, FulfillmentAvailableMethod, FulfillmentDestination, FulfillmentEvent, FulfillmentGroup, FulfillmentMethod, FulfillmentOption, Fulfillment, Item, LineItem, Link, MerchantFulfillmentConfig, MessageError, MessageInfo, MessageWarning, Message, OrderConfirmation, OrderLineItem, PaymentCredential, PaymentIdentity, PaymentInstrument, PlatformFulfillmentConfig, PostalAddress, RetailLocation, ShippingDestination, Signals, TokenCredential, Total, Payment, Order, InstrumentsChangeResult, CredentialResult } from "./file";
+//   import { Convert, Checkout, Order, ErrorResponse, InstrumentsChangeResult, CredentialResult } from "./file";
 //
 //   const checkout = Convert.toCheckout(json);
-//   const paymentAccountInfo = Convert.toPaymentAccountInfo(json);
-//   const adjustment = Convert.toAdjustment(json);
-//   const amount = Convert.toAmount(json);
-//   const availablePaymentInstrument = Convert.toAvailablePaymentInstrument(json);
-//   const binding = Convert.toBinding(json);
-//   const businessFulfillmentConfig = Convert.toBusinessFulfillmentConfig(json);
-//   const buyer = Convert.toBuyer(json);
-//   const cardCredential = Convert.toCardCredential(json);
-//   const cardPaymentInstrument = Convert.toCardPaymentInstrument(json);
-//   const context = Convert.toContext(json);
-//   const errorCode = Convert.toErrorCode(json);
-//   const errorResponse = Convert.toErrorResponse(json);
-//   const expectation = Convert.toExpectation(json);
-//   const fulfillmentAvailableMethod = Convert.toFulfillmentAvailableMethod(json);
-//   const fulfillmentDestination = Convert.toFulfillmentDestination(json);
-//   const fulfillmentEvent = Convert.toFulfillmentEvent(json);
-//   const fulfillmentGroup = Convert.toFulfillmentGroup(json);
-//   const fulfillmentMethod = Convert.toFulfillmentMethod(json);
-//   const fulfillmentOption = Convert.toFulfillmentOption(json);
-//   const fulfillment = Convert.toFulfillment(json);
-//   const item = Convert.toItem(json);
-//   const lineItem = Convert.toLineItem(json);
-//   const link = Convert.toLink(json);
-//   const merchantFulfillmentConfig = Convert.toMerchantFulfillmentConfig(json);
-//   const messageError = Convert.toMessageError(json);
-//   const messageInfo = Convert.toMessageInfo(json);
-//   const messageWarning = Convert.toMessageWarning(json);
-//   const message = Convert.toMessage(json);
-//   const orderConfirmation = Convert.toOrderConfirmation(json);
-//   const orderLineItem = Convert.toOrderLineItem(json);
-//   const paymentCredential = Convert.toPaymentCredential(json);
-//   const paymentIdentity = Convert.toPaymentIdentity(json);
-//   const paymentInstrument = Convert.toPaymentInstrument(json);
-//   const platformFulfillmentConfig = Convert.toPlatformFulfillmentConfig(json);
-//   const postalAddress = Convert.toPostalAddress(json);
-//   const retailLocation = Convert.toRetailLocation(json);
-//   const reverseDomainName = Convert.toReverseDomainName(json);
-//   const shippingDestination = Convert.toShippingDestination(json);
-//   const signals = Convert.toSignals(json);
-//   const signedAmount = Convert.toSignedAmount(json);
-//   const tokenCredential = Convert.toTokenCredential(json);
-//   const total = Convert.toTotal(json);
-//   const totals = Convert.toTotals(json);
-//   const payment = Convert.toPayment(json);
 //   const order = Convert.toOrder(json);
+//   const errorResponse = Convert.toErrorResponse(json);
 //   const instrumentsChangeResult = Convert.toInstrumentsChangeResult(json);
 //   const credentialResult = Convert.toCredentialResult(json);
 //
@@ -72,11 +29,16 @@ export interface Checkout {
      * ISO 4217 currency code reflecting the merchant's market determination. Derived from
      * address, context, and geo IP—buyers provide signals, merchants determine currency.
      */
-    currency: string;
+    currency:   string;
+    discounts?: CheckoutDiscounts;
     /**
      * RFC 3339 expiry timestamp. Default TTL is 6 hours from creation if not sent.
      */
     expiresAt?: string;
+    /**
+     * Fulfillment details.
+     */
+    fulfillment?: CheckoutFulfillment;
     /**
      * Unique identifier of the checkout session.
      */
@@ -200,6 +162,368 @@ export interface Context {
 }
 
 /**
+ * Discount codes input and applied discounts output.
+ */
+export interface CheckoutDiscounts {
+    /**
+     * Discounts successfully applied (code-based and automatic).
+     */
+    applied?: AppliedDiscount[];
+    /**
+     * Discount codes to apply. Case-insensitive. Replaces previously submitted codes. Send
+     * empty array to clear.
+     */
+    codes?: string[];
+    [property: string]: any;
+}
+
+/**
+ * A discount that was successfully applied.
+ */
+export interface AppliedDiscount {
+    /**
+     * Breakdown of where this discount was allocated. Sum of allocation amounts equals total
+     * amount.
+     */
+    allocations?: DiscountAllocation[];
+    /**
+     * Total discount amount in ISO 4217 minor units.
+     */
+    amount: number;
+    /**
+     * True if applied automatically by merchant rules (no code required).
+     */
+    automatic?: boolean;
+    /**
+     * The discount code. Omitted for automatic discounts.
+     */
+    code?: string;
+    /**
+     * The eligibility claim accepted by the Business for this discount. Corresponds to a value
+     * from context.eligibility. Omitted for code-based and non-eligibility automatic discounts.
+     */
+    eligibility?: string;
+    /**
+     * Allocation method. 'each' = applied independently per item. 'across' = split
+     * proportionally by value.
+     */
+    method?: DiscountMethod;
+    /**
+     * Stacking order for discount calculation. Lower numbers applied first (1 = first).
+     */
+    priority?: number;
+    /**
+     * True if this discount requires additional verification.
+     */
+    provisional?: boolean;
+    /**
+     * Human-readable discount name (e.g., 'Summer Sale 20% Off').
+     */
+    title: string;
+    [property: string]: any;
+}
+
+/**
+ * Breakdown of how a discount amount was allocated to a specific target.
+ */
+export interface DiscountAllocation {
+    /**
+     * Amount allocated to this target in ISO 4217 minor units.
+     */
+    amount: number;
+    /**
+     * JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals.shipping').
+     */
+    path: string;
+    [property: string]: any;
+}
+
+/**
+ * Allocation method. 'each' = applied independently per item. 'across' = split
+ * proportionally by value.
+ */
+export type DiscountMethod = "each" | "across";
+
+/**
+ * Fulfillment details.
+ *
+ * Container for fulfillment methods and availability.
+ */
+export interface CheckoutFulfillment {
+    /**
+     * Inventory availability hints.
+     */
+    availableMethods?: FulfillmentAvailableMethod[];
+    /**
+     * Fulfillment methods for cart items.
+     */
+    methods?: FulfillmentMethod[];
+    [property: string]: any;
+}
+
+/**
+ * Inventory availability hint for a fulfillment method type.
+ */
+export interface FulfillmentAvailableMethod {
+    /**
+     * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
+     */
+    description?: string;
+    /**
+     * 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
+     */
+    fulfillableOn?: null | string;
+    /**
+     * Line items available for this fulfillment method.
+     */
+    lineItemIds: string[];
+    /**
+     * Fulfillment method type this availability applies to.
+     */
+    type: FulfillmentMethodType;
+    [property: string]: any;
+}
+
+/**
+ * Fulfillment method type this availability applies to.
+ *
+ * Fulfillment method type.
+ */
+export type FulfillmentMethodType = "shipping" | "pickup";
+
+/**
+ * A fulfillment method (shipping or pickup) with destinations and groups.
+ */
+export interface FulfillmentMethod {
+    /**
+     * Available destinations. For shipping: addresses. For pickup: retail locations.
+     */
+    destinations?: FulfillmentDestination[];
+    /**
+     * Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
+     * choose shipping method.
+     */
+    groups?: FulfillmentGroup[];
+    /**
+     * Unique fulfillment method identifier.
+     */
+    id: string;
+    /**
+     * Line item IDs fulfilled via this method.
+     */
+    lineItemIds: string[];
+    /**
+     * ID of the selected destination.
+     */
+    selectedDestinationId?: null | string;
+    /**
+     * Fulfillment method type.
+     */
+    type: FulfillmentMethodType;
+    [property: string]: any;
+}
+
+/**
+ * A destination for fulfillment.
+ *
+ * Shipping destination.
+ *
+ * Physical address of the location.
+ *
+ * The billing address associated with this payment method.
+ *
+ * Delivery destination address.
+ *
+ * A pickup location (retail store, locker, etc.).
+ */
+export interface FulfillmentDestination {
+    /**
+     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+     * full country name such as "Singapore" can also be used.
+     */
+    addressCountry?: string;
+    /**
+     * The locality in which the street address is, and which is in the region. For example,
+     * Mountain View.
+     */
+    addressLocality?: string;
+    /**
+     * The region in which the locality is, and which is in the country. Required for applicable
+     * countries (i.e. state in US, province in CA). For example, California or another
+     * appropriate first-level Administrative division.
+     */
+    addressRegion?: string;
+    /**
+     * An address extension such as an apartment number, C/O or alternative name.
+     */
+    extendedAddress?: string;
+    /**
+     * Optional. First name of the contact associated with the address.
+     */
+    firstName?: string;
+    /**
+     * Optional. Last name of the contact associated with the address.
+     */
+    lastName?: string;
+    /**
+     * Optional. Phone number of the contact associated with the address.
+     */
+    phoneNumber?: string;
+    /**
+     * The postal code. For example, 94043.
+     */
+    postalCode?: string;
+    /**
+     * The street address.
+     */
+    streetAddress?: string;
+    /**
+     * ID specific to this shipping destination.
+     *
+     * Unique location identifier.
+     */
+    id: string;
+    /**
+     * Physical address of the location.
+     */
+    address?: PostalAddress;
+    /**
+     * Location name (e.g., store name).
+     */
+    name?: string;
+    [property: string]: any;
+}
+
+/**
+ * Physical address of the location.
+ *
+ * The billing address associated with this payment method.
+ *
+ * Delivery destination address.
+ */
+export interface PostalAddress {
+    /**
+     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+     * full country name such as "Singapore" can also be used.
+     */
+    addressCountry?: string;
+    /**
+     * The locality in which the street address is, and which is in the region. For example,
+     * Mountain View.
+     */
+    addressLocality?: string;
+    /**
+     * The region in which the locality is, and which is in the country. Required for applicable
+     * countries (i.e. state in US, province in CA). For example, California or another
+     * appropriate first-level Administrative division.
+     */
+    addressRegion?: string;
+    /**
+     * An address extension such as an apartment number, C/O or alternative name.
+     */
+    extendedAddress?: string;
+    /**
+     * Optional. First name of the contact associated with the address.
+     */
+    firstName?: string;
+    /**
+     * Optional. Last name of the contact associated with the address.
+     */
+    lastName?: string;
+    /**
+     * Optional. Phone number of the contact associated with the address.
+     */
+    phoneNumber?: string;
+    /**
+     * The postal code. For example, 94043.
+     */
+    postalCode?: string;
+    /**
+     * The street address.
+     */
+    streetAddress?: string;
+    [property: string]: any;
+}
+
+/**
+ * A merchant-generated package/group of line items with fulfillment options.
+ */
+export interface FulfillmentGroup {
+    /**
+     * Group identifier for referencing merchant-generated groups in updates.
+     */
+    id: string;
+    /**
+     * Line item IDs included in this group/package.
+     */
+    lineItemIds: string[];
+    /**
+     * Available fulfillment options for this group.
+     */
+    options?: FulfillmentOption[];
+    /**
+     * ID of the selected fulfillment option for this group.
+     */
+    selectedOptionId?: null | string;
+    [property: string]: any;
+}
+
+/**
+ * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
+ */
+export interface FulfillmentOption {
+    /**
+     * Carrier name (for shipping).
+     */
+    carrier?: string;
+    /**
+     * Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
+     */
+    description?: string;
+    /**
+     * Earliest fulfillment date.
+     */
+    earliestFulfillmentTime?: string;
+    /**
+     * Unique fulfillment option identifier.
+     */
+    id: string;
+    /**
+     * Latest fulfillment date.
+     */
+    latestFulfillmentTime?: string;
+    /**
+     * Short label (e.g., 'Express Shipping', 'Curbside Pickup').
+     */
+    title: string;
+    /**
+     * Fulfillment option totals breakdown.
+     */
+    totals: LineItemTotal[];
+    [property: string]: any;
+}
+
+/**
+ * A cost breakdown entry with a category, amount, and optional display text.
+ */
+export interface LineItemTotal {
+    amount: number;
+    /**
+     * Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
+     * 'Delivery').
+     */
+    displayText?: string;
+    /**
+     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+     * fee, total. Businesses MAY use additional values.
+     */
+    type: string;
+    [property: string]: any;
+}
+
+/**
  * Line item object. Expected to use the currency of the parent object.
  */
 export interface LineItem {
@@ -241,24 +565,6 @@ export interface Item {
      * Product title.
      */
     title: string;
-    [property: string]: any;
-}
-
-/**
- * A cost breakdown entry with a category, amount, and optional display text.
- */
-export interface LineItemTotal {
-    amount: number;
-    /**
-     * Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
-     * 'Delivery').
-     */
-    displayText?: string;
-    /**
-     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
-     * fee, total. Businesses MAY use additional values.
-     */
-    type: string;
     [property: string]: any;
 }
 
@@ -428,56 +734,6 @@ export interface SelectedPaymentInstrument {
      * Whether this instrument is selected by the user.
      */
     selected?: boolean;
-    [property: string]: any;
-}
-
-/**
- * The billing address associated with this payment method.
- *
- * Delivery destination address.
- */
-export interface PostalAddress {
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
-     */
-    addressCountry?: string;
-    /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
-     */
-    addressLocality?: string;
-    /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
-     */
-    addressRegion?: string;
-    /**
-     * An address extension such as an apartment number, C/O or alternative name.
-     */
-    extendedAddress?: string;
-    /**
-     * Optional. First name of the contact associated with the address.
-     */
-    firstName?: string;
-    /**
-     * Optional. Last name of the contact associated with the address.
-     */
-    lastName?: string;
-    /**
-     * Optional. Phone number of the contact associated with the address.
-     */
-    phoneNumber?: string;
-    /**
-     * The postal code. For example, 94043.
-     */
-    postalCode?: string;
-    /**
-     * The street address.
-     */
-    streetAddress?: string;
     [property: string]: any;
 }
 
@@ -992,7 +1248,7 @@ export interface OrderLineItem {
     /**
      * Quantity tracking for the line item.
      */
-    quantity: Quantity;
+    quantity: LineItemQuantity;
     /**
      * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
      * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
@@ -1009,7 +1265,7 @@ export interface OrderLineItem {
 /**
  * Quantity tracking for the line item.
  */
-export interface Quantity {
+export interface LineItemQuantity {
     /**
      * Quantity fulfilled so far.
      */
@@ -1405,92 +1661,12 @@ export class Convert {
         return JSON.stringify(uncast(value, r("Checkout")), null, 2);
     }
 
-    public static toPaymentAccountInfo(json: string): PaymentAccountInfo {
-        return cast(JSON.parse(json), r("PaymentAccountInfo"));
+    public static toOrder(json: string): Order {
+        return cast(JSON.parse(json), r("Order"));
     }
 
-    public static paymentAccountInfoToJson(value: PaymentAccountInfo): string {
-        return JSON.stringify(uncast(value, r("PaymentAccountInfo")), null, 2);
-    }
-
-    public static toAdjustment(json: string): Adjustment {
-        return cast(JSON.parse(json), r("Adjustment"));
-    }
-
-    public static adjustmentToJson(value: Adjustment): string {
-        return JSON.stringify(uncast(value, r("Adjustment")), null, 2);
-    }
-
-    public static toAmount(json: string): number {
-        return cast(JSON.parse(json), 0);
-    }
-
-    public static amountToJson(value: number): string {
-        return JSON.stringify(uncast(value, 0), null, 2);
-    }
-
-    public static toAvailablePaymentInstrument(json: string): AvailablePaymentInstrument {
-        return cast(JSON.parse(json), r("AvailablePaymentInstrument"));
-    }
-
-    public static availablePaymentInstrumentToJson(value: AvailablePaymentInstrument): string {
-        return JSON.stringify(uncast(value, r("AvailablePaymentInstrument")), null, 2);
-    }
-
-    public static toBinding(json: string): TokenBinding {
-        return cast(JSON.parse(json), r("TokenBinding"));
-    }
-
-    public static bindingToJson(value: TokenBinding): string {
-        return JSON.stringify(uncast(value, r("TokenBinding")), null, 2);
-    }
-
-    public static toBusinessFulfillmentConfig(json: string): BusinessFulfillmentConfig {
-        return cast(JSON.parse(json), r("BusinessFulfillmentConfig"));
-    }
-
-    public static businessFulfillmentConfigToJson(value: BusinessFulfillmentConfig): string {
-        return JSON.stringify(uncast(value, r("BusinessFulfillmentConfig")), null, 2);
-    }
-
-    public static toBuyer(json: string): Buyer {
-        return cast(JSON.parse(json), r("Buyer"));
-    }
-
-    public static buyerToJson(value: Buyer): string {
-        return JSON.stringify(uncast(value, r("Buyer")), null, 2);
-    }
-
-    public static toCardCredential(json: string): CardCredential {
-        return cast(JSON.parse(json), r("CardCredential"));
-    }
-
-    public static cardCredentialToJson(value: CardCredential): string {
-        return JSON.stringify(uncast(value, r("CardCredential")), null, 2);
-    }
-
-    public static toCardPaymentInstrument(json: string): CardPaymentInstrument {
-        return cast(JSON.parse(json), r("CardPaymentInstrument"));
-    }
-
-    public static cardPaymentInstrumentToJson(value: CardPaymentInstrument): string {
-        return JSON.stringify(uncast(value, r("CardPaymentInstrument")), null, 2);
-    }
-
-    public static toContext(json: string): Context {
-        return cast(JSON.parse(json), r("Context"));
-    }
-
-    public static contextToJson(value: Context): string {
-        return JSON.stringify(uncast(value, r("Context")), null, 2);
-    }
-
-    public static toErrorCode(json: string): string {
-        return cast(JSON.parse(json), "");
-    }
-
-    public static errorCodeToJson(value: string): string {
-        return JSON.stringify(uncast(value, ""), null, 2);
+    public static orderToJson(value: Order): string {
+        return JSON.stringify(uncast(value, r("Order")), null, 2);
     }
 
     public static toErrorResponse(json: string): ErrorResponse {
@@ -1499,270 +1675,6 @@ export class Convert {
 
     public static errorResponseToJson(value: ErrorResponse): string {
         return JSON.stringify(uncast(value, r("ErrorResponse")), null, 2);
-    }
-
-    public static toExpectation(json: string): Expectation {
-        return cast(JSON.parse(json), r("Expectation"));
-    }
-
-    public static expectationToJson(value: Expectation): string {
-        return JSON.stringify(uncast(value, r("Expectation")), null, 2);
-    }
-
-    public static toFulfillmentAvailableMethod(json: string): FulfillmentAvailableMethod {
-        return cast(JSON.parse(json), r("FulfillmentAvailableMethod"));
-    }
-
-    public static fulfillmentAvailableMethodToJson(value: FulfillmentAvailableMethod): string {
-        return JSON.stringify(uncast(value, r("FulfillmentAvailableMethod")), null, 2);
-    }
-
-    public static toFulfillmentDestination(json: string): FulfillmentDestination {
-        return cast(JSON.parse(json), r("FulfillmentDestination"));
-    }
-
-    public static fulfillmentDestinationToJson(value: FulfillmentDestination): string {
-        return JSON.stringify(uncast(value, r("FulfillmentDestination")), null, 2);
-    }
-
-    public static toFulfillmentEvent(json: string): FulfillmentEvent {
-        return cast(JSON.parse(json), r("FulfillmentEvent"));
-    }
-
-    public static fulfillmentEventToJson(value: FulfillmentEvent): string {
-        return JSON.stringify(uncast(value, r("FulfillmentEvent")), null, 2);
-    }
-
-    public static toFulfillmentGroup(json: string): FulfillmentGroup {
-        return cast(JSON.parse(json), r("FulfillmentGroup"));
-    }
-
-    public static fulfillmentGroupToJson(value: FulfillmentGroup): string {
-        return JSON.stringify(uncast(value, r("FulfillmentGroup")), null, 2);
-    }
-
-    public static toFulfillmentMethod(json: string): FulfillmentMethod {
-        return cast(JSON.parse(json), r("FulfillmentMethod"));
-    }
-
-    public static fulfillmentMethodToJson(value: FulfillmentMethod): string {
-        return JSON.stringify(uncast(value, r("FulfillmentMethod")), null, 2);
-    }
-
-    public static toFulfillmentOption(json: string): FulfillmentOption {
-        return cast(JSON.parse(json), r("FulfillmentOption"));
-    }
-
-    public static fulfillmentOptionToJson(value: FulfillmentOption): string {
-        return JSON.stringify(uncast(value, r("FulfillmentOption")), null, 2);
-    }
-
-    public static toFulfillment(json: string): Fulfillment {
-        return cast(JSON.parse(json), r("Fulfillment"));
-    }
-
-    public static fulfillmentToJson(value: Fulfillment): string {
-        return JSON.stringify(uncast(value, r("Fulfillment")), null, 2);
-    }
-
-    public static toItem(json: string): Item {
-        return cast(JSON.parse(json), r("Item"));
-    }
-
-    public static itemToJson(value: Item): string {
-        return JSON.stringify(uncast(value, r("Item")), null, 2);
-    }
-
-    public static toLineItem(json: string): LineItem {
-        return cast(JSON.parse(json), r("LineItem"));
-    }
-
-    public static lineItemToJson(value: LineItem): string {
-        return JSON.stringify(uncast(value, r("LineItem")), null, 2);
-    }
-
-    public static toLink(json: string): Link {
-        return cast(JSON.parse(json), r("Link"));
-    }
-
-    public static linkToJson(value: Link): string {
-        return JSON.stringify(uncast(value, r("Link")), null, 2);
-    }
-
-    public static toMerchantFulfillmentConfig(json: string): MerchantFulfillmentConfig {
-        return cast(JSON.parse(json), r("MerchantFulfillmentConfig"));
-    }
-
-    public static merchantFulfillmentConfigToJson(value: MerchantFulfillmentConfig): string {
-        return JSON.stringify(uncast(value, r("MerchantFulfillmentConfig")), null, 2);
-    }
-
-    public static toMessageError(json: string): MessageError {
-        return cast(JSON.parse(json), r("MessageError"));
-    }
-
-    public static messageErrorToJson(value: MessageError): string {
-        return JSON.stringify(uncast(value, r("MessageError")), null, 2);
-    }
-
-    public static toMessageInfo(json: string): MessageInfo {
-        return cast(JSON.parse(json), r("MessageInfo"));
-    }
-
-    public static messageInfoToJson(value: MessageInfo): string {
-        return JSON.stringify(uncast(value, r("MessageInfo")), null, 2);
-    }
-
-    public static toMessageWarning(json: string): MessageWarning {
-        return cast(JSON.parse(json), r("MessageWarning"));
-    }
-
-    public static messageWarningToJson(value: MessageWarning): string {
-        return JSON.stringify(uncast(value, r("MessageWarning")), null, 2);
-    }
-
-    public static toMessage(json: string): Message {
-        return cast(JSON.parse(json), r("Message"));
-    }
-
-    public static messageToJson(value: Message): string {
-        return JSON.stringify(uncast(value, r("Message")), null, 2);
-    }
-
-    public static toOrderConfirmation(json: string): OrderConfirmation {
-        return cast(JSON.parse(json), r("OrderConfirmation"));
-    }
-
-    public static orderConfirmationToJson(value: OrderConfirmation): string {
-        return JSON.stringify(uncast(value, r("OrderConfirmation")), null, 2);
-    }
-
-    public static toOrderLineItem(json: string): OrderLineItem {
-        return cast(JSON.parse(json), r("OrderLineItem"));
-    }
-
-    public static orderLineItemToJson(value: OrderLineItem): string {
-        return JSON.stringify(uncast(value, r("OrderLineItem")), null, 2);
-    }
-
-    public static toPaymentCredential(json: string): PaymentCredential {
-        return cast(JSON.parse(json), r("PaymentCredential"));
-    }
-
-    public static paymentCredentialToJson(value: PaymentCredential): string {
-        return JSON.stringify(uncast(value, r("PaymentCredential")), null, 2);
-    }
-
-    public static toPaymentIdentity(json: string): PaymentIdentity {
-        return cast(JSON.parse(json), r("PaymentIdentity"));
-    }
-
-    public static paymentIdentityToJson(value: PaymentIdentity): string {
-        return JSON.stringify(uncast(value, r("PaymentIdentity")), null, 2);
-    }
-
-    public static toPaymentInstrument(json: string): PaymentInstrument {
-        return cast(JSON.parse(json), r("PaymentInstrument"));
-    }
-
-    public static paymentInstrumentToJson(value: PaymentInstrument): string {
-        return JSON.stringify(uncast(value, r("PaymentInstrument")), null, 2);
-    }
-
-    public static toPlatformFulfillmentConfig(json: string): PlatformFulfillmentConfig {
-        return cast(JSON.parse(json), r("PlatformFulfillmentConfig"));
-    }
-
-    public static platformFulfillmentConfigToJson(value: PlatformFulfillmentConfig): string {
-        return JSON.stringify(uncast(value, r("PlatformFulfillmentConfig")), null, 2);
-    }
-
-    public static toPostalAddress(json: string): PostalAddress {
-        return cast(JSON.parse(json), r("PostalAddress"));
-    }
-
-    public static postalAddressToJson(value: PostalAddress): string {
-        return JSON.stringify(uncast(value, r("PostalAddress")), null, 2);
-    }
-
-    public static toRetailLocation(json: string): RetailLocation {
-        return cast(JSON.parse(json), r("RetailLocation"));
-    }
-
-    public static retailLocationToJson(value: RetailLocation): string {
-        return JSON.stringify(uncast(value, r("RetailLocation")), null, 2);
-    }
-
-    public static toReverseDomainName(json: string): string {
-        return cast(JSON.parse(json), "");
-    }
-
-    public static reverseDomainNameToJson(value: string): string {
-        return JSON.stringify(uncast(value, ""), null, 2);
-    }
-
-    public static toShippingDestination(json: string): ShippingDestination {
-        return cast(JSON.parse(json), r("ShippingDestination"));
-    }
-
-    public static shippingDestinationToJson(value: ShippingDestination): string {
-        return JSON.stringify(uncast(value, r("ShippingDestination")), null, 2);
-    }
-
-    public static toSignals(json: string): Signals {
-        return cast(JSON.parse(json), r("Signals"));
-    }
-
-    public static signalsToJson(value: Signals): string {
-        return JSON.stringify(uncast(value, r("Signals")), null, 2);
-    }
-
-    public static toSignedAmount(json: string): number {
-        return cast(JSON.parse(json), 0);
-    }
-
-    public static signedAmountToJson(value: number): string {
-        return JSON.stringify(uncast(value, 0), null, 2);
-    }
-
-    public static toTokenCredential(json: string): TokenCredential {
-        return cast(JSON.parse(json), r("TokenCredential"));
-    }
-
-    public static tokenCredentialToJson(value: TokenCredential): string {
-        return JSON.stringify(uncast(value, r("TokenCredential")), null, 2);
-    }
-
-    public static toTotal(json: string): Total {
-        return cast(JSON.parse(json), r("Total"));
-    }
-
-    public static totalToJson(value: Total): string {
-        return JSON.stringify(uncast(value, r("Total")), null, 2);
-    }
-
-    public static toTotals(json: string): Totals[] {
-        return cast(JSON.parse(json), a(r("Totals")));
-    }
-
-    public static totalsToJson(value: Totals[]): string {
-        return JSON.stringify(uncast(value, a(r("Totals"))), null, 2);
-    }
-
-    public static toPayment(json: string): Payment {
-        return cast(JSON.parse(json), r("Payment"));
-    }
-
-    public static paymentToJson(value: Payment): string {
-        return JSON.stringify(uncast(value, r("Payment")), null, 2);
-    }
-
-    public static toOrder(json: string): Order {
-        return cast(JSON.parse(json), r("Order"));
-    }
-
-    public static orderToJson(value: Order): string {
-        return JSON.stringify(uncast(value, r("Order")), null, 2);
     }
 
     public static toInstrumentsChangeResult(json: string): InstrumentsChangeResult {
@@ -1936,29 +1848,31 @@ function r(name: string) {
 
 const typeMap: any = {
     "Checkout": o([
-        { json: "buyer", js: "buyer", typ: u(undefined, r("BuyerObject")) },
-        { json: "context", js: "context", typ: u(undefined, r("ContextObject")) },
+        { json: "buyer", js: "buyer", typ: u(undefined, r("Buyer")) },
+        { json: "context", js: "context", typ: u(undefined, r("Context")) },
         { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
         { json: "currency", js: "currency", typ: "" },
+        { json: "discounts", js: "discounts", typ: u(undefined, r("CheckoutDiscounts")) },
         { json: "expires_at", js: "expiresAt", typ: u(undefined, "") },
+        { json: "fulfillment", js: "fulfillment", typ: u(undefined, r("CheckoutFulfillment")) },
         { json: "id", js: "id", typ: "" },
-        { json: "line_items", js: "lineItems", typ: a(r("CheckoutLineItem")) },
-        { json: "links", js: "links", typ: a(r("LinkElement")) },
-        { json: "messages", js: "messages", typ: u(undefined, a(r("MessageElement"))) },
-        { json: "order", js: "order", typ: u(undefined, r("OrderObject")) },
-        { json: "payment", js: "payment", typ: u(undefined, r("PaymentObject")) },
-        { json: "signals", js: "signals", typ: u(undefined, r("SignalsObject")) },
+        { json: "line_items", js: "lineItems", typ: a(r("LineItem")) },
+        { json: "links", js: "links", typ: a(r("Link")) },
+        { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
+        { json: "order", js: "order", typ: u(undefined, r("OrderConfirmation")) },
+        { json: "payment", js: "payment", typ: u(undefined, r("Payment")) },
+        { json: "signals", js: "signals", typ: u(undefined, r("Signals")) },
         { json: "status", js: "status", typ: r("CheckoutStatus") },
         { json: "totals", js: "totals", typ: a(r("CheckoutTotal")) },
         { json: "ucp", js: "ucp", typ: r("UcpCheckoutResponseSchema") },
     ], "any"),
-    "BuyerObject": o([
+    "Buyer": o([
         { json: "email", js: "email", typ: u(undefined, "") },
         { json: "first_name", js: "firstName", typ: u(undefined, "") },
         { json: "last_name", js: "lastName", typ: u(undefined, "") },
         { json: "phone_number", js: "phoneNumber", typ: u(undefined, "") },
     ], "any"),
-    "ContextObject": o([
+    "Context": o([
         { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
         { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
         { json: "currency", js: "currency", typ: u(undefined, "") },
@@ -1967,58 +1881,58 @@ const typeMap: any = {
         { json: "language", js: "language", typ: u(undefined, "") },
         { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
     ], "any"),
-    "CheckoutLineItem": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "item", js: "item", typ: r("ItemObject") },
-        { json: "parent_id", js: "parentId", typ: u(undefined, "") },
-        { json: "quantity", js: "quantity", typ: 0 },
-        { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
+    "CheckoutDiscounts": o([
+        { json: "applied", js: "applied", typ: u(undefined, a(r("AppliedDiscount"))) },
+        { json: "codes", js: "codes", typ: u(undefined, a("")) },
     ], "any"),
-    "ItemObject": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "image_url", js: "imageUrl", typ: u(undefined, "") },
-        { json: "price", js: "price", typ: 0 },
+    "AppliedDiscount": o([
+        { json: "allocations", js: "allocations", typ: u(undefined, a(r("DiscountAllocation"))) },
+        { json: "amount", js: "amount", typ: 0 },
+        { json: "automatic", js: "automatic", typ: u(undefined, true) },
+        { json: "code", js: "code", typ: u(undefined, "") },
+        { json: "eligibility", js: "eligibility", typ: u(undefined, "") },
+        { json: "method", js: "method", typ: u(undefined, r("DiscountMethod")) },
+        { json: "priority", js: "priority", typ: u(undefined, 0) },
+        { json: "provisional", js: "provisional", typ: u(undefined, true) },
         { json: "title", js: "title", typ: "" },
     ], "any"),
-    "LineItemTotal": o([
+    "DiscountAllocation": o([
         { json: "amount", js: "amount", typ: 0 },
-        { json: "display_text", js: "displayText", typ: u(undefined, "") },
-        { json: "type", js: "type", typ: "" },
+        { json: "path", js: "path", typ: "" },
     ], "any"),
-    "LinkElement": o([
-        { json: "title", js: "title", typ: u(undefined, "") },
-        { json: "type", js: "type", typ: "" },
-        { json: "url", js: "url", typ: "" },
+    "CheckoutFulfillment": o([
+        { json: "available_methods", js: "availableMethods", typ: u(undefined, a(r("FulfillmentAvailableMethod"))) },
+        { json: "methods", js: "methods", typ: u(undefined, a(r("FulfillmentMethod"))) },
     ], "any"),
-    "MessageElement": o([
-        { json: "code", js: "code", typ: u(undefined, "") },
-        { json: "content", js: "content", typ: "" },
-        { json: "content_type", js: "contentType", typ: u(undefined, r("ContentType")) },
-        { json: "path", js: "path", typ: u(undefined, "") },
-        { json: "severity", js: "severity", typ: u(undefined, r("Severity")) },
-        { json: "type", js: "type", typ: r("MessageType") },
-        { json: "image_url", js: "imageUrl", typ: u(undefined, "") },
-        { json: "presentation", js: "presentation", typ: u(undefined, "") },
-        { json: "url", js: "url", typ: u(undefined, "") },
+    "FulfillmentAvailableMethod": o([
+        { json: "description", js: "description", typ: u(undefined, "") },
+        { json: "fulfillable_on", js: "fulfillableOn", typ: u(undefined, u(null, "")) },
+        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
+        { json: "type", js: "type", typ: r("FulfillmentMethodType") },
     ], "any"),
-    "OrderObject": o([
+    "FulfillmentMethod": o([
+        { json: "destinations", js: "destinations", typ: u(undefined, a(r("FulfillmentDestination"))) },
+        { json: "groups", js: "groups", typ: u(undefined, a(r("FulfillmentGroup"))) },
         { json: "id", js: "id", typ: "" },
-        { json: "label", js: "label", typ: u(undefined, "") },
-        { json: "permalink_url", js: "permalinkUrl", typ: "" },
+        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
+        { json: "selected_destination_id", js: "selectedDestinationId", typ: u(undefined, u(null, "")) },
+        { json: "type", js: "type", typ: r("FulfillmentMethodType") },
     ], "any"),
-    "PaymentObject": o([
-        { json: "instruments", js: "instruments", typ: u(undefined, a(r("PaymentSelectedPaymentInstrument"))) },
-    ], "any"),
-    "PaymentSelectedPaymentInstrument": o([
-        { json: "billing_address", js: "billingAddress", typ: u(undefined, r("BillingAddressObject")) },
-        { json: "credential", js: "credential", typ: u(undefined, r("CredentialObject")) },
-        { json: "display", js: "display", typ: u(undefined, m("any")) },
-        { json: "handler_id", js: "handlerId", typ: "" },
+    "FulfillmentDestination": o([
+        { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
+        { json: "address_locality", js: "addressLocality", typ: u(undefined, "") },
+        { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
+        { json: "extended_address", js: "extendedAddress", typ: u(undefined, "") },
+        { json: "first_name", js: "firstName", typ: u(undefined, "") },
+        { json: "last_name", js: "lastName", typ: u(undefined, "") },
+        { json: "phone_number", js: "phoneNumber", typ: u(undefined, "") },
+        { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
+        { json: "street_address", js: "streetAddress", typ: u(undefined, "") },
         { json: "id", js: "id", typ: "" },
-        { json: "type", js: "type", typ: "" },
-        { json: "selected", js: "selected", typ: u(undefined, true) },
+        { json: "address", js: "address", typ: u(undefined, r("PostalAddress")) },
+        { json: "name", js: "name", typ: u(undefined, "") },
     ], "any"),
-    "BillingAddressObject": o([
+    "PostalAddress": o([
         { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
         { json: "address_locality", js: "addressLocality", typ: u(undefined, "") },
         { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
@@ -2029,10 +1943,76 @@ const typeMap: any = {
         { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
         { json: "street_address", js: "streetAddress", typ: u(undefined, "") },
     ], "any"),
-    "CredentialObject": o([
+    "FulfillmentGroup": o([
+        { json: "id", js: "id", typ: "" },
+        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
+        { json: "options", js: "options", typ: u(undefined, a(r("FulfillmentOption"))) },
+        { json: "selected_option_id", js: "selectedOptionId", typ: u(undefined, u(null, "")) },
+    ], "any"),
+    "FulfillmentOption": o([
+        { json: "carrier", js: "carrier", typ: u(undefined, "") },
+        { json: "description", js: "description", typ: u(undefined, "") },
+        { json: "earliest_fulfillment_time", js: "earliestFulfillmentTime", typ: u(undefined, "") },
+        { json: "id", js: "id", typ: "" },
+        { json: "latest_fulfillment_time", js: "latestFulfillmentTime", typ: u(undefined, "") },
+        { json: "title", js: "title", typ: "" },
+        { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
+    ], "any"),
+    "LineItemTotal": o([
+        { json: "amount", js: "amount", typ: 0 },
+        { json: "display_text", js: "displayText", typ: u(undefined, "") },
         { json: "type", js: "type", typ: "" },
     ], "any"),
-    "SignalsObject": o([
+    "LineItem": o([
+        { json: "id", js: "id", typ: "" },
+        { json: "item", js: "item", typ: r("Item") },
+        { json: "parent_id", js: "parentId", typ: u(undefined, "") },
+        { json: "quantity", js: "quantity", typ: 0 },
+        { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
+    ], "any"),
+    "Item": o([
+        { json: "id", js: "id", typ: "" },
+        { json: "image_url", js: "imageUrl", typ: u(undefined, "") },
+        { json: "price", js: "price", typ: 0 },
+        { json: "title", js: "title", typ: "" },
+    ], "any"),
+    "Link": o([
+        { json: "title", js: "title", typ: u(undefined, "") },
+        { json: "type", js: "type", typ: "" },
+        { json: "url", js: "url", typ: "" },
+    ], "any"),
+    "Message": o([
+        { json: "code", js: "code", typ: u(undefined, "") },
+        { json: "content", js: "content", typ: "" },
+        { json: "content_type", js: "contentType", typ: u(undefined, r("ContentType")) },
+        { json: "path", js: "path", typ: u(undefined, "") },
+        { json: "severity", js: "severity", typ: u(undefined, r("Severity")) },
+        { json: "type", js: "type", typ: r("MessageType") },
+        { json: "image_url", js: "imageUrl", typ: u(undefined, "") },
+        { json: "presentation", js: "presentation", typ: u(undefined, "") },
+        { json: "url", js: "url", typ: u(undefined, "") },
+    ], "any"),
+    "OrderConfirmation": o([
+        { json: "id", js: "id", typ: "" },
+        { json: "label", js: "label", typ: u(undefined, "") },
+        { json: "permalink_url", js: "permalinkUrl", typ: "" },
+    ], "any"),
+    "Payment": o([
+        { json: "instruments", js: "instruments", typ: u(undefined, a(r("SelectedPaymentInstrument"))) },
+    ], "any"),
+    "SelectedPaymentInstrument": o([
+        { json: "billing_address", js: "billingAddress", typ: u(undefined, r("PostalAddress")) },
+        { json: "credential", js: "credential", typ: u(undefined, r("PaymentCredential")) },
+        { json: "display", js: "display", typ: u(undefined, m("any")) },
+        { json: "handler_id", js: "handlerId", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "type", js: "type", typ: "" },
+        { json: "selected", js: "selected", typ: u(undefined, true) },
+    ], "any"),
+    "PaymentCredential": o([
+        { json: "type", js: "type", typ: "" },
+    ], "any"),
+    "Signals": o([
         { json: "dev.ucp.buyer_ip", js: "devUcpBuyerIp", typ: u(undefined, "") },
         { json: "dev.ucp.user_agent", js: "devUcpUserAgent", typ: u(undefined, "") },
     ], "any"),
@@ -2040,9 +2020,9 @@ const typeMap: any = {
         { json: "amount", js: "amount", typ: 0 },
         { json: "display_text", js: "displayText", typ: u(undefined, "") },
         { json: "type", js: "type", typ: "" },
-        { json: "lines", js: "lines", typ: u(undefined, a(r("TotalLine"))) },
+        { json: "lines", js: "lines", typ: u(undefined, a(r("Line"))) },
     ], "any"),
-    "TotalLine": o([
+    "Line": o([
         { json: "amount", js: "amount", typ: 0 },
         { json: "display_text", js: "displayText", typ: "" },
     ], "any"),
@@ -2086,8 +2066,18 @@ const typeMap: any = {
         { json: "color_scheme", js: "colorScheme", typ: u(undefined, a(r("EmbeddedColorScheme"))) },
         { json: "delegate", js: "delegate", typ: u(undefined, a("")) },
     ], "any"),
-    "PaymentAccountInfo": o([
-        { json: "payment_account_reference", js: "paymentAccountReference", typ: u(undefined, "") },
+    "Order": o([
+        { json: "adjustments", js: "adjustments", typ: u(undefined, a(r("Adjustment"))) },
+        { json: "checkout_id", js: "checkoutId", typ: "" },
+        { json: "currency", js: "currency", typ: "" },
+        { json: "fulfillment", js: "fulfillment", typ: r("Fulfillment") },
+        { json: "id", js: "id", typ: "" },
+        { json: "label", js: "label", typ: u(undefined, "") },
+        { json: "line_items", js: "lineItems", typ: a(r("OrderLineItem")) },
+        { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
+        { json: "permalink_url", js: "permalinkUrl", typ: "" },
+        { json: "totals", js: "totals", typ: a(r("CheckoutTotal")) },
+        { json: "ucp", js: "ucp", typ: r("UcpOrderResponseSchema") },
     ], "any"),
     "Adjustment": o([
         { json: "description", js: "description", typ: u(undefined, "") },
@@ -2102,386 +2092,11 @@ const typeMap: any = {
         { json: "id", js: "id", typ: "" },
         { json: "quantity", js: "quantity", typ: 0 },
     ], "any"),
-    "AvailablePaymentInstrument": o([
-        { json: "constraints", js: "constraints", typ: u(undefined, m("any")) },
-        { json: "type", js: "type", typ: "" },
-    ], "any"),
-    "TokenBinding": o([
-        { json: "checkout_id", js: "checkoutId", typ: "" },
-        { json: "identity", js: "identity", typ: u(undefined, r("IdentityObject")) },
-    ], "any"),
-    "IdentityObject": o([
-        { json: "access_token", js: "accessToken", typ: "" },
-    ], "any"),
-    "BusinessFulfillmentConfig": o([
-        { json: "allows_method_combinations", js: "allowsMethodCombinations", typ: u(undefined, a(a(r("TypeElement")))) },
-        { json: "allows_multi_destination", js: "allowsMultiDestination", typ: u(undefined, r("BusinessFulfillmentConfigAllowsMultiDestination")) },
-    ], "any"),
-    "BusinessFulfillmentConfigAllowsMultiDestination": o([
-        { json: "pickup", js: "pickup", typ: u(undefined, true) },
-        { json: "shipping", js: "shipping", typ: u(undefined, true) },
-    ], false),
-    "Buyer": o([
-        { json: "email", js: "email", typ: u(undefined, "") },
-        { json: "first_name", js: "firstName", typ: u(undefined, "") },
-        { json: "last_name", js: "lastName", typ: u(undefined, "") },
-        { json: "phone_number", js: "phoneNumber", typ: u(undefined, "") },
-    ], "any"),
-    "CardCredential": o([
-        { json: "type", js: "type", typ: r("TypeEnum") },
-        { json: "card_number_type", js: "cardNumberType", typ: r("CardNumberType") },
-        { json: "cryptogram", js: "cryptogram", typ: u(undefined, "") },
-        { json: "cvc", js: "cvc", typ: u(undefined, "") },
-        { json: "eci_value", js: "eciValue", typ: u(undefined, "") },
-        { json: "expiry_month", js: "expiryMonth", typ: u(undefined, 0) },
-        { json: "expiry_year", js: "expiryYear", typ: u(undefined, 0) },
-        { json: "name", js: "name", typ: u(undefined, "") },
-        { json: "number", js: "number", typ: u(undefined, "") },
-    ], "any"),
-    "CardPaymentInstrument": o([
-        { json: "billing_address", js: "billingAddress", typ: u(undefined, r("BillingAddressObject")) },
-        { json: "credential", js: "credential", typ: u(undefined, r("CredentialObject")) },
-        { json: "display", js: "display", typ: u(undefined, r("Display")) },
-        { json: "handler_id", js: "handlerId", typ: "" },
-        { json: "id", js: "id", typ: "" },
-        { json: "type", js: "type", typ: r("TypeEnum") },
-    ], "any"),
-    "Display": o([
-        { json: "brand", js: "brand", typ: u(undefined, "") },
-        { json: "card_art", js: "cardArt", typ: u(undefined, "") },
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "expiry_month", js: "expiryMonth", typ: u(undefined, 0) },
-        { json: "expiry_year", js: "expiryYear", typ: u(undefined, 0) },
-        { json: "last_digits", js: "lastDigits", typ: u(undefined, "") },
-    ], "any"),
-    "Context": o([
-        { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
-        { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
-        { json: "currency", js: "currency", typ: u(undefined, "") },
-        { json: "eligibility", js: "eligibility", typ: u(undefined, a("")) },
-        { json: "intent", js: "intent", typ: u(undefined, "") },
-        { json: "language", js: "language", typ: u(undefined, "") },
-        { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
-    ], "any"),
-    "ErrorResponse": o([
-        { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
-        { json: "messages", js: "messages", typ: a(r("MessageElement")) },
-        { json: "ucp", js: "ucp", typ: r("ErrorResponseUcp") },
-    ], false),
-    "ErrorResponseUcp": o([
-        { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityResponseSchema")))) },
-        { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerResponseSchema")))) },
-        { json: "services", js: "services", typ: u(undefined, m(a(r("UcpOrderResponseSchemaService")))) },
-        { json: "status", js: "status", typ: r("StatusEnum") },
-        { json: "version", js: "version", typ: "" },
-    ], "any"),
-    "UcpOrderResponseSchemaService": o([
-        { json: "config", js: "config", typ: u(undefined, m("any")) },
-        { json: "id", js: "id", typ: u(undefined, "") },
-        { json: "schema", js: "schema", typ: u(undefined, "") },
-        { json: "spec", js: "spec", typ: u(undefined, "") },
-        { json: "version", js: "version", typ: "" },
-        { json: "endpoint", js: "endpoint", typ: u(undefined, "") },
-        { json: "transport", js: "transport", typ: r("Transport") },
-    ], "any"),
-    "Expectation": o([
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "destination", js: "destination", typ: r("BillingAddressObject") },
-        { json: "fulfillable_on", js: "fulfillableOn", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-        { json: "line_items", js: "lineItems", typ: a(r("ExpectationLineItem")) },
-        { json: "method_type", js: "methodType", typ: r("MethodType") },
-    ], "any"),
-    "ExpectationLineItem": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "quantity", js: "quantity", typ: 0 },
-    ], "any"),
-    "FulfillmentAvailableMethod": o([
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "fulfillable_on", js: "fulfillableOn", typ: u(undefined, u(null, "")) },
-        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
-        { json: "type", js: "type", typ: r("TypeElement") },
-    ], "any"),
-    "FulfillmentDestination": o([
-        { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
-        { json: "address_locality", js: "addressLocality", typ: u(undefined, "") },
-        { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
-        { json: "extended_address", js: "extendedAddress", typ: u(undefined, "") },
-        { json: "first_name", js: "firstName", typ: u(undefined, "") },
-        { json: "last_name", js: "lastName", typ: u(undefined, "") },
-        { json: "phone_number", js: "phoneNumber", typ: u(undefined, "") },
-        { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
-        { json: "street_address", js: "streetAddress", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-        { json: "address", js: "address", typ: u(undefined, r("BillingAddressObject")) },
-        { json: "name", js: "name", typ: u(undefined, "") },
+    "Fulfillment": o([
+        { json: "events", js: "events", typ: u(undefined, a(r("FulfillmentEvent"))) },
+        { json: "expectations", js: "expectations", typ: u(undefined, a(r("Expectation"))) },
     ], "any"),
     "FulfillmentEvent": o([
-        { json: "carrier", js: "carrier", typ: u(undefined, "") },
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-        { json: "line_items", js: "lineItems", typ: a(r("FulfillmentEventLineItem")) },
-        { json: "occurred_at", js: "occurredAt", typ: "" },
-        { json: "tracking_number", js: "trackingNumber", typ: u(undefined, "") },
-        { json: "tracking_url", js: "trackingUrl", typ: u(undefined, "") },
-        { json: "type", js: "type", typ: "" },
-    ], "any"),
-    "FulfillmentEventLineItem": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "quantity", js: "quantity", typ: 0 },
-    ], "any"),
-    "FulfillmentGroup": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
-        { json: "options", js: "options", typ: u(undefined, a(r("OptionElement"))) },
-        { json: "selected_option_id", js: "selectedOptionId", typ: u(undefined, u(null, "")) },
-    ], "any"),
-    "OptionElement": o([
-        { json: "carrier", js: "carrier", typ: u(undefined, "") },
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "earliest_fulfillment_time", js: "earliestFulfillmentTime", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-        { json: "latest_fulfillment_time", js: "latestFulfillmentTime", typ: u(undefined, "") },
-        { json: "title", js: "title", typ: "" },
-        { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
-    ], "any"),
-    "FulfillmentMethod": o([
-        { json: "destinations", js: "destinations", typ: u(undefined, a(r("FulfillmentDestinationElement"))) },
-        { json: "groups", js: "groups", typ: u(undefined, a(r("GroupElement"))) },
-        { json: "id", js: "id", typ: "" },
-        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
-        { json: "selected_destination_id", js: "selectedDestinationId", typ: u(undefined, u(null, "")) },
-        { json: "type", js: "type", typ: r("TypeElement") },
-    ], "any"),
-    "FulfillmentDestinationElement": o([
-        { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
-        { json: "address_locality", js: "addressLocality", typ: u(undefined, "") },
-        { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
-        { json: "extended_address", js: "extendedAddress", typ: u(undefined, "") },
-        { json: "first_name", js: "firstName", typ: u(undefined, "") },
-        { json: "last_name", js: "lastName", typ: u(undefined, "") },
-        { json: "phone_number", js: "phoneNumber", typ: u(undefined, "") },
-        { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
-        { json: "street_address", js: "streetAddress", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-        { json: "address", js: "address", typ: u(undefined, r("BillingAddressObject")) },
-        { json: "name", js: "name", typ: u(undefined, "") },
-    ], "any"),
-    "GroupElement": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
-        { json: "options", js: "options", typ: u(undefined, a(r("OptionElement"))) },
-        { json: "selected_option_id", js: "selectedOptionId", typ: u(undefined, u(null, "")) },
-    ], "any"),
-    "FulfillmentOption": o([
-        { json: "carrier", js: "carrier", typ: u(undefined, "") },
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "earliest_fulfillment_time", js: "earliestFulfillmentTime", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-        { json: "latest_fulfillment_time", js: "latestFulfillmentTime", typ: u(undefined, "") },
-        { json: "title", js: "title", typ: "" },
-        { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
-    ], "any"),
-    "Fulfillment": o([
-        { json: "available_methods", js: "availableMethods", typ: u(undefined, a(r("AvailableMethodElement"))) },
-        { json: "methods", js: "methods", typ: u(undefined, a(r("MethodElement"))) },
-    ], "any"),
-    "AvailableMethodElement": o([
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "fulfillable_on", js: "fulfillableOn", typ: u(undefined, u(null, "")) },
-        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
-        { json: "type", js: "type", typ: r("TypeElement") },
-    ], "any"),
-    "MethodElement": o([
-        { json: "destinations", js: "destinations", typ: u(undefined, a(r("FulfillmentDestinationElement"))) },
-        { json: "groups", js: "groups", typ: u(undefined, a(r("GroupElement"))) },
-        { json: "id", js: "id", typ: "" },
-        { json: "line_item_ids", js: "lineItemIds", typ: a("") },
-        { json: "selected_destination_id", js: "selectedDestinationId", typ: u(undefined, u(null, "")) },
-        { json: "type", js: "type", typ: r("TypeElement") },
-    ], "any"),
-    "Item": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "image_url", js: "imageUrl", typ: u(undefined, "") },
-        { json: "price", js: "price", typ: 0 },
-        { json: "title", js: "title", typ: "" },
-    ], "any"),
-    "LineItem": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "item", js: "item", typ: r("ItemObject") },
-        { json: "parent_id", js: "parentId", typ: u(undefined, "") },
-        { json: "quantity", js: "quantity", typ: 0 },
-        { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
-    ], "any"),
-    "Link": o([
-        { json: "title", js: "title", typ: u(undefined, "") },
-        { json: "type", js: "type", typ: "" },
-        { json: "url", js: "url", typ: "" },
-    ], "any"),
-    "MerchantFulfillmentConfig": o([
-        { json: "allows_method_combinations", js: "allowsMethodCombinations", typ: u(undefined, a(a(r("TypeElement")))) },
-        { json: "allows_multi_destination", js: "allowsMultiDestination", typ: u(undefined, r("MerchantFulfillmentConfigAllowsMultiDestination")) },
-    ], "any"),
-    "MerchantFulfillmentConfigAllowsMultiDestination": o([
-        { json: "pickup", js: "pickup", typ: u(undefined, true) },
-        { json: "shipping", js: "shipping", typ: u(undefined, true) },
-    ], false),
-    "MessageError": o([
-        { json: "code", js: "code", typ: "" },
-        { json: "content", js: "content", typ: "" },
-        { json: "content_type", js: "contentType", typ: u(undefined, r("ContentType")) },
-        { json: "path", js: "path", typ: u(undefined, "") },
-        { json: "severity", js: "severity", typ: r("Severity") },
-        { json: "type", js: "type", typ: r("StatusEnum") },
-    ], "any"),
-    "MessageInfo": o([
-        { json: "code", js: "code", typ: u(undefined, "") },
-        { json: "content", js: "content", typ: "" },
-        { json: "content_type", js: "contentType", typ: u(undefined, r("ContentType")) },
-        { json: "path", js: "path", typ: u(undefined, "") },
-        { json: "type", js: "type", typ: r("MessageInfoType") },
-    ], "any"),
-    "MessageWarning": o([
-        { json: "code", js: "code", typ: "" },
-        { json: "content", js: "content", typ: "" },
-        { json: "content_type", js: "contentType", typ: u(undefined, r("ContentType")) },
-        { json: "image_url", js: "imageUrl", typ: u(undefined, "") },
-        { json: "path", js: "path", typ: u(undefined, "") },
-        { json: "presentation", js: "presentation", typ: u(undefined, "") },
-        { json: "type", js: "type", typ: r("MessageWarningType") },
-        { json: "url", js: "url", typ: u(undefined, "") },
-    ], "any"),
-    "Message": o([
-        { json: "code", js: "code", typ: u(undefined, "") },
-        { json: "content", js: "content", typ: "" },
-        { json: "content_type", js: "contentType", typ: u(undefined, r("ContentType")) },
-        { json: "path", js: "path", typ: u(undefined, "") },
-        { json: "severity", js: "severity", typ: u(undefined, r("Severity")) },
-        { json: "type", js: "type", typ: r("MessageType") },
-        { json: "image_url", js: "imageUrl", typ: u(undefined, "") },
-        { json: "presentation", js: "presentation", typ: u(undefined, "") },
-        { json: "url", js: "url", typ: u(undefined, "") },
-    ], "any"),
-    "OrderConfirmation": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "label", js: "label", typ: u(undefined, "") },
-        { json: "permalink_url", js: "permalinkUrl", typ: "" },
-    ], "any"),
-    "OrderLineItem": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "item", js: "item", typ: r("ItemObject") },
-        { json: "parent_id", js: "parentId", typ: u(undefined, "") },
-        { json: "quantity", js: "quantity", typ: r("OrderLineItemQuantity") },
-        { json: "status", js: "status", typ: r("OrderLineItemStatus") },
-        { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
-    ], "any"),
-    "OrderLineItemQuantity": o([
-        { json: "fulfilled", js: "fulfilled", typ: 0 },
-        { json: "original", js: "original", typ: u(undefined, 0) },
-        { json: "total", js: "total", typ: 0 },
-    ], "any"),
-    "PaymentCredential": o([
-        { json: "type", js: "type", typ: "" },
-    ], "any"),
-    "PaymentIdentity": o([
-        { json: "access_token", js: "accessToken", typ: "" },
-    ], "any"),
-    "PaymentInstrument": o([
-        { json: "billing_address", js: "billingAddress", typ: u(undefined, r("BillingAddressObject")) },
-        { json: "credential", js: "credential", typ: u(undefined, r("CredentialObject")) },
-        { json: "display", js: "display", typ: u(undefined, m("any")) },
-        { json: "handler_id", js: "handlerId", typ: "" },
-        { json: "id", js: "id", typ: "" },
-        { json: "type", js: "type", typ: "" },
-    ], "any"),
-    "PlatformFulfillmentConfig": o([
-        { json: "supports_multi_group", js: "supportsMultiGroup", typ: u(undefined, true) },
-    ], "any"),
-    "PostalAddress": o([
-        { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
-        { json: "address_locality", js: "addressLocality", typ: u(undefined, "") },
-        { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
-        { json: "extended_address", js: "extendedAddress", typ: u(undefined, "") },
-        { json: "first_name", js: "firstName", typ: u(undefined, "") },
-        { json: "last_name", js: "lastName", typ: u(undefined, "") },
-        { json: "phone_number", js: "phoneNumber", typ: u(undefined, "") },
-        { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
-        { json: "street_address", js: "streetAddress", typ: u(undefined, "") },
-    ], "any"),
-    "RetailLocation": o([
-        { json: "address", js: "address", typ: u(undefined, r("BillingAddressObject")) },
-        { json: "id", js: "id", typ: "" },
-        { json: "name", js: "name", typ: "" },
-    ], "any"),
-    "ShippingDestination": o([
-        { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
-        { json: "address_locality", js: "addressLocality", typ: u(undefined, "") },
-        { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
-        { json: "extended_address", js: "extendedAddress", typ: u(undefined, "") },
-        { json: "first_name", js: "firstName", typ: u(undefined, "") },
-        { json: "last_name", js: "lastName", typ: u(undefined, "") },
-        { json: "phone_number", js: "phoneNumber", typ: u(undefined, "") },
-        { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
-        { json: "street_address", js: "streetAddress", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-    ], "any"),
-    "Signals": o([
-        { json: "dev.ucp.buyer_ip", js: "devUcpBuyerIp", typ: u(undefined, "") },
-        { json: "dev.ucp.user_agent", js: "devUcpUserAgent", typ: u(undefined, "") },
-    ], "any"),
-    "TokenCredential": o([
-        { json: "type", js: "type", typ: "" },
-        { json: "token", js: "token", typ: "" },
-    ], "any"),
-    "Total": o([
-        { json: "amount", js: "amount", typ: 0 },
-        { json: "display_text", js: "displayText", typ: u(undefined, "") },
-        { json: "type", js: "type", typ: "" },
-    ], "any"),
-    "Totals": o([
-        { json: "amount", js: "amount", typ: 0 },
-        { json: "display_text", js: "displayText", typ: u(undefined, "") },
-        { json: "type", js: "type", typ: "" },
-        { json: "lines", js: "lines", typ: u(undefined, a(r("TotalLineObject"))) },
-    ], "any"),
-    "TotalLineObject": o([
-        { json: "amount", js: "amount", typ: 0 },
-        { json: "display_text", js: "displayText", typ: "" },
-    ], "any"),
-    "Payment": o([
-        { json: "instruments", js: "instruments", typ: u(undefined, a(r("PaymentSelectedPaymentInstrument"))) },
-    ], "any"),
-    "Order": o([
-        { json: "adjustments", js: "adjustments", typ: u(undefined, a(r("AdjustmentElement"))) },
-        { json: "checkout_id", js: "checkoutId", typ: "" },
-        { json: "currency", js: "currency", typ: "" },
-        { json: "fulfillment", js: "fulfillment", typ: r("FulfillmentObject") },
-        { json: "id", js: "id", typ: "" },
-        { json: "label", js: "label", typ: u(undefined, "") },
-        { json: "line_items", js: "lineItems", typ: a(r("LineItemElement")) },
-        { json: "messages", js: "messages", typ: u(undefined, a(r("MessageElement"))) },
-        { json: "permalink_url", js: "permalinkUrl", typ: "" },
-        { json: "totals", js: "totals", typ: a(r("CheckoutTotal")) },
-        { json: "ucp", js: "ucp", typ: r("UcpOrderResponseSchema") },
-    ], "any"),
-    "AdjustmentElement": o([
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-        { json: "line_items", js: "lineItems", typ: u(undefined, a(r("AdjustmentLineItemObject"))) },
-        { json: "occurred_at", js: "occurredAt", typ: "" },
-        { json: "status", js: "status", typ: r("AdjustmentStatus") },
-        { json: "totals", js: "totals", typ: u(undefined, a(r("LineItemTotal"))) },
-        { json: "type", js: "type", typ: "" },
-    ], "any"),
-    "AdjustmentLineItemObject": o([
-        { json: "id", js: "id", typ: "" },
-        { json: "quantity", js: "quantity", typ: 0 },
-    ], "any"),
-    "FulfillmentObject": o([
-        { json: "events", js: "events", typ: u(undefined, a(r("EventElement"))) },
-        { json: "expectations", js: "expectations", typ: u(undefined, a(r("ExpectationElement"))) },
-    ], "any"),
-    "EventElement": o([
         { json: "carrier", js: "carrier", typ: u(undefined, "") },
         { json: "description", js: "description", typ: u(undefined, "") },
         { json: "id", js: "id", typ: "" },
@@ -2495,24 +2110,24 @@ const typeMap: any = {
         { json: "id", js: "id", typ: "" },
         { json: "quantity", js: "quantity", typ: 0 },
     ], "any"),
-    "ExpectationElement": o([
+    "Expectation": o([
         { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "destination", js: "destination", typ: r("BillingAddressObject") },
+        { json: "destination", js: "destination", typ: r("PostalAddress") },
         { json: "fulfillable_on", js: "fulfillableOn", typ: u(undefined, "") },
         { json: "id", js: "id", typ: "" },
-        { json: "line_items", js: "lineItems", typ: a(r("ExpectationLineItemObject")) },
+        { json: "line_items", js: "lineItems", typ: a(r("ExpectationLineItem")) },
         { json: "method_type", js: "methodType", typ: r("MethodType") },
     ], "any"),
-    "ExpectationLineItemObject": o([
+    "ExpectationLineItem": o([
         { json: "id", js: "id", typ: "" },
         { json: "quantity", js: "quantity", typ: 0 },
     ], "any"),
-    "LineItemElement": o([
+    "OrderLineItem": o([
         { json: "id", js: "id", typ: "" },
-        { json: "item", js: "item", typ: r("ItemObject") },
+        { json: "item", js: "item", typ: r("Item") },
         { json: "parent_id", js: "parentId", typ: u(undefined, "") },
         { json: "quantity", js: "quantity", typ: r("LineItemQuantity") },
-        { json: "status", js: "status", typ: r("OrderLineItemStatus") },
+        { json: "status", js: "status", typ: r("LineItemStatus") },
         { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
     ], "any"),
     "LineItemQuantity": o([
@@ -2527,32 +2142,44 @@ const typeMap: any = {
         { json: "status", js: "status", typ: u(undefined, r("UcpCheckoutResponseSchemaStatus")) },
         { json: "version", js: "version", typ: "" },
     ], "any"),
+    "UcpOrderResponseSchemaService": o([
+        { json: "config", js: "config", typ: u(undefined, m("any")) },
+        { json: "id", js: "id", typ: u(undefined, "") },
+        { json: "schema", js: "schema", typ: u(undefined, "") },
+        { json: "spec", js: "spec", typ: u(undefined, "") },
+        { json: "version", js: "version", typ: "" },
+        { json: "endpoint", js: "endpoint", typ: u(undefined, "") },
+        { json: "transport", js: "transport", typ: r("Transport") },
+    ], "any"),
+    "ErrorResponse": o([
+        { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
+        { json: "messages", js: "messages", typ: a(r("Message")) },
+        { json: "ucp", js: "ucp", typ: r("ErrorResponseUcp") },
+    ], false),
+    "ErrorResponseUcp": o([
+        { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityResponseSchema")))) },
+        { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerResponseSchema")))) },
+        { json: "services", js: "services", typ: u(undefined, m(a(r("UcpOrderResponseSchemaService")))) },
+        { json: "status", js: "status", typ: r("StatusEnum") },
+        { json: "version", js: "version", typ: "" },
+    ], "any"),
     "InstrumentsChangeResult": o([
         { json: "checkout", js: "checkout", typ: u(undefined, r("InstrumentsChangeCheckout")) },
         { json: "ucp", js: "ucp", typ: r("InstrumentsChangeResultUcp") },
         { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
-        { json: "messages", js: "messages", typ: u(undefined, a(r("MessageElement"))) },
+        { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
     ], "any"),
     "InstrumentsChangeCheckout": o([
         { json: "payment", js: "payment", typ: u(undefined, r("InstrumentsChangePayment")) },
     ], "any"),
     "InstrumentsChangePayment": o([
-        { json: "instruments", js: "instruments", typ: u(undefined, a(r("PurpleSelectedPaymentInstrument"))) },
+        { json: "instruments", js: "instruments", typ: u(undefined, a(r("SelectedPaymentInstrument"))) },
         { json: "selected_instrument_id", js: "selectedInstrumentId", typ: u(undefined, "") },
-    ], "any"),
-    "PurpleSelectedPaymentInstrument": o([
-        { json: "billing_address", js: "billingAddress", typ: u(undefined, r("BillingAddressObject")) },
-        { json: "credential", js: "credential", typ: u(undefined, r("CredentialObject")) },
-        { json: "display", js: "display", typ: u(undefined, m("any")) },
-        { json: "handler_id", js: "handlerId", typ: "" },
-        { json: "id", js: "id", typ: "" },
-        { json: "type", js: "type", typ: "" },
-        { json: "selected", js: "selected", typ: u(undefined, true) },
     ], "any"),
     "InstrumentsChangeResultUcp": o([
         { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityElement")))) },
         { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerElement")))) },
-        { json: "services", js: "services", typ: u(undefined, m(a(r("PurpleService")))) },
+        { json: "services", js: "services", typ: u(undefined, m(a(r("InstrumentsChangeService")))) },
         { json: "status", js: "status", typ: r("UcpCheckoutResponseSchemaStatus") },
         { json: "version", js: "version", typ: "" },
     ], "any"),
@@ -2576,7 +2203,7 @@ const typeMap: any = {
         { json: "constraints", js: "constraints", typ: u(undefined, m("any")) },
         { json: "type", js: "type", typ: "" },
     ], "any"),
-    "PurpleService": o([
+    "InstrumentsChangeService": o([
         { json: "config", js: "config", typ: u(undefined, m("any")) },
         { json: "id", js: "id", typ: u(undefined, "") },
         { json: "schema", js: "schema", typ: u(undefined, "") },
@@ -2589,14 +2216,19 @@ const typeMap: any = {
         { json: "checkout", js: "checkout", typ: u(undefined, r("CredentialCheckout")) },
         { json: "ucp", js: "ucp", typ: r("InstrumentsChangeResultUcp") },
         { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
-        { json: "messages", js: "messages", typ: u(undefined, a(r("MessageElement"))) },
+        { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
     ], "any"),
     "CredentialCheckout": o([
-        { json: "payment", js: "payment", typ: u(undefined, r("CredentialPayment")) },
+        { json: "payment", js: "payment", typ: u(undefined, r("Payment")) },
     ], "any"),
-    "CredentialPayment": o([
-        { json: "instruments", js: "instruments", typ: u(undefined, a(r("PurpleSelectedPaymentInstrument"))) },
-    ], "any"),
+    "DiscountMethod": [
+        "across",
+        "each",
+    ],
+    "FulfillmentMethodType": [
+        "pickup",
+        "shipping",
+    ],
     "ContentType": [
         "markdown",
         "plain",
@@ -2639,36 +2271,18 @@ const typeMap: any = {
         "failed",
         "pending",
     ],
-    "TypeElement": [
-        "pickup",
-        "shipping",
-    ],
-    "CardNumberType": [
-        "dpan",
-        "fpan",
-        "network_token",
-    ],
-    "TypeEnum": [
-        "card",
-    ],
-    "StatusEnum": [
-        "error",
-    ],
     "MethodType": [
         "digital",
         "pickup",
         "shipping",
     ],
-    "MessageInfoType": [
-        "info",
-    ],
-    "MessageWarningType": [
-        "warning",
-    ],
-    "OrderLineItemStatus": [
+    "LineItemStatus": [
         "fulfilled",
         "partial",
         "processing",
         "removed",
+    ],
+    "StatusEnum": [
+        "error",
     ],
 };

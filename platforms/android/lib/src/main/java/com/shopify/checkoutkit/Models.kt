@@ -30,11 +30,18 @@ public data class Checkout (
      */
     public val currency: String,
 
+    public val discounts: CheckoutDiscounts? = null,
+
     /**
      * RFC 3339 expiry timestamp. Default TTL is 6 hours from creation if not sent.
      */
     @SerialName("expires_at")
     public val expiresAt: String? = null,
+
+    /**
+     * Fulfillment details.
+     */
+    public val fulfillment: CheckoutFulfillment? = null,
 
     /**
      * Unique identifier of the checkout session.
@@ -182,6 +189,453 @@ public data class Context (
 )
 
 /**
+ * Discount codes input and applied discounts output.
+ */
+@Serializable
+public data class CheckoutDiscounts (
+    /**
+     * Discounts successfully applied (code-based and automatic).
+     */
+    public val applied: List<AppliedDiscount>? = null,
+
+    /**
+     * Discount codes to apply. Case-insensitive. Replaces previously submitted codes. Send
+     * empty array to clear.
+     */
+    public val codes: List<String>? = null
+)
+
+/**
+ * A discount that was successfully applied.
+ */
+@Serializable
+public data class AppliedDiscount (
+    /**
+     * Breakdown of where this discount was allocated. Sum of allocation amounts equals total
+     * amount.
+     */
+    public val allocations: List<DiscountAllocation>? = null,
+
+    /**
+     * Total discount amount in ISO 4217 minor units.
+     */
+    public val amount: Long,
+
+    /**
+     * True if applied automatically by merchant rules (no code required).
+     */
+    public val automatic: Boolean? = null,
+
+    /**
+     * The discount code. Omitted for automatic discounts.
+     */
+    public val code: String? = null,
+
+    /**
+     * The eligibility claim accepted by the Business for this discount. Corresponds to a value
+     * from context.eligibility. Omitted for code-based and non-eligibility automatic discounts.
+     */
+    public val eligibility: String? = null,
+
+    /**
+     * Allocation method. 'each' = applied independently per item. 'across' = split
+     * proportionally by value.
+     */
+    public val method: DiscountMethod? = null,
+
+    /**
+     * Stacking order for discount calculation. Lower numbers applied first (1 = first).
+     */
+    public val priority: Long? = null,
+
+    /**
+     * True if this discount requires additional verification.
+     */
+    public val provisional: Boolean? = null,
+
+    /**
+     * Human-readable discount name (e.g., 'Summer Sale 20% Off').
+     */
+    public val title: String
+)
+
+/**
+ * Breakdown of how a discount amount was allocated to a specific target.
+ */
+@Serializable
+public data class DiscountAllocation (
+    /**
+     * Amount allocated to this target in ISO 4217 minor units.
+     */
+    public val amount: Long,
+
+    /**
+     * JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals.shipping').
+     */
+    public val path: String
+)
+
+/**
+ * Allocation method. 'each' = applied independently per item. 'across' = split
+ * proportionally by value.
+ */
+@Serializable
+public enum class DiscountMethod(public val value: String) {
+    @SerialName("across") Across("across"),
+    @SerialName("each") Each("each");
+}
+
+/**
+ * Fulfillment details.
+ *
+ * Container for fulfillment methods and availability.
+ */
+@Serializable
+public data class CheckoutFulfillment (
+    /**
+     * Inventory availability hints.
+     */
+    @SerialName("available_methods")
+    public val availableMethods: List<FulfillmentAvailableMethod>? = null,
+
+    /**
+     * Fulfillment methods for cart items.
+     */
+    public val methods: List<FulfillmentMethod>? = null
+)
+
+/**
+ * Inventory availability hint for a fulfillment method type.
+ */
+@Serializable
+public data class FulfillmentAvailableMethod (
+    /**
+     * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
+     */
+    public val description: String? = null,
+
+    /**
+     * 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
+     */
+    @SerialName("fulfillable_on")
+    public val fulfillableOn: String? = null,
+
+    /**
+     * Line items available for this fulfillment method.
+     */
+    @SerialName("line_item_ids")
+    public val lineItemIDS: List<String>,
+
+    /**
+     * Fulfillment method type this availability applies to.
+     */
+    public val type: FulfillmentMethodType
+)
+
+/**
+ * Fulfillment method type this availability applies to.
+ *
+ * Fulfillment method type.
+ */
+@Serializable
+public enum class FulfillmentMethodType(public val value: String) {
+    @SerialName("pickup") Pickup("pickup"),
+    @SerialName("shipping") Shipping("shipping");
+}
+
+/**
+ * A fulfillment method (shipping or pickup) with destinations and groups.
+ */
+@Serializable
+public data class FulfillmentMethod (
+    /**
+     * Available destinations. For shipping: addresses. For pickup: retail locations.
+     */
+    public val destinations: List<FulfillmentDestination>? = null,
+
+    /**
+     * Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
+     * choose shipping method.
+     */
+    public val groups: List<FulfillmentGroup>? = null,
+
+    /**
+     * Unique fulfillment method identifier.
+     */
+    public val id: String,
+
+    /**
+     * Line item IDs fulfilled via this method.
+     */
+    @SerialName("line_item_ids")
+    public val lineItemIDS: List<String>,
+
+    /**
+     * ID of the selected destination.
+     */
+    @SerialName("selected_destination_id")
+    public val selectedDestinationID: String? = null,
+
+    /**
+     * Fulfillment method type.
+     */
+    public val type: FulfillmentMethodType
+)
+
+/**
+ * A destination for fulfillment.
+ *
+ * Shipping destination.
+ *
+ * Physical address of the location.
+ *
+ * The billing address associated with this payment method.
+ *
+ * Delivery destination address.
+ *
+ * A pickup location (retail store, locker, etc.).
+ */
+@Serializable
+public data class FulfillmentDestination (
+    /**
+     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+     * full country name such as "Singapore" can also be used.
+     */
+    @SerialName("address_country")
+    public val addressCountry: String? = null,
+
+    /**
+     * The locality in which the street address is, and which is in the region. For example,
+     * Mountain View.
+     */
+    @SerialName("address_locality")
+    public val addressLocality: String? = null,
+
+    /**
+     * The region in which the locality is, and which is in the country. Required for applicable
+     * countries (i.e. state in US, province in CA). For example, California or another
+     * appropriate first-level Administrative division.
+     */
+    @SerialName("address_region")
+    public val addressRegion: String? = null,
+
+    /**
+     * An address extension such as an apartment number, C/O or alternative name.
+     */
+    @SerialName("extended_address")
+    public val extendedAddress: String? = null,
+
+    /**
+     * Optional. First name of the contact associated with the address.
+     */
+    @SerialName("first_name")
+    public val firstName: String? = null,
+
+    /**
+     * Optional. Last name of the contact associated with the address.
+     */
+    @SerialName("last_name")
+    public val lastName: String? = null,
+
+    /**
+     * Optional. Phone number of the contact associated with the address.
+     */
+    @SerialName("phone_number")
+    public val phoneNumber: String? = null,
+
+    /**
+     * The postal code. For example, 94043.
+     */
+    @SerialName("postal_code")
+    public val postalCode: String? = null,
+
+    /**
+     * The street address.
+     */
+    @SerialName("street_address")
+    public val streetAddress: String? = null,
+
+    /**
+     * ID specific to this shipping destination.
+     *
+     * Unique location identifier.
+     */
+    public val id: String,
+
+    /**
+     * Physical address of the location.
+     */
+    public val address: PostalAddress? = null,
+
+    /**
+     * Location name (e.g., store name).
+     */
+    public val name: String? = null
+)
+
+/**
+ * Physical address of the location.
+ *
+ * The billing address associated with this payment method.
+ *
+ * Delivery destination address.
+ */
+@Serializable
+public data class PostalAddress (
+    /**
+     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+     * full country name such as "Singapore" can also be used.
+     */
+    @SerialName("address_country")
+    public val addressCountry: String? = null,
+
+    /**
+     * The locality in which the street address is, and which is in the region. For example,
+     * Mountain View.
+     */
+    @SerialName("address_locality")
+    public val addressLocality: String? = null,
+
+    /**
+     * The region in which the locality is, and which is in the country. Required for applicable
+     * countries (i.e. state in US, province in CA). For example, California or another
+     * appropriate first-level Administrative division.
+     */
+    @SerialName("address_region")
+    public val addressRegion: String? = null,
+
+    /**
+     * An address extension such as an apartment number, C/O or alternative name.
+     */
+    @SerialName("extended_address")
+    public val extendedAddress: String? = null,
+
+    /**
+     * Optional. First name of the contact associated with the address.
+     */
+    @SerialName("first_name")
+    public val firstName: String? = null,
+
+    /**
+     * Optional. Last name of the contact associated with the address.
+     */
+    @SerialName("last_name")
+    public val lastName: String? = null,
+
+    /**
+     * Optional. Phone number of the contact associated with the address.
+     */
+    @SerialName("phone_number")
+    public val phoneNumber: String? = null,
+
+    /**
+     * The postal code. For example, 94043.
+     */
+    @SerialName("postal_code")
+    public val postalCode: String? = null,
+
+    /**
+     * The street address.
+     */
+    @SerialName("street_address")
+    public val streetAddress: String? = null
+)
+
+/**
+ * A merchant-generated package/group of line items with fulfillment options.
+ */
+@Serializable
+public data class FulfillmentGroup (
+    /**
+     * Group identifier for referencing merchant-generated groups in updates.
+     */
+    public val id: String,
+
+    /**
+     * Line item IDs included in this group/package.
+     */
+    @SerialName("line_item_ids")
+    public val lineItemIDS: List<String>,
+
+    /**
+     * Available fulfillment options for this group.
+     */
+    public val options: List<FulfillmentOption>? = null,
+
+    /**
+     * ID of the selected fulfillment option for this group.
+     */
+    @SerialName("selected_option_id")
+    public val selectedOptionID: String? = null
+)
+
+/**
+ * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
+ */
+@Serializable
+public data class FulfillmentOption (
+    /**
+     * Carrier name (for shipping).
+     */
+    public val carrier: String? = null,
+
+    /**
+     * Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
+     */
+    public val description: String? = null,
+
+    /**
+     * Earliest fulfillment date.
+     */
+    @SerialName("earliest_fulfillment_time")
+    public val earliestFulfillmentTime: String? = null,
+
+    /**
+     * Unique fulfillment option identifier.
+     */
+    public val id: String,
+
+    /**
+     * Latest fulfillment date.
+     */
+    @SerialName("latest_fulfillment_time")
+    public val latestFulfillmentTime: String? = null,
+
+    /**
+     * Short label (e.g., 'Express Shipping', 'Curbside Pickup').
+     */
+    public val title: String,
+
+    /**
+     * Fulfillment option totals breakdown.
+     */
+    public val totals: List<LineItemTotal>
+)
+
+/**
+ * A cost breakdown entry with a category, amount, and optional display text.
+ */
+@Serializable
+public data class LineItemTotal (
+    public val amount: Long,
+
+    /**
+     * Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
+     * 'Delivery').
+     */
+    @SerialName("display_text")
+    public val displayText: String? = null,
+
+    /**
+     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
+     * fee, total. Businesses MAY use additional values.
+     */
+    public val type: String
+)
+
+/**
  * Line item object. Expected to use the currency of the parent object.
  */
 @Serializable
@@ -232,27 +686,6 @@ public data class Item (
      * Product title.
      */
     public val title: String
-)
-
-/**
- * A cost breakdown entry with a category, amount, and optional display text.
- */
-@Serializable
-public data class LineItemTotal (
-    public val amount: Long,
-
-    /**
-     * Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
-     * 'Delivery').
-     */
-    @SerialName("display_text")
-    public val displayText: String? = null,
-
-    /**
-     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
-     * fee, total. Businesses MAY use additional values.
-     */
-    public val type: String
 )
 
 @Serializable
@@ -463,73 +896,6 @@ public data class SelectedPaymentInstrument (
 )
 
 /**
- * The billing address associated with this payment method.
- *
- * Delivery destination address.
- */
-@Serializable
-public data class PostalAddress (
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
-     */
-    @SerialName("address_country")
-    public val addressCountry: String? = null,
-
-    /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
-     */
-    @SerialName("address_locality")
-    public val addressLocality: String? = null,
-
-    /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
-     */
-    @SerialName("address_region")
-    public val addressRegion: String? = null,
-
-    /**
-     * An address extension such as an apartment number, C/O or alternative name.
-     */
-    @SerialName("extended_address")
-    public val extendedAddress: String? = null,
-
-    /**
-     * Optional. First name of the contact associated with the address.
-     */
-    @SerialName("first_name")
-    public val firstName: String? = null,
-
-    /**
-     * Optional. Last name of the contact associated with the address.
-     */
-    @SerialName("last_name")
-    public val lastName: String? = null,
-
-    /**
-     * Optional. Phone number of the contact associated with the address.
-     */
-    @SerialName("phone_number")
-    public val phoneNumber: String? = null,
-
-    /**
-     * The postal code. For example, 94043.
-     */
-    @SerialName("postal_code")
-    public val postalCode: String? = null,
-
-    /**
-     * The street address.
-     */
-    @SerialName("street_address")
-    public val streetAddress: String? = null
-)
-
-/**
  * The base definition for any payment credential. Handlers define specific credential types.
  */
 @Serializable
@@ -704,36 +1070,6 @@ public data class CapabilityResponseSchema (
 public sealed class Extends {
     public class StringArrayValue(public val value: List<String>) : Extends()
     public class StringValue(public val value: String)            : Extends()
-}
-
-internal object ExtendsSerializer : KSerializer<Extends> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.checkoutkit.Extends")
-
-    override fun deserialize(decoder: Decoder): Extends {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Extends can only be deserialized from JSON")
-        return when (val element = input.decodeJsonElement()) {
-            is JsonPrimitive -> Extends.StringValue(element.content)
-            is JsonArray -> Extends.StringArrayValue(
-                element.map {
-                    (it as? JsonPrimitive)?.content
-                        ?: throw SerializationException("Extends array element not a primitive: $it")
-                }
-            )
-            else -> throw SerializationException("Unexpected Extends shape: $element")
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: Extends) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Extends can only be serialized to JSON")
-        val element: JsonElement = when (value) {
-            is Extends.StringValue -> JsonPrimitive(value.value)
-            is Extends.StringArrayValue -> JsonArray(value.value.map { JsonPrimitive(it) })
-        }
-        output.encodeJsonElement(element)
-    }
 }
 
 /**
@@ -1195,7 +1531,7 @@ public data class OrderLineItem (
     /**
      * Quantity tracking for the line item.
      */
-    public val quantity: Quantity,
+    public val quantity: LineItemQuantity,
 
     /**
      * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
@@ -1214,7 +1550,7 @@ public data class OrderLineItem (
  * Quantity tracking for the line item.
  */
 @Serializable
-public data class Quantity (
+public data class LineItemQuantity (
     /**
      * Quantity fulfilled so far.
      */
