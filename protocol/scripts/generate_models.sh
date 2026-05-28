@@ -236,6 +236,11 @@ case "$LANG" in
       exit 1
     fi
 
+    if ! grep -q '@Serializable(with = ExtendsSerializer::class)' "${OUTPUT}"; then
+      echo "ERROR: ExtendsSerializer injection failed; quicktype Extends output may have changed" >&2
+      exit 1
+    fi
+
 
     echo "Generated ${OUTPUT}"
     ;;
