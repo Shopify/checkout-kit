@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "yaml"
+
+lockfile = ARGV[0] || "sample/ios/Podfile.lock"
+
+unless File.exist?(lockfile)
+  warn "::error file=#{lockfile}::Podfile.lock does not exist."
+  exit 1
+end
+
+lock = YAML.load_file(lockfile)
+external_sources = lock.fetch("EXTERNAL SOURCES", {}) || {}
+dependencies = lock.fetch("DEPENDENCIES", []) || []
+
+native_pods = [
+  "ShopifyCheckoutKit",
+  "ShopifyCheckoutKit/AcceleratedCheckouts",
+]
+
+local_external_sources = native_pods.filter_map do |pod|
+  source = external_sources[pod]
+  next unless source.is_a?(Hash)
+
+  path = source[":path"] || source[:path]
+  next if path.nil?
+
+  "#{pod} (#{path})"
+end
+
+local_dependencies = dependencies.map(&:to_s).select do |dependency|
+  native_pods.any? do |pod|
+    dependency.start_with?("#{pod} (from `")
+  end
+end
+
+local_entries = (local_external_sources + local_dependencies).uniq
+
+if local_entries.any?
+  warn "::error file=#{lockfile}::Podfile.lock resolves ShopifyCheckoutKit from a local path. CI uses published native SDKs, so regenerate without --local."
+  warn "Detected local entries:"
+  local_entries.each { |entry| warn "  - #{entry}" }
+  warn "Try: env -u USE_LOCAL_SDK dev rn pod-install"
+  exit 1
+end
+
+puts "Podfile.lock uses published ShopifyCheckoutKit dependencies."
