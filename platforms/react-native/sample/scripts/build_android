@@ -18,4 +18,8 @@ done
 
 cd android
 
+if [ "${USE_LOCAL_SDK:-0}" = "1" ]; then
+  args+=(--refresh-dependencies)
+fi
+
 ./gradlew assembleDebug --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a "${args[@]}"
