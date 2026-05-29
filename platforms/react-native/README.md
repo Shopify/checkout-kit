@@ -66,9 +66,9 @@ experiences.
 
 ## Platform Requirements
 
-- **React Native** - Minimum version `0.76` (v4+) / `0.70` (v3 and earlier)
+- **React Native** - Minimum version `0.77` (v4+) / `0.70` (v3 and earlier)
 - **iOS** - Minimum version iOS 13
-- **Android** - Minimum Java 11 & Android SDK version `24`
+- **Android** - Minimum Java 11, Android SDK version `24`, and Kotlin `2.0+`
 
 ## Version Compatibility
 
@@ -78,7 +78,7 @@ stay on the `v3.x` line until they migrate.
 
 | Package version | React Native   | Architecture       |
 | --------------- | -------------- | ------------------ |
-| `4.x`           | `>= 0.76`      | New Architecture   |
+| `4.x`           | `>= 0.77`      | New Architecture   |
 | `3.x`           | `>= 0.70`      | Old Architecture   |
 
 See the [React Native upgrade guide](https://reactnative.dev/docs/the-new-architecture/use-the-new-architecture)
@@ -109,6 +109,12 @@ npm install @shopify/checkout-kit-react-native
 
 Check the `minSdkVersion` property in your `android/build.gradle` file is at
 least `24`.
+
+The Android package also requires Kotlin `2.0+`. React Native `0.77+` templates
+use compatible Kotlin defaults (`2.0.21` for React Native `0.77`–`0.79`, and
+`2.1.20` for React Native `0.80+`). If your app defines a Kotlin version, the
+package will use `rootProject.ext.kotlinVersion`, `rootProject.ext.kotlin_version`,
+or matching Gradle properties before falling back to `2.0.21`.
 
 ```diff
 // android/build.gradle
