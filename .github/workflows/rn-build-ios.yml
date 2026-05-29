@@ -7,12 +7,6 @@ on:
 permissions:
   contents: read
 
-# TODO: remove once ShopifyCheckoutKit is published to CocoaPods trunk and
-# Maven Central. Tracks the new pod/AAR name introduced by the
-# ShopifyCheckoutSheetKit → ShopifyCheckoutKit rename.
-env:
-  USE_LOCAL_SDK: "1"
-
 jobs:
   build-ios:
     name: Build iOS Sample
