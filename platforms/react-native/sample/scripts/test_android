@@ -18,8 +18,4 @@ done
 
 cd android
 
-if [ "${USE_LOCAL_SDK:-0}" = "1" ]; then
-  args+=(--refresh-dependencies)
-fi
-
 ./gradlew clean generateAndroidManifestFromTemplate test --no-daemon --console=plain -Dorg.gradle.workers.max=1 -PreactNativeArchitectures=arm64-v8a "${args[@]}"
