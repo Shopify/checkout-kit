@@ -1,5 +1,21 @@
 buildscript {
-  ext.kotlin_version = rootProject.ext.has("kotlinVersion") ? rootProject.ext.get("kotlinVersion") : "2.1.20"
+  def getKotlinVersion = {
+    if (rootProject.ext.has("kotlinVersion")) {
+      return rootProject.ext.get("kotlinVersion")
+    }
+    if (rootProject.ext.has("kotlin_version")) {
+      return rootProject.ext.get("kotlin_version")
+    }
+    if (rootProject.hasProperty("kotlinVersion")) {
+      return rootProject.property("kotlinVersion")
+    }
+    if (rootProject.hasProperty("kotlin_version")) {
+      return rootProject.property("kotlin_version")
+    }
+    return "2.0.21"
+  }
+
+  ext.kotlin_version = getKotlinVersion()
 
   repositories {
     google()
