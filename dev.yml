@@ -235,10 +235,10 @@ commands:
       ios:
         desc: Run the iOS sample app in the simulator.
         long_desc: |
-          Builds and runs the iOS sample app on a simulator.
+          Ensures CocoaPods are in sync, then builds and runs the iOS sample app on a simulator.
 
           --local
-            Build against in-repo Swift SDK sources (runs pod install first).
+            Build against in-repo Swift SDK sources.
         syntax:
           optional: --local
         run: cd platforms/react-native && pnpm sample ios "$@"
@@ -263,9 +263,14 @@ commands:
           optional: --local
         run: cd platforms/react-native && pnpm run pod-install -- "$@"
       clean:
-        desc: Remove generated directories and stop sccache
+        desc: Remove generated directories, clean CocoaPods cache, and stop sccache
         run: |
           cd platforms/react-native
+          if (cd sample/ios && bundle exec pod --version >/dev/null 2>&1); then
+            (cd sample/ios && bundle exec pod cache clean --all)
+          else
+            echo "Skipping CocoaPods cache clean (pod unavailable; run dev up first)"
+          fi
           pnpm module clean
           pnpm sample clean
           pnpm clean
