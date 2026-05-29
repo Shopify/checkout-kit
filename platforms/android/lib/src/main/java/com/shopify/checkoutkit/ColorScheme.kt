@@ -261,7 +261,11 @@ public sealed class Color {
      * @property id The resource id of the color.
      */
     @Serializable
-    public data class ResourceId(@ColorRes public val id: Int) : Color()
+    public data class ResourceId(
+        @param:ColorRes
+        @get:ColorRes
+        public val id: Int
+    ) : Color()
 
     /**
      * Returns the color value.
@@ -279,7 +283,11 @@ public sealed class Color {
  * Represents a drawable resource.
  */
 @Serializable
-public data class DrawableResource(@DrawableRes public val id: Int)
+public data class DrawableResource(
+    @param:DrawableRes
+    @get:DrawableRes
+    public val id: Int
+)
 
 private val defaultLightColors = Colors(
     webViewBackground = Color.ResourceId(R.color.checkoutLightBg),

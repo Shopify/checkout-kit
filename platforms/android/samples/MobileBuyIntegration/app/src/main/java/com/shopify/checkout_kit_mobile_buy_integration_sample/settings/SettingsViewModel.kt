@@ -31,7 +31,7 @@ class SettingsViewModel(
             ) { settings, isAuthenticated ->
                 SettingsUiState.Loaded(
                     settings = settings,
-                    sdkVersion = ShopifyCheckoutKit.version,
+                    sdkVersion = ShopifyCheckoutKit.VERSION,
                     sampleAppVersion = BuildConfig.VERSION_NAME,
                     isAuthenticated = isAuthenticated
                 )

@@ -10,7 +10,7 @@ import android.net.Uri
  *
  * Used by both [CheckoutWebView.shouldOverrideUrlLoading] (for `mailto:` / `tel:` / custom-scheme
  * deep links intercepted during navigation) and [EmbeddedCheckoutProtocol.defaultDelegationClient]
- * (for `ec.window.open_request` payloads from the page). Centralising the resolver check and
+ * (for `ec.window.open_request` payloads from the page). Centralizing the resolver check and
  * `startActivity` failure handling keeps the two paths from drifting apart.
  */
 internal object ExternalUriLauncher {

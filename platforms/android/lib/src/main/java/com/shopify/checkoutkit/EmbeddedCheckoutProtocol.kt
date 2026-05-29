@@ -91,7 +91,7 @@ internal class EmbeddedCheckoutProtocol(
             JsonObject.serializer(),
             buildJsonObject {
                 putJsonObject("ucp") {
-                    put("version", CheckoutProtocol.specVersion)
+                    put("version", CheckoutProtocol.SPEC_VERSION)
                     put("status", "success")
                 }
                 if (negotiatedDelegations.isNotEmpty()) {
@@ -170,7 +170,7 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     companion object {
-        private val LOG_TAG = BaseWebView.ECP_LOG_TAG
+        private const val LOG_TAG = BaseWebView.ECP_LOG_TAG
 
         /** Name under which this handler is registered as a JS interface on the WebView. */
         internal const val INTERFACE_NAME = "EmbeddedCheckoutProtocolConsumer"

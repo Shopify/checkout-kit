@@ -68,7 +68,7 @@ class CheckoutWebViewTest {
         val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
         assertThat(view.settings.userAgentString)
             .endsWith(
-                "ShopifyCheckoutKit/${ShopifyCheckoutKit.version} (Android; Kotlin $kotlinVersion) ReactNative/0.80.0"
+                "ShopifyCheckoutKit/${ShopifyCheckoutKit.VERSION} (Android; Kotlin $kotlinVersion) ReactNative/0.80.0"
             )
     }
 
@@ -79,7 +79,7 @@ class CheckoutWebViewTest {
 
         val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
         assertThat(view.settings.userAgentString)
-            .endsWith("ShopifyCheckoutKit/${ShopifyCheckoutKit.version} (Android; Kotlin $kotlinVersion) ReactNative")
+            .endsWith("ShopifyCheckoutKit/${ShopifyCheckoutKit.VERSION} (Android; Kotlin $kotlinVersion) ReactNative")
     }
 
     @Test
@@ -205,7 +205,7 @@ class CheckoutWebViewTest {
         view.loadCheckout("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
-        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_version=${CheckoutProtocol.specVersion}")
+        assertThat(shadowOf(view).lastLoadedUrl).contains("ec_version=${CheckoutProtocol.SPEC_VERSION}")
     }
 
     @Test
@@ -216,7 +216,7 @@ class CheckoutWebViewTest {
 
         val loadedUrl = shadowOf(view).lastLoadedUrl
         assertThat(loadedUrl).contains("foo=bar")
-        assertThat(loadedUrl).contains("ec_version=${CheckoutProtocol.specVersion}")
+        assertThat(loadedUrl).contains("ec_version=${CheckoutProtocol.SPEC_VERSION}")
     }
 
     @Test

@@ -53,7 +53,7 @@ public interface CheckoutListener {
     public fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback)
 
     /**
-     * Called when the client should hide the location permissions prompt, e.g. if the request is cancelled.
+     * Called when the client should hide the location permissions prompt, e.g. if the request is canceled.
      */
     public fun onGeolocationPermissionsHidePrompt()
 }

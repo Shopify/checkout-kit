@@ -294,7 +294,7 @@ commands:
           cd modules/@shopify/checkout-kit-react-native/ios && swift test
           cd ../../../../
           USE_LOCAL_SDK=1 ./scripts/publish_android_snapshot
-          cd sample/android && USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test
+          cd sample/android && USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
         subcommands:
           js:
             desc: Run JS unit tests via jest
@@ -309,7 +309,7 @@ commands:
               cd platforms/react-native
               USE_LOCAL_SDK=1 ./scripts/publish_android_snapshot
               cd sample/android
-              USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test
+              USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)
         aliases: [style]

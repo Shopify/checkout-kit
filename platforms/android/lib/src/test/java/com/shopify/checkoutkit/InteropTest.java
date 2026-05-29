@@ -14,6 +14,8 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.shadows.ShadowDialog;
 
+import kotlin.Unit;
+
 @RunWith(RobolectricTestRunner.class)
 public class InteropTest {
     private Configuration initialConfiguration = null;
@@ -25,9 +27,7 @@ public class InteropTest {
 
     @After
     public void tearDown() {
-        ShopifyCheckoutKit.configure(config -> {
-            config.setColorScheme(initialConfiguration.getColorScheme());
-        });
+        ShopifyCheckoutKit.configure(config -> config.setColorScheme(initialConfiguration.getColorScheme()));
     }
 
     @Test
@@ -49,9 +49,7 @@ public class InteropTest {
 
     @Test
     public void canConfigureCheckoutKit() {
-        ShopifyCheckoutKit.configure(configuration -> {
-            configuration.setColorScheme(new ColorScheme.Dark());
-        });
+        ShopifyCheckoutKit.configure(configuration -> configuration.setColorScheme(new ColorScheme.Dark()));
 
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
 
@@ -93,7 +91,7 @@ public class InteropTest {
 
         ColorScheme customized = lightScheme.customize(builder -> {
             builder.setCloseIconTint(tintColor);
-            return null;
+            return Unit.INSTANCE;
         });
 
         assertThat(customized).isInstanceOf(ColorScheme.Light.class);
@@ -111,12 +109,12 @@ public class InteropTest {
         ColorScheme customized = autoScheme.customize(
                 lightBuilder -> {
                     lightBuilder.setCloseIconTint(lightTint);
-                    return null;
+                    return Unit.INSTANCE;
                 },
                 darkBuilder -> {
                     darkBuilder.setCloseIcon(customIcon);
                     darkBuilder.setCloseIconTint(darkTint);
-                    return null;
+                    return Unit.INSTANCE;
                 }
         );
 
@@ -139,7 +137,7 @@ public class InteropTest {
         ColorScheme customized = darkScheme.customize(builder -> {
             builder.setHeaderBackground(headerColor);
             builder.setCloseIconTint(tintColor);
-            return null;
+            return Unit.INSTANCE;
         });
 
         assertThat(customized).isInstanceOf(ColorScheme.Dark.class);
@@ -160,8 +158,7 @@ public class InteropTest {
                     .withWebViewBackground(webViewBg)
                     .withProgressIndicator(progressColor)
                     .withCloseIcon(icon);
-            // return null is slightly awkward, but we're prioritizing the kotlin interface
-            return null;
+            return Unit.INSTANCE;
         });
 
         assertThat(customized).isInstanceOf(ColorScheme.Web.class);
