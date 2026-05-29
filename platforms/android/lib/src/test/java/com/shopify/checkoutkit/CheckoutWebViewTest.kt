@@ -68,7 +68,7 @@ class CheckoutWebViewTest {
         val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
         assertThat(view.settings.userAgentString)
             .endsWith(
-                "ShopifyCheckoutKit/${ShopifyCheckoutKit.version} (Android; Kotlin $kotlinVersion) ReactNative/0.80.0"
+                "ShopifyCheckoutKit/${ShopifyCheckoutKit.VERSION} (Android; Kotlin $kotlinVersion) ReactNative/0.80.0"
             )
     }
 
@@ -79,7 +79,7 @@ class CheckoutWebViewTest {
 
         val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
         assertThat(view.settings.userAgentString)
-            .endsWith("ShopifyCheckoutKit/${ShopifyCheckoutKit.version} (Android; Kotlin $kotlinVersion) ReactNative")
+            .endsWith("ShopifyCheckoutKit/${ShopifyCheckoutKit.VERSION} (Android; Kotlin $kotlinVersion) ReactNative")
     }
 
     @Test

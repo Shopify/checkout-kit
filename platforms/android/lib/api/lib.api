@@ -3872,7 +3872,7 @@ public final class com/shopify/checkoutkit/ShippingDestination$Companion {
 
 public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/ShopifyCheckoutKit;
-	public static final field version Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
 	public static final fun configure (Lcom/shopify/checkoutkit/ConfigurationUpdater;)V
 	public static final fun getConfiguration ()Lcom/shopify/checkoutkit/Configuration;
 	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)Lcom/shopify/checkoutkit/CheckoutKitDialog;

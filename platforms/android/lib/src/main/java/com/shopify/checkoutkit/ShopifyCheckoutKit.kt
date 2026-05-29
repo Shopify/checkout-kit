@@ -18,7 +18,7 @@ public object ShopifyCheckoutKit {
 
      * @return the current version
      */
-    public const val version: String = BuildConfig.SDK_VERSION
+    public const val VERSION: String = BuildConfig.SDK_VERSION
 
     /**
      * Returns the currently applied ShopifyCheckoutKit configuration.
