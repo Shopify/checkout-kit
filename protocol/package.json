@@ -9,7 +9,8 @@
     "check-tools": "./scripts/check_codegen_tools.sh",
     "codegen:kotlin": "./scripts/generate_models.sh --lang kotlin",
     "codegen:swift": "./scripts/generate_models.sh --lang swift",
-    "codegen:typescript": "./scripts/generate_models.sh --lang typescript"
+    "codegen:typescript": "./scripts/generate_models.sh --lang typescript",
+    "check-codegen": "./scripts/check_generated_models.sh"
   },
   "devDependencies": {
     "quicktype": "23.2.6"

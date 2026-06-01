@@ -37,6 +37,28 @@ import {
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
+const KOTLIN_LICENSE = `/*
+ * MIT License
+ *
+ * Copyright 2023-present, Shopify Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */`;
 
 function usage() {
   console.error("Usage: generate_models.sh --lang <kotlin|swift|typescript> [--output <path>]");
@@ -160,6 +182,10 @@ async function typeSchemas(specDir) {
   return names.map((name) => path.join(typesDir, name));
 }
 
+function commonErrorResponseSchema(specDir) {
+  return path.join(path.dirname(specDir), "common", "types", "error_response.json");
+}
+
 async function runQuicktype(args) {
   await run(QUICKTYPE_BIN, args);
 }
@@ -191,6 +217,61 @@ function replaceIfPresent(source, regex, replacement) {
   return source.replace(regex.global ? regex : new RegExp(regex.source, `${regex.flags}g`), replacement);
 }
 
+function prependLicense(source, license) {
+  return `${license}\n\n${source}`;
+}
+
+function annotateKotlinExtendsSerializer(source) {
+  const search = "@Serializable\npublic sealed class Extends {";
+  const replacement = "@Serializable(with = ExtendsSerializer::class)\npublic sealed class Extends {";
+  return replaceExactlyOnce(source, search, replacement, "Kotlin Extends serializer annotation");
+}
+
+function addTypescriptMessageSubtypes(source) {
+  if (source.includes("export interface MessageError")) {
+    return source;
+  }
+
+  const messageInterface = `/**
+ * Container for error, warning, or info messages.
+ */
+export interface Message {`;
+  const messageSubtypes = `export interface MessageError {
+    code: string;
+    content: string;
+    contentType?: ContentType;
+    path?: string;
+    severity: Severity;
+    type: StatusEnum;
+    [property: string]: any;
+}
+
+export interface MessageInfo {
+    code?: string;
+    content: string;
+    contentType?: ContentType;
+    path?: string;
+    type: "info";
+    [property: string]: any;
+}
+
+export interface MessageWarning {
+    code: string;
+    content: string;
+    contentType?: ContentType;
+    imageUrl?: string;
+    path?: string;
+    presentation?: string;
+    type: "warning";
+    url?: string;
+    [property: string]: any;
+}
+
+`;
+
+  return replaceExactlyOnce(source, messageInterface, `${messageSubtypes}${messageInterface}`, "TypeScript message subtype declarations");
+}
+
 async function generateKotlin(specDir, output) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
@@ -202,6 +283,8 @@ async function generateKotlin(specDir, output) {
     "kotlinx",
     "--src",
     path.join(specDir, "checkout.json"),
+    "--src",
+    commonErrorResponseSchema(specDir),
     ...((await typeSchemas(specDir)).flatMap((file) => ["--src", file])),
     "--src",
     path.join(specDir, "payment.json"),
@@ -233,7 +316,10 @@ async function generateKotlin(specDir, output) {
     result = replaceExactlyOnce(result, "public enum class ColorScheme(", "public enum class EmbeddedColorScheme(", "Kotlin EmbeddedColorScheme declaration");
     result = replaceRequired(result, /List<ColorScheme>/g, "List<EmbeddedColorScheme>", "Kotlin EmbeddedColorScheme list references");
     result = replaceIfPresent(result, /ColorScheme\.serializer\(\)/g, "EmbeddedColorScheme.serializer()");
+    result = replaceIfPresent(result, /PurpleStatus/g, "StatusEnum");
     result = replaceExactlyOnce(result, "typealias Totals = JsonArray<TotalElement>", "typealias Totals = List<TotalElement>", "Kotlin Totals collection type");
+    result = annotateKotlinExtendsSerializer(result);
+    result = prependLicense(result, KOTLIN_LICENSE);
 
     return result;
   });
@@ -252,6 +338,8 @@ async function generateSwift(specDir, output) {
     "schema",
     "--src",
     path.join(specDir, "checkout.json"),
+    "--src",
+    commonErrorResponseSchema(specDir),
     ...((await typeSchemas(specDir)).flatMap((file) => ["--src", file])),
     "--src",
     path.join(specDir, "payment.json"),
@@ -267,7 +355,8 @@ async function generateSwift(specDir, output) {
 
   await replaceInFile(output, (source) => source
     .replace(/\bBinding\b/g, "TokenBinding")
-    .replace(/\bColorScheme\b/g, "EmbeddedColorScheme"));
+    .replace(/\bColorScheme\b/g, "EmbeddedColorScheme")
+    .replace(/\bPurpleStatus\b/g, "StatusEnum"));
 }
 
 async function generateTypescript(specDir, output) {
@@ -284,6 +373,8 @@ async function generateTypescript(specDir, output) {
     "--no-date-times",
     "--src",
     path.join(specDir, "checkout.json"),
+    "--src",
+    commonErrorResponseSchema(specDir),
     ...((await typeSchemas(specDir)).flatMap((file) => ["--src", file])),
     "--src",
     path.join(specDir, "payment.json"),
@@ -297,10 +388,15 @@ async function generateTypescript(specDir, output) {
     output,
   ]);
 
-  await replaceInFile(output, (source) => source
-    .replace(/^type /gm, "export type ")
-    .replace(/\bBinding\b/g, "TokenBinding")
-    .replace(/\bColorScheme\b/g, "EmbeddedColorScheme"));
+  await replaceInFile(output, (source) => {
+    const result = source
+      .replace(/^type /gm, "export type ")
+      .replace(/\bBinding\b/g, "TokenBinding")
+      .replace(/\bColorScheme\b/g, "EmbeddedColorScheme")
+      .replace(/\bPurpleStatus\b/g, "StatusEnum");
+
+    return addTypescriptMessageSubtypes(result);
+  });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 

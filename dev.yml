@@ -105,6 +105,9 @@ commands:
       update-upstream:
         desc: "Update vendored UCP snapshot files from upstream"
         run: ./protocol/scripts/update_ucp_snapshot.sh "$@"
+      check-codegen:
+        desc: "Verify generated protocol models match the checked-in schemas"
+        run: ./protocol/scripts/check_generated_models.sh "$@"
       check-tools:
         desc: "Verify protocol codegen tools match protocol/package.json"
         run: ./protocol/scripts/check_codegen_tools.sh "$@"

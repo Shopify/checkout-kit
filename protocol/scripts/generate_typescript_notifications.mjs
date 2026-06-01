@@ -30,10 +30,19 @@ const refMappings = new Map([
       converter: 'Convert.toErrorResponse',
     },
   ],
+  [
+    'common/types/error_response.json',
+    {
+      typeName: 'ErrorResponse',
+      converter: 'Convert.toErrorResponse',
+    },
+  ],
 ]);
 
 function normalizeRef(ref) {
-  return ref.replace(/^\.\.\/\.\.\/schemas\/shopping\//, '');
+  return ref
+    .replace(/^\.\.\/\.\.\/schemas\/shopping\//, '')
+    .replace(/^\.\.\/\.\.\/schemas\//, '');
 }
 
 function methodNameToIdentifier(methodName) {
