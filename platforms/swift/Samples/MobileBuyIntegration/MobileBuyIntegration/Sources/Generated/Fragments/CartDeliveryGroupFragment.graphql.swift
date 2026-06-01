@@ -20,7 +20,7 @@ extension Storefront {
       .field("groupType", GraphQLEnum<Storefront.CartDeliveryGroupType>.self),
       .field("deliveryAddress", DeliveryAddress.self),
       .field("deliveryOptions", [DeliveryOption].self),
-      .field("selectedDeliveryOption", SelectedDeliveryOption?.self),
+      .field("selectedDeliveryOption", SelectedDeliveryOption?.self)
     ] }
     static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
       CartDeliveryGroupFragment.self
@@ -55,7 +55,7 @@ extension Storefront {
         .field("lastName", String?.self),
         .field("phone", String?.self),
         .field("province", String?.self),
-        .field("zip", String?.self),
+        .field("zip", String?.self)
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         CartDeliveryGroupFragment.DeliveryAddress.self
@@ -100,7 +100,7 @@ extension Storefront {
         .field("code", String?.self),
         .field("deliveryMethodType", GraphQLEnum<Storefront.DeliveryMethodType>.self),
         .field("description", String?.self),
-        .field("estimatedCost", EstimatedCost.self),
+        .field("estimatedCost", EstimatedCost.self)
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         CartDeliveryGroupFragment.DeliveryOption.self
@@ -130,7 +130,7 @@ extension Storefront {
         static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
           .field("amount", Storefront.Decimal.self),
-          .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self),
+          .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self)
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           CartDeliveryGroupFragment.DeliveryOption.EstimatedCost.self
@@ -156,7 +156,7 @@ extension Storefront {
         .field("description", String?.self),
         .field("title", String?.self),
         .field("handle", String.self),
-        .field("estimatedCost", EstimatedCost.self),
+        .field("estimatedCost", EstimatedCost.self)
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         CartDeliveryGroupFragment.SelectedDeliveryOption.self
@@ -182,7 +182,7 @@ extension Storefront {
         static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
           .field("amount", Storefront.Decimal.self),
-          .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self),
+          .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self)
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           CartDeliveryGroupFragment.SelectedDeliveryOption.EstimatedCost.self

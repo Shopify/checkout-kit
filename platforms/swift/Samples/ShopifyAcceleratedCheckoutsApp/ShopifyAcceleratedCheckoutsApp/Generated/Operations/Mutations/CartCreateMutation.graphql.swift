@@ -39,7 +39,7 @@ extension Storefront {
 
       static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.Mutation }
       static var __selections: [ApolloAPI.Selection] { [
-        .field("cartCreate", CartCreate?.self, arguments: ["input": .variable("input")]),
+        .field("cartCreate", CartCreate?.self, arguments: ["input": .variable("input")])
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         CartCreateMutation.Data.self
@@ -61,7 +61,7 @@ extension Storefront {
         static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
           .field("cart", Cart?.self),
-          .field("userErrors", [UserError].self),
+          .field("userErrors", [UserError].self)
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           CartCreateMutation.Data.CartCreate.self
@@ -82,7 +82,7 @@ extension Storefront {
           static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.Cart }
           static var __selections: [ApolloAPI.Selection] { [
             .field("__typename", String.self),
-            .fragment(CartFragment.self),
+            .fragment(CartFragment.self)
           ] }
           static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
             CartCreateMutation.Data.CartCreate.Cart.self,
@@ -131,7 +131,7 @@ extension Storefront {
           static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.CartUserError }
           static var __selections: [ApolloAPI.Selection] { [
             .field("__typename", String.self),
-            .fragment(CartUserErrorFragment.self),
+            .fragment(CartUserErrorFragment.self)
           ] }
           static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
             CartCreateMutation.Data.CartCreate.UserError.self,
