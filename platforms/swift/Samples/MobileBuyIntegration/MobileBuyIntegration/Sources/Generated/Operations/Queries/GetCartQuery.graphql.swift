@@ -39,7 +39,7 @@ extension Storefront {
 
       static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.QueryRoot }
       static var __selections: [ApolloAPI.Selection] { [
-        .field("cart", Cart?.self, arguments: ["id": .variable("id")]),
+        .field("cart", Cart?.self, arguments: ["id": .variable("id")])
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         GetCartQuery.Data.self
@@ -60,7 +60,7 @@ extension Storefront {
         static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.Cart }
         static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
-          .fragment(CartFragment.self),
+          .fragment(CartFragment.self)
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           GetCartQuery.Data.Cart.self,

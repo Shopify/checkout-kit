@@ -18,7 +18,7 @@ extension Storefront {
       .field("__typename", String.self),
       .field("code", GraphQLEnum<Storefront.CartErrorCode>?.self),
       .field("message", String.self),
-      .field("field", [String]?.self),
+      .field("field", [String]?.self)
     ] }
     static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
       CartUserErrorFragment.self

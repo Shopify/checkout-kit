@@ -19,7 +19,7 @@ extension Storefront {
       .field("id", Storefront.ID.self),
       .field("quantity", Int.self),
       .field("merchandise", Merchandise.self),
-      .field("cost", Cost.self),
+      .field("cost", Cost.self)
     ] }
     static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
       CartLineFragment.self
@@ -44,7 +44,7 @@ extension Storefront {
       static var __parentType: any ApolloAPI.ParentType { Storefront.Unions.Merchandise }
       static var __selections: [ApolloAPI.Selection] { [
         .field("__typename", String.self),
-        .inlineFragment(AsProductVariant.self),
+        .inlineFragment(AsProductVariant.self)
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         CartLineFragment.Merchandise.self
@@ -67,7 +67,7 @@ extension Storefront {
           .field("image", Image?.self),
           .field("price", Price.self),
           .field("product", Product.self),
-          .field("requiresShipping", Bool.self),
+          .field("requiresShipping", Bool.self)
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           CartLineFragment.Merchandise.self,
@@ -97,7 +97,7 @@ extension Storefront {
           static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.Image }
           static var __selections: [ApolloAPI.Selection] { [
             .field("__typename", String.self),
-            .field("url", Storefront.URL.self),
+            .field("url", Storefront.URL.self)
           ] }
           static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
             CartLineFragment.Merchandise.AsProductVariant.Image.self
@@ -124,7 +124,7 @@ extension Storefront {
           static var __selections: [ApolloAPI.Selection] { [
             .field("__typename", String.self),
             .field("amount", Storefront.Decimal.self),
-            .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self),
+            .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self)
           ] }
           static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
             CartLineFragment.Merchandise.AsProductVariant.Price.self
@@ -148,7 +148,7 @@ extension Storefront {
             .field("__typename", String.self),
             .field("title", String.self),
             .field("vendor", String.self),
-            .field("featuredImage", FeaturedImage?.self),
+            .field("featuredImage", FeaturedImage?.self)
           ] }
           static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
             CartLineFragment.Merchandise.AsProductVariant.Product.self
@@ -174,7 +174,7 @@ extension Storefront {
             static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.Image }
             static var __selections: [ApolloAPI.Selection] { [
               .field("__typename", String.self),
-              .field("url", Storefront.URL.self),
+              .field("url", Storefront.URL.self)
             ] }
             static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
               CartLineFragment.Merchandise.AsProductVariant.Product.FeaturedImage.self
@@ -203,7 +203,7 @@ extension Storefront {
       static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.CartLineCost }
       static var __selections: [ApolloAPI.Selection] { [
         .field("__typename", String.self),
-        .field("totalAmount", TotalAmount.self),
+        .field("totalAmount", TotalAmount.self)
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         CartLineFragment.Cost.self
@@ -223,7 +223,7 @@ extension Storefront {
         static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
           .field("amount", Storefront.Decimal.self),
-          .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self),
+          .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self)
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           CartLineFragment.Cost.TotalAmount.self

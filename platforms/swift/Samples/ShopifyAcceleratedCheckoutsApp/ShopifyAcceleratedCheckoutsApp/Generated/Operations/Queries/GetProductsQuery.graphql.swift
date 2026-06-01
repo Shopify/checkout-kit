@@ -38,7 +38,7 @@ extension Storefront {
 
       static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.QueryRoot }
       static var __selections: [ApolloAPI.Selection] { [
-        .field("products", Products.self, arguments: ["first": .variable("first")]),
+        .field("products", Products.self, arguments: ["first": .variable("first")])
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         GetProductsQuery.Data.self
@@ -59,7 +59,7 @@ extension Storefront {
         static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.ProductConnection }
         static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
-          .field("nodes", [Node].self),
+          .field("nodes", [Node].self)
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           GetProductsQuery.Data.Products.self
@@ -81,7 +81,7 @@ extension Storefront {
             .field("id", Storefront.ID.self),
             .field("title", String.self),
             .field("featuredImage", FeaturedImage?.self),
-            .field("variants", Variants.self, arguments: ["first": 10]),
+            .field("variants", Variants.self, arguments: ["first": 10])
           ] }
           static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
             GetProductsQuery.Data.Products.Node.self
@@ -109,7 +109,7 @@ extension Storefront {
             static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.Image }
             static var __selections: [ApolloAPI.Selection] { [
               .field("__typename", String.self),
-              .field("url", Storefront.URL.self),
+              .field("url", Storefront.URL.self)
             ] }
             static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
               GetProductsQuery.Data.Products.Node.FeaturedImage.self
@@ -135,7 +135,7 @@ extension Storefront {
             static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.ProductVariantConnection }
             static var __selections: [ApolloAPI.Selection] { [
               .field("__typename", String.self),
-              .field("nodes", [Node].self),
+              .field("nodes", [Node].self)
             ] }
             static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
               GetProductsQuery.Data.Products.Node.Variants.self
@@ -158,7 +158,7 @@ extension Storefront {
                 .field("title", String.self),
                 .field("requiresShipping", Bool.self),
                 .field("image", Image?.self),
-                .field("price", Price.self),
+                .field("price", Price.self)
               ] }
               static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
                 GetProductsQuery.Data.Products.Node.Variants.Node.self
@@ -185,7 +185,7 @@ extension Storefront {
                 static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.Image }
                 static var __selections: [ApolloAPI.Selection] { [
                   .field("__typename", String.self),
-                  .field("url", Storefront.URL.self),
+                  .field("url", Storefront.URL.self)
                 ] }
                 static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
                   GetProductsQuery.Data.Products.Node.Variants.Node.Image.self
@@ -212,7 +212,7 @@ extension Storefront {
                 static var __selections: [ApolloAPI.Selection] { [
                   .field("__typename", String.self),
                   .field("amount", Storefront.Decimal.self),
-                  .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self),
+                  .field("currencyCode", GraphQLEnum<Storefront.CurrencyCode>.self)
                 ] }
                 static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
                   GetProductsQuery.Data.Products.Node.Variants.Node.Price.self
