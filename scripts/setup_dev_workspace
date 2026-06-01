@@ -110,6 +110,55 @@ ensure_storefront_env() {
   return "$storefront_status"
 }
 
+# TEMP (added 2026-06-05; safe to delete on/after ~2026-06-12, once everyone
+# has run `dev up` at least once).
+#
+# The demo apps are being renamed from MobileBuyIntegration to
+# CheckoutKit<Platform>Demo across a stack of PRs. Git removes the *tracked*
+# files on each old path when others pull, but gitignored local artifacts
+# (Storefront.xcconfig, xcuserdata, .DS_Store, .entitlements, build output) are
+# left behind on every machine that had the old sample checked out. Remove the
+# stale directories once.
+#
+# IMPORTANT: only list a path here in the same PR that performs the rename, so
+# we never delete a sample that is still active on this branch.
+#   - #238 Rename Swift demo app          -> platforms/swift/Samples/MobileBuyIntegration
+#   - #239 Rename Android demo app         -> (adds platforms/android/samples/MobileBuyIntegration)
+#   - #240 Rename React Native demo app    -> (adds the RN legacy sample path)
+LEGACY_SAMPLE_DIRS=(
+  "platforms/swift/Samples/MobileBuyIntegration"
+)
+
+cleanup_legacy_sample_dir() {
+  local dir="$1"
+
+  # Nothing to do once the stale directory is gone.
+  if [[ ! -d "$ROOT_DIR/$dir" ]]; then
+    return 0
+  fi
+
+  # Safety: never remove a directory that still has tracked files. After the
+  # rename this should be empty; bail out (leaving it for manual review) if not.
+  if [[ -n "$(cd "$ROOT_DIR" && git ls-files "$dir")" ]]; then
+    run_shell "Legacy sample cleanup ($dir)" "echo 'Skipping: $dir still has tracked files; remove it manually.' >&2; false" || true
+    return 0
+  fi
+
+  if [[ "$mode" == "check" ]]; then
+    # Report "not met" so dev up runs the meet step and performs the removal.
+    run_shell "Legacy sample cleanup ($dir)" "test ! -d \"$dir\"" || true
+  else
+    run_shell "Legacy sample cleanup ($dir)" "rm -rf \"$dir\"" || true
+  fi
+}
+
+cleanup_legacy_samples() {
+  local dir
+  for dir in "${LEGACY_SAMPLE_DIRS[@]}"; do
+    cleanup_legacy_sample_dir "$dir"
+  done
+}
+
 setup_android() {
   ensure_storefront_env || true
 }
@@ -185,6 +234,7 @@ print_summary() {
   fi
 }
 
+cleanup_legacy_samples
 setup_android
 setup_swift
 setup_react_native

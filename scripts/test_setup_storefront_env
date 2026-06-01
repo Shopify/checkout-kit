@@ -33,7 +33,7 @@ make_fixture() {
     "$fixture/scripts" \
     "$fixture/platforms/android/samples/MobileBuyIntegration" \
     "$fixture/platforms/react-native/sample" \
-    "$fixture/platforms/swift/Samples/MobileBuyIntegration" \
+    "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo" \
     "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp"
 
   cp "$REPO_ROOT/scripts/setup_storefront_env" "$fixture/scripts/setup_storefront_env"
@@ -98,11 +98,11 @@ test_sync_and_check() {
   assert_file_exists "$fixture/.env"
   assert_file_exists "$fixture/platforms/android/samples/MobileBuyIntegration/.env"
   assert_file_exists "$fixture/platforms/react-native/sample/.env"
-  assert_file_exists "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig"
+  assert_file_exists "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
   assert_file_exists "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
   assert_not_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "STOREFRONT_MERCHANT_IDENTIFIER"
   assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "STOREFRONT_MERCHANT_IDENTIFIER"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "EMAIL"
@@ -120,7 +120,7 @@ test_sync_and_check() {
   assert_output_is_sanitized "$output"
   assert_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "API_VERSION=2026-01"
   assert_contains "$fixture/platforms/react-native/sample/.env" "API_VERSION=\"2026-01\""
-  assert_contains "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" "API_VERSION = 2026-01"
+  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "API_VERSION = 2026-01"
   assert_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "API_VERSION = 2026-01"
 
   printf '%s\n' "stale" >"$fixture/platforms/android/samples/MobileBuyIntegration/.env"
@@ -147,7 +147,7 @@ test_required_values_only() {
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
   assert_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
   assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
@@ -178,7 +178,7 @@ test_optional_sync_updates_blank_optional_values_after_required_setup() {
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop"
   assert_contains "$fixture/platforms/react-native/sample/.env" "STOREFRONT_MERCHANT_IDENTIFIER=\"synthetic-merchant\""
-  assert_contains "$fixture/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID = synthetic-client"
+  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID = synthetic-client"
   assert_contains "$fixture/platforms/android/samples/MobileBuyIntegration/.env" "CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.synthetic-shop.app://callback"
 }
 

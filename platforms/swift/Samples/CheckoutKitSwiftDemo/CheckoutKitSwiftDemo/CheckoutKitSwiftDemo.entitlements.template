@@ -4,7 +4,7 @@
 <dict>
   <key>com.apple.developer.in-app-payments</key>
   <array>
-    <string>merchant.com.shopify.example.MobileBuyIntegration.ApplePay</string>
+    <string>merchant.com.shopify.checkoutkit.swiftdemo</string>
   </array>
 	<key>com.apple.developer.associated-domains</key>
 	<array>

@@ -14,10 +14,10 @@
       }
     },
     "schemaTypes" : {
-      "path" : "./MobileBuyIntegration/Sources/Generated",
+      "path" : "./CheckoutKitSwiftDemo/Sources/Generated",
       "moduleType" : {
         "embeddedInTarget" : {
-          "name" : "MobileBuyIntegration"
+          "name" : "CheckoutKitSwiftDemo"
         }
       }
     },

@@ -52,15 +52,15 @@ case "$APP" in
   accelerated)
     download_schema "Samples/ShopifyAcceleratedCheckoutsApp" "ShopifyAcceleratedCheckoutsApp" "accelerated"
     ;;
-  mobile-buy)
-    download_schema "Samples/MobileBuyIntegration" "MobileBuyIntegration" "mobile-buy"
+  swift)
+    download_schema "Samples/CheckoutKitSwiftDemo" "CheckoutKitSwiftDemo" "swift"
     ;;
   all)
     download_schema "Samples/ShopifyAcceleratedCheckoutsApp" "ShopifyAcceleratedCheckoutsApp" "accelerated"
-    download_schema "Samples/MobileBuyIntegration" "MobileBuyIntegration" "mobile-buy"
+    download_schema "Samples/CheckoutKitSwiftDemo" "CheckoutKitSwiftDemo" "swift"
     ;;
   *)
-    echo "❌ Unknown app: $APP. Use 'accelerated', 'mobile-buy', or 'all'"
+    echo "❌ Unknown app: $APP. Use 'accelerated', 'swift', or 'all'"
     exit 1
     ;;
 esac

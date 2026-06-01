@@ -1,4 +1,4 @@
-# MobileBuyIntegration Sample App
+# CheckoutKitSwiftDemo Sample App
 
 This sample demonstrates how to integrate Checkout Kit with the Shopify Storefront API using Apollo iOS.
 
@@ -17,8 +17,8 @@ This sample demonstrates how to integrate Checkout Kit with the Shopify Storefro
 The app uses Apollo iOS for Storefront API communication. GraphQL operations are defined as `.graphql` files, and Apollo's code generation tool produces type-safe Swift code from them.
 
 ```text
-MobileBuyIntegration/
-|-- MobileBuyIntegration/
+CheckoutKitSwiftDemo/
+|-- CheckoutKitSwiftDemo/
 |   |-- Sources/
 |   |   |-- Api/                         Source of truth - edit these files
 |   |   |   |-- Queries/
@@ -102,10 +102,10 @@ Open the project in Xcode, let Swift Package Manager resolve dependencies, then 
 3. Download the schema. This introspects your store's Storefront API and writes `schema.<version>.graphqls` into the sample app directory.
 
    ```sh
-   dev apollo download_schema swift mobile-buy
+   dev apollo download_schema swift swift
    ```
 
-4. Update `.graphql` operations if the schema changed. For example, add a product field to `MobileBuyIntegration/Sources/Api/Queries/GetProducts.graphql` before regenerating types:
+4. Update `.graphql` operations if the schema changed. For example, add a product field to `CheckoutKitSwiftDemo/Sources/Api/Queries/GetProducts.graphql` before regenerating types:
 
    ```graphql
    query GetProducts(...) {
@@ -119,10 +119,10 @@ Open the project in Xcode, let Swift Package Manager resolve dependencies, then 
    }
    ```
 
-5. Regenerate Swift types with the Apollo iOS CLI and this sample's `apollo-codegen-config.json`. This reads the schema and `.graphql` files, then regenerates Swift code in `MobileBuyIntegration/Sources/Generated/`.
+5. Regenerate Swift types with the Apollo iOS CLI and this sample's `apollo-codegen-config.json`. This reads the schema and `.graphql` files, then regenerates Swift code in `CheckoutKitSwiftDemo/Sources/Generated/`.
 
    ```sh
-   dev apollo codegen swift mobile-buy
+   dev apollo codegen swift swift
    ```
 
 6. Build in Xcode and fix any compile errors from schema changes.
@@ -133,8 +133,8 @@ All commands are run from the **repo root** (`checkout-kit/`):
 
 | Command | Description |
 |---------|-------------|
-| `dev apollo download_schema swift mobile-buy` | Download the Storefront API schema for this sample app |
-| `dev apollo codegen swift mobile-buy` | Regenerate Swift types from `.graphql` files |
+| `dev apollo download_schema swift swift` | Download the Storefront API schema for this sample app |
+| `dev apollo codegen swift swift` | Regenerate Swift types from `.graphql` files |
 | `dev apollo codegen swift all` | Regenerate for all sample apps |
 | `dev swift lint` | Run SwiftLint + SwiftFormat checks |
 | `dev swift format` | Auto-format and apply safe lint autocorrections |
@@ -147,9 +147,9 @@ All commands are run from the **repo root** (`checkout-kit/`):
 | `Storefront.xcconfig` | Generated sample config from the repo-root `.env` (not checked into git). |
 | `schema.<version>.graphqls` | Storefront API schema downloaded with the Apollo iOS CLI. |
 | `apollo-codegen-config.json` | Apollo code generation configuration. |
-| `MobileBuyIntegration/Sources/Api/Network.swift` | Apollo client setup and authentication interceptor. |
-| `MobileBuyIntegration/Sources/Api/StorefrontClient.swift` | Cart input creation and buyer identity mapping. |
-| `MobileBuyIntegration/Sources/App/CartManager.swift` | Cart state and Storefront API mutations. |
-| `MobileBuyIntegration/Sources/App/CheckoutCoordinator.swift` | Checkout presentation. |
-| `MobileBuyIntegration/Sources/CheckoutProtocolClient.swift` | Typed checkout lifecycle handlers. |
+| `CheckoutKitSwiftDemo/Sources/Api/Network.swift` | Apollo client setup and authentication interceptor. |
+| `CheckoutKitSwiftDemo/Sources/Api/StorefrontClient.swift` | Cart input creation and buyer identity mapping. |
+| `CheckoutKitSwiftDemo/Sources/App/CartManager.swift` | Cart state and Storefront API mutations. |
+| `CheckoutKitSwiftDemo/Sources/App/CheckoutCoordinator.swift` | Checkout presentation. |
+| `CheckoutKitSwiftDemo/Sources/CheckoutProtocolClient.swift` | Typed checkout lifecycle handlers. |
 | `Scripts/generate_entitlements.sh` | Generates Associated Domains entitlements for checkout and offsite-payment return links. |

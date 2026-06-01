@@ -37,5 +37,5 @@ build_app() {
     "$SCRIPT_DIR/xcode_run" "clean build" "$1"
 }
 
-build_app MobileBuyIntegration
+build_app CheckoutKitSwiftDemo
 build_app ShopifyAcceleratedCheckoutsApp
