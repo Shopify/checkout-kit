@@ -23,7 +23,7 @@ run_codegen() {
   local schema_count=$(find "$REPO_ROOT/$dir" -name "*.graphqls" -maxdepth 1 | wc -l | tr -d ' ')
   if [ "$schema_count" -eq 0 ]; then
     echo "❌ No .graphqls schema file found in $dir"
-    echo "   Run 'dev apollo download_schema $name' first"
+    echo "   Run 'dev apollo download_schema swift $name' first"
     return 1
   fi
 
@@ -58,4 +58,4 @@ case "$APP" in
     ;;
 esac
 
-/opt/dev/bin/dev swift fix
+/opt/dev/bin/dev swift format

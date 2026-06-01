@@ -123,6 +123,19 @@ Open the project in Xcode, let Swift Package Manager resolve dependencies, then 
 
 5. Build in Xcode and fix any compile errors from schema changes.
 
+## Dev commands reference
+
+All commands are run from the **repo root** (`checkout-kit/`):
+
+| Command | Description |
+|---------|-------------|
+| `dev apollo download_schema swift mobile-buy` | Download the Storefront API schema for this sample app |
+| `dev apollo codegen swift mobile-buy` | Regenerate Swift types from `.graphql` files |
+| `dev apollo codegen swift all` | Regenerate for all sample apps |
+| `dev swift lint` | Run SwiftLint + SwiftFormat checks |
+| `dev swift format` | Auto-format and apply safe lint autocorrections |
+| `dev swift build samples` | Build all sample apps |
+
 ## Key files
 
 | File | Purpose |

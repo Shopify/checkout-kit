@@ -138,7 +138,7 @@ print_linting_error() {
 	echo "❌ $tool_name detected issues that need to be fixed."
 	if [[ "$MODE" == "check" ]]; then
 		echo "🔧 How to fix:"
-		echo "   Shopify employee? Run 'dev swift fix' and resolve remaining issues"
+		echo "   Shopify employee? Run 'dev swift format' and resolve remaining issues"
 		echo "   Not a Shopify employee? Run './Scripts/lint fix' and resolve remaining issues"
 	else
 		echo "🔧 These files will need to be fixed manually"
@@ -169,6 +169,7 @@ if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 	# platforms/swift/ and protocol/languages/swift/. Run lint from the
 	# repo root.
 	REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
+	export BUNDLE_GEMFILE="${BUNDLE_GEMFILE:-$REPO_ROOT/platforms/swift/Gemfile}"
 	POD_LOG=""
 	if [[ "$VERBOSE" == "true" ]]; then
 		(cd "$REPO_ROOT" && bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings)
@@ -188,7 +189,7 @@ if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 
 		echo "❌ CocoaPods lint exit status: $POD_STATUS"
 		echo "❌ CocoaPods detected issues that need to be fixed."
-		echo "🔧 Run 'bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings --verbose' from the repo root for details"
+		echo "🔧 Run 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings --verbose' from the repo root for details"
 		exit 1
 	fi
 

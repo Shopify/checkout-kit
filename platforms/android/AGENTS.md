@@ -41,7 +41,6 @@ The sample is a separate Gradle composite (`samples/MobileBuyIntegration/setting
 
 - **`-Xexplicit-api=strict`** is on (`lib/build.gradle`). Every public class, method, field, and property must have an explicit visibility modifier. "Accidentally public" is not a thing here. This is a consumer-protection rule — if you see a public-by-default declaration, it was deliberate.
 - **Max line length: 140** (detekt-enforced). Detekt config: `lib/detekt.config.yml`.
-- **MIT license header required on every new source file.** Format: copy the top comment of any existing `.kt` or `.java` file in `lib/src/main` or `lib/src/test`. Enforced in CI via the repo-root `scripts/check_license_headers.rb`.
 - **Library JVM target: 11.** Consumers must build with JDK 11+ to consume the AAR. Raising further is a major-version discussion.
 - **Library Kotlin `apiVersion` / `languageVersion` are pinned at 2.0.** Set in `lib/build.gradle` so the AAR's bytecode stays consumable by Kotlin 2.0+ projects even though the compiler itself is on a newer 2.x. Bumping this pin is the consumer-facing breaking change, not bumping the compiler - treat it as a planned major-version event.
 - **Prefer generated protocol models.** Before adding hand-written protocol DTOs, check the generated models in `lib/src/main/java/com/shopify/checkoutkit/Models.kt` and the OpenRPC schema. Use generated UCP/ECP types for wire payloads; reserve local DTOs for Android-internal transport helpers that are not represented in the schema.
@@ -63,7 +62,7 @@ If `apiCheck` fails and you did *not* intend to change public API, the diff tell
 - Tests: `./gradlew :lib:test` (or `dev android test`)
 - API surface: `./gradlew :lib:apiCheck` / `./gradlew :lib:apiDump` (or `dev android api check` / `dev android api dump`)
 - Lint: `./gradlew detekt lintRelease` (or `dev android lint`)
-- Auto-fix lint: `./gradlew detekt --auto-correct` (or `dev android fix`)
+- Format: `./gradlew detekt --auto-correct` (or `dev android format`)
 - Full local verification: `./gradlew :lib:clean :lib:test :lib:detekt :lib:lintRelease :lib:assembleRelease`
 - Sample app build (from `samples/MobileBuyIntegration/`): `./gradlew assembleDebug`
 
