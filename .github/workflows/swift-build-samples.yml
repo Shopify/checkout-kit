@@ -13,3 +13,4 @@ jobs:
     with:
       test-path: ./Scripts/build_samples
       job-name: Build Sample Apps
+      setup-storefront-env: true

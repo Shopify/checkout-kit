@@ -66,13 +66,14 @@ Do not edit files in `app/build/generated/source/apollo/` by hand. Update `.grap
 
 ## Setup
 
-From this directory:
+From the repo root:
 
 ```sh
 cp .env.example .env
+scripts/setup_storefront_env
 ```
 
-Edit `.env`:
+Edit the repo-root `.env`:
 
 ```text
 STOREFRONT_DOMAIN=your-store.myshopify.com
@@ -84,19 +85,21 @@ Optional values enable Customer Account API and buyer identity demo flows:
 
 ```text
 CUSTOMER_ACCOUNT_API_CLIENT_ID=your-client-id
-CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.<shop id>.app://callback
-CUSTOMER_ACCOUNT_API_GRAPHQL_BASE_URL=https://shopify.com/<shop id>/account/customer/api/<api version>/graphql
-CUSTOMER_ACCOUNT_API_AUTH_BASE_URL=https://shopify.com/authentication/<shop id>
-PREFILL_EMAIL=test.buyer@example.com
-PREFILL_PHONE=+16135550123
+CUSTOMER_ACCOUNT_API_SHOP_ID=your-shop-id
+CUSTOMER_ACCOUNT_API_VERSION=2026-04
+EMAIL=test.buyer@example.com
+PHONE=+16135550123
 ```
+
+The setup script generates this sample's local `.env`.
 
 Open the project in Android Studio, sync Gradle, then build and run.
 
 ## Updating the Storefront API version
 
-1. Update `API_VERSION` in `.env`.
-2. Download the schema with Rover. This introspects your store's Storefront API and writes `schema.graphqls` into `app/src/main/graphql/`.
+1. Update `API_VERSION` in the repo-root `.env`.
+2. Run `scripts/setup_storefront_env` from the repo root.
+3. Download the schema with Rover. This introspects your store's Storefront API and writes `schema.graphqls` into `app/src/main/graphql/`.
 
    ```sh
    rover graph introspect \
@@ -105,7 +108,7 @@ Open the project in Android Studio, sync Gradle, then build and run.
      --output "app/src/main/graphql/schema.graphqls"
    ```
 
-3. Update GraphQL operations in `app/src/main/graphql/` if the schema changed. For example, add a product field to `FetchProducts.graphql` before regenerating types:
+4. Update GraphQL operations in `app/src/main/graphql/` if the schema changed. For example, add a product field to `FetchProducts.graphql` before regenerating types:
 
    ```graphql
    query FetchProducts(...) {
