@@ -12,9 +12,9 @@ struct DispatchEnvelope<Payload: Encodable>: Encodable {
     let payload: Payload
 }
 
-// Bridges native CheckoutProtocol notifications to the React Native onDispatch
-// event stream. Payloads are emitted in protocol wire casing; JS performs the
-// schema-aware conversion to the public camelCase shape with QuickType.
+/// Bridges native CheckoutProtocol notifications to the React Native onDispatch
+/// event stream. Payloads are emitted in protocol wire casing; JS performs the
+/// schema-aware conversion to the public camelCase shape with QuickType.
 let supportedProtocolRelayMethods = [
     CheckoutProtocol.complete.method,
     CheckoutProtocol.error.method,
@@ -65,9 +65,9 @@ func makeRelayClient(
 }
 
 @MainActor
-private func forwardEnvelope<P: Encodable>(
+private func forwardEnvelope(
     type: String,
-    payload: P,
+    payload: some Encodable,
     dispatch: @MainActor @Sendable (String) -> Void
 ) {
     let encoder = JSONEncoder()

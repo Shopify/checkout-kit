@@ -9,3 +9,4 @@
 --disable redundantReturn,hoistAwait,preferKeyPath,redundantInternal,redundantPublic
 --swiftversion 5.7.1
 --extensionacl on-declarations
+--exclude modules/@shopify/checkout-kit-react-native/ios/.build

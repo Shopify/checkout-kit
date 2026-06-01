@@ -24,27 +24,38 @@ print_install_instructions() {
 
 resolve_tool() {
     local command_name=$1
-
-    if which "$command_name" >/dev/null; then
-        which "$command_name"
-        return 0
-    fi
+    local display_name=$2
 
     if command -v mint >/dev/null; then
-        (cd "$SWIFT_TOOLS_DIR" && mint which "$command_name")
-        return $?
+        local mint_tool
+        if mint_tool="$(cd "$SWIFT_TOOLS_DIR" && mint which "$command_name" 2>/dev/null)"; then
+            echo "$mint_tool"
+            return 0
+        fi
+    fi
+
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+        echo "❌ $display_name must resolve through Mint in CI" >&2
+        print_install_instructions >&2
+        return 1
+    fi
+
+    if command -v "$command_name" >/dev/null; then
+        echo "⚠️ WARN: using $display_name from PATH. Run 'dev up' or bootstrap Mint for the pinned version." >&2
+        command -v "$command_name"
+        return 0
     fi
 
     return 1
 }
 
-if ! SWIFTLINT="$(resolve_tool swiftlint)"; then
+if ! SWIFTLINT="$(resolve_tool swiftlint SwiftLint)"; then
     echo "⚠️ WARN: SwiftLint not installed"
     print_install_instructions
     exit 1
 fi
 
-if ! SWIFTFORMAT="$(resolve_tool swiftformat)"; then
+if ! SWIFTFORMAT="$(resolve_tool swiftformat SwiftFormat)"; then
     echo "⚠️ WARN: SwiftFormat not installed"
     print_install_instructions
     exit 1
