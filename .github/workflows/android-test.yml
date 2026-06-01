@@ -54,7 +54,7 @@ jobs:
 
       - name: Build Sample App
         run: ./gradlew assembleDebug
-        working-directory: platforms/android/samples/MobileBuyIntegration
+        working-directory: platforms/android/samples/CheckoutKitAndroidDemo
 
   lint:
     runs-on: ubuntu-latest

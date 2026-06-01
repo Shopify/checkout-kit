@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 ROOT_ENV="${ROOT_DIR}/.env"
-ANDROID_ENV="${ROOT_DIR}/platforms/android/samples/MobileBuyIntegration/.env"
+ANDROID_ENV="${ROOT_DIR}/platforms/android/samples/CheckoutKitAndroidDemo/.env"
 SWIFT_DEMO_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
 SWIFT_ACCELERATED_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
 REACT_NATIVE_ENV="${ROOT_DIR}/platforms/react-native/sample/.env"

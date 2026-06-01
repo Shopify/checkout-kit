@@ -9,9 +9,9 @@ Shopify Checkout Kit for Android is a published AAR library (`com.shopify:checko
 Two modules matter:
 
 - **`lib/`** — the library itself. Everything here ships to consumers.
-- **`samples/MobileBuyIntegration/`** — a demo app that consumes `lib/` as a source dependency. Changes here never reach consumers; this module is for internal testing and developer onboarding.
+- **`samples/CheckoutKitAndroidDemo/`** — a demo app that consumes `lib/` as a source dependency. Changes here never reach consumers; this module is for internal testing and developer onboarding.
 
-The sample is a separate Gradle composite (`samples/MobileBuyIntegration/settings.gradle`) that includes `:lib` from `../../lib`. The sample's `gradle.properties` and Gradle wrapper are independent of the root's.
+The sample is a separate Gradle composite (`samples/CheckoutKitAndroidDemo/settings.gradle`) that includes `:lib` from `../../lib`. The sample's `gradle.properties` and Gradle wrapper are independent of the root's.
 
 ## Where to make changes
 
@@ -64,7 +64,7 @@ If `apiCheck` fails and you did *not* intend to change public API, the diff tell
 - Lint: `./gradlew detekt lintRelease` (or `dev android lint`)
 - Format: `./gradlew detekt --auto-correct` (or `dev android format`)
 - Full local verification: `./gradlew :lib:clean :lib:test :lib:detekt :lib:lintRelease :lib:assembleRelease`
-- Sample app build (from `samples/MobileBuyIntegration/`): `./gradlew assembleDebug`
+- Sample app build (from `samples/CheckoutKitAndroidDemo/`): `./gradlew assembleDebug`
 
 ## Consumer requirements
 

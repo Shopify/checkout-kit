@@ -42,7 +42,7 @@ updates:
 
   # Android sample app
   - package-ecosystem: gradle
-    directory: "/platforms/android/samples/MobileBuyIntegration"
+    directory: "/platforms/android/samples/CheckoutKitAndroidDemo"
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

@@ -8,7 +8,7 @@ and create or sync the generated sample config files.
 
 | Sample | Purpose |
 | --- | --- |
-| `MobileBuyIntegration` | Storefront API cart flow with Apollo Kotlin, checkout presentation, typed protocol lifecycle events, file chooser handling, geolocation callbacks, buyer identity demo data, and Customer Account API sign-in. |
+| `CheckoutKitAndroidDemo` | Storefront API cart flow with Apollo Kotlin, checkout presentation, typed protocol lifecycle events, file chooser handling, geolocation callbacks, buyer identity demo data, and Customer Account API sign-in. |
 
 ## Setup
 
@@ -25,7 +25,7 @@ in local values, then run:
 scripts/setup_storefront_env
 ```
 
-The setup script generates `platforms/android/samples/MobileBuyIntegration/.env`.
+The setup script generates `platforms/android/samples/CheckoutKitAndroidDemo/.env`.
 
-Open `MobileBuyIntegration` in Android Studio, sync Gradle, then build and run
+Open `CheckoutKitAndroidDemo` in Android Studio, sync Gradle, then build and run
 the `app` target.

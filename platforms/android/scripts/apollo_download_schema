@@ -1,12 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-cd samples/MobileBuyIntegration
+cd samples/CheckoutKitAndroidDemo
 
 ENV_FILE=".env"
 
 if [ ! -f "$ENV_FILE" ]; then
-  echo "❌ .env file not found in samples/MobileBuyIntegration/"
+  echo "❌ .env file not found in samples/CheckoutKitAndroidDemo/"
   echo "   Run scripts/setup_storefront_env from the repo root."
   exit 1
 fi
@@ -53,8 +53,7 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-echo "📡 Downloading schema for MobileBuyIntegration..."
-echo "   Domain: $DOMAIN"
+echo "📡 Downloading schema for CheckoutKitAndroidDemo..."
 echo "   API Version: $VERSION"
 
 if rover graph introspect \
