@@ -7,7 +7,7 @@ struct CodecEncodeTests {
     @Test func encodesResponse() throws {
         let result = CredentialResult(
             checkout: CredentialCheckout(
-                payment: CredentialPayment(instruments: nil)
+                payment: Payment(instruments: nil)
             ),
             ucp: InstrumentsChangeResultUcp(
                 capabilities: nil,

@@ -5,12 +5,6 @@ import kotlinx.serialization.json.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 
-public typealias Amount = Long
-public typealias ErrorCode = String
-public typealias ReverseDomainName = String
-public typealias SignedAmount = Long
-public typealias Totals = List<TotalElement>
-
 /**
  * Base checkout schema. Extensions compose onto this using allOf.
  */
@@ -19,9 +13,9 @@ public data class Checkout (
     /**
      * Representation of the buyer.
      */
-    public val buyer: BuyerClass? = null,
+    public val buyer: Buyer? = null,
 
-    public val context: ContextClass? = null,
+    public val context: Context? = null,
 
     /**
      * URL for checkout handoff and session recovery. MUST be provided when status is
@@ -36,11 +30,18 @@ public data class Checkout (
      */
     public val currency: String,
 
+    public val discounts: CheckoutDiscounts? = null,
+
     /**
      * RFC 3339 expiry timestamp. Default TTL is 6 hours from creation if not sent.
      */
     @SerialName("expires_at")
     public val expiresAt: String? = null,
+
+    /**
+     * Fulfillment details.
+     */
+    public val fulfillment: CheckoutFulfillment? = null,
 
     /**
      * Unique identifier of the checkout session.
@@ -51,26 +52,26 @@ public data class Checkout (
      * List of line items being checked out.
      */
     @SerialName("line_items")
-    public val lineItems: List<CheckoutLineItem>,
+    public val lineItems: List<LineItem>,
 
     /**
      * Links to be displayed by the platform (Privacy Policy, TOS). Mandatory for legal
      * compliance.
      */
-    public val links: List<LinkElement>,
+    public val links: List<Link>,
 
     /**
      * List of messages with error and info about the checkout session state.
      */
-    public val messages: List<MessageElement>? = null,
+    public val messages: List<Message>? = null,
 
     /**
      * Details about an order created for this checkout session.
      */
-    public val order: OrderClass? = null,
+    public val order: OrderConfirmation? = null,
 
-    public val payment: PaymentClass? = null,
-    public val signals: SignalsClass? = null,
+    public val payment: Payment? = null,
+    public val signals: Signals? = null,
 
     /**
      * Checkout state indicating the current phase and required action. See Checkout Status
@@ -90,7 +91,7 @@ public data class Checkout (
  * Representation of the buyer.
  */
 @Serializable
-public data class BuyerClass (
+public data class Buyer (
     /**
      * Email of the buyer.
      */
@@ -126,7 +127,7 @@ public data class BuyerClass (
  * address, billing address) supersedes context.
  */
 @Serializable
-public data class ContextClass (
+public data class Context (
     /**
      * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
      * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -188,56 +189,429 @@ public data class ContextClass (
 )
 
 /**
- * Line item object. Expected to use the currency of the parent object.
+ * Discount codes input and applied discounts output.
  */
 @Serializable
-public data class CheckoutLineItem (
-    public val id: String,
-    public val item: ItemClass,
+public data class CheckoutDiscounts (
+    /**
+     * Discounts successfully applied (code-based and automatic).
+     */
+    public val applied: List<AppliedDiscount>? = null,
 
     /**
-     * Parent line item identifier for any nested structures.
+     * Discount codes to apply. Case-insensitive. Replaces previously submitted codes. Send
+     * empty array to clear.
      */
-    @SerialName("parent_id")
-    public val parentID: String? = null,
-
-    /**
-     * Quantity of the item being purchased.
-     */
-    public val quantity: Long,
-
-    /**
-     * Line item totals breakdown.
-     */
-    public val totals: List<LineItemTotal>
+    public val codes: List<String>? = null
 )
 
 /**
- * Product data (id, title, price, image_url).
+ * A discount that was successfully applied.
  */
 @Serializable
-public data class ItemClass (
+public data class AppliedDiscount (
     /**
-     * The product identifier, often the SKU, required to resolve the product details associated
-     * with this line item. Should be recognized by both the Platform, and the Business.
+     * Breakdown of where this discount was allocated. Sum of allocation amounts equals total
+     * amount.
+     */
+    public val allocations: List<DiscountAllocation>? = null,
+
+    /**
+     * Total discount amount in ISO 4217 minor units.
+     */
+    public val amount: Long,
+
+    /**
+     * True if applied automatically by merchant rules (no code required).
+     */
+    public val automatic: Boolean? = null,
+
+    /**
+     * The discount code. Omitted for automatic discounts.
+     */
+    public val code: String? = null,
+
+    /**
+     * The eligibility claim accepted by the Business for this discount. Corresponds to a value
+     * from context.eligibility. Omitted for code-based and non-eligibility automatic discounts.
+     */
+    public val eligibility: String? = null,
+
+    /**
+     * Allocation method. 'each' = applied independently per item. 'across' = split
+     * proportionally by value.
+     */
+    public val method: DiscountMethod? = null,
+
+    /**
+     * Stacking order for discount calculation. Lower numbers applied first (1 = first).
+     */
+    public val priority: Long? = null,
+
+    /**
+     * True if this discount requires additional verification.
+     */
+    public val provisional: Boolean? = null,
+
+    /**
+     * Human-readable discount name (e.g., 'Summer Sale 20% Off').
+     */
+    public val title: String
+)
+
+/**
+ * Breakdown of how a discount amount was allocated to a specific target.
+ */
+@Serializable
+public data class DiscountAllocation (
+    /**
+     * Amount allocated to this target in ISO 4217 minor units.
+     */
+    public val amount: Long,
+
+    /**
+     * JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals.shipping').
+     */
+    public val path: String
+)
+
+/**
+ * Allocation method. 'each' = applied independently per item. 'across' = split
+ * proportionally by value.
+ */
+@Serializable
+public enum class DiscountMethod(public val value: String) {
+    @SerialName("across") Across("across"),
+    @SerialName("each") Each("each");
+}
+
+/**
+ * Fulfillment details.
+ *
+ * Container for fulfillment methods and availability.
+ */
+@Serializable
+public data class CheckoutFulfillment (
+    /**
+     * Inventory availability hints.
+     */
+    @SerialName("available_methods")
+    public val availableMethods: List<FulfillmentAvailableMethod>? = null,
+
+    /**
+     * Fulfillment methods for cart items.
+     */
+    public val methods: List<FulfillmentMethod>? = null
+)
+
+/**
+ * Inventory availability hint for a fulfillment method type.
+ */
+@Serializable
+public data class FulfillmentAvailableMethod (
+    /**
+     * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
+     */
+    public val description: String? = null,
+
+    /**
+     * 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
+     */
+    @SerialName("fulfillable_on")
+    public val fulfillableOn: String? = null,
+
+    /**
+     * Line items available for this fulfillment method.
+     */
+    @SerialName("line_item_ids")
+    public val lineItemIDS: List<String>,
+
+    /**
+     * Fulfillment method type this availability applies to.
+     */
+    public val type: FulfillmentMethodType
+)
+
+/**
+ * Fulfillment method type this availability applies to.
+ *
+ * Fulfillment method type.
+ */
+@Serializable
+public enum class FulfillmentMethodType(public val value: String) {
+    @SerialName("pickup") Pickup("pickup"),
+    @SerialName("shipping") Shipping("shipping");
+}
+
+/**
+ * A fulfillment method (shipping or pickup) with destinations and groups.
+ */
+@Serializable
+public data class FulfillmentMethod (
+    /**
+     * Available destinations. For shipping: addresses. For pickup: retail locations.
+     */
+    public val destinations: List<FulfillmentDestination>? = null,
+
+    /**
+     * Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
+     * choose shipping method.
+     */
+    public val groups: List<FulfillmentGroup>? = null,
+
+    /**
+     * Unique fulfillment method identifier.
      */
     public val id: String,
 
     /**
-     * Product image URI.
+     * Line item IDs fulfilled via this method.
      */
-    @SerialName("image_url")
-    public val imageURL: String? = null,
+    @SerialName("line_item_ids")
+    public val lineItemIDS: List<String>,
 
     /**
-     * Unit price in ISO 4217 minor units.
+     * ID of the selected destination.
      */
-    public val price: Long,
+    @SerialName("selected_destination_id")
+    public val selectedDestinationID: String? = null,
 
     /**
-     * Product title.
+     * Fulfillment method type.
      */
-    public val title: String
+    public val type: FulfillmentMethodType
+)
+
+/**
+ * A destination for fulfillment.
+ *
+ * Shipping destination.
+ *
+ * Physical address of the location.
+ *
+ * The billing address associated with this payment method.
+ *
+ * Delivery destination address.
+ *
+ * A pickup location (retail store, locker, etc.).
+ */
+@Serializable
+public data class FulfillmentDestination (
+    /**
+     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+     * full country name such as "Singapore" can also be used.
+     */
+    @SerialName("address_country")
+    public val addressCountry: String? = null,
+
+    /**
+     * The locality in which the street address is, and which is in the region. For example,
+     * Mountain View.
+     */
+    @SerialName("address_locality")
+    public val addressLocality: String? = null,
+
+    /**
+     * The region in which the locality is, and which is in the country. Required for applicable
+     * countries (i.e. state in US, province in CA). For example, California or another
+     * appropriate first-level Administrative division.
+     */
+    @SerialName("address_region")
+    public val addressRegion: String? = null,
+
+    /**
+     * An address extension such as an apartment number, C/O or alternative name.
+     */
+    @SerialName("extended_address")
+    public val extendedAddress: String? = null,
+
+    /**
+     * Optional. First name of the contact associated with the address.
+     */
+    @SerialName("first_name")
+    public val firstName: String? = null,
+
+    /**
+     * Optional. Last name of the contact associated with the address.
+     */
+    @SerialName("last_name")
+    public val lastName: String? = null,
+
+    /**
+     * Optional. Phone number of the contact associated with the address.
+     */
+    @SerialName("phone_number")
+    public val phoneNumber: String? = null,
+
+    /**
+     * The postal code. For example, 94043.
+     */
+    @SerialName("postal_code")
+    public val postalCode: String? = null,
+
+    /**
+     * The street address.
+     */
+    @SerialName("street_address")
+    public val streetAddress: String? = null,
+
+    /**
+     * ID specific to this shipping destination.
+     *
+     * Unique location identifier.
+     */
+    public val id: String,
+
+    /**
+     * Physical address of the location.
+     */
+    public val address: PostalAddress? = null,
+
+    /**
+     * Location name (e.g., store name).
+     */
+    public val name: String? = null
+)
+
+/**
+ * Physical address of the location.
+ *
+ * The billing address associated with this payment method.
+ *
+ * Delivery destination address.
+ */
+@Serializable
+public data class PostalAddress (
+    /**
+     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
+     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
+     * full country name such as "Singapore" can also be used.
+     */
+    @SerialName("address_country")
+    public val addressCountry: String? = null,
+
+    /**
+     * The locality in which the street address is, and which is in the region. For example,
+     * Mountain View.
+     */
+    @SerialName("address_locality")
+    public val addressLocality: String? = null,
+
+    /**
+     * The region in which the locality is, and which is in the country. Required for applicable
+     * countries (i.e. state in US, province in CA). For example, California or another
+     * appropriate first-level Administrative division.
+     */
+    @SerialName("address_region")
+    public val addressRegion: String? = null,
+
+    /**
+     * An address extension such as an apartment number, C/O or alternative name.
+     */
+    @SerialName("extended_address")
+    public val extendedAddress: String? = null,
+
+    /**
+     * Optional. First name of the contact associated with the address.
+     */
+    @SerialName("first_name")
+    public val firstName: String? = null,
+
+    /**
+     * Optional. Last name of the contact associated with the address.
+     */
+    @SerialName("last_name")
+    public val lastName: String? = null,
+
+    /**
+     * Optional. Phone number of the contact associated with the address.
+     */
+    @SerialName("phone_number")
+    public val phoneNumber: String? = null,
+
+    /**
+     * The postal code. For example, 94043.
+     */
+    @SerialName("postal_code")
+    public val postalCode: String? = null,
+
+    /**
+     * The street address.
+     */
+    @SerialName("street_address")
+    public val streetAddress: String? = null
+)
+
+/**
+ * A merchant-generated package/group of line items with fulfillment options.
+ */
+@Serializable
+public data class FulfillmentGroup (
+    /**
+     * Group identifier for referencing merchant-generated groups in updates.
+     */
+    public val id: String,
+
+    /**
+     * Line item IDs included in this group/package.
+     */
+    @SerialName("line_item_ids")
+    public val lineItemIDS: List<String>,
+
+    /**
+     * Available fulfillment options for this group.
+     */
+    public val options: List<FulfillmentOption>? = null,
+
+    /**
+     * ID of the selected fulfillment option for this group.
+     */
+    @SerialName("selected_option_id")
+    public val selectedOptionID: String? = null
+)
+
+/**
+ * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
+ */
+@Serializable
+public data class FulfillmentOption (
+    /**
+     * Carrier name (for shipping).
+     */
+    public val carrier: String? = null,
+
+    /**
+     * Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
+     */
+    public val description: String? = null,
+
+    /**
+     * Earliest fulfillment date.
+     */
+    @SerialName("earliest_fulfillment_time")
+    public val earliestFulfillmentTime: String? = null,
+
+    /**
+     * Unique fulfillment option identifier.
+     */
+    public val id: String,
+
+    /**
+     * Latest fulfillment date.
+     */
+    @SerialName("latest_fulfillment_time")
+    public val latestFulfillmentTime: String? = null,
+
+    /**
+     * Short label (e.g., 'Express Shipping', 'Curbside Pickup').
+     */
+    public val title: String,
+
+    /**
+     * Fulfillment option totals breakdown.
+     */
+    public val totals: List<LineItemTotal>
 )
 
 /**
@@ -261,8 +635,61 @@ public data class LineItemTotal (
     public val type: String
 )
 
+/**
+ * Line item object. Expected to use the currency of the parent object.
+ */
 @Serializable
-public data class LinkElement (
+public data class LineItem (
+    public val id: String,
+    public val item: Item,
+
+    /**
+     * Parent line item identifier for any nested structures.
+     */
+    @SerialName("parent_id")
+    public val parentID: String? = null,
+
+    /**
+     * Quantity of the item being purchased.
+     */
+    public val quantity: Long,
+
+    /**
+     * Line item totals breakdown.
+     */
+    public val totals: List<LineItemTotal>
+)
+
+/**
+ * Product data (id, title, price, image_url).
+ */
+@Serializable
+public data class Item (
+    /**
+     * The product identifier, often the SKU, required to resolve the product details associated
+     * with this line item. Should be recognized by both the Platform, and the Business.
+     */
+    public val id: String,
+
+    /**
+     * Product image URI.
+     */
+    @SerialName("image_url")
+    public val imageURL: String? = null,
+
+    /**
+     * Unit price in ISO 4217 minor units.
+     */
+    public val price: Long,
+
+    /**
+     * Product title.
+     */
+    public val title: String
+)
+
+@Serializable
+public data class Link (
     /**
      * Optional display text for the link. When provided, use this instead of generating from
      * type.
@@ -286,7 +713,7 @@ public data class LinkElement (
  * Container for error, warning, or info messages.
  */
 @Serializable
-public data class MessageElement (
+public data class Message (
     /**
      * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
      * fulfillment_changed, age_restricted, etc.).
@@ -391,7 +818,7 @@ public enum class MessageType(public val value: String) {
  * Order details available at the time of checkout completion.
  */
 @Serializable
-public data class OrderClass (
+public data class OrderConfirmation (
     /**
      * Unique order identifier.
      */
@@ -413,13 +840,13 @@ public data class OrderClass (
  * Payment configuration containing handlers.
  */
 @Serializable
-public data class PaymentClass (
+public data class Payment (
     /**
      * The payment instruments available for this payment. Each instrument is associated with a
      * specific handler via the handler_id field. Handlers can extend the base
      * payment_instrument schema to add handler-specific fields.
      */
-    public val instruments: List<PaymentSelectedPaymentInstrument>? = null
+    public val instruments: List<SelectedPaymentInstrument>? = null
 )
 
 /**
@@ -429,14 +856,14 @@ public data class PaymentClass (
  * payment handler.
  */
 @Serializable
-public data class PaymentSelectedPaymentInstrument (
+public data class SelectedPaymentInstrument (
     /**
      * The billing address associated with this payment method.
      */
     @SerialName("billing_address")
-    public val billingAddress: BillingAddressClass? = null,
+    public val billingAddress: PostalAddress? = null,
 
-    public val credential: CredentialClass? = null,
+    public val credential: PaymentCredential? = null,
 
     /**
      * Display information for this payment instrument. Each payment instrument schema defines
@@ -469,79 +896,10 @@ public data class PaymentSelectedPaymentInstrument (
 )
 
 /**
- * The billing address associated with this payment method.
- *
- * Delivery destination address.
- *
- * Physical address of the location.
- */
-@Serializable
-public data class BillingAddressClass (
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
-     */
-    @SerialName("address_country")
-    public val addressCountry: String? = null,
-
-    /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
-     */
-    @SerialName("address_locality")
-    public val addressLocality: String? = null,
-
-    /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
-     */
-    @SerialName("address_region")
-    public val addressRegion: String? = null,
-
-    /**
-     * An address extension such as an apartment number, C/O or alternative name.
-     */
-    @SerialName("extended_address")
-    public val extendedAddress: String? = null,
-
-    /**
-     * Optional. First name of the contact associated with the address.
-     */
-    @SerialName("first_name")
-    public val firstName: String? = null,
-
-    /**
-     * Optional. Last name of the contact associated with the address.
-     */
-    @SerialName("last_name")
-    public val lastName: String? = null,
-
-    /**
-     * Optional. Phone number of the contact associated with the address.
-     */
-    @SerialName("phone_number")
-    public val phoneNumber: String? = null,
-
-    /**
-     * The postal code. For example, 94043.
-     */
-    @SerialName("postal_code")
-    public val postalCode: String? = null,
-
-    /**
-     * The street address.
-     */
-    @SerialName("street_address")
-    public val streetAddress: String? = null
-)
-
-/**
  * The base definition for any payment credential. Handlers define specific credential types.
  */
 @Serializable
-public data class CredentialClass (
+public data class PaymentCredential (
     /**
      * The credential type discriminator. Specific schemas will constrain this to a constant
      * value.
@@ -557,7 +915,7 @@ public data class CredentialClass (
  * extensions contribute to the shared namespace.
  */
 @Serializable
-public data class SignalsClass (
+public data class Signals (
     /**
      * Client's IP address (IPv4 or IPv6).
      */
@@ -615,14 +973,14 @@ public data class CheckoutTotal (
      * Optional itemized breakdown. The parent entry is always rendered; lines are
      * supplementary. Sum of line amounts MUST equal the parent entry amount.
      */
-    public val lines: List<TotalLine>? = null
+    public val lines: List<Line>? = null
 )
 
 /**
  * Sub-line entry. Additional metadata MAY be included.
  */
 @Serializable
-public data class TotalLine (
+public data class Line (
     public val amount: Long,
 
     /**
@@ -712,36 +1070,6 @@ public data class CapabilityResponseSchema (
 public sealed class Extends {
     public class StringArrayValue(public val value: List<String>) : Extends()
     public class StringValue(public val value: String)            : Extends()
-}
-
-internal object ExtendsSerializer : KSerializer<Extends> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.checkoutkit.Extends")
-
-    override fun deserialize(decoder: Decoder): Extends {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Extends can only be deserialized from JSON")
-        return when (val element = input.decodeJsonElement()) {
-            is JsonPrimitive -> Extends.StringValue(element.content)
-            is JsonArray -> Extends.StringArrayValue(
-                element.map {
-                    (it as? JsonPrimitive)?.content
-                        ?: throw SerializationException("Extends array element not a primitive: $it")
-                }
-            )
-            else -> throw SerializationException("Unexpected Extends shape: $element")
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: Extends) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Extends can only be serialized to JSON")
-        val element: JsonElement = when (value) {
-            is Extends.StringValue -> JsonPrimitive(value.value)
-            is Extends.StringArrayValue -> JsonArray(value.value.map { JsonPrimitive(it) })
-        }
-        output.encodeJsonElement(element)
-    }
 }
 
 /**
@@ -898,16 +1226,66 @@ public enum class UCPCheckoutResponseSchemaStatus(public val value: String) {
 }
 
 /**
- * Non-sensitive backend identifiers for linking.
+ * Order schema with line items, buyer-facing fulfillment expectations, and event logs.
  */
 @Serializable
-public data class PaymentAccountInfo (
+public data class Order (
     /**
-     * EMVCo PAR. A unique identifier linking a payment card to a specific account, enabling
-     * tracking across tokens (Apple Pay, physical card, etc).
+     * Post-order events (refunds, returns, credits, disputes, cancellations, etc.) that exist
+     * independently of fulfillment.
      */
-    @SerialName("payment_account_reference")
-    public val paymentAccountReference: String? = null
+    public val adjustments: List<Adjustment>? = null,
+
+    /**
+     * Associated checkout ID for reconciliation.
+     */
+    @SerialName("checkout_id")
+    public val checkoutID: String,
+
+    /**
+     * ISO 4217 currency code. MUST match the currency from the originating checkout session.
+     */
+    public val currency: String,
+
+    /**
+     * Fulfillment data: buyer expectations and what actually happened.
+     */
+    public val fulfillment: Fulfillment,
+
+    /**
+     * Unique order identifier.
+     */
+    public val id: String,
+
+    /**
+     * Human-readable label for identifying the order. MUST only be provided by the business.
+     */
+    public val label: String? = null,
+
+    /**
+     * Line items representing what was purchased — can change post-order via edits or exchanges.
+     */
+    @SerialName("line_items")
+    public val lineItems: List<OrderLineItem>,
+
+    /**
+     * Business outcome messages (errors, warnings, informational). Present when the business
+     * needs to communicate status or issues to the platform.
+     */
+    public val messages: List<Message>? = null,
+
+    /**
+     * Permalink to access the order on merchant site.
+     */
+    @SerialName("permalink_url")
+    public val permalinkURL: String,
+
+    /**
+     * Different totals for the order.
+     */
+    public val totals: List<CheckoutTotal>,
+
+    public val ucp: UCPOrderResponseSchema
 )
 
 /**
@@ -983,670 +1361,20 @@ public enum class AdjustmentStatus(public val value: String) {
 }
 
 /**
- * An instrument type available from a payment handler with optional constraints.
+ * Fulfillment data: buyer expectations and what actually happened.
  */
 @Serializable
-public data class AvailablePaymentInstrument (
+public data class Fulfillment (
     /**
-     * Constraints on this instrument type. Structure depends on instrument type and active
-     * capabilities.
+     * Append-only event log of actual shipments. Each event references line items by ID.
      */
-    public val constraints: JsonObject? = null,
+    public val events: List<FulfillmentEvent>? = null,
 
     /**
-     * The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
-     * schema's type constant.
+     * Buyer-facing groups representing when/how items will be delivered. Can be split, merged,
+     * or adjusted post-order.
      */
-    public val type: String
-)
-
-/**
- * Binds a token to a specific checkout session and participant. Prevents token reuse across
- * different checkouts or participants.
- */
-@Serializable
-public data class TokenBinding (
-    /**
-     * The checkout session identifier this token is bound to.
-     */
-    @SerialName("checkout_id")
-    public val checkoutID: String,
-
-    /**
-     * The participant this token is bound to. Required when acting on behalf of another
-     * participant (e.g., agent tokenizing for merchant). Omit when the authenticated caller is
-     * the binding target.
-     */
-    public val identity: IdentityClass? = null
-)
-
-/**
- * The participant this token is bound to. Required when acting on behalf of another
- * participant (e.g., agent tokenizing for merchant). Omit when the authenticated caller is
- * the binding target.
- *
- * Identity of a participant for token binding. The access_token uniquely identifies the
- * participant who tokens should be bound to.
- */
-@Serializable
-public data class IdentityClass (
-    /**
-     * Unique identifier for this participant, obtained during onboarding with the tokenizer.
-     */
-    @SerialName("access_token")
-    public val accessToken: String
-)
-
-/**
- * Business's fulfillment configuration.
- */
-@Serializable
-public data class BusinessFulfillmentConfig (
-    /**
-     * Allowed method type combinations.
-     */
-    @SerialName("allows_method_combinations")
-    public val allowsMethodCombinations: List<List<TypeElement>>? = null,
-
-    /**
-     * Permits multiple destinations per method type.
-     */
-    @SerialName("allows_multi_destination")
-    public val allowsMultiDestination: BusinessFulfillmentConfigAllowsMultiDestination? = null
-)
-
-/**
- * Fulfillment method type this availability applies to.
- *
- * Fulfillment method type.
- */
-@Serializable
-public enum class TypeElement(public val value: String) {
-    @SerialName("pickup") Pickup("pickup"),
-    @SerialName("shipping") Shipping("shipping");
-}
-
-/**
- * Permits multiple destinations per method type.
- */
-@Serializable
-public data class BusinessFulfillmentConfigAllowsMultiDestination (
-    /**
-     * Multiple pickup locations allowed.
-     */
-    public val pickup: Boolean? = null,
-
-    /**
-     * Multiple shipping destinations allowed.
-     */
-    public val shipping: Boolean? = null
-)
-
-@Serializable
-public data class Buyer (
-    /**
-     * Email of the buyer.
-     */
-    public val email: String? = null,
-
-    /**
-     * First name of the buyer.
-     */
-    @SerialName("first_name")
-    public val firstName: String? = null,
-
-    /**
-     * Last name of the buyer.
-     */
-    @SerialName("last_name")
-    public val lastName: String? = null,
-
-    /**
-     * E.164 standard.
-     */
-    @SerialName("phone_number")
-    public val phoneNumber: String? = null
-)
-
-/**
- * A card credential containing sensitive payment card details including raw Primary Account
- * Numbers (PANs). This credential type MUST NOT be used for checkout, only with payment
- * handlers that tokenize or encrypt credentials. CRITICAL: Both parties handling
- * CardCredential (sender and receiver) MUST be PCI DSS compliant. Transmission MUST use
- * HTTPS/TLS with strong cipher suites.
- *
- * The base definition for any payment credential. Handlers define specific credential types.
- */
-@Serializable
-public data class CardCredential (
-    /**
-     * The credential type discriminator. Specific schemas will constrain this to a constant
-     * value.
-     *
-     * The credential type identifier for card credentials.
-     */
-    public val type: TypeEnum,
-
-    /**
-     * The type of card number. Network tokens are preferred with fallback to FPAN. See PCI
-     * Scope for more details.
-     */
-    @SerialName("card_number_type")
-    public val cardNumberType: CardNumberType,
-
-    /**
-     * Cryptogram provided with network tokens.
-     */
-    public val cryptogram: String? = null,
-
-    /**
-     * Card CVC number.
-     */
-    public val cvc: String? = null,
-
-    /**
-     * Electronic Commerce Indicator / Security Level Indicator provided with network tokens.
-     */
-    @SerialName("eci_value")
-    public val eciValue: String? = null,
-
-    /**
-     * The month of the card's expiration date (1-12).
-     */
-    @SerialName("expiry_month")
-    public val expiryMonth: Long? = null,
-
-    /**
-     * The year of the card's expiration date.
-     */
-    @SerialName("expiry_year")
-    public val expiryYear: Long? = null,
-
-    /**
-     * Cardholder name.
-     */
-    public val name: String? = null,
-
-    /**
-     * Card number.
-     */
-    public val number: String? = null
-)
-
-/**
- * The type of card number. Network tokens are preferred with fallback to FPAN. See PCI
- * Scope for more details.
- */
-@Serializable
-public enum class CardNumberType(public val value: String) {
-    @SerialName("dpan") Dpan("dpan"),
-    @SerialName("fpan") Fpan("fpan"),
-    @SerialName("network_token") NetworkToken("network_token");
-}
-
-/**
- * Error code identifying the type of error. Standard errors are defined in specification
- * (see examples), and have standardized semantics; freeform codes are permitted.
- */
-@Serializable
-public enum class TypeEnum(public val value: String) {
-    @SerialName("card") Card("card");
-}
-
-/**
- * A basic card payment instrument with visible card details. Can be inherited by a
- * handler's instrument schema to define handler-specific display details or more complex
- * credential structures.
- *
- * The base definition for any payment instrument. It links the instrument to a specific
- * payment handler.
- */
-@Serializable
-public data class CardPaymentInstrument (
-    /**
-     * The billing address associated with this payment method.
-     */
-    @SerialName("billing_address")
-    public val billingAddress: BillingAddressClass? = null,
-
-    public val credential: CredentialClass? = null,
-
-    /**
-     * Display information for this payment instrument. Each payment instrument schema defines
-     * its specific display properties, as outlined by the payment handler.
-     *
-     * Display information for this card payment instrument.
-     */
-    public val display: Display? = null,
-
-    /**
-     * The unique identifier for the handler instance that produced this instrument. This
-     * corresponds to the 'id' field in the Payment Handler definition.
-     */
-    @SerialName("handler_id")
-    public val handlerID: String,
-
-    /**
-     * A unique identifier for this instrument instance, assigned by the platform.
-     */
-    public val id: String,
-
-    /**
-     * The broad category of the instrument (e.g., 'card', 'tokenized_card'). Specific schemas
-     * will constrain this to a constant value.
-     *
-     * Indicates this is a card payment instrument.
-     */
-    public val type: TypeEnum
-)
-
-/**
- * Display information for this payment instrument. Each payment instrument schema defines
- * its specific display properties, as outlined by the payment handler.
- *
- * Display information for this card payment instrument.
- */
-@Serializable
-public data class Display (
-    /**
-     * The card brand/network (e.g., visa, mastercard, amex).
-     */
-    public val brand: String? = null,
-
-    /**
-     * An optional URI to a rich image representing the card (e.g., card art provided by the
-     * issuer).
-     */
-    @SerialName("card_art")
-    public val cardArt: String? = null,
-
-    /**
-     * An optional rich text description of the card to display to the user (e.g., 'Visa ending
-     * in 1234, expires 12/2025').
-     */
-    public val description: String? = null,
-
-    /**
-     * The month of the card's expiration date (1-12).
-     */
-    @SerialName("expiry_month")
-    public val expiryMonth: Long? = null,
-
-    /**
-     * The year of the card's expiration date.
-     */
-    @SerialName("expiry_year")
-    public val expiryYear: Long? = null,
-
-    /**
-     * Last 4 digits of the card number.
-     */
-    @SerialName("last_digits")
-    public val lastDigits: String? = null
-)
-
-/**
- * Provisional buyer signals for relevance and localization—not authoritative data.
- * Businesses SHOULD use these values when verified inputs (e.g., shipping address) are
- * absent, and MAY ignore or down-rank them if inconsistent with higher-confidence signals
- * (authenticated account, risk detection) or regulatory constraints (export controls).
- * Eligibility and policy enforcement MUST occur at checkout time using binding transaction
- * data. Context SHOULD be non-identifying and can be disclosed progressively—coarse signals
- * early, finer resolution as the session progresses. Higher-resolution data (shipping
- * address, billing address) supersedes context.
- */
-@Serializable
-public data class Context (
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used. Optional hint for market context
-     * (currency, availability, pricing)—higher-resolution data (e.g., shipping address)
-     * supersedes this value.
-     */
-    @SerialName("address_country")
-    public val addressCountry: String? = null,
-
-    /**
-     * The region in which the locality is, and which is in the country. For example, California
-     * or another appropriate first-level Administrative division. Optional hint for progressive
-     * localization—higher-resolution data (e.g., shipping address) supersedes this value.
-     */
-    @SerialName("address_region")
-    public val addressRegion: String? = null,
-
-    /**
-     * Preferred currency (ISO 4217, e.g., 'EUR', 'USD'). Businesses determine presentment
-     * currency from context and authoritative signals; this hint MAY inform selection in
-     * multi-currency markets. Also serves as the denomination for price filter values —
-     * platforms SHOULD include this field when sending price filters. Response prices include
-     * explicit currency confirming the resolution.
-     */
-    public val currency: String? = null,
-
-    /**
-     * Buyer claims about eligible benefits such as loyalty membership, payment instrument
-     * perks, and similar. Recognized claims MAY inform the Business response (e.g., member-only
-     * product availability, adjusted pricing in catalog, provisional discounts at cart or
-     * checkout). Businesses MUST ignore unrecognized values without error. Values MUST use
-     * reverse-domain naming (e.g., 'com.example.loyalty_gold', 'org.school.student') and MUST
-     * be non-identifying.
-     */
-    public val eligibility: List<String>? = null,
-
-    /**
-     * Background context describing buyer's intent (e.g., 'looking for a gift under $50', 'need
-     * something durable for outdoor use'). Informs relevance, recommendations, and
-     * personalization.
-     */
-    public val intent: String? = null,
-
-    /**
-     * Preferred language for content. Use IETF BCP 47 language tags (e.g., 'en', 'fr-CA',
-     * 'zh-Hans'). For REST, equivalent to Accept-Language header—platforms SHOULD fall back to
-     * Accept-Language when this field is absent; when provided, overrides Accept-Language.
-     * Businesses MAY return content in a different language if unavailable.
-     */
-    public val language: String? = null,
-
-    /**
-     * The postal code. For example, 94043. Optional hint for regional
-     * refinement—higher-resolution data (e.g., shipping address) supersedes this value.
-     */
-    @SerialName("postal_code")
-    public val postalCode: String? = null
-)
-
-/**
- * Generic error response when business logic prevents resource creation or failed to
- * retrieve resource. Used when no valid resource can be established.
- */
-@Serializable
-public data class ErrorResponse (
-    /**
-     * URL for buyer handoff or session recovery.
-     */
-    @SerialName("continue_url")
-    public val continueURL: String? = null,
-
-    /**
-     * Array of messages describing why the operation failed.
-     */
-    public val messages: List<MessageElement>,
-
-    /**
-     * UCP protocol metadata. Status MUST be 'error' for error response.
-     */
-    public val ucp: ErrorResponseUcp
-)
-
-/**
- * UCP protocol metadata. Status MUST be 'error' for error response.
- *
- * UCP metadata with status 'error'. Use for response branches that carry error
- * information.
- *
- * Base UCP metadata with shared properties for all schema types.
- */
-@Serializable
-public data class ErrorResponseUcp (
-    /**
-     * Capability registry keyed by reverse-domain name.
-     */
-    public val capabilities: Map<String, List<CapabilityResponseSchema>>? = null,
-
-    /**
-     * Payment handler registry keyed by reverse-domain name.
-     */
-    @SerialName("payment_handlers")
-    public val paymentHandlers: Map<String, List<PaymentHandlerResponseSchema>>? = null,
-
-    /**
-     * Service registry keyed by reverse-domain name.
-     */
-    public val services: Map<String, List<UCPOrderResponseSchemaService>>? = null,
-
-    /**
-     * Application-level status of the UCP operation.
-     */
-    public val status: StatusEnum,
-
-    public val version: String
-)
-
-/**
- * Shared foundation for all UCP entities.
- */
-@Serializable
-public data class UCPOrderResponseSchemaService (
-    /**
-     * Entity-specific configuration. Structure defined by each entity's schema.
-     */
-    public val config: JsonObject? = null,
-
-    /**
-     * Unique identifier for this entity instance. Used to disambiguate when multiple instances
-     * exist.
-     */
-    public val id: String? = null,
-
-    /**
-     * URL to JSON Schema defining this entity's structure and payloads.
-     */
-    public val schema: String? = null,
-
-    /**
-     * URL to human-readable specification document.
-     */
-    public val spec: String? = null,
-
-    /**
-     * Entity version in YYYY-MM-DD format.
-     */
-    public val version: String,
-
-    /**
-     * Endpoint URL for this transport binding.
-     */
-    public val endpoint: String? = null,
-
-    /**
-     * Transport protocol for this service binding.
-     */
-    public val transport: Transport
-)
-
-/**
- * Application-level status of the UCP operation.
- */
-@Serializable
-public enum class StatusEnum(public val value: String) {
-    @SerialName("error") Error("error");
-}
-
-/**
- * Buyer-facing fulfillment expectation representing logical groupings of items (e.g.,
- * 'package'). Can be split, merged, or adjusted post-order to set buyer expectations for
- * when/how items arrive.
- */
-@Serializable
-public data class Expectation (
-    /**
-     * Human-readable delivery description (e.g., 'Arrives in 5-8 business days').
-     */
-    public val description: String? = null,
-
-    /**
-     * Delivery destination address.
-     */
-    public val destination: BillingAddressClass,
-
-    /**
-     * When this expectation can be fulfilled: 'now' or ISO 8601 timestamp for future date
-     * (backorder, pre-order).
-     */
-    @SerialName("fulfillable_on")
-    public val fulfillableOn: String? = null,
-
-    /**
-     * Expectation identifier.
-     */
-    public val id: String,
-
-    /**
-     * Which line items and quantities are in this expectation.
-     */
-    @SerialName("line_items")
-    public val lineItems: List<ExpectationLineItem>,
-
-    /**
-     * Delivery method type (shipping, pickup, digital).
-     */
-    @SerialName("method_type")
-    public val methodType: MethodType
-)
-
-@Serializable
-public data class ExpectationLineItem (
-    /**
-     * Line item ID reference.
-     */
-    public val id: String,
-
-    /**
-     * Quantity of this item in this expectation.
-     */
-    public val quantity: Long
-)
-
-/**
- * Delivery method type (shipping, pickup, digital).
- */
-@Serializable
-public enum class MethodType(public val value: String) {
-    @SerialName("digital") Digital("digital"),
-    @SerialName("pickup") Pickup("pickup"),
-    @SerialName("shipping") Shipping("shipping");
-}
-
-/**
- * Inventory availability hint for a fulfillment method type.
- */
-@Serializable
-public data class FulfillmentAvailableMethod (
-    /**
-     * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
-     */
-    public val description: String? = null,
-
-    /**
-     * 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
-     */
-    @SerialName("fulfillable_on")
-    public val fulfillableOn: String? = null,
-
-    /**
-     * Line items available for this fulfillment method.
-     */
-    @SerialName("line_item_ids")
-    public val lineItemIDS: List<String>,
-
-    /**
-     * Fulfillment method type this availability applies to.
-     */
-    public val type: TypeElement
-)
-
-/**
- * A destination for fulfillment.
- *
- * Shipping destination.
- *
- * The billing address associated with this payment method.
- *
- * Delivery destination address.
- *
- * Physical address of the location.
- *
- * A pickup location (retail store, locker, etc.).
- */
-@Serializable
-public data class FulfillmentDestination (
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
-     */
-    @SerialName("address_country")
-    public val addressCountry: String? = null,
-
-    /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
-     */
-    @SerialName("address_locality")
-    public val addressLocality: String? = null,
-
-    /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
-     */
-    @SerialName("address_region")
-    public val addressRegion: String? = null,
-
-    /**
-     * An address extension such as an apartment number, C/O or alternative name.
-     */
-    @SerialName("extended_address")
-    public val extendedAddress: String? = null,
-
-    /**
-     * Optional. First name of the contact associated with the address.
-     */
-    @SerialName("first_name")
-    public val firstName: String? = null,
-
-    /**
-     * Optional. Last name of the contact associated with the address.
-     */
-    @SerialName("last_name")
-    public val lastName: String? = null,
-
-    /**
-     * Optional. Phone number of the contact associated with the address.
-     */
-    @SerialName("phone_number")
-    public val phoneNumber: String? = null,
-
-    /**
-     * The postal code. For example, 94043.
-     */
-    @SerialName("postal_code")
-    public val postalCode: String? = null,
-
-    /**
-     * The street address.
-     */
-    @SerialName("street_address")
-    public val streetAddress: String? = null,
-
-    /**
-     * ID specific to this shipping destination.
-     *
-     * Unique location identifier.
-     */
-    public val id: String,
-
-    /**
-     * Physical address of the location.
-     */
-    public val address: BillingAddressClass? = null,
-
-    /**
-     * Location name (e.g., store name).
-     */
-    public val name: String? = null
+    public val expectations: List<Expectation>? = null
 )
 
 /**
@@ -1655,1323 +1383,6 @@ public data class FulfillmentDestination (
  */
 @Serializable
 public data class FulfillmentEvent (
-    /**
-     * Carrier name (e.g., 'FedEx', 'USPS').
-     */
-    public val carrier: String? = null,
-
-    /**
-     * Human-readable description of the shipment status or delivery information (e.g.,
-     * 'Delivered to front door', 'Out for delivery').
-     */
-    public val description: String? = null,
-
-    /**
-     * Fulfillment event identifier.
-     */
-    public val id: String,
-
-    /**
-     * Which line items and quantities are fulfilled in this event.
-     */
-    @SerialName("line_items")
-    public val lineItems: List<FulfillmentEventLineItem>,
-
-    /**
-     * RFC 3339 timestamp when this fulfillment event occurred.
-     */
-    @SerialName("occurred_at")
-    public val occurredAt: String,
-
-    /**
-     * Carrier tracking number (required if type != processing).
-     */
-    @SerialName("tracking_number")
-    public val trackingNumber: String? = null,
-
-    /**
-     * URL to track this shipment (required if type != processing).
-     */
-    @SerialName("tracking_url")
-    public val trackingURL: String? = null,
-
-    /**
-     * Fulfillment event type. Common values include: processing (preparing to ship), shipped
-     * (handed to carrier), in_transit (in delivery network), delivered (received by buyer),
-     * failed_attempt (delivery attempt failed), canceled (fulfillment canceled), undeliverable
-     * (cannot be delivered), returned_to_sender (returned to merchant).
-     */
-    public val type: String
-)
-
-@Serializable
-public data class FulfillmentEventLineItem (
-    /**
-     * Line item ID reference.
-     */
-    public val id: String,
-
-    /**
-     * Quantity fulfilled in this event.
-     */
-    public val quantity: Long
-)
-
-/**
- * A merchant-generated package/group of line items with fulfillment options.
- */
-@Serializable
-public data class FulfillmentGroup (
-    /**
-     * Group identifier for referencing merchant-generated groups in updates.
-     */
-    public val id: String,
-
-    /**
-     * Line item IDs included in this group/package.
-     */
-    @SerialName("line_item_ids")
-    public val lineItemIDS: List<String>,
-
-    /**
-     * Available fulfillment options for this group.
-     */
-    public val options: List<OptionElement>? = null,
-
-    /**
-     * ID of the selected fulfillment option for this group.
-     */
-    @SerialName("selected_option_id")
-    public val selectedOptionID: String? = null
-)
-
-/**
- * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
- */
-@Serializable
-public data class OptionElement (
-    /**
-     * Carrier name (for shipping).
-     */
-    public val carrier: String? = null,
-
-    /**
-     * Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
-     */
-    public val description: String? = null,
-
-    /**
-     * Earliest fulfillment date.
-     */
-    @SerialName("earliest_fulfillment_time")
-    public val earliestFulfillmentTime: String? = null,
-
-    /**
-     * Unique fulfillment option identifier.
-     */
-    public val id: String,
-
-    /**
-     * Latest fulfillment date.
-     */
-    @SerialName("latest_fulfillment_time")
-    public val latestFulfillmentTime: String? = null,
-
-    /**
-     * Short label (e.g., 'Express Shipping', 'Curbside Pickup').
-     */
-    public val title: String,
-
-    /**
-     * Fulfillment option totals breakdown.
-     */
-    public val totals: List<LineItemTotal>
-)
-
-/**
- * A fulfillment method (shipping or pickup) with destinations and groups.
- */
-@Serializable
-public data class FulfillmentMethod (
-    /**
-     * Available destinations. For shipping: addresses. For pickup: retail locations.
-     */
-    public val destinations: List<FulfillmentDestinationElement>? = null,
-
-    /**
-     * Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
-     * choose shipping method.
-     */
-    public val groups: List<GroupElement>? = null,
-
-    /**
-     * Unique fulfillment method identifier.
-     */
-    public val id: String,
-
-    /**
-     * Line item IDs fulfilled via this method.
-     */
-    @SerialName("line_item_ids")
-    public val lineItemIDS: List<String>,
-
-    /**
-     * ID of the selected destination.
-     */
-    @SerialName("selected_destination_id")
-    public val selectedDestinationID: String? = null,
-
-    /**
-     * Fulfillment method type.
-     */
-    public val type: TypeElement
-)
-
-/**
- * A destination for fulfillment.
- *
- * Shipping destination.
- *
- * The billing address associated with this payment method.
- *
- * Delivery destination address.
- *
- * Physical address of the location.
- *
- * A pickup location (retail store, locker, etc.).
- */
-@Serializable
-public data class FulfillmentDestinationElement (
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
-     */
-    @SerialName("address_country")
-    public val addressCountry: String? = null,
-
-    /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
-     */
-    @SerialName("address_locality")
-    public val addressLocality: String? = null,
-
-    /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
-     */
-    @SerialName("address_region")
-    public val addressRegion: String? = null,
-
-    /**
-     * An address extension such as an apartment number, C/O or alternative name.
-     */
-    @SerialName("extended_address")
-    public val extendedAddress: String? = null,
-
-    /**
-     * Optional. First name of the contact associated with the address.
-     */
-    @SerialName("first_name")
-    public val firstName: String? = null,
-
-    /**
-     * Optional. Last name of the contact associated with the address.
-     */
-    @SerialName("last_name")
-    public val lastName: String? = null,
-
-    /**
-     * Optional. Phone number of the contact associated with the address.
-     */
-    @SerialName("phone_number")
-    public val phoneNumber: String? = null,
-
-    /**
-     * The postal code. For example, 94043.
-     */
-    @SerialName("postal_code")
-    public val postalCode: String? = null,
-
-    /**
-     * The street address.
-     */
-    @SerialName("street_address")
-    public val streetAddress: String? = null,
-
-    /**
-     * ID specific to this shipping destination.
-     *
-     * Unique location identifier.
-     */
-    public val id: String,
-
-    /**
-     * Physical address of the location.
-     */
-    public val address: BillingAddressClass? = null,
-
-    /**
-     * Location name (e.g., store name).
-     */
-    public val name: String? = null
-)
-
-/**
- * A merchant-generated package/group of line items with fulfillment options.
- */
-@Serializable
-public data class GroupElement (
-    /**
-     * Group identifier for referencing merchant-generated groups in updates.
-     */
-    public val id: String,
-
-    /**
-     * Line item IDs included in this group/package.
-     */
-    @SerialName("line_item_ids")
-    public val lineItemIDS: List<String>,
-
-    /**
-     * Available fulfillment options for this group.
-     */
-    public val options: List<OptionElement>? = null,
-
-    /**
-     * ID of the selected fulfillment option for this group.
-     */
-    @SerialName("selected_option_id")
-    public val selectedOptionID: String? = null
-)
-
-/**
- * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
- */
-@Serializable
-public data class FulfillmentOption (
-    /**
-     * Carrier name (for shipping).
-     */
-    public val carrier: String? = null,
-
-    /**
-     * Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
-     */
-    public val description: String? = null,
-
-    /**
-     * Earliest fulfillment date.
-     */
-    @SerialName("earliest_fulfillment_time")
-    public val earliestFulfillmentTime: String? = null,
-
-    /**
-     * Unique fulfillment option identifier.
-     */
-    public val id: String,
-
-    /**
-     * Latest fulfillment date.
-     */
-    @SerialName("latest_fulfillment_time")
-    public val latestFulfillmentTime: String? = null,
-
-    /**
-     * Short label (e.g., 'Express Shipping', 'Curbside Pickup').
-     */
-    public val title: String,
-
-    /**
-     * Fulfillment option totals breakdown.
-     */
-    public val totals: List<LineItemTotal>
-)
-
-/**
- * Container for fulfillment methods and availability.
- */
-@Serializable
-public data class Fulfillment (
-    /**
-     * Inventory availability hints.
-     */
-    @SerialName("available_methods")
-    public val availableMethods: List<AvailableMethodElement>? = null,
-
-    /**
-     * Fulfillment methods for cart items.
-     */
-    public val methods: List<MethodElement>? = null
-)
-
-/**
- * Inventory availability hint for a fulfillment method type.
- */
-@Serializable
-public data class AvailableMethodElement (
-    /**
-     * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
-     */
-    public val description: String? = null,
-
-    /**
-     * 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
-     */
-    @SerialName("fulfillable_on")
-    public val fulfillableOn: String? = null,
-
-    /**
-     * Line items available for this fulfillment method.
-     */
-    @SerialName("line_item_ids")
-    public val lineItemIDS: List<String>,
-
-    /**
-     * Fulfillment method type this availability applies to.
-     */
-    public val type: TypeElement
-)
-
-/**
- * A fulfillment method (shipping or pickup) with destinations and groups.
- */
-@Serializable
-public data class MethodElement (
-    /**
-     * Available destinations. For shipping: addresses. For pickup: retail locations.
-     */
-    public val destinations: List<FulfillmentDestinationElement>? = null,
-
-    /**
-     * Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
-     * choose shipping method.
-     */
-    public val groups: List<GroupElement>? = null,
-
-    /**
-     * Unique fulfillment method identifier.
-     */
-    public val id: String,
-
-    /**
-     * Line item IDs fulfilled via this method.
-     */
-    @SerialName("line_item_ids")
-    public val lineItemIDS: List<String>,
-
-    /**
-     * ID of the selected destination.
-     */
-    @SerialName("selected_destination_id")
-    public val selectedDestinationID: String? = null,
-
-    /**
-     * Fulfillment method type.
-     */
-    public val type: TypeElement
-)
-
-@Serializable
-public data class Item (
-    /**
-     * The product identifier, often the SKU, required to resolve the product details associated
-     * with this line item. Should be recognized by both the Platform, and the Business.
-     */
-    public val id: String,
-
-    /**
-     * Product image URI.
-     */
-    @SerialName("image_url")
-    public val imageURL: String? = null,
-
-    /**
-     * Unit price in ISO 4217 minor units.
-     */
-    public val price: Long,
-
-    /**
-     * Product title.
-     */
-    public val title: String
-)
-
-/**
- * Line item object. Expected to use the currency of the parent object.
- */
-@Serializable
-public data class LineItem (
-    public val id: String,
-    public val item: ItemClass,
-
-    /**
-     * Parent line item identifier for any nested structures.
-     */
-    @SerialName("parent_id")
-    public val parentID: String? = null,
-
-    /**
-     * Quantity of the item being purchased.
-     */
-    public val quantity: Long,
-
-    /**
-     * Line item totals breakdown.
-     */
-    public val totals: List<LineItemTotal>
-)
-
-@Serializable
-public data class Link (
-    /**
-     * Optional display text for the link. When provided, use this instead of generating from
-     * type.
-     */
-    public val title: String? = null,
-
-    /**
-     * Type of link. Well-known values: `privacy_policy`, `terms_of_service`, `refund_policy`,
-     * `shipping_policy`, `faq`. Consumers SHOULD handle unknown values gracefully by displaying
-     * them using the `title` field or omitting the link.
-     */
-    public val type: String,
-
-    /**
-     * The actual URL pointing to the content to be displayed.
-     */
-    public val url: String
-)
-
-/**
- * Merchant's fulfillment configuration.
- */
-@Serializable
-public data class MerchantFulfillmentConfig (
-    /**
-     * Allowed method type combinations.
-     */
-    @SerialName("allows_method_combinations")
-    public val allowsMethodCombinations: List<List<TypeElement>>? = null,
-
-    /**
-     * Permits multiple destinations per method type.
-     */
-    @SerialName("allows_multi_destination")
-    public val allowsMultiDestination: MerchantFulfillmentConfigAllowsMultiDestination? = null
-)
-
-/**
- * Permits multiple destinations per method type.
- */
-@Serializable
-public data class MerchantFulfillmentConfigAllowsMultiDestination (
-    /**
-     * Multiple pickup locations allowed.
-     */
-    public val pickup: Boolean? = null,
-
-    /**
-     * Multiple shipping destinations allowed.
-     */
-    public val shipping: Boolean? = null
-)
-
-@Serializable
-public data class MessageError (
-    public val code: String,
-
-    /**
-     * Human-readable message.
-     */
-    public val content: String,
-
-    /**
-     * Content format, default = plain.
-     */
-    @SerialName("content_type")
-    public val contentType: ContentType? = null,
-
-    /**
-     * RFC 9535 JSONPath to the component the message refers to (e.g., $.items[1]).
-     */
-    public val path: String? = null,
-
-    /**
-     * Reflects the resource state and recommended action. 'recoverable': platform can resolve
-     * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
-     * information their API doesn't support collecting programmatically (checkout incomplete).
-     * 'requires_buyer_review': buyer must authorize before order placement due to policy,
-     * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
-     * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
-     * 'status: requires_escalation'.
-     */
-    public val severity: Severity,
-
-    /**
-     * Message type discriminator.
-     */
-    public val type: StatusEnum
-)
-
-@Serializable
-public data class MessageInfo (
-    /**
-     * Info code for programmatic handling.
-     */
-    public val code: String? = null,
-
-    /**
-     * Human-readable message.
-     */
-    public val content: String,
-
-    /**
-     * Content format, default = plain.
-     */
-    @SerialName("content_type")
-    public val contentType: ContentType? = null,
-
-    /**
-     * RFC 9535 JSONPath to the component the message refers to.
-     */
-    public val path: String? = null,
-
-    /**
-     * Message type discriminator.
-     */
-    public val type: MessageInfoType
-)
-
-@Serializable
-public enum class MessageInfoType(public val value: String) {
-    @SerialName("info") Info("info");
-}
-
-@Serializable
-public data class MessageWarning (
-    /**
-     * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
-     * fulfillment_changed, age_restricted, etc.).
-     */
-    public val code: String,
-
-    /**
-     * Human-readable warning message that MUST be displayed.
-     */
-    public val content: String,
-
-    /**
-     * Content format, default = plain.
-     */
-    @SerialName("content_type")
-    public val contentType: ContentType? = null,
-
-    /**
-     * URL to a required visual element (e.g., warning symbol, energy class label).
-     */
-    @SerialName("image_url")
-    public val imageURL: String? = null,
-
-    /**
-     * JSONPath (RFC 9535) to related field (e.g., $.line_items[0]).
-     */
-    public val path: String? = null,
-
-    /**
-     * Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
-     * dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
-     * component, MUST NOT hide or auto-dismiss. See specification for full contract.
-     */
-    public val presentation: String? = null,
-
-    /**
-     * Message type discriminator.
-     */
-    public val type: MessageWarningType,
-
-    /**
-     * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
-     */
-    public val url: String? = null
-)
-
-@Serializable
-public enum class MessageWarningType(public val value: String) {
-    @SerialName("warning") Warning("warning");
-}
-
-/**
- * Container for error, warning, or info messages.
- */
-@Serializable
-public data class Message (
-    /**
-     * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
-     * fulfillment_changed, age_restricted, etc.).
-     *
-     * Info code for programmatic handling.
-     */
-    public val code: String? = null,
-
-    /**
-     * Human-readable message.
-     *
-     * Human-readable warning message that MUST be displayed.
-     */
-    public val content: String,
-
-    /**
-     * Content format, default = plain.
-     */
-    @SerialName("content_type")
-    public val contentType: ContentType? = null,
-
-    /**
-     * RFC 9535 JSONPath to the component the message refers to (e.g., $.items[1]).
-     *
-     * JSONPath (RFC 9535) to related field (e.g., $.line_items[0]).
-     *
-     * RFC 9535 JSONPath to the component the message refers to.
-     */
-    public val path: String? = null,
-
-    /**
-     * Reflects the resource state and recommended action. 'recoverable': platform can resolve
-     * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
-     * information their API doesn't support collecting programmatically (checkout incomplete).
-     * 'requires_buyer_review': buyer must authorize before order placement due to policy,
-     * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
-     * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
-     * 'status: requires_escalation'.
-     */
-    public val severity: Severity? = null,
-
-    /**
-     * Message type discriminator.
-     */
-    public val type: MessageType,
-
-    /**
-     * URL to a required visual element (e.g., warning symbol, energy class label).
-     */
-    @SerialName("image_url")
-    public val imageURL: String? = null,
-
-    /**
-     * Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
-     * dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
-     * component, MUST NOT hide or auto-dismiss. See specification for full contract.
-     */
-    public val presentation: String? = null,
-
-    /**
-     * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
-     */
-    public val url: String? = null
-)
-
-/**
- * Order details available at the time of checkout completion.
- */
-@Serializable
-public data class OrderConfirmation (
-    /**
-     * Unique order identifier.
-     */
-    public val id: String,
-
-    /**
-     * Human-readable label for identifying the order. MUST only be provided by the business.
-     */
-    public val label: String? = null,
-
-    /**
-     * Permalink to access the order on merchant site.
-     */
-    @SerialName("permalink_url")
-    public val permalinkURL: String
-)
-
-@Serializable
-public data class OrderLineItem (
-    /**
-     * Line item identifier.
-     */
-    public val id: String,
-
-    /**
-     * Product data (id, title, price, image_url).
-     */
-    public val item: ItemClass,
-
-    /**
-     * Parent line item identifier for any nested structures.
-     */
-    @SerialName("parent_id")
-    public val parentID: String? = null,
-
-    /**
-     * Quantity tracking for the line item.
-     */
-    public val quantity: OrderLineItemQuantity,
-
-    /**
-     * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
-     * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
-     * quantity.fulfilled > 0, otherwise processing.
-     */
-    public val status: OrderLineItemStatus,
-
-    /**
-     * Line item totals breakdown.
-     */
-    public val totals: List<LineItemTotal>
-)
-
-/**
- * Quantity tracking for the line item.
- */
-@Serializable
-public data class OrderLineItemQuantity (
-    /**
-     * Quantity fulfilled so far.
-     */
-    public val fulfilled: Long,
-
-    /**
-     * Quantity from the original checkout.
-     */
-    public val original: Long? = null,
-
-    /**
-     * Current total active quantity. May differ from original due to post-order modifications
-     * (e.g., returns or cancellations).
-     */
-    public val total: Long
-)
-
-/**
- * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
- * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
- * quantity.fulfilled > 0, otherwise processing.
- */
-@Serializable
-public enum class OrderLineItemStatus(public val value: String) {
-    @SerialName("fulfilled") Fulfilled("fulfilled"),
-    @SerialName("partial") Partial("partial"),
-    @SerialName("processing") Processing("processing"),
-    @SerialName("removed") Removed("removed");
-}
-
-/**
- * The base definition for any payment credential. Handlers define specific credential types.
- */
-@Serializable
-public data class PaymentCredential (
-    /**
-     * The credential type discriminator. Specific schemas will constrain this to a constant
-     * value.
-     */
-    public val type: String
-)
-
-/**
- * Identity of a participant for token binding. The access_token uniquely identifies the
- * participant who tokens should be bound to.
- */
-@Serializable
-public data class PaymentIdentity (
-    /**
-     * Unique identifier for this participant, obtained during onboarding with the tokenizer.
-     */
-    @SerialName("access_token")
-    public val accessToken: String
-)
-
-/**
- * The base definition for any payment instrument. It links the instrument to a specific
- * payment handler.
- */
-@Serializable
-public data class PaymentInstrument (
-    /**
-     * The billing address associated with this payment method.
-     */
-    @SerialName("billing_address")
-    public val billingAddress: BillingAddressClass? = null,
-
-    public val credential: CredentialClass? = null,
-
-    /**
-     * Display information for this payment instrument. Each payment instrument schema defines
-     * its specific display properties, as outlined by the payment handler.
-     */
-    public val display: JsonObject? = null,
-
-    /**
-     * The unique identifier for the handler instance that produced this instrument. This
-     * corresponds to the 'id' field in the Payment Handler definition.
-     */
-    @SerialName("handler_id")
-    public val handlerID: String,
-
-    /**
-     * A unique identifier for this instrument instance, assigned by the platform.
-     */
-    public val id: String,
-
-    /**
-     * The broad category of the instrument (e.g., 'card', 'tokenized_card'). Specific schemas
-     * will constrain this to a constant value.
-     */
-    public val type: String
-)
-
-/**
- * Platform's fulfillment configuration.
- */
-@Serializable
-public data class PlatformFulfillmentConfig (
-    /**
-     * Enables multiple groups per method.
-     */
-    @SerialName("supports_multi_group")
-    public val supportsMultiGroup: Boolean? = null
-)
-
-@Serializable
-public data class PostalAddress (
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
-     */
-    @SerialName("address_country")
-    public val addressCountry: String? = null,
-
-    /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
-     */
-    @SerialName("address_locality")
-    public val addressLocality: String? = null,
-
-    /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
-     */
-    @SerialName("address_region")
-    public val addressRegion: String? = null,
-
-    /**
-     * An address extension such as an apartment number, C/O or alternative name.
-     */
-    @SerialName("extended_address")
-    public val extendedAddress: String? = null,
-
-    /**
-     * Optional. First name of the contact associated with the address.
-     */
-    @SerialName("first_name")
-    public val firstName: String? = null,
-
-    /**
-     * Optional. Last name of the contact associated with the address.
-     */
-    @SerialName("last_name")
-    public val lastName: String? = null,
-
-    /**
-     * Optional. Phone number of the contact associated with the address.
-     */
-    @SerialName("phone_number")
-    public val phoneNumber: String? = null,
-
-    /**
-     * The postal code. For example, 94043.
-     */
-    @SerialName("postal_code")
-    public val postalCode: String? = null,
-
-    /**
-     * The street address.
-     */
-    @SerialName("street_address")
-    public val streetAddress: String? = null
-)
-
-/**
- * A pickup location (retail store, locker, etc.).
- */
-@Serializable
-public data class RetailLocation (
-    /**
-     * Physical address of the location.
-     */
-    public val address: BillingAddressClass? = null,
-
-    /**
-     * Unique location identifier.
-     */
-    public val id: String,
-
-    /**
-     * Location name (e.g., store name).
-     */
-    public val name: String
-)
-
-/**
- * Shipping destination.
- *
- * The billing address associated with this payment method.
- *
- * Delivery destination address.
- *
- * Physical address of the location.
- */
-@Serializable
-public data class ShippingDestination (
-    /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used.
-     */
-    @SerialName("address_country")
-    public val addressCountry: String? = null,
-
-    /**
-     * The locality in which the street address is, and which is in the region. For example,
-     * Mountain View.
-     */
-    @SerialName("address_locality")
-    public val addressLocality: String? = null,
-
-    /**
-     * The region in which the locality is, and which is in the country. Required for applicable
-     * countries (i.e. state in US, province in CA). For example, California or another
-     * appropriate first-level Administrative division.
-     */
-    @SerialName("address_region")
-    public val addressRegion: String? = null,
-
-    /**
-     * An address extension such as an apartment number, C/O or alternative name.
-     */
-    @SerialName("extended_address")
-    public val extendedAddress: String? = null,
-
-    /**
-     * Optional. First name of the contact associated with the address.
-     */
-    @SerialName("first_name")
-    public val firstName: String? = null,
-
-    /**
-     * Optional. Last name of the contact associated with the address.
-     */
-    @SerialName("last_name")
-    public val lastName: String? = null,
-
-    /**
-     * Optional. Phone number of the contact associated with the address.
-     */
-    @SerialName("phone_number")
-    public val phoneNumber: String? = null,
-
-    /**
-     * The postal code. For example, 94043.
-     */
-    @SerialName("postal_code")
-    public val postalCode: String? = null,
-
-    /**
-     * The street address.
-     */
-    @SerialName("street_address")
-    public val streetAddress: String? = null,
-
-    /**
-     * ID specific to this shipping destination.
-     */
-    public val id: String
-)
-
-/**
- * Environment data provided by the platform to support authorization and abuse prevention.
- * Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
- * observation or independently verifiable third-party attestations. All signal keys MUST
- * use reverse-domain naming to ensure provenance and prevent collisions when multiple
- * extensions contribute to the shared namespace.
- */
-@Serializable
-public data class Signals (
-    /**
-     * Client's IP address (IPv4 or IPv6).
-     */
-    @SerialName("dev.ucp.buyer_ip")
-    public val devUcpBuyerIP: String? = null,
-
-    /**
-     * Client's HTTP User-Agent header or equivalent.
-     */
-    @SerialName("dev.ucp.user_agent")
-    public val devUcpUserAgent: String? = null
-)
-
-/**
- * Base token credential schema. Concrete payment handlers may extend this schema with
- * additional fields and define their own constraints.
- *
- * The base definition for any payment credential. Handlers define specific credential types.
- */
-@Serializable
-public data class TokenCredential (
-    /**
-     * The credential type discriminator. Specific schemas will constrain this to a constant
-     * value.
-     *
-     * The specific type of token produced by the handler (e.g., 'stripe_token').
-     */
-    public val type: String,
-
-    /**
-     * The token value.
-     */
-    public val token: String
-)
-
-/**
- * A cost breakdown entry with a category, amount, and optional display text.
- */
-@Serializable
-public data class Total (
-    public val amount: Long,
-
-    /**
-     * Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
-     * 'Delivery').
-     */
-    @SerialName("display_text")
-    public val displayText: String? = null,
-
-    /**
-     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
-     * fee, total. Businesses MAY use additional values.
-     */
-    public val type: String
-)
-
-/**
- * Pricing breakdown provided by the business. MUST contain exactly one subtotal and one
- * total entry. Detail types (tax, fee, discount, fulfillment) may appear multiple times for
- * itemization. Platforms MUST render all entries in order using display_text and amount.
- *
- * A cost breakdown entry with a category, amount, and optional display text.
- */
-@Serializable
-public data class TotalElement (
-    public val amount: Long,
-
-    /**
-     * Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
-     * 'Delivery').
-     */
-    @SerialName("display_text")
-    public val displayText: String? = null,
-
-    /**
-     * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
-     * fee, total. Businesses MAY use additional values.
-     */
-    public val type: String,
-
-    /**
-     * Optional itemized breakdown. The parent entry is always rendered; lines are
-     * supplementary. Sum of line amounts MUST equal the parent entry amount.
-     */
-    public val lines: List<TotalLineClass>? = null
-)
-
-/**
- * Sub-line entry. Additional metadata MAY be included.
- */
-@Serializable
-public data class TotalLineClass (
-    public val amount: Long,
-
-    /**
-     * Human-readable label for this sub-line.
-     */
-    @SerialName("display_text")
-    public val displayText: String
-)
-
-/**
- * Payment configuration containing handlers.
- */
-@Serializable
-public data class Payment (
-    /**
-     * The payment instruments available for this payment. Each instrument is associated with a
-     * specific handler via the handler_id field. Handlers can extend the base
-     * payment_instrument schema to add handler-specific fields.
-     */
-    public val instruments: List<PaymentSelectedPaymentInstrument>? = null
-)
-
-/**
- * Order schema with line items, buyer-facing fulfillment expectations, and event logs.
- */
-@Serializable
-public data class Order (
-    /**
-     * Post-order events (refunds, returns, credits, disputes, cancellations, etc.) that exist
-     * independently of fulfillment.
-     */
-    public val adjustments: List<AdjustmentElement>? = null,
-
-    /**
-     * Associated checkout ID for reconciliation.
-     */
-    @SerialName("checkout_id")
-    public val checkoutID: String,
-
-    /**
-     * ISO 4217 currency code. MUST match the currency from the originating checkout session.
-     */
-    public val currency: String,
-
-    /**
-     * Fulfillment data: buyer expectations and what actually happened.
-     */
-    public val fulfillment: FulfillmentClass,
-
-    /**
-     * Unique order identifier.
-     */
-    public val id: String,
-
-    /**
-     * Human-readable label for identifying the order. MUST only be provided by the business.
-     */
-    public val label: String? = null,
-
-    /**
-     * Line items representing what was purchased — can change post-order via edits or exchanges.
-     */
-    @SerialName("line_items")
-    public val lineItems: List<LineItemElement>,
-
-    /**
-     * Business outcome messages (errors, warnings, informational). Present when the business
-     * needs to communicate status or issues to the platform.
-     */
-    public val messages: List<MessageElement>? = null,
-
-    /**
-     * Permalink to access the order on merchant site.
-     */
-    @SerialName("permalink_url")
-    public val permalinkURL: String,
-
-    /**
-     * Different totals for the order.
-     */
-    public val totals: List<CheckoutTotal>,
-
-    public val ucp: UCPOrderResponseSchema
-)
-
-/**
- * Post-order event that exists independently of fulfillment. Typically represents money
- * movements but can be any post-order change. Polymorphic type that can optionally
- * reference line items.
- */
-@Serializable
-public data class AdjustmentElement (
-    /**
-     * Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
-     */
-    public val description: String? = null,
-
-    /**
-     * Adjustment event identifier.
-     */
-    public val id: String,
-
-    /**
-     * Which line items and quantities are affected (optional).
-     */
-    @SerialName("line_items")
-    public val lineItems: List<AdjustmentLineItemClass>? = null,
-
-    /**
-     * RFC 3339 timestamp when this adjustment occurred.
-     */
-    @SerialName("occurred_at")
-    public val occurredAt: String,
-
-    /**
-     * Adjustment status.
-     */
-    public val status: AdjustmentStatus,
-
-    /**
-     * Adjustment totals breakdown. Signed values - negative for money returned to buyer
-     * (refunds, credits), positive for additional charges (exchanges).
-     */
-    public val totals: List<LineItemTotal>? = null,
-
-    /**
-     * Type of adjustment (open string). Typically money-related like: refund, return, credit,
-     * price_adjustment, dispute, cancellation. Can be any value that makes sense for the
-     * merchant's business.
-     */
-    public val type: String
-)
-
-@Serializable
-public data class AdjustmentLineItemClass (
-    /**
-     * Line item ID reference.
-     */
-    public val id: String,
-
-    /**
-     * Signed quantity affected by this adjustment. Negative values represent reductions (e.g.
-     * returns); positive values represent additions (e.g. exchanges).
-     */
-    public val quantity: Long
-)
-
-/**
- * Fulfillment data: buyer expectations and what actually happened.
- */
-@Serializable
-public data class FulfillmentClass (
-    /**
-     * Append-only event log of actual shipments. Each event references line items by ID.
-     */
-    public val events: List<EventElement>? = null,
-
-    /**
-     * Buyer-facing groups representing when/how items will be delivered. Can be split, merged,
-     * or adjusted post-order.
-     */
-    public val expectations: List<ExpectationElement>? = null
-)
-
-/**
- * Append-only fulfillment event representing an actual shipment. References line items by
- * ID.
- */
-@Serializable
-public data class EventElement (
     /**
      * Carrier name (e.g., 'FedEx', 'USPS').
      */
@@ -3040,7 +1451,7 @@ public data class EventLineItem (
  * when/how items arrive.
  */
 @Serializable
-public data class ExpectationElement (
+public data class Expectation (
     /**
      * Human-readable delivery description (e.g., 'Arrives in 5-8 business days').
      */
@@ -3049,7 +1460,7 @@ public data class ExpectationElement (
     /**
      * Delivery destination address.
      */
-    public val destination: BillingAddressClass,
+    public val destination: PostalAddress,
 
     /**
      * When this expectation can be fulfilled: 'now' or ISO 8601 timestamp for future date
@@ -3067,7 +1478,7 @@ public data class ExpectationElement (
      * Which line items and quantities are in this expectation.
      */
     @SerialName("line_items")
-    public val lineItems: List<ExpectationLineItemClass>,
+    public val lineItems: List<ExpectationLineItem>,
 
     /**
      * Delivery method type (shipping, pickup, digital).
@@ -3077,7 +1488,7 @@ public data class ExpectationElement (
 )
 
 @Serializable
-public data class ExpectationLineItemClass (
+public data class ExpectationLineItem (
     /**
      * Line item ID reference.
      */
@@ -3089,8 +1500,18 @@ public data class ExpectationLineItemClass (
     public val quantity: Long
 )
 
+/**
+ * Delivery method type (shipping, pickup, digital).
+ */
 @Serializable
-public data class LineItemElement (
+public enum class MethodType(public val value: String) {
+    @SerialName("digital") Digital("digital"),
+    @SerialName("pickup") Pickup("pickup"),
+    @SerialName("shipping") Shipping("shipping");
+}
+
+@Serializable
+public data class OrderLineItem (
     /**
      * Line item identifier.
      */
@@ -3099,7 +1520,7 @@ public data class LineItemElement (
     /**
      * Product data (id, title, price, image_url).
      */
-    public val item: ItemClass,
+    public val item: Item,
 
     /**
      * Parent line item identifier for any nested structures.
@@ -3117,7 +1538,7 @@ public data class LineItemElement (
      * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
      * quantity.fulfilled > 0, otherwise processing.
      */
-    public val status: OrderLineItemStatus,
+    public val status: LineItemStatus,
 
     /**
      * Line item totals breakdown.
@@ -3146,6 +1567,19 @@ public data class LineItemQuantity (
      */
     public val total: Long
 )
+
+/**
+ * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
+ * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
+ * quantity.fulfilled > 0, otherwise processing.
+ */
+@Serializable
+public enum class LineItemStatus(public val value: String) {
+    @SerialName("fulfilled") Fulfilled("fulfilled"),
+    @SerialName("partial") Partial("partial"),
+    @SerialName("processing") Processing("processing"),
+    @SerialName("removed") Removed("removed");
+}
 
 /**
  * UCP metadata for order responses. No payment handlers needed post-purchase.
@@ -3179,6 +1613,113 @@ public data class UCPOrderResponseSchema (
 )
 
 /**
+ * Shared foundation for all UCP entities.
+ */
+@Serializable
+public data class UCPOrderResponseSchemaService (
+    /**
+     * Entity-specific configuration. Structure defined by each entity's schema.
+     */
+    public val config: JsonObject? = null,
+
+    /**
+     * Unique identifier for this entity instance. Used to disambiguate when multiple instances
+     * exist.
+     */
+    public val id: String? = null,
+
+    /**
+     * URL to JSON Schema defining this entity's structure and payloads.
+     */
+    public val schema: String? = null,
+
+    /**
+     * URL to human-readable specification document.
+     */
+    public val spec: String? = null,
+
+    /**
+     * Entity version in YYYY-MM-DD format.
+     */
+    public val version: String,
+
+    /**
+     * Endpoint URL for this transport binding.
+     */
+    public val endpoint: String? = null,
+
+    /**
+     * Transport protocol for this service binding.
+     */
+    public val transport: Transport
+)
+
+/**
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+@Serializable
+public data class ErrorResponse (
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    @SerialName("continue_url")
+    public val continueURL: String? = null,
+
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    public val messages: List<Message>,
+
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    public val ucp: ErrorResponseUcp
+)
+
+/**
+ * UCP protocol metadata. Status MUST be 'error' for error response.
+ *
+ * UCP metadata with status 'error'. Use for response branches that carry error
+ * information.
+ *
+ * Base UCP metadata with shared properties for all schema types.
+ */
+@Serializable
+public data class ErrorResponseUcp (
+    /**
+     * Capability registry keyed by reverse-domain name.
+     */
+    public val capabilities: Map<String, List<CapabilityResponseSchema>>? = null,
+
+    /**
+     * Payment handler registry keyed by reverse-domain name.
+     */
+    @SerialName("payment_handlers")
+    public val paymentHandlers: Map<String, List<PaymentHandlerResponseSchema>>? = null,
+
+    /**
+     * Service registry keyed by reverse-domain name.
+     */
+    public val services: Map<String, List<UCPOrderResponseSchemaService>>? = null,
+
+    /**
+     * Application-level status of the UCP operation.
+     */
+    public val status: StatusEnum,
+
+    public val version: String
+)
+
+/**
+ * Application-level status of the UCP operation.
+ */
+@Serializable
+public enum class StatusEnum(public val value: String) {
+    @SerialName("error") Error("error");
+}
+
+/**
  * Checkout state after instrument selection.
  *
  * Generic error response when business logic prevents resource creation or failed to
@@ -3205,7 +1746,7 @@ public data class InstrumentsChangeResult (
     /**
      * Array of messages describing why the operation failed.
      */
-    public val messages: List<MessageElement>? = null
+    public val messages: List<Message>? = null
 )
 
 /**
@@ -3213,72 +1754,31 @@ public data class InstrumentsChangeResult (
  */
 @Serializable
 public data class InstrumentsChangeCheckout (
+    /**
+     * Payment instruments with selected instrument ID.
+     */
     public val payment: InstrumentsChangePayment? = null
 )
 
 /**
  * Payment instruments with selected instrument ID.
  *
- * Payment instruments from host.
+ * Payment configuration containing handlers.
  */
 @Serializable
 public data class InstrumentsChangePayment (
     /**
-     * Available payment instruments.
+     * The payment instruments available for this payment. Each instrument is associated with a
+     * specific handler via the handler_id field. Handlers can extend the base
+     * payment_instrument schema to add handler-specific fields.
      */
-    public val instruments: List<PurpleSelectedPaymentInstrument>? = null,
+    public val instruments: List<SelectedPaymentInstrument>? = null,
 
     /**
      * ID of the selected payment instrument.
      */
     @SerialName("selected_instrument_id")
     public val selectedInstrumentID: String? = null
-)
-
-/**
- * A payment instrument with selection state.
- *
- * The base definition for any payment instrument. It links the instrument to a specific
- * payment handler.
- */
-@Serializable
-public data class PurpleSelectedPaymentInstrument (
-    /**
-     * The billing address associated with this payment method.
-     */
-    @SerialName("billing_address")
-    public val billingAddress: BillingAddressClass? = null,
-
-    public val credential: CredentialClass? = null,
-
-    /**
-     * Display information for this payment instrument. Each payment instrument schema defines
-     * its specific display properties, as outlined by the payment handler.
-     */
-    public val display: JsonObject? = null,
-
-    /**
-     * The unique identifier for the handler instance that produced this instrument. This
-     * corresponds to the 'id' field in the Payment Handler definition.
-     */
-    @SerialName("handler_id")
-    public val handlerID: String,
-
-    /**
-     * A unique identifier for this instrument instance, assigned by the platform.
-     */
-    public val id: String,
-
-    /**
-     * The broad category of the instrument (e.g., 'card', 'tokenized_card'). Specific schemas
-     * will constrain this to a constant value.
-     */
-    public val type: String,
-
-    /**
-     * Whether this instrument is selected by the user.
-     */
-    public val selected: Boolean? = null
 )
 
 /**
@@ -3307,7 +1807,7 @@ public data class InstrumentsChangeResultUcp (
     /**
      * Service registry keyed by reverse-domain name.
      */
-    public val services: Map<String, List<PurpleService>>? = null,
+    public val services: Map<String, List<InstrumentsChangeService>>? = null,
 
     /**
      * Application-level status of the UCP operation.
@@ -3422,7 +1922,7 @@ public data class PaymentHandlerAvailableInstrument (
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class PurpleService (
+public data class InstrumentsChangeService (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -3487,7 +1987,7 @@ public data class CredentialResult (
     /**
      * Array of messages describing why the operation failed.
      */
-    public val messages: List<MessageElement>? = null
+    public val messages: List<Message>? = null
 )
 
 /**
@@ -3495,16 +1995,5 @@ public data class CredentialResult (
  */
 @Serializable
 public data class CredentialCheckout (
-    public val payment: CredentialPayment? = null
-)
-
-/**
- * Payment instruments from host.
- */
-@Serializable
-public data class CredentialPayment (
-    /**
-     * Available payment instruments.
-     */
-    public val instruments: List<PurpleSelectedPaymentInstrument>? = null
+    public val payment: Payment? = null
 )

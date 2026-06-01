@@ -4,6 +4,7 @@ import {
   type ErrorResponse,
   type ProtocolHandlers,
 } from '../src';
+import {Convert, type LineItemQuantity} from '@shopify/checkout-kit-protocol';
 import {decodeProtocolPayload} from '../src/protocol';
 
 const checkoutPayloadMethods = [
@@ -114,6 +115,170 @@ describe('CheckoutProtocol', () => {
           'com.example.loyalty_gold',
         ),
       ).toBe(true);
+    });
+
+    it('decodes each message type through the generated runtime converter', () => {
+      const decoded = decodeProtocolPayload(CheckoutProtocol.error, {
+        messages: [
+          {
+            content: 'Error message',
+            type: 'error',
+          },
+          {
+            content: 'Warning message',
+            type: 'warning',
+          },
+          {
+            content: 'Info message',
+            type: 'info',
+          },
+        ],
+        ucp: {
+          version: '2026-04-08',
+          status: 'error',
+          payment_handlers: {},
+        },
+      });
+
+      expect(decoded?.messages.map(message => message.type)).toEqual([
+        'error',
+        'warning',
+        'info',
+      ]);
+    });
+
+    it('decodes checkout extension fields through the generated runtime converter', () => {
+      const decoded = decodeProtocolPayload(CheckoutProtocol.start, {
+        id: 'checkout-123',
+        currency: 'USD',
+        discounts: {
+          codes: ['SUMMER20'],
+          applied: [
+            {
+              amount: 500,
+              code: 'SUMMER20',
+              method: 'across',
+              title: 'Summer sale',
+              allocations: [
+                {
+                  amount: 500,
+                  path: '$.line_items[0]',
+                },
+              ],
+            },
+          ],
+        },
+        fulfillment: {
+          available_methods: [
+            {
+              line_item_ids: ['li-1'],
+              type: 'shipping',
+            },
+          ],
+          methods: [
+            {
+              id: 'pickup-main',
+              line_item_ids: ['li-1'],
+              type: 'pickup',
+            },
+          ],
+        },
+        line_items: [],
+        links: [],
+        status: 'incomplete',
+        totals: [],
+        ucp: {
+          payment_handlers: {},
+          version: '2026-04-08',
+        },
+      });
+
+      expect(decoded?.discounts?.codes).toEqual(['SUMMER20']);
+      expect(decoded?.discounts?.applied?.[0]?.method).toBe('across');
+      expect(decoded?.discounts?.applied?.[0]?.allocations?.[0]?.path).toBe(
+        '$.line_items[0]',
+      );
+      expect(decoded?.fulfillment?.availableMethods?.[0]?.type).toBe(
+        'shipping',
+      );
+      expect(decoded?.fulfillment?.methods?.[0]?.id).toBe('pickup-main');
+      expect(decoded?.fulfillment?.methods?.[0]?.type).toBe('pickup');
+    });
+
+    it('decodes order line item quantity through the generated runtime converter', () => {
+      const decoded = Convert.toOrder(
+        JSON.stringify({
+          checkout_id: 'checkout-123',
+          currency: 'USD',
+          fulfillment: {},
+          id: 'order-123',
+          line_items: [
+            {
+              id: 'li-1',
+              item: {
+                id: 'sku-1',
+                price: 1000,
+                title: 'Socks',
+              },
+              quantity: {
+                fulfilled: 1,
+                original: 2,
+                total: 2,
+              },
+              status: 'partial',
+              totals: [],
+            },
+          ],
+          permalink_url: 'https://example.test/orders/order-123',
+          totals: [],
+          ucp: {
+            version: '2026-04-08',
+          },
+        }),
+      );
+      const quantity: LineItemQuantity = decoded.lineItems[0]!.quantity;
+
+      expect(quantity).toEqual({
+        fulfilled: 1,
+        original: 2,
+        total: 2,
+      });
+      expect(decoded.lineItems[0]!.status).toBe('partial');
+    });
+
+    it('decodes embedded color schemes through the generated runtime converter', () => {
+      const decoded = decodeProtocolPayload(CheckoutProtocol.start, {
+        id: 'checkout-123',
+        currency: 'USD',
+        status: 'incomplete',
+        line_items: [],
+        totals: [],
+        links: [],
+        ucp: {
+          version: '2026-04-08',
+          payment_handlers: {},
+          services: {
+            'com.example.embedded': [
+              {
+                config: {
+                  color_scheme: ['light', 'dark'],
+                  delegate: ['window.open'],
+                },
+                transport: 'embedded',
+                version: '2026-04-08',
+              },
+            ],
+          },
+        },
+      });
+
+      expect(
+        decoded?.ucp.services?.['com.example.embedded']?.[0]?.config
+          ?.colorScheme,
+      ).toEqual(['light', 'dark']);
+      expect(
+        decoded?.ucp.services?.['com.example.embedded']?.[0]?.config?.delegate,
+      ).toEqual(['window.open']);
     });
   });
 

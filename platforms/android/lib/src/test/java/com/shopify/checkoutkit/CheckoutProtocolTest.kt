@@ -1,6 +1,8 @@
 package com.shopify.checkoutkit
 
 import android.os.Looper
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -135,6 +137,131 @@ class CheckoutProtocolTest {
         assertThat(received?.messages?.get(1)?.code).isEqualTo("session_expired")
         assertThat(received?.messages?.get(1)?.severity).isEqualTo(Severity.Recoverable)
         assertThat(received?.continueURL).isEqualTo("https://example.com/retry")
+    }
+
+    @Test
+    fun `message model decodes all message types`() {
+        val cases = listOf(
+            "error" to MessageType.Error,
+            "warning" to MessageType.Warning,
+            "info" to MessageType.Info,
+        )
+
+        cases.forEach { (wireValue, expected) ->
+            val message = Json.decodeFromString<Message>(
+                """{"content":"$wireValue message","type":"$wireValue"}""",
+            )
+
+            assertThat(message.content).isEqualTo("$wireValue message")
+            assertThat(message.type).isEqualTo(expected)
+        }
+    }
+
+    @Test
+    fun `checkout model decodes extension fields`() {
+        val checkout = Json.decodeFromString<Checkout>(
+            """
+            {
+              "id": "checkout-123",
+              "currency": "USD",
+              "discounts": {
+                "codes": ["SUMMER20"],
+                "applied": [
+                  {
+                    "amount": 500,
+                    "code": "SUMMER20",
+                    "method": "across",
+                    "title": "Summer sale",
+                    "allocations": [
+                      {
+                        "amount": 500,
+                        "path": "${'$'}.line_items[0]"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "fulfillment": {
+                "available_methods": [
+                  {
+                    "line_item_ids": ["li-1"],
+                    "type": "shipping"
+                  }
+                ],
+                "methods": [
+                  {
+                    "id": "pickup-main",
+                    "line_item_ids": ["li-1"],
+                    "type": "pickup"
+                  }
+                ]
+              },
+              "line_items": [],
+              "links": [],
+              "status": "incomplete",
+              "totals": [],
+              "ucp": {
+                "payment_handlers": {},
+                "version": "2026-04-08"
+              }
+            }
+            """.trimIndent(),
+        )
+
+        assertThat(checkout.discounts?.codes).containsExactly("SUMMER20")
+        assertThat(checkout.discounts?.applied?.get(0)?.method).isEqualTo(DiscountMethod.Across)
+        assertThat(checkout.discounts?.applied?.get(0)?.allocations?.get(0)?.path)
+            .isEqualTo("\$.line_items[0]")
+        assertThat(checkout.fulfillment?.availableMethods?.get(0)?.type)
+            .isEqualTo(FulfillmentMethodType.Shipping)
+        assertThat(checkout.fulfillment?.methods?.get(0)?.id).isEqualTo("pickup-main")
+        assertThat(checkout.fulfillment?.methods?.get(0)?.type)
+            .isEqualTo(FulfillmentMethodType.Pickup)
+    }
+
+    @Test
+    fun `order line item decodes quantity model`() {
+        val lineItem = Json.decodeFromString<OrderLineItem>(
+            """
+            {
+              "id": "li-1",
+              "item": {
+                "id": "sku-1",
+                "price": 1000,
+                "title": "Socks"
+              },
+              "quantity": {
+                "fulfilled": 1,
+                "original": 2,
+                "total": 2
+              },
+              "status": "partial",
+              "totals": []
+            }
+            """.trimIndent(),
+        )
+        val quantity: LineItemQuantity = lineItem.quantity
+
+        assertThat(quantity.fulfilled).isEqualTo(1L)
+        assertThat(quantity.original).isEqualTo(2L)
+        assertThat(quantity.total).isEqualTo(2L)
+        assertThat(lineItem.status).isEqualTo(LineItemStatus.Partial)
+    }
+
+    @Test
+    fun `embedded transport config decodes color schemes`() {
+        val config = Json.decodeFromString<EmbeddedTransportConfig>(
+            """
+            {
+              "color_scheme": ["light", "dark"],
+              "delegate": ["window.open"]
+            }
+            """.trimIndent(),
+        )
+        val colorScheme: List<EmbeddedColorScheme>? = config.colorScheme
+
+        assertThat(colorScheme).containsExactly(EmbeddedColorScheme.Light, EmbeddedColorScheme.Dark)
+        assertThat(config.delegate).containsExactly("window.open")
     }
 
     @Test
