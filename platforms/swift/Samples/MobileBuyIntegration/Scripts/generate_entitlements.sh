@@ -8,11 +8,6 @@ STOREFRONT_DOMAIN=$(grep '^[[:space:]]*STOREFRONT_DOMAIN' "$CONFIG_FILE" | cut -
 TEMPLATE_FILE="MobileBuyIntegration/MobileBuyIntegration.entitlements.template"
 OUTPUT_FILE="MobileBuyIntegration/MobileBuyIntegration.entitlements"
 
-if [ -e "$OUTPUT_FILE" ]; then
-  echo "Warning: $OUTPUT_FILE already exists."
-  exit 0
-fi
-
 if [ -z "$STOREFRONT_DOMAIN" ]; then
   echo "Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig"
   exit 1

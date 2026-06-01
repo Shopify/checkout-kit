@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+mode="sync"
+storefront_prompt_arg="--skip-optional-prompts"
+
+step_names=()
+step_statuses=()
+step_details=()
+failure_count=0
+last_status=0
+storefront_ran=0
+storefront_status=0
+
+usage() {
+  cat <<EOF
+Usage: scripts/setup_dev_workspace [--skip-optional-prompts|--prompt-optional]
+
+Runs all repo-owned setup steps and prints a final summary. Unlike dev up's
+native provisioning tasks, this script keeps running independent setup steps
+after one fails, then exits non-zero if anything failed.
+
+This command prints paths and setup status only; it must not print configured
+storefront values.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --check)
+      mode="check"
+      ;;
+    --skip-optional-prompts)
+      storefront_prompt_arg="--skip-optional-prompts"
+      ;;
+    --prompt-optional)
+      storefront_prompt_arg="--prompt-optional"
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+record_step() {
+  local name="$1"
+  local status="$2"
+  local detail="$3"
+
+  step_names+=("$name")
+  step_statuses+=("$status")
+  step_details+=("$detail")
+
+  if [[ "$status" != "PASS" ]]; then
+    failure_count=$((failure_count + 1))
+  fi
+}
+
+status_icon() {
+  case "$1" in
+    PASS) printf '✅' ;;
+    FAIL) printf '❌' ;;
+    *) printf '•' ;;
+  esac
+}
+
+run_shell() {
+  local name="$1"
+  local command="$2"
+  local status
+
+  printf '\n🔧 %s\n' "$name"
+  (cd "$ROOT_DIR" && bash -c "$command")
+  status=$?
+
+  if [[ "$status" -eq 0 ]]; then
+    printf '✅ PASS %s\n' "$name"
+    record_step "$name" "PASS" ""
+  else
+    printf '❌ FAIL %s (exit %s)\n' "$name" "$status"
+    record_step "$name" "FAIL" "exit $status"
+  fi
+
+  last_status="$status"
+  return "$status"
+}
+
+ensure_storefront_env() {
+  if [[ "$storefront_ran" -eq 1 ]]; then
+    return "$storefront_status"
+  fi
+
+  if [[ "$mode" == "check" ]]; then
+    run_shell "Sample storefront config" './scripts/setup_storefront_env --check'
+  else
+    run_shell "Sample storefront config" "./scripts/setup_storefront_env ${storefront_prompt_arg}"
+  fi
+
+  storefront_status="$last_status"
+  storefront_ran=1
+  return "$storefront_status"
+}
+
+setup_android() {
+  ensure_storefront_env || true
+}
+
+setup_swift() {
+  ensure_storefront_env || true
+
+  if [[ "$mode" == "check" ]]; then
+    run_shell "Swift bundle packages" 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check' || true
+    run_shell "Swift Mint packages" '
+      set -e
+      cd platforms/swift
+      expected_swiftlint="$(sed -n "s#^realm/SwiftLint@##p" Mintfile)"
+      expected_swiftformat="$(sed -n "s#^nicklockwood/SwiftFormat@##p" Mintfile)"
+      swiftlint_bin="$(mint which swiftlint)"
+      swiftformat_bin="$(mint which swiftformat)"
+      test -n "$expected_swiftlint"
+      test -n "$expected_swiftformat"
+      test "$("$swiftlint_bin" version)" = "$expected_swiftlint"
+      test "$("$swiftformat_bin" --version)" = "$expected_swiftformat"
+    ' || true
+    run_shell "Swift sample entitlements" 'cd platforms/swift && ./Scripts/setup_entitlements' || true
+  else
+    run_shell "Swift bundle packages" 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check || BUNDLE_GEMFILE=platforms/swift/Gemfile bundle install' || true
+    run_shell "Swift Mint packages" 'cd platforms/swift && mint bootstrap' || true
+    run_shell "Swift sample entitlements" 'cd platforms/swift && ./Scripts/setup_entitlements' || true
+  fi
+}
+
+setup_react_native() {
+  ensure_storefront_env || true
+
+  if [[ "$mode" == "check" ]]; then
+    run_shell "React Native packages" 'test -d platforms/react-native/node_modules' || true
+    run_shell "React Native iOS gems" 'cd platforms/react-native/sample/ios && bundle check' || true
+  else
+    run_shell "React Native packages" 'test -d platforms/react-native/node_modules || (cd platforms/react-native && pnpm install)' || true
+    run_shell "React Native iOS gems" 'cd platforms/react-native/sample/ios && (bundle check || bundle install)' || true
+  fi
+}
+
+setup_web() {
+  if [[ "$mode" == "check" ]]; then
+    run_shell "Web packages" 'test -d platforms/web/node_modules' || true
+  else
+    run_shell "Web packages" 'test -d platforms/web/node_modules || (cd platforms/web && pnpm install)' || true
+  fi
+}
+
+print_summary() {
+  local index
+  local status
+  local detail
+  local icon
+
+  printf '\n📋 Setup summary\n'
+  for index in "${!step_names[@]}"; do
+    status="${step_statuses[$index]}"
+    detail="${step_details[$index]}"
+    icon="$(status_icon "$status")"
+    if [[ -n "$detail" ]]; then
+      printf '%s %-4s %s (%s)\n' "$icon" "$status" "${step_names[$index]}" "$detail"
+    else
+      printf '%s %-4s %s\n' "$icon" "$status" "${step_names[$index]}"
+    fi
+  done
+
+  if [[ "$failure_count" -gt 0 ]]; then
+    printf '\n⚠️  %s setup step(s) failed.\n' "$failure_count"
+    printf 'Fix the failure, then rerun dev up from the repo root.\n'
+  else
+    printf '\n✅ All requested setup steps passed.\n'
+  fi
+}
+
+setup_android
+setup_swift
+setup_react_native
+setup_web
+
+print_summary
+
+if [[ "$failure_count" -gt 0 ]]; then
+  exit 1
+fi

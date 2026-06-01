@@ -2,7 +2,7 @@
 
 The following is a set of guidelines for contributing to this project. Please take a moment to read through them before submitting your first PR.
 
-This is a monorepo containing the iOS/Swift, Android, and (forthcoming) React Native implementations of the Shopify Checkout Kit. Each platform has its own conventions, tooling, and release process; the shared guidelines below apply to all of them.
+This is a monorepo containing the Swift, Android, React Native, and Web implementations of the Shopify Checkout Kit. Each platform has its own conventions, tooling, and release process; the shared guidelines below apply to all of them.
 
 ## Code of Conduct
 
@@ -41,14 +41,30 @@ When in doubt about whether we will be interested in including a new feature, pl
 
 ### Dev tooling
 
-Shopify employees can use the root `dev.yml` from the repo root:
+Shopify employees can use the root `dev.yml` from the repo root or any platform
+directory:
 
 ```bash
 dev up
 dev check
 ```
 
-Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, and `dev react-native <command>` (or `dev rn`). Protocol schema/model commands are available as `dev protocol <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
+`dev up` performs full DevHub provisioning, then runs Checkout Kit's repo-owned
+setup steps. Those repo-owned steps are summarized at the end so a Swift,
+Android, React Native, or Web setup failure is visible without hiding later
+platform results. If a setup step fails, fix it and rerun `dev up`.
+
+Setup creates or syncs sample app storefront configuration from the repo-root
+`.env`. If `.env` is missing, setup prompts for required storefront values and
+then generates the Android, Swift, and React Native sample config files.
+Optional Apple Pay and Customer Account API values are preserved if already set,
+but `dev up` leaves missing optional values blank instead of prompting.
+
+Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, `dev react-native <command>` (or `dev rn`), and `dev web <command>` after setup. Protocol schema/model commands are available as `dev protocol <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
+
+React Native sample apps can be run against local in-repo SDK sources with
+`dev rn ios --local` or `dev rn android --local`. The Web sample accepts a
+checkout URL directly and does not use the shared storefront credential files.
 
 Sample app storefront configuration is generated from the repo-root `.env`.
 Shopify employees get this through `dev up`. External contributors can copy
@@ -142,7 +158,7 @@ If your change intentionally modifies the public API:
 2. Review the diff in `platforms/android/lib/api/lib.api` alongside your code changes.
 3. Commit the updated `.api` file in the same PR.
 
-If you did *not* intend to change public API and `apiCheck` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
+If you did _not_ intend to change public API and `apiCheck` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
 
 ### Releasing a new Android version
 
