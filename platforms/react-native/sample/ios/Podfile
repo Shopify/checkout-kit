@@ -18,7 +18,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'ReactNative' do
+target 'CheckoutKitReactNativeDemo' do
   config = use_native_modules!
 
   use_local_sdk = ENV['USE_LOCAL_SDK'] == '1'
@@ -37,7 +37,7 @@ target 'ReactNative' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'ReactNativeTests' do
+  target 'CheckoutKitReactNativeDemoTests' do
     inherit! :search_paths
   end
 

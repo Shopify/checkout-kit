@@ -1,4 +1,4 @@
-package com.shopify.checkoutkitreactnative
+package com.shopify.checkoutkit.reactnativedemo
 
 import android.app.Application
 import com.facebook.react.PackageList

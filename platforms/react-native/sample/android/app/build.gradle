@@ -56,7 +56,7 @@ react {
     // bundleConfig = file(../rn-cli.config.js)
     //
     //   The name of the generated asset file containing your JS bundle
-    bundleAssetName = "ReactNative.android.bundle"
+    bundleAssetName = "CheckoutKitReactNativeDemo.android.bundle"
     //
     //   The entry file for bundle generation. Default is 'index.android.js' or 'index.js'
     entryFile = file("../../index.js")
@@ -103,9 +103,9 @@ android {
     }
   }
 
-  namespace "com.shopify.checkoutkitreactnative"
+  namespace "com.shopify.checkoutkit.reactnativedemo"
   defaultConfig {
-    applicationId "com.shopify.checkoutkitreactnative"
+    applicationId "com.shopify.checkoutkit.reactnativedemo"
     minSdkVersion rootProject.ext.minSdkVersion
     targetSdkVersion rootProject.ext.targetSdkVersion
     versionCode 11

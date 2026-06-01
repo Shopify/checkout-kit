@@ -124,10 +124,17 @@ ensure_storefront_env() {
 # we never delete a sample that is still active on this branch.
 #   - #238 Rename Swift demo app          -> platforms/swift/Samples/MobileBuyIntegration
 #   - #239 Rename Android demo app         -> platforms/android/samples/MobileBuyIntegration
-#   - #240 Rename React Native demo app    -> (adds the RN legacy sample path)
+#   - #240 Rename React Native demo app    -> platforms/react-native/sample/ios/ReactNative{,.xcodeproj,.xcworkspace,Tests}
+#                                            (RN sample dir itself was not renamed; only the
+#                                             iOS Xcode project/app/tests, which keep gitignored
+#                                             xcuserdata behind on the old paths.)
 LEGACY_SAMPLE_DIRS=(
   "platforms/swift/Samples/MobileBuyIntegration"
   "platforms/android/samples/MobileBuyIntegration"
+  "platforms/react-native/sample/ios/ReactNative.xcodeproj"
+  "platforms/react-native/sample/ios/ReactNative.xcworkspace"
+  "platforms/react-native/sample/ios/ReactNative"
+  "platforms/react-native/sample/ios/ReactNativeTests"
 )
 
 cleanup_legacy_sample_dir() {

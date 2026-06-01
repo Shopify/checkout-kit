@@ -46,7 +46,7 @@ Output files:
 
 To install the release build:
   - Ensure an emulator or device is connected
-  - Uninstall existing version: adb uninstall com.shopify.checkoutkitreactnative
+  - Uninstall existing version: adb uninstall com.shopify.checkoutkit.reactnativedemo
   - Install new version: adb install android/app/build/outputs/apk/release/app-release.apk
 
 To observe the production logs for your emulator/device:
