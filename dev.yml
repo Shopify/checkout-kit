@@ -105,10 +105,6 @@ commands:
       update-upstream:
         desc: "Update vendored UCP snapshot files from upstream"
         run: ./protocol/scripts/update_ucp_snapshot.sh "$@"
-  checkout-web-wire-fields:
-    desc: "Check checkout-web UCP checkout schema fields against generated protocol models"
-    syntax: "[--checkout-web <path>|--schema-root <path>]"
-    run: node protocol/scripts/check_checkout_web_wire_fields.mjs "$@"
   apollo:
     subcommands:
       download_schema:
