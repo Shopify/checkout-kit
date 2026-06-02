@@ -18,17 +18,16 @@ jobs:
       - name: Setup Node.js, pnpm, and install dependencies
         uses: ./.github/actions/setup
         with:
-          node-version-file: platforms/react-native/package.json
-          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
-          package-json-file: platforms/react-native/package.json
-          working-directory: platforms/react-native
+          node-version-file: protocol/package.json
+          cache-dependency-path: protocol/pnpm-lock.yaml
+          package-json-file: protocol/package.json
+          working-directory: protocol
 
       - name: Regenerate protocol models
         run: |
-          export PATH="${GITHUB_WORKSPACE}/platforms/react-native/node_modules/.bin:${PATH}"
-          ./protocol/scripts/generate_models.sh --lang kotlin
-          ./protocol/scripts/generate_models.sh --lang swift
-          ./protocol/scripts/generate_models.sh --lang typescript
+          pnpm --dir protocol run codegen:kotlin
+          pnpm --dir protocol run codegen:swift
+          pnpm --dir protocol run codegen:typescript
 
       - name: Check generated files are current
         run: git diff --exit-code

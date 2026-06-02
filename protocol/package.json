@@ -11,7 +11,11 @@
     "codegen:swift": "./scripts/generate_models.sh --lang swift",
     "codegen:typescript": "./scripts/generate_models.sh --lang typescript"
   },
+  "engines": {
+    "node": "22.14.0"
+  },
   "devDependencies": {
-    "quicktype": "23.2.6"
+    "quicktype": "23.2.6",
+    "typescript": "5.9.2"
   }
 }

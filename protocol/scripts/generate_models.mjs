@@ -30,8 +30,10 @@ import {
   PROTOCOL_DIR,
   QUICKTYPE_BIN,
   REPO_ROOT,
+  TSC_BIN,
   readJson,
   requireQuicktype,
+  requireTypescript,
   run,
 } from "./codegen_tools.mjs";
 
@@ -357,11 +359,10 @@ async function generateTypescript(specDir, output) {
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 
   const declarationOutput = path.join(PROTOCOL_DIR, "languages", "typescript", "src", "index.d.ts");
-  const tscBin = path.join(REPO_ROOT, "platforms", "react-native", "node_modules", "typescript", "bin", "tsc");
   const indexOutput = path.join(PROTOCOL_DIR, "languages", "typescript", "src", "index.ts");
 
-  await run("node", [
-    tscBin,
+  await requireTypescript();
+  await run(TSC_BIN, [
     "--declaration",
     "--emitDeclarationOnly",
     "--noEmit",

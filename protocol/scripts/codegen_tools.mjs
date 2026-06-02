@@ -32,6 +32,7 @@ export const PROTOCOL_DIR = path.resolve(SCRIPT_DIR, "..");
 export const REPO_ROOT = path.resolve(PROTOCOL_DIR, "..");
 export const PACKAGE_JSON = path.join(PROTOCOL_DIR, "package.json");
 export const QUICKTYPE_BIN = path.join(PROTOCOL_DIR, "node_modules", ".bin", "quicktype");
+export const TSC_BIN = path.join(PROTOCOL_DIR, "node_modules", ".bin", "tsc");
 
 export function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -104,5 +105,31 @@ export async function requireQuicktype() {
 
   if (actual !== expected) {
     throw new Error(`Unsupported quicktype version: ${actual}. Expected ${expected} from ${PACKAGE_JSON}.`);
+  }
+}
+
+export async function requireTypescript() {
+  if (!(await fileIsExecutable(TSC_BIN))) {
+    throw new Error(`TypeScript is required at ${TSC_BIN}. Run dev up or (cd protocol && pnpm install).`);
+  }
+
+  const packageJson = await readJson(PACKAGE_JSON);
+  const expected = packageJson.devDependencies?.typescript ?? "";
+  if (expected === "") {
+    throw new Error(`Missing TypeScript version in ${PACKAGE_JSON}`);
+  }
+
+  if (!/^[0-9]+[.][0-9]+[.][0-9]+(-[0-9A-Za-z.-]+)?$/.test(expected)) {
+    throw new Error(`TypeScript must use an exact version in ${PACKAGE_JSON}; found ${expected}.`);
+  }
+
+  const {stdout} = await run(TSC_BIN, ["--version"], {capture: true});
+  const actual = stdout.match(/^Version (\S+)/m)?.[1] ?? "";
+  if (actual === "") {
+    throw new Error(`Unable to determine TypeScript version from ${TSC_BIN}`);
+  }
+
+  if (actual !== expected) {
+    throw new Error(`Unsupported TypeScript version: ${actual}. Expected ${expected} from ${PACKAGE_JSON}.`);
   }
 }
