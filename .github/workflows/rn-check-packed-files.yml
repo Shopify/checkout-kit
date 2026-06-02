@@ -11,7 +11,7 @@ jobs:
   check-packed-files:
     name: Check package files
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     env:
       TERM: xterm
     defaults:
@@ -33,3 +33,9 @@ jobs:
           pnpm module clean
           pnpm module build
           pnpm compare-snapshot
+
+      - name: Validate package publish shape
+        env:
+          KEEP_TMP: "0"
+          PACKAGE_MANAGERS: pnpm
+        run: pnpm publish:check:package

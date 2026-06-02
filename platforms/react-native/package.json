@@ -23,6 +23,10 @@
     "pod-install": "bash ./scripts/pod_install",
     "snapshot": "./scripts/create_snapshot",
     "compare-snapshot": "./scripts/compare_snapshot",
+    "publish:check": "pnpm publish:check:package && pnpm publish:check:react-native && pnpm publish:check:expo",
+    "publish:check:package": "./scripts/validate_release package",
+    "publish:check:react-native": "./scripts/validate_release react-native",
+    "publish:check:expo": "./scripts/validate_release expo",
     "turbo": "turbo",
     "test": "jest"
   },

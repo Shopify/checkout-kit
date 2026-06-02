@@ -34,8 +34,74 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-react-native-release:
+    name: Validate React Native release package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Skip React Native publish validation
+        if: ${{ inputs.platform != 'React Native' || inputs.mode == 'Dry run' }}
+        run: echo "No React Native npm publish validation needed for ${{ inputs.platform }} / ${{ inputs.mode }}."
+
+      - name: Checkout
+        if: ${{ inputs.platform == 'React Native' && inputs.mode != 'Dry run' }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Validate requested React Native release
+        if: ${{ inputs.platform == 'React Native' && inputs.mode != 'Dry run' }}
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+        run: .github/scripts/validate-release-version "React Native" "$EXPECTED_VERSION" >/dev/null
+
+      - name: Setup Node.js, pnpm, and install dependencies
+        if: ${{ inputs.platform == 'React Native' && inputs.mode != 'Dry run' }}
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
+          ignore-scripts: "true"
+
+      - name: Verify React Native version is not already published
+        if: ${{ inputs.platform == 'React Native' && inputs.mode != 'Dry run' }}
+        working-directory: platforms/react-native
+        run: |
+          set -euo pipefail
+          NAME=$(node -p "require('./modules/@shopify/checkout-kit-react-native/package.json').name")
+          VERSION=$(node -p "require('./modules/@shopify/checkout-kit-react-native/package.json').version")
+          ENCODED_NAME=$(node -p "encodeURIComponent(require('./modules/@shopify/checkout-kit-react-native/package.json').name)")
+          URL="https://registry.npmjs.org/${ENCODED_NAME}/${VERSION}"
+          if curl -fs "$URL" > /dev/null; then
+            echo "::error::${NAME}@${VERSION} is already published on npm. Bump platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json before creating a GitHub Release."
+            exit 1
+          fi
+          echo "::notice::${NAME}@${VERSION} is not yet on npm — safe to create a release."
+
+      - name: Validate React Native package publish shape
+        if: ${{ inputs.platform == 'React Native' && inputs.mode != 'Dry run' }}
+        working-directory: platforms/react-native
+        env:
+          KEEP_TMP: "0"
+          PACKAGE_MANAGERS: pnpm
+        run: pnpm publish:check:package
+
+      - name: Validate generated React Native consumer app
+        if: ${{ inputs.platform == 'React Native' && inputs.mode != 'Dry run' }}
+        working-directory: platforms/react-native
+        env:
+          BUILD_NATIVE: "0"
+          KEEP_TMP: "0"
+          PACKAGE_MANAGER: pnpm
+          PLATFORM: ios
+        run: pnpm publish:check:react-native
+
   release:
     name: Release ${{ inputs.platform }} ${{ inputs.version }}
+    needs: validate-react-native-release
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

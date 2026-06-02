@@ -21,5 +21,6 @@
     "strict": true,
     "verbatimModuleSyntax": true,
     "target": "esnext"
-  }
+  },
+  "exclude": ["scripts/publish_checks/support/templates/**/*"]
 }
