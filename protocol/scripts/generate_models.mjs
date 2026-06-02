@@ -115,24 +115,95 @@ function rewriteRefs(value) {
   }
 }
 
-function ensureObjectPath(root, pathSegments) {
-  let target = root;
-  for (const segment of pathSegments) {
-    if (target[segment] === undefined) {
-      target[segment] = {};
-    }
-    target = target[segment];
-  }
-  return target;
-}
-
 async function prepareCodegenSchemas(tempDir) {
   const schemaDir = path.join(tempDir, "schemas");
   await fs.cp(SCHEMA_SOURCE_DIR, schemaDir, {recursive: true});
-  return path.join(schemaDir, "shopping");
+
+  const specDir = path.join(schemaDir, "shopping");
+
+  // Build checkout models from the base checkout schema plus checkout extension
+  // fields that checkout-web emits in the primary checkout snapshot/change
+  // notifications. The imported public schemas stay unchanged; this temp schema
+  // only gives quicktype the full checkout shape we expose through the SDKs.
+  const checkout = await readJson(path.join(specDir, "checkout.json"));
+  checkout.properties.fulfillment = {
+    title: "CheckoutFulfillment",
+    allOf: [
+      {$ref: "fulfillment.json#/$defs/fulfillment"},
+    ],
+    description: "Fulfillment details.",
+    ucp_request: {
+      create: "optional",
+      update: "optional",
+      complete: "omit",
+    },
+  };
+  checkout.properties.discounts = {
+    $ref: "discount.json#/$defs/discounts_object",
+    ucp_request: {
+      create: "optional",
+      update: "optional",
+      complete: "omit",
+    },
+  };
+  checkout.properties.payment.title = "Payment";
+  await writeJson(path.join(specDir, "checkout.json"), checkout);
+
+  const order = await readJson(path.join(specDir, "order.json"));
+  order.properties.fulfillment.title = "Fulfillment";
+  await writeJson(path.join(specDir, "order.json"), order);
+
+  // The public schemas are imported inputs, so keep naming hints local to codegen.
+  // quicktype otherwise collapses order_line_item.quantity to a generic Quantity.
+  const orderLineItem = await readJson(path.join(specDir, "types", "order_line_item.json"));
+  orderLineItem.properties.quantity.title = "LineItemQuantity";
+  await writeJson(path.join(specDir, "types", "order_line_item.json"), orderLineItem);
+
+  // Preserve the existing shared line-item total model name after checkout
+  // fulfillment adds another reference from fulfillment option totals.
+  const total = await readJson(path.join(specDir, "types", "total.json"));
+  total.title = "LineItemTotal";
+  await writeJson(path.join(specDir, "types", "total.json"), total);
+
+  const totals = await readJson(path.join(specDir, "types", "totals.json"));
+  totals.items.title = "CheckoutTotal";
+  await writeJson(path.join(specDir, "types", "totals.json"), totals);
+
+  const embeddedConfig = await readJson(path.join(schemaDir, "transports", "embedded_config.json"));
+  embeddedConfig.properties.color_scheme.items.title = "EmbeddedColorScheme";
+  await writeJson(path.join(schemaDir, "transports", "embedded_config.json"), embeddedConfig);
+
+  // Message discriminators are defined across the message variant schemas. Give
+  // each variant the same local title so quicktype emits a single MessageType symbol.
+  for (const messageSchema of ["message_error", "message_warning", "message_info"]) {
+    const schema = await readJson(path.join(specDir, "types", `${messageSchema}.json`));
+    schema.properties.type.title = "MessageType";
+    await writeJson(path.join(specDir, "types", `${messageSchema}.json`), schema);
+  }
+
+  // Extension schemas bring in repeated generic property names like `type` and
+  // `method`; add local titles so generated model symbols stay domain-specific.
+  const discount = await readJson(path.join(specDir, "discount.json"));
+  discount.$defs.discounts_object.title = "CheckoutDiscounts";
+  discount.$defs.applied_discount.title = "AppliedDiscount";
+  discount.$defs.applied_discount.properties.method.title = "DiscountMethod";
+  discount.$defs.allocation.title = "DiscountAllocation";
+  await writeJson(path.join(specDir, "discount.json"), discount);
+
+  for (const fulfillmentSchema of ["fulfillment_available_method", "fulfillment_method"]) {
+    const schema = await readJson(path.join(specDir, "types", `${fulfillmentSchema}.json`));
+    schema.properties.type.title = "FulfillmentMethodType";
+    await writeJson(path.join(specDir, "types", `${fulfillmentSchema}.json`), schema);
+  }
+
+  const fulfillment = await readJson(path.join(specDir, "types", "fulfillment.json"));
+  fulfillment.title = "CheckoutFulfillment";
+  await writeJson(path.join(specDir, "types", "fulfillment.json"), fulfillment);
+
+  return specDir;
 }
 
-async function extractResultSchema(specDir, methodName, outputFile, rootTitle, checkoutTitle, paymentTitle) {
+async function extractResultSchema(specDir, methodName, outputFile, rootTitle, checkoutTitle, paymentSchema) {
   const service = await readJson(path.join(SERVICES_DIR, "embedded.openrpc.json"));
   const method = service.methods.find((candidate) => candidate.name === methodName);
   if (method === undefined) {
@@ -141,23 +212,18 @@ async function extractResultSchema(specDir, methodName, outputFile, rootTitle, c
 
   const schema = structuredClone(method.result.schema);
   schema.title = rootTitle;
-  ensureObjectPath(schema, ["properties", "checkout"]).title = checkoutTitle;
-  ensureObjectPath(schema, ["properties", "checkout", "properties", "payment"]).title = paymentTitle;
   rewriteRefs(schema);
-  ensureObjectPath(schema, ["properties", "checkout", "properties", "payment", "properties"]).instruments = {
-    $ref: "payment.json#/properties/instruments",
-  };
+
+  for (const variant of schema.oneOf ?? []) {
+    if (variant?.properties?.checkout !== undefined) {
+      variant.properties.checkout.title = checkoutTitle;
+      variant.properties.checkout.properties.payment = structuredClone(paymentSchema);
+    }
+  }
+
   schema.components = service.components;
 
   await writeJson(path.join(specDir, outputFile), schema);
-}
-
-async function typeSchemas(specDir) {
-  const typesDir = path.join(specDir, "types");
-  const names = (await fs.readdir(typesDir))
-    .filter((name) => name.endsWith(".json"))
-    .sort();
-  return names.map((name) => path.join(typesDir, name));
 }
 
 async function runQuicktype(args) {
@@ -169,26 +235,45 @@ async function replaceInFile(file, transform) {
   await fs.writeFile(file, transform(source));
 }
 
-function replaceRequired(source, regex, replacement, description) {
-  const matches = Array.from(source.matchAll(regex.global ? regex : new RegExp(regex.source, `${regex.flags}g`))).length;
-  if (matches === 0) {
-    throw new Error(`${description}: expected at least one match.`);
-  }
-
-  return source.replace(regex.global ? regex : new RegExp(regex.source, `${regex.flags}g`), replacement);
+function normalizeQuicktypeFallbacks(source) {
+  return source
+    .replace(/\bPurpleStatus\b/g, "StatusEnum")
+    .replace(/\bPurpleService\b/g, "InstrumentsChangeService");
 }
 
-function replaceExactlyOnce(source, search, replacement, description) {
-  const matches = source.split(search).length - 1;
-  if (matches !== 1) {
-    throw new Error(`${description}: expected exactly one match, found ${matches}.`);
-  }
+function assertNoQuicktypeFallbacks(source, output) {
+  const matches = Array.from(
+    source.matchAll(/\b(?:Purple|Fluffy|Tentacled|Sticky|Indigo|Magenta)\w+/g),
+    (match) => match[0],
+  );
+  const unique = [...new Set(matches)].sort();
 
-  return source.replace(search, replacement);
+  if (unique.length > 0) {
+    throw new Error(`Unexpected quicktype color-name fallback detected in ${output}:\n${unique.join("\n")}`);
+  }
 }
 
-function replaceIfPresent(source, regex, replacement) {
-  return source.replace(regex.global ? regex : new RegExp(regex.source, `${regex.flags}g`), replacement);
+async function normalizeGeneratedFile(output, transform = (source) => source) {
+  await replaceInFile(output, (source) => {
+    const result = normalizeQuicktypeFallbacks(transform(source));
+    assertNoQuicktypeFallbacks(result, output);
+    return result;
+  });
+}
+
+function commonSchemaSources(specDir) {
+  return [
+    "--src",
+    path.join(specDir, "checkout.json"),
+    "--src",
+    path.join(specDir, "order.json"),
+    "--src",
+    path.join(specDir, "types", "error_response.json"),
+    "--src",
+    path.join(specDir, "instruments_change_result.json"),
+    "--src",
+    path.join(specDir, "credential_result.json"),
+  ];
 }
 
 async function generateKotlin(specDir, output) {
@@ -200,25 +285,16 @@ async function generateKotlin(specDir, output) {
     "schema",
     "--framework",
     "kotlinx",
-    "--src",
-    path.join(specDir, "checkout.json"),
-    ...((await typeSchemas(specDir)).flatMap((file) => ["--src", file])),
-    "--src",
-    path.join(specDir, "payment.json"),
-    "--src",
-    path.join(specDir, "order.json"),
-    "--src",
-    path.join(specDir, "instruments_change_result.json"),
-    "--src",
-    path.join(specDir, "credential_result.json"),
+    ...commonSchemaSources(specDir),
     "--package",
     "com.shopify.checkoutkit",
     "-o",
     output,
   ]);
 
-  await replaceInFile(output, (source) => {
-    let result = source
+  await normalizeGeneratedFile(output, (source) => {
+    const result = source
+      .replace(/^.*?(?=^package )/ms, "")
       .replace(/^data class /gm, "public data class ")
       .replace(/^sealed class /gm, "public sealed class ")
       .replace(/^enum class /gm, "public enum class ")
@@ -227,15 +303,16 @@ async function generateKotlin(specDir, output) {
       .replace(/^    val /gm, "    public val ")
       .replace(/\(val value: /g, "(public val value: ");
 
-    result = replaceExactlyOnce(result, "public data class Binding (", "public data class TokenBinding (", "Kotlin TokenBinding class declaration");
-    result = replaceIfPresent(result, /: Binding$/gm, ": TokenBinding");
-    result = replaceRequired(result, /Binding\.serializer\(\)/g, "TokenBinding.serializer()", "Kotlin TokenBinding serializer references");
-    result = replaceExactlyOnce(result, "public enum class ColorScheme(", "public enum class EmbeddedColorScheme(", "Kotlin EmbeddedColorScheme declaration");
-    result = replaceRequired(result, /List<ColorScheme>/g, "List<EmbeddedColorScheme>", "Kotlin EmbeddedColorScheme list references");
-    result = replaceIfPresent(result, /ColorScheme\.serializer\(\)/g, "EmbeddedColorScheme.serializer()");
-    result = replaceExactlyOnce(result, "typealias Totals = JsonArray<TotalElement>", "typealias Totals = List<TotalElement>", "Kotlin Totals collection type");
+    const withSerializer = result.replace(
+      /@Serializable(\s+public sealed class Extends\b)/,
+      "@Serializable(with = ExtendsSerializer::class)$1",
+    );
 
-    return result;
+    if (withSerializer === result) {
+      throw new Error("ExtendsSerializer injection failed; quicktype Extends output may have changed");
+    }
+
+    return withSerializer;
   });
 }
 
@@ -250,24 +327,12 @@ async function generateSwift(specDir, output) {
     "--sendable",
     "--src-lang",
     "schema",
-    "--src",
-    path.join(specDir, "checkout.json"),
-    ...((await typeSchemas(specDir)).flatMap((file) => ["--src", file])),
-    "--src",
-    path.join(specDir, "payment.json"),
-    "--src",
-    path.join(specDir, "order.json"),
-    "--src",
-    path.join(specDir, "instruments_change_result.json"),
-    "--src",
-    path.join(specDir, "credential_result.json"),
+    ...commonSchemaSources(specDir),
     "-o",
     output,
   ]);
 
-  await replaceInFile(output, (source) => source
-    .replace(/\bBinding\b/g, "TokenBinding")
-    .replace(/\bColorScheme\b/g, "EmbeddedColorScheme"));
+  await normalizeGeneratedFile(output);
 }
 
 async function generateTypescript(specDir, output) {
@@ -282,25 +347,12 @@ async function generateTypescript(specDir, output) {
     "--acronym-style",
     "camel",
     "--no-date-times",
-    "--src",
-    path.join(specDir, "checkout.json"),
-    ...((await typeSchemas(specDir)).flatMap((file) => ["--src", file])),
-    "--src",
-    path.join(specDir, "payment.json"),
-    "--src",
-    path.join(specDir, "order.json"),
-    "--src",
-    path.join(specDir, "instruments_change_result.json"),
-    "--src",
-    path.join(specDir, "credential_result.json"),
+    ...commonSchemaSources(specDir),
     "-o",
     output,
   ]);
 
-  await replaceInFile(output, (source) => source
-    .replace(/^type /gm, "export type ")
-    .replace(/\bBinding\b/g, "TokenBinding")
-    .replace(/\bColorScheme\b/g, "EmbeddedColorScheme"));
+  await normalizeGeneratedFile(output, (source) => source.replace(/^type /gm, "export type "));
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 
@@ -340,7 +392,22 @@ async function main() {
       "instruments_change_result.json",
       "InstrumentsChangeResult",
       "InstrumentsChangeCheckout",
-      "InstrumentsChangePayment",
+      {
+        title: "InstrumentsChangePayment",
+        description: "Payment instruments with selected instrument ID.",
+        allOf: [
+          {$ref: "checkout.json#/properties/payment"},
+          {
+            type: "object",
+            properties: {
+              selected_instrument_id: {
+                type: "string",
+                description: "ID of the selected payment instrument.",
+              },
+            },
+          },
+        ],
+      },
     );
     await extractResultSchema(
       specDir,
@@ -348,7 +415,7 @@ async function main() {
       "credential_result.json",
       "CredentialResult",
       "CredentialCheckout",
-      "CredentialPayment",
+      {$ref: "checkout.json#/properties/payment"},
     );
 
     switch (lang) {
