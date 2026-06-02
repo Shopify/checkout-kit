@@ -130,6 +130,11 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    groups:
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
     ignore:
       - dependency-name: "*"
         update-types:
