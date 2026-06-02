@@ -2,7 +2,6 @@ name: checkout-kit
 
 up:
   - packages:
-      - quicktype
       - rover
       - mint
       - xcbeautify
@@ -21,6 +20,7 @@ up:
       version: v22.14.0
       package_manager: pnpm@10.33.1
       packages:
+        - protocol
         - platforms/react-native
         - platforms/web
   - custom:
@@ -137,6 +137,9 @@ commands:
       update-upstream:
         desc: Update vendored UCP snapshot files from upstream
         run: ./protocol/scripts/update_ucp_snapshot.sh "$@"
+      check-tools:
+        desc: Verify protocol codegen tools match protocol/package.json
+        run: ./protocol/scripts/check_codegen_tools.sh "$@"
 
   # Android
   android:
