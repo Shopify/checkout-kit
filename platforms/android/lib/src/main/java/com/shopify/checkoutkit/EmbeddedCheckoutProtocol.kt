@@ -1,6 +1,5 @@
 package com.shopify.checkoutkit
 
-import android.content.Context
 import android.webkit.JavascriptInterface
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import kotlinx.serialization.Serializable
@@ -29,7 +28,7 @@ internal class EmbeddedCheckoutProtocol(
     @Volatile private var client: CheckoutCommunicationClient? = null,
 ) {
     private val decoder = Json { ignoreUnknownKeys = true }
-    private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient(view.context)
+    private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
 
     internal fun setClient(client: CheckoutCommunicationClient?) {
         this.client = client
@@ -48,9 +47,9 @@ internal class EmbeddedCheckoutProtocol(
                 // ep.cart.* is out of scope for the checkout bridge
                 request.method.startsWith("ep.") ->
                     log.d(LOG_TAG, "Ignoring out-of-scope ep method: ${request.method}.")
-                request.method == METHOD_WINDOW_OPEN_REQUEST -> handleWindowOpenRequest(message)
-                request.method == METHOD_START -> handleStart(message)
-                request.method == METHOD_COMPLETE -> handleComplete(message)
+                request.method == CheckoutProtocol.windowOpen.method -> handleWindowOpenRequest(message)
+                request.method == CheckoutProtocol.start.method -> handleStart(message)
+                request.method == CheckoutProtocol.complete.method -> handleComplete(message)
                 else -> handleClientMessage(request.method, message)
             }
         } catch (e: SerializationException) {
@@ -101,7 +100,7 @@ internal class EmbeddedCheckoutProtocol(
         )
 
     private fun handleStart(message: String) {
-        log.d(LOG_TAG, "Handling $METHOD_START: hiding progress bar and bubbling up.")
+        log.d(LOG_TAG, "Handling ${CheckoutProtocol.start.method}: hiding progress bar and bubbling up.")
         onMainThread {
             view.getListener().onCheckoutViewLoadComplete()
             client?.process(message)
@@ -109,7 +108,7 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     private fun handleComplete(message: String) {
-        log.d(LOG_TAG, "Handling $METHOD_COMPLETE: bubbling up.")
+        log.d(LOG_TAG, "Handling ${CheckoutProtocol.complete.method}: bubbling up.")
         onMainThread {
             client?.process(message)
         }
@@ -124,7 +123,7 @@ internal class EmbeddedCheckoutProtocol(
      * `Intent.ACTION_VIEW` (see [defaultDelegationClient]).
      */
     private fun handleWindowOpenRequest(message: String) {
-        log.d(LOG_TAG, "Handling $METHOD_WINDOW_OPEN_REQUEST")
+        log.d(LOG_TAG, "Handling ${CheckoutProtocol.windowOpen.method}")
         onMainThread {
             val merchantResponse = client?.process(message)
             if (merchantResponse != null) {
@@ -135,12 +134,22 @@ internal class EmbeddedCheckoutProtocol(
         }
     }
 
+    /**
+     * Dispatch a message through the consumer client. `ec.error` also runs through the
+     * kit-owned [defaultClient] regardless of the consumer response so unrecoverable
+     * session errors always close checkout while still reaching `CheckoutProtocol.error`.
+     */
     private fun handleClientMessage(method: String, message: String) {
         log.d(LOG_TAG, "Delegating $method to client.")
         onMainThread {
             val response = client?.process(message)
             log.d(LOG_TAG, "  client response: $response")
             response?.let { sendRaw(it) }
+            if (method == CheckoutProtocol.error.method) {
+                // Unrecoverable ec.error is kit behavior: emit to the client, then run
+                // the default handler so checkout is dismissed even if the client responded.
+                defaultClient.process(message)?.let { sendRaw(it) }
+            }
         }
     }
 
@@ -169,6 +178,37 @@ internal class EmbeddedCheckoutProtocol(
         }
     }
 
+    /**
+     * Kit-owned client that handles delegations and kit-mandated notifications,
+     * mirroring Swift's `defaultsClient`. Currently:
+     *   - [CheckoutProtocol.windowOpen] - launches the URI via `Intent.ACTION_VIEW`, or
+     *     returns [WindowOpenResult.Rejected] with `window_open_rejected_error` semantics.
+     *   - [CheckoutProtocol.error] - when any message carries `severity: "unrecoverable"`,
+     *     dismiss the kit via the listener. Per UCP spec, `unrecoverable` means no valid
+     *     resource exists to act on, so consumers don't have to wire dismissal in every
+     *     error handler.
+     */
+    private fun defaultDelegationClient(): CheckoutProtocol.Client =
+        CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { request ->
+                when (val result = ExternalUriLauncher.launch(view.context, request.url)) {
+                    is ExternalUriLauncher.Result.Launched -> WindowOpenResult.Success
+                    is ExternalUriLauncher.Result.Rejected -> {
+                        log.d(LOG_TAG, "window.open rejected for ${request.url}: ${result.reason}")
+                        WindowOpenResult.Rejected(reason = result.reason)
+                    }
+                }
+            }
+            .on(CheckoutProtocol.error) { payload ->
+                if (payload.messages.none { it.severity == Severity.Unrecoverable }) return@on
+                log.d(LOG_TAG, "ec.error unrecoverable; dismissing checkout via event processor")
+                view.getListener().onCheckoutViewFailedWithError(
+                    ClientException(
+                        errorDescription = "Embedded checkout reported unrecoverable error.",
+                    ),
+                )
+            }
+
     companion object {
         private const val LOG_TAG = BaseWebView.ECP_LOG_TAG
 
@@ -179,10 +219,6 @@ internal class EmbeddedCheckoutProtocol(
         private const val ECP_RESPONSE_GLOBAL = "EmbeddedCheckoutProtocol"
 
         internal const val METHOD_READY = "ec.ready"
-        internal const val METHOD_START = "ec.start"
-        internal const val METHOD_COMPLETE = "ec.complete"
-
-        private const val METHOD_WINDOW_OPEN_REQUEST = "ec.window.open_request"
 
         // Delegations this SDK supports. Echoed back in the ec.ready response as the
         // intersection of checkout-accepted ∩ kit-supported. Must align with the
@@ -200,24 +236,6 @@ internal class EmbeddedCheckoutProtocol(
 
         private const val CODE_PARSE_ERROR = -32700
         private const val CODE_METHOD_NOT_SUPPORTED = -32601
-
-        /**
-         * The kit's default [CheckoutProtocol.windowOpen] handler.
-         *
-         * Mirrors Swift's `defaultsClient`: launches the URI via `Intent.ACTION_VIEW`
-         * if any activity resolves it, otherwise returns [WindowOpenResult.Rejected]
-         * with `window_open_rejected_error` semantics.
-         */
-        internal fun defaultDelegationClient(context: Context): CheckoutProtocol.Client =
-            CheckoutProtocol.Client().on(CheckoutProtocol.windowOpen) { request ->
-                when (val result = ExternalUriLauncher.launch(context, request.url)) {
-                    is ExternalUriLauncher.Result.Launched -> WindowOpenResult.Success
-                    is ExternalUriLauncher.Result.Rejected -> {
-                        log.d(LOG_TAG, "window.open rejected for ${request.url}: ${result.reason}")
-                        WindowOpenResult.Rejected(reason = result.reason)
-                    }
-                }
-            }
     }
 }
 

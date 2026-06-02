@@ -7,11 +7,13 @@ import android.net.Uri
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
@@ -360,11 +362,11 @@ class EmbeddedCheckoutProtocolTest {
 
     // endregion
 
-    // region delegated notifications
+    // region ec.error — severity-driven dismissal
 
     @Test
-    fun `ec error is delegated to client`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"ec.error","params":{"error":{"code":-1,"message":"fail"}}}"""
+    fun `ec error is forwarded to client regardless of severity`() {
+        val rawMessage = ecErrorMessage(severity = "recoverable")
         val client = mock<CheckoutCommunicationClient>()
         ecp.setClient(client)
 
@@ -373,6 +375,107 @@ class EmbeddedCheckoutProtocolTest {
 
         verify(client).process(rawMessage)
     }
+
+    @Test
+    fun `ec error with unrecoverable severity dismisses via listener`() {
+        val rawMessage = ecErrorMessage(severity = "unrecoverable")
+        val client = mock<CheckoutCommunicationClient>()
+        ecp.setClient(client)
+
+        ecp.postMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(client).process(rawMessage)
+        val captor = argumentCaptor<CheckoutException>()
+        verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
+        assertThat(captor.firstValue).isInstanceOf(ClientException::class.java)
+        assertThat(captor.firstValue.errorDescription)
+            .isEqualTo("Embedded checkout reported unrecoverable error.")
+    }
+
+    @Test
+    fun `ec error with unrecoverable severity dismisses even when client returns response`() {
+        val rawMessage = ecErrorMessage(severity = "unrecoverable")
+        val client = mock<CheckoutCommunicationClient>()
+        whenever(client.process(rawMessage)).thenReturn("""{"jsonrpc":"2.0","id":null,"result":{}}""")
+        ecp.setClient(client)
+
+        ecp.postMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(client).process(rawMessage)
+        verify(mockListener).onCheckoutViewFailedWithError(
+            argThat { this is ClientException },
+        )
+    }
+
+    @Test
+    fun `ec error with recoverable severity does not dismiss`() {
+        val rawMessage = ecErrorMessage(severity = "recoverable")
+        ecp.setClient(mock())
+
+        ecp.postMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(mockListener, never()).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `ec error with requires_buyer_input severity does not dismiss`() {
+        val rawMessage = ecErrorMessage(severity = "requires_buyer_input")
+        ecp.setClient(mock())
+
+        ecp.postMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(mockListener, never()).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `ec error with requires_buyer_review severity does not dismiss`() {
+        val rawMessage = ecErrorMessage(severity = "requires_buyer_review")
+        ecp.setClient(mock())
+
+        ecp.postMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(mockListener, never()).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `ec error dismisses when any message has unrecoverable severity`() {
+        val messages = """[
+            |{"type":"error","code":"a","content":"x","severity":"recoverable"},
+            |{"type":"error","code":"b","content":"y","severity":"unrecoverable"}
+        |]
+        """.trimMargin()
+        val rawMessage = ecErrorMessageWithMessages(messages)
+        ecp.setClient(mock())
+
+        ecp.postMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(mockListener).onCheckoutViewFailedWithError(
+            argThat { this is ClientException },
+        )
+    }
+
+    @Test
+    fun `ec error without required messages field is ignored by typed handler`() {
+        val rawMessage = """{"jsonrpc":"2.0","method":"ec.error","params":{"error":{$ERROR_RESPONSE_UCP}}}"""
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.error) { fail("Malformed ec.error should not dispatch") }
+        ecp.setClient(client)
+
+        ecp.postMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(mockListener, never()).onCheckoutViewFailedWithError(any())
+    }
+
+    // endregion
+
+    // region delegated notifications
 
     @Test
     fun `ec complete is delegated to client`() {
@@ -490,6 +593,21 @@ class EmbeddedCheckoutProtocolTest {
 
     private fun windowOpenRequest(id: String, url: String): String =
         """{"jsonrpc":"2.0","method":"ec.window.open_request","id":$id,"params":{"url":"$url"}}"""
+
+    private fun ecErrorMessage(severity: String): String {
+        val messages =
+            """[{"type":"error","code":"session_failed","content":"Session failed","severity":"$severity"}]"""
+        return ecErrorMessageWithMessages(messages)
+    }
+
+    private fun ecErrorMessageWithMessages(messages: String): String {
+        val error = """{$ERROR_RESPONSE_UCP,"messages":$messages}"""
+        return """{"jsonrpc":"2.0","method":"ec.error","params":{"error":$error}}"""
+    }
+
+    private companion object {
+        private const val ERROR_RESPONSE_UCP = """"ucp":{"version":"2026-04-08","status":"error"}"""
+    }
 
     /**
      * Runs [block], drains the main-thread queue, captures the first JS string
