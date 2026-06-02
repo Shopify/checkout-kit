@@ -32,6 +32,16 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
     }
 
     static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?) {
+        sendMessage(
+            evaluateJavaScript: { script in
+                webView.evaluateJavaScript(script)
+            },
+            messageName: messageName,
+            messageBody: messageBody
+        )
+    }
+
+    static func sendMessage(evaluateJavaScript: (String) -> Void, messageName: String, messageBody: String?) {
         let dispatchMessageBody: String
         if let body = messageBody {
             dispatchMessageBody = "'\(messageName)', \(body)"
@@ -39,7 +49,7 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
             dispatchMessageBody = "'\(messageName)'"
         }
         let script = dispatchMessageTemplate(body: dispatchMessageBody)
-        webView.evaluateJavaScript(script)
+        evaluateJavaScript(script)
     }
 
     static func sendResponse(_ webView: WKWebView, messageBody: String) {

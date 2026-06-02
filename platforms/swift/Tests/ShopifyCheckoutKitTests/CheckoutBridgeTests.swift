@@ -55,29 +55,27 @@ class CheckoutBridgeTests: XCTestCase {
     }
 
     func testSendMessageShouldCallEvaluateJavaScriptPresented() {
-        let webView = MockWebView()
-        webView.expectedScript = expectedPresentedScript()
-        let evaluateJavaScriptExpectation = expectation(
-            description: "evaluateJavaScript was called"
+        var evaluatedScript: String?
+
+        CheckoutBridge.sendMessage(
+            evaluateJavaScript: { evaluatedScript = $0 },
+            messageName: "presented",
+            messageBody: nil
         )
-        webView.evaluateJavaScriptExpectation = evaluateJavaScriptExpectation
 
-        CheckoutBridge.sendMessage(webView, messageName: "presented", messageBody: nil)
-
-        wait(for: [evaluateJavaScriptExpectation], timeout: 2)
+        XCTAssertEqual(evaluatedScript, expectedPresentedScript())
     }
 
     func testSendMessageWithPayloadEvaulatesJavaScript() {
-        let webView = MockWebView()
-        webView.expectedScript = expectedPayloadScript()
-        let evaluateJavaScriptExpectation = expectation(
-            description: "evaluateJavaScript was called"
+        var evaluatedScript: String?
+
+        CheckoutBridge.sendMessage(
+            evaluateJavaScript: { evaluatedScript = $0 },
+            messageName: "payload",
+            messageBody: "{\"one\": true}"
         )
-        webView.evaluateJavaScriptExpectation = evaluateJavaScriptExpectation
 
-        CheckoutBridge.sendMessage(webView, messageName: "payload", messageBody: "{\"one\": true}")
-
-        wait(for: [evaluateJavaScriptExpectation], timeout: 2)
+        XCTAssertEqual(evaluatedScript, expectedPayloadScript())
     }
 
     private func expectedPresentedScript() -> String {
