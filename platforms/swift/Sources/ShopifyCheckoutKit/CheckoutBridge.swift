@@ -7,7 +7,7 @@ enum BridgeError: Swift.Error {
 
 protocol CheckoutBridgeProtocol {
     static func instrument(_ webView: WKWebView, _ instrumentation: InstrumentationPayload)
-    static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?)
+    @discardableResult static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?) async -> Bool
     static func sendResponse(_ webView: WKWebView, messageBody: String)
 }
 
@@ -27,11 +27,13 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
 
     static func instrument(_ webView: WKWebView, _ instrumentation: InstrumentationPayload) {
         if let payload = instrumentation.toBridgeEvent() {
-            sendMessage(webView, messageName: "instrumentation", messageBody: payload)
+            Task {
+                await sendMessage(webView, messageName: "instrumentation", messageBody: payload)
+            }
         }
     }
 
-    static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?) {
+    @discardableResult static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?) async -> Bool {
         let dispatchMessageBody: String
         if let body = messageBody {
             dispatchMessageBody = "'\(messageName)', \(body)"
@@ -39,7 +41,13 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
             dispatchMessageBody = "'\(messageName)'"
         }
         let script = dispatchMessageTemplate(body: dispatchMessageBody)
-        webView.evaluateJavaScript(script)
+        do {
+            try await webView.evaluateJavaScript(script)
+            return true
+        } catch {
+            OSLogger.shared.error("Failed to dispatch bridge message: \(error.localizedDescription)")
+            return false
+        }
     }
 
     static func sendResponse(_ webView: WKWebView, messageBody: String) {

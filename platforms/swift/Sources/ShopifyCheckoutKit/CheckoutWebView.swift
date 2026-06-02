@@ -66,6 +66,7 @@ class CheckoutWebView: WKWebView {
 
     weak var viewDelegate: CheckoutWebViewDelegate?
     var presentedEventDidDispatch = false
+    private var presentedEventDispatchInFlight = false
     var checkoutDidPresent: Bool = false {
         didSet {
             dispatchPresentedMessage(checkoutDidLoad, checkoutDidPresent)
@@ -151,10 +152,17 @@ class CheckoutWebView: WKWebView {
     }
 
     private func dispatchPresentedMessage(_ checkoutDidLoad: Bool, _ checkoutDidPresent: Bool) {
-        if checkoutDidLoad, checkoutDidPresent, isBridgeAttached {
-            OSLogger.shared.info("Emitting presented event to checkout")
-            CheckoutBridge.sendMessage(self, messageName: "presented", messageBody: nil)
-            presentedEventDidDispatch = true
+        guard checkoutDidLoad, checkoutDidPresent, isBridgeAttached, !presentedEventDidDispatch, !presentedEventDispatchInFlight else {
+            return
+        }
+
+        OSLogger.shared.info("Emitting presented event to checkout")
+        presentedEventDispatchInFlight = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let didDispatch = await CheckoutBridge.sendMessage(self, messageName: "presented", messageBody: nil)
+            presentedEventDispatchInFlight = false
+            presentedEventDidDispatch = didDispatch
         }
     }
 }

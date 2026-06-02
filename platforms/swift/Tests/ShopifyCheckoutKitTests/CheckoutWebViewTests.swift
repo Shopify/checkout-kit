@@ -536,8 +536,9 @@ class MockCheckoutBridge: CheckoutBridgeProtocol {
         instrumentCalled = true
     }
 
-    static func sendMessage(_: WKWebView, messageName _: String, messageBody _: String?) {
+    static func sendMessage(_: WKWebView, messageName _: String, messageBody _: String?) async -> Bool {
         sendMessageCalled = true
+        return true
     }
 
     static func sendResponse(_: WKWebView, messageBody: String) {
