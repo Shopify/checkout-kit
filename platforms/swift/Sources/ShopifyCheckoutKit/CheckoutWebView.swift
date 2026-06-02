@@ -44,6 +44,19 @@ class CheckoutWebView: WKWebView {
             )
         }
 
+    var defaultClientBindings: [String: DefaultClientBinding] {
+        [
+            CheckoutProtocol.windowOpen.method: DefaultClientBinding(
+                client: defaultsClient,
+                policy: .runIfUnhandled
+            ),
+            CheckoutProtocol.error.method: DefaultClientBinding(
+                client: defaultsClient,
+                policy: .alwaysRunAfterMerchant
+            )
+        ]
+    }
+
     static func `for`(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
         OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString)")
         return CheckoutWebView(entryPoint: entryPoint)
@@ -158,30 +171,14 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         Task {
-            let isErrorNotification = CheckoutWebView.message(body, hasMethod: CheckoutProtocol.error.method)
-            let clientResponse = await client?.process(body)
-            if let response = clientResponse {
-                checkoutBridge.sendResponse(self, messageBody: response)
-            }
-
-            // Defaults are fallback handlers except for ec.error: unrecoverable errors
-            // must still dismiss checkout after being emitted to the client.
-            if isErrorNotification || clientResponse == nil,
-               let response = await defaultsClient.process(body)
-            {
+            let composedClient = ComposedCheckoutCommunicationClient(
+                merchant: client,
+                defaults: defaultClientBindings
+            )
+            if let response = await composedClient.process(body) {
                 checkoutBridge.sendResponse(self, messageBody: response)
             }
         }
-    }
-
-    private static func message(_ body: String, hasMethod method: String) -> Bool {
-        guard
-            let object = try? JSONSerialization.jsonObject(with: Data(body.utf8)) as? [String: Any],
-            object["method"] as? String == method
-        else {
-            return false
-        }
-        return true
     }
 }
 

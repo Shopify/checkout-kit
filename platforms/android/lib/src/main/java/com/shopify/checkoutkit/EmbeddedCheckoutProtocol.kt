@@ -29,6 +29,21 @@ internal class EmbeddedCheckoutProtocol(
 ) {
     private val decoder = Json { ignoreUnknownKeys = true }
     private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
+    private val defaultClientBindings: Map<String, DefaultClientBinding> = mapOf(
+        CheckoutProtocol.windowOpen.method to DefaultClientBinding(
+            client = defaultClient,
+            policy = DefaultClientPolicy.RunIfUnhandled,
+        ),
+        CheckoutProtocol.error.method to DefaultClientBinding(
+            client = defaultClient,
+            policy = DefaultClientPolicy.AlwaysRunAfterMerchant,
+        ),
+    )
+    private val composedClient: CheckoutCommunicationClient
+        get() = ComposedCheckoutCommunicationClient(
+            merchant = client,
+            defaults = defaultClientBindings,
+        )
 
     internal fun setClient(client: CheckoutCommunicationClient?) {
         this.client = client
@@ -103,14 +118,14 @@ internal class EmbeddedCheckoutProtocol(
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.start.method}: hiding progress bar and bubbling up.")
         onMainThread {
             view.getListener().onCheckoutViewLoadComplete()
-            client?.process(message)
+            composedClient.process(message)
         }
     }
 
     private fun handleComplete(message: String) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.complete.method}: bubbling up.")
         onMainThread {
-            client?.process(message)
+            composedClient.process(message)
         }
     }
 
@@ -125,12 +140,7 @@ internal class EmbeddedCheckoutProtocol(
     private fun handleWindowOpenRequest(message: String) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.windowOpen.method}")
         onMainThread {
-            val merchantResponse = client?.process(message)
-            if (merchantResponse != null) {
-                sendRaw(merchantResponse)
-            } else {
-                defaultClient.process(message)?.let { sendRaw(it) }
-            }
+            composedClient.process(message)?.let { sendRaw(it) }
         }
     }
 
@@ -142,14 +152,9 @@ internal class EmbeddedCheckoutProtocol(
     private fun handleClientMessage(method: String, message: String) {
         log.d(LOG_TAG, "Delegating $method to client.")
         onMainThread {
-            val response = client?.process(message)
+            val response = composedClient.process(message)
             log.d(LOG_TAG, "  client response: $response")
             response?.let { sendRaw(it) }
-            if (method == CheckoutProtocol.error.method) {
-                // Unrecoverable ec.error is kit behavior: emit to the client, then run
-                // the default handler so checkout is dismissed even if the client responded.
-                defaultClient.process(message)?.let { sendRaw(it) }
-            }
         }
     }
 
