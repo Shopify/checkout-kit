@@ -126,8 +126,8 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 
 1. Select `iOS` as the platform.
 2. Enter the expected version. The workflow reads the SDK version from the checked-in files and fails if the typed version does not match.
-3. Leave `dry-run` enabled first to review the release plan.
-4. Rerun with `dry-run` disabled. By default this creates a draft GitHub Release with the bare semver tag (e.g. `3.8.1`) for human review.
+3. Select `Dry run` first to review the release plan without creating a release.
+4. Rerun with `Draft release` to create a draft GitHub Release with the bare semver tag (e.g. `3.8.1`) for human review.
 5. Publish the draft release when ready. Publishing the draft kicks off the [Swift publish workflow](../../actions/workflows/swift-publish.yml), which publishes the new version to CocoaPods.
 
 ---
@@ -174,8 +174,8 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 
 1. Select `Android` as the platform.
 2. Enter the expected version. The workflow reads the SDK version from `platforms/android/lib/build.gradle` and fails if the typed version does not match.
-3. Leave `dry-run` enabled first to review the release plan.
-4. Rerun with `dry-run` disabled. By default this creates a draft GitHub Release with the `android/`-prefixed tag (e.g. `android/3.0.1`) for human review.
+3. Select `Dry run` first to review the release plan without creating a release.
+4. Rerun with `Draft release` to create a draft GitHub Release with the `android/`-prefixed tag (e.g. `android/3.0.1`) for human review.
 5. Publish the draft release when ready. Publishing the draft kicks off the [Android publish workflow](../../actions/workflows/android-publish.yml). **A manual approval by a maintainer is required before publication to Maven Central.**
 
 ---
@@ -208,3 +208,20 @@ If your change intentionally modifies the public API:
 3. Commit the updated `.api.md` file in the same PR.
 
 If you did *not* intend to change public API and `api:check` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
+
+### Releasing a new React Native version
+
+Open a pull request with the following changes:
+
+1. Bump the `version` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`.
+2. Add an entry to the React Native changelog.
+
+Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
+
+Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
+
+1. Select `React Native` as the platform.
+2. Enter the expected version. The workflow reads the SDK version from `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` and fails if the typed version does not match.
+3. Select `Dry run` first to review the release plan without creating a release.
+4. From the dry-run job summary, copy the generated `gh workflow run` command to create a `Draft release` without retyping the validated version. Running it creates a draft GitHub Release with the `react-native/`-prefixed tag (e.g. `react-native/4.0.1`) for human review.
+5. Publish the draft release when ready. Publishing the draft kicks off the [React Native publish workflow](../../actions/workflows/rn-publish.yml), which publishes `@shopify/checkout-kit-react-native` to npm.

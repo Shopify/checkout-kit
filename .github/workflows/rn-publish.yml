@@ -1,0 +1,149 @@
+name: React Native — Publish to npm
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: react-native-publish
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish @shopify/checkout-kit-react-native to npm
+    if: |
+      (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'react-native/'))
+      || github.event_name == 'workflow_dispatch'
+    environment:
+      name: npm-react-native
+      url: https://www.npmjs.com/package/@shopify/checkout-kit-react-native
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: platforms/react-native
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Validate release tag matches package.json version
+        id: release
+        working-directory: ${{ github.workspace }}
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            TAG="$RELEASE_TAG"
+          else
+            TAG="$GITHUB_REF_NAME"
+          fi
+
+          .github/scripts/validate-release-version "React Native" "" "$TAG" >> "$GITHUB_OUTPUT"
+
+      # `ignore-scripts` prevents dependency postinstall scripts from running in
+      # this privileged npm publishing job.
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
+          ignore-scripts: "true"
+
+      - name: Verify version is not already published
+        run: |
+          set -euo pipefail
+          NAME=$(node -p "require('./modules/@shopify/checkout-kit-react-native/package.json').name")
+          VERSION=$(node -p "require('./modules/@shopify/checkout-kit-react-native/package.json').version")
+          ENCODED_NAME=$(node -p "encodeURIComponent(require('./modules/@shopify/checkout-kit-react-native/package.json').name)")
+          URL="https://registry.npmjs.org/${ENCODED_NAME}/${VERSION}"
+          if curl -fs "$URL" > /dev/null; then
+            echo "::error::${NAME}@${VERSION} is already published on npm. Bump platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json before re-running."
+            exit 1
+          fi
+          echo "::notice::${NAME}@${VERSION} is not yet on npm — safe to proceed."
+
+      - name: Build package
+        run: |
+          set -euo pipefail
+          cp README.md modules/@shopify/checkout-kit-react-native/README.md
+          pnpm module clean
+          pnpm module build
+
+      - name: Pack and inspect contents
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/react-native-publish
+          cd modules/@shopify/checkout-kit-react-native
+          pnpm pack --dry-run
+          pnpm pack --pack-destination /tmp/react-native-publish
+          echo "Tarball contents:"
+          tar -tzf /tmp/react-native-publish/*.tgz | sort
+
+      - name: Verify packed manifest has no workspace dependencies
+        run: |
+          set -euo pipefail
+          tar -xOf /tmp/react-native-publish/*.tgz package/package.json > /tmp/react-native-publish/package.json
+          node <<'NODE'
+          const pkg = require('/tmp/react-native-publish/package.json');
+          const sections = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
+          const workspaceDependencies = [];
+          for (const section of sections) {
+            for (const [name, version] of Object.entries(pkg[section] ?? {})) {
+              if (typeof version === 'string' && version.startsWith('workspace:')) {
+                workspaceDependencies.push(`${section}.${name}=${version}`);
+              }
+            }
+          }
+          if (workspaceDependencies.length > 0) {
+            console.error(`::error::Packed package still contains workspace dependencies: ${workspaceDependencies.join(', ')}`);
+            process.exit(1);
+          }
+          console.log('Packed package manifest has no workspace: dependencies.');
+          NODE
+
+      # DELETE AFTER FIRST PUBLISH: START
+      # This bootstrap-only auth check supports the first publish before npm
+      # Trusted Publishing/OIDC can be configured for the package. Once the
+      # package exists on npm and Trusted Publishing is configured for this
+      # workflow/environment, delete this whole step.
+      - name: Print npm auth mode
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${NPM_TOKEN:-}" ]; then
+            echo "::notice::NPM_TOKEN is present — bootstrap/token publish path will be used."
+            pnpm whoami
+          else
+            echo "::notice::NPM_TOKEN is not present — relying on npm trusted publishing/OIDC."
+          fi
+      # DELETE AFTER FIRST PUBLISH: END
+
+      - name: Publish to npm
+        run: |
+          set -euo pipefail
+          cd modules/@shopify/checkout-kit-react-native
+          pnpm publish --no-git-checks --ignore-scripts --access public --tag "$NPM_TAG" --provenance
+        env:
+          NPM_TAG: ${{ steps.release.outputs.npm_tag }}
+          NPM_CONFIG_PROVENANCE: "true"
+          # DELETE AFTER FIRST PUBLISH: START
+          # These token env vars bootstrap the first publish. After npm Trusted
+          # Publishing/OIDC is configured for this package/workflow/environment,
+          # replace both values with empty strings (or delete both lines) so npm
+          # uses OIDC instead of a long-lived token.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # DELETE AFTER FIRST PUBLISH: END
+

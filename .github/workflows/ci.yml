@@ -66,6 +66,11 @@ jobs:
               - '.github/workflows/rn-build-ios.yml'
               - '.github/workflows/rn-check-packed-files.yml'
               - '.github/workflows/rn-lint.yml'
+              - '.github/workflows/rn-publish.yml'
+              - '.github/workflows/release.yml'
+              - '.github/scripts/package-json-version'
+              - '.github/scripts/validate-release-version'
+              - '.github/actions/setup/**'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             web:

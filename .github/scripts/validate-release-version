@@ -8,7 +8,7 @@ Usage: validate-release-version <platform> [expected-version] [expected-tag]
 Validates the selected SDK's checked-in version declarations, optional user
 version input, optional git tag, and prints GitHub Actions outputs to stdout.
 
-Platforms: iOS, Android
+Platforms: iOS, Android, React Native
 USAGE
 }
 
@@ -40,6 +40,12 @@ extract_first_match() {
   fi
 
   printf '%s\n' "$value"
+}
+
+json_version() {
+  local file="$1"
+
+  .github/scripts/package-json-version "$file"
 }
 
 check_same_version() {
@@ -84,8 +90,19 @@ case "$PLATFORM_INPUT" in
     VERSION=$(extract_first_match "$ANDROID_VERSION_FILE" 's/^[[:space:]]*def[[:space:]]+versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p')
     ;;
 
+  "React Native"|react-native|ReactNative|rn|RN)
+    PLATFORM="react-native"
+    DISPLAY_PLATFORM="React Native"
+    RELEASE_TITLE_PREFIX="React Native"
+    TAG_PREFIX="react-native/"
+    PUBLISH_WORKFLOW="rn-publish.yml"
+
+    RN_PACKAGE_FILE="platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json"
+    VERSION=$(json_version "$RN_PACKAGE_FILE")
+    ;;
+
   *)
-    echo "::error::Unsupported platform '$PLATFORM_INPUT'. Expected one of: iOS, Android." >&2
+    echo "::error::Unsupported platform '$PLATFORM_INPUT'. Expected one of: iOS, Android, React Native." >&2
     exit 1
     ;;
 esac
@@ -110,8 +127,10 @@ fi
 
 if [[ "$VERSION" == *-* ]]; then
   PRERELEASE="true"
+  NPM_TAG="next"
 else
   PRERELEASE="false"
+  NPM_TAG="latest"
 fi
 
 {
@@ -122,6 +141,7 @@ fi
   echo "release_title=$RELEASE_TITLE"
   echo "publish_workflow=$PUBLISH_WORKFLOW"
   echo "prerelease=$PRERELEASE"
+  echo "npm_tag=$NPM_TAG"
 }
 
 echo "✓ ${DISPLAY_PLATFORM} version '$VERSION' validates and maps to tag '$TAG'." >&2

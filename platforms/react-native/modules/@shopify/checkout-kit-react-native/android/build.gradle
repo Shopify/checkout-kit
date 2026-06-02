@@ -118,11 +118,19 @@ if (shopifySdkVersion == null || shopifySdkVersion.trim().isEmpty()) {
 def shopifySdkArtifact = "com.shopify:checkout-kit:$shopifySdkVersion"
 
 repositories {
-  mavenLocal()
+  if (useLocalSdk) {
+    exclusiveContent {
+      forRepository {
+        mavenLocal()
+      }
+      filter {
+        includeModule("com.shopify", "checkout-kit")
+      }
+    }
+  }
   mavenCentral()
   google()
 }
-
 
 dependencies {
   // For < 0.71, this will be from the local maven repo

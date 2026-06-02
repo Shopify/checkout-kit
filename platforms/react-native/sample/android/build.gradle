@@ -9,7 +9,6 @@ buildscript {
         kotlinVersion = "2.1.20"
     }
     repositories {
-        mavenLocal()
         google()
         mavenCentral()
     }
@@ -30,9 +29,20 @@ def loadProperties() {
 
 apply plugin: "com.facebook.react.rootproject"
 
+def useLocalSdk = (System.getenv("USE_LOCAL_SDK") ?: "0") == "1"
+
 allprojects {
     repositories {
-        mavenLocal()
+        if (useLocalSdk) {
+            exclusiveContent {
+                forRepository {
+                    mavenLocal()
+                }
+                filter {
+                    includeModule("com.shopify", "checkout-kit")
+                }
+            }
+        }
         google()
         mavenCentral()
     }
