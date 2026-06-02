@@ -108,9 +108,6 @@ importers:
 
   modules/@shopify/checkout-kit-react-native:
     dependencies:
-      '@shopify/checkout-kit-protocol':
-        specifier: workspace:*
-        version: link:../../../../../protocol/languages/typescript
       react:
         specifier: '*'
         version: 19.1.0
@@ -121,6 +118,9 @@ importers:
       '@microsoft/api-extractor':
         specifier: ^7.58.7
         version: 7.58.7(@types/node@20.9.3)
+      '@shopify/checkout-kit-protocol':
+        specifier: workspace:*
+        version: link:../../../../../protocol/languages/typescript
       react-native-builder-bob:
         specifier: ^0.23.2
         version: 0.23.2

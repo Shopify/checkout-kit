@@ -10,20 +10,20 @@ on:
         options:
           - iOS
           - Android
+          - React Native
       version:
         description: Expected SDK version. Must match the checked-in SDK version for the selected platform.
         required: true
         type: string
-      dry-run:
-        description: Dry run
+      mode:
+        description: Release mode
         required: false
-        type: boolean
-        default: true
-      draft:
-        description: Draft release
-        required: false
-        type: boolean
-        default: true
+        type: choice
+        default: Dry run
+        options:
+          - Dry run
+          - Draft release
+          - Production release
 
 permissions:
   contents: write
@@ -81,14 +81,13 @@ jobs:
 
       - name: Print release plan
         env:
-          DRY_RUN: ${{ inputs['dry-run'] && 'true' || 'false' }}
+          MODE: ${{ inputs.mode }}
           DISPLAY_PLATFORM: ${{ steps.release.outputs.display_platform }}
           VERSION: ${{ steps.release.outputs.version }}
           TAG: ${{ steps.release.outputs.tag }}
           RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
-          DRAFT: ${{ inputs.draft && 'true' || 'false' }}
         run: |
           set -euo pipefail
           echo "Release plan:"
@@ -98,21 +97,25 @@ jobs:
           echo "  Title: ${RELEASE_TITLE}"
           echo "  Prerelease: ${PRERELEASE}"
           echo "  Publish workflow: ${PUBLISH_WORKFLOW}"
-          echo "  Dry run: ${DRY_RUN}"
-          echo "  Draft release: ${DRAFT}"
-          if [ "$DRY_RUN" = "false" ] && [ "$DRAFT" = "true" ]; then
+          echo "  Mode: ${MODE}"
+          if [ "$MODE" = "Dry run" ]; then
+            echo "  Release creation: skipped"
+            echo "  Publish dispatch: skipped"
+          elif [ "$MODE" = "Draft release" ]; then
+            echo "  Release creation: draft GitHub Release"
             echo "  Publish dispatch: skipped until the draft release is manually published"
-          elif [ "$DRY_RUN" = "false" ]; then
+          else
+            echo "  Release creation: published GitHub Release"
             echo "  Publish dispatch: ${PUBLISH_WORKFLOW} will be dispatched after release creation"
           fi
 
       - name: Create GitHub Release
-        if: ${{ !inputs['dry-run'] }}
+        if: ${{ inputs.mode != 'Dry run' }}
         env:
           TAG: ${{ steps.release.outputs.tag }}
           RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
-          DRAFT: ${{ inputs.draft && 'true' || 'false' }}
+          DRAFT: ${{ inputs.mode == 'Draft release' && 'true' || 'false' }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -131,7 +134,7 @@ jobs:
           gh release create "${args[@]}"
 
       - name: Dispatch publish workflow
-        if: ${{ !inputs['dry-run'] && !inputs.draft }}
+        if: ${{ inputs.mode == 'Production release' }}
         env:
           TAG: ${{ steps.release.outputs.tag }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
@@ -143,22 +146,50 @@ jobs:
 
       - name: Summary
         env:
-          DRY_RUN: ${{ inputs['dry-run'] && 'true' || 'false' }}
-          DRAFT: ${{ inputs.draft && 'true' || 'false' }}
+          MODE: ${{ inputs.mode }}
           DISPLAY_PLATFORM: ${{ steps.release.outputs.display_platform }}
           VERSION: ${{ steps.release.outputs.version }}
           TAG: ${{ steps.release.outputs.tag }}
           RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
+          REF_NAME: ${{ github.ref_name }}
+          PLATFORM: ${{ inputs.platform }}
         run: |
+          set -euo pipefail
+
+          WORKFLOW_URL="https://github.com/${GITHUB_REPOSITORY}/actions/workflows/release.yml"
+
           cat >> "$GITHUB_STEP_SUMMARY" <<SUMMARY
           ## Release plan
 
-          - Dry run: `${DRY_RUN}`
-          - Draft release: `${DRAFT}`
+          - Mode: \`${MODE}\`
           - Platform: ${DISPLAY_PLATFORM}
           - Version: ${VERSION}
           - Tag: \`${TAG}\`
           - Title: ${RELEASE_TITLE}
           - Publish workflow: \`${PUBLISH_WORKFLOW}\`
           SUMMARY
+
+          if [ "$MODE" = "Dry run" ]; then
+            cat >> "$GITHUB_STEP_SUMMARY" <<SUMMARY
+
+          ## Continue to draft release
+
+          GitHub does not currently support pre-filled \`workflow_dispatch\`
+          form inputs via URL. To avoid retyping the validated version, run this
+          GitHub CLI command:
+
+          \`\`\`bash
+          gh workflow run release.yml \\
+            --repo "${GITHUB_REPOSITORY}" \\
+            --ref "${REF_NAME}" \\
+            -f platform="${PLATFORM}" \\
+            -f version="${VERSION}" \\
+            -f mode="Draft release"
+          \`\`\`
+
+          Or open the [Release package workflow](${WORKFLOW_URL}) and enter the
+          same values manually.
+          SUMMARY
+            echo "::notice::GitHub CLI draft release command written to the job summary."
+          fi

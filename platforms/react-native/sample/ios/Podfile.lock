@@ -2996,7 +2996,7 @@ SPEC CHECKSUMS:
   RNGestureHandler: eeb622199ef1fb3a076243131095df1c797072f0
   RNReanimated: 237d420b7bb4378ef1dacc7d7a5c674fddb4b5d2
   RNScreens: 3fc29af06302e1f1c18a7829fe57cbc2c0259912
-  RNShopifyCheckoutKit: 23f4881a5a839cc7b5e0840ccfec3b317c3c3bd6
+  RNShopifyCheckoutKit: e19eba6efb68ed31936d7e7b413a02fdb104a053
   RNVectorIcons: be4d047a76ad307ffe54732208fb0498fcb8477f
   ShopifyCheckoutKit: ffd719db529ac48907536d855182d7c57c85659f
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748

@@ -97,5 +97,5 @@ USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:testDebugUnitTest
 Treat storefront environment and generated sample app configuration values as
 sensitive. Never print, commit, paste, or document real values from `.env`,
 generated platform config, access tokens, merchant identifiers, shop IDs,
-account IDs, or storefront domains. Use synthetic placeholders for docs and
+account IDs. Use synthetic placeholders for docs and
 verification.
