@@ -211,21 +211,6 @@ class CheckoutWebViewTests: XCTestCase {
         waitForExpectations(timeout: 0.5, handler: nil)
     }
 
-    func testInstrumentRequest() throws {
-        let webView = LoadedRequestObservableWebView()
-
-        try webView.load(
-            checkout: XCTUnwrap(URL(string: "https://checkout-sdk.myshopify.io"))
-        )
-
-        webView.timer = Date()
-        webView.webView(webView, didFinish: nil)
-
-        XCTAssertEqual(webView.lastInstrumentationPayload?.name, "checkout_finished_loading")
-        XCTAssertEqual(webView.lastInstrumentationPayload?.type, .histogram)
-        XCTAssertEqual(webView.lastInstrumentationPayload?.tags, [:])
-    }
-
     func testForReturnsNewWebView() throws {
         let url = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
         let firstView = CheckoutWebView.for(checkout: url)
@@ -279,12 +264,17 @@ class CheckoutWebViewTests: XCTestCase {
 
     // MARK: - ec.ready handshake
 
-    func testAcknowledgeReadyRespondsToReadyRequest() throws {
+    @MainActor
+    func testAcknowledgeReadyRespondsToReadyRequest() async throws {
         let id = "req-ready-1"
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"\#(id)","params":{"delegate":[]}}"#
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: body)
 
         view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
 
         XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
         let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
@@ -299,12 +289,17 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(ucp["version"] as? String, CheckoutProtocol.specVersion)
     }
 
-    func testAcknowledgeReadyDoesNotInvokeClient() {
+    @MainActor
+    func testAcknowledgeReadyDoesNotInvokeClient() async {
         view.client = MockBridgeClient(responseMessage: "client-response")
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: body)
 
         view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
 
         let response = try? XCTUnwrap(MockCheckoutBridge.lastResponseBody)
         XCTAssertNotEqual(response, "client-response")
@@ -327,12 +322,17 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
     }
 
-    func testReadyAckFiresWhenNoClientIsAttached() {
+    @MainActor
+    func testReadyAckFiresWhenNoClientIsAttached() async {
         view.client = nil
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: body)
 
         view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
 
         XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
     }
@@ -351,7 +351,7 @@ class CheckoutWebViewTests: XCTestCase {
 
         view.userContentController(WKUserContentController(), didReceive: message)
 
-        await fulfillment(of: [responseSent], timeout: 2.0)
+        await fulfillment(of: [responseSent], timeout: 5.0)
 
         let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
         let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
@@ -496,54 +496,31 @@ class CheckoutWebViewTests: XCTestCase {
 
         view.userContentController(WKUserContentController(), didReceive: message)
 
-        await fulfillment(of: [responseSent, dismissed], timeout: 2.0)
+        await fulfillment(of: [responseSent, dismissed], timeout: 5.0)
         guard case .checkoutUnavailable = mockDelegate.errorReceived else {
             return XCTFail("Expected checkoutUnavailable error")
         }
     }
 }
 
-class LoadedRequestObservableWebView: CheckoutWebView {
-    var lastInstrumentationPayload: InstrumentationPayload?
-
-    override func load(_: URLRequest) -> WKNavigation? {
-        return nil
-    }
-
-    override func instrument(_ payload: InstrumentationPayload) {
-        lastInstrumentationPayload = payload
-    }
-}
-
 class MockCheckoutBridge: CheckoutBridgeProtocol {
-    static var instrumentCalled = false
-    static var sendMessageCalled = false
     static var sendResponseCalled = false
     static var sendResponseCount = 0
     static var lastResponseBody: String?
     static var sendResponseExpectation: XCTestExpectation?
 
     static func reset() {
-        instrumentCalled = false
-        sendMessageCalled = false
         sendResponseCalled = false
         sendResponseCount = 0
         lastResponseBody = nil
         sendResponseExpectation = nil
     }
 
-    static func instrument(_: WKWebView, _: InstrumentationPayload) {
-        instrumentCalled = true
-    }
-
-    static func sendMessage(_: WKWebView, messageName _: String, messageBody _: String?) {
-        sendMessageCalled = true
-    }
-
-    static func sendResponse(_: WKWebView, messageBody: String) {
+    static func sendResponse(_: WKWebView, messageBody: String) async -> Bool {
         sendResponseCalled = true
         sendResponseCount += 1
         lastResponseBody = messageBody
         sendResponseExpectation?.fulfill()
+        return true
     }
 }

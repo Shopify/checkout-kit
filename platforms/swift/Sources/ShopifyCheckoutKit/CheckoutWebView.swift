@@ -65,18 +65,7 @@ class CheckoutWebView: WKWebView {
     // MARK: Properties
 
     weak var viewDelegate: CheckoutWebViewDelegate?
-    var presentedEventDidDispatch = false
-    var checkoutDidPresent: Bool = false {
-        didSet {
-            dispatchPresentedMessage(checkoutDidLoad, checkoutDidPresent)
-        }
-    }
-
-    var checkoutDidLoad: Bool = false {
-        didSet {
-            dispatchPresentedMessage(checkoutDidLoad, checkoutDidPresent)
-        }
-    }
+    var checkoutDidLoad: Bool = false
 
     private var entryPoint: MetaData.EntryPoint?
 
@@ -138,24 +127,11 @@ class CheckoutWebView: WKWebView {
         }
     }
 
-    func instrument(_ payload: InstrumentationPayload) {
-        OSLogger.shared.debug("Emitting instrumentation event with payload: \(payload)")
-        checkoutBridge.instrument(self, payload)
-    }
-
     // MARK: -
 
     func load(checkout url: URL) {
         OSLogger.shared.info("Loading checkout URL: \(url.absoluteString)")
         load(URLRequest(url: url))
-    }
-
-    private func dispatchPresentedMessage(_ checkoutDidLoad: Bool, _ checkoutDidPresent: Bool) {
-        if checkoutDidLoad, checkoutDidPresent, isBridgeAttached {
-            OSLogger.shared.info("Emitting presented event to checkout")
-            CheckoutBridge.sendMessage(self, messageName: "presented", messageBody: nil)
-            presentedEventDidDispatch = true
-        }
     }
 }
 
@@ -166,7 +142,9 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         if let response = CheckoutProtocol.acknowledgeReady(body) {
-            checkoutBridge.sendResponse(self, messageBody: response)
+            Task {
+                await checkoutBridge.sendResponse(self, messageBody: response)
+            }
             return
         }
 
@@ -176,7 +154,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
                 defaults: defaultClientBindings
             )
             if let response = await composedClient.process(body) {
-                checkoutBridge.sendResponse(self, messageBody: response)
+                await checkoutBridge.sendResponse(self, messageBody: response)
             }
         }
     }
@@ -272,16 +250,6 @@ extension CheckoutWebView: WKNavigationDelegate {
             let message = "Loaded checkout in \(String(format: "%.2f", diff))s"
 
             ShopifyCheckoutKit.configuration.logger.log(message)
-
-            if isBridgeAttached {
-                instrument(
-                    InstrumentationPayload(
-                        name: "checkout_finished_loading",
-                        value: Int(diff * 1000),
-                        type: .histogram
-                    )
-                )
-            }
         }
         checkoutDidLoad = true
         timer = nil

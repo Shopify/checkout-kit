@@ -132,10 +132,6 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         }
     }
 
-    func notifyPresented() {
-        checkoutView.checkoutDidPresent = true
-    }
-
     private func loadCheckout() {
         if checkoutView.url == nil {
             initialNavigation = true
