@@ -553,7 +553,7 @@ export class ShopifyCheckout
         break;
       }
       case "ec.error": {
-        const error = message.body as CheckoutProtocolMessageMap["ec.error"];
+        const { error } = message.body as CheckoutProtocolMessageMap["ec.error"];
         this.#error = error;
         this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
         // Per UCP spec, `unrecoverable` means no valid resource exists to act on —
@@ -801,7 +801,7 @@ export interface ShopifyCheckoutCompleteEventDetail {
 }
 
 export interface ShopifyCheckoutErrorEventDetail {
-  /** Wire-shape error payload from the ECP `ec.error` notification. */
+  /** Error payload from the ECP `ec.error` notification. */
   error: UcpErrorResponse;
 }
 
@@ -924,6 +924,7 @@ class CheckoutProtocolMessage<
   static parse(event: MessageEvent): CheckoutProtocolMessage | undefined {
     const { data, source, origin } = event;
     if (!isCheckoutProtocolMessage(data)) return;
+    if (data.method === "ec.error" && !isEcErrorParams(data.params)) return;
     return new CheckoutProtocolMessage(data, { source, origin });
   }
 
@@ -948,6 +949,10 @@ class CheckoutProtocolMessage<
     this.source = source;
     this.origin = origin;
   }
+}
+
+function isEcErrorParams(params: unknown): params is CheckoutProtocolMessageMap["ec.error"] {
+  return params != null && typeof params === "object" && "error" in params;
 }
 
 function isCheckoutProtocolMessage(data: unknown): data is CheckoutProtocolMessageData {

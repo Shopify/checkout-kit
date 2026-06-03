@@ -161,7 +161,7 @@ export interface CheckoutCloseEvent {
 export interface CheckoutErrorEvent {
   type: "checkout:error";
   detail: {
-    /** Wire-shape error payload from the ECP `ec.error` notification. */
+    /** Error payload from the ECP `ec.error` notification. */
     error: UcpErrorResponse;
   };
 }
@@ -236,6 +236,11 @@ interface CheckoutPayload {
   shop_cash?: ShopCash;
 }
 
+/** `ec.error` wraps the generated error response in the JSON-RPC `params.error` field. */
+export interface EcErrorParams {
+  error: UcpErrorResponse;
+}
+
 /**
  * Mapping of the 2026-04-08 ECP messages this component handles to their
  * wire-format payloads. Delegation methods (fulfillment.address_change_request,
@@ -247,7 +252,7 @@ export interface CheckoutProtocolMessageMap {
   "ec.ready": EcReadyParams;
   "ec.start": CheckoutPayload;
   "ec.complete": CheckoutPayload;
-  "ec.error": UcpErrorResponse;
+  "ec.error": EcErrorParams;
   "ec.line_items.change": CheckoutPayload;
   "ec.buyer.change": CheckoutPayload;
   "ec.totals.change": CheckoutPayload;

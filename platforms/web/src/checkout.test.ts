@@ -750,14 +750,37 @@ describe("<shopify-checkout>", () => {
         const onErrorSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "checkout:error", onErrorSpy);
 
-        const errorPayload = makeErrorPayload({ severity: "recoverable" });
-        simulateProtocolMessageEvent(checkout, "ec.error", errorPayload, {
+        const errorParams = makeErrorParams({ severity: "recoverable" });
+        simulateProtocolMessageEvent(checkout, "ec.error", errorParams, {
           source: mockCheckoutWindow,
         });
         await listenForEvent;
 
-        expect(checkout.error).toStrictEqual(errorPayload);
+        expect(checkout.error).toStrictEqual(errorParams.error);
         expect(onErrorSpy).toHaveBeenCalledOnce();
+      });
+
+      it("ignores the old ec.error shape with ucp and messages directly in params", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onErrorSpy = vi.fn();
+        checkout.addEventListener("checkout:error", onErrorSpy);
+
+        const errorPayload = makeErrorPayload();
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            data: {
+              jsonrpc: "2.0",
+              method: "ec.error",
+              params: errorPayload,
+            },
+            origin: new URL(checkout.src).origin,
+            source: mockCheckoutWindow,
+          }),
+        );
+        await Promise.resolve();
+
+        expect(checkout.error).toBeUndefined();
+        expect(onErrorSpy).not.toHaveBeenCalled();
       });
 
       it("auto-closes when any message has severity 'unrecoverable'", async () => {
@@ -769,7 +792,7 @@ describe("<shopify-checkout>", () => {
         simulateProtocolMessageEvent(
           checkout,
           "ec.error",
-          makeErrorPayload({ severity: "unrecoverable" }),
+          makeErrorParams({ severity: "unrecoverable" }),
           { source: mockCheckoutWindow },
         );
         await Promise.resolve();
@@ -789,7 +812,7 @@ describe("<shopify-checkout>", () => {
           const closeSpy = vi.fn();
           checkout.addEventListener("checkout:close", closeSpy);
 
-          simulateProtocolMessageEvent(checkout, "ec.error", makeErrorPayload({ severity }), {
+          simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams({ severity }), {
             source: mockCheckoutWindow,
           });
           await Promise.resolve();
@@ -915,14 +938,14 @@ describe("<shopify-checkout>", () => {
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "checkout:error", spy);
 
-        const errorPayload = makeErrorPayload();
-        simulateProtocolMessageEvent(checkout, "ec.error", errorPayload, {
+        const errorParams = makeErrorParams();
+        simulateProtocolMessageEvent(checkout, "ec.error", errorParams, {
           source: mockCheckoutWindow,
         });
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail).toEqual({ error: errorPayload });
+        expect(event.detail).toEqual({ error: errorParams.error });
       });
 
       it("checkout:lineItemsChange carries {lineItems, checkout}", async () => {
@@ -1498,7 +1521,7 @@ describe("<shopify-checkout>", () => {
 function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMessageMap>(
   checkout: ShopifyCheckout,
   name: Message,
-  body: CheckoutProtocolMessageMap[Message],
+  params: CheckoutProtocolMessageMap[Message],
   options?: {
     id?: string;
     source?: MessageEventSource | null;
@@ -1520,7 +1543,7 @@ function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMess
     data: {
       jsonrpc: "2.0",
       method: name,
-      params: body,
+      params,
       ...(options?.id && { id: options.id }),
     },
     origin,
@@ -1645,4 +1668,10 @@ function makeErrorPayload(overrides?: {
       },
     ],
   };
+}
+
+function makeErrorParams(overrides?: {
+  severity?: CheckoutMessageError["severity"];
+}): CheckoutProtocolMessageMap["ec.error"] {
+  return { error: makeErrorPayload(overrides) };
 }
