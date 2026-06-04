@@ -405,7 +405,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         return try walletStrings.compactMap { walletString in
             guard let wallet = Wallet(rawValue: walletString), wallet != nil else {
                 let message = "Unknown wallet option: \(String(describing: walletString))"
-                print("[ShopifyAcceleratedCheckouts] \(message)")
+                print("[checkout_kit:accelerated_checkout] \(message)")
                 throw NSError(domain: "ShopifyAcceleratedCheckouts", code: 1, userInfo: ["message": message])
             }
 

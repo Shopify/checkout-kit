@@ -74,7 +74,7 @@ class Network {
     }()
 
     func getProducts() async -> Products? {
-        print("Network: Starting product fetch from \(EnvironmentVariables.storefrontDomain)")
+        print("[accelerated_checkouts_app:network] Network: Starting product fetch")
 
         let countryCode = GraphQLEnum(Storefront.CountryCode(rawValue: Locale.current.region?.identifier ?? "US") ?? .us)
         let languageCode = getLanguageCode()
@@ -84,13 +84,13 @@ class Network {
                 country: countryCode,
                 language: languageCode
             ))
-            print("Network: Successfully fetched products")
+            print("[accelerated_checkouts_app:network] Network: Successfully fetched products")
             if let errors = response.errors {
-                print("Network: GraphQL errors: \(errors)")
+                print("[accelerated_checkouts_app:network] Network: GraphQL errors: \(errors)")
             }
             return response.data?.products
         } catch {
-            print("Network: Failed to fetch products - \(error.localizedDescription)")
+            print("[accelerated_checkouts_app:network] Network: Failed to fetch products - \(error.localizedDescription)")
             return nil
         }
     }
@@ -135,7 +135,7 @@ class Network {
             let response = try await Network.shared.apollo.perform(mutation: mutation)
             return response.data?.cartCreate?.cart
         } catch {
-            print(error)
+            print("[accelerated_checkouts_app:network] \(error)")
             return nil
         }
     }

@@ -5,6 +5,7 @@ import {
 } from './dispatch-events';
 import {parseCheckoutError} from './errors';
 import type {CheckoutNativeError} from './errors';
+import {formatLogPrefix} from './logging';
 import {decodeProtocolPayload} from './protocol';
 import type {CheckoutProtocolPayloads, ProtocolHandlers} from './protocol';
 import type {GeolocationRequestEvent, PresentCallbacks} from './index.d';
@@ -159,7 +160,7 @@ function dispatchEnvelope(
   // registered for it.
   // eslint-disable-next-line no-console
   console.warn(
-    `[ShopifyCheckoutKit] Ignoring dispatch envelope with unknown type "${type}". ` +
+    `${formatLogPrefix('checkout_kit')} Ignoring dispatch envelope with unknown type "${type}". ` +
       'Either the native module emitted an event the JS layer does not know how ' +
       'to handle, or no protocol handler was registered for it. Confirm both sides ' +
       'are on compatible versions.',
@@ -254,7 +255,7 @@ function validateGeolocationRequestPayload(
 
 function logParseError(detail: string, raw: string): void {
   const err = new LifecycleEventParseError(
-    `Failed to handle present() dispatcher envelope: ${detail}`,
+    `${formatLogPrefix('checkout_kit')} Failed to handle present() dispatcher envelope: ${detail}`,
     {cause: detail},
   );
   // eslint-disable-next-line no-console

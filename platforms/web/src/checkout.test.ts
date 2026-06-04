@@ -186,7 +186,7 @@ describe("<shopify-checkout>", () => {
       checkout.open();
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "`<shopify-checkout>`: src property is empty or invalid, cannot open checkout",
+        "[checkout_kit:web] src property is empty or invalid, cannot open checkout",
       );
       expect(windowOpenSpy).not.toHaveBeenCalled();
     });
@@ -313,7 +313,7 @@ describe("<shopify-checkout>", () => {
             checkout.open();
 
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-              "`<shopify-checkout>`: src property is empty or invalid, cannot open checkout",
+              "[checkout_kit:web] src property is empty or invalid, cannot open checkout",
             );
             expect(windowOpenSpy).not.toHaveBeenCalled();
           });

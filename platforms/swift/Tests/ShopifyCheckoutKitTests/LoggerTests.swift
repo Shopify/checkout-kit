@@ -63,19 +63,19 @@ final class OSLoggerTests: XCTestCase {
 
         XCTAssertEqual(logger.capturedMessages.count, 4)
         XCTAssertEqual(
-            logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Info) - test info"
+            logger.capturedMessages[0].message, "[checkout_kit:checkout_kit] (Info) - test info"
         )
         XCTAssertEqual(logger.capturedMessages[0].type, OSLogType.info)
         XCTAssertEqual(
-            logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Debug) - test debug"
+            logger.capturedMessages[1].message, "[checkout_kit:checkout_kit] (Debug) - test debug"
         )
         XCTAssertEqual(logger.capturedMessages[1].type, OSLogType.debug)
         XCTAssertEqual(
-            logger.capturedMessages[2].message, "[ShopifyCheckoutKit] (Error) - test error"
+            logger.capturedMessages[2].message, "[checkout_kit:checkout_kit] (Error) - test error"
         )
         XCTAssertEqual(logger.capturedMessages[2].type, OSLogType.error)
         XCTAssertEqual(
-            logger.capturedMessages[3].message, "[ShopifyCheckoutKit] (Fault) - test fault"
+            logger.capturedMessages[3].message, "[checkout_kit:checkout_kit] (Fault) - test fault"
         )
         XCTAssertEqual(logger.capturedMessages[3].type, OSLogType.fault)
     }
@@ -90,10 +90,10 @@ final class OSLoggerTests: XCTestCase {
 
         XCTAssertEqual(logger.capturedMessages.count, 2)
         XCTAssertEqual(
-            logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Info) - test info"
+            logger.capturedMessages[0].message, "[checkout_kit:checkout_kit] (Info) - test info"
         )
         XCTAssertEqual(
-            logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Debug) - test debug"
+            logger.capturedMessages[1].message, "[checkout_kit:checkout_kit] (Debug) - test debug"
         )
     }
 
@@ -107,10 +107,10 @@ final class OSLoggerTests: XCTestCase {
 
         XCTAssertEqual(logger.capturedMessages.count, 2)
         XCTAssertEqual(
-            logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Error) - test error"
+            logger.capturedMessages[0].message, "[checkout_kit:checkout_kit] (Error) - test error"
         )
         XCTAssertEqual(
-            logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Fault) - test fault"
+            logger.capturedMessages[1].message, "[checkout_kit:checkout_kit] (Fault) - test fault"
         )
     }
 
@@ -130,19 +130,19 @@ final class OSLoggerTests: XCTestCase {
         XCTAssertEqual(logger.capturedMessages.count, 4)
         XCTAssertEqual(
             logger.capturedMessages[0].message,
-            "[ShopifyCheckoutKit] (Info) - user action completed"
+            "[checkout_kit:checkout_kit] (Info) - user action completed"
         )
         XCTAssertEqual(
             logger.capturedMessages[1].message,
-            "[ShopifyCheckoutKit] (Debug) - processing checkout data"
+            "[checkout_kit:checkout_kit] (Debug) - processing checkout data"
         )
         XCTAssertEqual(
             logger.capturedMessages[2].message,
-            "[ShopifyCheckoutKit] (Error) - network request failed"
+            "[checkout_kit:checkout_kit] (Error) - network request failed"
         )
         XCTAssertEqual(
             logger.capturedMessages[3].message,
-            "[ShopifyCheckoutKit] (Fault) - critical system error"
+            "[checkout_kit:checkout_kit] (Fault) - critical system error"
         )
     }
 
@@ -155,12 +155,37 @@ final class OSLoggerTests: XCTestCase {
         XCTAssertEqual(customLogger.capturedMessages.count, 2)
         XCTAssertEqual(
             customLogger.capturedMessages[0].message,
-            "[CustomModule] (Info) - custom module message"
+            "[checkout_kit:custom_module] (Info) - custom module message"
         )
         XCTAssertEqual(
             customLogger.capturedMessages[1].message,
-            "[CustomModule] (Error) - custom error"
+            "[checkout_kit:custom_module] (Error) - custom error"
         )
+    }
+
+    func test_prefixNormalization_withMixedCasing_shouldUseConsistentLogScopes() {
+        let cases = [
+            ("ShopifyCheckoutKit", "checkout_kit"),
+            ("ShopifyAcceleratedCheckouts", "accelerated_checkout"),
+            ("CheckoutECP", "ecp"),
+            ("URLParser", "url_parser"),
+            ("HTTPRequest", "http_request"),
+            ("accelerated_checkout", "accelerated_checkout"),
+            ("Checkout2Kit", "checkout2_kit"),
+            ("ECP2Checkout", "ecp2_checkout")
+        ]
+
+        for (prefix, scope) in cases {
+            let logger = TestableOSLogger(prefix: prefix, logLevel: .all)
+
+            logger.info("test message")
+
+            XCTAssertEqual(
+                logger.capturedMessages.map(\.message),
+                ["[checkout_kit:\(scope)] (Info) - test message"],
+                "Expected \(prefix) to normalize to \(scope)"
+            )
+        }
     }
 
     func test_logLevelNone_withAllMessageTypes_shouldBlockAllMessagesRegardlessOfType() {

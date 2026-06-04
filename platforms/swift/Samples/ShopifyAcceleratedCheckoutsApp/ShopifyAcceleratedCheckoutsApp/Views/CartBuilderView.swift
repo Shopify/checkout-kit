@@ -120,11 +120,11 @@ struct CartBuilderView: View {
     func onLoad() async {
         // Prevent multiple simultaneous loads
         guard !isLoadingProducts else {
-            print("Already loading products, skipping...")
+            print("[accelerated_checkouts_app:cart_builder] Already loading products, skipping...")
             return
         }
 
-        print("Starting to load products...")
+        print("[accelerated_checkouts_app:cart_builder] Starting to load products...")
         isLoadingProducts = true
 
         // Ensure products load regardless of any configuration issues
@@ -134,12 +134,12 @@ struct CartBuilderView: View {
 
         let products = await Network.shared.getProducts()
         if let products {
-            print("Loaded \(products.nodes.count) products")
+            print("[accelerated_checkouts_app:cart_builder] Loaded \(products.nodes.count) products")
             withAnimation {
                 allProducts = products.nodes
             }
         } else {
-            print("Warning: No products returned from API")
+            print("[accelerated_checkouts_app:cart_builder] Warning: No products returned from API")
         }
     }
 }

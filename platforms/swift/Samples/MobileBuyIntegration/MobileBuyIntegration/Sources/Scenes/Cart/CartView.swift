@@ -38,10 +38,10 @@ struct CartView: View {
                     if let cartID = cartManager.cart?.id {
                         AcceleratedCheckoutButtons(cartID: cartID)
                             .onFail { error in
-                                print("[AcceleratedCheckout] Failed: \(error)")
+                                print("[mobile_buy_integration:accelerated_checkout] Failed: \(error)")
                             }
                             .onCancel {
-                                print("[AcceleratedCheckout] Cancelled")
+                                print("[mobile_buy_integration:accelerated_checkout] Cancelled")
                             }
                             .connect(client)
                             .environmentObject(
@@ -92,12 +92,12 @@ struct CartView: View {
                             // Set the flag here; defer the cart reset until the user dismisses
                             // the sheet (in .onCancel). Resetting now would nil the cart and
                             // SwiftUI would auto-collapse this sheet, hiding the confirmation page.
-                            print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
+                            print("[mobile_buy_integration:ucp] ec.complete: \(checkout.order?.id ?? "unknown")")
                             isCompleted = true
                         })
                         .colorScheme(.automatic)
                         .onCancel {
-                            print("[ShopifyCheckoutKit] CANCEL")
+                            print("[mobile_buy_integration:checkout] CANCEL")
                             showCheckoutSheet = false
 
                             if isCompleted {
@@ -107,7 +107,7 @@ struct CartView: View {
                         }
                         .onFail { error in
                             showCheckoutSheet = false
-                            print("[ShopifyCheckoutKit] FAIL - Checkout failed: \(error)")
+                            print("[mobile_buy_integration:checkout] FAIL - Checkout failed: \(error)")
                         }
                         .edgesIgnoringSafeArea(.all)
                 }

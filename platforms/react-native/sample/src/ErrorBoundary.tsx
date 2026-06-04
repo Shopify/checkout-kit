@@ -1,5 +1,6 @@
 import React from 'react';
 import {View, Text} from 'react-native';
+import {formatLogPrefix} from './utils';
 
 interface State {
   hasError: boolean;
@@ -14,7 +15,7 @@ class ErrorBoundary extends React.Component<any, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.log('[ErrorBoundary]', error, errorInfo);
+    console.log(formatLogPrefix('error_boundary'), error, errorInfo);
   }
 
   render() {

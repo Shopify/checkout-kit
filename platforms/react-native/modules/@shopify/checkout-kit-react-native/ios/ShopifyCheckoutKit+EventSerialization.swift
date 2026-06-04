@@ -18,7 +18,7 @@ internal enum ShopifyEventSerialization {
                 return jsonObject
             }
         } catch {
-            print("Error encoding to JSON object: \(error)")
+            print("[checkout_kit:checkout_kit] Error encoding to JSON object: \(error)")
         }
         return [:]
     }
@@ -31,7 +31,7 @@ internal enum ShopifyEventSerialization {
         do {
             return try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String: Any]
         } catch {
-            print("Failed to convert string to JSON: \(error)", value ?? "nil")
+            print("[checkout_kit:checkout_kit] Failed to convert string to JSON: \(error)", value ?? "nil")
             return [:]
         }
     }

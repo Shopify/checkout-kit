@@ -2,6 +2,7 @@ import React, {useCallback, useMemo, useRef, useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {ShopifyCheckout} from './index';
 import type {Configuration, Features, PresentCallbacks} from './index.d';
+import {formatLogPrefix} from './logging';
 import type {ProtocolHandlers} from './protocol';
 
 type Maybe<T> = T | undefined;
@@ -50,7 +51,7 @@ export function ShopifyCheckoutProvider({
     if (customer?.accessToken && (customer?.email || customer?.phoneNumber)) {
       // eslint-disable-next-line no-console
       console.warn(
-        '[ShopifyCheckoutKit] Providing accessToken with contactFields (email / phoneNumber) is deprecated and will become an error in v4.' +
+        `${formatLogPrefix('checkout_kit')} Providing accessToken with contactFields (email / phoneNumber) is deprecated and will become an error in v4.` +
           'When the user is authenticated with Customer Accounts, provide accessToken' +
           'When the user is otherwise authenticated, provide email/phoneNumber.',
       );

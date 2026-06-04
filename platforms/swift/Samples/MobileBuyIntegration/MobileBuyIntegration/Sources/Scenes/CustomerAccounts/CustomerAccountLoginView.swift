@@ -75,14 +75,14 @@ struct CustomerAccountLoginView: UIViewRepresentable {
             if (error as NSError).code == NSURLErrorCancelled {
                 return
             }
-            print("WebView navigation failed: \(error)")
+            print("[mobile_buy_integration:customer_account] WebView navigation failed: \(error)")
         }
 
         func webView(_: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
             if (error as NSError).code == NSURLErrorCancelled {
                 return
             }
-            print("WebView provisional navigation failed: \(error)")
+            print("[mobile_buy_integration:customer_account] WebView provisional navigation failed: \(error)")
         }
     }
 }
@@ -110,7 +110,7 @@ struct LoginSheetView: View {
                                     try await accountManager.exchangeCodeForTokens(code: code)
                                     dismiss()
                                 } catch {
-                                    print("Failed to exchange code: \(error)")
+                                    print("[mobile_buy_integration:customer_account] Failed to exchange code: \(error)")
                                 }
                             }
                         },

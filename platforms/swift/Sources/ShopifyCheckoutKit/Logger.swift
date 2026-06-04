@@ -2,6 +2,7 @@ import Foundation
 import os.log
 
 private let subsystem = "com.shopify.checkoutkit"
+private let logPrefix = "checkout_kit"
 
 public enum LogLevel: String, CaseIterable {
     case all
@@ -30,25 +31,25 @@ public class OSLogger {
     public func debug(_ message: String) {
         guard shouldEmit(.debug) else { return }
 
-        sendToOSLog("[\(prefix)] (Debug) - \(message)", type: .debug)
+        sendToOSLog("[\(logPrefix):\(prefix.toLogScope())] (Debug) - \(message)", type: .debug)
     }
 
     public func info(_ message: String) {
         guard shouldEmit(.debug) else { return }
 
-        sendToOSLog("[\(prefix)] (Info) - \(message)", type: .info)
+        sendToOSLog("[\(logPrefix):\(prefix.toLogScope())] (Info) - \(message)", type: .info)
     }
 
     public func error(_ message: String) {
         guard shouldEmit(.error) else { return }
 
-        sendToOSLog("[\(prefix)] (Error) - \(message)", type: .error)
+        sendToOSLog("[\(logPrefix):\(prefix.toLogScope())] (Error) - \(message)", type: .error)
     }
 
     public func fault(_ message: String) {
         guard shouldEmit(.error) else { return }
 
-        sendToOSLog("[\(prefix)] (Fault) - \(message)", type: .fault)
+        sendToOSLog("[\(logPrefix):\(prefix.toLogScope())] (Fault) - \(message)", type: .fault)
     }
 
     /// Capturing `os_log` output is not possible
@@ -63,6 +64,35 @@ public class OSLogger {
         }
 
         return logLevel == .all || logLevel == choice
+    }
+}
+
+extension String {
+    fileprivate func toLogScope() -> String {
+        switch self {
+        case "ShopifyCheckoutKit":
+            return "checkout_kit"
+        case "ShopifyAcceleratedCheckouts":
+            return "accelerated_checkout"
+        case "CheckoutECP":
+            return "ecp"
+        default:
+            return toSnakeCase()
+        }
+    }
+
+    private func toSnakeCase() -> String {
+        replacingOccurrences(
+            of: #"([a-z0-9])([A-Z])"#,
+            with: "$1_$2",
+            options: .regularExpression
+        )
+        .replacingOccurrences(
+            of: #"([A-Z]+)([A-Z][a-z])"#,
+            with: "$1_$2",
+            options: .regularExpression
+        )
+        .lowercased()
     }
 }
 

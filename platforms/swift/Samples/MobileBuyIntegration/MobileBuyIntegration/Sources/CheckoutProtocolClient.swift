@@ -7,25 +7,25 @@ extension CheckoutProtocol.Client {
     static func with(windowOpen: WindowOpenHandlerOption) -> CheckoutProtocol.Client {
         let base = CheckoutProtocol.Client()
             .on(CheckoutProtocol.start) { checkout in
-                print("[UCP] ec.start: \(checkout.id)")
+                print("[mobile_buy_integration:ucp] ec.start: \(checkout.id)")
             }
             .on(CheckoutProtocol.complete) { checkout in
                 // Do NOT reset the cart here — the cart drives a SwiftUI `if let` in CartView,
                 // and nil-ing it auto-collapses the .sheet, hiding the order confirmation page.
                 // Reset on user dismiss instead (see CartView .onCancel + isCompleted).
-                print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
+                print("[mobile_buy_integration:ucp] ec.complete: \(checkout.order?.id ?? "unknown")")
             }
             .on(CheckoutProtocol.lineItemsChange) { checkout in
-                print("[UCP] ec.line_items.change: \(checkout.id)")
+                print("[mobile_buy_integration:ucp] ec.line_items.change: \(checkout.id)")
             }
             .on(CheckoutProtocol.messagesChange) { checkout in
-                print("[UCP] ec.messages.change: \(checkout.id)")
+                print("[mobile_buy_integration:ucp] ec.messages.change: \(checkout.id)")
             }
             .on(CheckoutProtocol.totalsChange) { checkout in
-                print("[UCP] ec.totals.change: \(checkout.id)")
+                print("[mobile_buy_integration:ucp] ec.totals.change: \(checkout.id)")
             }
             .on(CheckoutProtocol.error) { error in
-                print("[UCP] ec.error: \(error.messages.first?.content ?? "(no message)")")
+                print("[mobile_buy_integration:ucp] ec.error: \(error.messages.first?.content ?? "(no message)")")
             }
 
         switch windowOpen {
@@ -35,7 +35,7 @@ extension CheckoutProtocol.Client {
             return base.on(CheckoutProtocol.windowOpen) { request in
                 let scheme = request.url.scheme?.lowercased()
 
-                print("[UCP] ec.window_open (\(scheme ?? ""))")
+                print("[mobile_buy_integration:ucp] ec.window_open (\(scheme ?? ""))")
 
                 guard scheme == "http" || scheme == "https" else {
                     return .rejected(reason: "unsupported URL scheme")

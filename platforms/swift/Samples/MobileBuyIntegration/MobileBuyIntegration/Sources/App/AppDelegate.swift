@@ -29,7 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             $0.logLevel = checkoutKitLogLevel
         }
 
-        print("[MobileBuyIntegration] CheckoutKit Log level set to \(checkoutKitLogLevel)")
+        print("[mobile_buy_integration:app] CheckoutKit Log level set to \(checkoutKitLogLevel)")
 
         UIBarButtonItem.appearance().tintColor = ColorPalette.primaryColor
 

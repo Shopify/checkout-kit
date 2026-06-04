@@ -1,6 +1,7 @@
 package com.shopify.reactnative.checkoutkit;
 
 import android.app.Activity;
+import android.util.Log;
 import androidx.activity.ComponentActivity;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
@@ -18,6 +19,9 @@ import java.util.Map;
 import java.util.Objects;
 
 public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
+  private static final String TAG = "checkout_kit";
+  private static final String LOG_PREFIX = "checkout_kit";
+  private static final String LOG_SCOPE = "checkout_kit";
 
   public static Configuration checkoutConfig = new Configuration();
 
@@ -342,7 +346,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
       return new Color.SRGB((int) color);
     } catch (NumberFormatException e) {
-      System.out.println("Warning: Invalid color string. Default color will be used.");
+      Log.w(TAG, "[" + LOG_PREFIX + ":" + LOG_SCOPE + "] Invalid color string. Default color will be used.");
       return null;
     }
   }

@@ -10,6 +10,7 @@ import {ColorScheme, ApplePayStyle} from '@shopify/checkout-kit-react-native';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import {useTheme} from './Theme';
 import {BuyerIdentityMode} from '../auth/types';
+import {formatLogPrefix} from '../utils';
 
 export interface AppConfig {
   colorScheme: ColorScheme;
@@ -64,8 +65,8 @@ export const ConfigProvider: React.FC<
   }, [config, setColorScheme]);
 
   const setAppConfig = useCallback((newConfig: AppConfig) => {
-    console.groupCollapsed('APP CONFIG UPDATE');
-    console.log(newConfig);
+    console.groupCollapsed(formatLogPrefix('app_config'));
+    console.log(formatLogPrefix('app_config'), newConfig);
     console.groupEnd();
     setInternalAppConfig(newConfig);
     EncryptedStorage.setItem(

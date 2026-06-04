@@ -18,13 +18,13 @@ class FileLogger: Logger {
         do {
             fileHandle = try FileHandle(forWritingTo: logFileUrl)
         } catch let error as NSError {
-            print("Couldn't open the log file. Error: \(error)")
+            print("[mobile_buy_integration:app] Couldn't open the log file. Error: \(error)")
         }
     }
 
     public func log(_ message: String) {
         guard let fileHandle else {
-            print("File handle is nil")
+            print("[mobile_buy_integration:app] File handle is nil")
             return
         }
 
@@ -34,7 +34,7 @@ class FileLogger: Logger {
         dateFormatter.timeStyle = .medium
         let timeString = dateFormatter.string(from: date)
 
-        let logMessage = "\(timeString): \(message)\n"
+        let logMessage = "\(timeString): [mobile_buy_integration:app] \(message)\n"
         if let data = logMessage.data(using: .utf8) {
             fileHandle.seekToEndOfFile()
             fileHandle.write(data)
@@ -45,7 +45,7 @@ class FileLogger: Logger {
         do {
             try "".write(toFile: logFileUrl.path, atomically: false, encoding: .utf8)
         } catch let error as NSError {
-            print("Couldn't clear the log file. Error: \(error)")
+            print("[mobile_buy_integration:app] Couldn't clear the log file. Error: \(error)")
         }
     }
 }

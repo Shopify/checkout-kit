@@ -6,7 +6,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private const val TAG = "ShopifyCheckoutKit"
+private const val TAG = "checkout_kit"
+private const val LOG_PREFIX = "checkout_kit"
+private const val LOG_SCOPE = "checkout_kit"
 
 fun interface DispatchCallback {
     fun invoke(json: String)
@@ -79,7 +81,7 @@ object ProtocolRelay {
             val envelopeJson = json.encodeToString(DispatchEnvelope(type, payload))
             dispatch.invoke(envelopeJson)
         } catch (e: Exception) {
-            Log.e(TAG, "Error dispatching protocol event \"$type\"", e)
+            Log.e(TAG, "[$LOG_PREFIX:$LOG_SCOPE] Error dispatching protocol event \"$type\"", e)
         }
     }
 }

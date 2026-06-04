@@ -14,7 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CustomCheckoutListener extends DefaultCheckoutListener {
-  private static final String TAG = "ShopifyCheckoutKit";
+  private static final String TAG = "checkout_kit";
+  private static final String LOG_PREFIX = "checkout_kit";
+  private static final String LOG_SCOPE = "checkout_kit";
 
   private final ObjectMapper mapper = new ObjectMapper();
 
@@ -69,7 +71,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
       // Multi-shot geolocation requests can in principle arrive after a
       // terminal event or explicit dismiss has released the dispatcher. Log
       // so the silence is observable rather than mystifying.
-      Log.w(TAG, "Dropping geolocationRequest — dispatcher already released.");
+      Log.w(TAG, formatLogMessage("Dropping geolocationRequest — dispatcher already released."));
       return;
     }
 
@@ -81,7 +83,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
       payload.put("origin", origin);
       dispatch.invoke(buildEnvelope(DispatchEventTypes.GEOLOCATION_REQUEST, payload));
     } catch (IOException e) {
-      Log.e(TAG, "Error emitting \"geolocationRequest\" event", e);
+      Log.e(TAG, formatLogMessage("Error emitting \"geolocationRequest\" event"), e);
     }
   }
 
@@ -101,7 +103,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     try {
       dispatch.invoke(buildEnvelope(DispatchEventTypes.FAIL, populateErrorDetails(checkoutError)));
     } catch (IOException e) {
-      Log.e(TAG, "Error processing checkout failed event", e);
+      Log.e(TAG, formatLogMessage("Error processing checkout failed event"), e);
     } finally {
       release();
     }
@@ -115,7 +117,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     try {
       dispatch.invoke(buildEnvelope(DispatchEventTypes.CLOSE, null));
     } catch (IOException e) {
-      Log.e(TAG, "Error processing checkout canceled event", e);
+      Log.e(TAG, formatLogMessage("Error processing checkout canceled event"), e);
     } finally {
       release();
     }
@@ -130,6 +132,10 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
       envelope.set("payload", mapper.valueToTree(payload));
     }
     return mapper.writeValueAsString(envelope);
+  }
+
+  private String formatLogMessage(String message) {
+    return "[" + LOG_PREFIX + ":" + LOG_SCOPE + "] " + message;
   }
 
   private Map<String, Object> populateErrorDetails(CheckoutException checkoutError) {

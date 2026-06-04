@@ -17,7 +17,7 @@ class Logger(
         insert(
             LogLine(
                 type = LogType.STANDARD,
-                message = message,
+                message = formatMessage(message),
             )
         )
     }
@@ -26,7 +26,7 @@ class Logger(
         insert(
             LogLine(
                 type = LogType.CHECKOUT_COMPLETED,
-                message = "Checkout completed: ${checkout.order?.id ?: "unknown"}",
+                message = formatMessage("Checkout completed: ${checkout.order?.id ?: "unknown"}"),
                 checkoutCompletedPayload = Json.encodeToString(checkout),
             )
         )
@@ -38,7 +38,7 @@ class Logger(
                 id = UUID.randomUUID(),
                 type = LogType.ERROR,
                 createdAt = Date().time,
-                message = message,
+                message = formatMessage(message),
                 errorDetails = ErrorDetails(
                     message = e.message ?: "No message on error",
                     type = "${e::class.java}"
@@ -50,4 +50,6 @@ class Logger(
     private fun insert(logLine: LogLine) = coroutineScope.launch {
         logDb.logDao().insert(logLine)
     }
+
+    private fun formatMessage(message: String): String = "[mobile_buy_integration:app] $message"
 }

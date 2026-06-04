@@ -116,10 +116,10 @@ struct ProductView: View {
                             AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
                                 .wallets([.applePay])
                                 .onFail { error in
-                                    print("[AcceleratedCheckout] Failed: \(error)")
+                                    print("[mobile_buy_integration:accelerated_checkout] Failed: \(error)")
                                 }
                                 .onCancel {
-                                    print("[AcceleratedCheckout] Cancelled")
+                                    print("[mobile_buy_integration:accelerated_checkout] Cancelled")
                                 }
                                 .environmentObject(
                                     ShopifyAcceleratedCheckouts.Configuration(

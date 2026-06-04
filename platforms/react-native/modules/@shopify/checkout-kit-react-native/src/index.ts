@@ -12,6 +12,7 @@ import {
   createPresentDispatcher,
   LifecycleEventParseError,
 } from './present-dispatcher';
+import {formatLogPrefix} from './logging';
 import type {
   AcceleratedCheckoutConfiguration,
   AndroidAutomaticColors,
@@ -204,7 +205,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(
-        '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
+        `${formatLogPrefix('checkout_kit')} Failed to configure accelerated checkouts with`,
         error,
       );
       return false;

@@ -131,10 +131,10 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
     private let checkoutDelegate = CartResettingCheckoutDelegate()
     private lazy var client = CheckoutProtocol.Client()
         .on(CheckoutProtocol.start) { checkout in
-            print("[UCP] Checkout started: \(checkout.id)")
+            print("[mobile_buy_integration:ucp] Checkout started: \(checkout.id)")
         }
         .on(CheckoutProtocol.complete) { [checkoutDelegate] checkout in
-            print("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
+            print("[mobile_buy_integration:ucp] Checkout completed: \(checkout.order?.id ?? "unknown")")
             checkoutDelegate.markCompleted()
         }
 

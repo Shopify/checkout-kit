@@ -17,7 +17,7 @@ final class LogReader: Sendable {
             logLines = Array(logLines.suffix(limit))
             return logLines.reversed()
         } catch {
-            print("Couldn't read the log file")
+            print("[mobile_buy_integration:app] Couldn't read the log file")
             return []
         }
     }

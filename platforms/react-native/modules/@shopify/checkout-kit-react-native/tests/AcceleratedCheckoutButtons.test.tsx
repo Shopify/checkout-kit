@@ -410,7 +410,7 @@ describe('AcceleratedCheckoutButtons', () => {
       );
       expect(queryByTestId('accelerated-checkout-buttons')).toBeNull();
       expect(warn).toHaveBeenCalledWith(
-        'AcceleratedCheckoutButton: Either `cartId` or `variantId` and `quantity` must be provided',
+        '[checkout_kit:accelerated_checkout] AcceleratedCheckoutButton: Either `cartId` or `variantId` and `quantity` must be provided',
       );
 
       warn.mockRestore();
@@ -473,7 +473,7 @@ describe('AcceleratedCheckoutButtons', () => {
       });
 
       expect(mockError).toHaveBeenCalledWith(
-        '[ShopifyAcceleratedCheckouts] Invalid render state: unexpected',
+        '[checkout_kit:accelerated_checkout] Invalid render state: unexpected',
       );
     });
   });

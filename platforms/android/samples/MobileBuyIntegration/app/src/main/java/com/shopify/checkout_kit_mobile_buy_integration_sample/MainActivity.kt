@@ -15,7 +15,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import timber.log.Timber
-import timber.log.Timber.DebugTree
 
 class MainActivity : ComponentActivity() {
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
@@ -38,7 +37,7 @@ class MainActivity : ComponentActivity() {
 
         // Setup logging in debug build
         if (BuildConfig.DEBUG) {
-            Timber.plant(DebugTree())
+            Timber.plant(CheckoutKitDebugTree())
         }
 
         setContent {
@@ -99,4 +98,15 @@ class MainActivity : ComponentActivity() {
     private fun permissionAlreadyGranted(permission: String): Boolean {
         return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
     }
+}
+
+private class CheckoutKitDebugTree : Timber.DebugTree() {
+    override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+        val scope = tag ?: "MobileBuyIntegration"
+        super.log(priority, "mobile_buy_integration", "[mobile_buy_integration:${scope.toSnakeCase()}] $message", t)
+    }
+
+    private fun String.toSnakeCase(): String = replace(Regex("([a-z0-9])([A-Z])"), "$1_$2")
+        .replace(Regex("([A-Z]+)([A-Z][a-z])"), "$1_$2")
+        .lowercase()
 }

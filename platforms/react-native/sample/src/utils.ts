@@ -16,6 +16,28 @@ const {
   PHONE,
 } = Config;
 
+const LOG_PREFIX = 'react_native_sample';
+
+export function formatLogPrefix(scope = 'sample') {
+  return `[${LOG_PREFIX}:${toLogScope(scope)}]`;
+}
+
+function toLogScope(scope: string) {
+  switch (scope) {
+    case 'ENV':
+      return 'env';
+    default:
+      return toSnakeCase(scope);
+  }
+}
+
+function toSnakeCase(scope: string) {
+  return scope
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+    .toLowerCase();
+}
+
 export function createBuyerIdentityCartInput(
   appConfig: AppConfig,
   customerAccessToken?: string,
@@ -72,7 +94,7 @@ export function currency(amount?: string, currency?: string): string {
       currency: currency,
     }).format(Number(amount ?? 0));
   } catch (error) {
-    console.error(error);
+    console.error(formatLogPrefix('utils'), error);
     const currencyCode = currency ? ` ${currency}` : '';
     return `${Number(amount ?? 0).toFixed(2)}` + currencyCode;
   }
@@ -80,11 +102,14 @@ export function currency(amount?: string, currency?: string): string {
 
 export function debugLog(message: string, data?: any) {
   if (__DEV__) {
-    console.log(message, data || '');
+    console.log(`${formatLogPrefix()} ${message}`, data ?? '');
   }
 }
 
 export function createDebugLogger(name: string) {
-  return (message: string, data?: any) =>
-    debugLog(`[${name}] ${message}`, data);
+  return (message: string, data?: any) => {
+    if (__DEV__) {
+      console.log(`${formatLogPrefix(name)} ${message}`, data ?? '');
+    }
+  };
 }

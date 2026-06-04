@@ -7,6 +7,7 @@ import {
   type CheckoutProtocolPayloads,
   type ProtocolHandlers,
 } from '../protocol';
+import {formatLogPrefix} from '../logging';
 import RCTAcceleratedCheckoutButtons from '../specs/RCTAcceleratedCheckoutButtonsNativeComponent';
 
 export enum RenderState {
@@ -274,7 +275,9 @@ export const AcceleratedCheckoutButtons: React.FC<
       throw error;
     } else {
       // eslint-disable-next-line no-console
-      console.warn(error.message);
+      console.warn(
+        `${formatLogPrefix('accelerated_checkout')} ${error.message}`,
+      );
       return null;
     }
   }
@@ -313,7 +316,7 @@ function validRenderState(state: string): RenderState {
     default:
       // eslint-disable-next-line no-console
       console.error(
-        `[ShopifyAcceleratedCheckouts] Invalid render state: ${state}`,
+        `${formatLogPrefix('accelerated_checkout')} Invalid render state: ${state}`,
       );
       return RenderState.Error;
   }
@@ -468,7 +471,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 function logUnknownDispatchType(type: string): void {
   // eslint-disable-next-line no-console
   console.warn(
-    `[ShopifyAcceleratedCheckouts] Ignoring protocol dispatch envelope with unknown type "${type}". ` +
+    `${formatLogPrefix('accelerated_checkout')} Ignoring protocol dispatch envelope with unknown type "${type}". ` +
       'Native emitted a Checkout Protocol event this JS package does not know how to handle. ' +
       'Confirm native and JS package versions are compatible.',
   );
@@ -477,14 +480,14 @@ function logUnknownDispatchType(type: string): void {
 function logProtocolEventParityWarning(detail: string): void {
   // eslint-disable-next-line no-console
   console.warn(
-    '[ShopifyAcceleratedCheckouts] Checkout Protocol event list out of sync between JS ' +
+    `${formatLogPrefix('accelerated_checkout')} Checkout Protocol event list out of sync between JS ` +
       'and native. Rebuild your host app so the bundled native component matches ' +
       `this version of '@shopify/checkout-kit-react-native'.\n  ${detail}`,
   );
 }
 
 function logDispatchError(detail: string, raw?: string): void {
-  const message = `[ShopifyAcceleratedCheckouts] Failed to handle protocol dispatch: ${detail}`;
+  const message = `${formatLogPrefix('accelerated_checkout')} Failed to handle protocol dispatch: ${detail}`;
   if (raw == null) {
     // eslint-disable-next-line no-console
     console.error(message);

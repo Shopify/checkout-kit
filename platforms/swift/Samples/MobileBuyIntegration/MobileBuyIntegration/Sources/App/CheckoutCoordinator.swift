@@ -10,10 +10,10 @@ class CheckoutCoordinator: UIViewController {
     private let checkoutDelegate = CartResettingCheckoutDelegate()
     private lazy var client = CheckoutProtocol.Client()
         .on(CheckoutProtocol.start) { checkout in
-            OSLogger.shared.debug("[UCP] Checkout started: \(checkout.id)")
+            OSLogger.shared.debug("UCP Checkout started: \(checkout.id)")
         }
         .on(CheckoutProtocol.complete) { [checkoutDelegate] checkout in
-            OSLogger.shared.debug("[UCP] Checkout completed: \(checkout.order?.id ?? "unknown")")
+            OSLogger.shared.debug("UCP Checkout completed: \(checkout.order?.id ?? "unknown")")
             checkoutDelegate.markCompleted()
         }
 

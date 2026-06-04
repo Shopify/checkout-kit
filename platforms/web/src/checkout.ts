@@ -22,6 +22,7 @@ export const DEFAULT_POPUP_HEIGHT = 600;
 export const EMBED_PROTOCOL_VERSION = "2026-04-08";
 export const CK_VERSION = "4.0.0";
 const EMBED_DELEGATIONS: readonly string[] = ["window.open"];
+const LOG_PREFIX = "[checkout_kit:web]";
 
 const SHADOW_TEMPLATE = createTemplate(html`
   <div id="shopify-element-wrapper">
@@ -163,7 +164,7 @@ export class ShopifyCheckout
   #debugWarn(message: string, ...args: unknown[]) {
     if (this.debug) {
       // eslint-disable-next-line no-console
-      console.warn(`<shopify-checkout>: ${message}`, ...args);
+      console.warn(`${LOG_PREFIX} ${message}`, ...args);
     }
   }
 
@@ -253,7 +254,7 @@ export class ShopifyCheckout
 
     if (!src) {
       // eslint-disable-next-line no-console
-      console.warn("`<shopify-checkout>`: src property is empty or invalid, cannot open checkout");
+      console.warn(`${LOG_PREFIX} src property is empty or invalid, cannot open checkout`);
       return;
     }
 
@@ -613,7 +614,7 @@ export class ShopifyCheckout
         if (!body || typeof body.url !== "string") {
           // eslint-disable-next-line no-console
           console.warn(
-            "<shopify-checkout>: ec.window.open_request received without a valid url",
+            `${LOG_PREFIX} ec.window.open_request received without a valid url`,
             message,
           );
           message.source?.postMessage(
@@ -670,7 +671,7 @@ export class ShopifyCheckout
       default: {
         // eslint-disable-next-line no-console
         console.warn(
-          `<shopify-checkout>: Unknown checkout protocol message received: ${message.name}`,
+          `${LOG_PREFIX} Unknown checkout protocol message received: ${message.name}`,
           message,
         );
         break;

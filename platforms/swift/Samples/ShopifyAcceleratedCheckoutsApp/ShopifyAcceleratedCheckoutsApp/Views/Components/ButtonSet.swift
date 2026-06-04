@@ -21,10 +21,10 @@ struct ButtonSet: View {
                     AcceleratedCheckoutButtons(cartID: cartID)
                         .applePayLabel(.plain)
                         .onFail { error in
-                            print("❌ Checkout failed: \(error)")
+                            print("[accelerated_checkouts_app:accelerated_checkout] Checkout failed: \(error)")
                         }
                         .onCancel {
-                            print("🚫 Checkout cancelled")
+                            print("[accelerated_checkouts_app:accelerated_checkout] Checkout cancelled")
                         }
                         .onRenderStateChange {
                             cartRenderState = $0
@@ -48,10 +48,10 @@ struct ButtonSet: View {
                     .cornerRadius(24)
                     .wallets([.applePay, .shopPay])
                     .onFail { error in
-                        print("❌ Variant checkout failed: \(error)")
+                        print("[accelerated_checkouts_app:accelerated_checkout] Variant checkout failed: \(error)")
                     }
                     .onCancel {
-                        print("🚫 Variant checkout cancelled")
+                        print("[accelerated_checkouts_app:accelerated_checkout] Variant checkout cancelled")
                     }
                     .onRenderStateChange {
                         variantRenderState = $0

@@ -41,7 +41,7 @@ import ProductDetailsScreen from './screens/ProductDetailsScreen';
 import type {ProductVariant, ShopifyProduct} from '../@types';
 import ErrorBoundary from './ErrorBoundary';
 import env from 'react-native-config';
-import {createDebugLogger} from './utils';
+import {createDebugLogger, formatLogPrefix} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
 
 const log = createDebugLogger('ENV');
@@ -52,7 +52,7 @@ function configured(value: string | undefined) {
 
 const storefrontApiVersion = env.API_VERSION ?? env.STOREFRONT_VERSION;
 
-console.groupCollapsed('ENV');
+console.groupCollapsed(formatLogPrefix('env'));
 log('STOREFRONT_DOMAIN:', configured(env.STOREFRONT_DOMAIN));
 log('STOREFRONT_ACCESS_TOKEN:', configured(env.STOREFRONT_ACCESS_TOKEN));
 log('API_VERSION:', configured(storefrontApiVersion));

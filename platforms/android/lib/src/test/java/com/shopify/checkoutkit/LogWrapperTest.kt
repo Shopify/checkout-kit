@@ -37,7 +37,7 @@ class LogWrapperTest {
         log.d("TAG", "Debug message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.DEBUG && it.tag == "TAG" && it.msg == "Debug message"
+                it.type == Log.DEBUG && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Debug message"
             }
         ).isTrue()
     }
@@ -51,7 +51,7 @@ class LogWrapperTest {
         log.d("TAG", "Debug message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.DEBUG && it.tag == "TAG" && it.msg == "Debug message"
+                it.type == Log.DEBUG && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Debug message"
             }
         ).isFalse()
     }
@@ -65,7 +65,7 @@ class LogWrapperTest {
         log.d("TAG", "Debug message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.DEBUG && it.tag == "TAG" && it.msg == "Debug message"
+                it.type == Log.DEBUG && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Debug message"
             }
         ).isFalse()
     }
@@ -79,7 +79,7 @@ class LogWrapperTest {
         log.w("TAG", "Warn message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.WARN && it.tag == "TAG" && it.msg == "Warn message"
+                it.type == Log.WARN && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Warn message"
             }
         ).isTrue()
     }
@@ -93,7 +93,7 @@ class LogWrapperTest {
         log.w("TAG", "Warn message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.WARN && it.tag == "TAG" && it.msg == "Warn message"
+                it.type == Log.WARN && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Warn message"
             }
         ).isTrue()
     }
@@ -107,7 +107,7 @@ class LogWrapperTest {
         log.w("TAG", "Warn message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.WARN && it.tag == "TAG" && it.msg == "Warn message"
+                it.type == Log.WARN && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Warn message"
             }
         ).isFalse()
     }
@@ -121,7 +121,7 @@ class LogWrapperTest {
         log.e("TAG", "Error message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.ERROR && it.tag == "TAG" && it.msg == "Error message"
+                it.type == Log.ERROR && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Error message"
             }
         ).isTrue()
     }
@@ -135,7 +135,7 @@ class LogWrapperTest {
         log.e("TAG", "Error message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.ERROR && it.tag == "TAG" && it.msg == "Error message"
+                it.type == Log.ERROR && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Error message"
             }
         ).isTrue()
     }
@@ -149,8 +149,40 @@ class LogWrapperTest {
         log.e("TAG", "Error message")
         assertThat(
             ShadowLog.getLogs().any {
-                it.type == Log.ERROR && it.tag == "TAG" && it.msg == "Error message"
+                it.type == Log.ERROR && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Error message"
             }
         ).isTrue()
+    }
+
+    @Test
+    fun `should normalize log scopes consistently`() {
+        ShopifyCheckoutKit.configure {
+            it.logLevel = LogLevel.ERROR
+        }
+
+        val cases = mapOf(
+            "ShopifyCheckoutKit" to "checkout_kit",
+            "ShopifyAcceleratedCheckouts" to "accelerated_checkout",
+            "CheckoutECP" to "ecp",
+            "URLParser" to "url_parser",
+            "HTTPRequest" to "http_request",
+            "accelerated_checkout" to "accelerated_checkout",
+            "Checkout2Kit" to "checkout2_kit",
+            "ECP2Checkout" to "ecp2_checkout",
+        )
+
+        cases.forEach { (tag, scope) ->
+            ShadowLog.clear()
+
+            log.e(tag, "Error message")
+
+            assertThat(
+                ShadowLog.getLogs().any {
+                    it.type == Log.ERROR &&
+                        it.tag == "checkout_kit" &&
+                        it.msg == "[checkout_kit:$scope] Error message"
+                }
+            ).isTrue()
+        }
     }
 }
