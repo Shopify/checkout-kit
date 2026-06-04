@@ -28,6 +28,8 @@ Check out our blog to
   - [Installation](#installation)
 - [Basic Usage](#basic-usage)
 - [Programmatic Usage](#programmatic-usage)
+- [Usage with other frameworks](#usage-with-other-frameworks)
+  - [React](#react)
 - [Usage with the Shopify Storefront API](#usage-with-the-shopify-storefront-api)
 - [Configuration](#configuration)
   - [`src`](#src)
@@ -149,6 +151,88 @@ if (!customElements.get('shopify-checkout')) {
   customElements.define('shopify-checkout', ShopifyCheckout);
 }
 ```
+
+## Usage with other frameworks
+
+### React
+
+React 19+ has first-class support for custom elements — it renders
+`<shopify-checkout>` and forwards props to it as properties with no extra
+configuration. Reach for a `ref` for the two things that aren't expressible as
+JSX props: calling imperative methods (`open()`, `close()`, `focus()`) and
+subscribing to the `checkout:*` events.
+
+```tsx
+import {useEffect, useRef} from 'react';
+import '@shopify/checkout-kit';
+import type {ShopifyCheckout} from '@shopify/checkout-kit';
+
+export function BuyNowButton({checkoutUrl}: {checkoutUrl: string}) {
+  const checkoutRef = useRef<ShopifyCheckout>(null);
+
+  useEffect(() => {
+    const checkout = checkoutRef.current;
+    if (!checkout) return;
+
+    // A single AbortController removes every listener on cleanup.
+    const controller = new AbortController();
+    const {signal} = controller;
+
+    checkout.addEventListener(
+      'checkout:complete',
+      (event) => console.log('Order complete', event.detail.order.id),
+      {signal},
+    );
+    checkout.addEventListener('checkout:close', () => console.log('Dismissed'), {
+      signal,
+    });
+
+    return () => controller.abort();
+  }, []);
+
+  return (
+    <>
+      <shopify-checkout ref={checkoutRef} src={checkoutUrl} target="popup" />
+      <button onClick={() => checkoutRef.current?.open()}>Buy now</button>
+    </>
+  );
+}
+```
+
+`event` is fully typed inside each listener — `event.detail.order` on
+`checkout:complete`, and so on — courtesy of the element's overloaded
+`addEventListener` signatures. See [Checkout lifecycle](#checkout-lifecycle)
+for the full event list.
+
+TypeScript doesn't know about the `<shopify-checkout>` tag in JSX out of the
+box. Declare it once, anywhere in your project's type definitions:
+
+```ts
+import type {ShopifyCheckout} from '@shopify/checkout-kit';
+
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'shopify-checkout': DetailedHTMLProps<
+        HTMLAttributes<ShopifyCheckout>,
+        ShopifyCheckout
+      > & {src?: string; target?: string; debug?: boolean};
+    }
+  }
+}
+```
+
+> [!NOTE]
+> On React 18 and earlier, declare the element on the **global** `JSX`
+> namespace (`declare global { namespace JSX { ... } }`) instead of augmenting
+> the `react` module.
+
+> [!NOTE]
+> The `import '@shopify/checkout-kit'` side effect registers the element with
+> `customElements` and touches browser-only globals, so it must run on the
+> client. In server-rendered frameworks (Next.js, Remix), keep the import and
+> the component in a client component — e.g. add `'use client'` to the top of
+> the file.
 
 ## Usage with the Shopify Storefront API
 
