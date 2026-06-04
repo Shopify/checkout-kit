@@ -394,10 +394,10 @@ exactly the fields relevant to that moment.
 | `checkout:complete`         | `{checkout, order}`                             | The buyer completed the order successfully.                                |
 | `checkout:close`            | _(none)_                                        | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
 | `checkout:error`            | `{error}`                                       | Session-level fatal error — tear down the embedded context.                |
-| `checkout:lineItemsChange`  | `{lineItems, checkout}`                         | The cart's line items changed (item added/removed/quantity updated).       |
-| `checkout:buyerChange`      | `{buyer, checkout}`                             | The buyer's information changed (email, address, etc.).                    |
-| `checkout:totalsChange`     | `{totals, checkout}`                            | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
-| `checkout:messagesChange`   | `{messages, checkout}`                          | Checkout-level warnings/errors/info shown inside the checkout changed.     |
+| `checkout:lineItemsChange`  | `{checkout, lineItems}`                         | The cart's line items changed (item added/removed/quantity updated).       |
+| `checkout:buyerChange`      | `{checkout, buyer}`                             | The buyer's information changed (email, address, etc.).                    |
+| `checkout:totalsChange`     | `{checkout, totals}`                            | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
+| `checkout:messagesChange`   | `{checkout, messages}`                          | Checkout-level warnings/errors/info shown inside the checkout changed.     |
 
 The `checkout` field on every `*Change` event is the full UCP `Checkout`
 snapshot, included for handlers that want broader context. Most handlers only
