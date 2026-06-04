@@ -3,104 +3,58 @@ import WebKit
 import XCTest
 
 class CheckoutBridgeTests: XCTestCase {
-    func testReturnsStandardUserAgent() {
-        let version = ShopifyCheckoutKit.version
-        XCTAssertEqual(CheckoutBridge.applicationName, "ShopifyCheckoutKit/\(version) (iOS;Swift \(SwiftVersion.current!))")
-    }
-
-    func testReturnsUserAgentWithCustomPlatformSuffix() {
-        let version = ShopifyCheckoutKit.version
-        ShopifyCheckoutKit.configuration.platform = Platform.reactNative
-        XCTAssertEqual(CheckoutBridge.applicationName, "ShopifyCheckoutKit/\(version) (iOS;Swift \(SwiftVersion.current!)) ReactNative")
-        ShopifyCheckoutKit.configuration.platform = nil
-    }
-
-    func testReturnsUserAgentWithPlatformVersion() {
-        let version = ShopifyCheckoutKit.version
-        ShopifyCheckoutKit.configuration.platform = .reactNative(version: "0.74.5")
-        XCTAssertEqual(CheckoutBridge.applicationName, "ShopifyCheckoutKit/\(version) (iOS;Swift \(SwiftVersion.current!)) ReactNative/0.74.5")
-        ShopifyCheckoutKit.configuration.platform = nil
-    }
-
-    func testReturnsUserAgentWithEntryPoint() {
-        let version = ShopifyCheckoutKit.version
-        let applicationNameWithEntryPoint = CheckoutBridge.applicationName(entryPoint: .acceleratedCheckouts)
-
-        XCTAssertEqual(applicationNameWithEntryPoint, "ShopifyCheckoutKit/\(version) (iOS;Swift \(SwiftVersion.current!)) AcceleratedCheckouts")
-    }
-
-    func testReturnsUserAgentWithEntryPointAndPlatform() {
-        let version = ShopifyCheckoutKit.version
-        ShopifyCheckoutKit.configuration.platform = Platform.reactNative
-
-        let applicationNameWithEntryPoint = CheckoutBridge.applicationName(entryPoint: .acceleratedCheckouts)
-
-        XCTAssertEqual(applicationNameWithEntryPoint, "ShopifyCheckoutKit/\(version) (iOS;Swift \(SwiftVersion.current!)) ReactNative AcceleratedCheckouts")
-
-        ShopifyCheckoutKit.configuration.platform = nil
-    }
-
-    func testInstrumentationPayloadToBridgeEvent() {
-        let payload = InstrumentationPayload(name: "test", value: 1, type: .histogram)
-        let jsonString = payload.toBridgeEvent()
-        XCTAssertNotNil(jsonString)
-
-        if let jsonData = jsonString?.data(using: .utf8) {
-            let decodedPayload = try? JSONDecoder().decode(SdkToWebEvent<InstrumentationPayload>.self, from: jsonData)
-            XCTAssertNotNil(decodedPayload)
-            XCTAssertEqual(decodedPayload?.detail.name, "test")
-            XCTAssertEqual(decodedPayload?.detail.value, 1)
-            XCTAssertEqual(decodedPayload?.detail.type, .histogram)
-        }
-    }
-
-    func testSendMessageShouldCallEvaluateJavaScriptPresented() {
-        let webView = MockWebView()
-        webView.expectedScript = expectedPresentedScript()
-        let evaluateJavaScriptExpectation = expectation(
-            description: "evaluateJavaScript was called"
+    func testApplicationNameDelegatesToUserAgent() {
+        XCTAssertEqual(
+            CheckoutBridge.applicationName,
+            UserAgent.string(platform: ShopifyCheckoutKit.configuration.platform)
         )
-        webView.evaluateJavaScriptExpectation = evaluateJavaScriptExpectation
-
-        CheckoutBridge.sendMessage(webView, messageName: "presented", messageBody: nil)
-
-        wait(for: [evaluateJavaScriptExpectation], timeout: 2)
     }
 
-    func testSendMessageWithPayloadEvaulatesJavaScript() {
-        let webView = MockWebView()
-        webView.expectedScript = expectedPayloadScript()
-        let evaluateJavaScriptExpectation = expectation(
-            description: "evaluateJavaScript was called"
+    func testApplicationNameWithEntryPointDelegatesToUserAgent() {
+        XCTAssertEqual(
+            CheckoutBridge.applicationName(entryPoint: .acceleratedCheckouts),
+            UserAgent.string(
+                platform: ShopifyCheckoutKit.configuration.platform,
+                entryPoint: .acceleratedCheckouts
+            )
         )
-        webView.evaluateJavaScriptExpectation = evaluateJavaScriptExpectation
-
-        CheckoutBridge.sendMessage(webView, messageName: "payload", messageBody: "{\"one\": true}")
-
-        wait(for: [evaluateJavaScriptExpectation], timeout: 2)
     }
 
-    private func expectedPresentedScript() -> String {
+    @MainActor
+    func testSendResponseEvaluatesExpectedJavaScript() async {
+        let webView = MockWebView()
+        let messageBody = #"{"jsonrpc":"2.0","id":"response-id","result":{}}"#
+
+        let didDispatch = await CheckoutBridge.sendResponse(webView, messageBody: messageBody)
+
+        XCTAssertEqual(webView.evaluatedScript, expectedResponseScript(messageBody: messageBody))
+        XCTAssertTrue(didDispatch)
+    }
+
+    private func expectedResponseScript(messageBody: String) -> String {
         return """
-        if (window.MobileCheckoutSdk && window.MobileCheckoutSdk.dispatchMessage) {
-        	window.MobileCheckoutSdk.dispatchMessage('presented');
-        } else {
-        	window.addEventListener('mobileCheckoutBridgeReady', function () {
-        		window.MobileCheckoutSdk.dispatchMessage('presented');
-        	}, {passive: true, once: true});
-        }
+        (function() {
+            try {
+                if (window.EmbeddedCheckoutProtocol && typeof window.EmbeddedCheckoutProtocol.postMessage === 'function') {
+                    window.EmbeddedCheckoutProtocol.postMessage(\(messageBody));
+                } else if (window && window.console && window.console.error) {
+                    window.console.error('EmbeddedCheckoutProtocol.postMessage is not available.');
+                }
+            } catch (error) {
+                if (window && window.console && window.console.error) {
+                    window.console.error('Failed to post message to checkout', error);
+                }
+            }
+        })();
         """
     }
+}
 
-    private func expectedPayloadScript() -> String {
-        return """
-        if (window.MobileCheckoutSdk && window.MobileCheckoutSdk.dispatchMessage) {
-        	window.MobileCheckoutSdk.dispatchMessage('payload', {"one": true});
-        } else {
-        	window.addEventListener('mobileCheckoutBridgeReady', function () {
-        		window.MobileCheckoutSdk.dispatchMessage('payload', {"one": true});
-        	}, {passive: true, once: true});
-        }
-        """
+private class MockWebView: WKWebView {
+    var evaluatedScript: String?
+
+    override func evaluateJavaScript(_ javaScriptString: String) async throws -> Any {
+        evaluatedScript = javaScriptString
+        return true
     }
 }

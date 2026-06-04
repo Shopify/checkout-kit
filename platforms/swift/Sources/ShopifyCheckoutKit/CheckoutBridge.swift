@@ -1,14 +1,7 @@
 import WebKit
 
-enum BridgeError: Swift.Error {
-    case invalidBridgeEvent(Swift.Error? = nil)
-    case unencodableInstrumentation(Swift.Error? = nil)
-}
-
 protocol CheckoutBridgeProtocol {
-    static func instrument(_ webView: WKWebView, _ instrumentation: InstrumentationPayload)
-    static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?)
-    static func sendResponse(_ webView: WKWebView, messageBody: String)
+    @discardableResult static func sendResponse(_ webView: WKWebView, messageBody: String) async -> Bool
 }
 
 enum CheckoutBridge: CheckoutBridgeProtocol {
@@ -25,88 +18,31 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
         )
     }
 
-    static func instrument(_ webView: WKWebView, _ instrumentation: InstrumentationPayload) {
-        if let payload = instrumentation.toBridgeEvent() {
-            sendMessage(webView, messageName: "instrumentation", messageBody: payload)
-        }
-    }
-
-    static func sendMessage(_ webView: WKWebView, messageName: String, messageBody: String?) {
-        let dispatchMessageBody: String
-        if let body = messageBody {
-            dispatchMessageBody = "'\(messageName)', \(body)"
-        } else {
-            dispatchMessageBody = "'\(messageName)'"
-        }
-        let script = dispatchMessageTemplate(body: dispatchMessageBody)
-        webView.evaluateJavaScript(script)
-    }
-
-    static func sendResponse(_ webView: WKWebView, messageBody: String) {
-        DispatchQueue.main.async {
-            let script = """
-            (function() {
-                try {
-                    if (window.EmbeddedCheckoutProtocol && typeof window.EmbeddedCheckoutProtocol.postMessage === 'function') {
-                        window.EmbeddedCheckoutProtocol.postMessage(\(messageBody));
-                    } else if (window && window.console && window.console.error) {
-                        window.console.error('EmbeddedCheckoutProtocol.postMessage is not available.');
-                    }
-                } catch (error) {
-                    if (window && window.console && window.console.error) {
-                        window.console.error('Failed to post message to checkout', error);
-                    }
-                }
-            })();
-            """
-
-            webView.evaluateJavaScript(script)
-        }
-    }
-
-    static func dispatchMessageTemplate(body: String) -> String {
-        return """
-        if (window.MobileCheckoutSdk && window.MobileCheckoutSdk.dispatchMessage) {
-        	window.MobileCheckoutSdk.dispatchMessage(\(body));
-        } else {
-        	window.addEventListener('mobileCheckoutBridgeReady', function () {
-        		window.MobileCheckoutSdk.dispatchMessage(\(body));
-        	}, {passive: true, once: true});
-        }
-        """
-    }
-}
-
-struct InstrumentationPayload: Codable {
-    var name: String
-    var value: Int
-    var type: InstrumentationType
-    var tags: [String: String] = [:]
-}
-
-enum InstrumentationType: String, Codable {
-    case histogram
-}
-
-extension InstrumentationPayload {
-    func toBridgeEvent() -> String? {
-        SdkToWebEvent(detail: self).toJson()
-    }
-}
-
-struct SdkToWebEvent<T: Codable>: Codable {
-    var detail: T
-}
-
-extension SdkToWebEvent {
-    func toJson() -> String? {
+    @discardableResult static func sendResponse(_ webView: WKWebView, messageBody: String) async -> Bool {
         do {
-            let jsonData = try JSONEncoder().encode(self)
-            return String(data: jsonData, encoding: .utf8)
+            try await webView.evaluateJavaScript(responseScript(messageBody: messageBody))
+            return true
         } catch {
-            print(#function, BridgeError.unencodableInstrumentation(error))
+            OSLogger.shared.error("Failed to dispatch bridge response: \(error.localizedDescription)")
+            return false
         }
+    }
 
-        return nil
+    static func responseScript(messageBody: String) -> String {
+        return """
+        (function() {
+            try {
+                if (window.EmbeddedCheckoutProtocol && typeof window.EmbeddedCheckoutProtocol.postMessage === 'function') {
+                    window.EmbeddedCheckoutProtocol.postMessage(\(messageBody));
+                } else if (window && window.console && window.console.error) {
+                    window.console.error('EmbeddedCheckoutProtocol.postMessage is not available.');
+                }
+            } catch (error) {
+                if (window && window.console && window.console.error) {
+                    window.console.error('Failed to post message to checkout', error);
+                }
+            }
+        })();
+        """
     }
 }
