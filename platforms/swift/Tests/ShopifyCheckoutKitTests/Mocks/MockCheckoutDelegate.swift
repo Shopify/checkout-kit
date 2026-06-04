@@ -1,11 +1,16 @@
 @testable import ShopifyCheckoutKit
 import XCTest
 
-struct MockBridgeClient: CheckoutCommunicationProtocol {
-    var responseMessage: String?
-    var receivedMessages: [String] = []
+actor MockBridgeClient: CheckoutCommunicationProtocol {
+    let responseMessage: String?
+    private(set) var receivedMessages: [String] = []
 
-    func process(_: String) async -> String? {
+    init(responseMessage: String? = nil) {
+        self.responseMessage = responseMessage
+    }
+
+    func process(_ message: String) async -> String? {
+        receivedMessages.append(message)
         return responseMessage
     }
 }

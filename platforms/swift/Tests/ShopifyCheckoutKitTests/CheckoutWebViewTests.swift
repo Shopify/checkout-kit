@@ -290,8 +290,9 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
-    func testAcknowledgeReadyDoesNotInvokeClient() async {
-        view.client = MockBridgeClient(responseMessage: "client-response")
+    func testAcknowledgeReadyDoesNotInvokeClient() async throws {
+        let client = MockBridgeClient(responseMessage: "client-response")
+        view.client = client
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
@@ -301,8 +302,10 @@ class CheckoutWebViewTests: XCTestCase {
 
         await fulfillment(of: [responseSent], timeout: 5.0)
 
-        let response = try? XCTUnwrap(MockCheckoutBridge.lastResponseBody)
+        let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
         XCTAssertNotEqual(response, "client-response")
+        let receivedMessages = await client.receivedMessages
+        XCTAssertTrue(receivedMessages.isEmpty)
     }
 
     func testNonReadyMessageDoesNotTriggerReadyAck() {
