@@ -8,7 +8,6 @@ import type {
   CheckoutMessage,
   EcReadyParams,
   OrderConfirmation,
-  ShopCash,
   Total,
   UcpErrorResponse,
 } from "./ucp-embed-types";
@@ -233,7 +232,6 @@ export interface CheckoutProtocolMessageData<
 /** Common payload shape for messages that carry the full Checkout object. */
 interface CheckoutPayload {
   checkout: Checkout;
-  shop_cash?: ShopCash;
 }
 
 /**
@@ -262,7 +260,6 @@ export type {
   CheckoutMessage,
   EcReadyParams,
   OrderConfirmation,
-  ShopCash,
   Total,
   UcpErrorResponse,
 } from "./ucp-embed-types";
