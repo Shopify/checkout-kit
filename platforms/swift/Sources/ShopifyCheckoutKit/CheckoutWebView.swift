@@ -65,7 +65,6 @@ class CheckoutWebView: WKWebView {
     // MARK: Properties
 
     weak var viewDelegate: CheckoutWebViewDelegate?
-    var checkoutDidLoad: Bool = false
 
     private var entryPoint: MetaData.EntryPoint?
 
@@ -251,7 +250,6 @@ extension CheckoutWebView: WKNavigationDelegate {
 
             ShopifyCheckoutKit.configuration.logger.log(message)
         }
-        checkoutDidLoad = true
         timer = nil
     }
 
