@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Checkout, CheckoutProtocolMessageMap, UcpErrorResponse } from "./checkout.types";
-import type { CheckoutMessageError } from "./ucp-embed-types";
+import type { CheckoutMessageError } from "@shopify/checkout-kit-protocol/web";
 import "./checkout-web-component";
 import {
   DEFAULT_POPUP_WIDTH,

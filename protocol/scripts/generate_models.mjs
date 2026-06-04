@@ -39,7 +39,7 @@ const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
 
 function usage() {
-  console.error("Usage: generate_models.sh --lang <kotlin|swift|typescript> [--output <path>]");
+  console.error("Usage: generate_models.sh --lang <kotlin|swift|typescript|typescript-ucp> [--output <path>]");
 }
 
 function parseArgs(argv) {
@@ -81,11 +81,12 @@ function normalizeLang(lang) {
     case "kotlin":
     case "swift":
     case "typescript":
+    case "typescript-ucp":
       return lang;
     case "ts":
       return "typescript";
     default:
-      throw new Error(`Unsupported language: ${lang}. Use kotlin, swift, or typescript.`);
+      throw new Error(`Unsupported language: ${lang}. Use kotlin, swift, typescript, or typescript-ucp.`);
   }
 }
 
@@ -175,10 +176,12 @@ async function prepareCodegenSchemas(tempDir) {
 
   // Message discriminators are defined across the message variant schemas. Give
   // each variant the same local title so quicktype emits a single MessageType symbol.
+  // PR #202 moved these files from `shopping/types/` into `common/types/`.
+  const commonTypesDir = path.join(schemaDir, "common", "types");
   for (const messageSchema of ["message_error", "message_warning", "message_info"]) {
-    const schema = await readJson(path.join(specDir, "types", `${messageSchema}.json`));
+    const schema = await readJson(path.join(commonTypesDir, `${messageSchema}.json`));
     schema.properties.type.title = "MessageType";
-    await writeJson(path.join(specDir, "types", `${messageSchema}.json`), schema);
+    await writeJson(path.join(commonTypesDir, `${messageSchema}.json`), schema);
   }
 
   // Extension schemas bring in repeated generic property names like `type` and
@@ -226,6 +229,109 @@ async function extractResultSchema(specDir, methodName, outputFile, rootTitle, c
   await writeJson(path.join(specDir, outputFile), schema);
 }
 
+// Synthesize a JSON Schema object from an OpenRPC method's `params` array so
+// quicktype can emit a named type for the params payload. Used by the web
+// target to give `EcReadyParams` a stable name without duplicating the OpenRPC
+// definition by hand.
+async function extractParamsSchema(specDir, methodName, outputFile, rootTitle) {
+  const service = await readJson(path.join(SERVICES_DIR, "embedded.openrpc.json"));
+  const method = service.methods.find((candidate) => candidate.name === methodName);
+  if (method === undefined) {
+    throw new Error(`Missing OpenRPC method ${methodName}`);
+  }
+
+  const properties = {};
+  const required = [];
+  for (const param of method.params ?? []) {
+    if (typeof param?.name !== "string" || param.schema === undefined) {
+      continue;
+    }
+    properties[param.name] = structuredClone(param.schema);
+    if (param.required === true) {
+      required.push(param.name);
+    }
+  }
+
+  const schema = {
+    title: rootTitle,
+    description: method.summary ?? method.description ?? `Params for ${methodName}.`,
+    type: "object",
+    properties,
+    additionalProperties: true,
+  };
+  if (required.length > 0) {
+    schema.required = required;
+  }
+  rewriteRefs(schema);
+  schema.components = service.components;
+
+  await writeJson(path.join(specDir, outputFile), schema);
+}
+
+// `typescript-ucp` target reuses every disambiguation prepared by
+// `prepareCodegenSchemas` (which targets the shopping checkout/order surface)
+// and adds local titles on the UCP transport schemas plus a handful of shopping
+// types so the generated symbol names match the public surface of
+// `@shopify/checkout-kit-protocol/web`. These overrides are scoped to the
+// typescript-ucp target so existing kotlin/swift/typescript outputs are unchanged.
+async function prepareTypescriptUcpTitles(schemaDir) {
+  const ucp = await readJson(path.join(schemaDir, "ucp.json"));
+  ucp.$defs.response_checkout_schema.title = "UcpMetadata";
+  ucp.$defs.error.title = "UcpErrorMetadata";
+  ucp.$defs.success.title = "UcpSuccessMetadata";
+  await writeJson(path.join(schemaDir, "ucp.json"), ucp);
+
+  const service = await readJson(path.join(schemaDir, "service.json"));
+  service.$defs.response_schema.title = "UcpService";
+  await writeJson(path.join(schemaDir, "service.json"), service);
+
+  const capability = await readJson(path.join(schemaDir, "capability.json"));
+  capability.$defs.response_schema.title = "UcpCapability";
+  await writeJson(path.join(schemaDir, "capability.json"), capability);
+
+  const paymentHandler = await readJson(path.join(schemaDir, "payment_handler.json"));
+  paymentHandler.$defs.response_schema.title = "UcpPaymentHandler";
+  await writeJson(path.join(schemaDir, "payment_handler.json"), paymentHandler);
+
+  // Align generated symbol names with the previously hand-written wire payload
+  // types exposed by the web component's public API (`Checkout`, `Buyer`,
+  // `CheckoutLineItem`, `CheckoutMessage`, `Total`, `OrderConfirmation`,
+  // `UcpErrorResponse`). The kotlin/swift/typescript targets keep their existing
+  // names because these overrides only run for `--lang web`.
+  const specDir = path.join(schemaDir, "shopping");
+  const commonTypesDir = path.join(schemaDir, "common", "types");
+
+  const lineItem = await readJson(path.join(specDir, "types", "line_item.json"));
+  lineItem.title = "CheckoutLineItem";
+  await writeJson(path.join(specDir, "types", "line_item.json"), lineItem);
+
+  // `prepareCodegenSchemas` retitled these to `LineItemTotal`/`CheckoutTotal`.
+  // For web, both line-item totals and checkout totals collapse to a single
+  // `Total` type matching the previously hand-written shape. Replace the
+  // wrapping `allOf` in totals.json so the items become a plain ref to total.json
+  // — without this, quicktype keeps them as structurally distinct types (the
+  // checkout totals wrapper adds a `lines` field) and emits a fallback name.
+  const total = await readJson(path.join(specDir, "types", "total.json"));
+  total.title = "Total";
+  await writeJson(path.join(specDir, "types", "total.json"), total);
+
+  const totals = await readJson(path.join(specDir, "types", "totals.json"));
+  totals.items = {$ref: "total.json"};
+  await writeJson(path.join(specDir, "types", "totals.json"), totals);
+
+  const errorResponse = await readJson(path.join(commonTypesDir, "error_response.json"));
+  errorResponse.title = "UcpErrorResponse";
+  await writeJson(path.join(commonTypesDir, "error_response.json"), errorResponse);
+
+  const message = await readJson(path.join(commonTypesDir, "message.json"));
+  message.title = "CheckoutMessage";
+  await writeJson(path.join(commonTypesDir, "message.json"), message);
+
+  const messageError = await readJson(path.join(commonTypesDir, "message_error.json"));
+  messageError.title = "CheckoutMessageError";
+  await writeJson(path.join(commonTypesDir, "message_error.json"), messageError);
+}
+
 async function runQuicktype(args) {
   await run(QUICKTYPE_BIN, args);
 }
@@ -262,13 +368,16 @@ async function normalizeGeneratedFile(output, transform = (source) => source) {
 }
 
 function commonSchemaSources(specDir) {
+  // `error_response.json` lives under `common/types/` after PR #202; the rest
+  // are still under `shopping/`.
+  const schemaDir = path.join(specDir, "..");
   return [
     "--src",
     path.join(specDir, "checkout.json"),
     "--src",
     path.join(specDir, "order.json"),
     "--src",
-    path.join(specDir, "types", "error_response.json"),
+    path.join(schemaDir, "common", "types", "error_response.json"),
     "--src",
     path.join(specDir, "instruments_change_result.json"),
     "--src",
@@ -378,6 +487,66 @@ async function generateTypescript(specDir, output) {
   return declarationOutput;
 }
 
+function typescriptUcpSchemaSources(specDir, schemaDir) {
+  return [
+    ...commonSchemaSources(specDir),
+    "--src",
+    path.join(schemaDir, "ucp.json"),
+    "--src",
+    path.join(schemaDir, "service.json"),
+    "--src",
+    path.join(schemaDir, "capability.json"),
+    "--src",
+    path.join(schemaDir, "payment_handler.json"),
+    "--src",
+    path.join(specDir, "ec_ready_params.json"),
+  ];
+}
+
+async function generateTypescriptUcp(specDir, schemaDir, output) {
+  await fs.mkdir(path.dirname(output), {recursive: true});
+  // Drop `--nice-property-names` and `--acronym-style camel`: the web component
+  // reads raw postMessage JSON without key conversion, so the generated types
+  // must keep schema property names in their snake_case wire form. `--just-types`
+  // keeps the file declaration-only, matching the public surface previously
+  // held by the hand-written `ucp-embed-types.ts`.
+  await runQuicktype([
+    "--lang",
+    "ts",
+    "--src-lang",
+    "schema",
+    "--just-types",
+    "--prefer-unions",
+    "--no-date-times",
+    ...typescriptUcpSchemaSources(specDir, schemaDir),
+    "-o",
+    output,
+  ]);
+
+  await normalizeGeneratedFile(output, (source) => source.replace(/^type /gm, "export type "));
+
+  const declarationOutput = path.join(PROTOCOL_DIR, "languages", "typescript", "src", "web.d.ts");
+  const tscBin = path.join(REPO_ROOT, "platforms", "react-native", "node_modules", "typescript", "bin", "tsc");
+  const webEntry = path.join(PROTOCOL_DIR, "languages", "typescript", "src", "web.ts");
+
+  await run("node", [
+    tscBin,
+    "--declaration",
+    "--emitDeclarationOnly",
+    "--noEmit",
+    "false",
+    "--rootDir",
+    path.join(PROTOCOL_DIR, "languages", "typescript", "src"),
+    "--declarationDir",
+    path.join(PROTOCOL_DIR, "languages", "typescript", "src"),
+    "--pretty",
+    "false",
+    webEntry,
+  ]);
+
+  return declarationOutput;
+}
+
 async function main() {
   const {lang, output} = parseArgs(process.argv.slice(2));
   await requireQuicktype();
@@ -437,8 +606,17 @@ async function main() {
         console.log(`Generated ${target}, TypeScript protocol notifications, and ${declarationOutput}`);
         break;
       }
+      case "typescript-ucp": {
+        const schemaDir = path.join(tempDir, "schemas");
+        await extractParamsSchema(specDir, "ec.ready", "ec_ready_params.json", "EcReadyParams");
+        await prepareTypescriptUcpTitles(schemaDir);
+        const target = output || path.join(PROTOCOL_DIR, "languages", "typescript", "src", "generated", "WebModels.ts");
+        const declarationOutput = await generateTypescriptUcp(specDir, schemaDir, target);
+        console.log(`Generated ${target} and ${declarationOutput}`);
+        break;
+      }
       default:
-        throw new Error(`Unsupported language: ${lang}. Use kotlin, swift, or typescript.`);
+        throw new Error(`Unsupported language: ${lang}. Use kotlin, swift, typescript, or typescript-ucp.`);
     }
   } finally {
     await fs.rm(tempDir, {recursive: true, force: true});
