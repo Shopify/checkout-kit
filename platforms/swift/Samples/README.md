@@ -29,7 +29,7 @@ them from the shared `.env`.
    dev up
    ```
 
-2. If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+2. If you are not using `dev`, copy the repo-root `.demo.env.example` to `.demo.env`,
 fill in local values, then run `scripts/setup_storefront_env`.
 
 The setup script generates `platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig`.
@@ -52,7 +52,7 @@ To get started:
    dev up
    ```
 
-2. If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+2. If you are not using `dev`, copy the repo-root `.demo.env.example` to `.demo.env`,
 fill in local values, then run `scripts/setup_storefront_env`.
 
 The setup script generates `platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig`.
@@ -69,5 +69,5 @@ Open the build log and check the script output.
 | Build log output | Cause | Fix |
 | --- | --- | --- |
 | `grep: Storefront.xcconfig: No such file or directory` | `Storefront.xcconfig` file is missing. | Run `dev up` from the repo root or any platform directory. |
-| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank. | Update root `.env`, then run `dev up`. |
-| Associated domains not working at runtime | Domain value is incorrect. | Update root `.env`, then run `dev up`. |
+| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank. | Update root `.demo.env`, then run `dev up`. |
+| Associated domains not working at runtime | Domain value is incorrect. | Update root `.demo.env`, then run `dev up`. |

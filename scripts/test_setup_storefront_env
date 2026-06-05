@@ -95,7 +95,7 @@ test_sync_and_check() {
     "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_file_exists "$fixture/.env"
+  assert_file_exists "$fixture/.demo.env"
   assert_file_exists "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
   assert_file_exists "$fixture/platforms/react-native/sample/.env"
   assert_file_exists "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
@@ -113,8 +113,8 @@ test_sync_and_check() {
   awk '
     /^API_VERSION=/ { print "API_VERSION=2026-01"; next }
     { print }
-  ' "$fixture/.env" >"$fixture/.env.next"
-  mv "$fixture/.env.next" "$fixture/.env"
+  ' "$fixture/.demo.env" >"$fixture/.demo.env.next"
+  mv "$fixture/.demo.env.next" "$fixture/.demo.env"
 
   "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
@@ -140,11 +140,11 @@ test_required_values_only() {
     "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_file_exists "$fixture/.env"
-  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_file_exists "$fixture/.demo.env"
+  assert_contains "$fixture/.demo.env" "STOREFRONT_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
   assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
@@ -164,9 +164,9 @@ test_optional_sync_updates_blank_optional_values_after_required_setup() {
     "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
+  assert_contains "$fixture/.demo.env" "STOREFRONT_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
 
   STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant \
     CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
@@ -174,9 +174,9 @@ test_optional_sync_updates_blank_optional_values_after_required_setup() {
     "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant"
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop"
+  assert_contains "$fixture/.demo.env" "STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant"
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop"
   assert_contains "$fixture/platforms/react-native/sample/.env" "STOREFRONT_MERCHANT_IDENTIFIER=\"synthetic-merchant\""
   assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID = synthetic-client"
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.synthetic-shop.app://callback"
@@ -187,21 +187,21 @@ test_normalizes_existing_root_env() {
   fixture="$(make_fixture)"
   output="$fixture/output.log"
 
-  cat >"$fixture/.env" <<'EOF'
+  cat >"$fixture/.demo.env" <<'EOF'
 STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
 STOREFRONT_ACCESS_TOKEN=synthetic-token
 EOF
 
   if "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1; then
-    fail "non-canonical root .env passed --check"
+    fail "non-canonical root .demo.env passed --check"
   fi
   assert_output_is_sanitized "$output"
 
   "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
-  assert_contains "$fixture/.env" "EMAIL=checkout-kit@example.com"
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$fixture/.demo.env" "EMAIL=checkout-kit@example.com"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
   assert_output_is_sanitized "$output"
@@ -212,7 +212,7 @@ test_blank_customer_account_api_version_defaults() {
   fixture="$(make_fixture)"
   output="$fixture/output.log"
 
-  cat >"$fixture/.env" <<'EOF'
+  cat >"$fixture/.demo.env" <<'EOF'
 STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
 STOREFRONT_ACCESS_TOKEN=synthetic-token
 STOREFRONT_MERCHANT_IDENTIFIER=
@@ -236,7 +236,7 @@ EOF
   "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "/2026-04/graphql"
 }
@@ -260,9 +260,9 @@ EOF
   "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
-  assert_file_exists "$fixture/.env"
-  assert_contains "$fixture/.env" "API_VERSION=2026-04"
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_file_exists "$fixture/.demo.env"
+  assert_contains "$fixture/.demo.env" "API_VERSION=2026-04"
+  assert_contains "$fixture/.demo.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
   assert_output_is_sanitized "$output"

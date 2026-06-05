@@ -45,6 +45,9 @@ captures/
 local.properties
 .env
 
+# Demo apps' storefront configuration (see .demo.env.example)
+.demo.env
+
 # Local developer tooling preferences (see .dev.env.example)
 .dev.env
 upload-keystore.jks

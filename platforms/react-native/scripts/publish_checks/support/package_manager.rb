@@ -41,9 +41,7 @@ module PublishChecks
     end
 
     def resolved_binary
-      Shell.capture('command', '-v', binary).strip
-    rescue StandardError
-      binary
+      Shell.which(binary) || binary
     end
 
     def write_config(app_dir)

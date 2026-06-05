@@ -55,7 +55,7 @@ Android, React Native, or Web setup failure is visible without hiding later
 platform results. If a setup step fails, fix it and rerun `dev up`.
 
 Setup creates or syncs sample app storefront configuration from the repo-root
-`.env`. If `.env` is missing, setup prompts for required storefront values and
+`.demo.env`. If `.demo.env` is missing, setup prompts for required storefront values and
 then generates the Android, Swift, and React Native sample config files.
 Optional Apple Pay and Customer Account API values are preserved if already set,
 but `dev up` leaves missing optional values blank instead of prompting.
@@ -66,9 +66,9 @@ React Native sample apps can be run against local in-repo SDK sources with
 `dev rn ios --local` or `dev rn android --local`. The Web sample accepts a
 checkout URL directly and does not use the shared storefront credential files.
 
-Sample app storefront configuration is generated from the repo-root `.env`.
+Sample app storefront configuration is generated from the repo-root `.demo.env`.
 Shopify employees get this through `dev up`. External contributors can copy
-`.env.example` to `.env`, fill in local storefront values, then run
+`.demo.env.example` to `.demo.env`, fill in local storefront values, then run
 `scripts/setup_storefront_env` from the repo root.
 
 ---

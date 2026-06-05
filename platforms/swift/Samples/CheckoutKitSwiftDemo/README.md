@@ -70,7 +70,7 @@ Do not edit files in `Generated/` by hand. Update `.graphql` files and regenerat
    dev up
    ```
 
-   If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+   If you are not using `dev`, copy the repo-root `.demo.env.example` to `.demo.env`,
    fill in local values, then run:
 
    ```bash
@@ -92,7 +92,7 @@ Open the project in Xcode, let Swift Package Manager resolve dependencies, then 
 
 ## Updating the Storefront API version
 
-1. Update `API_VERSION` in the repo-root `.env`.
+1. Update `API_VERSION` in the repo-root `.demo.env`.
 2. Sync the generated platform config:
 
    ```sh
@@ -144,7 +144,7 @@ All commands are run from the **repo root** (`checkout-kit/`):
 
 | File | Purpose |
 | --- | --- |
-| `Storefront.xcconfig` | Generated sample config from the repo-root `.env` (not checked into git). |
+| `Storefront.xcconfig` | Generated sample config from the repo-root `.demo.env` (not checked into git). |
 | `schema.<version>.graphqls` | Storefront API schema downloaded with the Apollo iOS CLI. |
 | `apollo-codegen-config.json` | Apollo code generation configuration. |
 | `CheckoutKitSwiftDemo/Sources/Api/Network.swift` | Apollo client setup and authentication interceptor. |

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# TODO(remove after 2026-06-19): temporary one-off migration.
+#
+# The repo-root storefront configuration moved from `.env` to `.demo.env`.
+# This copies an existing `.env` to `.demo.env` once, so developers with a
+# pre-existing local `.env` keep working without re-running setup.
+#
+# It is idempotent: it does nothing once `.demo.env` exists (or if there is no
+# `.env` to migrate). Once everyone has run `dev up` at least once, delete this
+# script and its `up:` step in dev.yml.
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+OLD_ENV="$ROOT_DIR/.env"
+NEW_ENV="$ROOT_DIR/.demo.env"
+
+needs_migration() {
+  [[ -f "$OLD_ENV" && ! -f "$NEW_ENV" ]]
+}
+
+# `--check` is the dev `met?` probe: succeed (exit 0) when no work is needed.
+if [[ "${1:-}" == "--check" ]]; then
+  if needs_migration; then
+    exit 1
+  fi
+  exit 0
+fi
+
+if needs_migration; then
+  cp "$OLD_ENV" "$NEW_ENV"
+  echo "Migrated repo-root .env -> .demo.env (your existing .env was left untouched)."
+fi
+
+exit 0

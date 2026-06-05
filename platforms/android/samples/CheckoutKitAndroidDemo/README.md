@@ -73,7 +73,7 @@ Do not edit files in `app/build/generated/source/apollo/` by hand. Update `.grap
    dev up
    ```
 
-   If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
+   If you are not using `dev`, copy the repo-root `.demo.env.example` to `.demo.env`,
    fill in local values, then run:
 
    ```bash
@@ -96,7 +96,7 @@ Open the project in Android Studio, sync Gradle, then build and run.
 
 ## Updating the Storefront API version
 
-1. Update `API_VERSION` in the repo-root `.env`.
+1. Update `API_VERSION` in the repo-root `.demo.env`.
 2. Sync the generated platform config:
 
    ```sh
@@ -139,7 +139,7 @@ Open the project in Android Studio, sync Gradle, then build and run.
 
 | File | Purpose |
 | --- | --- |
-| `.env` | Generated sample config from the repo-root `.env` (not checked into git). |
+| `.env` | Generated sample config from the repo-root `.demo.env` (not checked into git). |
 | `app/build.gradle` | Apollo plugin configuration and `BuildConfig` values from `.env`. |
 | `app/src/main/graphql/schema.graphqls` | Storefront API schema. |
 | `common/client/StorefrontApiClient.kt` | Apollo client setup and Storefront API auth header. |

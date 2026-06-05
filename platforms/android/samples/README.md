@@ -2,7 +2,7 @@
 
 This directory contains Android sample apps for Checkout Kit.
 
-Sample app storefront configuration is generated from the repo-root `.env`.
+Sample app storefront configuration is generated from the repo-root `.demo.env`.
 Run `dev up` from the repo root or any platform directory to provision the repo
 and create or sync the generated sample config files.
 
@@ -18,7 +18,7 @@ From the repo root or this platform directory:
 dev up
 ```
 
-If you are not using `dev`, copy the repo-root `.env.example` to `.env`, fill
+If you are not using `dev`, copy the repo-root `.demo.env.example` to `.demo.env`, fill
 in local values, then run:
 
 ```sh

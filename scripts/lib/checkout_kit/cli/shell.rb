@@ -89,7 +89,25 @@ module CheckoutKit
       end
 
       def command?(binary)
-        system('command', '-v', binary.to_s, out: File::NULL, err: File::NULL)
+        !which(binary).nil?
+      end
+
+      def which(binary)
+        binary = binary.to_s
+        return nil if binary.empty?
+
+        if binary.include?(File::SEPARATOR) || (File::ALT_SEPARATOR && binary.include?(File::ALT_SEPARATOR))
+          return File.expand_path(binary) if File.file?(binary) && File.executable?(binary)
+
+          return nil
+        end
+
+        ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).each do |dir|
+          candidate = File.join(dir.empty? ? '.' : dir, binary)
+          return candidate if File.file?(candidate) && File.executable?(candidate)
+        end
+
+        nil
       end
 
       def require_command!(binary, message = nil)

@@ -193,9 +193,9 @@ pnpm module build
 ### Update sample configuration
 
 From the repo root or this platform directory, run `dev up` to create or sync
-the sample app dotenv file from the root `.env`.
+the sample app dotenv file from the root `.demo.env`.
 
-If you are not using `dev`, copy `.env.example` from the repo root to `.env`,
+If you are not using `dev`, copy `.demo.env.example` from the repo root to `.demo.env`,
 fill in local values, then run `scripts/setup_storefront_env`.
 
 ```

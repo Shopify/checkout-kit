@@ -23,6 +23,13 @@ up:
         - protocol
         - platforms/react-native
         - platforms/web
+  # TODO(remove after 2026-06-19): one-off migration of the repo-root storefront
+  # config from .env to .demo.env. Delete this step and scripts/migrate_demo_env
+  # once developers have run `dev up` at least once.
+  - custom:
+      name: Migrate .env to .demo.env
+      met?: ./scripts/migrate_demo_env --check
+      meet: ./scripts/migrate_demo_env
   - custom:
       name: Run Checkout Kit workspace setup
       met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts

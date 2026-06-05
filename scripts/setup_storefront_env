@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-ROOT_ENV="${ROOT_DIR}/.env"
+ROOT_ENV="${ROOT_DIR}/.demo.env"
 ANDROID_ENV="${ROOT_DIR}/platforms/android/samples/CheckoutKitAndroidDemo/.env"
 SWIFT_DEMO_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
 SWIFT_ACCELERATED_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
@@ -17,7 +17,7 @@ usage() {
   cat <<EOF
 Usage: scripts/setup_storefront_env [--check] [--skip-optional-prompts|--prompt-optional]
 
-Creates or checks sample app storefront configuration from the repo-root .env.
+Creates or checks sample app storefront configuration from the repo-root .demo.env.
 This command prints file paths and status only; it never prints configured values.
 
 By default, interactive setup prompts for missing optional Apple Pay and Customer
@@ -528,16 +528,16 @@ EOF
 
 generate_platform_env_header() {
   cat <<EOF
-# Generated from repo-root .env by scripts/setup_storefront_env.
-# Do not edit directly; update .env and rerun scripts/setup_storefront_env.
+# Generated from repo-root .demo.env by scripts/setup_storefront_env.
+# Do not edit directly; update .demo.env and rerun scripts/setup_storefront_env.
 
 EOF
 }
 
 generate_xcconfig_header() {
   cat <<EOF
-// Generated from repo-root .env by scripts/setup_storefront_env.
-// Do not edit directly; update .env and rerun scripts/setup_storefront_env.
+// Generated from repo-root .demo.env by scripts/setup_storefront_env.
+// Do not edit directly; update .demo.env and rerun scripts/setup_storefront_env.
 
 EOF
 }
@@ -644,23 +644,23 @@ ensure_root_env() {
 
   if [[ "$mode" == "check" ]]; then
     if [[ ! -f "$ROOT_ENV" ]]; then
-      echo "Missing storefront configuration: .env" >&2
+      echo "Missing storefront configuration: .demo.env" >&2
       exit 1
     fi
 
     if is_missing_required_value "$(read_env_value STOREFRONT_DOMAIN "$ROOT_ENV")" ||
       is_missing_required_value "$(read_env_value STOREFRONT_ACCESS_TOKEN "$ROOT_ENV")"; then
-      echo "Root .env is missing required storefront configuration." >&2
+      echo "Root .demo.env is missing required storefront configuration." >&2
       exit 1
     fi
 
     if ! root_has_canonical_keys; then
-      echo "Root .env is missing canonical storefront configuration keys." >&2
+      echo "Root .demo.env is missing canonical storefront configuration keys." >&2
       exit 1
     fi
 
     if customer_account_api_version_needs_default; then
-      echo "Root .env has a blank Customer Account API version." >&2
+      echo "Root .demo.env has a blank Customer Account API version." >&2
       exit 1
     fi
 
@@ -670,27 +670,27 @@ ensure_root_env() {
   local root_needs_write="false"
   if [[ ! -f "$ROOT_ENV" ]]; then
     root_needs_write="true"
-    echo "Creating root storefront configuration at .env."
+    echo "Creating root storefront configuration at .demo.env."
   elif is_missing_required_value "$(read_env_value STOREFRONT_DOMAIN "$ROOT_ENV")" ||
     is_missing_required_value "$(read_env_value STOREFRONT_ACCESS_TOKEN "$ROOT_ENV")"; then
     root_needs_write="true"
-    echo "Updating root storefront configuration at .env."
+    echo "Updating root storefront configuration at .demo.env."
   elif ! root_has_canonical_keys; then
     root_needs_write="true"
-    echo "Normalizing root storefront configuration at .env."
+    echo "Normalizing root storefront configuration at .demo.env."
   elif customer_account_api_version_needs_default; then
     root_needs_write="true"
-    echo "Normalizing root storefront configuration at .env."
+    echo "Normalizing root storefront configuration at .demo.env."
   fi
 
   if [[ "$root_needs_write" == "true" ]]; then
     collect_missing_values
     generate_root_env >"$ROOT_ENV"
   elif fill_optional_values_from_environment; then
-    echo "Updating optional storefront configuration at .env."
+    echo "Updating optional storefront configuration at .demo.env."
     generate_root_env >"$ROOT_ENV"
   elif optional_values_need_prompt; then
-    echo "Updating optional storefront configuration at .env."
+    echo "Updating optional storefront configuration at .demo.env."
     collect_missing_values
     generate_root_env >"$ROOT_ENV"
   fi
