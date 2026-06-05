@@ -21,7 +21,7 @@ import java.util.Objects;
 public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   private static final String TAG = "checkout_kit";
   private static final String LOG_PREFIX = "checkout_kit";
-  private static final String LOG_SCOPE = "checkout_kit";
+  private static final String LOG_SCOPE = "sdk";
 
   public static Configuration checkoutConfig = new Configuration();
 

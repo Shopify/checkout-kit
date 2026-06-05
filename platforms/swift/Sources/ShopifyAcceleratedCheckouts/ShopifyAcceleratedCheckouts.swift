@@ -4,7 +4,7 @@ public enum ShopifyAcceleratedCheckouts {
     /// Storefront API version used for cart operations
     internal static let apiVersion = "2026-04"
 
-    internal static let name = "ShopifyAcceleratedCheckouts"
+    internal static let name = "accelerated_checkout"
 
     /// The logging level for Accelerated Checkouts operations
     /// Default: .error - which will emit "error" and "fault" logs

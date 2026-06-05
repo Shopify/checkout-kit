@@ -844,7 +844,7 @@ describe('ShopifyCheckoutKit', () => {
           false,
         );
         expect(console.error).toHaveBeenCalledWith(
-          '[checkout_kit:checkout_kit] Failed to configure accelerated checkouts with',
+          '[checkout_kit:sdk] Failed to configure accelerated checkouts with',
           expectedError,
         );
       });
@@ -862,7 +862,7 @@ describe('ShopifyCheckoutKit', () => {
           false,
         );
         expect(console.error).toHaveBeenCalledWith(
-          '[checkout_kit:checkout_kit] Failed to configure accelerated checkouts with',
+          '[checkout_kit:sdk] Failed to configure accelerated checkouts with',
           expectedError,
         );
       });
@@ -887,7 +887,7 @@ describe('ShopifyCheckoutKit', () => {
           false,
         );
         expect(console.error).toHaveBeenCalledWith(
-          '[checkout_kit:checkout_kit] Failed to configure accelerated checkouts with',
+          '[checkout_kit:sdk] Failed to configure accelerated checkouts with',
           expectedError,
         );
       });
@@ -912,7 +912,7 @@ describe('ShopifyCheckoutKit', () => {
           instance.configureAcceleratedCheckouts(invalidConfig as any),
         ).toBe(false);
         expect(console.error).toHaveBeenCalledWith(
-          '[checkout_kit:checkout_kit] Failed to configure accelerated checkouts with',
+          '[checkout_kit:sdk] Failed to configure accelerated checkouts with',
           expectedError,
         );
       });
@@ -951,7 +951,7 @@ describe('ShopifyCheckoutKit', () => {
           instance.configureAcceleratedCheckouts(invalidConfig as any),
         ).toBe(false);
         expect(console.error).toHaveBeenCalledWith(
-          '[checkout_kit:checkout_kit] Failed to configure accelerated checkouts with',
+          '[checkout_kit:sdk] Failed to configure accelerated checkouts with',
           expectedError,
         );
       });

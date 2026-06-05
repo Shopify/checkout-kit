@@ -63,19 +63,19 @@ final class OSLoggerTests: XCTestCase {
 
         XCTAssertEqual(logger.capturedMessages.count, 4)
         XCTAssertEqual(
-            logger.capturedMessages[0].message, "[checkout_kit:checkout_kit] (Info) - test info"
+            logger.capturedMessages[0].message, "[checkout_kit:sdk] (Info) - test info"
         )
         XCTAssertEqual(logger.capturedMessages[0].type, OSLogType.info)
         XCTAssertEqual(
-            logger.capturedMessages[1].message, "[checkout_kit:checkout_kit] (Debug) - test debug"
+            logger.capturedMessages[1].message, "[checkout_kit:sdk] (Debug) - test debug"
         )
         XCTAssertEqual(logger.capturedMessages[1].type, OSLogType.debug)
         XCTAssertEqual(
-            logger.capturedMessages[2].message, "[checkout_kit:checkout_kit] (Error) - test error"
+            logger.capturedMessages[2].message, "[checkout_kit:sdk] (Error) - test error"
         )
         XCTAssertEqual(logger.capturedMessages[2].type, OSLogType.error)
         XCTAssertEqual(
-            logger.capturedMessages[3].message, "[checkout_kit:checkout_kit] (Fault) - test fault"
+            logger.capturedMessages[3].message, "[checkout_kit:sdk] (Fault) - test fault"
         )
         XCTAssertEqual(logger.capturedMessages[3].type, OSLogType.fault)
     }
@@ -90,10 +90,10 @@ final class OSLoggerTests: XCTestCase {
 
         XCTAssertEqual(logger.capturedMessages.count, 2)
         XCTAssertEqual(
-            logger.capturedMessages[0].message, "[checkout_kit:checkout_kit] (Info) - test info"
+            logger.capturedMessages[0].message, "[checkout_kit:sdk] (Info) - test info"
         )
         XCTAssertEqual(
-            logger.capturedMessages[1].message, "[checkout_kit:checkout_kit] (Debug) - test debug"
+            logger.capturedMessages[1].message, "[checkout_kit:sdk] (Debug) - test debug"
         )
     }
 
@@ -107,10 +107,10 @@ final class OSLoggerTests: XCTestCase {
 
         XCTAssertEqual(logger.capturedMessages.count, 2)
         XCTAssertEqual(
-            logger.capturedMessages[0].message, "[checkout_kit:checkout_kit] (Error) - test error"
+            logger.capturedMessages[0].message, "[checkout_kit:sdk] (Error) - test error"
         )
         XCTAssertEqual(
-            logger.capturedMessages[1].message, "[checkout_kit:checkout_kit] (Fault) - test fault"
+            logger.capturedMessages[1].message, "[checkout_kit:sdk] (Fault) - test fault"
         )
     }
 
@@ -130,24 +130,24 @@ final class OSLoggerTests: XCTestCase {
         XCTAssertEqual(logger.capturedMessages.count, 4)
         XCTAssertEqual(
             logger.capturedMessages[0].message,
-            "[checkout_kit:checkout_kit] (Info) - user action completed"
+            "[checkout_kit:sdk] (Info) - user action completed"
         )
         XCTAssertEqual(
             logger.capturedMessages[1].message,
-            "[checkout_kit:checkout_kit] (Debug) - processing checkout data"
+            "[checkout_kit:sdk] (Debug) - processing checkout data"
         )
         XCTAssertEqual(
             logger.capturedMessages[2].message,
-            "[checkout_kit:checkout_kit] (Error) - network request failed"
+            "[checkout_kit:sdk] (Error) - network request failed"
         )
         XCTAssertEqual(
             logger.capturedMessages[3].message,
-            "[checkout_kit:checkout_kit] (Fault) - critical system error"
+            "[checkout_kit:sdk] (Fault) - critical system error"
         )
     }
 
     func test_customPrefix_withLoggerInitialization_shouldUseCustomPrefix() {
-        let customLogger = TestableOSLogger(prefix: "CustomModule", logLevel: .all)
+        let customLogger = TestableOSLogger(prefix: "custom_module", logLevel: .all)
 
         customLogger.info("custom module message")
         customLogger.error("custom error")
@@ -165,14 +165,12 @@ final class OSLoggerTests: XCTestCase {
 
     func test_prefixNormalization_withMixedCasing_shouldUseConsistentLogScopes() {
         let cases = [
-            ("ShopifyCheckoutKit", "checkout_kit"),
+            ("ShopifyCheckoutKit", "sdk"),
+            ("checkout_kit", "sdk"),
+            ("sdk", "sdk"),
             ("ShopifyAcceleratedCheckouts", "accelerated_checkout"),
             ("CheckoutECP", "ecp"),
-            ("URLParser", "url_parser"),
-            ("HTTPRequest", "http_request"),
-            ("accelerated_checkout", "accelerated_checkout"),
-            ("Checkout2Kit", "checkout2_kit"),
-            ("ECP2Checkout", "ecp2_checkout")
+            ("accelerated_checkout", "accelerated_checkout")
         ]
 
         for (prefix, scope) in cases {

@@ -19,23 +19,7 @@ const {
 const LOG_PREFIX = 'react_native_sample';
 
 export function formatLogPrefix(scope = 'sample') {
-  return `[${LOG_PREFIX}:${toLogScope(scope)}]`;
-}
-
-function toLogScope(scope: string) {
-  switch (scope) {
-    case 'ENV':
-      return 'env';
-    default:
-      return toSnakeCase(scope);
-  }
-}
-
-function toSnakeCase(scope: string) {
-  return scope
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
-    .toLowerCase();
+  return `[${LOG_PREFIX}:${scope}]`;
 }
 
 export function createBuyerIdentityCartInput(

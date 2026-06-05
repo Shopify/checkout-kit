@@ -160,7 +160,7 @@ function dispatchEnvelope(
   // registered for it.
   // eslint-disable-next-line no-console
   console.warn(
-    `${formatLogPrefix('checkout_kit')} Ignoring dispatch envelope with unknown type "${type}". ` +
+    `${formatLogPrefix('sdk')} Ignoring dispatch envelope with unknown type "${type}". ` +
       'Either the native module emitted an event the JS layer does not know how ' +
       'to handle, or no protocol handler was registered for it. Confirm both sides ' +
       'are on compatible versions.',
@@ -255,7 +255,7 @@ function validateGeolocationRequestPayload(
 
 function logParseError(detail: string, raw: string): void {
   const err = new LifecycleEventParseError(
-    `${formatLogPrefix('checkout_kit')} Failed to handle present() dispatcher envelope: ${detail}`,
+    `${formatLogPrefix('sdk')} Failed to handle present() dispatcher envelope: ${detail}`,
     {cause: detail},
   );
   // eslint-disable-next-line no-console

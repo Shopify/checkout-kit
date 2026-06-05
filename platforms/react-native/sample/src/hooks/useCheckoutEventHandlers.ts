@@ -35,16 +35,16 @@ export function useShopifyEventHandlers(name?: string): EventHandlers {
   const log = createDebugLogger(name ?? '');
   return {
     onFail: error => {
-      log('onFail', error);
+      log('on_fail', error);
     },
     onCancel: () => {
-      log('onCancel');
+      log('on_cancel');
     },
     onRenderStateChange: event => {
-      log('onRenderStateChange', event);
+      log('on_render_state_change', event);
     },
     onClickLink: async url => {
-      log('onClickLink', url);
+      log('on_click_link', url);
 
       if (await Linking.canOpenURL(url)) {
         await Linking.openURL(url);

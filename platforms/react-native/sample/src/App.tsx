@@ -44,7 +44,7 @@ import env from 'react-native-config';
 import {createDebugLogger, formatLogPrefix} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
 
-const log = createDebugLogger('ENV');
+const log = createDebugLogger('env');
 
 function configured(value: string | undefined) {
   return value ? 'configured' : 'missing';

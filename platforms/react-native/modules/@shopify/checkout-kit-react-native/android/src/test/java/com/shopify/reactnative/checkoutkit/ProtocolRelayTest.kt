@@ -77,7 +77,7 @@ class ProtocolRelayTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val logs = ShadowLog.getLogsForTag("checkout_kit")
-            .filter { it.msg == "[checkout_kit:checkout_kit] Error dispatching protocol event \"ec.start\"" }
+            .filter { it.msg == "[checkout_kit:sdk] Error dispatching protocol event \"ec.start\"" }
         assertThat(logs).hasSize(1)
         assertThat(logs.single().type).isEqualTo(Log.ERROR)
         assertThat(logs.single().throwable).isSameAs(failure)

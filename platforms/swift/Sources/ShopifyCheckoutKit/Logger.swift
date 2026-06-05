@@ -3,6 +3,7 @@ import os.log
 
 private let subsystem = "com.shopify.checkoutkit"
 private let logPrefix = "checkout_kit"
+private let defaultLogScope = "sdk"
 
 public enum LogLevel: String, CaseIterable {
     case all
@@ -19,7 +20,7 @@ public class OSLogger {
     public static var shared = OSLogger()
 
     public init() {
-        prefix = "ShopifyCheckoutKit"
+        prefix = defaultLogScope
         logLevel = ShopifyCheckoutKit.configuration.logLevel
     }
 
@@ -70,29 +71,15 @@ public class OSLogger {
 extension String {
     fileprivate func toLogScope() -> String {
         switch self {
-        case "ShopifyCheckoutKit":
-            return "checkout_kit"
+        case "ShopifyCheckoutKit", "checkout_kit":
+            return defaultLogScope
         case "ShopifyAcceleratedCheckouts":
             return "accelerated_checkout"
         case "CheckoutECP":
             return "ecp"
         default:
-            return toSnakeCase()
+            return self
         }
-    }
-
-    private func toSnakeCase() -> String {
-        replacingOccurrences(
-            of: #"([a-z0-9])([A-Z])"#,
-            with: "$1_$2",
-            options: .regularExpression
-        )
-        .replacingOccurrences(
-            of: #"([A-Z]+)([A-Z][a-z])"#,
-            with: "$1_$2",
-            options: .regularExpression
-        )
-        .lowercased()
     }
 }
 

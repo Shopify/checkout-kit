@@ -205,7 +205,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(
-        `${formatLogPrefix('checkout_kit')} Failed to configure accelerated checkouts with`,
+        `${formatLogPrefix('sdk')} Failed to configure accelerated checkouts with`,
         error,
       );
       return false;

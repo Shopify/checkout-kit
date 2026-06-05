@@ -199,8 +199,8 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
     }
 
     companion object {
-        private const val LOG_TAG = "BaseWebView"
-        internal const val ECP_LOG_TAG = "CheckoutECP"
+        private const val LOG_TAG = "base_web_view"
+        internal const val ECP_LOG_TAG = "ecp"
     }
 }
 
@@ -210,7 +210,7 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
 internal fun BaseWebView.removeFromParent() {
     val parent = this.parent
     if (parent is ViewGroup) {
-        log.d("BaseWebView", "Existing parent found for WebView, removing.")
+        log.d("base_web_view", "Existing parent found for WebView, removing.")
         parent.removeView(this)
     }
 }

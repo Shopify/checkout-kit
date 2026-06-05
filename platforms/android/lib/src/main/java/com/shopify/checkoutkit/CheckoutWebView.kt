@@ -91,6 +91,6 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     }
 
     companion object {
-        private const val LOG_TAG = "CheckoutWebView"
+        private const val LOG_TAG = "checkout_web_view"
     }
 }

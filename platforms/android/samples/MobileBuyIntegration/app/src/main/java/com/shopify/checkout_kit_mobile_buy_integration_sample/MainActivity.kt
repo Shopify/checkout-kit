@@ -102,11 +102,7 @@ class MainActivity : ComponentActivity() {
 
 private class CheckoutKitDebugTree : Timber.DebugTree() {
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-        val scope = tag ?: "MobileBuyIntegration"
-        super.log(priority, "mobile_buy_integration", "[mobile_buy_integration:${scope.toSnakeCase()}] $message", t)
+        val scope = tag ?: "mobile_buy_integration"
+        super.log(priority, "mobile_buy_integration", "[mobile_buy_integration:$scope] $message", t)
     }
-
-    private fun String.toSnakeCase(): String = replace(Regex("([a-z0-9])([A-Z])"), "$1_$2")
-        .replace(Regex("([A-Z]+)([A-Z][a-z])"), "$1_$2")
-        .lowercase()
 }

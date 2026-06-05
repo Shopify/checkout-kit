@@ -19,7 +19,7 @@ interface Session {
   tokenExpiresAt: number | null;
 }
 
-const log = createDebugLogger('CustomerAccount');
+const log = createDebugLogger('customer_account');
 
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
 

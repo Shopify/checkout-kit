@@ -196,6 +196,6 @@ internal class CheckoutDialog(
         resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES
 
     companion object {
-        private const val LOG_TAG = "CheckoutDialog"
+        private const val LOG_TAG = "checkout_dialog"
     }
 }

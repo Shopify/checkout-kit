@@ -8,7 +8,7 @@ import kotlinx.serialization.json.Json
 
 private const val TAG = "checkout_kit"
 private const val LOG_PREFIX = "checkout_kit"
-private const val LOG_SCOPE = "checkout_kit"
+private const val LOG_SCOPE = "sdk"
 
 fun interface DispatchCallback {
     fun invoke(json: String)

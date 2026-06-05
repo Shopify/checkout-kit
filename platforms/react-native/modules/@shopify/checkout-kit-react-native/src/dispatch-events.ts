@@ -100,7 +100,7 @@ export function verifyDispatchEventParity(
 
 function buildMessage(detail: string): string {
   return (
-    `${formatLogPrefix('checkout_kit')} SDK lifecycle event list out of sync between JS ` +
+    `${formatLogPrefix('sdk')} SDK lifecycle event list out of sync between JS ` +
     "and native. Rebuild your host app so the bundled native module matches " +
     "this version of '@shopify/checkout-kit-react-native'.\n  " +
     detail
@@ -116,7 +116,7 @@ export function __resetDispatchEventParityForTests(): void {
   if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'test') {
     // eslint-disable-next-line no-console
     console.warn(
-      `${formatLogPrefix('checkout_kit')} Test-only function called in production`,
+      `${formatLogPrefix('sdk')} Test-only function called in production`,
     );
     return;
   }

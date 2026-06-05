@@ -92,22 +92,22 @@ public object ShopifyCheckoutKit {
         checkoutListener: T,
         communicationClient: CheckoutCommunicationClient? = null,
     ): CheckoutKitDialog? {
-        log.d("ShopifyCheckoutKit", "Present called with checkoutUrl $checkoutUrl.")
+        log.d("sdk", "Present called with checkoutUrl $checkoutUrl.")
         if (context.isDestroyed || context.isFinishing) {
-            log.d("ShopifyCheckoutKit", "Context is destroyed or finishing, returning null.")
+            log.d("sdk", "Context is destroyed or finishing, returning null.")
             return null
         }
-        log.d("ShopifyCheckoutKit", "Constructing Dialog")
+        log.d("sdk", "Constructing Dialog")
         val dialog = CheckoutDialog(checkoutUrl, checkoutListener, context, communicationClient)
         context.lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
-                log.d("ShopifyCheckoutKit", "Context is being destroyed, dismissing dialog.")
+                log.d("sdk", "Context is being destroyed, dismissing dialog.")
                 dialog.dismiss()
                 super.onDestroy(owner)
             }
         })
 
-        log.d("ShopifyCheckoutKit", "Starting Dialog.")
+        log.d("sdk", "Starting Dialog.")
         dialog.start(context)
         return CheckoutKitDialog { dialog.dismiss() }
     }

@@ -258,7 +258,7 @@ class RCTShopifyCheckoutKit: NSObject {
         return try contactFields.compactMap {
             guard let field = ShopifyAcceleratedCheckouts.RequiredContactFields(rawValue: $0), field != nil else {
                 let message = "Unknown contactField option: \(String(describing: $0))"
-                print("[checkout_kit:checkout_kit] \(message)")
+                print("[checkout_kit:sdk] \(message)")
                 throw NSError(domain: "ShopifyCheckoutKit", code: 1, userInfo: ["message": message])
             }
             return field
@@ -337,12 +337,12 @@ extension RCTShopifyCheckoutKit {
         do {
             let data = try JSONSerialization.data(withJSONObject: envelope, options: [])
             guard let json = String(data: data, encoding: .utf8) else {
-                NSLog("[checkout_kit:checkout_kit] Failed to encode dispatch envelope for \(type.rawValue): non-UTF8 result")
+                NSLog("[checkout_kit:sdk] Failed to encode dispatch envelope for \(type.rawValue): non-UTF8 result")
                 return
             }
             emitDispatchEvent(json)
         } catch {
-            NSLog("[checkout_kit:checkout_kit] Failed to serialize dispatch envelope for \(type.rawValue): \(error)")
+            NSLog("[checkout_kit:sdk] Failed to serialize dispatch envelope for \(type.rawValue): \(error)")
         }
     }
 

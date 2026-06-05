@@ -16,7 +16,7 @@ import java.util.Map;
 public class CustomCheckoutListener extends DefaultCheckoutListener {
   private static final String TAG = "checkout_kit";
   private static final String LOG_PREFIX = "checkout_kit";
-  private static final String LOG_SCOPE = "checkout_kit";
+  private static final String LOG_SCOPE = "sdk";
 
   private final ObjectMapper mapper = new ObjectMapper();
 

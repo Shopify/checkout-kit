@@ -34,7 +34,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.DEBUG
         }
 
-        log.d("TAG", "Debug message")
+        log.d("tag", "Debug message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.DEBUG && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Debug message"
@@ -48,7 +48,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.WARN
         }
 
-        log.d("TAG", "Debug message")
+        log.d("tag", "Debug message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.DEBUG && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Debug message"
@@ -62,7 +62,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.WARN
         }
 
-        log.d("TAG", "Debug message")
+        log.d("tag", "Debug message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.DEBUG && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Debug message"
@@ -76,7 +76,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.DEBUG
         }
 
-        log.w("TAG", "Warn message")
+        log.w("tag", "Warn message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.WARN && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Warn message"
@@ -90,7 +90,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.WARN
         }
 
-        log.w("TAG", "Warn message")
+        log.w("tag", "Warn message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.WARN && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Warn message"
@@ -104,7 +104,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.ERROR
         }
 
-        log.w("TAG", "Warn message")
+        log.w("tag", "Warn message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.WARN && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Warn message"
@@ -118,7 +118,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.DEBUG
         }
 
-        log.e("TAG", "Error message")
+        log.e("tag", "Error message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.ERROR && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Error message"
@@ -132,7 +132,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.WARN
         }
 
-        log.e("TAG", "Error message")
+        log.e("tag", "Error message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.ERROR && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Error message"
@@ -146,7 +146,7 @@ class LogWrapperTest {
             it.logLevel = LogLevel.ERROR
         }
 
-        log.e("TAG", "Error message")
+        log.e("tag", "Error message")
         assertThat(
             ShadowLog.getLogs().any {
                 it.type == Log.ERROR && it.tag == "checkout_kit" && it.msg == "[checkout_kit:tag] Error message"
@@ -161,14 +161,12 @@ class LogWrapperTest {
         }
 
         val cases = mapOf(
-            "ShopifyCheckoutKit" to "checkout_kit",
+            "ShopifyCheckoutKit" to "sdk",
+            "checkout_kit" to "sdk",
+            "sdk" to "sdk",
             "ShopifyAcceleratedCheckouts" to "accelerated_checkout",
             "CheckoutECP" to "ecp",
-            "URLParser" to "url_parser",
-            "HTTPRequest" to "http_request",
             "accelerated_checkout" to "accelerated_checkout",
-            "Checkout2Kit" to "checkout2_kit",
-            "ECP2Checkout" to "ecp2_checkout",
         )
 
         cases.forEach { (tag, scope) ->
