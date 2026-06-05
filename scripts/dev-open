@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'English'
+
+$LOAD_PATH.unshift(File.expand_path('lib', __dir__))
+
+require 'checkout_kit/cli'
+
+require_relative 'dev_open/commands/swift'
+require_relative 'dev_open/commands/android'
+require_relative 'dev_open/commands/react_native'
+require_relative 'dev_open/commands/web'
+
+module DevOpen
+  COMMANDS = {
+    'swift' => Commands::Swift,
+    'android' => Commands::Android,
+    'react-native' => Commands::ReactNative,
+    'rn' => Commands::ReactNative,
+    'web' => Commands::Web,
+  }.freeze
+end
+
+repo_root = File.expand_path('..', __dir__)
+platform = ARGV.shift
+command = DevOpen::COMMANDS[platform]
+
+begin
+  if command.nil?
+    warn "Usage: #{File.basename($PROGRAM_NAME)} <swift|android|react-native|web> [lib|demo] [flags]"
+    exit 1
+  end
+
+  command.run(ARGV, repo_root: repo_root)
+rescue DevOpen::UsageError => e
+  warn e.message
+  exit 1
+rescue Interrupt
+  exit 130
+rescue CheckoutKit::CLI::Error => e
+  warn "ERROR: #{e.message}"
+  exit 1
+end

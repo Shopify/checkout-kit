@@ -44,4 +44,7 @@ captures/
 # Android local config / secrets
 local.properties
 .env
+
+# Local developer tooling preferences (see .dev.env.example)
+.dev.env
 upload-keystore.jks

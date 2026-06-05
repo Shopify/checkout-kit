@@ -190,6 +190,18 @@ commands:
         desc: Clean Android Gradle build outputs
         run: cd platforms/android && ./gradlew clean
 
+      open:
+        desc: Open the Android library or sample app in Android Studio
+        long_desc: |
+          Opens an Android project in Android Studio.
+
+            dev android open          Open the demo app (default)
+            dev android open demo     Open the demo app (aliases: sample, samples)
+            dev android open lib      Open the Android SDK library project (alias: library)
+        syntax:
+          optional: "[lib|demo]"
+        run: ./scripts/dev-open android "$@"
+
       api:
         desc: Validate or update the public API baseline (lib/api/lib.api)
         run: |
@@ -262,6 +274,18 @@ commands:
       check:
         desc: Run Swift lint checks
         run: /opt/dev/bin/dev swift lint
+
+      open:
+        desc: Open the Swift package or sample app in Xcode
+        long_desc: |
+          Opens a Swift workspace in Xcode via `xed`.
+
+            dev swift open          Open the demo app workspace (default)
+            dev swift open demo     Open the demo app workspace (aliases: sample, samples)
+            dev swift open lib      Open the ShopifyCheckoutKit Swift package (aliases: library, package)
+        syntax:
+          optional: "[lib|demo]"
+        run: ./scripts/dev-open swift "$@"
 
       clean:
         desc: Clean Swift packages and sample app build artifacts
@@ -416,6 +440,20 @@ commands:
           optional: --local
         run: cd platforms/react-native && pnpm run pod-install -- "$@"
 
+      open:
+        desc: Open the React Native workspace root or native sample projects
+        long_desc: |
+          Opens platforms/react-native in the editor set by DEV_EDITOR in
+          .dev.env, otherwise `open` (see .dev.env.example). The --ios and
+          --android flags open the sample app's native projects.
+
+            dev rn open                 Open platforms/react-native
+            dev rn open --ios           Open the sample iOS workspace in Xcode
+            dev rn open --android       Open the sample Android project in Android Studio
+        syntax:
+          optional: "[--ios|--android]"
+        run: ./scripts/dev-open react-native "$@"
+
   rn:
     desc: "Alias for React Native Checkout Kit commands"
     long_desc: |
@@ -484,3 +522,16 @@ commands:
       verify:
         desc: Run Web package verification
         run: cd platforms/web && pnpm verify
+
+      open:
+        desc: Open the Web package or sample app in an editor
+        long_desc: |
+          Opens a Web workspace in the editor set by DEV_EDITOR in .dev.env,
+          otherwise `open` (see .dev.env.example).
+
+            dev web open          Open the sample app (default)
+            dev web open demo     Open the sample app (aliases: sample, samples)
+            dev web open lib      Open the @shopify/checkout-kit package (aliases: library, package)
+        syntax:
+          optional: "[lib|demo]"
+        run: ./scripts/dev-open web "$@"
