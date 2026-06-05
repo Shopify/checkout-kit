@@ -1,7 +1,7 @@
 import WebKit
 
 protocol CheckoutBridgeProtocol {
-    @discardableResult static func sendResponse(_ webView: WKWebView, messageBody: String) async -> Bool
+    @discardableResult @MainActor static func sendResponse(_ webView: WKWebView, messageBody: String) async -> Bool
 }
 
 enum CheckoutBridge: CheckoutBridgeProtocol {
@@ -18,7 +18,7 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
         )
     }
 
-    @discardableResult static func sendResponse(_ webView: WKWebView, messageBody: String) async -> Bool {
+    @discardableResult @MainActor static func sendResponse(_ webView: WKWebView, messageBody: String) async -> Bool {
         do {
             try await webView.evaluateJavaScript(responseScript(messageBody: messageBody))
             return true
