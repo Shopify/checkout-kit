@@ -516,7 +516,7 @@ class MockCheckoutBridge: CheckoutBridgeProtocol {
         sendResponseExpectation = nil
     }
 
-    static func sendResponse(_: WKWebView, messageBody: String) async -> Bool {
+    @MainActor static func sendResponse(_: WKWebView, messageBody: String) async -> Bool {
         sendResponseCalled = true
         sendResponseCount += 1
         lastResponseBody = messageBody
