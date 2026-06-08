@@ -32,6 +32,15 @@ import type {
 
 export type CheckoutTarget = "auto" | "popup" | "_blank";
 
+export interface CheckoutPreloadOptions {
+  /**
+   * Adds an opt-in Speculation Rules document prefetch hint for the checkout
+   * URL. Disabled by default so benchmarks can compare the
+   * baseline resource-hint preload against Speculation Rules separately.
+   */
+  speculationRules?: boolean;
+}
+
 export interface CheckoutAttributes {
   src?: string;
   target?: CheckoutTarget | string;
@@ -39,6 +48,13 @@ export interface CheckoutAttributes {
 }
 
 export interface CheckoutMethods {
+  /**
+   * Hints that checkout may be opened soon. For popup/new-tab targets this
+   * warms network/cache state only; it does not create or retain a checkout
+   * window.
+   */
+  preload?: (options?: CheckoutPreloadOptions) => void;
+
   /**
    * Opens the checkout in a popup window by default, but can be configured
    * to open in a new tab or named window using the `target` property.

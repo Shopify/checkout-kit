@@ -35,6 +35,9 @@ const form = $<HTMLFormElement>("#options-form");
 const eventLog = $<HTMLUListElement>("#event-log");
 const clearLogButton = $<HTMLButtonElement>("#clear-log");
 const buyNowButton = $<HTMLButtonElement>("#buy-now");
+const srcRequiredButtons = document.querySelectorAll<HTMLButtonElement>(
+  "button[data-requires-src]",
+);
 const buyHint = $<HTMLParagraphElement>("#buy-hint");
 
 const stateNodes = {
@@ -83,6 +86,9 @@ function syncAttributes(): void {
 function refreshBuyButton(src: FormDataEntryValue | null): void {
   const hasSrc = typeof src === "string" && src.length > 0;
   buyNowButton.disabled = !hasSrc;
+  for (const button of srcRequiredButtons) {
+    button.disabled = !hasSrc;
+  }
   buyHint.style.display = hasSrc ? "none" : "";
 }
 
@@ -99,6 +105,11 @@ document.addEventListener("click", (event) => {
   if (!button || button.disabled) return;
 
   switch (button.dataset["method"]) {
+    case "preload":
+      checkout.preload({ speculationRules: new FormData(form).has("speculationRules") });
+      appendLog("method:preload");
+      refreshState();
+      break;
     case "open":
       checkout.open();
       break;

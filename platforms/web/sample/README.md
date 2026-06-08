@@ -14,8 +14,9 @@ pnpm sample
 
 Vite serves at `http://localhost:5173`. The page has three panels:
 
-- **Options** — form for `src`, `target` (`auto` | `popup`), and `debug`,
-  plus buttons for `open()`, `close()`, and `focus()`.
+- **Options** — form for `src`, `target` (`auto` | `popup`), `debug`, and the
+  opt-in Speculation Rules preload arm, plus buttons for `preload()`, `open()`,
+  `close()`, and `focus()`.
 - **Demo Storefront** — a mocked product card with **Buy now** calling
   `checkout.open()`. The button stays disabled until a checkout URL is set.
   The collapsible readout shows `checkout`, `error`, `target`, and `debug`.

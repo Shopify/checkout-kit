@@ -28,6 +28,9 @@ function expectWindowOpenArgs(spy: {
 describe("<shopify-checkout>", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    document.head.querySelectorAll('[data-shopify-checkout-preload=""]').forEach((node) => {
+      node.remove();
+    });
     // Clear any <shopify-checkout> elements left over from prior tests so
     // their global `message` listeners stop responding to events dispatched
     // by later tests. Without this, e.g. the new ec.window.open_request SDK
@@ -220,6 +223,131 @@ describe("<shopify-checkout>", () => {
   });
 
   describe("methods", () => {
+    describe("preload", () => {
+      it("adds preconnect, DNS prefetch, and checkout preload endpoint hints", () => {
+        const checkout = renderCheckout({
+          src: "https://shop.example.com/checkouts/cn/abc123?locale=fr&configuration_id=42&edited_at=1742040000",
+        });
+
+        checkout.preload();
+
+        const linkHrefs = preloadLinks().map((link) => link.href);
+
+        expect(linkHrefs).toContain("https://shop.example.com/");
+        expect(linkHrefs).toContain("https://cdn.shopify.com/");
+        expect(linkHrefs).toContain("https://fonts.shopifycdn.com/");
+        expect(linkHrefs).toContain("https://extensions.shopifycdn.com/");
+        expect(linkHrefs).toContain(
+          "https://shop.example.com/checkouts/internal/preloads.js?locale=fr&configuration_id=42&edited_at=1742040000",
+        );
+
+        const preloadEndpoint = preloadLinks().find((link) =>
+          link.href.includes("/checkouts/internal/preloads.js"),
+        );
+        expect(preloadEndpoint?.rel).toBe("prefetch");
+        expect(preloadEndpoint?.as).toBe("script");
+        expect(preloadEndpoint?.crossOrigin).toBe("");
+        expect(preloadEndpoint?.fetchPriority).toBe("low");
+      });
+
+      it("does not open a checkout window", () => {
+        const checkout = renderCheckout({ target: "popup" });
+        const windowOpenSpy = vi.spyOn(window, "open");
+
+        checkout.preload();
+
+        expect(windowOpenSpy).not.toHaveBeenCalled();
+      });
+
+      it("strips ec_auth and includes embedded-checkout query params in Speculation Rules", () => {
+        mockSpeculationRulesSupport(true);
+        const checkout = renderCheckout({
+          src: "https://shop.example.com/checkouts/cn/abc123?ec_auth=secret&locale=en",
+        });
+
+        checkout.preload({ speculationRules: true });
+
+        const script = preloadSpeculationRules()[0];
+        expect(script).toBeDefined();
+
+        const rules = JSON.parse(script!.textContent ?? "") as {
+          prefetch: [{ urls: [string]; eagerness: string }];
+        };
+        const url = new URL(rules.prefetch[0].urls[0]);
+
+        expect(url.origin).toBe("https://shop.example.com");
+        expect(url.searchParams.get("ec_auth")).toBeNull();
+        expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
+        expect(url.searchParams.get("ck_version")).toBe(CK_VERSION);
+        expect(rules.prefetch[0].eagerness).toBe("moderate");
+      });
+
+      it("does not add Speculation Rules unless explicitly requested", () => {
+        const checkout = renderCheckout();
+
+        checkout.preload();
+
+        expect(preloadSpeculationRules()).toHaveLength(0);
+      });
+
+      it("dedupes baseline hints separately from the Speculation Rules hint", () => {
+        mockSpeculationRulesSupport(true);
+        const checkout = renderCheckout();
+
+        checkout.preload();
+        const baselineLinkCount = preloadLinks().length;
+        checkout.preload();
+        checkout.preload({ speculationRules: true });
+        checkout.preload({ speculationRules: true });
+
+        expect(preloadLinks()).toHaveLength(baselineLinkCount);
+        expect(preloadSpeculationRules()).toHaveLength(1);
+      });
+
+      it("skips Speculation Rules when the browser does not support them", () => {
+        mockSpeculationRulesSupport(false);
+        const checkout = renderCheckout({ debug: "" });
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        checkout.preload({ speculationRules: true });
+
+        expect(preloadSpeculationRules()).toHaveLength(0);
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("Speculation Rules are not supported by this browser"),
+        );
+      });
+
+      it("reuses base_configuration_id as configuration_id for the preload endpoint", () => {
+        const checkout = renderCheckout({
+          src: "https://shop.example.com/checkouts/cn/abc123?base_configuration_id=99",
+        });
+
+        checkout.preload();
+
+        const preloadEndpoint = preloadLinks().find((link) =>
+          link.href.includes("/checkouts/internal/preloads.js"),
+        );
+
+        expect(preloadEndpoint?.href).toBe(
+          "https://shop.example.com/checkouts/internal/preloads.js?configuration_id=99",
+        );
+      });
+
+      it("returns early for invalid src and logs only in debug mode", () => {
+        const checkout = renderCheckout({ debug: "" });
+        checkout.src = "http://shop.example.com/checkouts/cn/abc123";
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        checkout.preload();
+
+        expect(preloadLinks()).toHaveLength(0);
+        expect(preloadSpeculationRules()).toHaveLength(0);
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("src property is empty or invalid, cannot preload checkout"),
+        );
+      });
+    });
+
     describe("open", () => {
       describe("when target is not specified", () => {
         it("defaults to auto target (new tab)", () => {
@@ -1560,6 +1688,30 @@ function waitForEvent(element: HTMLElement, eventName: string, spyFn?: (event: E
       resolve();
     };
     element.addEventListener(eventName, handler);
+  });
+}
+
+function preloadLinks() {
+  return [
+    ...document.head.querySelectorAll<HTMLLinkElement>('link[data-shopify-checkout-preload=""]'),
+  ];
+}
+
+function preloadSpeculationRules() {
+  return [
+    ...document.head.querySelectorAll<HTMLScriptElement>(
+      'script[type="speculationrules"][data-shopify-checkout-preload=""]',
+    ),
+  ];
+}
+
+function mockSpeculationRulesSupport(supported: boolean) {
+  Object.defineProperty(HTMLScriptElement, "supports", {
+    configurable: true,
+    value: () => false,
+  });
+  vi.spyOn(HTMLScriptElement, "supports").mockImplementation((type: string) => {
+    return type === "speculationrules" && supported;
   });
 }
 

@@ -5,6 +5,7 @@ import type {
   CheckoutProperties,
   CheckoutProtocolMessageMap,
   CheckoutTarget,
+  CheckoutPreloadOptions,
   TypedEventListener,
   CheckoutProtocolMessageData,
   Checkout,
@@ -22,6 +23,12 @@ export const DEFAULT_POPUP_HEIGHT = 600;
 export const EMBED_PROTOCOL_VERSION = "2026-04-08";
 export const CK_VERSION = "4.0.0";
 const EMBED_DELEGATIONS: readonly string[] = ["window.open"];
+const PRELOADS_PATH = "/checkouts/internal/preloads.js";
+const CHECKOUT_ASSET_CDN_ORIGINS: readonly string[] = [
+  "https://cdn.shopify.com",
+  "https://fonts.shopifycdn.com",
+  "https://extensions.shopifycdn.com",
+];
 
 const SHADOW_TEMPLATE = createTemplate(html`
   <div id="shopify-element-wrapper">
@@ -102,6 +109,8 @@ export class ShopifyCheckout
   #currentOpen: { controller: AbortController } | null = null;
   // Manages the global message event listener for checkout protocol communication
   #checkoutProtocolController: { controller: AbortController } | null = null;
+  #preloadHintKeys = new Set<string>();
+  #speculationRulesKeys = new Set<string>();
 
   /* ------------------------------------------------------------
    * Read/write properties (reflected with attributes)
@@ -245,8 +254,44 @@ export class ShopifyCheckout
    */
 
   /**
-   * Reveals checkout in the target.
+   * Hints that checkout may be opened soon.
    */
+  preload(options: CheckoutPreloadOptions = {}): void {
+    const url = this.#srcAsURL();
+    if (!url) {
+      this.#debugWarn("src property is empty or invalid, cannot preload checkout");
+      return;
+    }
+
+    const preloadUrl = this.#preloadEndpointForURL(url);
+    const preloadHintKey = JSON.stringify({ checkout: url.href, endpoint: preloadUrl.href });
+    if (!this.#preloadHintKeys.has(preloadHintKey)) {
+      this.#preloadHintKeys.add(preloadHintKey);
+
+      for (const origin of [url.origin, ...CHECKOUT_ASSET_CDN_ORIGINS]) {
+        this.#appendLinkHint({ rel: "preconnect", href: origin, crossOrigin: "" });
+        this.#appendLinkHint({ rel: "dns-prefetch", href: origin });
+      }
+
+      this.#appendLinkHint({
+        rel: "prefetch",
+        href: preloadUrl.href,
+        as: "script",
+        crossOrigin: "",
+        fetchPriority: "low",
+      });
+    }
+
+    if (
+      options.speculationRules === true &&
+      this.#supportsSpeculationRules() &&
+      !this.#speculationRulesKeys.has(url.href)
+    ) {
+      this.#speculationRulesKeys.add(url.href);
+      this.#appendSpeculationRules(url);
+    }
+  }
+
   open(): void {
     const { target } = this;
     const src = this.#srcAsURL()?.href;
@@ -402,6 +447,67 @@ export class ShopifyCheckout
     } else {
       link.removeAttribute("href");
     }
+  }
+
+  #preloadEndpointForURL(url: URL) {
+    const preloadUrl = new URL(PRELOADS_PATH, url.origin);
+    const locale = url.searchParams.get("locale");
+    const configurationId =
+      url.searchParams.get("configuration_id") ?? url.searchParams.get("base_configuration_id");
+    const editedAt = url.searchParams.get("edited_at");
+
+    if (locale) preloadUrl.searchParams.set("locale", locale);
+    if (configurationId) preloadUrl.searchParams.set("configuration_id", configurationId);
+    if (editedAt) preloadUrl.searchParams.set("edited_at", editedAt);
+
+    return preloadUrl;
+  }
+
+  #appendLinkHint({
+    rel,
+    href,
+    as,
+    crossOrigin,
+    fetchPriority,
+  }: {
+    rel: string;
+    href: string;
+    as?: string;
+    crossOrigin?: string;
+    fetchPriority?: "high" | "low" | "auto";
+  }) {
+    const link = document.createElement("link");
+    link.rel = rel;
+    link.href = href;
+    if (as) link.as = as;
+    if (crossOrigin !== undefined) link.crossOrigin = crossOrigin;
+    if (fetchPriority) link.fetchPriority = fetchPriority;
+    link.dataset["shopifyCheckoutPreload"] = "";
+    document.head.appendChild(link);
+  }
+
+  #appendSpeculationRules(url: URL) {
+    const script = document.createElement("script");
+    script.type = "speculationrules";
+    script.dataset["shopifyCheckoutPreload"] = "";
+    script.textContent = JSON.stringify({
+      prefetch: [
+        {
+          source: "list",
+          urls: [url.href],
+          eagerness: "moderate",
+        },
+      ],
+    });
+    document.head.appendChild(script);
+  }
+
+  #supportsSpeculationRules() {
+    const supports = HTMLScriptElement.supports?.("speculationrules") === true;
+    if (!supports) {
+      this.#debugWarn("Speculation Rules are not supported by this browser");
+    }
+    return supports;
   }
 
   /**

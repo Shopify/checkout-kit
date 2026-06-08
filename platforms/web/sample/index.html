@@ -47,10 +47,18 @@
             <span>debug</span>
           </label>
 
+          <label class="checkbox">
+            <input type="checkbox" name="speculationRules" />
+            <span>Speculation Rules preload</span>
+          </label>
+
           <fieldset>
             <legend>Methods</legend>
             <div class="button-row">
-              <button type="button" data-method="open">open()</button>
+              <button type="button" data-method="preload" data-requires-src disabled>
+                preload()
+              </button>
+              <button type="button" data-method="open" data-requires-src disabled>open()</button>
               <button type="button" data-method="close">close()</button>
               <button type="button" data-method="focus">focus()</button>
             </div>

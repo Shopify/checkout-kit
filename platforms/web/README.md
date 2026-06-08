@@ -323,6 +323,27 @@ checkout: `ec_version` (Embedded Checkout Protocol version),
 `ec_delegate` (which capabilities the host delegates), and `ck_version`
 (the Checkout Kit version).
 
+## Preloading
+
+Call `preload()` when there is a strong signal that the buyer may enter
+checkout soon, such as landing on a cart screen. For popup and new-tab targets,
+preloading is a best-effort hint: it warms connection/cache state, but it does
+not create a popup and `open()` does not depend on it.
+
+```ts
+checkout.preload();
+```
+
+For benchmark and experimentation, Speculation Rules document prefetch can be
+enabled explicitly:
+
+```ts
+checkout.preload({speculationRules: true});
+```
+
+Speculation Rules are off by default so you can compare their impact separately
+from the baseline preload hints. Unsupported browsers skip this hint.
+
 ### `target`
 
 Where the checkout is presented. Defaults to `"auto"`.
