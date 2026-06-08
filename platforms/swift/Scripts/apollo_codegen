@@ -45,15 +45,15 @@ case "$APP" in
   accelerated)
     run_codegen "Samples/ShopifyAcceleratedCheckoutsApp" "accelerated"
     ;;
-  mobile-buy)
-    run_codegen "Samples/MobileBuyIntegration" "mobile-buy"
+  swift)
+    run_codegen "Samples/CheckoutKitSwiftDemo" "swift"
     ;;
   all)
     run_codegen "Samples/ShopifyAcceleratedCheckoutsApp" "accelerated"
-    run_codegen "Samples/MobileBuyIntegration" "mobile-buy"
+    run_codegen "Samples/CheckoutKitSwiftDemo" "swift"
     ;;
   *)
-    echo "❌ Unknown app: $APP. Use 'accelerated', 'mobile-buy', or 'all'"
+    echo "❌ Unknown app: $APP. Use 'accelerated', 'swift', or 'all'"
     exit 1
     ;;
 esac

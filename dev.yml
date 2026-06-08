@@ -97,22 +97,22 @@ commands:
     desc: "Apollo GraphQL schema and code generation commands"
     subcommands:
       download_schema:
-        desc: "Download GraphQL schema. Usage: dev apollo download_schema <android|swift> [accelerated|mobile-buy|all]"
-        syntax: "<android|swift> [accelerated|mobile-buy|all]"
+        desc: "Download GraphQL schema. Usage: dev apollo download_schema <android|swift> [accelerated|swift|all]"
+        syntax: "<android|swift> [accelerated|swift|all]"
         run: |
           case "$1" in
             android) cd platforms/android && ./scripts/apollo_download_schema ;;
             swift) shift; cd platforms/swift && ./Scripts/apollo_download_schema "$@" ;;
-            *) echo "Usage: dev apollo download_schema <android|swift> [accelerated|mobile-buy|all]"; exit 1 ;;
+            *) echo "Usage: dev apollo download_schema <android|swift> [accelerated|swift|all]"; exit 1 ;;
           esac
       codegen:
-        desc: "Generate Apollo models. Usage: dev apollo codegen <android|swift> [accelerated|mobile-buy|all]"
-        syntax: "<android|swift> [accelerated|mobile-buy|all]"
+        desc: "Generate Apollo models. Usage: dev apollo codegen <android|swift> [accelerated|swift|all]"
+        syntax: "<android|swift> [accelerated|swift|all]"
         run: |
           case "$1" in
             android) cd platforms/android && ./scripts/apollo_codegen ;;
             swift) shift; cd platforms/swift && ./Scripts/apollo_codegen "$@" ;;
-            *) echo "Usage: dev apollo codegen <android|swift> [accelerated|mobile-buy|all]"; exit 1 ;;
+            *) echo "Usage: dev apollo codegen <android|swift> [accelerated|swift|all]"; exit 1 ;;
           esac
 
   # Protocol
@@ -276,7 +276,7 @@ commands:
           # Sample apps have a "Run Script" build phase that runs during clean
           # and exits non-zero when there is nothing to delete. Tolerate it so
           # the second sample still gets cleaned.
-          ../Scripts/xcode_run clean MobileBuyIntegration || true
+          ../Scripts/xcode_run clean CheckoutKitSwiftDemo || true
           ../Scripts/xcode_run clean ShopifyAcceleratedCheckoutsApp || true
 
   # React Native

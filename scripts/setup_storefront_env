@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 ROOT_ENV="${ROOT_DIR}/.env"
 ANDROID_ENV="${ROOT_DIR}/platforms/android/samples/MobileBuyIntegration/.env"
-SWIFT_MOBILE_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/MobileBuyIntegration/Storefront.xcconfig"
+SWIFT_DEMO_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
 SWIFT_ACCELERATED_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
 REACT_NATIVE_ENV="${ROOT_DIR}/platforms/react-native/sample/.env"
 
@@ -387,14 +387,14 @@ load_values() {
     "$(required_config_value STOREFRONT_DOMAIN)" \
     "$(read_env_value STOREFRONT_DOMAIN "$ANDROID_ENV")" \
     "$(read_env_value STOREFRONT_DOMAIN "$REACT_NATIVE_ENV")" \
-    "$(read_env_value STOREFRONT_DOMAIN "$SWIFT_MOBILE_XCCONFIG")" \
+    "$(read_env_value STOREFRONT_DOMAIN "$SWIFT_DEMO_XCCONFIG")" \
     "$(read_env_value STOREFRONT_DOMAIN "$SWIFT_ACCELERATED_XCCONFIG")")"
 
   STOREFRONT_ACCESS_TOKEN_VALUE="$(first_config_value \
     "$(required_config_value STOREFRONT_ACCESS_TOKEN)" \
     "$(read_env_value STOREFRONT_ACCESS_TOKEN "$ANDROID_ENV")" \
     "$(read_env_value STOREFRONT_ACCESS_TOKEN "$REACT_NATIVE_ENV")" \
-    "$(read_env_value STOREFRONT_ACCESS_TOKEN "$SWIFT_MOBILE_XCCONFIG")" \
+    "$(read_env_value STOREFRONT_ACCESS_TOKEN "$SWIFT_DEMO_XCCONFIG")" \
     "$(read_env_value STOREFRONT_ACCESS_TOKEN "$SWIFT_ACCELERATED_XCCONFIG")")"
 
   API_VERSION_VALUE="$(first_config_value \
@@ -405,7 +405,7 @@ load_values() {
     "$(read_env_value API_VERSION "$ANDROID_ENV")" \
     "$(read_env_value API_VERSION "$REACT_NATIVE_ENV")" \
     "$(read_env_value STOREFRONT_VERSION "$REACT_NATIVE_ENV")" \
-    "$(read_env_value API_VERSION "$SWIFT_MOBILE_XCCONFIG")" \
+    "$(read_env_value API_VERSION "$SWIFT_DEMO_XCCONFIG")" \
     "$(read_env_value API_VERSION "$SWIFT_ACCELERATED_XCCONFIG")" \
     "$DEFAULT_API_VERSION")"
 
@@ -413,39 +413,39 @@ load_values() {
     "$(env_fallback STOREFRONT_MERCHANT_IDENTIFIER)" \
     "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$ANDROID_ENV")" \
     "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$REACT_NATIVE_ENV")" \
-    "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$SWIFT_MOBILE_XCCONFIG")")"
+    "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$SWIFT_DEMO_XCCONFIG")")"
 
   CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE="$(root_or_source_value CUSTOMER_ACCOUNT_API_CLIENT_ID \
     "$(env_fallback CUSTOMER_ACCOUNT_API_CLIENT_ID)" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$ANDROID_ENV")" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$REACT_NATIVE_ENV")" \
-    "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$SWIFT_MOBILE_XCCONFIG")")"
+    "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$SWIFT_DEMO_XCCONFIG")")"
 
   CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE="$(root_or_source_value CUSTOMER_ACCOUNT_API_SHOP_ID \
     "$(env_fallback CUSTOMER_ACCOUNT_API_SHOP_ID)" \
     "$(derive_customer_account_api_shop_id)" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_SHOP_ID "$REACT_NATIVE_ENV")" \
-    "$(read_env_value CUSTOMER_ACCOUNT_API_SHOP_ID "$SWIFT_MOBILE_XCCONFIG")")"
+    "$(read_env_value CUSTOMER_ACCOUNT_API_SHOP_ID "$SWIFT_DEMO_XCCONFIG")")"
 
   CUSTOMER_ACCOUNT_API_VERSION_VALUE="$(root_or_source_nonempty_value CUSTOMER_ACCOUNT_API_VERSION \
     "$(env_fallback CUSTOMER_ACCOUNT_API_VERSION)" \
     "$(derive_customer_account_api_version)" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$REACT_NATIVE_ENV")" \
-    "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$SWIFT_MOBILE_XCCONFIG")" \
+    "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$SWIFT_DEMO_XCCONFIG")" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$SWIFT_ACCELERATED_XCCONFIG")" \
     "$DEFAULT_CUSTOMER_ACCOUNT_API_VERSION")"
 
-  EMAIL_VALUE="$(root_or_source_value EMAIL "$(env_fallback EMAIL)" "$(read_env_value EMAIL "$ANDROID_ENV")" "$(read_env_value PREFILL_EMAIL "$ANDROID_ENV")" "$(read_env_value EMAIL "$REACT_NATIVE_ENV")" "$(read_env_value EMAIL "$SWIFT_MOBILE_XCCONFIG")" "checkout-kit@example.com")"
-  ADDRESS_1_VALUE="$(root_or_source_value ADDRESS_1 "$(env_fallback ADDRESS_1)" "$(read_env_value ADDRESS_1 "$REACT_NATIVE_ENV")" "$(read_env_value ADDRESS_1 "$SWIFT_MOBILE_XCCONFIG")" "650 King Street")"
-  ADDRESS_2_VALUE="$(root_or_source_value ADDRESS_2 "$(env_fallback ADDRESS_2)" "$(read_env_value ADDRESS_2 "$REACT_NATIVE_ENV")" "$(read_env_value ADDRESS_2 "$SWIFT_MOBILE_XCCONFIG")" "Shopify HQ")"
-  CITY_VALUE="$(root_or_source_value CITY "$(env_fallback CITY)" "$(read_env_value CITY "$REACT_NATIVE_ENV")" "$(read_env_value CITY "$SWIFT_MOBILE_XCCONFIG")" "Toronto")"
-  COMPANY_VALUE="$(root_or_source_value COMPANY "$(env_fallback COMPANY)" "$(read_env_value COMPANY "$REACT_NATIVE_ENV")" "$(read_env_value COMPANY "$SWIFT_MOBILE_XCCONFIG")" "Shopify")"
-  COUNTRY_VALUE="$(root_or_source_value COUNTRY "$(env_fallback COUNTRY)" "$(read_env_value COUNTRY "$REACT_NATIVE_ENV")" "$(read_env_value COUNTRY "$SWIFT_MOBILE_XCCONFIG")" "CA")"
-  FIRST_NAME_VALUE="$(root_or_source_value FIRST_NAME "$(env_fallback FIRST_NAME)" "$(read_env_value FIRST_NAME "$REACT_NATIVE_ENV")" "$(read_env_value FIRST_NAME "$SWIFT_MOBILE_XCCONFIG")" "Evelyn")"
-  LAST_NAME_VALUE="$(root_or_source_value LAST_NAME "$(env_fallback LAST_NAME)" "$(read_env_value LAST_NAME "$REACT_NATIVE_ENV")" "$(read_env_value LAST_NAME "$SWIFT_MOBILE_XCCONFIG")" "Hartley")"
-  PROVINCE_VALUE="$(root_or_source_value PROVINCE "$(env_fallback PROVINCE)" "$(read_env_value PROVINCE "$REACT_NATIVE_ENV")" "$(read_env_value PROVINCE "$SWIFT_MOBILE_XCCONFIG")" "ON")"
-  ZIP_VALUE="$(root_or_source_value ZIP "$(env_fallback ZIP)" "$(read_env_value ZIP "$REACT_NATIVE_ENV")" "$(read_env_value ZIP "$SWIFT_MOBILE_XCCONFIG")" "M5V 1M7")"
-  PHONE_VALUE="$(root_or_source_value PHONE "$(env_fallback PHONE)" "$(read_env_value PHONE "$ANDROID_ENV")" "$(read_env_value PREFILL_PHONE "$ANDROID_ENV")" "$(read_env_value PHONE "$REACT_NATIVE_ENV")" "$(read_env_value PHONE "$SWIFT_MOBILE_XCCONFIG")" "+14165550100")"
+  EMAIL_VALUE="$(root_or_source_value EMAIL "$(env_fallback EMAIL)" "$(read_env_value EMAIL "$ANDROID_ENV")" "$(read_env_value PREFILL_EMAIL "$ANDROID_ENV")" "$(read_env_value EMAIL "$REACT_NATIVE_ENV")" "$(read_env_value EMAIL "$SWIFT_DEMO_XCCONFIG")" "checkout-kit@example.com")"
+  ADDRESS_1_VALUE="$(root_or_source_value ADDRESS_1 "$(env_fallback ADDRESS_1)" "$(read_env_value ADDRESS_1 "$REACT_NATIVE_ENV")" "$(read_env_value ADDRESS_1 "$SWIFT_DEMO_XCCONFIG")" "650 King Street")"
+  ADDRESS_2_VALUE="$(root_or_source_value ADDRESS_2 "$(env_fallback ADDRESS_2)" "$(read_env_value ADDRESS_2 "$REACT_NATIVE_ENV")" "$(read_env_value ADDRESS_2 "$SWIFT_DEMO_XCCONFIG")" "Shopify HQ")"
+  CITY_VALUE="$(root_or_source_value CITY "$(env_fallback CITY)" "$(read_env_value CITY "$REACT_NATIVE_ENV")" "$(read_env_value CITY "$SWIFT_DEMO_XCCONFIG")" "Toronto")"
+  COMPANY_VALUE="$(root_or_source_value COMPANY "$(env_fallback COMPANY)" "$(read_env_value COMPANY "$REACT_NATIVE_ENV")" "$(read_env_value COMPANY "$SWIFT_DEMO_XCCONFIG")" "Shopify")"
+  COUNTRY_VALUE="$(root_or_source_value COUNTRY "$(env_fallback COUNTRY)" "$(read_env_value COUNTRY "$REACT_NATIVE_ENV")" "$(read_env_value COUNTRY "$SWIFT_DEMO_XCCONFIG")" "CA")"
+  FIRST_NAME_VALUE="$(root_or_source_value FIRST_NAME "$(env_fallback FIRST_NAME)" "$(read_env_value FIRST_NAME "$REACT_NATIVE_ENV")" "$(read_env_value FIRST_NAME "$SWIFT_DEMO_XCCONFIG")" "Evelyn")"
+  LAST_NAME_VALUE="$(root_or_source_value LAST_NAME "$(env_fallback LAST_NAME)" "$(read_env_value LAST_NAME "$REACT_NATIVE_ENV")" "$(read_env_value LAST_NAME "$SWIFT_DEMO_XCCONFIG")" "Hartley")"
+  PROVINCE_VALUE="$(root_or_source_value PROVINCE "$(env_fallback PROVINCE)" "$(read_env_value PROVINCE "$REACT_NATIVE_ENV")" "$(read_env_value PROVINCE "$SWIFT_DEMO_XCCONFIG")" "ON")"
+  ZIP_VALUE="$(root_or_source_value ZIP "$(env_fallback ZIP)" "$(read_env_value ZIP "$REACT_NATIVE_ENV")" "$(read_env_value ZIP "$SWIFT_DEMO_XCCONFIG")" "M5V 1M7")"
+  PHONE_VALUE="$(root_or_source_value PHONE "$(env_fallback PHONE)" "$(read_env_value PHONE "$ANDROID_ENV")" "$(read_env_value PREFILL_PHONE "$ANDROID_ENV")" "$(read_env_value PHONE "$REACT_NATIVE_ENV")" "$(read_env_value PHONE "$SWIFT_DEMO_XCCONFIG")" "+14165550100")"
 }
 
 collect_missing_values() {
@@ -601,7 +601,7 @@ EOF
   write_quoted_env_assignment CUSTOMER_ACCOUNT_API_SHOP_ID "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE"
 }
 
-generate_swift_mobile_xcconfig() {
+generate_swift_demo_xcconfig() {
   generate_xcconfig_header
   write_xcconfig_assignment STOREFRONT_DOMAIN "$STOREFRONT_DOMAIN_VALUE"
   write_xcconfig_assignment STOREFRONT_ACCESS_TOKEN "$STOREFRONT_ACCESS_TOKEN_VALUE"
@@ -700,7 +700,7 @@ ensure_root_env() {
 
 write_generated_files() {
   generate_android_env >"$ANDROID_ENV"
-  generate_swift_mobile_xcconfig >"$SWIFT_MOBILE_XCCONFIG"
+  generate_swift_demo_xcconfig >"$SWIFT_DEMO_XCCONFIG"
   generate_swift_accelerated_xcconfig >"$SWIFT_ACCELERATED_XCCONFIG"
   generate_react_native_env >"$REACT_NATIVE_ENV"
 
@@ -729,7 +729,7 @@ check_generated_files() {
   local failed="false"
 
   check_generated_file "$ANDROID_ENV" generate_android_env || failed="true"
-  check_generated_file "$SWIFT_MOBILE_XCCONFIG" generate_swift_mobile_xcconfig || failed="true"
+  check_generated_file "$SWIFT_DEMO_XCCONFIG" generate_swift_demo_xcconfig || failed="true"
   check_generated_file "$SWIFT_ACCELERATED_XCCONFIG" generate_swift_accelerated_xcconfig || failed="true"
   check_generated_file "$REACT_NATIVE_ENV" generate_react_native_env || failed="true"
 

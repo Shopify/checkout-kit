@@ -391,7 +391,7 @@ Use `CheckoutProtocol.Client` through `.connect(client)` to observe checkout com
 
 See [Samples](Samples/README.md):
 
-- `MobileBuyIntegration` demonstrates a Storefront API cart flow, buyer identity modes, Customer Account API, checkout presentation, and protocol events.
+- `CheckoutKitSwiftDemo` demonstrates a Storefront API cart flow, buyer identity modes, Customer Account API, checkout presentation, and protocol events.
 - `ShopifyAcceleratedCheckoutsApp` demonstrates Shop Pay and Apple Pay accelerated checkout buttons.
 
 ## Contributing

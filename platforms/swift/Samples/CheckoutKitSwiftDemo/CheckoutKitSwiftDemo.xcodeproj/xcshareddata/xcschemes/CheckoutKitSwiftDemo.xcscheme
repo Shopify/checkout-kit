@@ -15,9 +15,9 @@
                   <BuildableReference
                      BuildableIdentifier = "primary"
                      BlueprintIdentifier = "4EBBA7662A5F0CE200193E19"
-                     BuildableName = "MobileBuyIntegration.app"
-                     BlueprintName = "MobileBuyIntegration"
-                     ReferencedContainer = "container:MobileBuyIntegration.xcodeproj">
+                     BuildableName = "CheckoutKitSwiftDemo.app"
+                     BlueprintName = "CheckoutKitSwiftDemo"
+                     ReferencedContainer = "container:CheckoutKitSwiftDemo.xcodeproj">
                   </BuildableReference>
                </EnvironmentBuildable>
             </ActionContent>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4EBBA7662A5F0CE200193E19"
-               BuildableName = "MobileBuyIntegration.app"
-               BlueprintName = "MobileBuyIntegration"
-               ReferencedContainer = "container:MobileBuyIntegration.xcodeproj">
+               BuildableName = "CheckoutKitSwiftDemo.app"
+               BlueprintName = "CheckoutKitSwiftDemo"
+               ReferencedContainer = "container:CheckoutKitSwiftDemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4EBBA7662A5F0CE200193E19"
-            BuildableName = "MobileBuyIntegration.app"
-            BlueprintName = "MobileBuyIntegration"
-            ReferencedContainer = "container:MobileBuyIntegration.xcodeproj">
+            BuildableName = "CheckoutKitSwiftDemo.app"
+            BlueprintName = "CheckoutKitSwiftDemo"
+            ReferencedContainer = "container:CheckoutKitSwiftDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -79,9 +79,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4EBBA7662A5F0CE200193E19"
-            BuildableName = "MobileBuyIntegration.app"
-            BlueprintName = "MobileBuyIntegration"
-            ReferencedContainer = "container:MobileBuyIntegration.xcodeproj">
+            BuildableName = "CheckoutKitSwiftDemo.app"
+            BlueprintName = "CheckoutKitSwiftDemo"
+            ReferencedContainer = "container:CheckoutKitSwiftDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

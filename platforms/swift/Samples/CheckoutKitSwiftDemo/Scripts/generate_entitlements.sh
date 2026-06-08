@@ -5,8 +5,8 @@ set -e
 CONFIG_FILE="Storefront.xcconfig"
 STOREFRONT_DOMAIN=$(grep '^[[:space:]]*STOREFRONT_DOMAIN' "$CONFIG_FILE" | cut -d '=' -f2 | tr -d ' ')
 
-TEMPLATE_FILE="MobileBuyIntegration/MobileBuyIntegration.entitlements.template"
-OUTPUT_FILE="MobileBuyIntegration/MobileBuyIntegration.entitlements"
+TEMPLATE_FILE="CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.entitlements.template"
+OUTPUT_FILE="CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.entitlements"
 
 if [ -z "$STOREFRONT_DOMAIN" ]; then
   echo "Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig"
