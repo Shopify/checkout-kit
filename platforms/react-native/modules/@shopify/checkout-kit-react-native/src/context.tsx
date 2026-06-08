@@ -46,16 +46,6 @@ export function ShopifyCheckoutProvider({
       return;
     }
 
-    const customer = configuration.acceleratedCheckouts?.customer;
-    if (customer?.accessToken && (customer?.email || customer?.phoneNumber)) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[ShopifyCheckoutKit] Providing accessToken with contactFields (email / phoneNumber) is deprecated and will become an error in v4.' +
-          'When the user is authenticated with Customer Accounts, provide accessToken' +
-          'When the user is otherwise authenticated, provide email/phoneNumber.',
-      );
-    }
-
     instance.current.setConfig(configuration);
     setAcceleratedCheckoutsAvailable(
       instance.current.acceleratedCheckoutsReady,

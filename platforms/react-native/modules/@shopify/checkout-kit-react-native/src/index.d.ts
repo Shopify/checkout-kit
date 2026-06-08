@@ -186,6 +186,17 @@ export interface PresentCallbacks {
 }
 
 /**
+ * Customer information for personalized accelerated checkout.
+ *
+ * Use `accessToken` for buyers authenticated with Shopify Customer Accounts.
+ * Use `email` and `phoneNumber` together for buyers identified by contact
+ * fields. These modes are mutually exclusive.
+ */
+export type AcceleratedCheckoutCustomer =
+  | {accessToken: string; email?: never; phoneNumber?: never}
+  | {accessToken?: never; email: string; phoneNumber: string};
+
+/**
  * Configuration for AcceleratedCheckouts
  */
 export interface AcceleratedCheckoutConfiguration {
@@ -200,17 +211,12 @@ export interface AcceleratedCheckoutConfiguration {
   storefrontAccessToken: string;
 
   /**
-   * Customer information for personalized checkout
+   * Customer information for personalized checkout.
    *
-   * @todo v4: Change to union type to match Swift SDK:
-   * `{ accessToken: string } | { email: string; phoneNumber: string }`
-   * This will enforce mutually exclusive customer identification patterns.
+   * Provide either an authenticated Customer Account `accessToken`, or provide
+   * both `email` and `phoneNumber` for contact-field identification.
    */
-  customer?: {
-    email?: string;
-    phoneNumber?: string;
-    accessToken?: string;
-  };
+  customer?: AcceleratedCheckoutCustomer;
   /**
    * Enable and configure accelerated checkout wallets.
    */

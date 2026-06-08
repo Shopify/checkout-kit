@@ -14,6 +14,7 @@ import {
 } from './present-dispatcher';
 import type {
   AcceleratedCheckoutConfiguration,
+  AcceleratedCheckoutCustomer,
   AndroidAutomaticColors,
   AndroidColors,
   Configuration,
@@ -243,7 +244,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
       return;
     }
 
-    const {storefrontDomain, storefrontAccessToken, wallets} =
+    const {storefrontDomain, storefrontAccessToken, customer, wallets} =
       acceleratedCheckouts;
 
     /**
@@ -254,6 +255,24 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     }
     if (!storefrontAccessToken) {
       throw new Error('`storefrontAccessToken` is required');
+    }
+
+    if (customer) {
+      const hasAccessToken = Object.prototype.hasOwnProperty.call(
+        customer,
+        'accessToken',
+      );
+      const hasEmail = Object.prototype.hasOwnProperty.call(customer, 'email');
+      const hasPhoneNumber = Object.prototype.hasOwnProperty.call(
+        customer,
+        'phoneNumber',
+      );
+
+      if (hasAccessToken && (hasEmail || hasPhoneNumber)) {
+        throw new Error(
+          '`customer` must contain either `accessToken` or both `email` and `phoneNumber`, but not both',
+        );
+      }
     }
 
     /**
@@ -383,6 +402,7 @@ export {
 export type {
   AcceleratedCheckoutButtonsProps,
   AcceleratedCheckoutConfiguration,
+  AcceleratedCheckoutCustomer,
   AndroidAutomaticColors,
   AndroidColors,
   Checkout,

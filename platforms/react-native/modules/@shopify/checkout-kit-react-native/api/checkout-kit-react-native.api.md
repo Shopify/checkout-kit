@@ -23,11 +23,7 @@ export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) & Commo
 
 // @public
 export interface AcceleratedCheckoutConfiguration {
-    customer?: {
-        email?: string;
-        phoneNumber?: string;
-        accessToken?: string;
-    };
+    customer?: AcceleratedCheckoutCustomer;
 
     storefrontAccessToken: string;
 
@@ -41,6 +37,11 @@ export interface AcceleratedCheckoutConfiguration {
         };
     };
 }
+
+// @public
+export type AcceleratedCheckoutCustomer =
+| {accessToken: string; email?: never; phoneNumber?: never}
+| {accessToken?: never; email: string; phoneNumber: string};
 
 // @public
 export enum AcceleratedCheckoutWallet {

@@ -194,11 +194,13 @@ class RCTShopifyCheckoutKit: NSObject {
             return NSNumber(value: false)
         }
 
-        let customer = ShopifyAcceleratedCheckouts.Customer(
-            email: customerEmail,
-            phoneNumber: customerPhoneNumber,
-            customerAccessToken: customerAccessToken
-        )
+        let customer: ShopifyAcceleratedCheckouts.Customer? = if let customerAccessToken {
+            .init(customerAccessToken: customerAccessToken)
+        } else if let customerEmail, let customerPhoneNumber {
+            .init(email: customerEmail, phoneNumber: customerPhoneNumber)
+        } else {
+            nil
+        }
 
         acceleratedCheckoutsConfiguration = ShopifyAcceleratedCheckouts.Configuration(
             storefrontDomain: storefrontDomain,
