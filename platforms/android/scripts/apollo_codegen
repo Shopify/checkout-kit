@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-cd samples/MobileBuyIntegration
+cd samples/CheckoutKitAndroidDemo
 
-echo "🔄 Running codegen for MobileBuyIntegration..."
+echo "🔄 Running codegen for CheckoutKitAndroidDemo..."
 ./gradlew :app:generateApolloSources
 
 if [ $? -eq 0 ]; then

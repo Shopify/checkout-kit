@@ -312,7 +312,7 @@ Checkout Kit opens external HTTPS links, `mailto:`, `tel:`, and custom-scheme li
 
 ## Samples
 
-See [samples](samples/README.md). `MobileBuyIntegration` demonstrates an Apollo Kotlin Storefront API cart flow, checkout presentation, typed protocol lifecycle events, file chooser handling, geolocation callbacks, and Customer Account API sign-in.
+See [samples](samples/README.md). `CheckoutKitAndroidDemo` demonstrates an Apollo Kotlin Storefront API cart flow, checkout presentation, typed protocol lifecycle events, file chooser handling, geolocation callbacks, and Customer Account API sign-in.
 
 ## Contributing
 
@@ -330,7 +330,7 @@ cd platforms/android
 For sample app changes, run:
 
 ```sh
-cd platforms/android/samples/MobileBuyIntegration
+cd platforms/android/samples/CheckoutKitAndroidDemo
 ./gradlew build
 ```
 
