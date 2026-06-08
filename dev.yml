@@ -190,6 +190,19 @@ commands:
         desc: Clean Android Gradle build outputs
         run: cd platforms/android && ./gradlew clean
 
+      open:
+        desc: Open the Android sample app in Android Studio
+        run: open -a "Android Studio" platforms/android/samples/MobileBuyIntegration
+        subcommands:
+          demo:
+            desc: Open the Android sample app in Android Studio
+            aliases: [sample, samples]
+            run: open -a "Android Studio" platforms/android/samples/MobileBuyIntegration
+          lib:
+            desc: Open the Android SDK library project in Android Studio
+            aliases: [library]
+            run: open -a "Android Studio" platforms/android
+
       api:
         desc: Validate or update the public API baseline (lib/api/lib.api)
         run: |
@@ -262,6 +275,19 @@ commands:
       check:
         desc: Run Swift lint checks
         run: /opt/dev/bin/dev swift lint
+
+      open:
+        desc: Open the Swift sample workspace in Xcode
+        run: xed platforms/swift/Samples/Samples.xcworkspace
+        subcommands:
+          demo:
+            desc: Open the Swift sample workspace in Xcode
+            aliases: [sample, samples]
+            run: xed platforms/swift/Samples/Samples.xcworkspace
+          lib:
+            desc: Open the Swift package in Xcode
+            aliases: [library, package]
+            run: xed platforms/swift
 
       clean:
         desc: Clean Swift packages and sample app build artifacts
@@ -416,6 +442,21 @@ commands:
           optional: --local
         run: cd platforms/react-native && pnpm run pod-install -- "$@"
 
+      open:
+        desc: Open the React Native workspace or native sample projects
+        run: '${DEV_EDITOR:-open} platforms/react-native'
+        subcommands:
+          ios:
+            desc: Open the React Native iOS sample workspace in Xcode
+            run: xed platforms/react-native/sample/ios/ReactNative.xcworkspace
+          android:
+            desc: Open the React Native Android sample project in Android Studio
+            run: open -a "Android Studio" platforms/react-native/sample/android
+          demo:
+            desc: Open the React Native sample app workspace
+            aliases: [sample, samples]
+            run: '${DEV_EDITOR:-open} platforms/react-native/sample'
+
   rn:
     desc: "Alias for React Native Checkout Kit commands"
     long_desc: |
@@ -484,3 +525,16 @@ commands:
       verify:
         desc: Run Web package verification
         run: cd platforms/web && pnpm verify
+
+      open:
+        desc: Open the Web sample app
+        run: '${DEV_EDITOR:-open} platforms/web/sample'
+        subcommands:
+          demo:
+            desc: Open the Web sample app
+            aliases: [sample, samples]
+            run: '${DEV_EDITOR:-open} platforms/web/sample'
+          lib:
+            desc: Open the Web package
+            aliases: [library, package]
+            run: '${DEV_EDITOR:-open} platforms/web'
