@@ -15,7 +15,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
     )
 }
 
-rootProject.name = 'ReactNative'
+rootProject.name = 'CheckoutKitReactNativeDemo'
 
 include ':app'
 include ':react-native-config'

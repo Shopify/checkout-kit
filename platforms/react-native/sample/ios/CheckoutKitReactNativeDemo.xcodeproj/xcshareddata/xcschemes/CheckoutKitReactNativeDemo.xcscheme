@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "ReactNative.app"
-               BlueprintName = "ReactNative"
-               ReferencedContainer = "container:ReactNative.xcodeproj">
+               BuildableName = "CheckoutKitReactNativeDemo.app"
+               BlueprintName = "CheckoutKitReactNativeDemo"
+               ReferencedContainer = "container:CheckoutKitReactNativeDemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "ReactNativeTests.xctest"
-               BlueprintName = "ReactNativeTests"
-               ReferencedContainer = "container:ReactNative.xcodeproj">
+               BuildableName = "CheckoutKitReactNativeDemoTests.xctest"
+               BlueprintName = "CheckoutKitReactNativeDemoTests"
+               ReferencedContainer = "container:CheckoutKitReactNativeDemo.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "ReactNative.app"
-            BlueprintName = "ReactNative"
-            ReferencedContainer = "container:ReactNative.xcodeproj">
+            BuildableName = "CheckoutKitReactNativeDemo.app"
+            BlueprintName = "CheckoutKitReactNativeDemo"
+            ReferencedContainer = "container:CheckoutKitReactNativeDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <EnvironmentVariables>
@@ -79,9 +79,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "ReactNative.app"
-            BlueprintName = "ReactNative"
-            ReferencedContainer = "container:ReactNative.xcodeproj">
+            BuildableName = "CheckoutKitReactNativeDemo.app"
+            BlueprintName = "CheckoutKitReactNativeDemo"
+            ReferencedContainer = "container:CheckoutKitReactNativeDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

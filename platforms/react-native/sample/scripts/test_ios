@@ -14,8 +14,8 @@ if [ "$CI" = "true" ]; then
 fi
 
 xcodebuild test \
-    -workspace ReactNative.xcworkspace \
-    -scheme ReactNative \
+    -workspace CheckoutKitReactNativeDemo.xcworkspace \
+    -scheme CheckoutKitReactNativeDemo \
     -destination "$dest" \
     -skipPackagePluginValidation \
     -sdk iphonesimulator \
