@@ -8,6 +8,7 @@ sample/dist/
 build/
 coverage/
 custom-elements.json
+benchmarks/preload/results/
 
 # Logs
 *.log

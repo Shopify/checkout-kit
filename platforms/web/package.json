@@ -56,6 +56,8 @@
     "clean": "rm -rf dist sample/dist coverage",
     "build": "vite build && pnpm run build:manifest",
     "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' --outdir dist",
+    "benchmark:preload": "sitespeed.io benchmarks/preload/preload.sitespeed.cjs --browser chrome --browsertime.iterations ${CHECKOUT_KIT_BENCHMARK_ITERATIONS:-5} --outputFolder ${CHECKOUT_KIT_BENCHMARK_OUTPUT_FOLDER:-benchmarks/preload/results}",
+    "benchmark:preload:matrix": "bash benchmarks/preload/run-matrix.sh",
     "dev": "vite build --watch",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
@@ -80,12 +82,18 @@
     "oxfmt": "^0.47.0",
     "oxlint": "^1.62.0",
     "publint": "^0.3.12",
+    "sitespeed.io": "^41.2.1",
     "typescript": "5.9.3",
     "vite": "^7.3.2",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "^4.1.0"
   },
   "packageManager": "pnpm@10.33.1+sha512.05ba3c1d5d1c18f68df06470d74055e62d41fc110a0c660db1b2dfb2785327f04cf0f68345d4609bc52089e7fa0343c31593b2f9594e2c5d5da426230acc9820",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@sitespeed.io/chromedriver"
+    ]
+  },
   "engines": {
     "node": ">=22.14.0"
   },
