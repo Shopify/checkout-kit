@@ -121,9 +121,7 @@ class CheckoutWebView: WKWebView {
         isOpaque = false
         backgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
 
-        if #available(iOS 15.0, *) {
-            underPageBackgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
-        }
+        underPageBackgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
     }
 
     // MARK: -

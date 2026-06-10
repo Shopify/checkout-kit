@@ -64,10 +64,6 @@ extension UIApplication {
             .compactMap { $0 as? UIWindowScene }
             .filter { $0.activationState == .foregroundActive }
 
-        if #available(iOS 15.0, *) {
-            return activeScenes.compactMap(\.keyWindow).first
-        } else {
-            return activeScenes.flatMap(\.windows).first { $0.isKeyWindow }
-        }
+        return activeScenes.compactMap(\.keyWindow).first
     }
 }

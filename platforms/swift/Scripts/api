@@ -18,7 +18,7 @@ SWIFT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PACKAGE_ROOT="$(cd "$SWIFT_ROOT/../.." && pwd)"
 BASELINE_DIR="$SWIFT_ROOT/api"
 MODULES=(ShopifyCheckoutProtocol ShopifyCheckoutKit ShopifyAcceleratedCheckouts)
-TARGET="arm64-apple-ios13.0-simulator"
+TARGET="arm64-apple-ios15.0-simulator"
 
 if [[ ! -f "$PACKAGE_ROOT/Package.swift" ]]; then
     echo "Error: Package.swift not found at $PACKAGE_ROOT" >&2

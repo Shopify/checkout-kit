@@ -1,7 +1,6 @@
 @preconcurrency import ShopifyCheckoutKit
 import SwiftUI
 
-@available(iOS 15.0, *)
 struct LogsView: View {
     @State private var logs: [String?] = LogReader.shared.readLogs(limit: 100) ?? []
 
