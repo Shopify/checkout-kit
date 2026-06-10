@@ -20,6 +20,7 @@ import {
   CheckoutProtocol,
   type Configuration,
   type AcceleratedCheckoutConfiguration,
+  type AcceleratedCheckoutCustomer,
 } from '../src';
 import {__resetDispatchEventParityForTests} from '../src/dispatch-events';
 import type {ApplePayContactField} from '../src/index.d';
@@ -49,6 +50,53 @@ beforeEach(() => {
   NativeModule.getConstants.mockReturnValue({
     version: '0.7.0',
     dispatchEventTypes: ['close', 'fail', 'geolocationRequest'],
+  });
+});
+
+describe('Type contracts', () => {
+  it('rejects invalid AcceleratedCheckoutCustomer shapes at compile time', () => {
+    const acceptsCustomer = (customer: AcceleratedCheckoutCustomer) => customer;
+    const acceptsConfiguration = (configuration: Configuration) =>
+      configuration;
+
+    expect(acceptsCustomer({accessToken: 'customer-access-token'})).toEqual({
+      accessToken: 'customer-access-token',
+    });
+    expect(
+      acceptsCustomer({email: 'test@example.com', phoneNumber: '+1234567890'}),
+    ).toEqual({email: 'test@example.com', phoneNumber: '+1234567890'});
+
+    expect(
+      acceptsConfiguration({
+        acceleratedCheckouts: {
+          storefrontDomain: 'test-shop.myshopify.com',
+          storefrontAccessToken: 'shpat_test_token',
+          customer: {
+            email: 'test@example.com',
+            phoneNumber: '+1234567890',
+          },
+        },
+      }).acceleratedCheckouts?.customer,
+    ).toEqual({email: 'test@example.com', phoneNumber: '+1234567890'});
+
+    expect(
+      acceptsConfiguration({
+        acceleratedCheckouts: {
+          storefrontDomain: 'test-shop.myshopify.com',
+          storefrontAccessToken: 'shpat_test_token',
+          customer: {
+            accessToken: 'customer-access-token',
+          },
+        },
+      }).acceleratedCheckouts?.customer,
+    ).toEqual({accessToken: 'customer-access-token'});
+
+    // @ts-expect-error - accessToken cannot be mixed with contact fields.
+    acceptsCustomer({
+      accessToken: 'customer-access-token',
+      email: 'test@example.com',
+      phoneNumber: '+1234567890',
+    });
   });
 });
 
@@ -759,7 +807,6 @@ describe('ShopifyCheckoutKit', () => {
       customer: {
         email: 'test@example.com',
         phoneNumber: '+1234567890',
-        accessToken: 'customer-access-token',
       },
       wallets: {
         applePay: {
@@ -777,7 +824,7 @@ describe('ShopifyCheckoutKit', () => {
     });
 
     describe('configureAcceleratedCheckouts', () => {
-      it('calls native configureAcceleratedCheckouts with correct parameters on iOS', async () => {
+      it('calls native configureAcceleratedCheckouts with contact customer fields on iOS', async () => {
         const instance = new ShopifyCheckout();
         NativeModule.configureAcceleratedCheckouts.mockReturnValue(true);
 
@@ -790,6 +837,30 @@ describe('ShopifyCheckoutKit', () => {
           'shpat_test_token',
           'test@example.com',
           '+1234567890',
+          null,
+          'merchant.com.test',
+          ['email', 'phone'],
+          [],
+        );
+      });
+
+      it('calls native configureAcceleratedCheckouts with authenticated customer access token on iOS', async () => {
+        const instance = new ShopifyCheckout();
+        NativeModule.configureAcceleratedCheckouts.mockReturnValue(true);
+
+        const result = instance.configureAcceleratedCheckouts({
+          ...acceleratedConfig,
+          customer: {
+            accessToken: 'customer-access-token',
+          },
+        });
+
+        expect(result).toBe(true);
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledWith(
+          'test-shop.myshopify.com',
+          'shpat_test_token',
+          null,
+          null,
           'customer-access-token',
           'merchant.com.test',
           ['email', 'phone'],
@@ -857,6 +928,57 @@ describe('ShopifyCheckoutKit', () => {
         };
 
         const expectedError = new Error('`storefrontAccessToken` is required');
+
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
+        expect(console.error).toHaveBeenCalledWith(
+          '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
+          expectedError,
+        );
+      });
+
+      it('validates mixed customer access token and contact fields', async () => {
+        const instance = new ShopifyCheckout();
+        const invalidConfig: AcceleratedCheckoutConfiguration = {
+          ...acceleratedConfig,
+          customer: {
+            email: 'test@example.com',
+            phoneNumber: '+1234567890',
+            // @ts-expect-error - accessToken cannot be mixed with contact fields.
+            accessToken: 'customer-access-token',
+          },
+        };
+
+        const expectedError = new Error(
+          '`customer` must contain either `accessToken` or both `email` and `phoneNumber`, but not both',
+        );
+
+        expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
+          false,
+        );
+        expect(console.error).toHaveBeenCalledWith(
+          '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
+          expectedError,
+        );
+      });
+
+      it('validates mixed customer fields by property presence', async () => {
+        const instance = new ShopifyCheckout();
+        const invalidConfig: AcceleratedCheckoutConfiguration = {
+          ...acceleratedConfig,
+          customer: {
+            accessToken: '',
+            // @ts-expect-error - accessToken cannot be mixed with contact fields.
+            email: '',
+            // @ts-expect-error - accessToken cannot be mixed with contact fields.
+            phoneNumber: '',
+          },
+        };
+
+        const expectedError = new Error(
+          '`customer` must contain either `accessToken` or both `email` and `phoneNumber`, but not both',
+        );
 
         expect(instance.configureAcceleratedCheckouts(invalidConfig)).toBe(
           false,
@@ -974,7 +1096,7 @@ describe('ShopifyCheckoutKit', () => {
           'shpat_test_token',
           'test@example.com',
           '+1234567890',
-          'customer-access-token',
+          null,
           'merchant.test.com',
           [],
           [],
@@ -1000,7 +1122,7 @@ describe('ShopifyCheckoutKit', () => {
           'shpat_test_token',
           'test@example.com',
           '+1234567890',
-          'customer-access-token',
+          null,
           'merchant.test.com',
           [],
           ['IE', 'CA'],

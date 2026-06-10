@@ -266,7 +266,7 @@ function AccountStackScreen() {
 
 function AppWithCheckoutKit({children}: PropsWithChildren) {
   const {appConfig} = useConfig();
-  const {isAuthenticated, customerEmail, getValidAccessToken} = useAuth();
+  const {isAuthenticated, getValidAccessToken} = useAuth();
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   const fetchAccessToken = useCallback(async () => {
@@ -339,6 +339,20 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
   }, [appConfig.colorScheme, updatedColors]);
 
   const checkoutKitConfig: Configuration = useMemo(() => {
+    const customer =
+      appConfig.buyerIdentityMode === BuyerIdentityMode.Hardcoded
+        ? {
+            email: env.EMAIL!,
+            phoneNumber: env.PHONE!,
+          }
+        : appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount &&
+            isAuthenticated &&
+            accessToken
+          ? {
+              accessToken,
+            }
+          : undefined;
+
     return {
       ...checkoutKitConfigDefaults,
       ...checkoutKitThemeConfig,
@@ -360,22 +374,12 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
         storefrontDomain: env.STOREFRONT_DOMAIN!,
         storefrontAccessToken: env.STOREFRONT_ACCESS_TOKEN!,
         /**
-         * We're reading the customer email and phone number from the environment variables here,
-         * but in a real app you would derive these values from your backend.
+         * We're reading the hardcoded customer email and phone number from the
+         * environment variables here, but in a real app you would derive these
+         * values from your backend. Customer Account mode provides only the
+         * authenticated access token.
          */
-        customer:
-          appConfig.buyerIdentityMode === BuyerIdentityMode.Hardcoded
-            ? {
-                email: env.EMAIL!,
-                phoneNumber: env.PHONE!,
-              }
-            : appConfig.buyerIdentityMode ===
-                  BuyerIdentityMode.CustomerAccount && isAuthenticated
-              ? {
-                  email: customerEmail ?? undefined,
-                  accessToken: accessToken ?? undefined,
-                }
-              : undefined,
+        customer,
         wallets: {
           applePay: {
             contactFields: [
@@ -387,7 +391,7 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
         },
       },
     } as Configuration;
-  }, [appConfig, checkoutKitThemeConfig, isAuthenticated, customerEmail, accessToken]);
+  }, [appConfig, checkoutKitThemeConfig, isAuthenticated, accessToken]);
 
   return (
     <ShopifyCheckoutProvider

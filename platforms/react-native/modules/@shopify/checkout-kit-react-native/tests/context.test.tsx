@@ -94,7 +94,6 @@ describe('ShopifyCheckoutProvider', () => {
         customer: {
           email: 'test@example.com',
           phoneNumber: '+123',
-          accessToken: 'customer-access-token',
         },
         wallets: {
           applePay: {
@@ -122,7 +121,7 @@ describe('ShopifyCheckoutProvider', () => {
       'shpat_test_token',
       'test@example.com',
       '+123',
-      'customer-access-token',
+      null,
       'merchant.test',
       ['email'],
       [],

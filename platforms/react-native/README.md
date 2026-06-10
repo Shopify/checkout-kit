@@ -833,13 +833,16 @@ const config = {
   acceleratedCheckouts: {
     storefrontDomain: 'your-shop.myshopify.com',
     storefrontAccessToken: 'your-storefront-access-token',
+    // Identify the buyer using exactly one of the supported modes:
     customer: {
-      // For authenticated customers
+      // For buyers authenticated with Shopify Customer Accounts
       accessToken: 'customer-access-token',
-      // OR for guest customers
-      // email: 'customer@example.com',
-      // phoneNumber: '0123456789',
     },
+    // OR, for buyers identified by contact fields:
+    // customer: {
+    //   email: 'customer@example.com',
+    //   phoneNumber: '0123456789',
+    // },
     wallets: {
       applePay: {
         merchantIdentifier: 'merchant.com.yourcompany',
@@ -860,8 +863,7 @@ function App() {
 }
 ```
 
-> [!WARNING]
-> Do not provide both `accessToken` and `email`/`phoneNumber` together. For authenticated customers, email and phone are fetched automatically from the Shopify account.
+`customer` accepts either `{accessToken}` for authenticated Customer Account buyers, or `{email, phoneNumber}` for contact-field identification. These modes are mutually exclusive.
 
 ### Render accelerated checkout buttons
 
