@@ -66405,43 +66405,6 @@
             "funcSelfKind": "NonMutating"
           },
           {
-            "kind": "Var",
-            "name": "hashValue",
-            "printedName": "hashValue",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Int",
-                "printedName": "Swift.Int",
-                "usr": "s:Si"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol8JSONNullC9hashValueSivp",
-            "mangledName": "$s23ShopifyCheckoutProtocol8JSONNullC9hashValueSivp",
-            "moduleName": "ShopifyCheckoutProtocol",
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Int",
-                    "printedName": "Swift.Int",
-                    "usr": "s:Si"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol8JSONNullC9hashValueSivg",
-                "mangledName": "$s23ShopifyCheckoutProtocol8JSONNullC9hashValueSivg",
-                "moduleName": "ShopifyCheckoutProtocol",
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
             "kind": "Function",
             "name": "hash",
             "printedName": "hash(into:)",
@@ -66463,6 +66426,9 @@
             "usr": "s:23ShopifyCheckoutProtocol8JSONNullC4hash4intoys6HasherVz_tF",
             "mangledName": "$s23ShopifyCheckoutProtocol8JSONNullC4hash4intoys6HasherVz_tF",
             "moduleName": "ShopifyCheckoutProtocol",
+            "declAttributes": [
+              "Final"
+            ],
             "funcSelfKind": "NonMutating"
           },
           {
@@ -66532,14 +66498,65 @@
             "usr": "s:23ShopifyCheckoutProtocol8JSONNullC6encode2toys7Encoder_p_tKF",
             "mangledName": "$s23ShopifyCheckoutProtocol8JSONNullC6encode2toys7Encoder_p_tKF",
             "moduleName": "ShopifyCheckoutProtocol",
+            "declAttributes": [
+              "Final"
+            ],
             "throwing": true,
             "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Var",
+            "name": "hashValue",
+            "printedName": "hashValue",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCheckoutProtocol8JSONNullC9hashValueSivp",
+            "mangledName": "$s23ShopifyCheckoutProtocol8JSONNullC9hashValueSivp",
+            "moduleName": "ShopifyCheckoutProtocol",
+            "implicit": true,
+            "declAttributes": [
+              "Final"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCheckoutProtocol8JSONNullC9hashValueSivg",
+                "mangledName": "$s23ShopifyCheckoutProtocol8JSONNullC9hashValueSivg",
+                "moduleName": "ShopifyCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
           }
         ],
         "declKind": "Class",
         "usr": "s:23ShopifyCheckoutProtocol8JSONNullC",
         "mangledName": "$s23ShopifyCheckoutProtocol8JSONNullC",
         "moduleName": "ShopifyCheckoutProtocol",
+        "declAttributes": [
+          "Final"
+        ],
         "conformances": [
           {
             "kind": "Conformance",
@@ -66564,10 +66581,24 @@
           },
           {
             "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           },
           {
             "kind": "Conformance",
@@ -66685,6 +66716,9 @@
             "usr": "s:23ShopifyCheckoutProtocol7JSONAnyC6encode2toys7Encoder_p_tKF",
             "mangledName": "$s23ShopifyCheckoutProtocol7JSONAnyC6encode2toys7Encoder_p_tKF",
             "moduleName": "ShopifyCheckoutProtocol",
+            "declAttributes": [
+              "Final"
+            ],
             "throwing": true,
             "funcSelfKind": "NonMutating"
           }
@@ -66693,6 +66727,9 @@
         "usr": "s:23ShopifyCheckoutProtocol7JSONAnyC",
         "mangledName": "$s23ShopifyCheckoutProtocol7JSONAnyC",
         "moduleName": "ShopifyCheckoutProtocol",
+        "declAttributes": [
+          "Final"
+        ],
         "conformances": [
           {
             "kind": "Conformance",
@@ -66707,6 +66744,20 @@
             "printedName": "Encodable",
             "usr": "s:SE",
             "mangledName": "$sSE"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           },
           {
             "kind": "Conformance",

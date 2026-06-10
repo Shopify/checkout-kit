@@ -2630,6 +2630,20 @@
           },
           {
             "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -5353,6 +5367,9 @@
         "usr": "s:18ShopifyCheckoutKit13configurationAA13ConfigurationVvp",
         "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvp",
         "moduleName": "ShopifyCheckoutKit",
+        "declAttributes": [
+          "Nonisolated"
+        ],
         "accessors": [
           {
             "kind": "Accessor",

@@ -3,7 +3,7 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 @MainActor
-class WalletController: ObservableObject {
+class WalletController: ObservableObject, @unchecked Sendable {
     @Published var identifier: CheckoutIdentifier
     @Published var storefront: StorefrontAPIProtocol
     @Published var checkoutViewController: CheckoutViewController?

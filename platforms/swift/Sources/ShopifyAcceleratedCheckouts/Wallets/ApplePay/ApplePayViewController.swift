@@ -14,7 +14,7 @@ protocol PayController: AnyObject {
 
 @available(iOS 16.0, *)
 @MainActor
-class ApplePayViewController: WalletController, PayController {
+class ApplePayViewController: WalletController, PayController, @unchecked Sendable {
     @Published var paymentController: PKPaymentAuthorizationController?
 
     var cart: StorefrontAPI.Types.Cart?

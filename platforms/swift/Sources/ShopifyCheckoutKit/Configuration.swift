@@ -1,6 +1,6 @@
 import UIKit
 
-public struct Platform: Equatable {
+public struct Platform: Equatable, Sendable {
     public let identifier: String
     public let version: String?
 

@@ -3,7 +3,7 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 @MainActor
-class ShopPayViewController: WalletController {
+class ShopPayViewController: WalletController, @unchecked Sendable {
     var eventHandlers: EventHandlers
     var client: (any CheckoutCommunicationProtocol)?
 
