@@ -13,6 +13,7 @@ public enum UserAgent {
         if let swiftVersion = SwiftVersion.current {
             parameters.append(" \(swiftVersion)")
         }
+        parameters.append(";iOSVersion/\(UIDevice.current.systemVersion)")
 
         var userAgentString = "\(baseUserAgent) (\(parameters))"
 

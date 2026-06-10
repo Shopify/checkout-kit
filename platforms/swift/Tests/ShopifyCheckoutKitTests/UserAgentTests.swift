@@ -1,14 +1,19 @@
 @testable import ShopifyCheckoutKit
+import UIKit
 import XCTest
 
 class UserAgentTests: XCTestCase {
+    private var expectedParameters: String {
+        "iOS;Swift \(SwiftVersion.current!);iOSVersion/\(UIDevice.current.systemVersion)"
+    }
+
     func test_string_withAcceleratedCheckoutsEntryPoint_shouldReturnCorrectUserAgent() {
         let acceleratedCheckoutsUA = UserAgent.string(
             entryPoint: .acceleratedCheckouts
         )
         XCTAssertEqual(
             acceleratedCheckoutsUA,
-            "ShopifyCheckoutKit/4.0.0-alpha.1 (iOS;Swift \(SwiftVersion.current!)) AcceleratedCheckouts"
+            "ShopifyCheckoutKit/4.0.0-alpha.1 (\(expectedParameters)) AcceleratedCheckouts"
         )
     }
 
@@ -19,7 +24,7 @@ class UserAgentTests: XCTestCase {
         )
         XCTAssertEqual(
             acceleratedCheckoutsUA,
-            "ShopifyCheckoutKit/4.0.0-alpha.1 (iOS;Swift \(SwiftVersion.current!)) ReactNative AcceleratedCheckouts"
+            "ShopifyCheckoutKit/4.0.0-alpha.1 (\(expectedParameters)) ReactNative AcceleratedCheckouts"
         )
     }
 
@@ -30,14 +35,19 @@ class UserAgentTests: XCTestCase {
         )
         XCTAssertEqual(
             acceleratedCheckoutsUA,
-            "ShopifyCheckoutKit/4.0.0-alpha.1 (iOS;Swift \(SwiftVersion.current!)) ReactNative/0.74.5 AcceleratedCheckouts"
+            "ShopifyCheckoutKit/4.0.0-alpha.1 (\(expectedParameters)) ReactNative/0.74.5 AcceleratedCheckouts"
         )
     }
 
     func test_string_withoutEntryPoint_shouldReturnBasicUserAgent() {
         let checkoutKitUA = UserAgent.string()
         XCTAssertEqual(
-            checkoutKitUA, "ShopifyCheckoutKit/4.0.0-alpha.1 (iOS;Swift \(SwiftVersion.current!))"
+            checkoutKitUA, "ShopifyCheckoutKit/4.0.0-alpha.1 (\(expectedParameters))"
         )
+    }
+
+    func test_string_shouldIncludeRuntimeIOSVersion() {
+        let checkoutKitUA = UserAgent.string()
+        XCTAssertTrue(checkoutKitUA.contains("iOSVersion/\(UIDevice.current.systemVersion)"))
     }
 }
