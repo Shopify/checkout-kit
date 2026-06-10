@@ -12,10 +12,13 @@ extension CheckoutProtocol {
             return url
         }
         var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == "ec_version" || $0.name == "ec_delegate" }
+
         queryItems.append(URLQueryItem(name: "ec_version", value: specVersion))
         if !delegations.isEmpty {
             queryItems.append(URLQueryItem(name: "ec_delegate", value: delegations.joined(separator: ",")))
         }
+
         components.queryItems = queryItems
         return components.url ?? url
     }

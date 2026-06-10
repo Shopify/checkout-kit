@@ -161,6 +161,20 @@ describe("<shopify-checkout>", () => {
       expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
     });
 
+    it("replaces caller-supplied ec_* parameters", () => {
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_version=stale&ec_delegate=custom",
+      });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.getAll("ec_version")).toEqual([EMBED_PROTOCOL_VERSION]);
+      expect(url.searchParams.getAll("ec_delegate")).toEqual(["window.open"]);
+    });
+
     it("strips ec_auth from src when the incoming checkout URL includes it", () => {
       const checkout = renderCheckout({
         src: "https://example.com/checkout?ec_auth=should-not-propagate&keep=1",

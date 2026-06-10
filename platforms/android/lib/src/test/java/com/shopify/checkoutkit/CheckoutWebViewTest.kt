@@ -220,14 +220,17 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `loadCheckout does not duplicate ec_version when already present`() {
+    fun `loadCheckout replaces ec_version when already present`() {
         val view = CheckoutWebView(activity)
-        val urlWithVersion = "https://checkout.shopify.com/cart/123?ec_version=2026-01-23"
+        val callerSuppliedVersion = "2026-01-23"
+        val urlWithVersion = "https://checkout.shopify.com/cart/123?ec_version=$callerSuppliedVersion"
+
         view.loadCheckout(urlWithVersion)
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         val loadedUrl = shadowOf(view).lastLoadedUrl!!
-        assertThat(loadedUrl).contains("ec_version=2026-01-23")
+        assertThat(loadedUrl).contains("ec_version=${CheckoutProtocol.SPEC_VERSION}")
+        assertThat(loadedUrl).doesNotContain("ec_version=$callerSuppliedVersion")
         assertThat(loadedUrl.split("ec_version").size - 1).isEqualTo(1)
     }
 
@@ -245,13 +248,17 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `loadCheckout does not duplicate ec_delegate when already present`() {
+    fun `loadCheckout replaces ec_delegate when already present`() {
         val view = CheckoutWebView(activity)
-        view.loadCheckout("https://checkout.shopify.com/cart/123?ec_delegate=window.open")
+        val callerSuppliedDelegate = "custom"
+        val urlWithDelegate = "https://checkout.shopify.com/cart/123?ec_delegate=$callerSuppliedDelegate"
+
+        view.loadCheckout(urlWithDelegate)
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         val loadedUrl = shadowOf(view).lastLoadedUrl!!
         assertThat(loadedUrl).contains("ec_delegate=window.open")
+        assertThat(loadedUrl).doesNotContain("ec_delegate=$callerSuppliedDelegate")
         assertThat(loadedUrl.split("ec_delegate").size - 1).isEqualTo(1)
     }
 

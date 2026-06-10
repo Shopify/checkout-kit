@@ -41,4 +41,29 @@ struct CheckoutProtocolURLTests {
         #expect(items.contains(URLQueryItem(name: "utm_source", value: "email")))
         #expect(items.contains(URLQueryItem(name: "ec_version", value: CheckoutProtocol.specVersion)))
     }
+
+    @Test func replacesCallerSuppliedProtocolQueryItems() throws {
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=stale&ec_delegate=custom"))
+        let items = queryItems(CheckoutProtocol.url(for: url))
+
+        #expect(items.filter { $0.name == "ec_version" }.map(\.value) == [CheckoutProtocol.specVersion])
+        #expect(items.filter { $0.name == "ec_delegate" }.map(\.value) == ["window.open"])
+    }
+
+    @Test func isIdempotentOnRecall() {
+        let once = CheckoutProtocol.url(for: baseURL)
+        let twice = CheckoutProtocol.url(for: once)
+        let items = queryItems(twice)
+
+        #expect(items.filter { $0.name == "ec_version" }.count == 1)
+        #expect(items.filter { $0.name == "ec_delegate" }.count == 1)
+    }
+
+    @Test func removesExistingDelegationWhenDelegationsAreEmpty() throws {
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_delegate=custom"))
+        let items = queryItems(CheckoutProtocol.url(for: url, delegations: []))
+
+        #expect(items.contains(URLQueryItem(name: "ec_version", value: CheckoutProtocol.specVersion)))
+        #expect(!items.contains { $0.name == "ec_delegate" })
+    }
 }
