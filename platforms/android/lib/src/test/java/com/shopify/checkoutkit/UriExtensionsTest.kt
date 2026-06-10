@@ -86,11 +86,11 @@ class UriExtensionsTest {
     }
 
     @Test
-    fun `appendEcpParams does not overwrite caller-supplied ECP params`() {
+    fun `appendEcpParams replaces caller-supplied ECP params`() {
         val url = "$BASE_URL?ec_version=override&ec_delegate=custom"
         val result = url.appendEcpParams(SPEC_VERSION).toUri()
-        assertThat(result.getQueryParameter("ec_version")).isEqualTo("override")
-        assertThat(result.getQueryParameter("ec_delegate")).isEqualTo("custom")
+        assertThat(result.getQueryParameters("ec_version")).containsExactly(SPEC_VERSION)
+        assertThat(result.getQueryParameters("ec_delegate")).containsExactly("window.open")
     }
 
     private companion object {

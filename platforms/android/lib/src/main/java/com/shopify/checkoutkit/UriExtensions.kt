@@ -13,21 +13,27 @@ internal fun Uri?.isConfirmationPage(): Boolean =
     this?.pathSegments?.any { CONFIRMATION_PATH_REGEX.matches(it) } == true
 
 /**
- * Appends Embedded Checkout Protocol query parameters to a checkout URL, leaving any
- * params already present on the URL untouched. Idempotent on re-call.
+ * Applies Embedded Checkout Protocol query parameters to a checkout URL, replacing
+ * any existing SDK-owned protocol params. Idempotent on re-call.
  *
  * - `ec_version`   — the ECP spec version the SDK speaks
  * - `ec_delegate`  — fixed to `window.open` so checkout delegates link opens to the bridge
  */
 internal fun String.appendEcpParams(specVersion: String): String {
     val uri = this.toUri()
-    val builder = uri.buildUpon()
-    if (uri.getQueryParameter(EC_VERSION_PARAM) == null) {
-        builder.appendQueryParameter(EC_VERSION_PARAM, specVersion)
-    }
-    if (uri.getQueryParameter(EC_DELEGATE_PARAM) == null) {
-        builder.appendQueryParameter(EC_DELEGATE_PARAM, EC_DELEGATE_VALUE)
-    }
+    val builder = uri.buildUpon().clearQuery()
+
+    uri.queryParameterNames
+        .filterNot { it == EC_VERSION_PARAM || it == EC_DELEGATE_PARAM }
+        .forEach { name ->
+            uri.getQueryParameters(name).forEach { value ->
+                builder.appendQueryParameter(name, value)
+            }
+        }
+
+    builder.appendQueryParameter(EC_VERSION_PARAM, specVersion)
+    builder.appendQueryParameter(EC_DELEGATE_PARAM, EC_DELEGATE_VALUE)
+
     return builder.build().toString()
 }
 
