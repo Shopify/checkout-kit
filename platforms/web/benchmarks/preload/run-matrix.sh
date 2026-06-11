@@ -335,7 +335,19 @@ const metrics = [
   "popupCheckoutInertDurationMs",
   "preloadEndpointStartBeforeOpenMs",
   "preloadEndpointResponseBeforeOpenMs",
+  "linkCount",
+  "preconnectCount",
+  "dnsPrefetchCount",
+  "prefetchCount",
+  "allLinkCount",
+  "allPreconnectCount",
+  "allDnsPrefetchCount",
+  "allPrefetchCount",
   "preloadScriptCount",
+  "endpointSuppressedLinkCount",
+  "endpointSuppressedPreconnectCount",
+  "endpointSuppressedDnsPrefetchCount",
+  "endpointLinkSuppressorActive",
 ];
 
 function percentile(values, p) {

@@ -237,6 +237,147 @@ async function prepareArm(commands, arm, leadTimeMs) {
         document.head.appendChild(dnsPrefetch);
       }
     `);
+  } else if (arm === "endpoint_execute_direct" || arm === "endpoint_execute_assets_only") {
+    const suppressConnectionHints = arm === "endpoint_execute_assets_only";
+    await commands.js.run(`
+      const checkout = document.querySelector('shopify-checkout');
+      if (!checkout) throw new Error('shopify-checkout element not found');
+
+      const checkoutUrl = new URL(checkout.src);
+      const preloadUrl = new URL('/checkouts/internal/preloads.js', checkoutUrl.origin);
+      const locale = checkoutUrl.searchParams.get('locale');
+      const configurationId =
+        checkoutUrl.searchParams.get('configuration_id') ??
+        checkoutUrl.searchParams.get('base_configuration_id');
+      const editedAt = checkoutUrl.searchParams.get('edited_at');
+
+      if (locale) preloadUrl.searchParams.set('locale', locale);
+      if (configurationId) preloadUrl.searchParams.set('configuration_id', configurationId);
+      if (editedAt) preloadUrl.searchParams.set('edited_at', editedAt);
+
+      if (${JSON.stringify(suppressConnectionHints)}) {
+        window.__checkoutKitEndpointLinkSuppressor?.restore?.();
+
+        const metrics = window.__checkoutKitBenchmark;
+        metrics.endpointSuppressedLinkCount = 0;
+        metrics.endpointSuppressedPreconnectCount = 0;
+        metrics.endpointSuppressedDnsPrefetchCount = 0;
+
+        const originals = {
+          appendChild: Node.prototype.appendChild,
+          insertBefore: Node.prototype.insertBefore,
+          replaceChild: Node.prototype.replaceChild,
+          append: Element.prototype.append,
+          prepend: Element.prototype.prepend
+        };
+        const suppressedNodes = new WeakSet();
+
+        const relTokens = (node) =>
+          node instanceof HTMLLinkElement ? node.rel.split(/\\s+/).filter(Boolean) : [];
+        const shouldSuppress = (node) => {
+          const tokens = relTokens(node);
+          return tokens.includes('preconnect') || tokens.includes('dns-prefetch');
+        };
+        const recordSuppressed = (node) => {
+          if (suppressedNodes.has(node)) return;
+          suppressedNodes.add(node);
+          const tokens = relTokens(node);
+          metrics.endpointSuppressedLinkCount += 1;
+          if (tokens.includes('preconnect')) metrics.endpointSuppressedPreconnectCount += 1;
+          if (tokens.includes('dns-prefetch')) metrics.endpointSuppressedDnsPrefetchCount += 1;
+        };
+        const suppressNode = (node) => {
+          if (shouldSuppress(node)) {
+            recordSuppressed(node);
+            node.remove?.();
+            return true;
+          }
+
+          if (node instanceof Element) {
+            for (const link of node.querySelectorAll('link')) {
+              if (shouldSuppress(link)) {
+                recordSuppressed(link);
+                link.remove();
+              }
+            }
+          }
+
+          return false;
+        };
+        const filterNodes = (nodes) => {
+          const kept = [];
+          for (const node of nodes) {
+            if (!suppressNode(node)) {
+              kept.push(node);
+            }
+          }
+          return kept;
+        };
+
+        Node.prototype.appendChild = function checkoutKitBenchmarkAppendChild(node) {
+          if (suppressNode(node)) {
+            return node;
+          }
+          return originals.appendChild.call(this, node);
+        };
+        Node.prototype.insertBefore = function checkoutKitBenchmarkInsertBefore(node, child) {
+          if (suppressNode(node)) {
+            return node;
+          }
+          return originals.insertBefore.call(this, node, child);
+        };
+        Node.prototype.replaceChild = function checkoutKitBenchmarkReplaceChild(node, child) {
+          if (suppressNode(node)) {
+            return child;
+          }
+          return originals.replaceChild.call(this, node, child);
+        };
+        Element.prototype.append = function checkoutKitBenchmarkAppend(...nodes) {
+          return originals.append.apply(this, filterNodes(nodes));
+        };
+        Element.prototype.prepend = function checkoutKitBenchmarkPrepend(...nodes) {
+          return originals.prepend.apply(this, filterNodes(nodes));
+        };
+
+        const observer = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            if (mutation.type === 'childList') {
+              for (const node of mutation.addedNodes) {
+                suppressNode(node);
+              }
+            } else if (mutation.type === 'attributes') {
+              suppressNode(mutation.target);
+            }
+          }
+        });
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['rel'],
+          childList: true,
+          subtree: true
+        });
+
+        window.__checkoutKitEndpointLinkSuppressor = {
+          restore() {
+            observer.disconnect();
+            Node.prototype.appendChild = originals.appendChild;
+            Node.prototype.insertBefore = originals.insertBefore;
+            Node.prototype.replaceChild = originals.replaceChild;
+            Element.prototype.append = originals.append;
+            Element.prototype.prepend = originals.prepend;
+            window.__checkoutKitEndpointLinkSuppressor = undefined;
+          }
+        };
+      }
+
+      const script = document.createElement('script');
+      script.src = preloadUrl.href;
+      script.async = true;
+      script.crossOrigin = '';
+      script.dataset.shopifyCheckoutPreload = '';
+      script.dataset.shopifyCheckoutBenchmarkArm = ${JSON.stringify(arm)};
+      document.head.appendChild(script);
+    `);
   } else if (arm !== "none") {
     const executePreloadScript =
       arm === "preload_execute" || arm === "preload_execute_speculation";
@@ -257,6 +398,13 @@ async function prepareArm(commands, arm, leadTimeMs) {
       `return new Promise((resolve) => setTimeout(resolve, ${JSON.stringify(leadTimeMs)}));`,
     );
   }
+
+  if (arm === "endpoint_execute_assets_only") {
+    await commands.js.run(`
+      window.__checkoutKitBenchmark.endpointLinkSuppressorActive =
+        window.__checkoutKitEndpointLinkSuppressor ? 1 : 0;
+    `);
+  }
 }
 
 async function collectPreloadState(commands) {
@@ -264,6 +412,11 @@ async function collectPreloadState(commands) {
     const links = [
       ...document.head.querySelectorAll('link[data-shopify-checkout-preload=""]')
     ].map((link) => ({
+      rel: link.rel,
+      href: link.href,
+      as: link.as
+    }));
+    const allLinks = [...document.head.querySelectorAll('link')].map((link) => ({
       rel: link.rel,
       href: link.href,
       as: link.as
@@ -284,6 +437,20 @@ async function collectPreloadState(commands) {
       preconnectCount: links.filter((link) => link.rel.includes('preconnect')).length,
       dnsPrefetchCount: links.filter((link) => link.rel.includes('dns-prefetch')).length,
       prefetchCount: links.filter((link) => link.rel.split(/\\s+/).includes('prefetch')).length,
+      allLinkCount: allLinks.length,
+      allPreconnectCount: allLinks.filter((link) => link.rel.includes('preconnect')).length,
+      allDnsPrefetchCount: allLinks.filter((link) => link.rel.includes('dns-prefetch')).length,
+      allPrefetchCount: allLinks.filter((link) =>
+        link.rel.split(/\\s+/).includes('prefetch')
+      ).length,
+      endpointSuppressedLinkCount:
+        window.__checkoutKitBenchmark?.endpointSuppressedLinkCount ?? 0,
+      endpointSuppressedPreconnectCount:
+        window.__checkoutKitBenchmark?.endpointSuppressedPreconnectCount ?? 0,
+      endpointSuppressedDnsPrefetchCount:
+        window.__checkoutKitBenchmark?.endpointSuppressedDnsPrefetchCount ?? 0,
+      endpointLinkSuppressorActive:
+        window.__checkoutKitBenchmark?.endpointLinkSuppressorActive ?? 0,
       preloadScriptCount: document.head.querySelectorAll(
         'script[src*="/checkouts/internal/preloads.js"][data-shopify-checkout-preload=""]'
       ).length,
@@ -703,10 +870,12 @@ module.exports = async function checkoutPreloadBenchmark(context, commands) {
       "preload_speculation",
       "preload_execute",
       "preload_execute_speculation",
+      "endpoint_execute_direct",
+      "endpoint_execute_assets_only",
     ].includes(arm)
   ) {
     throw new Error(
-      `Unsupported CHECKOUT_KIT_BENCHMARK_ARM=${arm}. Expected none, preconnect, preload, preload_speculation, preload_execute, or preload_execute_speculation.`,
+      `Unsupported CHECKOUT_KIT_BENCHMARK_ARM=${arm}. Expected none, preconnect, preload, preload_speculation, preload_execute, preload_execute_speculation, endpoint_execute_direct, or endpoint_execute_assets_only.`,
     );
   }
 

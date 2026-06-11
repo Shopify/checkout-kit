@@ -77,6 +77,18 @@ Do not paste real storefront tokens or sensitive generated config into logs.
 - `preload_execute_speculation`: calls
   `checkout.preload({executePreloadScript: true, speculationRules: true})`,
   waits for the configured lead time, then opens checkout.
+- `endpoint_execute_direct`: benchmark-only isolation arm. Injects
+  `/checkouts/internal/preloads.js` directly without calling
+  `checkout.preload()`, waits for the configured lead time, then opens checkout.
+  This strips out SDK-added connection hints, but the endpoint script can still
+  append its own hints.
+- `endpoint_execute_assets_only`: benchmark-only diagnostic arm. Injects
+  `/checkouts/internal/preloads.js` directly while suppressing `preconnect` and
+  `dns-prefetch` links appended by the endpoint script, waits for the configured
+  lead time, then opens checkout. This is intentionally artificial and exists to
+  estimate whether endpoint asset hints help separately from endpoint connection
+  hints. The suppression stays active for the sample so late endpoint script
+  execution cannot add connection hints during popup loading.
 
 ## Environment
 
@@ -115,6 +127,8 @@ Do not paste real storefront tokens or sensitive generated config into logs.
 - `CHECKOUT_KIT_BENCHMARK_ARMS` defaults to
   `none preconnect preload preload_speculation preload_execute preload_execute_speculation`
   for the matrix runner.
+  For endpoint attribution, use:
+  `none preconnect endpoint_execute_direct endpoint_execute_assets_only preload_execute`.
 - `CHECKOUT_KIT_BENCHMARK_MATRIX_OUTPUT_DIR` can override the matrix output
   directory.
 
@@ -181,7 +195,18 @@ version:
 - `popupLoadingShellApproxVisibleDurationMs`
 - `leadTimeMs`
 - `linkCount`
+- `preconnectCount`
+- `dnsPrefetchCount`
+- `prefetchCount`
+- `allLinkCount`
+- `allPreconnectCount`
+- `allDnsPrefetchCount`
+- `allPrefetchCount`
 - `preloadScriptCount`
+- `endpointSuppressedLinkCount`
+- `endpointSuppressedPreconnectCount`
+- `endpointSuppressedDnsPrefetchCount`
+- `endpointLinkSuppressorActive`
 - `speculationRulesCount`
 
 ## Notes
