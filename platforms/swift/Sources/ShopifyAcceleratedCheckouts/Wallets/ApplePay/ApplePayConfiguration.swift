@@ -1,10 +1,9 @@
-import Foundation
-import PassKit
+import SwiftUI
 
 @available(iOS 16.0, *)
 extension ShopifyAcceleratedCheckouts {
     /// Contact field types that can be required during Apple Pay checkout.
-    public enum RequiredContactFields: String {
+    public enum RequiredContactFields: String, Sendable {
         case email
         case phone
     }
@@ -14,7 +13,7 @@ extension ShopifyAcceleratedCheckouts {
     /// This class encapsulates all necessary settings for enabling Apple Pay as a payment method,
     /// including merchant identification and required contact information. Supported payment networks
     /// are automatically determined based on the merchant's Shopify configuration.
-    public class ApplePayConfiguration: ObservableObject, Copyable {
+    public struct ApplePayConfiguration: Sendable, Equatable {
         /// The merchant identifier for Apple Pay transactions.
         ///
         /// This value must match one of the merchant identifiers specified by the Merchant IDs
@@ -64,12 +63,19 @@ extension ShopifyAcceleratedCheckouts {
             self.contactFields = contactFields
             self.supportedShippingCountries = supportedShippingCountries
         }
+    }
+}
 
-        package required init(copy: ApplePayConfiguration) {
-            merchantIdentifier = copy.merchantIdentifier
-            contactFields = copy.contactFields
-            supportedShippingCountries = copy.supportedShippingCountries
-        }
+@available(iOS 16.0, *)
+private struct ShopifyApplePayConfigurationKey: EnvironmentKey {
+    static let defaultValue: ShopifyAcceleratedCheckouts.ApplePayConfiguration? = nil
+}
+
+@available(iOS 16.0, *)
+extension EnvironmentValues {
+    public var shopifyApplePayConfiguration: ShopifyAcceleratedCheckouts.ApplePayConfiguration? {
+        get { self[ShopifyApplePayConfigurationKey.self] }
+        set { self[ShopifyApplePayConfigurationKey.self] = newValue }
     }
 }
 
@@ -94,8 +100,8 @@ class ApplePayConfigurationWrapper: Copyable {
     }
 
     package required init(copy: ApplePayConfigurationWrapper) {
-        common = copy.common.copy()
-        applePay = copy.applePay.copy()
+        common = copy.common
+        applePay = copy.applePay
         shopSettings = copy.shopSettings
     }
 }

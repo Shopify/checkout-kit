@@ -18,12 +18,12 @@ class ShopPayButtonTests: XCTestCase {
     // MARK: - ShopPayButton Tests
 
     func test_shopPayButton_withValidCartIdentifier_shouldRenderLogo() throws {
-        let button = ShopPayButton(
+        let button = Internal_ShopPayButton(
             identifier: validCartIdentifier,
+            configuration: testConfiguration,
             eventHandlers: EventHandlers(),
             cornerRadius: nil
         )
-        .environmentObject(testConfiguration)
 
         // Assert the Shop Pay logo image is present in the button
         let buttonElement = try button.inspect().find(ViewType.Button.self)
@@ -32,12 +32,12 @@ class ShopPayButtonTests: XCTestCase {
     }
 
     func test_shopPayButton_withValidVariantIdentifier_shouldRenderLogo() throws {
-        let button = ShopPayButton(
+        let button = Internal_ShopPayButton(
             identifier: validVariantIdentifier,
+            configuration: testConfiguration,
             eventHandlers: EventHandlers(),
             cornerRadius: nil
         )
-        .environmentObject(testConfiguration)
 
         // Assert the Shop Pay logo image is present in the button
         let buttonElement = try button.inspect().find(ViewType.Button.self)
@@ -48,12 +48,12 @@ class ShopPayButtonTests: XCTestCase {
     // MARK: - ShopPayButton Rendering Tests
 
     func test_shopPayButton_shouldHaveShopPayBlueBackground() throws {
-        let button = ShopPayButton(
+        let button = Internal_ShopPayButton(
             identifier: validCartIdentifier,
+            configuration: testConfiguration,
             eventHandlers: EventHandlers(),
             cornerRadius: nil
         )
-        .environmentObject(testConfiguration)
 
         let buttonElement = try button.inspect().find(ViewType.Button.self)
         let hStack = try buttonElement.labelView().hStack()
@@ -73,12 +73,12 @@ class ShopPayButtonTests: XCTestCase {
 
         for testCase in testCases {
             try XCTContext.runActivity(named: "Testing \(testCase.description)") { _ in
-                let button = ShopPayButton(
+                let button = Internal_ShopPayButton(
                     identifier: validCartIdentifier,
+                    configuration: testConfiguration,
                     eventHandlers: EventHandlers(),
                     cornerRadius: testCase.input
                 )
-                .environmentObject(testConfiguration)
 
                 let buttonElement = try button.inspect().find(ViewType.Button.self)
                 XCTAssertEqual(try buttonElement.cornerRadius(), testCase.expected)
@@ -109,7 +109,6 @@ class ShopPayButtonTests: XCTestCase {
                     eventHandlers: EventHandlers(),
                     cornerRadius: nil
                 )
-                .environmentObject(testConfiguration)
 
                 XCTAssertNoThrow(try button.inspect().find(ViewType.EmptyView.self))
             }
