@@ -21,6 +21,29 @@ function getRequiredEnv(name) {
   return value;
 }
 
+function optionalEnv(name) {
+  const value = process.env[name];
+  return value && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function isPlaceholderEnvValue(value) {
+  return (
+    value.startsWith("<") ||
+    value.startsWith("YOUR_") ||
+    value.startsWith("your-") ||
+    value.includes("placeholder")
+  );
+}
+
+function getRequiredConfigEnv(name) {
+  const value = getRequiredEnv(name).trim();
+  if (isPlaceholderEnvValue(value)) {
+    throw new Error(`${name} is configured with a placeholder value`);
+  }
+
+  return value;
+}
+
 function normalizeCheckoutUrl(rawUrl, ecAuth) {
   let normalized = rawUrl.trim().replaceAll("\\", "").replaceAll("&amp;", "&");
 
@@ -35,6 +58,95 @@ function normalizeCheckoutUrl(rawUrl, ecAuth) {
   }
 
   return url.href;
+}
+
+function storefrontGraphqlEndpoint(domain, apiVersion) {
+  return `https://${domain.replace(/^https?:\/\//, "").replace(/\/$/, "")}/api/${apiVersion}/graphql.json`;
+}
+
+async function createStorefrontCartCheckoutUrl() {
+  const domain = getRequiredConfigEnv("CHECKOUT_KIT_BENCHMARK_STOREFRONT_DOMAIN");
+  const token = getRequiredConfigEnv("CHECKOUT_KIT_BENCHMARK_STOREFRONT_ACCESS_TOKEN");
+  const rawVariantId = getRequiredConfigEnv("CHECKOUT_KIT_BENCHMARK_VARIANT_ID");
+  const variantId = rawVariantId.startsWith("gid://")
+    ? rawVariantId
+    : `gid://shopify/ProductVariant/${rawVariantId}`;
+  const apiVersion =
+    optionalEnv("CHECKOUT_KIT_BENCHMARK_STOREFRONT_API_VERSION") ??
+    optionalEnv("STOREFRONT_VERSION") ??
+    optionalEnv("API_VERSION") ??
+    "2026-04";
+  const quantity = envNumber("CHECKOUT_KIT_BENCHMARK_VARIANT_QUANTITY", 1);
+
+  const mutation = `
+    mutation CheckoutKitBenchmarkCartCreate($input: CartInput!) {
+      cartCreate(input: $input) {
+        cart {
+          checkoutUrl
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+
+  const response = await fetch(storefrontGraphqlEndpoint(domain, apiVersion), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Storefront-Access-Token": token,
+    },
+    body: JSON.stringify({
+      query: mutation,
+      variables: {
+        input: {
+          lines: [
+            {
+              merchandiseId: variantId,
+              quantity,
+            },
+          ],
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Storefront cartCreate failed with HTTP ${response.status}`);
+  }
+
+  const payload = await response.json();
+  if (payload.errors?.length > 0) {
+    throw new Error(`Storefront cartCreate GraphQL error: ${payload.errors[0].message}`);
+  }
+
+  const userErrors = payload.data?.cartCreate?.userErrors ?? [];
+  if (userErrors.length > 0) {
+    throw new Error(`Storefront cartCreate user error: ${userErrors[0].message}`);
+  }
+
+  const checkoutUrl = payload.data?.cartCreate?.cart?.checkoutUrl;
+  if (typeof checkoutUrl !== "string" || checkoutUrl.length === 0) {
+    throw new Error("Storefront cartCreate did not return cart.checkoutUrl");
+  }
+
+  return checkoutUrl;
+}
+
+async function resolveCheckoutUrl() {
+  if (process.env.CHECKOUT_KIT_BENCHMARK_CART_SOURCE === "storefront") {
+    return normalizeCheckoutUrl(
+      await createStorefrontCartCheckoutUrl(),
+      process.env.CHECKOUT_KIT_BENCHMARK_EC_AUTH,
+    );
+  }
+
+  return normalizeCheckoutUrl(
+    getRequiredEnv("CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL"),
+    process.env.CHECKOUT_KIT_BENCHMARK_EC_AUTH,
+  );
 }
 
 function sleep(ms) {
@@ -99,12 +211,44 @@ async function installMetricHooks(commands) {
 }
 
 async function prepareArm(commands, arm, leadTimeMs) {
-  if (arm !== "none") {
-    const speculationRules = arm === "preload_speculation";
+  if (arm === "preconnect") {
     await commands.js.run(`
       const checkout = document.querySelector('shopify-checkout');
       if (!checkout) throw new Error('shopify-checkout element not found');
-      checkout.preload({speculationRules: ${JSON.stringify(speculationRules)}});
+      const url = new URL(checkout.src);
+      const origins = [
+        url.origin,
+        'https://cdn.shopify.com',
+        'https://fonts.shopifycdn.com',
+        'https://extensions.shopifycdn.com',
+      ];
+      for (const origin of origins) {
+        const preconnect = document.createElement('link');
+        preconnect.rel = 'preconnect';
+        preconnect.href = origin;
+        preconnect.crossOrigin = '';
+        preconnect.dataset.shopifyCheckoutPreload = '';
+        document.head.appendChild(preconnect);
+
+        const dnsPrefetch = document.createElement('link');
+        dnsPrefetch.rel = 'dns-prefetch';
+        dnsPrefetch.href = origin;
+        dnsPrefetch.dataset.shopifyCheckoutPreload = '';
+        document.head.appendChild(dnsPrefetch);
+      }
+    `);
+  } else if (arm !== "none") {
+    const executePreloadScript =
+      arm === "preload_execute" || arm === "preload_execute_speculation";
+    const speculationRules =
+      arm === "preload_speculation" || arm === "preload_execute_speculation";
+    await commands.js.run(`
+      const checkout = document.querySelector('shopify-checkout');
+      if (!checkout) throw new Error('shopify-checkout element not found');
+      checkout.preload({
+        speculationRules: ${JSON.stringify(speculationRules)},
+        executePreloadScript: ${JSON.stringify(executePreloadScript)}
+      });
     `);
   }
 
@@ -139,7 +283,10 @@ async function collectPreloadState(commands) {
       linkCount: links.length,
       preconnectCount: links.filter((link) => link.rel.includes('preconnect')).length,
       dnsPrefetchCount: links.filter((link) => link.rel.includes('dns-prefetch')).length,
-      prefetchCount: links.filter((link) => link.rel.includes('prefetch')).length,
+      prefetchCount: links.filter((link) => link.rel.split(/\\s+/).includes('prefetch')).length,
+      preloadScriptCount: document.head.querySelectorAll(
+        'script[src*="/checkouts/internal/preloads.js"][data-shopify-checkout-preload=""]'
+      ).length,
       speculationRulesCount: document.head.querySelectorAll(
         'script[type="speculationrules"][data-shopify-checkout-preload=""]'
       ).length,
@@ -234,16 +381,44 @@ async function waitForNewWindow(context, previousHandles, timeoutMs) {
   return undefined;
 }
 
-async function waitForPopupNavigationComplete(driver, timeoutMs) {
+async function probePopupNavigation(driver, timeoutMs, intervalMs) {
   const startedAt = Date.now();
   let sawTargetNavigation = false;
+  let readyStateCompleteSeenAt = 0;
+  const probe = {
+    popupProbeCount: 0,
+    popupLoadingShellDetected: 0,
+    popupLoadingShellVisibleDetected: 0,
+    popupBodyLoadingDetected: 0,
+  };
 
   while (Date.now() - startedAt < timeoutMs) {
     try {
       const state = await driver.executeScript(`
+        const shell = document.querySelector('.LoadingShell');
+        const shellStyle = shell ? getComputedStyle(shell) : undefined;
+        const shellRect = shell?.getBoundingClientRect();
+        const shellOpacity = shellStyle ? Number(shellStyle.opacity) : undefined;
+        const shellVisible = Boolean(
+          shell &&
+          shellStyle &&
+          shellStyle.display !== 'none' &&
+          shellStyle.visibility !== 'hidden' &&
+          shellRect &&
+          shellRect.width > 0 &&
+          shellRect.height > 0 &&
+          Number.isFinite(shellOpacity) &&
+          shellOpacity > 0.01
+        );
+
         return {
           isInitialBlank: location.href === 'about:blank',
-          readyState: document.readyState
+          readyState: document.readyState,
+          now: performance.now(),
+          shellPresent: Boolean(shell),
+          shellVisible,
+          shellOpacity,
+          bodyLoading: Boolean(document.body?.classList.contains('Loading'))
         };
       `);
 
@@ -251,13 +426,70 @@ async function waitForPopupNavigationComplete(driver, timeoutMs) {
         sawTargetNavigation = true;
       }
 
-      if (sawTargetNavigation && state.readyState === "complete") return;
+      if (sawTargetNavigation) {
+        probe.popupProbeCount += 1;
+
+        if (state.bodyLoading) {
+          probe.popupBodyLoadingDetected = 1;
+          probe.popupBodyLoadingFirstSeenMs ??= state.now;
+        } else if (
+          probe.popupBodyLoadingFirstSeenMs !== undefined &&
+          probe.popupBodyLoadingRemovedMs === undefined
+        ) {
+          probe.popupBodyLoadingRemovedMs = state.now;
+        }
+
+        if (state.shellPresent) {
+          probe.popupLoadingShellDetected = 1;
+          probe.popupLoadingShellFirstSeenMs ??= state.now;
+        } else if (
+          probe.popupLoadingShellFirstSeenMs !== undefined &&
+          probe.popupLoadingShellRemovedMs === undefined
+        ) {
+          probe.popupLoadingShellRemovedMs = state.now;
+        }
+
+        if (state.shellVisible) {
+          probe.popupLoadingShellVisibleDetected = 1;
+          probe.popupLoadingShellFirstVisibleMs ??= state.now;
+          probe.popupLoadingShellLastVisibleMs = state.now;
+        } else if (
+          probe.popupLoadingShellFirstVisibleMs !== undefined &&
+          probe.popupLoadingShellFirstHiddenMs === undefined
+        ) {
+          probe.popupLoadingShellFirstHiddenMs = state.now;
+        }
+
+        if (state.readyState === "complete") {
+          probe.popupReadyStateCompleteObservedMs ??= state.now;
+          readyStateCompleteSeenAt ||= Date.now();
+        }
+
+        const postCompleteProbeExpired =
+          readyStateCompleteSeenAt > 0 && Date.now() - readyStateCompleteSeenAt > 500;
+        const sawShellAndRemovalSettled =
+          probe.popupLoadingShellFirstSeenMs !== undefined &&
+          (probe.popupLoadingShellRemovedMs !== undefined ||
+            probe.popupBodyLoadingRemovedMs !== undefined);
+
+        if (
+          readyStateCompleteSeenAt > 0 &&
+          (probe.popupLoadingShellFirstSeenMs === undefined ||
+            sawShellAndRemovalSettled ||
+            postCompleteProbeExpired)
+        ) {
+          return probe;
+        }
+      }
     } catch {
       // The popup can be between documents while navigation is in flight.
     }
 
-    await sleep(100);
+    await sleep(intervalMs);
   }
+
+  probe.popupProbeTimedOut = 1;
+  return probe;
 }
 
 async function collectPopupMetrics(
@@ -266,6 +498,7 @@ async function collectPopupMetrics(
   openerHandle,
   openWallTime,
   timeoutMs,
+  probeIntervalMs,
 ) {
   const popupHandle = await waitForNewWindow(context, previousHandles, timeoutMs);
 
@@ -279,7 +512,7 @@ async function collectPopupMetrics(
   try {
     await driver.switchTo().window(popupHandle);
     switchedToPopup = true;
-    await waitForPopupNavigationComplete(driver, timeoutMs);
+    const popupProbe = await probePopupNavigation(driver, timeoutMs, probeIntervalMs);
 
     const popup = await driver.executeScript(`
       const navigation = performance.getEntriesByType('navigation')[0];
@@ -377,6 +610,12 @@ async function collectPopupMetrics(
         typeof popup.firstContentfulPaint === "number" && typeof popup.checkoutVisible === "number"
           ? popup.firstContentfulPaint - popup.checkoutVisible
           : undefined,
+      ...popupProbe,
+      popupLoadingShellApproxVisibleDurationMs:
+        typeof popupProbe.popupLoadingShellFirstVisibleMs === "number" &&
+        typeof popupProbe.popupLoadingShellFirstHiddenMs === "number"
+          ? popupProbe.popupLoadingShellFirstHiddenMs - popupProbe.popupLoadingShellFirstVisibleMs
+          : undefined,
       popupTransferSize: popup.transferSize,
       popupEncodedBodySize: popup.encodedBodySize,
       popupDecodedBodySize: popup.decodedBodySize,
@@ -392,6 +631,14 @@ async function collectPopupMetrics(
       openToPopupLargestContentfulPaintMs: toOpen(popup.largestContentfulPaint),
       openToPopupCheckoutVisibleMs: toOpen(popup.checkoutVisible),
       openToPopupCheckoutHydratedMs: toOpen(popup.checkoutHydrated),
+      openToPopupLoadingShellFirstSeenMs: toOpen(popupProbe.popupLoadingShellFirstSeenMs),
+      openToPopupLoadingShellFirstVisibleMs: toOpen(
+        popupProbe.popupLoadingShellFirstVisibleMs,
+      ),
+      openToPopupLoadingShellFirstHiddenMs: toOpen(popupProbe.popupLoadingShellFirstHiddenMs),
+      openToPopupLoadingShellRemovedMs: toOpen(popupProbe.popupLoadingShellRemovedMs),
+      openToPopupBodyLoadingFirstSeenMs: toOpen(popupProbe.popupBodyLoadingFirstSeenMs),
+      openToPopupBodyLoadingRemovedMs: toOpen(popupProbe.popupBodyLoadingRemovedMs),
     };
   } catch (error) {
     context.log.warn(`Could not collect popup metrics: ${error.message}`);
@@ -399,17 +646,33 @@ async function collectPopupMetrics(
   } finally {
     if (switchedToPopup) {
       try {
-        await driver.close();
+        await driver.switchTo().window(openerHandle);
       } catch {
-        // Ignore cleanup failures; the next iteration starts from a cleared browser context.
+        // If the opener was already gone, let Browsertime surface the session state.
       }
     }
+  }
+}
+
+async function closeNewWindows(context, previousHandles, openerHandle) {
+  const driver = context.selenium.driver;
+  const previous = new Set(previousHandles);
+
+  for (const handle of await driver.getAllWindowHandles()) {
+    if (previous.has(handle)) continue;
 
     try {
-      await driver.switchTo().window(openerHandle);
+      await driver.switchTo().window(handle);
+      await driver.close();
     } catch {
-      // If the opener was already gone, let Browsertime surface the session state.
+      // Ignore cleanup failures; the next iteration starts from a cleared browser context.
     }
+  }
+
+  try {
+    await driver.switchTo().window(openerHandle);
+  } catch {
+    // Let Browsertime surface unexpected session state.
   }
 }
 
@@ -422,10 +685,7 @@ function numericMetricsOnly(metrics) {
 }
 
 module.exports = async function checkoutPreloadBenchmark(context, commands) {
-  const checkoutUrl = normalizeCheckoutUrl(
-    getRequiredEnv("CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL"),
-    process.env.CHECKOUT_KIT_BENCHMARK_EC_AUTH,
-  );
+  const checkoutUrl = await resolveCheckoutUrl();
   const sampleUrl = process.env.CHECKOUT_KIT_BENCHMARK_SAMPLE_URL ?? "http://localhost:5173";
   const arm = process.env.CHECKOUT_KIT_BENCHMARK_ARM ?? "none";
   const leadTimeMs = envNumber("CHECKOUT_KIT_BENCHMARK_LEAD_TIME_MS", 2_000);
@@ -433,10 +693,20 @@ module.exports = async function checkoutPreloadBenchmark(context, commands) {
   const waitForStart = envBoolean("CHECKOUT_KIT_BENCHMARK_WAIT_FOR_START", true);
   const collectPopup = envBoolean("CHECKOUT_KIT_BENCHMARK_COLLECT_POPUP", true);
   const popupTimeoutMs = envNumber("CHECKOUT_KIT_BENCHMARK_POPUP_TIMEOUT_MS", DEFAULT_TIMEOUT_MS);
+  const popupProbeIntervalMs = envNumber("CHECKOUT_KIT_BENCHMARK_POPUP_PROBE_INTERVAL_MS", 25);
 
-  if (!["none", "preload", "preload_speculation"].includes(arm)) {
+  if (
+    ![
+      "none",
+      "preconnect",
+      "preload",
+      "preload_speculation",
+      "preload_execute",
+      "preload_execute_speculation",
+    ].includes(arm)
+  ) {
     throw new Error(
-      `Unsupported CHECKOUT_KIT_BENCHMARK_ARM=${arm}. Expected none, preload, or preload_speculation.`,
+      `Unsupported CHECKOUT_KIT_BENCHMARK_ARM=${arm}. Expected none, preconnect, preload, preload_speculation, preload_execute, or preload_execute_speculation.`,
     );
   }
 
@@ -453,13 +723,10 @@ module.exports = async function checkoutPreloadBenchmark(context, commands) {
   const windowHandlesBeforeOpen = await context.selenium.driver.getAllWindowHandles();
   await openCheckout(commands);
 
-  if (waitForStart) {
-    await waitForCheckoutStart(commands);
-  }
+  const openWallTime = (
+    await commands.js.run("return window.__checkoutKitBenchmark.openWallTime;")
+  );
 
-  const postOpenMetrics = await collectPostOpenMetrics(commands);
-  const openWallTime = postOpenMetrics.openWallTime;
-  delete postOpenMetrics.openWallTime;
   const popupMetrics = collectPopup
     ? await collectPopupMetrics(
         context,
@@ -467,8 +734,20 @@ module.exports = async function checkoutPreloadBenchmark(context, commands) {
         openerHandle,
         openWallTime,
         popupTimeoutMs,
+        popupProbeIntervalMs,
       )
     : {};
+
+  if (waitForStart) {
+    await waitForCheckoutStart(commands);
+  }
+
+  const postOpenMetrics = await collectPostOpenMetrics(commands);
+  delete postOpenMetrics.openWallTime;
+
+  if (collectPopup) {
+    await closeNewWindows(context, windowHandlesBeforeOpen, openerHandle);
+  }
 
   const metrics = {
     arm,

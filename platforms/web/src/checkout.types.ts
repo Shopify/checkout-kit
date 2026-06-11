@@ -39,6 +39,13 @@ export interface CheckoutPreloadOptions {
    * baseline resource-hint preload against Speculation Rules separately.
    */
   speculationRules?: boolean;
+
+  /**
+   * Executes checkout-web's preload script endpoint instead of only prefetching
+   * it. Experimental, and disabled by default so benchmarks can compare script
+   * execution against resource-hint-only preloading.
+   */
+  executePreloadScript?: boolean;
 }
 
 export interface CheckoutAttributes {

@@ -110,6 +110,7 @@ export class ShopifyCheckout
   // Manages the global message event listener for checkout protocol communication
   #checkoutProtocolController: { controller: AbortController } | null = null;
   #preloadHintKeys = new Set<string>();
+  #preloadScriptKeys = new Set<string>();
   #speculationRulesKeys = new Set<string>();
 
   /* ------------------------------------------------------------
@@ -273,13 +274,19 @@ export class ShopifyCheckout
         this.#appendLinkHint({ rel: "dns-prefetch", href: origin });
       }
 
-      this.#appendLinkHint({
-        rel: "prefetch",
-        href: preloadUrl.href,
-        as: "script",
-        crossOrigin: "",
-        fetchPriority: "low",
-      });
+      if (options.executePreloadScript === true) {
+        this.#appendPreloadScript(preloadUrl);
+      } else {
+        this.#appendLinkHint({
+          rel: "prefetch",
+          href: preloadUrl.href,
+          as: "script",
+          crossOrigin: "",
+          fetchPriority: "low",
+        });
+      }
+    } else if (options.executePreloadScript === true) {
+      this.#appendPreloadScript(preloadUrl);
     }
 
     if (
@@ -484,6 +491,18 @@ export class ShopifyCheckout
     if (fetchPriority) link.fetchPriority = fetchPriority;
     link.dataset["shopifyCheckoutPreload"] = "";
     document.head.appendChild(link);
+  }
+
+  #appendPreloadScript(url: URL) {
+    if (this.#preloadScriptKeys.has(url.href)) return;
+
+    this.#preloadScriptKeys.add(url.href);
+    const script = document.createElement("script");
+    script.src = url.href;
+    script.async = true;
+    script.crossOrigin = "";
+    script.dataset["shopifyCheckoutPreload"] = "";
+    document.head.appendChild(script);
   }
 
   #appendSpeculationRules(url: URL) {

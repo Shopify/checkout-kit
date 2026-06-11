@@ -106,7 +106,10 @@ document.addEventListener("click", (event) => {
 
   switch (button.dataset["method"]) {
     case "preload":
-      checkout.preload({ speculationRules: new FormData(form).has("speculationRules") });
+      checkout.preload({
+        speculationRules: new FormData(form).has("speculationRules"),
+        executePreloadScript: new FormData(form).has("executePreloadScript"),
+      });
       appendLog("method:preload");
       refreshState();
       break;

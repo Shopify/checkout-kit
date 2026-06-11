@@ -186,6 +186,7 @@ Candidate API:
 ```ts
 checkout.preload();
 checkout.preload({speculationRules: true});
+checkout.preload({executePreloadScript: true});
 checkout.invalidatePreload();
 checkout.open();
 ```
@@ -198,6 +199,10 @@ Semantics:
 - Speculation Rules are opt-in through `preload({speculationRules: true})` and
   gated by browser support, so benchmark arms can measure their incremental
   impact separately.
+- Executing checkout-web's `/checkouts/internal/preloads.js` endpoint is also
+  being evaluated as a benchmark-only prototype path. This runs checkout-web's
+  generated preload script on the host page so it can inject the checkout asset
+  hints it returns, rather than only prefetching the endpoint response.
 - `open()` should work the same whether or not preload completed.
 - A future iframe target may use the same method name for a stronger retained
   iframe implementation, but that is out of scope for the popup benchmark.

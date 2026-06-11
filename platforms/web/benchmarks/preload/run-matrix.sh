@@ -4,15 +4,9 @@ set -euo pipefail
 WEB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$WEB_DIR"
 
-if [[ -z "${CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL:-}" ]]; then
-  echo "CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL is required." >&2
-  echo "Set it to a checkout URL before running this script." >&2
-  exit 1
-fi
-
-if [[ "${CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL}" != *"ec_auth"* && -z "${CHECKOUT_KIT_BENCHMARK_EC_AUTH:-}" ]]; then
-  echo "No ec_auth value found in CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL." >&2
-  echo "Set CHECKOUT_KIT_BENCHMARK_EC_AUTH if you are using a URL template." >&2
+if [[ -z "${CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL:-}" && "${CHECKOUT_KIT_BENCHMARK_CART_SOURCE:-}" != "storefront" ]]; then
+  echo "CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL is required unless CHECKOUT_KIT_BENCHMARK_CART_SOURCE=storefront." >&2
+  echo "Set it to a checkout URL, or configure the Storefront cart source env vars." >&2
   exit 1
 fi
 
@@ -23,6 +17,7 @@ EQUALIZE_LEAD_TIME="${CHECKOUT_KIT_BENCHMARK_EQUALIZE_LEAD_TIME:-true}"
 WAIT_FOR_START="${CHECKOUT_KIT_BENCHMARK_WAIT_FOR_START:-true}"
 COLLECT_POPUP="${CHECKOUT_KIT_BENCHMARK_COLLECT_POPUP:-true}"
 POPUP_TIMEOUT_MS="${CHECKOUT_KIT_BENCHMARK_POPUP_TIMEOUT_MS:-45000}"
+POPUP_PROBE_INTERVAL_MS="${CHECKOUT_KIT_BENCHMARK_POPUP_PROBE_INTERVAL_MS:-25}"
 SAMPLE_HOST="${CHECKOUT_KIT_BENCHMARK_SAMPLE_HOST:-127.0.0.1}"
 SAMPLE_PORT="${CHECKOUT_KIT_BENCHMARK_SAMPLE_PORT:-5173}"
 SAMPLE_URL="${CHECKOUT_KIT_BENCHMARK_SAMPLE_URL:-http://${SAMPLE_HOST}:${SAMPLE_PORT}}"
@@ -71,9 +66,13 @@ echo "Iterations: ${ITERATIONS}"
 echo "Run mode: ${RUN_MODE}"
 echo "Lead time: ${LEAD_TIME_MS}ms"
 echo "Equalize lead time: ${EQUALIZE_LEAD_TIME}"
-echo "Checkout URL: configured but not printed"
+if [[ "${CHECKOUT_KIT_BENCHMARK_CART_SOURCE:-}" == "storefront" ]]; then
+  echo "Checkout URL source: Storefront cartCreate"
+else
+  echo "Checkout URL: configured but not printed"
+fi
 
-ARMS_STRING="${CHECKOUT_KIT_BENCHMARK_ARMS:-none preload preload_speculation}"
+ARMS_STRING="${CHECKOUT_KIT_BENCHMARK_ARMS:-none preconnect preload preload_speculation preload_execute preload_execute_speculation}"
 read -r -a ARMS <<<"$ARMS_STRING"
 
 if [[ "$RUN_MODE" != "interleaved" && "$RUN_MODE" != "grouped" ]]; then
@@ -82,9 +81,142 @@ if [[ "$RUN_MODE" != "interleaved" && "$RUN_MODE" != "grouped" ]]; then
   exit 1
 fi
 
+create_round_checkout_url() {
+  if [[ "${CHECKOUT_KIT_BENCHMARK_CART_SOURCE:-}" != "storefront" ]]; then
+    printf "%s" "${CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL:-}"
+    return
+  fi
+
+  node <<'NODE'
+const domain = required("CHECKOUT_KIT_BENCHMARK_STOREFRONT_DOMAIN");
+const token = required("CHECKOUT_KIT_BENCHMARK_STOREFRONT_ACCESS_TOKEN");
+const rawVariantId = required("CHECKOUT_KIT_BENCHMARK_VARIANT_ID");
+const variantId = rawVariantId.startsWith("gid://")
+  ? rawVariantId
+  : `gid://shopify/ProductVariant/${rawVariantId}`;
+const apiVersion =
+  optional("CHECKOUT_KIT_BENCHMARK_STOREFRONT_API_VERSION") ??
+  optional("STOREFRONT_VERSION") ??
+  optional("API_VERSION") ??
+  "2026-04";
+const quantity = Number(process.env.CHECKOUT_KIT_BENCHMARK_VARIANT_QUANTITY ?? "1");
+const maxAttempts = numberEnv("CHECKOUT_KIT_BENCHMARK_CART_CREATE_MAX_ATTEMPTS", 12);
+const throttleBackoffMs = numberEnv("CHECKOUT_KIT_BENCHMARK_CART_CREATE_THROTTLE_BACKOFF_MS", 60_000);
+const throttleBackoffMaxMs = numberEnv(
+  "CHECKOUT_KIT_BENCHMARK_CART_CREATE_THROTTLE_BACKOFF_MAX_MS",
+  300_000,
+);
+const endpoint = `https://${domain.replace(/^https?:\/\//, "").replace(/\/$/, "")}/api/${apiVersion}/graphql.json`;
+const query = `
+  mutation CheckoutKitBenchmarkCartCreate($input: CartInput!) {
+    cartCreate(input: $input) {
+      cart {
+        checkoutUrl
+      }
+      userErrors {
+        message
+      }
+    }
+  }
+`;
+
+function optional(name) {
+  const value = process.env[name]?.trim();
+  return value && !isPlaceholder(value) ? value : undefined;
+}
+
+function required(name) {
+  const value = process.env[name]?.trim();
+  if (!value || isPlaceholder(value)) {
+    throw new Error(`${name} is required`);
+  }
+
+  return value;
+}
+
+function numberEnv(name, fallback) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function isPlaceholder(value) {
+  return (
+    value.startsWith("<") ||
+    value.startsWith("YOUR_") ||
+    value.startsWith("your-") ||
+    value.includes("placeholder")
+  );
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function createCart() {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Storefront-Access-Token": token,
+    },
+    body: JSON.stringify({
+      query,
+      variables: {
+        input: {
+          lines: [
+            {
+              merchandiseId: variantId,
+              quantity: Number.isFinite(quantity) ? quantity : 1,
+            },
+          ],
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Storefront cartCreate failed with HTTP ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const graphQlError = payload.errors?.[0]?.message;
+  const userError = payload.data?.cartCreate?.userErrors?.[0]?.message;
+
+  if (graphQlError || userError) {
+    throw new Error(graphQlError ?? userError);
+  }
+
+  const checkoutUrl = payload.data?.cartCreate?.cart?.checkoutUrl;
+  if (typeof checkoutUrl !== "string" || checkoutUrl.length === 0) {
+    throw new Error("Storefront cartCreate did not return cart.checkoutUrl");
+  }
+
+  return checkoutUrl;
+}
+
+(async () => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      process.stdout.write(await createCart());
+      process.exit(0);
+    } catch (error) {
+      if (!String(error.message).includes("Throttled") || attempt === maxAttempts) {
+        throw error;
+      }
+
+      const delayMs = Math.min(throttleBackoffMs * attempt, throttleBackoffMaxMs);
+      console.error(`Storefront cartCreate throttled; retrying in ${delayMs / 1000}s`);
+      await sleep(delayMs);
+    }
+  }
+})();
+NODE
+}
+
 run_arm() {
   local arm="$1"
   local iteration="$2"
+  local checkout_url="${3:-}"
   ARM_DIR="${OUTPUT_ROOT}/${arm}"
   mkdir -p "$ARM_DIR"
 
@@ -105,6 +237,13 @@ run_arm() {
   echo "Running arm: ${arm}${iteration_label}"
 
   CHECKOUT_KIT_BENCHMARK_ARM="$arm" \
+    CHECKOUT_KIT_BENCHMARK_CART_SOURCE="$([[ -n "$checkout_url" ]] && printf "" || printf "%s" "${CHECKOUT_KIT_BENCHMARK_CART_SOURCE:-}")" \
+    CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL="${checkout_url:-${CHECKOUT_KIT_BENCHMARK_CHECKOUT_URL:-}}" \
+    CHECKOUT_KIT_BENCHMARK_STOREFRONT_DOMAIN="${CHECKOUT_KIT_BENCHMARK_STOREFRONT_DOMAIN:-}" \
+    CHECKOUT_KIT_BENCHMARK_STOREFRONT_ACCESS_TOKEN="${CHECKOUT_KIT_BENCHMARK_STOREFRONT_ACCESS_TOKEN:-}" \
+    CHECKOUT_KIT_BENCHMARK_STOREFRONT_API_VERSION="${CHECKOUT_KIT_BENCHMARK_STOREFRONT_API_VERSION:-}" \
+    CHECKOUT_KIT_BENCHMARK_VARIANT_ID="${CHECKOUT_KIT_BENCHMARK_VARIANT_ID:-}" \
+    CHECKOUT_KIT_BENCHMARK_VARIANT_QUANTITY="${CHECKOUT_KIT_BENCHMARK_VARIANT_QUANTITY:-}" \
     CHECKOUT_KIT_BENCHMARK_SAMPLE_URL="$SAMPLE_URL" \
     CHECKOUT_KIT_BENCHMARK_ITERATIONS="$arm_iterations" \
     CHECKOUT_KIT_BENCHMARK_LEAD_TIME_MS="$LEAD_TIME_MS" \
@@ -112,6 +251,7 @@ run_arm() {
     CHECKOUT_KIT_BENCHMARK_WAIT_FOR_START="$WAIT_FOR_START" \
     CHECKOUT_KIT_BENCHMARK_COLLECT_POPUP="$COLLECT_POPUP" \
     CHECKOUT_KIT_BENCHMARK_POPUP_TIMEOUT_MS="$POPUP_TIMEOUT_MS" \
+    CHECKOUT_KIT_BENCHMARK_POPUP_PROBE_INTERVAL_MS="$POPUP_PROBE_INTERVAL_MS" \
     CHECKOUT_KIT_BENCHMARK_OUTPUT_FOLDER="$output_folder" \
     pnpm run benchmark:preload 2>&1 | tee "$log_path"
 }
@@ -122,6 +262,7 @@ if [[ "$RUN_MODE" == "grouped" ]]; then
   done
 else
   for iteration in $(seq 1 "$ITERATIONS"); do
+    ROUND_CHECKOUT_URL="$(create_round_checkout_url)"
     ROUND_ARMS=($(
       node -e '
         const arms = process.argv.slice(1);
@@ -135,7 +276,7 @@ else
     echo
     echo "Round ${iteration} order: ${ROUND_ARMS[*]}"
     for arm in "${ROUND_ARMS[@]}"; do
-      run_arm "$arm" "$iteration"
+      run_arm "$arm" "$iteration" "$ROUND_CHECKOUT_URL"
     done
   done
 fi
@@ -165,6 +306,11 @@ const metrics = [
   "popupConnectDurationMs",
   "popupRequestToResponseStartMs",
   "popupResponseDurationMs",
+  "popupProbeCount",
+  "popupProbeTimedOut",
+  "popupLoadingShellDetected",
+  "popupLoadingShellVisibleDetected",
+  "popupBodyLoadingDetected",
   "openToPopupFetchStartMs",
   "openToPopupRequestStartMs",
   "openToPopupResponseStartMs",
@@ -174,14 +320,22 @@ const metrics = [
   "openToPopupFirstContentfulPaintMs",
   "openToPopupCheckoutVisibleMs",
   "openToPopupCheckoutHydratedMs",
+  "openToPopupLoadingShellFirstSeenMs",
+  "openToPopupLoadingShellFirstVisibleMs",
+  "openToPopupLoadingShellFirstHiddenMs",
+  "openToPopupLoadingShellRemovedMs",
+  "openToPopupBodyLoadingFirstSeenMs",
+  "openToPopupBodyLoadingRemovedMs",
   "openToCheckoutStartMs",
   "popupCheckoutVisibleToFirstContentfulPaintMs",
+  "popupLoadingShellApproxVisibleDurationMs",
   "popupCheckoutBeforeHydrateDurationMs",
   "popupCheckoutHydrateDurationMs",
   "popupCheckoutBootDurationMs",
   "popupCheckoutInertDurationMs",
   "preloadEndpointStartBeforeOpenMs",
   "preloadEndpointResponseBeforeOpenMs",
+  "preloadScriptCount",
 ];
 
 function percentile(values, p) {
@@ -189,6 +343,18 @@ function percentile(values, p) {
   const sorted = [...values].sort((a, b) => a - b);
   const index = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
   return sorted[index].toFixed(2);
+}
+
+function median(values) {
+  if (values.length === 0) return "";
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2 === 1) {
+    return sorted[middle].toFixed(2);
+  }
+
+  return ((sorted[middle - 1] + sorted[middle]) / 2).toFixed(2);
 }
 
 function numeric(value) {
@@ -208,7 +374,7 @@ for (const arm of arms) {
         arm,
         metric,
         values.length,
-        percentile(values, 50),
+        median(values),
         percentile(values, 75),
         Math.min(...values).toFixed(2),
         Math.max(...values).toFixed(2),

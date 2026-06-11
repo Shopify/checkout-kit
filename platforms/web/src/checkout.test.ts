@@ -290,6 +290,35 @@ describe("<shopify-checkout>", () => {
         expect(preloadSpeculationRules()).toHaveLength(0);
       });
 
+      it("can execute the checkout preload endpoint instead of prefetching it", () => {
+        const appendChildSpy = vi
+          .spyOn(document.head, "appendChild")
+          .mockImplementation((node) => node);
+        const checkout = renderCheckout({
+          src: "https://shop.example.com/checkouts/cn/abc123?locale=fr",
+        });
+
+        checkout.preload({ executePreloadScript: true });
+
+        const preloadEndpointLink = preloadLinks().find((link) =>
+          link.href.includes("/checkouts/internal/preloads.js"),
+        );
+        expect(preloadEndpointLink).toBeUndefined();
+
+        const script = appendChildSpy.mock.calls
+          .map(([node]) => node)
+          .find(
+            (node): node is HTMLScriptElement =>
+              node instanceof HTMLScriptElement &&
+              node.src.includes("/checkouts/internal/preloads.js"),
+          );
+        expect(script?.src).toBe(
+          "https://shop.example.com/checkouts/internal/preloads.js?locale=fr",
+        );
+        expect(script?.async).toBe(true);
+        expect(script?.crossOrigin).toBe("");
+      });
+
       it("dedupes baseline hints separately from the Speculation Rules hint", () => {
         mockSpeculationRulesSupport(true);
         const checkout = renderCheckout();
@@ -302,6 +331,25 @@ describe("<shopify-checkout>", () => {
 
         expect(preloadLinks()).toHaveLength(baselineLinkCount);
         expect(preloadSpeculationRules()).toHaveLength(1);
+      });
+
+      it("dedupes executed preload endpoint scripts", () => {
+        const appendChildSpy = vi
+          .spyOn(document.head, "appendChild")
+          .mockImplementation((node) => node);
+        const checkout = renderCheckout();
+
+        checkout.preload({ executePreloadScript: true });
+        checkout.preload({ executePreloadScript: true });
+
+        const scripts = appendChildSpy.mock.calls
+          .map(([node]) => node)
+          .filter(
+            (node): node is HTMLScriptElement =>
+              node instanceof HTMLScriptElement &&
+              node.src.includes("/checkouts/internal/preloads.js"),
+          );
+        expect(scripts).toHaveLength(1);
       });
 
       it("skips Speculation Rules when the browser does not support them", () => {
