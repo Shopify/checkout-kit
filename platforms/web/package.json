@@ -72,6 +72,9 @@
     "verify": "publint",
     "prepack": "pnpm run build"
   },
+  "dependencies": {
+    "@shopify/checkout-kit-protocol": "workspace:*"
+  },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
     "@types/node": "^22.10.0",

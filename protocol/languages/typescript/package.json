@@ -7,8 +7,20 @@
   "main": "src/index.ts",
   "react-native": "src/index.ts",
   "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "react-native": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./web": {
+      "types": "./src/web.d.ts",
+      "default": "./src/web.ts"
+    }
+  },
   "scripts": {
     "codegen": "../../scripts/generate_models.sh --lang typescript",
+    "codegen:typescript-ucp": "../../scripts/generate_models.sh --lang typescript-ucp",
     "typecheck": "tsc --noEmit"
   },
   "files": [

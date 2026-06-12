@@ -1,5 +1,6 @@
-// Types for this component are derived from the 2026-04-08 UCP embedded
-// checkout protocol. Embed payload shapes live in `./ucp-embed-types.ts`.
+// Types for this component are derived from the UCP embedded checkout
+// protocol. Wire payload shapes are generated from the canonical JSON schemas
+// in `@shopify/checkout-kit-protocol/web`.
 
 import type {
   Buyer,
@@ -10,7 +11,7 @@ import type {
   OrderConfirmation,
   Total,
   UcpErrorResponse,
-} from "./ucp-embed-types";
+} from "@shopify/checkout-kit-protocol/web";
 
 // This component should follow the custom element conventions set out here:
 // https://github.com/Shopify/ui-api-design/tree/main/codex. In particular,
@@ -267,4 +268,4 @@ export type {
   OrderConfirmation,
   Total,
   UcpErrorResponse,
-} from "./ucp-embed-types";
+} from "@shopify/checkout-kit-protocol/web";
