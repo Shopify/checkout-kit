@@ -1,5 +1,6 @@
 import UIKit
 
+@MainActor
 enum ConfettiCannon {
     static func fire(in view: UIView) {
         let layerName = "shopify-confetti"

@@ -1,6 +1,7 @@
 @testable import ShopifyCheckoutKit
 import XCTest
 
+@MainActor
 class CheckoutViewControllerTests: XCTestCase {
     var checkoutURL: URL!
     var checkoutViewController: CheckoutViewController!
@@ -16,6 +17,7 @@ class CheckoutViewControllerTests: XCTestCase {
     }
 }
 
+@MainActor
 class ShopifyCheckoutTests: XCTestCase {
     var checkoutURL: URL!
     var shopifyCheckout: ShopifyCheckout!
@@ -58,6 +60,7 @@ class ShopifyCheckoutTests: XCTestCase {
     }
 }
 
+@MainActor
 class CheckoutConfigurableTests: XCTestCase {
     var checkoutURL: URL!
     var shopifyCheckout: ShopifyCheckout!

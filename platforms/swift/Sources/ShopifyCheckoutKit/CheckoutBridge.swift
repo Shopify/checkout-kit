@@ -1,5 +1,6 @@
 import WebKit
 
+@MainActor
 protocol CheckoutBridgeProtocol {
     @discardableResult @MainActor static func sendResponse(_ webView: WKWebView, messageBody: String) async -> Bool
 }

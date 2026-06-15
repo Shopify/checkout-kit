@@ -18,6 +18,7 @@ public func configure(_ block: (inout Configuration) -> Void) {
     block(&configuration)
 }
 
+@MainActor
 @discardableResult
 public func present(checkout url: URL, from: UIViewController, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
     let decorated = CheckoutProtocol.url(for: url)
@@ -26,6 +27,7 @@ public func present(checkout url: URL, from: UIViewController, delegate: (any Ch
     return viewController
 }
 
+@MainActor
 @discardableResult
 package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
     let decorated = CheckoutProtocol.url(for: url)

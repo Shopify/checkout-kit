@@ -2,6 +2,7 @@
 import WebKit
 import XCTest
 
+@MainActor
 class CheckoutBridgeTests: XCTestCase {
     func testApplicationNameDelegatesToUserAgent() {
         XCTAssertEqual(
@@ -50,6 +51,7 @@ class CheckoutBridgeTests: XCTestCase {
     }
 }
 
+@MainActor
 private class MockWebView: WKWebView {
     var evaluatedScript: String?
 

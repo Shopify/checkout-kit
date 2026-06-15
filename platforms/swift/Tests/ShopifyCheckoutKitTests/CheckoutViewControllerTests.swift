@@ -2,13 +2,15 @@
 import WebKit
 import XCTest
 
+@MainActor
 class CheckoutViewDelegateTests: XCTestCase {
     private var customTitle: String?
     private let checkoutURL = URL(string: "https://checkout-sdk.myshopify.com")!
     private var viewController: MockCheckoutWebViewController!
     private var navigationController: UINavigationController!
 
-    override func setUp() {
+    override func setUp() async throws {
+        try await super.setUp()
         ShopifyCheckoutKit.configure {
             $0.title = customTitle ?? "Checkout"
         }
@@ -19,9 +21,9 @@ class CheckoutViewDelegateTests: XCTestCase {
         navigationController = UINavigationController(rootViewController: viewController)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         customTitle = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testTitleIsSetToCheckout() {
@@ -30,7 +32,10 @@ class CheckoutViewDelegateTests: XCTestCase {
 
     func testTitleCanBeCustomized() {
         customTitle = "Custom title"
-        setUp()
+        ShopifyCheckoutKit.configure { $0.title = customTitle ?? "Checkout" }
+        viewController = MockCheckoutWebViewController(
+            checkoutURL: checkoutURL
+        )
         XCTAssertEqual(viewController.title, "Custom title")
     }
 
@@ -103,6 +108,7 @@ class CheckoutViewDelegateTests: XCTestCase {
     }
 }
 
+@MainActor
 protocol Dismissible: AnyObject {
     func dismiss(animated flag: Bool, completion: (() -> Void)?)
 }
