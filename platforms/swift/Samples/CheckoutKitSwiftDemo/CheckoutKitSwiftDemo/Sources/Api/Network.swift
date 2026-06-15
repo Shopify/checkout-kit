@@ -5,35 +5,61 @@ import Foundation
 final class Network: Sendable {
     static let shared = Network()
 
+    private static var currentLanguageCode: String? {
+        if #available(iOS 16.0, *) {
+            return Locale.current.language.languageCode?.identifier
+        } else {
+            return Locale.current.languageCode
+        }
+    }
+
+    private static var currentScriptCode: String? {
+        if #available(iOS 16.0, *) {
+            return Locale.current.language.script?.identifier
+        } else {
+            return Locale.current.scriptCode
+        }
+    }
+
+    private static var currentRegionCode: String? {
+        if #available(iOS 16.0, *) {
+            return Locale.current.region?.identifier
+        } else {
+            return Locale.current.regionCode
+        }
+    }
+
     private static func getLanguageCode() -> GraphQLEnum<Storefront.LanguageCode> {
-        if let languageCode = Locale.current.language.languageCode?.identifier {
-            let code = languageCode.uppercased()
-            switch code {
-            case "ZH":
-                if let scriptCode = Locale.current.language.script?.identifier {
-                    return GraphQLEnum(scriptCode == "Hans" ? Storefront.LanguageCode.zhCn : Storefront.LanguageCode.zhTw)
-                }
-                return GraphQLEnum(Storefront.LanguageCode.zhCn)
-            case "PT":
-                if let regionCode = Locale.current.language.region?.identifier {
-                    return GraphQLEnum(regionCode == "BR" ? Storefront.LanguageCode.ptBr : Storefront.LanguageCode.ptPt)
-                }
-                return GraphQLEnum(Storefront.LanguageCode.pt)
-            default:
-                if let mappedCode = Storefront.LanguageCode(rawValue: code) {
-                    return GraphQLEnum(mappedCode)
-                }
-                let baseLanguage = String(code.prefix(2))
-                if let mappedCode = Storefront.LanguageCode(rawValue: baseLanguage) {
-                    return GraphQLEnum(mappedCode)
-                }
+        guard let languageCode = currentLanguageCode?.uppercased() else {
+            return GraphQLEnum(Storefront.LanguageCode.en)
+        }
+
+        switch languageCode {
+        case "ZH":
+            if let scriptCode = currentScriptCode {
+                return GraphQLEnum(scriptCode == "Hans" ? Storefront.LanguageCode.zhCn : Storefront.LanguageCode.zhTw)
+            }
+            return GraphQLEnum(Storefront.LanguageCode.zhCn)
+        case "PT":
+            if let regionCode = currentRegionCode?.uppercased() {
+                return GraphQLEnum(regionCode == "BR" ? Storefront.LanguageCode.ptBr : Storefront.LanguageCode.ptPt)
+            }
+            return GraphQLEnum(Storefront.LanguageCode.pt)
+        default:
+            if let mappedCode = Storefront.LanguageCode(rawValue: languageCode) {
+                return GraphQLEnum(mappedCode)
+            }
+            let baseLanguage = String(languageCode.prefix(2))
+            if let mappedCode = Storefront.LanguageCode(rawValue: baseLanguage) {
+                return GraphQLEnum(mappedCode)
             }
         }
+
         return GraphQLEnum(Storefront.LanguageCode.en)
     }
 
     var countryCode: GraphQLEnum<Storefront.CountryCode> {
-        GraphQLEnum(Storefront.CountryCode(rawValue: Locale.current.region?.identifier ?? "US") ?? .us)
+        GraphQLEnum(Storefront.CountryCode(rawValue: Network.currentRegionCode ?? "US") ?? .us)
     }
 
     var languageCode: GraphQLEnum<Storefront.LanguageCode> {

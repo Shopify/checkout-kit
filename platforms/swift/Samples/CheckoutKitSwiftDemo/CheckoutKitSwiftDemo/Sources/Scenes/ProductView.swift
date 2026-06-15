@@ -113,26 +113,29 @@ struct ProductView: View {
                         .disabled(!variant.availableForSale || loading)
 
                         if variant.availableForSale {
-                            AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
-                                .wallets([.applePay])
-                                .onFail { error in
-                                    print("[AcceleratedCheckout] Failed: \(error)")
-                                }
-                                .onCancel {
-                                    print("[AcceleratedCheckout] Cancelled")
-                                }
-                                .environmentObject(
-                                    ShopifyAcceleratedCheckouts.Configuration(
-                                        storefrontDomain: InfoDictionary.shared.domain,
-                                        storefrontAccessToken: InfoDictionary.shared.accessToken
+                            if #available(iOS 16, *) {
+                                AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
+                                    .wallets([.applePay])
+                                    .applePayStyle(applePayStyle.style)
+                                    .onFail { error in
+                                        print("[AcceleratedCheckout] Failed: \(error)")
+                                    }
+                                    .onCancel {
+                                        print("[AcceleratedCheckout] Cancelled")
+                                    }
+                                    .environmentObject(
+                                        ShopifyAcceleratedCheckouts.Configuration(
+                                            storefrontDomain: InfoDictionary.shared.domain,
+                                            storefrontAccessToken: InfoDictionary.shared.accessToken
+                                        )
                                     )
-                                )
-                                .environmentObject(
-                                    ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-                                        merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
-                                        contactFields: [.email, .phone]
+                                    .environmentObject(
+                                        ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+                                            merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
+                                            contactFields: [.email, .phone]
+                                        )
                                     )
-                                )
+                            }
                         }
                     }.padding([.leading, .trailing], 15)
                 }

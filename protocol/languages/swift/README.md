@@ -9,7 +9,7 @@ Most apps consume this product through the root Checkout Kit Swift package.
 ## Requirements
 
 - Swift Package Manager with Swift tools 5.9+
-- iOS 13.0+ or macOS 10.15+
+- iOS 15.0+ or macOS 10.15+
 
 ## Install
 

@@ -23,6 +23,11 @@ if [[ "$MODE" != "check" && "$MODE" != "fix" ]]; then
 	exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ! "$SCRIPT_DIR/check_sample_package_paths"; then
+	exit 1
+fi
+
 print_install_instructions() {
 	echo "🔧 FIX:"
 	echo "   Shopify employee? Run 'dev up'"
