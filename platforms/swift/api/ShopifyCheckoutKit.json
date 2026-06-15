@@ -97,6 +97,13 @@
       },
       {
         "kind": "Import",
+        "name": "os.lock",
+        "printedName": "os.lock",
+        "declKind": "Import",
+        "moduleName": "ShopifyCheckoutKit"
+      },
+      {
+        "kind": "Import",
         "name": "os.log",
         "printedName": "os.log",
         "declKind": "Import",
@@ -2633,6 +2640,20 @@
           },
           {
             "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -3843,6 +3864,20 @@
               },
               {
                 "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              },
+              {
+                "kind": "Conformance",
                 "name": "Copyable",
                 "printedName": "Copyable",
                 "usr": "s:s8CopyableP",
@@ -4041,6 +4076,20 @@
             "conformances": [
               {
                 "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              },
+              {
+                "kind": "Conformance",
                 "name": "Copyable",
                 "printedName": "Copyable",
                 "usr": "s:s8CopyableP",
@@ -4061,6 +4110,20 @@
         "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV",
         "moduleName": "ShopifyCheckoutKit",
         "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
           {
             "kind": "Conformance",
             "name": "Copyable",
@@ -4488,6 +4551,20 @@
           },
           {
             "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -4879,6 +4956,7 @@
         "usr": "s:18ShopifyCheckoutKit6LoggerP",
         "mangledName": "$s18ShopifyCheckoutKit6LoggerP",
         "moduleName": "ShopifyCheckoutKit",
+        "genericSig": "<Self : Swift.Sendable>",
         "conformances": [
           {
             "kind": "Conformance",
@@ -4893,6 +4971,20 @@
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
             "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       },
@@ -4922,6 +5014,9 @@
             "usr": "s:18ShopifyCheckoutKit10NoOpLoggerC3logyySSF",
             "mangledName": "$s18ShopifyCheckoutKit10NoOpLoggerC3logyySSF",
             "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Final"
+            ],
             "funcSelfKind": "NonMutating"
           },
           {
@@ -4939,6 +5034,9 @@
             "usr": "s:18ShopifyCheckoutKit10NoOpLoggerC9clearLogsyyF",
             "mangledName": "$s18ShopifyCheckoutKit10NoOpLoggerC9clearLogsyyF",
             "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Final"
+            ],
             "funcSelfKind": "NonMutating"
           }
         ],
@@ -4946,6 +5044,9 @@
         "usr": "s:18ShopifyCheckoutKit10NoOpLoggerC",
         "mangledName": "$s18ShopifyCheckoutKit10NoOpLoggerC",
         "moduleName": "ShopifyCheckoutKit",
+        "declAttributes": [
+          "Final"
+        ],
         "hasMissingDesignatedInitializers": true,
         "conformances": [
           {
@@ -4954,6 +5055,20 @@
             "printedName": "Logger",
             "usr": "s:18ShopifyCheckoutKit6LoggerP",
             "mangledName": "$s18ShopifyCheckoutKit6LoggerP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           },
           {
             "kind": "Conformance",
@@ -5361,11 +5476,6 @@
         "usr": "s:18ShopifyCheckoutKit13configurationAA13ConfigurationVvp",
         "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvp",
         "moduleName": "ShopifyCheckoutKit",
-        "declAttributes": [
-          "HasInitialValue",
-          "HasStorage"
-        ],
-        "hasStorage": true,
         "accessors": [
           {
             "kind": "Accessor",
@@ -5383,7 +5493,6 @@
             "usr": "s:18ShopifyCheckoutKit13configurationAA13ConfigurationVvg",
             "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvg",
             "moduleName": "ShopifyCheckoutKit",
-            "implicit": true,
             "accessorKind": "get"
           },
           {
@@ -5407,7 +5516,6 @@
             "usr": "s:18ShopifyCheckoutKit13configurationAA13ConfigurationVvs",
             "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvs",
             "moduleName": "ShopifyCheckoutKit",
-            "implicit": true,
             "accessorKind": "set"
           }
         ]

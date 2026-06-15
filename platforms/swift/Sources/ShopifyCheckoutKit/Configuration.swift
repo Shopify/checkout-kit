@@ -1,6 +1,6 @@
 import UIKit
 
-public struct Platform: Equatable {
+public struct Platform: Equatable, Sendable {
     public let identifier: String
     public let version: String?
 
@@ -11,7 +11,7 @@ public struct Platform: Equatable {
     }
 }
 
-public struct Configuration {
+public struct Configuration: Sendable {
     /// Determines the color scheme used when checkout is presented.
     ///
     /// By default, the color scheme is determined based on the current
@@ -48,7 +48,7 @@ public struct Configuration {
 }
 
 extension Configuration {
-    public enum ColorScheme: String, CaseIterable {
+    public enum ColorScheme: String, CaseIterable, Sendable {
         /// Uses a light, idiomatic color scheme.
         case light
         /// Uses a dark, idiomatic color scheme.
@@ -61,7 +61,7 @@ extension Configuration {
 }
 
 extension Configuration {
-    public struct Confetti {
+    public struct Confetti: Sendable {
         public var enabled: Bool = false
 
         public var particles = [UIImage]()

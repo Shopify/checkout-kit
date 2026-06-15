@@ -3,7 +3,7 @@ import os.log
 
 private let subsystem = "com.shopify.checkoutkit"
 
-public enum LogLevel: String, CaseIterable {
+public enum LogLevel: String, CaseIterable, Sendable {
     case all
     case debug
     case error
@@ -66,12 +66,12 @@ public class OSLogger {
     }
 }
 
-public protocol Logger {
+public protocol Logger: Sendable {
     func log(_ message: String)
     func clearLogs()
 }
 
-public class NoOpLogger: Logger {
+public final class NoOpLogger: Logger {
     public func log(_: String) {}
 
     public func clearLogs() {}
