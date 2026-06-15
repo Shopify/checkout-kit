@@ -315,6 +315,7 @@ enum ApplePayStyleOption: String, CaseIterable {
         }
     }
 
+    @available(iOS 16.0, *)
     var style: PayWithApplePayButtonStyle {
         switch self {
         case .automatic: return .automatic

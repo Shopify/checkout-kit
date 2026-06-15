@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "ShopifyCheckoutProtocol",
     platforms: [
-        .iOS(.v13),
+        .iOS(.v15),
         .macOS(.v10_15),
     ],
     products: [

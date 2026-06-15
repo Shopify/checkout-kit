@@ -39,7 +39,7 @@
 ## Requirements
 
 - Swift Package Manager with Swift tools 5.9+
-- iOS 13.0+ for `ShopifyCheckoutKit`
+- iOS 15.0+ for `ShopifyCheckoutKit`
 - iOS 16.0+ for `ShopifyAcceleratedCheckouts`
 - A checkout URL from `cart.checkoutUrl` or a cart permalink
 
