@@ -2,21 +2,44 @@ import os.log
 @testable import ShopifyCheckoutKit
 import XCTest
 
-class TestableOSLogger: OSLogger {
-    private(set) var capturedMessages: [(message: String, type: OSLogType)] = []
-    private let testPrefix: String
-    override init() {
-        testPrefix = "ShopifyCheckoutKit"
-        super.init()
+final class TestableOSLogger: Sendable {
+    private let capturedMessagesStorage = LockedValue([(message: String, type: OSLogType)]())
+    private let logger: OSLogger
+
+    var capturedMessages: [(message: String, type: OSLogType)] {
+        capturedMessagesStorage.get()
     }
 
-    override init(prefix: String, logLevel: LogLevel) {
-        testPrefix = prefix
-        super.init(prefix: prefix, logLevel: logLevel)
+    convenience init() {
+        self.init(prefix: "ShopifyCheckoutKit", logLevel: ShopifyCheckoutKit.configuration.logLevel)
     }
 
-    override func sendToOSLog(_ message: String, type: OSLogType) {
-        capturedMessages.append((message: message, type: type))
+    init(prefix: String, logLevel: LogLevel) {
+        logger = OSLogger(
+            prefix: prefix,
+            logLevel: logLevel,
+            sendToOSLogHandler: { [capturedMessagesStorage] message, type in
+                capturedMessagesStorage.update {
+                    $0.append((message: message, type: type))
+                }
+            }
+        )
+    }
+
+    func info(_ message: String) {
+        logger.info(message)
+    }
+
+    func debug(_ message: String) {
+        logger.debug(message)
+    }
+
+    func error(_ message: String) {
+        logger.error(message)
+    }
+
+    func fault(_ message: String) {
+        logger.fault(message)
     }
 }
 
@@ -37,9 +60,23 @@ final class OSLoggerTests: XCTestCase {
         XCTAssertNotNil(OSLogger.shared)
     }
 
-    func test_defaultInitializer_withNoParameters_shouldMaintainBackwardsCompatibility() {
+    func test_defaultInitializer_withNoParameters_shouldUseConfigurationLogLevel() {
+        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
+
         let logger = OSLogger()
-        XCTAssertNotNil(logger)
+
+        XCTAssertEqual(logger.logLevel, .debug)
+    }
+
+    func test_sharedLogger_canBeReplaced() {
+        let originalLogger = OSLogger.shared
+        defer { OSLogger.shared = originalLogger }
+
+        let replacementLogger = OSLogger(prefix: "Replacement", logLevel: .debug)
+
+        OSLogger.shared = replacementLogger
+
+        XCTAssertTrue(OSLogger.shared === replacementLogger)
     }
 
     func test_logLevelNone_withAllLogCalls_shouldBlockAllLogging() {
