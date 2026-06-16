@@ -3,7 +3,8 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 internal struct ShopPayButton: View {
-    @EnvironmentObject private var configuration: ShopifyAcceleratedCheckouts.Configuration
+    @Environment(\.shopifyAcceleratedCheckoutsConfiguration)
+    private var configuration: ShopifyAcceleratedCheckouts.Configuration?
 
     let identifier: CheckoutIdentifier
     let eventHandlers: EventHandlers
@@ -29,12 +30,19 @@ internal struct ShopPayButton: View {
         default:
             Internal_ShopPayButton(
                 identifier: identifier,
-                configuration: configuration,
+                configuration: resolvedConfiguration,
                 eventHandlers: eventHandlers,
                 cornerRadius: cornerRadius,
                 client: clientContainer.client
             )
         }
+    }
+
+    private var resolvedConfiguration: ShopifyAcceleratedCheckouts.Configuration {
+        guard let configuration else {
+            fatalError("Missing ShopifyAcceleratedCheckouts.Configuration. Add .environment(\\.shopifyAcceleratedCheckoutsConfiguration, ...) to an ancestor view.")
+        }
+        return configuration
     }
 }
 

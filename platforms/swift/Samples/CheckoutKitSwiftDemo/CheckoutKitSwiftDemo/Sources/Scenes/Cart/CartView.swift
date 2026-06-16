@@ -46,13 +46,15 @@ struct CartView: View {
                                     print("[AcceleratedCheckout] Cancelled")
                                 }
                                 .connect(client)
-                                .environmentObject(
+                                .environment(
+                                    \.shopifyAcceleratedCheckoutsConfiguration,
                                     ShopifyAcceleratedCheckouts.Configuration(
                                         storefrontDomain: InfoDictionary.shared.domain,
                                         storefrontAccessToken: InfoDictionary.shared.accessToken
                                     )
                                 )
-                                .environmentObject(
+                                .environment(
+                                    \.shopifyApplePayConfiguration,
                                     ShopifyAcceleratedCheckouts.ApplePayConfiguration(
                                         merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
                                         contactFields: [.email, .phone]

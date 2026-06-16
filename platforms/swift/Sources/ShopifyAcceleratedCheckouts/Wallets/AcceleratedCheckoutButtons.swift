@@ -17,8 +17,8 @@ public enum RenderState: Equatable {
 /// - omission of the `wallets` modifier will render all buttons
 @available(iOS 16.0, *)
 public struct AcceleratedCheckoutButtons: View {
-    @EnvironmentObject
-    private var configuration: ShopifyAcceleratedCheckouts.Configuration
+    @Environment(\.shopifyAcceleratedCheckoutsConfiguration)
+    private var configuration: ShopifyAcceleratedCheckouts.Configuration?
 
     let identifier: CheckoutIdentifier
     public var wallets: [Wallet] = [.shopPay, .applePay]
@@ -95,11 +95,19 @@ public struct AcceleratedCheckoutButtons: View {
         }
     }
 
+    private var resolvedConfiguration: ShopifyAcceleratedCheckouts.Configuration {
+        guard let configuration else {
+            fatalError("Missing ShopifyAcceleratedCheckouts.Configuration. Add .environment(\\.shopifyAcceleratedCheckoutsConfiguration, ...) to an ancestor view.")
+        }
+        return configuration
+    }
+
     private func loadShopSettings() async {
         guard identifier.isValid() else { return }
 
         do {
             currentRenderState = .loading
+            let configuration = resolvedConfiguration
             let storefront = StorefrontAPI(
                 storefrontDomain: configuration.storefrontDomain,
                 storefrontAccessToken: configuration.storefrontAccessToken

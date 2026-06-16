@@ -53,8 +53,8 @@ final class ApplePayViewModifierTests: XCTestCase {
 
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onCancel(cancelAction)
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully with cancel modifier")
@@ -70,8 +70,8 @@ final class ApplePayViewModifierTests: XCTestCase {
         _ = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onCancel { firstCallbackInvoked = true }
             .onCancel { secondCallbackInvoked = true } // Should replace the first
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertFalse(firstCallbackInvoked, "First callback should not be invoked")
@@ -88,8 +88,8 @@ final class ApplePayViewModifierTests: XCTestCase {
 
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onFail(errorAction)
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully with error modifier")
@@ -114,8 +114,8 @@ final class ApplePayViewModifierTests: XCTestCase {
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onFail(errorAction)
             .onCancel(cancelAction)
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully with both modifiers")
@@ -132,8 +132,8 @@ final class ApplePayViewModifierTests: XCTestCase {
 
     func testEnvironmentValueDefaults() {
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully without handlers")
@@ -151,8 +151,8 @@ final class ApplePayViewModifierTests: XCTestCase {
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onFail(errorAction)
             .onCancel(cancelAction)
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully with all modifiers")
@@ -177,8 +177,8 @@ final class ApplePayViewModifierTests: XCTestCase {
             AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
                 .onFail { _ in errorCount += 1 }
         }
-        .environmentObject(mockConfiguration)
-        .environmentObject(mockApplePayConfiguration)
+        .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+        .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
         .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully")
@@ -195,8 +195,8 @@ final class ApplePayViewModifierTests: XCTestCase {
     func testCornerRadiusModifier() {
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .cornerRadius(16)
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully with corner radius modifier")
@@ -205,8 +205,8 @@ final class ApplePayViewModifierTests: XCTestCase {
     func testCornerRadiusZeroValue() {
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .cornerRadius(0)
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully with zero corner radius")
@@ -215,8 +215,8 @@ final class ApplePayViewModifierTests: XCTestCase {
     func testCornerRadiusNegativeValue() {
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .cornerRadius(-10)
-            .environmentObject(mockConfiguration)
-            .environmentObject(mockApplePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
+            .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
         XCTAssertNotNil(view, "View should be created successfully with negative corner radius")

@@ -302,7 +302,7 @@ iOS handles checkout geolocation permission prompts through the system prompt. I
 
 ### Configure accelerated checkouts
 
-Create shared configuration objects and inject them into your SwiftUI hierarchy:
+Create shared configuration values and inject them into your SwiftUI hierarchy:
 
 ```swift
 import ShopifyAcceleratedCheckouts
@@ -325,8 +325,8 @@ struct YourApp: App {
   var body: some Scene {
     WindowGroup {
       ContentView()
-        .environmentObject(checkoutConfig)
-        .environmentObject(applePayConfig)
+        .environment(\.shopifyAcceleratedCheckoutsConfiguration, checkoutConfig)
+        .environment(\.shopifyApplePayConfiguration, applePayConfig)
     }
   }
 }

@@ -60,8 +60,8 @@ final class ApplePayIntegrationTests: XCTestCase {
         await MainActor.run {
             let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart")
                 .wallets([.applePay])
-                .environmentObject(mockCommonConfiguration)
-                .environmentObject(mockApplePayConfiguration)
+                .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockCommonConfiguration)
+                .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
                 .environmentObject(mockShopSettings)
 
             let hostingController = UIHostingController(rootView: view)
@@ -89,8 +89,8 @@ final class ApplePayIntegrationTests: XCTestCase {
                 .onCancel {
                     cancelExpectation.fulfill()
                 }
-                .environmentObject(mockCommonConfiguration)
-                .environmentObject(mockApplePayConfiguration)
+                .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockCommonConfiguration)
+                .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
                 .environmentObject(mockShopSettings)
 
             let hostingController = UIHostingController(rootView: view)
@@ -114,8 +114,8 @@ final class ApplePayIntegrationTests: XCTestCase {
         // Create hosting controller to render the view
         let hostingController = UIHostingController(
             rootView: button
-                .environmentObject(mockCommonConfiguration)
-                .environmentObject(mockApplePayConfiguration)
+                .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockCommonConfiguration)
+                .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
                 .environmentObject(mockShopSettings)
         )
 

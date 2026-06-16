@@ -11,13 +11,13 @@ struct ShopifyAcceleratedCheckoutsApp: App {
     @AppStorage(AppStorageKeys.email.rawValue) var email: String = ""
     @AppStorage(AppStorageKeys.phone.rawValue) var phone: String = ""
     @AppStorage(AppStorageKeys.supportedCountries.rawValue) var supportedCountriesString: String = ""
-    @StateObject private var configuration: ShopifyAcceleratedCheckouts.Configuration
+    @State private var configuration: ShopifyAcceleratedCheckouts.Configuration
 
     init() {
         let email = UserDefaults.standard.string(forKey: AppStorageKeys.email.rawValue) ?? ""
         let phone = UserDefaults.standard.string(forKey: AppStorageKeys.phone.rawValue) ?? ""
-        _configuration = StateObject(
-            wrappedValue: ShopifyAcceleratedCheckouts.Configuration(
+        _configuration = State(
+            initialValue: ShopifyAcceleratedCheckouts.Configuration(
                 storefrontDomain: EnvironmentVariables.storefrontDomain,
                 storefrontAccessToken: EnvironmentVariables.storefrontAccessToken,
                 customer: Self.customer(email: email, phone: phone)
@@ -51,8 +51,8 @@ struct ShopifyAcceleratedCheckoutsApp: App {
                 ShopifyAcceleratedCheckouts.logLevel = logLevel
                 updateConfiguration()
             }
-            .environmentObject(configuration)
-            .environmentObject(applePayConfiguration)
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, configuration)
+            .environment(\.shopifyApplePayConfiguration, applePayConfiguration)
         }
         .environment(\.locale, Locale(identifier: locale))
     }

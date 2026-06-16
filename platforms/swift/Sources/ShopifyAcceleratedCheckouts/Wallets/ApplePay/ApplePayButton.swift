@@ -7,15 +7,15 @@ import SwiftUI
 @available(macOS, unavailable)
 struct ApplePayButton: View {
     /// The configuration for Apple Pay
-    @EnvironmentObject
-    private var configuration: ShopifyAcceleratedCheckouts.Configuration
+    @Environment(\.shopifyAcceleratedCheckoutsConfiguration)
+    private var configuration: ShopifyAcceleratedCheckouts.Configuration?
 
     /// The shop settings
     @EnvironmentObject
     private var shopSettings: ShopSettings
 
-    @EnvironmentObject
-    private var applePayConfiguration: ShopifyAcceleratedCheckouts.ApplePayConfiguration
+    @Environment(\.shopifyApplePayConfiguration)
+    private var applePayConfiguration: ShopifyAcceleratedCheckouts.ApplePayConfiguration?
 
     /// The identifier to use for checkout
     private let identifier: CheckoutIdentifier
@@ -58,8 +58,8 @@ struct ApplePayButton: View {
                 label: label,
                 style: style,
                 configuration: ApplePayConfigurationWrapper(
-                    common: configuration,
-                    applePay: applePayConfiguration,
+                    common: resolvedConfiguration,
+                    applePay: resolvedApplePayConfiguration,
                     shopSettings: shopSettings
                 ),
                 eventHandlers: eventHandlers,
@@ -67,6 +67,20 @@ struct ApplePayButton: View {
                 client: clientContainer.client
             )
         }
+    }
+
+    private var resolvedConfiguration: ShopifyAcceleratedCheckouts.Configuration {
+        guard let configuration else {
+            fatalError("Missing ShopifyAcceleratedCheckouts.Configuration. Add .environment(\\.shopifyAcceleratedCheckoutsConfiguration, ...) to an ancestor view.")
+        }
+        return configuration
+    }
+
+    private var resolvedApplePayConfiguration: ShopifyAcceleratedCheckouts.ApplePayConfiguration {
+        guard let applePayConfiguration else {
+            fatalError("Missing ShopifyAcceleratedCheckouts.ApplePayConfiguration. Add .environment(\\.shopifyApplePayConfiguration, ...) to an ancestor view.")
+        }
+        return applePayConfiguration
     }
 
     func applePayStyle(_ style: PayWithApplePayButtonStyle) -> some View {

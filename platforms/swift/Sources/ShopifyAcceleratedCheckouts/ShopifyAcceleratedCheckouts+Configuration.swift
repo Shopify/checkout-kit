@@ -3,25 +3,25 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 extension ShopifyAcceleratedCheckouts {
-    public class Configuration: ObservableObject, Copyable {
+    public struct Configuration: Sendable, Equatable {
         /// The domain of the shop without the protocol.
         ///
         /// Example: `my-shop.myshopify.com`
         ///
         /// See: https://shopify.dev/docs/storefronts/themes/getting-started/build-a-theme#get-the-shop-domain
-        @Published public var storefrontDomain: String
+        public var storefrontDomain: String
 
         /// The storefront access token.
         ///
         /// See: https://shopify.dev/docs/storefronts/themes/getting-started/build-a-theme#get-the-storefront-access-token
-        @Published public var storefrontAccessToken: String
+        public var storefrontAccessToken: String
 
         /// Data to attach to the buyerIdentity during cart creation
         /// - Apple Pay sheet will skip requesting email/phone number fields if provided here
         /// - Customer will *override* existing cart.buyerIdentity if you are using cartId
         ///
         /// See: https://shopify.dev/docs/api/storefront/latest/mutations/cartBuyerIdentityUpdate
-        @Published public var customer: Customer?
+        public var customer: Customer?
 
         public init(
             storefrontDomain: String,
@@ -31,12 +31,6 @@ extension ShopifyAcceleratedCheckouts {
             self.storefrontDomain = storefrontDomain
             self.storefrontAccessToken = storefrontAccessToken
             self.customer = customer
-        }
-
-        package required init(copy: Configuration) {
-            storefrontDomain = copy.storefrontDomain
-            storefrontAccessToken = copy.storefrontAccessToken
-            customer = copy.customer
         }
     }
 
@@ -61,5 +55,18 @@ extension ShopifyAcceleratedCheckouts {
             self.phoneNumber = phoneNumber
             self.customerAccessToken = customerAccessToken
         }
+    }
+}
+
+@available(iOS 16.0, *)
+private struct ShopifyAcceleratedCheckoutsConfigurationKey: EnvironmentKey {
+    static let defaultValue: ShopifyAcceleratedCheckouts.Configuration? = nil
+}
+
+@available(iOS 16.0, *)
+extension EnvironmentValues {
+    public var shopifyAcceleratedCheckoutsConfiguration: ShopifyAcceleratedCheckouts.Configuration? {
+        get { self[ShopifyAcceleratedCheckoutsConfigurationKey.self] }
+        set { self[ShopifyAcceleratedCheckoutsConfigurationKey.self] = newValue }
     }
 }
