@@ -150,42 +150,58 @@ class EmbeddedCheckoutProtocolTest {
 
     // endregion
 
-    // region unsupported methods — silently ignored
+    // region unsupported methods
 
     @Test
-    fun `ec auth is silently ignored and not delegated to client`() {
-        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ec.auth","id":"1","params":{"type":"oauth"}}""")
-    }
-
-    @Test
-    fun `ec payment instruments change request is silently ignored and not delegated to client`() {
-        assertIgnoredByBridge(
-            """{"jsonrpc":"2.0","method":"ec.payment.instruments_change_request","id":"2","params":{}}"""
+    fun `ec auth request returns method not found and is not delegated to client`() {
+        assertMethodNotFoundByBridge(
+            """{"jsonrpc":"2.0","method":"ec.auth","id":"1","params":{"type":"oauth"}}""",
+            """"id":"1"""",
         )
     }
 
     @Test
-    fun `ec payment credential request is silently ignored and not delegated to client`() {
-        assertIgnoredByBridge(
-            """{"jsonrpc":"2.0","method":"ec.payment.credential_request","id":"3","params":{}}"""
+    fun `ec payment instruments change request returns method not found and is not delegated to client`() {
+        assertMethodNotFoundByBridge(
+            """{"jsonrpc":"2.0","method":"ec.payment.instruments_change_request","id":"2","params":{}}""",
+            """"id":"2"""",
         )
     }
 
     @Test
-    fun `ec fulfillment address change request is silently ignored and not delegated to client`() {
-        assertIgnoredByBridge(
-            """{"jsonrpc":"2.0","method":"ec.fulfillment.address_change_request","id":"4","params":{}}"""
+    fun `ec payment credential request returns method not found and is not delegated to client`() {
+        assertMethodNotFoundByBridge(
+            """{"jsonrpc":"2.0","method":"ec.payment.credential_request","id":"3","params":{}}""",
+            """"id":"3"""",
         )
     }
 
     @Test
-    fun `ec buyer change is silently ignored and not delegated to client`() {
+    fun `ec fulfillment address change request returns method not found and is not delegated to client`() {
+        assertMethodNotFoundByBridge(
+            """{"jsonrpc":"2.0","method":"ec.fulfillment.address_change_request","id":"4","params":{}}""",
+            """"id":"4"""",
+        )
+    }
+
+    @Test
+    fun `ep cart request returns method not found and is not delegated to client`() {
+        assertMethodNotFoundByBridge(
+            """{"jsonrpc":"2.0","method":"ep.cart.ready","id":"5","params":{}}""",
+            """"id":"5"""",
+        )
+    }
+
+    @Test
+    fun `ec buyer change notification is ignored and not delegated to client`() {
         assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ec.buyer.change","params":{"checkout":{}}}""")
     }
 
     @Test
-    fun `ep cart methods fall through as unsupported and are not delegated to client`() {
-        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ep.cart.ready","id":"5","params":{}}""")
+    fun `unsupported notifications are ignored and not delegated to client`() {
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ec.auth","params":{"type":"oauth"}}""")
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ec.buyer.change","params":{"checkout":{}}}""")
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ep.cart.ready","params":{}}""")
     }
 
     // endregion
@@ -496,9 +512,9 @@ class EmbeddedCheckoutProtocolTest {
     // region client delegation — requests
 
     @Test
-    fun `unknown method is silently ignored and not delegated to client`() {
+    fun `unknown request returns method not found and is not delegated to client`() {
         val rawMessage = """{"jsonrpc":"2.0","method":"customMethod","id":"8","params":{}}"""
-        assertIgnoredByBridge(rawMessage)
+        assertMethodNotFoundByBridge(rawMessage, """"id":"8"""")
     }
 
     @Test
@@ -530,11 +546,27 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
-    fun `unknown method with no client sends nothing to checkout`() {
-        ecp.postMessage("""{"jsonrpc":"2.0","method":"unknownMethod","id":"11"}""")
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+    fun `unknown notification sends nothing to checkout`() {
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"unknownMethod"}""")
+    }
 
-        verify(viewSpy, never()).evaluateJavascript(any(), any())
+    @Test
+    fun `unknown request with no client returns method not found`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"unknownMethod","id":"11"}""")
+        }
+
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32601")
+        assertThat(js).contains("Method not found")
+        assertThat(js).contains(""""id":"11"""")
+    }
+
+    @Test
+    fun `unknown request with invalid id sends no response`() {
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"unknownMethod","id":{},"params":{}}""")
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"unknownMethod","id":null,"params":{}}""")
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"unknownMethod","id":true,"params":{}}""")
     }
 
     // endregion
@@ -597,6 +629,21 @@ class EmbeddedCheckoutProtocolTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(viewSpy, never()).evaluateJavascript(any(), any())
+        verify(client, never()).process(any())
+    }
+
+    private fun assertMethodNotFoundByBridge(rawMessage: String, expectedId: String) {
+        val client = mock<CheckoutCommunicationClient>()
+        ecp.setClient(client)
+
+        val js = captureEvaluatedJs {
+            ecp.postMessage(rawMessage)
+        }
+
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32601")
+        assertThat(js).contains("Method not found")
+        assertThat(js).contains(expectedId)
         verify(client, never()).process(any())
     }
 

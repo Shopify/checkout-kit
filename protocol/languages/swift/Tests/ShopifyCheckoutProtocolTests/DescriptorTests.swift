@@ -1,4 +1,5 @@
 @testable import ShopifyCheckoutProtocol
+import Foundation
 import Testing
 
 @Suite("Descriptor Tests")
@@ -67,6 +68,35 @@ struct DescriptorTests {
             #expect(CheckoutProtocol.supportedProtocolMethod(#"{"jsonrpc":"2.0","method":"custom"}"#) == nil)
             #expect(CheckoutProtocol.supportedProtocolMethod(#"{"jsonrpc":"1.0","method":"ec.start"}"#) == nil)
             #expect(CheckoutProtocol.supportedProtocolMethod("not json") == nil)
+        }
+
+        @Test func methodNotFoundResponseEncodesUnsupportedRequests() throws {
+            let response = try #require(
+                CheckoutProtocol.methodNotFoundResponse(
+                    forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":"unsupported","params":{}}"#
+                )
+            )
+            let data = try #require(response.data(using: .utf8))
+            let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+            #expect(object["jsonrpc"] as? String == "2.0")
+            #expect(object["id"] as? String == "unsupported")
+            let error = try #require(object["error"] as? [String: Any])
+            #expect(error["code"] as? Int == CheckoutProtocol.methodNotFoundCode)
+            #expect(error["message"] as? String == CheckoutProtocol.methodNotFoundMessage)
+        }
+
+        @Test func methodNotFoundResponseRejectsInvalidRequestIDs() {
+            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":true,"params":{}}"#) == nil)
+            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":null,"params":{}}"#) == nil)
+            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":{},"params":{}}"#) == nil)
+        }
+
+        @Test func methodNotFoundResponseRejectsSupportedNotificationsOrInvalidMessages() {
+            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom"}"#) == nil)
+            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"ec.start","id":"supported"}"#) == nil)
+            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"1.0","method":"custom","id":"unsupported"}"#) == nil)
+            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: "not json") == nil)
         }
     }
 }

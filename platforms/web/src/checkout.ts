@@ -524,7 +524,10 @@ export class ShopifyCheckout
     }
 
     const message = CheckoutProtocolMessage.parse(event);
-    if (!message) return;
+    if (!message) {
+      respondToUnsupportedProtocolRequest(event);
+      return;
+    }
 
     // @see https://ucp.dev/2026-04-08/specification/embedded-checkout/
 
@@ -921,6 +924,11 @@ const CHECKOUT_PROTOCOL_MESSAGES: (keyof CheckoutProtocolMessageMap)[] = [
   "ec.window.open_request",
 ];
 
+const METHOD_NOT_FOUND_ERROR = {
+  code: -32601,
+  message: "Method not found",
+} as const;
+
 class CheckoutProtocolMessage<
   MessageType extends keyof CheckoutProtocolMessageMap = keyof CheckoutProtocolMessageMap,
 > {
@@ -956,6 +964,44 @@ class CheckoutProtocolMessage<
 
 function isEcErrorParams(params: unknown): params is CheckoutProtocolMessageMap["ec.error"] {
   return params != null && typeof params === "object" && "error" in params;
+}
+
+function respondToUnsupportedProtocolRequest(event: MessageEvent) {
+  const request = parseUnsupportedProtocolRequest(event.data);
+  if (!request) return;
+
+  event.source?.postMessage(
+    {
+      jsonrpc: "2.0" as const,
+      id: request.id,
+      error: METHOD_NOT_FOUND_ERROR,
+    },
+    { targetOrigin: event.origin },
+  );
+}
+
+function parseUnsupportedProtocolRequest(data: unknown): { id: string | number } | undefined {
+  if (
+    data == null ||
+    typeof data !== "object" ||
+    !("jsonrpc" in data) ||
+    data.jsonrpc !== "2.0" ||
+    !("method" in data) ||
+    typeof data.method !== "string" ||
+    CHECKOUT_PROTOCOL_MESSAGES.includes(data.method as keyof CheckoutProtocolMessageMap) ||
+    !("id" in data) ||
+    !isJsonRpcRequestId(data.id)
+  ) {
+    return;
+  }
+
+  return { id: data.id };
+}
+
+function isJsonRpcRequestId(id: unknown): id is string | number {
+  if (typeof id === "string") return true;
+  if (typeof id === "number" && Number.isFinite(id)) return true;
+  return false;
 }
 
 function isCheckoutProtocolMessage(data: unknown): data is CheckoutProtocolMessageData {
