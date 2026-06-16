@@ -21,6 +21,7 @@
   - [Maven](#maven)
 - [Get a checkout URL](#get-a-checkout-url)
 - [Present checkout](#present-checkout)
+- [Preload checkout](#preload-checkout)
 - [Configure checkout](#configure-checkout)
   - [Color schemes](#color-schemes)
   - [Title localization](#title-localization)
@@ -123,6 +124,43 @@ val checkoutDialog = ShopifyCheckoutKit.present(checkoutUrl, activity) {
 checkoutDialog?.dismiss()
 ```
 
+## Preload checkout
+
+Call `preload` when your app has a strong signal that the buyer is likely to check out soon, such as when they open the cart screen or move toward a checkout action:
+
+```kotlin
+ShopifyCheckoutKit.preload(checkoutUrl, activity)
+```
+
+Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
+
+```kotlin
+ShopifyCheckoutKit.present(checkoutUrl, activity) {
+    onFail { error -> handleCheckoutError(error) }
+    onCancel { resetCheckoutUi() }
+}
+```
+
+Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart represented by the URL passed to `preload`, so call `preload` again after cart changes produce a new checkout URL.
+
+Avoid preloading on every add-to-cart or cart mutation. Preload only when buyer intent is strong enough to justify the additional client and network work.
+
+Clear unused preloaded checkout work with `invalidate`:
+
+```kotlin
+ShopifyCheckoutKit.invalidate()
+```
+
+Preloading is enabled by default. Disable it when appropriate, for example for data-saver modes or app-specific runtime conditions:
+
+```kotlin
+import com.shopify.checkoutkit.Preloading
+
+ShopifyCheckoutKit.configure {
+    it.preloading = Preloading(enabled = false)
+}
+```
+
 ## Configure checkout
 
 Configure global presentation defaults before presenting checkout:
@@ -138,6 +176,7 @@ ShopifyCheckoutKit.configure {
 | --- | --- | --- |
 | `colorScheme` | `ColorScheme.Automatic()` | Use device appearance, force `Light` or `Dark`, or use `Web` to match web checkout branding. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
+| `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
 
 ### Color schemes
 

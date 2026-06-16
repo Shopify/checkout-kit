@@ -14,12 +14,27 @@ fun BuyerIdentityDemoSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier,
 ) {
+    SettingsSwitch(
+        label = "Prefill buyer information",
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun SettingsSwitch(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier,
+) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
-        BodyMedium("Prefill buyer information")
+        BodyMedium(label)
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange

@@ -11,6 +11,19 @@ internal fun Uri?.isContactLink(): Boolean = this.isMailtoLink() || this.isTelLi
 internal fun Uri?.isDeepLink(): Boolean = this != null && !this.isWebLink() && !this.isContactLink() && !this.isAboutScheme()
 internal fun Uri?.isConfirmationPage(): Boolean =
     this?.pathSegments?.any { CONFIRMATION_PATH_REGEX.matches(it) } == true
+internal fun Uri?.redactedForLogging(): String? = when {
+    this == null -> null
+    isOpaque || queryParameterNames.isEmpty() -> toString()
+    else -> {
+        val builder = buildUpon().clearQuery()
+        queryParameterNames.forEach { name ->
+            builder.appendQueryParameter(name, REDACTED_QUERY_VALUE)
+        }
+        builder.build().toString()
+    }
+}
+
+internal fun String.redactedUrlForLogging(): String = toUri().redactedForLogging().orEmpty()
 
 /**
  * Applies Embedded Checkout Protocol query parameters to a checkout URL, replacing
@@ -42,6 +55,7 @@ private val CONFIRMATION_PATH_REGEX = Regex(pattern = "^(thank[-_]+you)$", optio
 private const val EC_VERSION_PARAM = "ec_version"
 private const val EC_DELEGATE_PARAM = "ec_delegate"
 private const val EC_DELEGATE_VALUE = "window.open"
+private const val REDACTED_QUERY_VALUE = "[REDACTED]"
 
 internal object Scheme {
     const val HTTP = "http"

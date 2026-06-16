@@ -171,7 +171,8 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
             if (request?.isForMainFrame == true) {
                 log.d(
                     LOG_TAG,
-                    "Handling error for main frame. URL: ${request.url}, errorCode: $errorCode, errorDescription: $errorDescription"
+                    "Handling error for main frame. URL: ${request.url.redactedForLogging()}, " +
+                        "errorCode: $errorCode, errorDescription: $errorDescription"
                 )
                 val listener = getListener()
                 when {

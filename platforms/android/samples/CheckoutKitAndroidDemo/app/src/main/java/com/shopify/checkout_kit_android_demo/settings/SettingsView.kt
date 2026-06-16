@@ -95,6 +95,15 @@ fun SettingsView(
                             .background(color = MaterialTheme.colorScheme.background)
                             .fillMaxWidth()
                     )
+
+                    SettingsSwitch(
+                        label = stringResource(id = R.string.checkout_preloading),
+                        checked = uiState.settings.checkoutPreloadingEnabled,
+                        onCheckedChange = settingsViewModel::setCheckoutPreloadingEnabled,
+                        modifier = Modifier
+                            .background(color = MaterialTheme.colorScheme.background)
+                            .fillMaxWidth()
+                    )
                 }
 
                 ColorSchemeSection(

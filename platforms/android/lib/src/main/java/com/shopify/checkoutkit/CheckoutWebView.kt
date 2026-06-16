@@ -5,9 +5,14 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import androidx.activity.ComponentActivity
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
+import java.util.concurrent.CountDownLatch
 
 internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = null) :
     BaseWebView(context, attributeSet) {
@@ -15,6 +20,10 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     private var listener = CheckoutWebViewListener(NoopCheckoutListener())
     private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocol(this)
     private var loadComplete = false
+    internal var isPresented = false
+        private set
+    internal var isPreloadRequest = false
+        private set
 
     init {
         webViewClient = CheckoutWebViewClient()
@@ -34,6 +43,10 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         embeddedCheckoutProtocol.setClient(client)
     }
 
+    fun markPresented() {
+        isPresented = true
+    }
+
     override fun getListener(): CheckoutWebViewListener {
         return listener
     }
@@ -50,27 +63,65 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         removeJavascriptInterface(EmbeddedCheckoutProtocol.INTERFACE_NAME)
     }
 
-    fun loadCheckout(url: String) {
-        log.d(LOG_TAG, "Loading checkout with url $url.")
+    fun loadCheckout(url: String, isPreload: Boolean = false) {
+        log.d(LOG_TAG, "Loading checkout with url ${url.redactedUrlForLogging()}. IsPreload: $isPreload.")
+        loadComplete = false
+        isPreloadRequest = isPreload
         Handler(Looper.getMainLooper()).post {
             val ecpUrl = url.appendEcpParams(specVersion = CheckoutProtocol.SPEC_VERSION)
-            loadUrl(ecpUrl)
+            val headers = if (isPreload) {
+                mutableMapOf(SHOPIFY_PURPOSE_HEADER to PREFETCH_PURPOSE)
+            } else {
+                mutableMapOf()
+            }
+            loadUrl(ecpUrl, headers)
         }
+    }
+
+    internal fun markPreloadConsumed() {
+        isPreloadRequest = false
     }
 
     inner class CheckoutWebViewClient : BaseWebViewClient() {
 
+        override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+            CheckoutWebView.invalidate()
+            return super.onRenderProcessGone(view, detail)
+        }
+
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
-            log.d(LOG_TAG, "onPageStarted called $url.")
+            log.d(LOG_TAG, "onPageStarted called ${url?.redactedUrlForLogging()}.")
             getListener().onCheckoutViewLoadStarted()
         }
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
-            log.d(LOG_TAG, "onPageFinished called $url.")
+            log.d(LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
             loadComplete = true
             getListener().onCheckoutViewLoadComplete()
+        }
+
+        override fun onReceivedError(
+            view: WebView?,
+            request: WebResourceRequest?,
+            error: WebResourceError?
+        ) {
+            if (request?.isForMainFrame == true) {
+                CheckoutWebView.invalidate()
+            }
+            super.onReceivedError(view, request, error)
+        }
+
+        override fun onReceivedHttpError(
+            view: WebView?,
+            request: WebResourceRequest?,
+            errorResponse: WebResourceResponse?
+        ) {
+            if (request?.isForMainFrame == true) {
+                CheckoutWebView.invalidate()
+            }
+            super.onReceivedHttpError(view, request, errorResponse)
         }
 
         override fun shouldOverrideUrlLoading(
@@ -82,9 +133,9 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
             when (val result = ExternalUriLauncher.launch(context, uri)) {
                 is ExternalUriLauncher.Result.Launched ->
-                    log.d(LOG_TAG, "Deep link intercepted: $uri — allowed")
+                    log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
                 is ExternalUriLauncher.Result.Rejected ->
-                    log.d(LOG_TAG, "Deep link intercepted: $uri — rejected (${result.reason})")
+                    log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})")
             }
             return true
         }
@@ -92,5 +143,87 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
     companion object {
         private const val LOG_TAG = "CheckoutWebView"
+        private const val SHOPIFY_PURPOSE_HEADER = "Shopify-Purpose"
+        private const val PREFETCH_PURPOSE = "prefetch"
+
+        private val preloadCache = PreloadCache()
+        internal var cacheClock: PreloadCache.Clock
+            get() = preloadCache.clock
+            set(value) {
+                preloadCache.clock = value
+            }
+
+        fun preload(url: String, activity: ComponentActivity) {
+            if (!ShopifyCheckoutKit.configuration.preloading.enabled) {
+                return
+            }
+
+            runOnUiThreadBlocking(activity) {
+                invalidate()
+                val view = CheckoutWebView(activity as Context).apply {
+                    loadCheckout(url, isPreload = true)
+                    log.d(LOG_TAG, "Pausing preloaded WebView.")
+                    onPause()
+                }
+                preloadCache.store(PreloadKey.forUrl(url), view)
+            }
+        }
+
+        fun checkoutViewFor(url: String, activity: ComponentActivity): CheckoutWebView {
+            var checkoutWebView: CheckoutWebView? = null
+            runOnUiThreadBlocking(activity) {
+                val cachedView = if (ShopifyCheckoutKit.configuration.preloading.enabled) {
+                    preloadCache.take(PreloadKey.forUrl(url))
+                } else {
+                    preloadCache.invalidate()
+                    null
+                }
+
+                checkoutWebView = cachedView ?: run {
+                    CheckoutWebView(activity as Context).apply {
+                        loadCheckout(url)
+                    }
+                }
+            }
+
+            return checkoutWebView!!
+        }
+
+        fun invalidate() {
+            runOnMainThread {
+                preloadCache.invalidate()
+            }
+        }
+
+        fun clearCache() {
+            if (!preloadCache.hasEntry) return
+            invalidate()
+        }
+
+        private fun runOnUiThreadBlocking(activity: ComponentActivity, action: () -> Unit) {
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                action()
+                return
+            }
+
+            val countDownLatch = CountDownLatch(1)
+            activity.runOnUiThread {
+                action()
+                countDownLatch.countDown()
+            }
+            countDownLatch.await()
+        }
+
+        private fun runOnMainThread(action: () -> Unit) {
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                action()
+            } else {
+                Handler(Looper.getMainLooper()).post(action)
+            }
+        }
+
+        internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedViewForTesting()
+
+        internal fun hasCacheEntryForTesting(): Boolean = preloadCache.hasEntry
     }
 }

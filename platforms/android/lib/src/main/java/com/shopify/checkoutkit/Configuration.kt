@@ -10,6 +10,11 @@ public data class Configuration internal constructor(
     var colorScheme: ColorScheme = ColorScheme.Automatic(),
     var platform: Platform? = null,
     var logLevel: LogLevel = LogLevel.WARN,
+    var preloading: Preloading = Preloading(),
+)
+
+public data class Preloading(
+    public val enabled: Boolean = true,
 )
 
 public enum class LogLevel {

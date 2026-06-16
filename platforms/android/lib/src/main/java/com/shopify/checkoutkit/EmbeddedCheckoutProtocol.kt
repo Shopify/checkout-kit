@@ -38,6 +38,10 @@ internal class EmbeddedCheckoutProtocol(
             client = defaultClient,
             policy = DefaultClientPolicy.AlwaysRunAfterMerchant,
         ),
+        CheckoutProtocol.complete.method to DefaultClientBinding(
+            client = defaultClient,
+            policy = DefaultClientPolicy.AlwaysRunAfterMerchant,
+        ),
     )
     private val composedClient: CheckoutCommunicationClient
         get() = ComposedCheckoutCommunicationClient(
@@ -79,6 +83,7 @@ internal class EmbeddedCheckoutProtocol(
         log.d(
             LOG_TAG,
             "Handling $METHOD_READY, " +
+                "isPreload=${view.isPreloadRequest} " +
                 "checkoutAcceptedDelegations=$checkoutAcceptedDelegations " +
                 "checkoutKitSupportedDelegations=$KIT_SUPPORTED_DELEGATIONS " +
                 "negotiatedDelegations=$negotiatedDelegations"
@@ -192,14 +197,18 @@ internal class EmbeddedCheckoutProtocol(
      *     dismiss the kit via the listener. Per UCP spec, `unrecoverable` means no valid
      *     resource exists to act on, so consumers don't have to wire dismissal in every
      *     error handler.
+     *   - [CheckoutProtocol.complete] - evicts any cached preload state.
      */
     private fun defaultDelegationClient(): CheckoutProtocol.Client =
         CheckoutProtocol.Client()
+            .on(CheckoutProtocol.complete) {
+                CheckoutWebView.invalidate()
+            }
             .on(CheckoutProtocol.windowOpen) { request ->
                 when (val result = ExternalUriLauncher.launch(view.context, request.url)) {
                     is ExternalUriLauncher.Result.Launched -> WindowOpenResult.Success
                     is ExternalUriLauncher.Result.Rejected -> {
-                        log.d(LOG_TAG, "window.open rejected for ${request.url}: ${result.reason}")
+                        log.d(LOG_TAG, "window.open rejected for ${request.url.redactedForLogging()}: ${result.reason}")
                         WindowOpenResult.Rejected(reason = result.reason)
                     }
                 }
@@ -207,6 +216,7 @@ internal class EmbeddedCheckoutProtocol(
             .on(CheckoutProtocol.error) { payload ->
                 if (payload.messages.none { it.severity == Severity.Unrecoverable }) return@on
                 log.d(LOG_TAG, "ec.error unrecoverable; dismissing checkout via event processor")
+                CheckoutWebView.invalidate()
                 view.getListener().onCheckoutViewFailedWithError(
                     ClientException(
                         errorDescription = "Embedded checkout reported unrecoverable error.",
