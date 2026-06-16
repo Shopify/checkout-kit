@@ -46,6 +46,47 @@ class CheckoutProtocolTest {
 
     // endregion
 
+    // region supported protocol methods
+
+    @Test
+    fun `supported protocol methods include ready notifications and delegations`() {
+        assertThat(CheckoutProtocol.supportedProtocolMethods).containsExactlyInAnyOrder(
+            CheckoutProtocol.READY_METHOD,
+            CheckoutProtocol.start.method,
+            CheckoutProtocol.complete.method,
+            CheckoutProtocol.error.method,
+            CheckoutProtocol.lineItemsChange.method,
+            CheckoutProtocol.messagesChange.method,
+            CheckoutProtocol.totalsChange.method,
+            CheckoutProtocol.windowOpen.method,
+        )
+    }
+
+    @Test
+    fun `supported protocol methods exclude internal or unsupported methods`() {
+        assertThat(CheckoutProtocol.supportedProtocolMethods).doesNotContain(
+            CheckoutProtocol.buyerChange.method,
+            "ec.payment.credential_request",
+            "ep.cart.ready",
+        )
+    }
+
+    @Test
+    fun `supported protocol method parses valid supported message`() {
+        val message = """{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}"""
+
+        assertThat(CheckoutProtocol.supportedProtocolMethod(message)).isEqualTo(CheckoutProtocol.start.method)
+    }
+
+    @Test
+    fun `supported protocol method rejects unsupported or invalid message`() {
+        assertThat(CheckoutProtocol.supportedProtocolMethod("""{"jsonrpc":"2.0","method":"custom"}""")).isNull()
+        assertThat(CheckoutProtocol.supportedProtocolMethod("""{"jsonrpc":"1.0","method":"ec.start"}""")).isNull()
+        assertThat(CheckoutProtocol.supportedProtocolMethod("not json")).isNull()
+    }
+
+    // endregion
+
     // region process — notification dispatch
 
     @Test

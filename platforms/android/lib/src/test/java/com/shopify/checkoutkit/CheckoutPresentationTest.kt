@@ -80,7 +80,7 @@ class CheckoutPresentationTest {
 
     @Test
     fun `present builder forwards connected client to embedded checkout protocol`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"customMethod","id":"1"}"""
+        val rawMessage = """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":{}}}"""
         val client = mock<CheckoutCommunicationClient>()
         whenever(client.process(rawMessage)).thenReturn(null)
 

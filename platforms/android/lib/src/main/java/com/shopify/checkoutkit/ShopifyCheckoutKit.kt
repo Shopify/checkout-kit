@@ -117,10 +117,10 @@ public object ShopifyCheckoutKit {
      * @param context The context the checkout is being presented from
      * @param checkoutListener provides callbacks to allow clients to listen for and respond to checkout lifecycle events
      * (failure, cancellation, permission prompts, file chooser).
-     * @param communicationClient optional handler for Embedded Checkout Protocol (ECP) messages.
-     * Implement [CheckoutCommunicationClient] to intercept arbitrary ECP messages from the checkout
-     * web page. Built-in messages ([ec.ready][EmbeddedCheckoutProtocol.METHOD_READY] and
-     * [ec.start][CheckoutProtocol.start]) are handled automatically by the SDK.
+     * @param communicationClient optional handler for supported Embedded Checkout Protocol (ECP)
+     * messages from the checkout web page. Built-in messages
+     * (`ec.ready` and [ec.start][CheckoutProtocol.start])
+     * are handled automatically by the SDK.
      * @return An instance of [CheckoutKitDialog] if the dialog was successfully created and displayed.
      */
     @JvmOverloads

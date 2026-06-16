@@ -334,6 +334,29 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
+    func testUnsupportedProtocolMethodsDoNotInvokeClient() async {
+        let client = RecordingBridgeClient(response: #"{"jsonrpc":"2.0","id":"raw","result":{}}"#)
+        view.client = client
+        let notSent = expectation(description: "sendResponse must not fire")
+        notSent.isInverted = true
+        MockCheckoutBridge.sendResponseExpectation = notSent
+        let messages = [
+            #"{"jsonrpc":"2.0","method":"ec.payment.credential_request","id":"unsupported","params":{}}"#,
+            #"{"jsonrpc":"2.0","method":"ep.cart.ready","id":"ep","params":{}}"#,
+            #"{"jsonrpc":"2.0","method":"customMethod","id":"custom","params":{}}"#
+        ]
+
+        for body in messages {
+            view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
+        }
+
+        await fulfillment(of: [notSent], timeout: 1.0)
+        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+        let receivedMessages = await client.messages()
+        XCTAssertEqual(receivedMessages, [])
+    }
+
+    @MainActor
     func testReadyAckFiresWhenNoClientIsAttached() async {
         view.client = nil
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
@@ -346,6 +369,24 @@ class CheckoutWebViewTests: XCTestCase {
         await fulfillment(of: [responseSent], timeout: 5.0)
 
         XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
+    func testSupportedRequestUsesRawClientResponse() async {
+        let id = "req-window-raw"
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"\#(id)","params":{"url":"https://example.com/terms"}}"#
+        let rawResponse = #"{"jsonrpc":"2.0","id":"\#(id)","result":{"data":"ok"}}"#
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let client = RecordingBridgeClient(response: rawResponse)
+        view.client = client
+
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertEqual(MockCheckoutBridge.lastResponseBody, rawResponse)
+        let receivedMessages = await client.messages()
+        XCTAssertEqual(receivedMessages, [body])
     }
 
     @MainActor
@@ -511,6 +552,24 @@ class CheckoutWebViewTests: XCTestCase {
         guard case .checkoutUnavailable = mockDelegate.errorReceived else {
             return XCTFail("Expected checkoutUnavailable error")
         }
+    }
+}
+
+private actor RecordingBridgeClient: CheckoutCommunicationProtocol {
+    let response: String?
+    private var receivedMessages: [String] = []
+
+    init(response: String? = nil) {
+        self.response = response
+    }
+
+    func messages() -> [String] {
+        receivedMessages
+    }
+
+    func process(_ message: String) async -> String? {
+        receivedMessages.append(message)
+        return response
     }
 }
 
