@@ -6,16 +6,17 @@ import ShopifyCheckoutKit
 
 /// Protocol to abstract PKPaymentAuthorizationController for testing
 @available(iOS 16.0, *)
+@MainActor
 protocol PaymentAuthorizationController {
-    var delegate: PKPaymentAuthorizationControllerDelegate? { get set }
+    var delegate: (any PKPaymentAuthorizationControllerDelegate)? { get set }
     func present() async -> Bool
-    func dismiss(completion: (() -> Void)?)
+    func dismiss(completion: (@Sendable () -> Void)?)
 }
 
 extension PKPaymentAuthorizationController: PaymentAuthorizationController {}
 
 @available(iOS 16.0, *)
-typealias PKAuthorizationControllerFactory = (PKPaymentRequest) -> PaymentAuthorizationController
+typealias PKAuthorizationControllerFactory = @MainActor @Sendable (PKPaymentRequest) -> any PaymentAuthorizationController
 
 @available(iOS 16.0, *)
 @MainActor
