@@ -9,8 +9,8 @@ final class ShopPayViewControllerTests: XCTestCase {
     var mockConfiguration: ShopifyAcceleratedCheckouts.Configuration!
     var mockStorefront: TestStorefrontAPI!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         mockConfiguration = ShopifyAcceleratedCheckouts.Configuration(
             storefrontDomain: "test-shop.myshopify.com",
@@ -19,11 +19,11 @@ final class ShopPayViewControllerTests: XCTestCase {
         mockStorefront = TestStorefrontAPI()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         viewController = nil
         mockConfiguration = nil
         mockStorefront = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     @available(iOS 16.0, *)

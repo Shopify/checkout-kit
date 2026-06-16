@@ -6,6 +6,7 @@ import XCTest
 
 // MARK: - Configuration Helpers
 
+@MainActor
 func XCTAssertThrowsErrorAsync(
     _ expression: @autoclosure () async throws -> some Any,
     _ errorHandler: (Error) -> Void,

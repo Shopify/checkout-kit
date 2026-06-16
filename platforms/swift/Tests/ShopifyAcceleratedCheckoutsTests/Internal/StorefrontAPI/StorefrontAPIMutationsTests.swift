@@ -40,74 +40,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
         }
     }
 
-    // MARK: - Mock URLProtocol for Network Mocking
-
-    class MockURLProtocol: URLProtocol {
-        static var mockResponseData: Data?
-        static var mockError: Error?
-        static var mockStatusCode: Int = 200
-        static var capturedRequest: URLRequest?
-        static var capturedRequestBody: Data?
-
-        override class func canInit(with _: URLRequest) -> Bool {
-            return true
-        }
-
-        override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-            return request
-        }
-
-        override func startLoading() {
-            Self.capturedRequest = request
-
-            // Capture the request body properly
-            if let bodyStream = request.httpBodyStream {
-                bodyStream.open()
-                defer { bodyStream.close() }
-
-                var data = Data()
-                let bufferSize = 1024
-                let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
-                defer { buffer.deallocate() }
-
-                while bodyStream.hasBytesAvailable {
-                    let bytesRead = bodyStream.read(buffer, maxLength: bufferSize)
-                    if bytesRead > 0 {
-                        data.append(buffer, count: bytesRead)
-                    } else {
-                        break
-                    }
-                }
-                Self.capturedRequestBody = data
-            } else {
-                Self.capturedRequestBody = request.httpBody
-            }
-
-            if let error = Self.mockError {
-                client?.urlProtocol(self, didFailWithError: error)
-            } else if let data = Self.mockResponseData {
-                let response = HTTPURLResponse(
-                    url: request.url!,
-                    statusCode: Self.mockStatusCode,
-                    httpVersion: nil,
-                    headerFields: nil
-                )!
-                client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-                client?.urlProtocol(self, didLoad: data)
-            }
-            client?.urlProtocolDidFinishLoading(self)
-        }
-
-        override func stopLoading() {}
-
-        static func reset() {
-            mockResponseData = nil
-            mockError = nil
-            mockStatusCode = 200
-            capturedRequest = nil
-            capturedRequestBody = nil
-        }
-    }
+    typealias MockURLProtocol = StorefrontAPIMockURLProtocol
 
     // MARK: - Test Setup
 
