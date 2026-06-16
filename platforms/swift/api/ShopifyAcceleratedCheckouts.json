@@ -62,6 +62,13 @@
       },
       {
         "kind": "Import",
+        "name": "ShopifyCheckoutProtocol",
+        "printedName": "ShopifyCheckoutProtocol",
+        "declKind": "Import",
+        "moduleName": "ShopifyAcceleratedCheckouts"
+      },
+      {
+        "kind": "Import",
         "name": "SwiftOnoneSupport",
         "printedName": "SwiftOnoneSupport",
         "declKind": "Import",
@@ -2220,21 +2227,28 @@
               {
                 "kind": "TypeNominal",
                 "name": "Optional",
-                "printedName": "(any ShopifyCheckoutKit.CheckoutCommunicationProtocol)?",
+                "printedName": "ShopifyCheckoutKit.CheckoutProtocol.Client?",
                 "children": [
                   {
-                    "kind": "TypeNominal",
-                    "name": "CheckoutCommunicationProtocol",
-                    "printedName": "any ShopifyCheckoutKit.CheckoutCommunicationProtocol",
-                    "usr": "s:18ShopifyCheckoutKit0B21CommunicationProtocolP"
+                    "kind": "TypeNameAlias",
+                    "name": "Client",
+                    "printedName": "ShopifyCheckoutKit.CheckoutProtocol.Client",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Client",
+                        "printedName": "ShopifyCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
+                        "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV"
+                      }
+                    ]
                   }
                 ],
                 "usr": "s:Sq"
               }
             ],
             "declKind": "Func",
-            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7connectyAC0aD3Kit0D21CommunicationProtocol_pSgF",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7connectyAC0aD3Kit0D21CommunicationProtocol_pSgF",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7connectyAC0aD8Protocol08EmbeddeddG0O6ClientVSgF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7connectyAC0aD8Protocol08EmbeddeddG0O6ClientVSgF",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "Preconcurrency",

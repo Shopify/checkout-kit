@@ -43,7 +43,7 @@ let package = Package(
         ),
         .target(
             name: "ShopifyAcceleratedCheckouts",
-            dependencies: ["ShopifyCheckoutKit"],
+            dependencies: ["ShopifyCheckoutKit", "ShopifyCheckoutProtocol"],
             path: "platforms/swift/Sources/ShopifyAcceleratedCheckouts",
             resources: [.process("Localizable.xcstrings"), .process("Media.xcassets")]
         ),

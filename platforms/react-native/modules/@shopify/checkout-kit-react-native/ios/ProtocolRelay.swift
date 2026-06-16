@@ -1,10 +1,19 @@
 import Foundation
 #if COCOAPODS
     import ShopifyCheckoutKit
-
-    extension CheckoutProtocol.Client: @retroactive CheckoutCommunicationProtocol {}
 #else
     import ShopifyCheckoutProtocol
+
+    enum CheckoutProtocol {
+        typealias Client = EmbeddedCheckoutProtocol.Client
+
+        static let complete = EmbeddedCheckoutProtocol.Event.complete
+        static let error = EmbeddedCheckoutProtocol.Event.error
+        static let lineItemsChange = EmbeddedCheckoutProtocol.Event.lineItemsChange
+        static let messagesChange = EmbeddedCheckoutProtocol.Event.messagesChange
+        static let start = EmbeddedCheckoutProtocol.Event.start
+        static let totalsChange = EmbeddedCheckoutProtocol.Event.totalsChange
+    }
 #endif
 
 struct DispatchEnvelope<Payload: Encodable>: Encodable {
