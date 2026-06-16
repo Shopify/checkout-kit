@@ -2,7 +2,6 @@
 // checkout protocol. Embed payload shapes live in `./ucp-embed-types.ts`.
 
 import type {
-  Buyer,
   Checkout,
   CheckoutLineItem,
   CheckoutMessage,
@@ -119,11 +118,6 @@ export interface CheckoutEvents {
   "ec.line_items.change": CheckoutLineItemsChangeEvent;
 
   /**
-   * Dispatched when the buyer information changes.
-   */
-  "ec.buyer.change": CheckoutBuyerChangeEvent;
-
-  /**
    * Dispatched when the totals change.
    */
   "ec.totals.change": CheckoutTotalsChangeEvent;
@@ -170,16 +164,6 @@ export interface CheckoutLineItemsChangeEvent {
   detail: {
     /** Updated cart line items. */
     lineItems: readonly CheckoutLineItem[];
-    /** Full checkout snapshot for handlers that want broader context. */
-    checkout: Checkout;
-  };
-}
-
-export interface CheckoutBuyerChangeEvent {
-  type: "ec.buyer.change";
-  detail: {
-    /** Updated buyer (may be undefined when buyer information is cleared). */
-    buyer: Buyer | undefined;
     /** Full checkout snapshot for handlers that want broader context. */
     checkout: Checkout;
   };
@@ -252,7 +236,6 @@ export interface CheckoutProtocolMessageMap {
   "ec.complete": CheckoutPayload;
   "ec.error": EcErrorParams;
   "ec.line_items.change": CheckoutPayload;
-  "ec.buyer.change": CheckoutPayload;
   "ec.totals.change": CheckoutPayload;
   "ec.messages.change": CheckoutPayload;
   "ec.window.open_request": { url: string };

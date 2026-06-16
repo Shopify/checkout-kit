@@ -134,7 +134,6 @@ const EVENT_TYPES = [
   "ec.close",
   "ec.error",
   "ec.line_items.change",
-  "ec.buyer.change",
   "ec.totals.change",
   "ec.messages.change",
 ] as const;

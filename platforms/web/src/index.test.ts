@@ -15,7 +15,6 @@ describe("@shopify/checkout-kit public entry", () => {
       pkg.ShopifyCheckoutCloseEvent,
       pkg.ShopifyCheckoutErrorEvent,
       pkg.ShopifyCheckoutLineItemsChangeEvent,
-      pkg.ShopifyCheckoutBuyerChangeEvent,
       pkg.ShopifyCheckoutTotalsChangeEvent,
       pkg.ShopifyCheckoutMessagesChangeEvent,
     ];

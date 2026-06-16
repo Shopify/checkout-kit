@@ -11,7 +11,6 @@ export {
   ShopifyCheckoutCloseEvent,
   ShopifyCheckoutErrorEvent,
   ShopifyCheckoutLineItemsChangeEvent,
-  ShopifyCheckoutBuyerChangeEvent,
   ShopifyCheckoutTotalsChangeEvent,
   ShopifyCheckoutMessagesChangeEvent,
 } from "./checkout";
@@ -22,7 +21,6 @@ export type {
   ShopifyCheckoutCompleteEventDetail,
   ShopifyCheckoutErrorEventDetail,
   ShopifyCheckoutLineItemsChangeEventDetail,
-  ShopifyCheckoutBuyerChangeEventDetail,
   ShopifyCheckoutTotalsChangeEventDetail,
   ShopifyCheckoutMessagesChangeEventDetail,
 } from "./checkout";
