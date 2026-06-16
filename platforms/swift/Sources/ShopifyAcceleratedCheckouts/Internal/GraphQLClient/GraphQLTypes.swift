@@ -28,31 +28,115 @@ enum GraphQLError: LocalizedError {
     }
 }
 
-/// Helper type for encoding/decoding Any values
-struct AnyCodable: Codable {
-    let value: Any
+private enum GraphQLJSONValue {
+    case bool(Bool)
+    case int(Int)
+    case double(Double)
+    case string(String)
+    case null
+    case array([GraphQLJSONValue])
+    case object([String: GraphQLJSONValue])
+    case unsupported(String)
 
     init(_ value: Any) {
-        self.value = value
+        switch value {
+        case let value as Bool:
+            self = .bool(value)
+        case let value as Int:
+            self = .int(value)
+        case let value as Double:
+            self = .double(value)
+        case let value as String:
+            self = .string(value)
+        case let value as [String: Any]:
+            self = .object(value.mapValues(GraphQLJSONValue.init))
+        case let value as [Any]:
+            self = .array(value.map(GraphQLJSONValue.init))
+        case let value as AnyCodable:
+            self = value.storage
+        case is NSNull:
+            self = .null
+        default:
+            self = .unsupported(String(describing: type(of: value)))
+        }
+    }
+
+    var value: Any {
+        switch self {
+        case let .bool(value):
+            return value
+        case let .int(value):
+            return value
+        case let .double(value):
+            return value
+        case let .string(value):
+            return value
+        case .null:
+            return NSNull()
+        case let .array(values):
+            return values.map(\.value)
+        case let .object(values):
+            return values.mapValues { $0.value }
+        case let .unsupported(typeName):
+            return typeName
+        }
+    }
+
+    func encode(to container: inout SingleValueEncodingContainer) throws {
+        switch self {
+        case let .bool(value):
+            try container.encode(value)
+        case let .int(value):
+            try container.encode(value)
+        case let .double(value):
+            try container.encode(value)
+        case let .string(value):
+            try container.encode(value)
+        case let .array(values):
+            try container.encode(values.map(AnyCodable.init))
+        case let .object(values):
+            try container.encode(values.mapValues { AnyCodable($0) })
+        case .null:
+            try container.encodeNil()
+        case let .unsupported(typeName):
+            throw EncodingError.invalidValue(typeName, EncodingError.Context(codingPath: container.codingPath, debugDescription: "Unable to encode value of type \(typeName)"))
+        }
+    }
+}
+
+/// Helper type for encoding/decoding dynamically-shaped JSON values.
+struct AnyCodable: Codable {
+    fileprivate let storage: GraphQLJSONValue
+
+    var value: Any {
+        storage.value
+    }
+
+    init(_ value: Any) {
+        storage = GraphQLJSONValue(value)
+    }
+
+    fileprivate init(_ storage: GraphQLJSONValue) {
+        self.storage = storage
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
 
         if let value = try? container.decode(Bool.self) {
-            self.value = value
+            storage = .bool(value)
         } else if let value = try? container.decode(Int.self) {
-            self.value = value
+            storage = .int(value)
         } else if let value = try? container.decode(Double.self) {
-            self.value = value
+            storage = .double(value)
         } else if let value = try? container.decode(String.self) {
-            self.value = value
+            storage = .string(value)
         } else if let value = try? container.decode([String: AnyCodable].self) {
-            self.value = value.mapValues { $0.value }
+            storage = .object(value.mapValues(\.storage))
         } else if let value = try? container.decode([AnyCodable].self) {
-            self.value = value.map { $0.value }
+            storage = .array(value.map(\.storage))
         } else if container.decodeNil() {
-            value = NSNull()
+            storage = .null
         } else {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unable to decode value")
         }
@@ -60,24 +144,6 @@ struct AnyCodable: Codable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-
-        switch value {
-        case let value as Bool:
-            try container.encode(value)
-        case let value as Int:
-            try container.encode(value)
-        case let value as Double:
-            try container.encode(value)
-        case let value as String:
-            try container.encode(value)
-        case let value as [String: Any]:
-            try container.encode(value.mapValues { AnyCodable($0) })
-        case let value as [Any]:
-            try container.encode(value.map { AnyCodable($0) })
-        case is NSNull:
-            try container.encodeNil()
-        default:
-            throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: container.codingPath, debugDescription: "Unable to encode value"))
-        }
+        try storage.encode(to: &container)
     }
 }

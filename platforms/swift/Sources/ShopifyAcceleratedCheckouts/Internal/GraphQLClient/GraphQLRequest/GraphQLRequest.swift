@@ -4,10 +4,14 @@ import Foundation
 
 /// GraphQLOperation binds a query (data to be requested)
 /// with a response Decoder(Codable to decode the data requested).
-struct GraphQLRequest<T: Decodable>: Encodable {
+struct GraphQLRequest<T: Decodable & Sendable>: Encodable {
     private(set) var query: String
     let responseType: T.Type
-    let variables: [String: Any]
+    let encodedVariables: [String: AnyCodable]
+
+    var variables: [String: Any] {
+        encodedVariables.mapValues { $0.value }
+    }
 
     enum CodingKeys: String, CodingKey {
         case query
@@ -15,9 +19,17 @@ struct GraphQLRequest<T: Decodable>: Encodable {
     }
 
     init(query: String, responseType: T.Type, variables: [String: Any] = [:]) {
+        self.init(
+            query: query,
+            responseType: responseType,
+            encodedVariables: variables.mapValues(AnyCodable.init)
+        )
+    }
+
+    init(query: String, responseType: T.Type, encodedVariables: [String: AnyCodable]) {
         self.query = query
         self.responseType = responseType
-        self.variables = variables
+        self.encodedVariables = encodedVariables
     }
 
     init(
@@ -50,8 +62,8 @@ struct GraphQLRequest<T: Decodable>: Encodable {
 
         try container.encode(query, forKey: .query)
 
-        if !variables.isEmpty {
-            try container.encode(AnyCodable(variables), forKey: .variables)
+        if !encodedVariables.isEmpty {
+            try container.encode(encodedVariables, forKey: .variables)
         }
     }
 
@@ -79,7 +91,7 @@ struct GraphQLRequest<T: Decodable>: Encodable {
         return GraphQLRequest(
             query: minifiedQuery,
             responseType: responseType,
-            variables: variables
+            encodedVariables: encodedVariables
         )
     }
 }

@@ -11,14 +11,16 @@ struct ShopifyAcceleratedCheckoutsApp: App {
     @AppStorage(AppStorageKeys.email.rawValue) var email: String = ""
     @AppStorage(AppStorageKeys.phone.rawValue) var phone: String = ""
     @AppStorage(AppStorageKeys.supportedCountries.rawValue) var supportedCountriesString: String = ""
+    @StateObject private var configuration: ShopifyAcceleratedCheckouts.Configuration
 
-    var configuration: ShopifyAcceleratedCheckouts.Configuration {
-        .init(
-            storefrontDomain: EnvironmentVariables.storefrontDomain,
-            storefrontAccessToken: EnvironmentVariables.storefrontAccessToken,
-            customer: ShopifyAcceleratedCheckouts.Customer(
-                email: email.isEmpty ? nil : email,
-                phoneNumber: phone.isEmpty ? nil : phone
+    init() {
+        let email = UserDefaults.standard.string(forKey: AppStorageKeys.email.rawValue) ?? ""
+        let phone = UserDefaults.standard.string(forKey: AppStorageKeys.phone.rawValue) ?? ""
+        _configuration = StateObject(
+            wrappedValue: ShopifyAcceleratedCheckouts.Configuration(
+                storefrontDomain: EnvironmentVariables.storefrontDomain,
+                storefrontAccessToken: EnvironmentVariables.storefrontAccessToken,
+                customer: Self.customer(email: email, phone: phone)
             )
         )
     }
@@ -47,6 +49,7 @@ struct ShopifyAcceleratedCheckoutsApp: App {
             }
             .onAppear {
                 ShopifyAcceleratedCheckouts.logLevel = logLevel
+                updateConfiguration()
             }
             .environmentObject(configuration)
             .environmentObject(applePayConfiguration)
@@ -54,11 +57,15 @@ struct ShopifyAcceleratedCheckoutsApp: App {
         .environment(\.locale, Locale(identifier: locale))
     }
 
-    private func updateConfiguration() {
-        configuration.customer = ShopifyAcceleratedCheckouts.Customer(
+    private static func customer(email: String, phone: String) -> ShopifyAcceleratedCheckouts.Customer {
+        ShopifyAcceleratedCheckouts.Customer(
             email: email.isEmpty ? nil : email,
             phoneNumber: phone.isEmpty ? nil : phone
         )
+    }
+
+    private func updateConfiguration() {
+        configuration.customer = Self.customer(email: email, phone: phone)
     }
 }
 

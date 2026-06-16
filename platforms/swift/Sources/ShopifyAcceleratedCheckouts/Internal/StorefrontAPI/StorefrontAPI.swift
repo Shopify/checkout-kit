@@ -2,7 +2,7 @@ import Foundation
 
 /// High-level API for Storefront operations using the custom GraphQL client
 @available(iOS 16.0, *)
-class StorefrontAPI: ObservableObject, StorefrontAPIProtocol {
+final class StorefrontAPI: ObservableObject, StorefrontAPIProtocol {
     let client: GraphQLClient
 
     /// Initialize the Storefront API
@@ -33,7 +33,7 @@ class StorefrontAPI: ObservableObject, StorefrontAPIProtocol {
 }
 
 @available(iOS 16.0, *)
-protocol StorefrontAPIProtocol {
+protocol StorefrontAPIProtocol: Sendable {
     // MARK: - Query Methods
 
     func cart(by id: GraphQLScalars.ID) async throws -> StorefrontAPI.Cart?

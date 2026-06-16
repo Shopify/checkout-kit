@@ -63,7 +63,7 @@ extension GraphQLRequest {
         return GraphQLRequest(
             query: lines.joined(separator: "\n"),
             responseType: responseType,
-            variables: variables
+            encodedVariables: encodedVariables
         )
     }
 }
