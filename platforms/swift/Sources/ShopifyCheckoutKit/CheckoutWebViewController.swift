@@ -8,7 +8,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     weak var delegate: (any CheckoutDelegate)?
     var client: (any CheckoutCommunicationProtocol)?
 
-    var checkoutView: CheckoutWebView
+    var checkoutView: CheckoutWebView?
 
     lazy var progressBar: ProgressBarView = {
         let progressBar = ProgressBarView(frame: .zero)
@@ -82,10 +82,6 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        progressObserver?.invalidate()
-    }
-
     // MARK: UIViewController Lifecycle
 
     override public func viewWillAppear(_ animated: Bool) {
@@ -96,6 +92,8 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     override public func viewDidLoad() {
         super.viewDidLoad()
+
+        guard let checkoutView else { return }
 
         view.addSubview(checkoutView)
         NSLayoutConstraint.activate([
@@ -118,22 +116,34 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         loadCheckout()
     }
 
+    override public func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+
+        if isBeingDismissed || navigationController?.isBeingDismissed == true || isMovingFromParent {
+            cleanUpCheckoutView()
+        }
+    }
+
     func observeProgressChanges(_ view: WKWebView) {
         progressObserver = view.observe(\.estimatedProgress, options: [.new]) { [weak self] _, change in
             guard let self else { return }
-            if let newProgress = change.newValue {
-                let estimatedProgress = Float(newProgress)
-                self.progressBar.setProgress(estimatedProgress, animated: true)
-                if estimatedProgress < 1.0 {
-                    self.progressBar.startAnimating()
-                } else {
-                    self.progressBar.stopAnimating()
+            Task { @MainActor in
+                if let newProgress = change.newValue {
+                    let estimatedProgress = Float(newProgress)
+                    self.progressBar.setProgress(estimatedProgress, animated: true)
+                    if estimatedProgress < 1.0 {
+                        self.progressBar.startAnimating()
+                    } else {
+                        self.progressBar.stopAnimating()
+                    }
                 }
             }
         }
     }
 
     private func loadCheckout() {
+        guard let checkoutView else { return }
+
         if checkoutView.url == nil {
             initialNavigation = true
             checkoutView.load(checkout: checkoutURL)
@@ -145,15 +155,26 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     @IBAction func close() {
         didCancel()
+        dismiss(animated: true) { [weak self] in
+            self?.cleanUpCheckoutView()
+        }
     }
 
     public func presentationControllerDidDismiss(_: UIPresentationController) {
         didCancel()
+        cleanUpCheckoutView()
     }
 
     private func didCancel() {
         onCancel?()
         delegate?.checkoutDidCancel()
+    }
+
+    func cleanUpCheckoutView() {
+        progressObserver?.invalidate()
+        progressObserver = nil
+        checkoutView?.cleanUpForDismissal()
+        checkoutView = nil
     }
 }
 
@@ -163,6 +184,7 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
     func checkoutViewDidFinishNavigation() {
         initialNavigation = false
         progressBar.stopAnimating()
+        let checkoutView = checkoutView
         UIView.animate(withDuration: UINavigationController.hideShowBarDuration) { [weak checkoutView] in
             checkoutView?.alpha = 1
         }
@@ -171,6 +193,8 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
     func checkoutViewDidFailWithError(error: CheckoutError) {
         onFail?(error)
         delegate?.checkoutDidFail(error: error)
-        dismiss(animated: true)
+        dismiss(animated: true) { [weak self] in
+            self?.cleanUpCheckoutView()
+        }
     }
 }

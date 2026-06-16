@@ -25,6 +25,8 @@ public struct Configuration: Sendable {
 
     public var confetti = Configuration.Confetti()
 
+    public var preloading = Configuration.Preloading()
+
     public var tintColor: UIColor = .init(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
 
     @available(*, renamed: "tintColor", message: "spinnerColor has been superseded by tintColor")
@@ -65,5 +67,11 @@ extension Configuration {
         public var enabled: Bool = false
 
         public var particles = [UIImage]()
+    }
+}
+
+extension Configuration {
+    public struct Preloading: Sendable {
+        public var enabled: Bool = true
     }
 }

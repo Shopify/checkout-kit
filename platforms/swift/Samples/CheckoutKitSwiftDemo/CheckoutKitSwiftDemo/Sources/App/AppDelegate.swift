@@ -21,12 +21,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let checkoutKitLogLevel: LogLevel = getLogLevel(
             key: AppStorageKeys.checkoutKitLogLevel.rawValue
         )
+        let checkoutPreloadingEnabled = UserDefaults.standard.object(
+            forKey: AppStorageKeys.checkoutPreloadingEnabled.rawValue
+        ) as? Bool ?? true
 
         ShopifyCheckoutKit.configure {
             $0.colorScheme = .automatic
             $0.tintColor = ColorPalette.primaryColor
             $0.logger = FileLogger("log.txt")
             $0.logLevel = checkoutKitLogLevel
+            $0.preloading.enabled = checkoutPreloadingEnabled
         }
 
         print("[CheckoutKitSwiftDemo] CheckoutKit Log level set to \(checkoutKitLogLevel)")

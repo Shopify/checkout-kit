@@ -26,6 +26,31 @@ public func configure(_ block: (inout Configuration) -> Void) {
 private func applyConfigurationChange() {
     let configuration = lockedCheckoutKitConfiguration.get()
     OSLogger.shared.logLevel = configuration.logLevel
+
+    if !configuration.preloading.enabled {
+        Task { @MainActor in
+            if !ShopifyCheckoutKit.configuration.preloading.enabled {
+                CheckoutWebView.invalidate()
+            }
+        }
+    }
+}
+
+/// Preloads the checkout for faster presentation.
+@MainActor
+public func preload(checkout url: URL) {
+    guard configuration.preloading.enabled else {
+        return
+    }
+
+    let decorated = CheckoutProtocol.url(for: url)
+    CheckoutWebView.preload(checkout: decorated)
+}
+
+/// Invalidates any cached checkout created by preload calls.
+@MainActor
+public func invalidate() {
+    CheckoutWebView.invalidate(disconnect: true)
 }
 
 @MainActor

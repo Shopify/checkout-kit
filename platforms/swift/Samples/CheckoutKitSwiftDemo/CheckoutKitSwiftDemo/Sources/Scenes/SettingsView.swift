@@ -6,6 +6,7 @@ import SwiftUI
 enum AppStorageKeys: String {
     case acceleratedCheckoutsLogLevel
     case checkoutKitLogLevel
+    case checkoutPreloadingEnabled
     case buyerIdentityMode
     case applePayStyle
     case windowOpenHandler
@@ -38,6 +39,15 @@ struct SettingsView: View {
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
 
+    @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
+    var checkoutPreloadingEnabled = true {
+        didSet {
+            ShopifyCheckoutKit.configure {
+                $0.preloading.enabled = checkoutPreloadingEnabled
+            }
+        }
+    }
+
     @AppStorage(AppStorageKeys.windowOpenHandler.rawValue)
     var windowOpenHandler: WindowOpenHandlerOption = .default
 
@@ -49,6 +59,8 @@ struct SettingsView: View {
         NavigationView {
             List {
                 Section(header: Text("Features")) {
+                    Toggle("Checkout preloading", isOn: $checkoutPreloadingEnabled)
+
                     Picker("Window open handler", selection: $windowOpenHandler) {
                         ForEach(WindowOpenHandlerOption.allCases, id: \.self) { option in
                             Text(option.title).tag(option)

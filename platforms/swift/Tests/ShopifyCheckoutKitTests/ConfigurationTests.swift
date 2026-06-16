@@ -2,6 +2,7 @@
 import UIKit
 import XCTest
 
+@MainActor
 class ConfigurationTests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -15,6 +16,7 @@ class ConfigurationTests: XCTestCase {
 
     private func resetConfigurationState() {
         ShopifyCheckoutKit.configuration = Configuration()
+        CheckoutWebView.invalidate()
     }
 
     func testCloseButtonTintColorDefaultsToNil() {
@@ -34,6 +36,24 @@ class ConfigurationTests: XCTestCase {
 
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
         XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+    }
+
+    func testPreloadingDefaultsToEnabled() {
+        XCTAssertTrue(ShopifyCheckoutKit.configuration.preloading.enabled)
+    }
+
+    func testPreloadingCanBeDisabled() async throws {
+        let checkoutURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
+
+        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        ShopifyCheckoutKit.configuration.preloading.enabled = false
+
+        for _ in 0 ..< 10 where CheckoutWebView.preloadCache.hasEntry() {
+            await Task.yield()
+        }
+
+        XCTAssertFalse(ShopifyCheckoutKit.configuration.preloading.enabled)
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
     }
 
     func testColorSchemeCanBeSetDirectly() {
