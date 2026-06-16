@@ -3,8 +3,7 @@ import ShopifyCheckoutKit
 import XCTest
 
 @available(iOS 16.0, *)
-
-@available(iOS 16.0, *)
+@MainActor
 final class ShopPayViewControllerTests: XCTestCase {
     var viewController: MockShopPayViewController!
     var mockConfiguration: ShopifyAcceleratedCheckouts.Configuration!

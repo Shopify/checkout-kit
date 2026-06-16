@@ -2,6 +2,7 @@ import ShopifyCheckoutKit
 import SwiftUI
 
 @available(iOS 16.0, *)
+@MainActor
 class WalletController: ObservableObject {
     @Published var identifier: CheckoutIdentifier
     @Published var storefront: StorefrontAPIProtocol
@@ -34,7 +35,6 @@ class WalletController: ObservableObject {
         }
     }
 
-    @MainActor
     func present(url: URL, client: (any CheckoutCommunicationProtocol)?) async throws {
         guard let topViewController = getTopViewController() else {
             throw ShopifyAcceleratedCheckouts.Error.invariant(expected: "topViewController")
@@ -47,7 +47,6 @@ class WalletController: ObservableObject {
         )
     }
 
-    @MainActor
     func getTopViewController() -> UIViewController? {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let window = windowScene.windows.first

@@ -4,6 +4,7 @@ import UIKit
 import XCTest
 
 @available(iOS 16.0, *)
+@MainActor
 final class WalletControllerTests: XCTestCase {
     var mockStorefront: TestStorefrontAPI!
     var controller: MockWalletController!

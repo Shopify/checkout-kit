@@ -3,6 +3,7 @@
 import XCTest
 
 @available(iOS 17.0, *)
+@MainActor
 final class ShopPayCallbackTests: XCTestCase {
     // MARK: - Properties
 
