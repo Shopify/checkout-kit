@@ -46,6 +46,7 @@
     <string name="products_failed_to_load" translatable="false">Failed to load products</string>
     <string name="cart_error_creating" translatable="false">Failed to create cart</string>
     <string name="cart_error_updating" translatable="false">Failed to update cart</string>
+    <string name="cart_bootstrap_failed" translatable="false">Failed to prepare cart</string>
     <string name="login_error" translatable="false">An error occurred when completing log in</string>
     <string name="customer_failed_to_load" translatable="false">Failed to load customer</string>R
 

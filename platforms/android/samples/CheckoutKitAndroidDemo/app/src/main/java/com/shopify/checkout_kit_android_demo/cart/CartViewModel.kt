@@ -72,6 +72,11 @@ class CartViewModel(
         }
     }
 
+    fun seedCart(variantId: ID, quantity: Int, onComplete: OnComplete) {
+        clearCart()
+        addToCart(variantId, quantity, onComplete)
+    }
+
     fun modifyLineItem(lineItemId: ID, quantity: Int?) = viewModelScope.launch {
         when (val state = _cartState.value) {
             is CartState.Cart -> {

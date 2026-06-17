@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -231,6 +232,7 @@ private fun CheckoutButton(
         modifier = modifier
     ) {
         Button(
+            modifier = Modifier.testTag("checkout-button"),
             shape = RectangleShape,
             onClick = onClick,
         ) {
@@ -254,7 +256,7 @@ private fun EmptyCartMessage(
     modifier: Modifier,
 ) {
     Box(
-        modifier,
+        modifier.testTag("cart-empty-message"),
         contentAlignment = Alignment.Center,
     ) {
         Column(

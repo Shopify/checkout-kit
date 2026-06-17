@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.contentDescription
@@ -40,6 +41,7 @@ fun BottomAppBarWithNavigation(
                 ImageVector.vectorResource(R.drawable.home),
                 stringResource(id = R.string.navigation_home),
                 currentScreen,
+                "home-tab",
             )
             NavigationItem(
                 navController,
@@ -47,6 +49,7 @@ fun BottomAppBarWithNavigation(
                 ImageVector.vectorResource(R.drawable.product),
                 stringResource(id = R.string.navigation_shop),
                 currentScreen,
+                "products-tab",
             )
             NavigationItem(
                 navController,
@@ -54,6 +57,7 @@ fun BottomAppBarWithNavigation(
                 ImageVector.vectorResource(R.drawable.profile),
                 stringResource(id = R.string.navigation_log_in),
                 currentScreen,
+                "settings-tab",
             )
         }
     }
@@ -66,6 +70,7 @@ fun NavigationItem(
     icon: ImageVector,
     label: String,
     currentScreen: Screen,
+    testTag: String,
 ) {
     val isActiveScreen = currentScreen == screen
     val color = if (isActiveScreen) {
@@ -77,9 +82,11 @@ fun NavigationItem(
     Column {
         IconButton(
             onClick = { navController.navigate(screen.route) },
-            modifier = Modifier.semantics {
-                this.contentDescription = "$label icon"
-            }
+            modifier = Modifier
+                .testTag(testTag)
+                .semantics {
+                    this.contentDescription = "$label icon"
+                }
         ) {
             Icon(imageVector = icon, contentDescription = label, tint = color)
         }
