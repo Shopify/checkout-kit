@@ -61,6 +61,22 @@ class CheckoutWebViewTests: XCTestCase {
         wait(for: [received], timeout: 2.0)
     }
 
+    func testDeepLinkIsCancelledAndOpenedExternallyWhenUIApplicationCanOpen() throws {
+        let link = try XCTUnwrap(URL(string: "tel:+15555551234"))
+        var openedURL: URL?
+        view.canOpenExternalURL = { _ in true }
+        view.openExternalURL = { openedURL = $0 }
+        let received = expectation(description: "policy decided")
+
+        view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link)) { policy in
+            XCTAssertEqual(policy, .cancel, "An externally opened deep link must not also navigate the webview")
+            received.fulfill()
+        }
+
+        wait(for: [received], timeout: 2.0)
+        XCTAssertEqual(openedURL, link, "The deep link should be opened via UIApplication exactly once")
+    }
+
     func testHTTPSubframeRequestIsAllowed() throws {
         let link = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
         let received = expectation(description: "policy decided")
