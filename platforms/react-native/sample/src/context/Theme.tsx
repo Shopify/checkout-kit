@@ -72,7 +72,7 @@ const ThemeContext = createContext<Context>({
   cornerRadius: 35,
   colorScheme: ColorScheme.automatic,
   colors: lightColors,
-  preference: Appearance.getColorScheme(),
+  preference: Appearance.getColorScheme() ?? 'light',
   setColorScheme() {},
 });
 
@@ -179,7 +179,7 @@ export const ThemeProvider: React.FC<
 
   const setColorScheme = useCallback((colorScheme: ColorScheme) => {
     if (colorScheme === ColorScheme.automatic) {
-      Appearance.setColorScheme(null);
+      Appearance.setColorScheme('light');
     } else {
       Appearance.setColorScheme(
         colorScheme === ColorScheme.dark ? 'dark' : 'light',
@@ -191,8 +191,8 @@ export const ThemeProvider: React.FC<
   const value = useMemo(
     () => ({
       cornerRadius,
-      colors: getColors(colorScheme, preference),
-      preference,
+      colors: getColors(colorScheme, preference ?? 'light'),
+      preference: preference ?? 'light',
       colorScheme,
       setColorScheme,
     }),

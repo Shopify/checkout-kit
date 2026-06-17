@@ -1,4 +1,4 @@
-import Config from 'react-native-config';
+import env from './env';
 import type {AppConfig} from './context/Config';
 import {BuyerIdentityMode} from './auth/types';
 
@@ -14,7 +14,7 @@ const {
   PROVINCE,
   ZIP,
   PHONE,
-} = Config;
+} = env;
 
 export function createBuyerIdentityCartInput(
   appConfig: AppConfig,

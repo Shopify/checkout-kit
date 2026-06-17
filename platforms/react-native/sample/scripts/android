@@ -3,6 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SAMPLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 . "$SCRIPT_DIR/android_sccache"
 
 args=()
@@ -15,5 +16,6 @@ for arg in "$@"; do
 done
 
 "$SCRIPT_DIR/../../scripts/publish_android_snapshot"
-
-exec react-native run-android "${args[@]}"
+"$SCRIPT_DIR/prebuild" android
+cd "$SAMPLE_DIR"
+exec pnpm exec expo run:android --no-install "${args[@]}"

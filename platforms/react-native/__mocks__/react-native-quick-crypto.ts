@@ -38,3 +38,5 @@ module.exports = {
   createHash,
   resetCallCount,
 };
+
+export {};

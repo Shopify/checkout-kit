@@ -3,6 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SAMPLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 args=()
 pod_install_args=()
@@ -16,5 +17,5 @@ for arg in "$@"; do
 done
 
 (cd "$SCRIPT_DIR/../.." && pnpm run pod-install -- "${pod_install_args[@]}")
-
-exec react-native run-ios "${args[@]}"
+cd "$SAMPLE_DIR"
+exec pnpm exec expo run:ios --no-install "${args[@]}"

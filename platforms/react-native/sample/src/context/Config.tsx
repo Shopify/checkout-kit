@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 import {ColorScheme, ApplePayStyle} from '@shopify/checkout-kit-react-native';
-import EncryptedStorage from 'react-native-encrypted-storage';
+import * as SecureStore from 'expo-secure-store';
 import {useTheme} from './Theme';
 import {BuyerIdentityMode} from '../auth/types';
 
@@ -45,7 +45,7 @@ export const ConfigProvider: React.FC<
   useEffect(() => {
     async function restoreConfig() {
       try {
-        const raw = await EncryptedStorage.getItem(CONFIG_STORAGE_KEY);
+        const raw = await SecureStore.getItemAsync(CONFIG_STORAGE_KEY);
         if (raw) {
           const saved = JSON.parse(raw) as Partial<AppConfig>;
           const restored: AppConfig = {
@@ -68,7 +68,7 @@ export const ConfigProvider: React.FC<
     console.log(newConfig);
     console.groupEnd();
     setInternalAppConfig(newConfig);
-    EncryptedStorage.setItem(
+    SecureStore.setItemAsync(
       CONFIG_STORAGE_KEY,
       JSON.stringify(newConfig),
     ).catch(() => {});

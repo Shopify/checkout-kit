@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {ActivityIndicator, StyleSheet, View} from 'react-native';
 import {WebView} from 'react-native-webview';
 import type {ShouldStartLoadRequest} from 'react-native-webview/lib/WebViewTypes';
@@ -22,11 +22,11 @@ function LoginScreen({navigation}: Props) {
   const {colors} = useTheme();
   const styles = createStyles(colors);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [authorizationURL, setAuthorizationURL] = useState<string | null>(null);
 
-  const authorizationURL = useMemo(
-    () => customerAccountManager.buildAuthorizationURL(),
-    [],
-  );
+  useEffect(() => {
+    customerAccountManager.buildAuthorizationURL().then(setAuthorizationURL);
+  }, []);
   const callbackScheme = CustomerAccountManager.callbackScheme;
 
   const handleNavigationRequest = useCallback(
@@ -64,7 +64,7 @@ function LoginScreen({navigation}: Props) {
     [appConfig, callbackScheme, handleAuthCallback, navigation, setAppConfig],
   );
 
-  if (isProcessing) {
+  if (isProcessing || !authorizationURL) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" />

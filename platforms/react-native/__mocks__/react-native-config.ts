@@ -6,3 +6,5 @@ module.exports = {
     CUSTOMER_ACCOUNT_API_CLIENT_ID: 'test-client-456',
   },
 };
+
+export {};

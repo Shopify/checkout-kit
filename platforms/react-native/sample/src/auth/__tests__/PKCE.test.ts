@@ -16,13 +16,13 @@ describe('PKCE', () => {
   });
 
   describe('generateCodeChallenge', () => {
-    it('returns a base64url-encoded string', () => {
-      const challenge = PKCE.generateCodeChallenge('test-verifier');
+    it('returns a base64url-encoded string', async () => {
+      const challenge = await PKCE.generateCodeChallenge('test-verifier');
       expect(challenge).toMatch(BASE64URL_REGEX);
     });
 
-    it('returns a string of 43 characters (SHA-256 hash base64url)', () => {
-      const challenge = PKCE.generateCodeChallenge('test-verifier');
+    it('returns a string of 43 characters (SHA-256 hash base64url)', async () => {
+      const challenge = await PKCE.generateCodeChallenge('test-verifier');
       expect(challenge).toHaveLength(43);
     });
   });

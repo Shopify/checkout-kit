@@ -92,6 +92,7 @@ const ShopifyCheckoutKit = {
   isApplePayAvailable: jest.fn(() => true),
   addListener: jest.fn(),
   removeListeners: jest.fn(),
+  eventEmitter: shopifyCheckoutKitEventEmitter,
 };
 
 // CommonJS export for Jest manual mock resolution
@@ -113,10 +114,9 @@ module.exports = {
     }),
   },
   NativeModules: {
-    ShopifyCheckoutKit: {
-      ...ShopifyCheckoutKit,
-      eventEmitter: shopifyCheckoutKitEventEmitter,
-    },
+    ShopifyCheckoutKit,
   },
   StyleSheet,
 };
+
+export {};

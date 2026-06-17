@@ -21,10 +21,10 @@ class AcceleratedCheckouts_UnsupportedTests: XCTestCase {
 
     func testManagerReturnsFallbackViewOnPreIOS16() throws {
         let view = manager.view()
-        XCTAssertEqual(String(describing: type(of: view!)), "UIView")
+        XCTAssertEqual(try String(describing: type(of: XCTUnwrap(view))), "UIView")
     }
 
-    func testAvailabilityAPIsReturnFalseOnPreIOS16() throws {
+    func testAvailabilityAPIsReturnFalseOnPreIOS16() {
         XCTAssertEqual(module.isAcceleratedCheckoutAvailable().boolValue, false)
         XCTAssertEqual(module.isApplePayAvailable().boolValue, false)
     }

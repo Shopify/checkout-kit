@@ -15,7 +15,7 @@ for arg in "$@"; do
 done
 
 "$SCRIPT_DIR/../../scripts/publish_android_snapshot"
+"$SCRIPT_DIR/prebuild" android
 
-cd android
-
+cd "$SCRIPT_DIR/../android"
 ./gradlew assembleDebug --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a "${args[@]}"

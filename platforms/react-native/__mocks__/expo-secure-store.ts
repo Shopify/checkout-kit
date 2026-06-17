@@ -1,13 +1,13 @@
 const store: Record<string, string> = {};
 
-const EncryptedStorage = {
-  setItem: jest.fn(async (key: string, value: string) => {
+const SecureStore = {
+  setItemAsync: jest.fn(async (key: string, value: string) => {
     store[key] = value;
   }),
-  getItem: jest.fn(async (key: string) => {
+  getItemAsync: jest.fn(async (key: string) => {
     return store[key] ?? null;
   }),
-  removeItem: jest.fn(async (key: string) => {
+  deleteItemAsync: jest.fn(async (key: string) => {
     delete store[key];
   }),
   clear: jest.fn(async () => {
@@ -17,7 +17,8 @@ const EncryptedStorage = {
 
 module.exports = {
   __esModule: true,
-  default: EncryptedStorage,
+  ...SecureStore,
+  default: SecureStore,
 };
 
 export {};

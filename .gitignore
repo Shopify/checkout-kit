@@ -29,10 +29,11 @@ platforms/react-native/test/rct-integration-app/*.xcworkspace/
 **/*.entitlements
 platforms/swift/Samples/**/Info.plist
 platforms/react-native/test/rct-integration-app/**/Info.plist
-# Exception: the React Native sample's entitlements are source code (associated
-# domains + in-app payments merchant ID), not secrets — Xcode requires this file
-# at build time and CI fails without it.
-!platforms/react-native/sample/ios/ReactNative/ReactNative.entitlements
+
+# Generated React Native sample native projects
+platforms/react-native/sample/.expo/
+platforms/react-native/sample/ios/
+platforms/react-native/sample/android/
 
 # Apollo / GraphQL
 *.graphqls

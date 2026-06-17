@@ -9,7 +9,7 @@ import {
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ApolloClient, InMemoryCache, ApolloProvider} from '@apollo/client';
-import Icon from 'react-native-vector-icons/Entypo';
+import Icon from '@expo/vector-icons/Entypo';
 
 import CatalogScreen from './screens/CatalogScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -40,7 +40,7 @@ import CartScreen from './screens/CartScreen';
 import ProductDetailsScreen from './screens/ProductDetailsScreen';
 import type {ProductVariant, ShopifyProduct} from '../@types';
 import ErrorBoundary from './ErrorBoundary';
-import env from 'react-native-config';
+import env from './env';
 import {createDebugLogger} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
 
@@ -106,7 +106,7 @@ function AppWithTheme({children}: PropsWithChildren) {
 }
 
 const createNavigationIcon =
-  (name: string) =>
+  (name: React.ComponentProps<typeof Icon>['name']) =>
   ({
     color,
     size,
@@ -287,7 +287,7 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
 
   const updatedColors = getColors(
     appConfig.colorScheme,
-    Appearance.getColorScheme(),
+    Appearance.getColorScheme() ?? 'light',
   );
 
   const checkoutKitThemeConfig: Configuration = useMemo(() => {

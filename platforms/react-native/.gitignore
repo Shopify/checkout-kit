@@ -103,8 +103,10 @@ modules/@shopify/checkout-kit-react-native/android/gradlew.bat
 # Local gems
 sample/vendor
 
-# Sample app
-sample/**/AndroidManifest.xml
+# Generated sample app native projects
+sample/.expo/
+sample/ios/
+sample/android/
 
 .claude/
 CLAUDE.md

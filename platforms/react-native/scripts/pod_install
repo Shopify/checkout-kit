@@ -2,12 +2,17 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SAMPLE_DIR="$SCRIPT_DIR/../sample"
+
 for arg in "$@"; do
   if [ "$arg" = "--local" ]; then
     export USE_LOCAL_SDK=1
   fi
 done
 
-cd sample/ios
+cd "$SAMPLE_DIR"
+./scripts/prebuild ios
+cd ios
 bundle check || bundle install
 bundle exec pod install --repo-update

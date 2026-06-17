@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIR=modules/@shopify/checkout-kit-react-native
+DIR="modules/@shopify/checkout-kit-react-native/ios modules/@shopify/checkout-kit-react-native/ios-tests/CheckoutKitReactNativeDemoTests modules/@shopify/checkout-kit-react-native/ios-tests/AppDelegate.swift"
 MODE="${1:-check}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"

@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 
-# Working directory is "sample" when running "pnpm sample release:android" from root.
-
-# Exit immediately if a command exits with a non-zero status
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SAMPLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 . "$SCRIPT_DIR/android_sccache"
 
 for arg in "$@"; do
@@ -15,40 +13,28 @@ for arg in "$@"; do
 done
 
 "$SCRIPT_DIR/../../scripts/publish_android_snapshot"
+"$SCRIPT_DIR/prebuild" android
 
-# Print each command as it is executed
 set -x
 
-mkdir -p android/app/src/main/assets
-npx react-native bundle --platform android \
+cd "$SAMPLE_DIR"
+pnpm exec expo export:embed \
+  --platform android \
   --dev false \
   --entry-file index.js \
   --bundle-output android/app/src/main/assets/index.android.bundle \
+  --assets-dest android/app/src/main/res
 
-# Generate release build (.aab file)
-npx react-native build-android --mode=release
-
-# Generate APK (for testing)
 cd android
-./gradlew clean assembleRelease
+./gradlew clean bundleRelease assembleRelease --no-daemon --console=plain
 
-# Stop printing commands
 set +x
 
 cat << EOF
 
-
-Run "cd sample && npx react-native run-android --mode release" to test the release build.
+Android release build complete.
 
 Output files:
-  - sample/android/app/build/outputs/bundle/release/app-release.aab (Upload to Play Store)
-  - sample/android/app/build/outputs/apk/release/app-release.apk (For testing)
-
-To install the release build:
-  - Ensure an emulator or device is connected
-  - Uninstall existing version: adb uninstall com.shopify.checkoutkit.reactnativedemo
-  - Install new version: adb install android/app/build/outputs/apk/release/app-release.apk
-
-To observe the production logs for your emulator/device:
-  - Run "adb logcat"
+  - sample/android/app/build/outputs/bundle/release/app-release.aab
+  - sample/android/app/build/outputs/apk/release/app-release.apk
 EOF
