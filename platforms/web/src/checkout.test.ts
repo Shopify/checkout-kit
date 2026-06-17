@@ -617,6 +617,45 @@ describe("<shopify-checkout>", () => {
             vi.useRealTimers();
           }
         });
+
+        it("does not abort a reopened session when a stale focus timer from the previous session fires", () => {
+          vi.useFakeTimers();
+          try {
+            const checkout = renderCheckout({ target: "popup" });
+            const firstWindow = createMockWindow();
+            const secondWindow = createMockWindow();
+            (firstWindow as { closed: boolean }).closed = false;
+            (secondWindow as { closed: boolean }).closed = false;
+            vi.spyOn(window, "open")
+              .mockReturnValueOnce(firstWindow)
+              .mockReturnValueOnce(secondWindow);
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("checkout:close", closeEventSpy);
+
+            // Session A opens.
+            checkout.open();
+
+            // The user closes window A; the page regains focus and schedules the
+            // 50ms timer that captures window A.
+            (firstWindow as { closed: boolean }).closed = true;
+            window.dispatchEvent(new FocusEvent("focus"));
+
+            // Within the 50ms window, checkout reopens as session B.
+            checkout.open();
+
+            // The stale timer from session A now fires.
+            vi.advanceTimersByTime(50);
+
+            // Only session A's close should have fired; session B must stay alive.
+            expect(closeEventSpy).toHaveBeenCalledTimes(1);
+            expect(secondWindow.close).not.toHaveBeenCalled();
+          } finally {
+            vi.useRealTimers();
+          }
+        });
       });
     });
 

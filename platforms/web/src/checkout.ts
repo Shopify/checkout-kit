@@ -364,11 +364,14 @@ export class ShopifyCheckout
       "focus",
       () => {
         // Small delay to allow browser to update the closed property
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           if (checkoutWindow?.closed) {
-            this.#currentOpen?.controller.abort();
+            abortController.abort();
           }
         }, 50);
+        abortController.signal.addEventListener("abort", () => {
+          clearTimeout(timer);
+        });
       },
       {
         signal: abortController.signal,
