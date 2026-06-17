@@ -9,6 +9,7 @@
 # Claude / dev tooling
 .claude/
 .dev/
+.dev.env
 .mint
 
 # Node / pnpm
