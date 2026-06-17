@@ -27,15 +27,27 @@ import org.robolectric.shadows.ShadowLooper
 class CheckoutWebViewTest {
 
     private lateinit var activity: ComponentActivity
+    private lateinit var initialConfiguration: Configuration
 
     @Before
     fun setUp() {
+        initialConfiguration = ShopifyCheckoutKit.getConfiguration()
+        CheckoutWebView.clearCache()
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
     }
 
     @After
     fun tearDown() {
-        ShopifyCheckoutKit.configuration.platform = null
+        CheckoutWebView.clearCache()
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        CheckoutWebView.cacheClock = PreloadCache.Clock()
+        ShopifyCheckoutKit.configure {
+            it.colorScheme = initialConfiguration.colorScheme
+            it.preloading = initialConfiguration.preloading
+            it.platform = initialConfiguration.platform
+            it.logLevel = initialConfiguration.logLevel
+        }
     }
 
     @Test
@@ -232,6 +244,135 @@ class CheckoutWebViewTest {
         assertThat(loadedUrl).contains("ec_version=${CheckoutProtocol.SPEC_VERSION}")
         assertThat(loadedUrl).doesNotContain("ec_version=$callerSuppliedVersion")
         assertThat(loadedUrl.split("ec_version").size - 1).isEqualTo(1)
+    }
+
+    // endregion
+
+    // region preload cache
+
+    @Test
+    fun `preload creates cached checkout view with prefetch header`() {
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val view = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val shadow = shadowOf(view)
+        assertThat(shadow.lastLoadedUrl).contains("ec_version=${CheckoutProtocol.SPEC_VERSION}")
+        assertThat(shadow.lastAdditionalHttpHeaders).containsEntry("Shopify-Purpose", "prefetch")
+        assertThat(view.isPreloadRequest).isTrue()
+        assertThat(shadow.wasOnPauseCalled()).isTrue()
+    }
+
+    @Test
+    fun `present consumes cached checkout view for matching URL`() {
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val presentedView = CheckoutWebView.checkoutViewFor("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(presentedView).isSameAs(cachedView)
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isFalse()
+        assertThat(presentedView.isPreloadRequest).isFalse()
+    }
+
+    @Test
+    fun `present discards cached checkout view for mismatched URL`() {
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val presentedView = CheckoutWebView.checkoutViewFor("https://checkout.shopify.com/cart/456", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(presentedView).isNotSameAs(cachedView)
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+        assertThat(shadowOf(presentedView).lastLoadedUrl).contains("/cart/456")
+    }
+
+    @Test
+    fun `present discards cached checkout view for mismatched query params`() {
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123?ec_auth=first", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val presentedView = CheckoutWebView.checkoutViewFor(
+            "https://checkout.shopify.com/cart/123?ec_auth=second",
+            activity,
+        )
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(presentedView).isNotSameAs(cachedView)
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+        assertThat(shadowOf(presentedView).lastLoadedUrl).contains("ec_auth=second")
+    }
+
+    @Test
+    fun `present discards cached checkout view after ttl expiry`() {
+        var now = 1_000L
+        CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
+            override fun currentTimeMillis(): Long = now
+        }
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        now += 5 * 60 * 1000L
+        val presentedView = CheckoutWebView.checkoutViewFor("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(presentedView).isNotSameAs(cachedView)
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
+    fun `invalidate destroys unpresented cached checkout view`() {
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        CheckoutWebView.invalidate()
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
+    fun `invalidate does not destroy presented checkout view`() {
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val presentedView = CheckoutWebView.checkoutViewFor("https://checkout.shopify.com/cart/123", activity)
+        presentedView.markPresented()
+
+        CheckoutWebView.invalidate()
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(shadowOf(presentedView).wasDestroyCalled()).isFalse()
+    }
+
+    @Test
+    fun `preload is ignored when preloading is disabled`() {
+        ShopifyCheckoutKit.configure {
+            it.preloading = Preloading(enabled = false)
+        }
+
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+    }
+
+    @Test
+    fun `loadCheckout does not send prefetch header for normal loads`() {
+        val view = CheckoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(shadowOf(view).lastAdditionalHttpHeaders).doesNotContainKey("Shopify-Purpose")
+        assertThat(view.isPreloadRequest).isFalse()
     }
 
     // endregion

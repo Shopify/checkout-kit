@@ -5,6 +5,7 @@ import com.shopify.checkout_kit_android_demo.common.di.setupDI
 import com.shopify.checkout_kit_android_demo.common.withCustomCloseIcon
 import com.shopify.checkout_kit_android_demo.settings.PreferencesManager
 import com.shopify.checkoutkit.LogLevel
+import com.shopify.checkoutkit.Preloading
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -32,6 +33,7 @@ class CheckoutKitAndroidDemo : Application() {
             ShopifyCheckoutKit.configure {
                 it.logLevel = LogLevel.DEBUG
                 it.colorScheme = settings.colorScheme.withCustomCloseIcon()
+                it.preloading = Preloading(enabled = settings.checkoutPreloadingEnabled)
             }
         }
     }

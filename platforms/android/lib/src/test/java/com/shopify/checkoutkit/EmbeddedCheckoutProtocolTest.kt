@@ -34,6 +34,8 @@ class EmbeddedCheckoutProtocolTest {
 
     @Before
     fun setUp() {
+        CheckoutWebView.clearCache()
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         // Mirror real-Android behavior: startActivity throws ActivityNotFoundException when
         // no activity resolves the intent. Robolectric defaults to silently recording the
@@ -394,6 +396,19 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
+    fun `ec error with unrecoverable severity invalidates cached preload`() {
+        CheckoutWebView.preload("https://shopify.dev/cart/123", activity)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        ecp.postMessage(ecErrorMessage(severity = "unrecoverable"))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
     fun `ec error with unrecoverable severity dismisses even when client returns response`() {
         val rawMessage = ecErrorMessage(severity = "unrecoverable")
         val client = mock<CheckoutCommunicationClient>()
@@ -487,6 +502,19 @@ class EmbeddedCheckoutProtocolTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(client).process(rawMessage)
+    }
+
+    @Test
+    fun `ec complete invalidates cached preload`() {
+        CheckoutWebView.preload("https://shopify.dev/cart/123", activity)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        ecp.postMessage(ecCompleteMessage())
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
     }
 
     // endregion
@@ -603,6 +631,18 @@ class EmbeddedCheckoutProtocolTest {
     private fun ecErrorMessageWithMessages(messages: String): String {
         val error = """{$ERROR_RESPONSE_UCP,"messages":$messages}"""
         return """{"jsonrpc":"2.0","method":"ec.error","params":{"error":$error}}"""
+    }
+
+    private fun ecCompleteMessage(): String =
+        """{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":${checkoutJson(status = "completed")}}}"""
+
+    private fun checkoutJson(
+        id: String = "chk1",
+        currency: String = "USD",
+        status: String = "incomplete",
+    ): String {
+        val ucp = """{"payment_handlers":{},"version":"1.0"}"""
+        return """{"id":"$id","currency":"$currency","status":"$status","line_items":[],"totals":[],"links":[],"ucp":$ucp}"""
     }
 
     private companion object {

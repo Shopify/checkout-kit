@@ -47,6 +47,7 @@ class CartViewModel(
     val loadingState: StateFlow<Boolean> = _loadingState
 
     private var demoBuyerIdentityEnabled = false
+    private var checkoutPreloadingEnabled = true
     private var windowOpenHandler = WindowOpenHandler.Default
 
     init {
@@ -57,6 +58,7 @@ class CartViewModel(
                     clearCart()
                     demoBuyerIdentityEnabled = it.buyerIdentityDemoEnabled
                 }
+                checkoutPreloadingEnabled = it.checkoutPreloadingEnabled
                 windowOpenHandler = it.windowOpenHandler
             }
         }
@@ -100,7 +102,7 @@ class CartViewModel(
         activity: ComponentActivity,
         navController: NavController,
     ) {
-        Timber.i("Presenting checkout with $url")
+        Timber.i("Presenting checkout")
         val sampleActivity = activity as? MainActivity
         ShopifyCheckoutKit.present(url, activity) {
             onFail { error ->
@@ -122,6 +124,13 @@ class CartViewModel(
             }
             connect(buildCommunicationClient(navController, activity, windowOpenHandler))
         }
+    }
+
+    fun preloadCheckout(url: String, activity: ComponentActivity) {
+        if (!checkoutPreloadingEnabled) return
+
+        Timber.i("Preloading checkout")
+        ShopifyCheckoutKit.preload(url, activity)
     }
 
     fun continueShopping(navController: NavController) {
@@ -179,7 +188,7 @@ class CartViewModel(
             WindowOpenHandler.Default -> base
             WindowOpenHandler.CustomTabs -> base.on(CheckoutProtocol.windowOpen) { request ->
                 val scheme = request.url.scheme?.lowercase()
-                Timber.i("ECP ec.window.open_request ($scheme): ${request.url}")
+                Timber.i("ECP ec.window.open_request ($scheme)")
                 if (scheme != "http" && scheme != "https") {
                     WindowOpenResult.Rejected(reason = "unsupported URL scheme: $scheme")
                 } else {
@@ -187,7 +196,7 @@ class CartViewModel(
                         CustomTabsIntent.Builder().build().launchUrl(activity, request.url)
                         WindowOpenResult.Success
                     } catch (e: ActivityNotFoundException) {
-                        Timber.w(e, "No activity resolved ${request.url}")
+                        Timber.w(e, "No activity resolved URL")
                         WindowOpenResult.Rejected(reason = "no activity resolved URL")
                     }
                 }

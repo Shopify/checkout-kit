@@ -23,6 +23,7 @@ class PreferencesManager(private val context: Context) {
             preferences[COLOR_SCHEME] ?: DEFAULT_COLOR_SCHEME
         )
         val buyerIdentityDemoEnabled = preferences[BUYER_IDENTITY] ?: false
+        val checkoutPreloadingEnabled = preferences[CHECKOUT_PRELOADING] ?: true
         val windowOpenHandler = preferences[WINDOW_OPEN_HANDLER]?.let { value ->
             runCatching { WindowOpenHandler.valueOf(value) }.getOrNull()
         } ?: WindowOpenHandler.Default
@@ -30,6 +31,7 @@ class PreferencesManager(private val context: Context) {
         UserPreferences(
             colorScheme = colorScheme,
             buyerIdentityDemoEnabled = buyerIdentityDemoEnabled,
+            checkoutPreloadingEnabled = checkoutPreloadingEnabled,
             windowOpenHandler = windowOpenHandler,
         )
     }
@@ -38,6 +40,8 @@ class PreferencesManager(private val context: Context) {
         saveData(COLOR_SCHEME, Json.encodeToString(ColorScheme.serializer(), colorScheme))
 
     suspend fun setBuyerIdentityDemoEnabled(enabled: Boolean) = saveData(BUYER_IDENTITY, enabled)
+
+    suspend fun setCheckoutPreloadingEnabled(enabled: Boolean) = saveData(CHECKOUT_PRELOADING, enabled)
 
     suspend fun setWindowOpenHandler(handler: WindowOpenHandler) = saveData(WINDOW_OPEN_HANDLER, handler.name)
 
@@ -48,6 +52,7 @@ class PreferencesManager(private val context: Context) {
     companion object {
         private val COLOR_SCHEME = stringPreferencesKey("colorScheme")
         private val BUYER_IDENTITY = booleanPreferencesKey("buyerIdentity")
+        private val CHECKOUT_PRELOADING = booleanPreferencesKey("checkoutPreloading")
         private val WINDOW_OPEN_HANDLER = stringPreferencesKey("windowOpenHandler")
 
         private val DEFAULT_COLOR_SCHEME = Json.encodeToString(
@@ -60,5 +65,6 @@ class PreferencesManager(private val context: Context) {
 data class UserPreferences(
     val colorScheme: ColorScheme,
     val buyerIdentityDemoEnabled: Boolean,
+    val checkoutPreloadingEnabled: Boolean,
     val windowOpenHandler: WindowOpenHandler,
 )

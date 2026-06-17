@@ -93,6 +93,24 @@ class UriExtensionsTest {
         assertThat(result.getQueryParameters("ec_delegate")).containsExactly("window.open")
     }
 
+    @Test
+    fun `redactedForLogging strips checkout auth and prefill query values`() {
+        val url = "$BASE_URL?ec_auth=jwt-token&checkout%5Bemail%5D=buyer%40example.com&cart=123"
+
+        val result = url.redactedUrlForLogging()
+
+        assertThat(result).contains("ec_auth=%5BREDACTED%5D")
+        assertThat(result).contains("checkout%5Bemail%5D=%5BREDACTED%5D")
+        assertThat(result).contains("cart=%5BREDACTED%5D")
+        assertThat(result).doesNotContain("jwt-token")
+        assertThat(result).doesNotContain("buyer%40example.com")
+    }
+
+    @Test
+    fun `redactedForLogging preserves URL without query`() {
+        assertThat(BASE_URL.redactedUrlForLogging()).isEqualTo(BASE_URL)
+    }
+
     private companion object {
         private const val BASE_URL = "https://shop.com/cart/c/abc"
         private const val SPEC_VERSION = "2026-04-08"

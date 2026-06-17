@@ -11,13 +11,16 @@ class ConfigurationTest {
 
     @Before
     fun setUp() {
-        initialConfiguration = ShopifyCheckoutKit.configuration
+        initialConfiguration = ShopifyCheckoutKit.getConfiguration()
     }
 
     @After
     fun tearDown() {
         ShopifyCheckoutKit.configure {
             it.colorScheme = initialConfiguration.colorScheme
+            it.preloading = initialConfiguration.preloading
+            it.platform = initialConfiguration.platform
+            it.logLevel = initialConfiguration.logLevel
         }
     }
 
@@ -55,5 +58,19 @@ class ConfigurationTest {
         }
 
         assertThat(ShopifyCheckoutKit.getConfiguration().colorScheme).isEqualTo(ColorScheme.Automatic())
+    }
+
+    @Test
+    fun `preloading defaults to enabled`() {
+        assertThat(ShopifyCheckoutKit.getConfiguration().preloading.enabled).isTrue()
+    }
+
+    @Test
+    fun `can disable preloading via configure function`() {
+        ShopifyCheckoutKit.configure {
+            it.preloading = Preloading(enabled = false)
+        }
+
+        assertThat(ShopifyCheckoutKit.getConfiguration().preloading.enabled).isFalse()
     }
 }
