@@ -155,14 +155,11 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     @IBAction func close() {
         didCancel()
-        dismiss(animated: true) { [weak self] in
-            self?.cleanUpCheckoutView()
-        }
+        dismiss(animated: true)
     }
 
     public func presentationControllerDidDismiss(_: UIPresentationController) {
         didCancel()
-        cleanUpCheckoutView()
     }
 
     private func didCancel() {
@@ -173,7 +170,15 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     func cleanUpCheckoutView() {
         progressObserver?.invalidate()
         progressObserver = nil
-        checkoutView?.cleanUpForDismissal()
+
+        if let checkoutView, CheckoutWebView.preloadCache.contains(checkoutView) {
+            checkoutView.viewDelegate = nil
+            checkoutView.client = nil
+            checkoutView.removeFromSuperview()
+        } else {
+            checkoutView?.cleanUpForDismissal()
+        }
+
         checkoutView = nil
     }
 }
@@ -193,8 +198,6 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
     func checkoutViewDidFailWithError(error: CheckoutError) {
         onFail?(error)
         delegate?.checkoutDidFail(error: error)
-        dismiss(animated: true) { [weak self] in
-            self?.cleanUpCheckoutView()
-        }
+        dismiss(animated: true)
     }
 }

@@ -41,6 +41,10 @@ final class PreloadCache {
     private var expiryTimer: Timer?
 
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
+        if let entry, entry.key == key, !entry.isStale {
+            return true
+        }
+
         invalidate()
 
         let entry = Entry(key: key, view: view, createdAt: createdAt)
@@ -55,13 +59,12 @@ final class PreloadCache {
         return true
     }
 
-    func take(for key: PreloadKey) -> CheckoutWebView? {
+    func view(for key: PreloadKey) -> CheckoutWebView? {
         guard let entry, entry.key == key, !entry.isStale else {
             invalidate()
             return nil
         }
 
-        self.entry = nil
         stopKeepAlive()
         stopExpiryTimer()
         return entry.view
@@ -81,7 +84,28 @@ final class PreloadCache {
     }
 
     func hasEntry() -> Bool {
+        if entry?.isStale == true {
+            invalidate()
+            return false
+        }
+
         return entry != nil
+    }
+
+    func hasEntry(for key: PreloadKey) -> Bool {
+        guard let entry, entry.key == key, !entry.isStale else {
+            return false
+        }
+
+        return true
+    }
+
+    func contains(_ view: CheckoutWebView) -> Bool {
+        guard let entry, !entry.isStale else {
+            return false
+        }
+
+        return entry.view === view
     }
 
     func hasActiveKeepAlive() -> Bool {
@@ -138,6 +162,15 @@ final class PreloadCache {
 }
 
 private enum LogSafeURL {
+    private static let redactedQueryItemNames = Set([
+        "checkout[email]",
+        "checkout[phone]",
+        "ec_auth",
+        "key",
+        "multipass",
+        "token"
+    ])
+
     static func string(_ url: URL?) -> String {
         guard let url else {
             return "unknown URL"
@@ -149,12 +182,18 @@ private enum LogSafeURL {
 
         components.user = components.user.map { _ in "redacted" }
         components.password = components.password.map { _ in "redacted" }
-        components.queryItems = components.queryItems?.map { item in
-            URLQueryItem(name: item.name, value: "redacted")
-        }
+        components.queryItems = components.queryItems?.map(redactedQueryItem)
         components.fragment = nil
 
         return components.string ?? "redacted URL"
+    }
+
+    private static func redactedQueryItem(_ item: URLQueryItem) -> URLQueryItem {
+        guard redactedQueryItemNames.contains(item.name) || item.name.hasPrefix("checkout[") else {
+            return item
+        }
+
+        return URLQueryItem(name: item.name, value: "redacted")
     }
 }
 
@@ -238,7 +277,7 @@ class CheckoutWebView: WKWebView {
             return CheckoutWebView(entryPoint: entryPoint)
         }
 
-        guard let cachedView = preloadCache.take(for: PreloadKey(url: url, entryPoint: entryPoint)) else {
+        guard let cachedView = preloadCache.view(for: PreloadKey(url: url, entryPoint: entryPoint)) else {
             return CheckoutWebView(entryPoint: entryPoint)
         }
 
@@ -251,13 +290,19 @@ class CheckoutWebView: WKWebView {
             return
         }
 
+        let key = PreloadKey(url: url, entryPoint: entryPoint)
+        guard !preloadCache.hasEntry(for: key) else {
+            OSLogger.shared.debug("Preload cache already has matching entry")
+            return
+        }
+
         let view = CheckoutWebView(entryPoint: entryPoint)
         // Keep the preloaded webview out of any window. WebKit derives
         // `document.visibilityState` from window membership, so an unparented webview reports
         // `hidden` while still running JS to completion; adding it to a window at presentation
         // flips it to `visible`. Size it to the presentation viewport so it loads at the right
         // dimensions and avoids a reflow when shown.
-        if preloadCache.store(view, for: PreloadKey(url: url, entryPoint: entryPoint), createdAt: createdAt) {
+        if preloadCache.store(view, for: key, createdAt: createdAt) {
             view.load(checkout: url, isPreload: true)
         }
     }
