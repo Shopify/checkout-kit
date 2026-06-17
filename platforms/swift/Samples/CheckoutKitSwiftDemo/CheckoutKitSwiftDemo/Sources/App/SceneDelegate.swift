@@ -85,6 +85,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Catalog grid view
         productGridController.tabBarItem.image = UIImage(systemName: "square.grid.2x2")
         productGridController.tabBarItem.title = "Catalog"
+        productGridController.tabBarItem.accessibilityIdentifier = "catalog-tab"
         productGridController.navigationItem.titleView = logoImageView
         catalogCartButton = createCartButtonWithBadge()
         productGridController.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: catalogCartButton!)
@@ -92,6 +93,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Product Gallery
         productGalleryController.tabBarItem.image = UIImage(systemName: "appwindow.swipe.rectangle")
         productGalleryController.tabBarItem.title = "Products"
+        productGalleryController.tabBarItem.accessibilityIdentifier = "products-tab"
         productGalleryController.navigationItem.titleView = logoImageView
         galleryCartButton = createCartButtonWithBadge()
         productGalleryController.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: galleryCartButton!)
@@ -99,16 +101,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Cart (UI Kit)
         swiftUICartController.tabBarItem.image = UIImage(systemName: "cart")
         swiftUICartController.tabBarItem.title = "Cart"
+        swiftUICartController.tabBarItem.accessibilityIdentifier = "cart-tab"
         swiftUICartController.navigationItem.title = "Cart (SwiftUI)"
 
         // Account
         accountController.tabBarItem.image = UIImage(systemName: "person.circle")
         accountController.tabBarItem.title = "Log in"
+        accountController.tabBarItem.accessibilityIdentifier = "account-tab"
         subscribeToAuthStateChanges()
 
         // Settings
         settingsController.tabBarItem.image = UIImage(systemName: "gearshape.2")
         settingsController.tabBarItem.title = "Settings"
+        settingsController.tabBarItem.accessibilityIdentifier = "settings-tab"
     }
 
     private func subscribeToAuthStateChanges() {
@@ -231,6 +236,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if CustomerAccountManager.shared.handleCallback(url: url) {
             return
         }
+
+        do {
+            guard let cartBootstrapLink = try CartBootstrapLink.parse(url) else { return }
+
+            handleCartBootstrapLink(cartBootstrapLink)
+        } catch {
+            presentCartBootstrapError(error)
+        }
     }
 
     func scene(_: UIScene, continue userActivity: NSUserActivity) {
@@ -281,6 +294,45 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func navigateToProduct(with handle: String) {
         ProductCache.shared.getProduct(handle: handle, completion: { _ in })
         navigateTo(.catalog)
+    }
+
+    private func handleCartBootstrapLink(_ cartBootstrapLink: CartBootstrapLink) {
+        Task { @MainActor in
+            do {
+                let variantId = try await variantId(for: cartBootstrapLink)
+                _ = try await CartManager.shared.seedCart(variant: variantId, quantity: cartBootstrapLink.quantity)
+                navigateTo(.cart)
+            } catch {
+                presentCartBootstrapError(error)
+            }
+        }
+    }
+
+    @MainActor
+    private func variantId(for cartBootstrapLink: CartBootstrapLink) async throws -> String {
+        if let variantId = cartBootstrapLink.variantId {
+            return variantId
+        }
+
+        guard
+            let productIndex = cartBootstrapLink.productIndex,
+            let product = await ProductCache.shared.product(at: productIndex),
+            let variant = product.variants.nodes.first
+        else {
+            throw CartBootstrapError.productVariantNotFound
+        }
+
+        return variant.id
+    }
+
+    private func presentCartBootstrapError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "Cart bootstrap failed",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        window?.topMostViewController()?.present(alert, animated: true)
     }
 
     @objc func colorSchemeChanged() {

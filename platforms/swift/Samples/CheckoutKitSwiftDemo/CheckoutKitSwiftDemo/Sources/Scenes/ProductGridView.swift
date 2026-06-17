@@ -15,8 +15,9 @@ struct ProductGridView: View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 2) {
                 if let products = productCache.collection, !products.isEmpty {
-                    ForEach(products, id: \.id) { product in
+                    ForEach(Array(products.enumerated()), id: \.element.id) { index, product in
                         ProductGridItem(product: product)
+                            .accessibilityIdentifier("product-\(index)-grid-item")
                             .onTapGesture {
                                 selectProductAndShowSheet(for: product)
                             }
@@ -29,6 +30,7 @@ struct ProductGridView: View {
             .padding(.horizontal, 5)
             .padding(.top, 10)
         }
+        .accessibilityIdentifier("checkout-kit-sample-ready")
         .onAppear {
             if productCache.collection == nil {
                 productCache.fetchCollection()

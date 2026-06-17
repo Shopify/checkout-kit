@@ -185,6 +185,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
 
         let emptyLabel = UILabel()
         emptyLabel.text = "Your cart is empty"
+        emptyLabel.accessibilityIdentifier = "cart-empty-message"
         emptyLabel.textAlignment = .center
         emptyLabel.textColor = .secondaryLabel
         emptyLabel.translatesAutoresizingMaskIntoConstraints = false

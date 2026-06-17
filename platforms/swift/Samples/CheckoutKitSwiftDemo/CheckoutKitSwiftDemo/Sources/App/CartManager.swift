@@ -31,12 +31,14 @@ class CartManager: ObservableObject {
 
     // MARK: Cart Actions
 
-    func performCartLinesAdd(variant: String) async throws -> Storefront.CartFragment {
+    func performCartLinesAdd(variant: String, quantity: Int = 1) async throws -> Storefront.CartFragment {
+        let line = try createCartLineInput(variant: variant, quantity: quantity)
+
         guard let cartId = cart?.id else {
-            return try await performCartCreate(items: [variant])
+            return try await performCartCreate(lines: [line])
         }
 
-        let lines = [Storefront.CartLineInput(merchandiseId: variant)]
+        let lines = [line]
         let network = Network.shared
 
         let mutation = Storefront.CartLinesAddMutation(
@@ -120,12 +122,22 @@ class CartManager: ObservableObject {
         }
     }
 
+    func seedCart(variant: String, quantity: Int = 1) async throws -> Storefront.CartFragment {
+        resetCart()
+        return try await performCartLinesAdd(variant: variant, quantity: quantity)
+    }
+
     private func performCartCreate(items: [String] = []) async throws -> Storefront.CartFragment {
+        let lines = try items.map { try createCartLineInput(variant: $0, quantity: 1) }
+        return try await performCartCreate(lines: lines)
+    }
+
+    private func performCartCreate(lines: [Storefront.CartLineInput]) async throws -> Storefront.CartFragment {
         var customerAccessToken: String?
         if CustomerAccountManager.shared.isAuthenticated {
             customerAccessToken = try? await CustomerAccountManager.shared.getValidAccessToken()
         }
-        let input = StorefrontInputFactory.shared.createCartInput(items, customerAccessToken: customerAccessToken)
+        let input = StorefrontInputFactory.shared.createCartInput(lines: lines, customerAccessToken: customerAccessToken)
         let network = Network.shared
 
         let mutation = Storefront.CartCreateMutation(
@@ -182,6 +194,14 @@ class CartManager: ObservableObject {
     func resetCart() {
         cart = nil
         isDirty = false
+    }
+
+    private func createCartLineInput(variant: String, quantity: Int) throws -> Storefront.CartLineInput {
+        guard let lineQuantity = Int32(exactly: quantity), lineQuantity > 0 else {
+            throw Errors.invariant(message: "Cart quantity must be a positive integer")
+        }
+
+        return Storefront.CartLineInput(quantity: .some(lineQuantity), merchandiseId: variant)
     }
 }
 

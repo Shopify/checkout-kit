@@ -89,6 +89,8 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - shop.$(CUSTOMER_ACCOUNT_API_SHOP_ID).app
+          - CFBundleURLSchemes:
+              - checkout-kit-swift
         Address1: $(ADDRESS_1)
         Address2: $(ADDRESS_2)
         City: $(CITY)

@@ -88,7 +88,7 @@ struct CartView: View {
                     )
                     .disabled(isBusy)
                     .foregroundColor(.white)
-                    .accessibilityIdentifier("checkoutSheetButton")
+                    .accessibilityIdentifier("checkout-button")
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
@@ -167,6 +167,7 @@ struct EmptyState: View {
                 .padding(.bottom, 6)
             Text("Your cart is empty.")
                 .font(.caption)
+                .accessibilityIdentifier("cart-empty-message")
         }
     }
 }

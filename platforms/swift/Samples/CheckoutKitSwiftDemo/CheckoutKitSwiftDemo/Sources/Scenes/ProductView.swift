@@ -111,6 +111,7 @@ struct ProductView: View {
                         .foregroundStyle(.white)
                         .cornerRadius(DesignSystem.cornerRadius)
                         .disabled(!variant.availableForSale || loading)
+                        .accessibilityIdentifier("add-to-cart-button")
 
                         if variant.availableForSale {
                             if #available(iOS 16, *) {
@@ -190,6 +191,7 @@ struct ProductView: View {
 @MainActor
 class ProductCache: ObservableObject {
     static let shared = ProductCache()
+
     @Published public var cachedProduct: Product?
     @Published public var isFetching: Bool = false
     @Published public var collection: [Product]?
@@ -223,23 +225,43 @@ class ProductCache: ObservableObject {
         }
     }
 
+    public func product(at index: Int) async -> Product? {
+        guard index >= 0 else { return nil }
+
+        if let collection, collection.indices.contains(index) {
+            return collection[index]
+        }
+
+        let products = await fetchProducts(limit: index + 1)
+        guard products.indices.contains(index) else { return nil }
+
+        return products[index]
+    }
+
     public func fetchCollection(limit: Int = 20) {
         Task {
-            let network = Network.shared
+            let products = await fetchProducts(limit: limit)
+            self.collection = products
+            self.cachedProduct = products.first
+        }
+    }
 
-            let query = Storefront.GetProductsQuery(
-                first: .some(Int32(limit)),
-                country: network.countryCode,
-                language: network.languageCode
-            )
+    private func fetchProducts(limit: Int) async -> [Product] {
+        guard let productLimit = Int32(exactly: limit), productLimit > 0 else { return [] }
 
-            do {
-                let response = try await network.apollo.fetch(query: query)
-                self.collection = response.data?.products.nodes
-                self.cachedProduct = response.data?.products.nodes.first
-            } catch {
-                // Fetch failed silently
-            }
+        let network = Network.shared
+
+        let query = Storefront.GetProductsQuery(
+            first: .some(productLimit),
+            country: network.countryCode,
+            language: network.languageCode
+        )
+
+        do {
+            let response = try await network.apollo.fetch(query: query)
+            return response.data?.products.nodes ?? []
+        } catch {
+            return []
         }
     }
 }
