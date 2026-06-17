@@ -35,6 +35,14 @@
             <!-- Note: the host here will be replaced on application start -->
             <data android:scheme="https" android:host="{{STOREFRONT_DOMAIN}}" />
         </intent-filter>
+
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+
+            <data android:scheme="com.shopify.checkoutkit.reactnativedemo" android:host="cart" />
+        </intent-filter>
       </activity>
     </application>
 </manifest>

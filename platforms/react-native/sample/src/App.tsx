@@ -1,6 +1,6 @@
 import type {PropsWithChildren, ReactNode} from 'react';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Appearance, Linking, Pressable, StatusBar} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Alert, Appearance, Linking, Pressable, StatusBar, View} from 'react-native';
 import {
   NavigationContainer,
   useNavigation,
@@ -43,6 +43,7 @@ import ErrorBoundary from './ErrorBoundary';
 import env from 'react-native-config';
 import {createDebugLogger} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
+import useShopify from './hooks/useShopify';
 
 const log = createDebugLogger('ENV');
 
@@ -94,6 +95,67 @@ const client = new ApolloClient({
   },
   connectToDevTools: __DEV__,
 });
+
+const CART_BOOTSTRAP_SCHEME = 'com.shopify.checkoutkit.reactnativedemo:';
+const CART_BOOTSTRAP_ROUTE = `${CART_BOOTSTRAP_SCHEME}//cart`;
+
+type CartBootstrapLink = {
+  variantId?: string;
+  productIndex?: number;
+  quantity: number;
+};
+
+function parseCartBootstrapLink(url: string): CartBootstrapLink | null {
+  if (!url.startsWith(CART_BOOTSTRAP_SCHEME)) {
+    return null;
+  }
+
+  const queryIndex = url.indexOf('?');
+  const route = queryIndex < 0 ? url : url.slice(0, queryIndex);
+
+  if (route !== CART_BOOTSTRAP_ROUTE) {
+    throw new Error('Unsupported cart bootstrap path');
+  }
+
+  if (queryIndex < 0) {
+    throw new Error('Missing variantId or productIndex');
+  }
+
+  const searchParams = new URLSearchParams(url.slice(queryIndex + 1));
+  const variantId = searchParams.get('variantId')?.trim();
+  const productIndexParam = searchParams.get('productIndex')?.trim();
+
+  const quantityParam = searchParams.get('quantity') ?? '1';
+  const quantity = Number(quantityParam);
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    throw new Error('quantity must be a positive integer');
+  }
+
+  if (variantId && productIndexParam) {
+    throw new Error('Use variantId or productIndex, not both');
+  }
+
+  if (variantId) {
+    return {variantId, quantity};
+  }
+
+  if (!productIndexParam) {
+    throw new Error('Missing variantId or productIndex');
+  }
+
+  const productIndex = Number(productIndexParam);
+
+  if (!Number.isInteger(productIndex) || productIndex < 0) {
+    throw new Error('productIndex must be a non-negative integer');
+  }
+
+  return {productIndex, quantity};
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
 
 function AppWithTheme({children}: PropsWithChildren) {
   const {colorScheme} = useTheme();
@@ -412,14 +474,51 @@ function AppWithNavigation(props: {children: React.ReactNode}) {
 }
 
 function Routes() {
-  const {totalQuantity} = useCart();
+  const {totalQuantity, seedCart} = useCart();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const {url: initialUrl} = useInitialURL();
+  const handledInitialUrlRef = useRef<string | null>(null);
+  const [linkingReady, setLinkingReady] = useState(false);
   const shopify = useShopifyCheckout();
   const eventHandlers = useShopifyEventHandlers('UniversalLink');
+  const {queries} = useShopify();
+  const [fetchProducts] = queries.products;
 
   useEffect(() => {
     async function handleUniversalLink(url: string) {
+      let cartBootstrapLink: CartBootstrapLink | null = null;
+
+      try {
+        cartBootstrapLink = parseCartBootstrapLink(url);
+      } catch (error) {
+        Alert.alert('Invalid cart bootstrap link', errorMessage(error));
+        return;
+      }
+
+      if (cartBootstrapLink) {
+        try {
+          let {variantId} = cartBootstrapLink;
+
+          if (!variantId) {
+            const {data} = await fetchProducts();
+            const product =
+              data?.products.edges[cartBootstrapLink.productIndex ?? 0]?.node;
+
+            variantId = product?.variants.edges[0]?.node.id;
+          }
+
+          if (!variantId) {
+            throw new Error('Cart bootstrap product variant was not found');
+          }
+
+          await seedCart(variantId, cartBootstrapLink.quantity);
+          navigation.navigate('Cart');
+        } catch (error) {
+          Alert.alert('Cart bootstrap failed', errorMessage(error));
+        }
+        return;
+      }
+
       const storefrontUrl = new StorefrontURL(url);
 
       switch (true) {
@@ -444,7 +543,8 @@ function Routes() {
       }
     }
 
-    if (initialUrl) {
+    if (initialUrl && handledInitialUrlRef.current !== initialUrl) {
+      handledInitialUrlRef.current = initialUrl;
       handleUniversalLink(initialUrl);
     }
 
@@ -452,50 +552,55 @@ function Routes() {
     const subscription = Linking.addEventListener('url', ({url}) => {
       handleUniversalLink(url);
     });
+    setLinkingReady(true);
 
     return () => {
       subscription.remove();
     };
-  }, [initialUrl, shopify, navigation, eventHandlers]);
+  }, [initialUrl, shopify, navigation, eventHandlers, seedCart, fetchProducts]);
 
   return (
-    <Tab.Navigator>
-      <Tab.Screen
-        name="Catalog"
-        component={CatalogStack}
-        options={{
-          headerShown: false,
-          tabBarButtonTestID: 'catalog-tab',
-          tabBarIcon: createNavigationIcon('shop'),
-        }}
-      />
-      <Tab.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{
-          tabBarButtonTestID: 'cart-tab',
-          tabBarIcon: createNavigationIcon('shopping-bag'),
-          tabBarBadge: totalQuantity > 0 ? totalQuantity : undefined,
-        }}
-      />
-      <Tab.Screen
-        name="Account"
-        component={AccountStackScreen}
-        options={{
-          headerShown: false,
-          tabBarButtonTestID: 'account-tab',
-          tabBarIcon: createNavigationIcon('user'),
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          tabBarButtonTestID: 'settings-tab',
-          tabBarIcon: createNavigationIcon('cog'),
-        }}
-      />
-    </Tab.Navigator>
+    <View
+      style={{flex: 1}}
+      testID={linkingReady ? 'checkout-kit-sample-ready' : undefined}>
+      <Tab.Navigator>
+        <Tab.Screen
+          name="Catalog"
+          component={CatalogStack}
+          options={{
+            headerShown: false,
+            tabBarButtonTestID: 'catalog-tab',
+            tabBarIcon: createNavigationIcon('shop'),
+          }}
+        />
+        <Tab.Screen
+          name="Cart"
+          component={CartScreen}
+          options={{
+            tabBarButtonTestID: 'cart-tab',
+            tabBarIcon: createNavigationIcon('shopping-bag'),
+            tabBarBadge: totalQuantity > 0 ? totalQuantity : undefined,
+          }}
+        />
+        <Tab.Screen
+          name="Account"
+          component={AccountStackScreen}
+          options={{
+            headerShown: false,
+            tabBarButtonTestID: 'account-tab',
+            tabBarIcon: createNavigationIcon('user'),
+          }}
+        />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            tabBarButtonTestID: 'settings-tab',
+            tabBarIcon: createNavigationIcon('cog'),
+          }}
+        />
+      </Tab.Navigator>
+    </View>
   );
 }
 
