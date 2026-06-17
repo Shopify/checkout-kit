@@ -38,7 +38,9 @@
     "pod-install": "bash ./scripts/pod_install",
     "snapshot": "./scripts/create_snapshot",
     "compare-snapshot": "./scripts/compare_snapshot",
-    "test": "jest"
+    "test": "jest",
+    "e2e:ios": "maestro --platform ios test --config ../../e2e/config.yaml -e APP_ID=com.shopify.checkoutkit.reactnativedemo -e 'CART_BOOTSTRAP_LINK=com.shopify.checkoutkit.reactnativedemo://cart?productIndex=0&quantity=1' -e STOP_APP_BEFORE_DEEPLINK=false -e USE_IOS_CHECKOUT_FIELDS=true -e USE_ANDROID_CHECKOUT_FIELDS=false -e DISMISS_ADDRESS_KEYBOARD_AFTER_SUGGESTIONS=false ../../e2e/shared/checkout-smoke.yaml",
+    "e2e:android": "maestro --platform android test --config ../../e2e/config.yaml -e APP_ID=com.shopify.checkoutkit.reactnativedemo -e 'CART_BOOTSTRAP_LINK=com.shopify.checkoutkit.reactnativedemo://cart?productIndex=0&quantity=1' -e STOP_APP_BEFORE_DEEPLINK=true -e USE_IOS_CHECKOUT_FIELDS=false -e USE_ANDROID_CHECKOUT_FIELDS=true -e DISMISS_ADDRESS_KEYBOARD_AFTER_SUGGESTIONS=true ../../e2e/shared/checkout-smoke.yaml"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

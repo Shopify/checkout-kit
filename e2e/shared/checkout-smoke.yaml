@@ -1,0 +1,387 @@
+appId: ${APP_ID}
+name: Shared checkout smoke
+
+env:
+  # Checkout contact fixture
+  EMAIL: "maestro.e2e@shopify.com"
+  FIRST_NAME: "Maestro"
+  LAST_NAME: "Shopify"
+
+  # Checkout shipping fixture
+  COUNTRY_LABEL: "United States"
+  ADDRESS_LINE1: "700 S Flower St"
+  CITY: "Los Angeles"
+  STATE_FIELD_LABEL: "State"
+  STATE_LABEL: "California"
+  POSTAL_CODE: "90017"
+  POSTAL_FIELD_LABEL: "ZIP code"
+
+  # Checkout payment fixture
+  CARD_NUMBER: "1"
+  CARD_EXPIRY: "1230"
+  CARD_EXPIRY_DISPLAY: "12 / 30"
+  CARD_SECURITY_CODE: "123"
+  # Checkout pre-fills this from FIRST_NAME and LAST_NAME; Android asserts it.
+  CARDHOLDER_NAME: "Maestro Shopify"
+
+  # Accepted successful checkout states for this smoke test.
+  POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
+---
+- launchApp:
+    clearState: true
+    arguments:
+      # iOS-only launch arguments; Android ignores them.
+      AppleLocale: en_US
+      AppleLanguages: "(en)"
+- extendedWaitUntil:
+    visible:
+      id: checkout-kit-sample-ready
+    timeout: 60000
+- runFlow:
+    when:
+      true: ${STOP_APP_BEFORE_DEEPLINK}
+    commands:
+      # RN Android opts into this so the app receives the bootstrap link on cold start.
+      - stopApp
+- openLink: "${CART_BOOTSTRAP_LINK}"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible:
+      id: checkout-button
+    timeout: 30000
+- tapOn:
+    id: checkout-button
+    enabled: true
+
+# Contact
+- extendedWaitUntil:
+    visible:
+      text: "^Email( or mobile phone number)?$"
+    timeout: 60000
+- tapOn:
+    text: "^Email( or mobile phone number)?$"
+- inputText: "${EMAIL}"
+- runFlow:
+    when:
+      visible: "selected"
+    commands:
+      - tapOn: "selected"
+- runFlow:
+    when:
+      true: ${USE_ANDROID_CHECKOUT_FIELDS}
+    commands:
+      - runFlow:
+          when:
+            notVisible: "^${EMAIL}$"
+          commands:
+            - tapOn:
+                id: email
+            - eraseText: 80
+            - inputText: "${EMAIL}"
+      - extendedWaitUntil:
+          visible: "^${EMAIL}$"
+      - pressKey: Back
+      - waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "^First name( \\(optional\\))?$"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- tapOn:
+    text: "^First name( \\(optional\\))?$"
+- inputText: "${FIRST_NAME}"
+- runFlow:
+    when:
+      visible: "selected"
+    commands:
+      - tapOn: "selected"
+- scrollUntilVisible:
+    element:
+      text: "^Last name$"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- tapOn:
+    text: "^Last name$"
+- inputText: "${LAST_NAME}"
+- runFlow:
+    when:
+      visible: "selected"
+    commands:
+      - tapOn: "selected"
+
+# Shipping address
+- scrollUntilVisible:
+    element:
+      text: "Country/Region"
+    direction: DOWN
+- tapOn:
+    text: "Country/Region"
+    index: 1
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "^${COUNTRY_LABEL}$"
+    direction: UP
+    visibilityPercentage: 10
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "^${COUNTRY_LABEL}$"
+    direction: DOWN
+    visibilityPercentage: 10
+    optional: true
+- tapOn:
+    text: "^${COUNTRY_LABEL}$"
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      text: "Address"
+    direction: DOWN
+- tapOn:
+    text: "Address"
+    index: -1
+- eraseText: 80
+- inputText: "${ADDRESS_LINE1}"
+- runFlow:
+    when:
+      visible: "selected"
+    commands:
+      - tapOn: "selected"
+- runFlow:
+    when:
+      true: ${DISMISS_ADDRESS_KEYBOARD_AFTER_SUGGESTIONS}
+    commands:
+      - pressKey: Back
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Close suggestions"
+    commands:
+      - tapOn: "Close suggestions"
+      - waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "^City$"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    text: "^City$"
+    index: -1
+- eraseText: 80
+- inputText: "${CITY}"
+- runFlow:
+    when:
+      visible: "selected"
+    commands:
+      - tapOn: "selected"
+- runFlow:
+    when:
+      true: ${USE_ANDROID_CHECKOUT_FIELDS}
+    commands:
+      - pressKey: Back
+      - waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "^${STATE_FIELD_LABEL}$"
+    direction: DOWN
+    centerElement: true
+- runFlow:
+    when:
+      notVisible: "^${STATE_LABEL}$"
+    commands:
+      - tapOn:
+          text: "^${STATE_FIELD_LABEL}$"
+          index: -1
+      - waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "^${STATE_LABEL}$"
+    direction: UP
+    visibilityPercentage: 100
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "^${STATE_LABEL}$"
+    direction: DOWN
+    visibilityPercentage: 100
+    optional: true
+- tapOn:
+    text: "^${STATE_LABEL}$"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    notVisible: "Select a state"
+- extendedWaitUntil:
+    visible: "^${STATE_LABEL}$"
+- scrollUntilVisible:
+    element:
+      text: "^${POSTAL_FIELD_LABEL}$"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    text: "^${POSTAL_FIELD_LABEL}$"
+    index: -1
+- eraseText: 80
+- inputText: "${POSTAL_CODE}"
+- runFlow:
+    when:
+      visible: "selected"
+    commands:
+      - tapOn: "selected"
+- extendedWaitUntil:
+    visible: "^${POSTAL_CODE}$"
+- waitForAnimationToEnd
+
+# Payment
+- runFlow:
+    when:
+      true: ${USE_IOS_CHECKOUT_FIELDS}
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^Field container for: Card number$"
+          direction: DOWN
+          centerElement: true
+      - tapOn:
+          text: "^Field container for: Card number$"
+      - inputText: "${CARD_NUMBER}"
+      - tapOn: "selected"
+      - tapOn: "Expiration date (MM / YY)"
+      - inputText: "${CARD_EXPIRY}"
+      - tapOn: "selected"
+      - tapOn: "Field container for: Security code"
+      - inputText: "${CARD_SECURITY_CODE}"
+      - tapOn: "selected"
+      - scrollUntilVisible:
+          element:
+            text: "^Field container for: Name on card$"
+          direction: DOWN
+          centerElement: true
+- runFlow:
+    when:
+      true: ${USE_ANDROID_CHECKOUT_FIELDS}
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: number
+          direction: DOWN
+          centerElement: true
+      - tapOn:
+          text: "Card number"
+          index: -1
+      - inputText: "${CARD_NUMBER}"
+      - scrollUntilVisible:
+          element:
+            id: expiry
+          direction: DOWN
+          centerElement: true
+      - tapOn:
+          id: expiry
+          index: -1
+      # Android's hosted expiry field is entered digit-by-digit; keep in sync with CARD_EXPIRY.
+      - inputText: "1"
+      - waitForAnimationToEnd
+      - inputText: "2"
+      - waitForAnimationToEnd
+      - inputText: "3"
+      - waitForAnimationToEnd
+      - inputText: "0"
+      - extendedWaitUntil:
+          visible: "^${CARD_EXPIRY_DISPLAY}$"
+      - pressKey: Back
+      - waitForAnimationToEnd
+      - scrollUntilVisible:
+          element:
+            id: verification_value
+          direction: DOWN
+          centerElement: true
+          optional: true
+      - runFlow:
+          when:
+            visible:
+              id: verification_value
+          commands:
+            - tapOn:
+                id: verification_value
+                index: -1
+      - runFlow:
+          when:
+            notVisible:
+              id: verification_value
+          commands:
+            - scrollUntilVisible:
+                element:
+                  text: "Security code"
+                direction: DOWN
+                centerElement: true
+            - tapOn:
+                text: "Security code"
+                index: -1
+      - inputText: "${CARD_SECURITY_CODE}"
+      - extendedWaitUntil:
+          visible: "^${CARD_SECURITY_CODE}$"
+      - pressKey: Back
+      - waitForAnimationToEnd
+      - scrollUntilVisible:
+          element:
+            id: name
+          direction: DOWN
+          centerElement: true
+      - extendedWaitUntil:
+          visible: "^${CARDHOLDER_NAME}$"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      true: ${USE_ANDROID_CHECKOUT_FIELDS}
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: checkout-pay-button
+          direction: DOWN
+          visibilityPercentage: 90
+      - tapOn:
+          id: checkout-pay-button
+- runFlow:
+    when:
+      true: ${USE_IOS_CHECKOUT_FIELDS}
+    commands:
+      - tapOn:
+          text: "^(Pay now|Complete order)$"
+          enabled: true
+- extendedWaitUntil:
+    visible: "${POST_SUBMIT_RESULT_PATTERN}"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "close"
+    commands:
+      - tapOn: "close"
+- runFlow:
+    when:
+      visible: "Close Checkout"
+    commands:
+      - tapOn: "Close Checkout"
+- runFlow:
+    when:
+      visible:
+        id: products-tab
+    commands:
+      - tapOn:
+          id: cart-tab
+- runFlow:
+    when:
+      visible:
+        id: catalog-tab
+    commands:
+      - tapOn:
+          id: cart-tab
+- extendedWaitUntil:
+    visible:
+      id: cart-empty-message
+    timeout: 15000

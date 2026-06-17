@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+E2E_DIR="$(cd "$SCRIPT_DIR/../../../e2e" && pwd)"
+
+maestro --platform ios test --config "$E2E_DIR/config.yaml" -e APP_ID=com.shopify.checkoutkit.swiftdemo -e 'CART_BOOTSTRAP_LINK=checkout-kit-swift://cart?productIndex=0&quantity=1' -e STOP_APP_BEFORE_DEEPLINK=false -e USE_IOS_CHECKOUT_FIELDS=true -e USE_ANDROID_CHECKOUT_FIELDS=false -e DISMISS_ADDRESS_KEYBOARD_AFTER_SUGGESTIONS=false "$E2E_DIR/shared/checkout-smoke.yaml"
