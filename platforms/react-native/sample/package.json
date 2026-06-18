@@ -25,30 +25,23 @@
     "@shopify/checkout-kit-react-native": "workspace:*",
     "graphql": "^16.8.2",
     "jotai": "^2.13.1",
-    "react-native-dotenv": "^3.4.11",
-    "react-native-reanimated": "4.4.1",
-    "react-native-safe-area-context": "5.8.0",
+    "react-native-reanimated": "4.3.1",
+    "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
     "react-native-webview": "13.16.1",
-    "@expo/vector-icons": "15.1.1",
-    "expo": "56.0.9",
-    "expo-build-properties": "56.0.17",
-    "expo-constants": "56.0.17",
-    "expo-crypto": "56.0.4",
-    "expo-dev-client": "56.0.19",
-    "expo-font": "56.0.5",
-    "expo-secure-store": "56.0.4",
-    "react-native-gesture-handler": "3.0.0",
-    "react": "19.2.7",
+    "@expo/vector-icons": "~15.1.1",
+    "expo": "~56.0.11",
+    "expo-build-properties": "~56.0.18",
+    "expo-constants": "~56.0.18",
+    "expo-crypto": "~56.0.4",
+    "expo-dev-client": "~56.0.20",
+    "expo-font": "~56.0.6",
+    "expo-secure-store": "~56.0.4",
+    "react-native-gesture-handler": "~2.31.1",
+    "react": "19.2.3",
     "react-native": "0.85.3",
-    "react-native-worklets": "0.9.1"
-  },
-  "peerDependencies": {
-    "@react-native/babel-preset": "*",
-    "@react-native/metro-config": "*",
-    "@types/react-native": "*",
-    "react": "*",
-    "react-native": "*"
+    "react-native-worklets": "0.8.3",
+    "expo-system-ui": "~56.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
@@ -85,5 +78,14 @@
         }
       }
     ]
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo",
+        "expo-build-properties",
+        "expo-font"
+      ]
+    }
   }
 }

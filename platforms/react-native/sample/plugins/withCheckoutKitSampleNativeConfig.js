@@ -90,7 +90,15 @@ dependencyResolutionManagement {
     repositories {
         if ((System.getenv("USE_LOCAL_SDK") ?: "0") == "1") {
             exclusiveContent {
-                forRepository { mavenLocal() }
+                forRepository {
+                    mavenLocal {
+                        metadataSources {
+                            mavenPom()
+                            artifact()
+                            ignoreGradleMetadataRedirection()
+                        }
+                    }
+                }
                 filter { includeModule("com.shopify", "checkout-kit") }
             }
         }
@@ -115,7 +123,15 @@ allprojects {
     repositories {
         if (useLocalSdk) {
             exclusiveContent {
-                forRepository { mavenLocal() }
+                forRepository {
+                    mavenLocal {
+                        metadataSources {
+                            mavenPom()
+                            artifact()
+                            ignoreGradleMetadataRedirection()
+                        }
+                    }
+                }
                 filter { includeModule("com.shopify", "checkout-kit") }
             }
         }

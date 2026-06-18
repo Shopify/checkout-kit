@@ -41,7 +41,7 @@ if local_entries.any?
   warn "::error file=#{lockfile}::Podfile.lock resolves ShopifyCheckoutKit from a local path. CI uses published native SDKs, so regenerate without --local."
   warn "Detected local entries:"
   local_entries.each { |entry| warn "  - #{entry}" }
-  warn "Try: env -u USE_LOCAL_SDK dev rn pod-install"
+  warn "Try: env -u USE_LOCAL_SDK dev rn prebuild ios"
   exit 1
 end
 

@@ -116,8 +116,6 @@ if (shopifySdkVersion == null || shopifySdkVersion.trim().isEmpty()) {
 }
 
 def shopifySdkArtifact = "com.shopify:checkout-kit:$shopifySdkVersion"
-def localShopifySdkAar = file("${System.getProperty('user.home')}/.m2/repository/com/shopify/checkout-kit/${shopifySdkVersion}/checkout-kit-${shopifySdkVersion}.aar")
-def shopifySdkDependency = useLocalSdk ? files(localShopifySdkAar) : shopifySdkArtifact
 
 repositories {
   if (useLocalSdk) {
@@ -148,15 +146,10 @@ dependencies {
   // Uncomment to install dependencies for local development
   //  implementation("com.facebook.react:react-android:+")
 
-  implementation(shopifySdkDependency)
+  implementation(shopifySdkArtifact)
   implementation("com.fasterxml.jackson.core:jackson-databind:2.12.5")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-  debugImplementation(shopifySdkDependency)
-
-  if (useLocalSdk) {
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("androidx.webkit:webkit:1.16.0")
-  }
+  debugImplementation(shopifySdkArtifact)
 
   testImplementation "junit:junit:4.13.2"
   testImplementation "androidx.activity:activity:1.9.3"

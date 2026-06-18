@@ -485,17 +485,6 @@ commands:
           optional: "[ios|android|all] [--local]"
         run: cd platforms/react-native && pnpm run prebuild -- "$@"
 
-      pod-install:
-        desc: Compatibility alias for `dev rn prebuild ios`.
-        long_desc: |
-          Compatibility alias for `dev rn prebuild ios`.
-
-          --local
-            Wire the generated Podfile against in-repo Swift SDK sources.
-        syntax:
-          optional: --local
-        run: cd platforms/react-native && pnpm run prebuild -- ios "$@"
-
       open:
         desc: Open the React Native workspace root or native sample projects
         long_desc: |

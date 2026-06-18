@@ -43,10 +43,8 @@ module.exports = {
   version: '0.6.0',
   scheme: ['rn', customerAccountScheme].filter(Boolean),
   orientation: 'portrait',
-  icon: './assets/icon.jpg',
+  icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
-  newArchEnabled: true,
-  jsEngine: 'hermes',
   ios: {
     bundleIdentifier: 'com.shopify.checkoutkit.reactnativedemo',
     deploymentTarget: '16.6',
@@ -69,10 +67,8 @@ module.exports = {
   },
   android: {
     package: 'com.shopify.checkoutkit.reactnativedemo',
-    minSdkVersion: 24,
-    targetSdkVersion: 35,
     adaptiveIcon: {
-      foregroundImage: './assets/icon.jpg',
+      foregroundImage: './assets/icon.png',
       backgroundColor: '#000000',
     },
     intentFilters: [
