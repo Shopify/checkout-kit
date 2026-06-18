@@ -84,7 +84,6 @@ pnpm-debug.log
 .build
 lib
 dist
-.turbo
 
 # Module
 modules/@shopify/checkout-kit-react-native/android/gradle/wrapper/gradle-wrapper.jar
