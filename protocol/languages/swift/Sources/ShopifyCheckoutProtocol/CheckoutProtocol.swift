@@ -6,6 +6,8 @@ public enum CheckoutProtocol {
     public static let defaultDelegations: [String] = ["window.open"]
 
     package static let readyMethod = "ec.ready"
+    package static let methodNotFoundCode = -32601
+    package static let methodNotFoundMessage = "Method not found"
 
     public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
     public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")
@@ -40,5 +42,50 @@ public enum CheckoutProtocol {
         }
 
         return method
+    }
+
+    package static func methodNotFoundResponse(forUnsupportedProtocolRequest message: String) -> String? {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: Data(message.utf8)) as? [String: Any],
+            object["jsonrpc"] as? String == "2.0",
+            let method = object["method"] as? String,
+            !supportedProtocolMethods.contains(method),
+            let id = jsonRpcRequestID(object["id"])
+        else {
+            return nil
+        }
+
+        let response: [String: Any] = [
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": [
+                "code": methodNotFoundCode,
+                "message": methodNotFoundMessage
+            ]
+        ]
+
+        guard
+            JSONSerialization.isValidJSONObject(response),
+            let data = try? JSONSerialization.data(withJSONObject: response),
+            let body = String(data: data, encoding: .utf8)
+        else {
+            return nil
+        }
+
+        return body
+    }
+
+    private static func jsonRpcRequestID(_ id: Any?) -> Any? {
+        switch id {
+        case let value as String:
+            return value
+        case let value as NSNumber:
+            guard CFGetTypeID(value) != CFBooleanGetTypeID() else {
+                return nil
+            }
+            return value
+        default:
+            return nil
+        }
     }
 }

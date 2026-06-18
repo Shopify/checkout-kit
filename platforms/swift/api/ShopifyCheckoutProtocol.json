@@ -208,6 +208,102 @@
           },
           {
             "kind": "Var",
+            "name": "methodNotFoundCode",
+            "printedName": "methodNotFoundCode",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCheckoutProtocol0bC0O18methodNotFoundCodeSivpZ",
+            "mangledName": "$s23ShopifyCheckoutProtocol0bC0O18methodNotFoundCodeSivpZ",
+            "moduleName": "ShopifyCheckoutProtocol",
+            "static": true,
+            "isInternal": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCheckoutProtocol0bC0O18methodNotFoundCodeSivgZ",
+                "mangledName": "$s23ShopifyCheckoutProtocol0bC0O18methodNotFoundCodeSivgZ",
+                "moduleName": "ShopifyCheckoutProtocol",
+                "static": true,
+                "implicit": true,
+                "isInternal": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "methodNotFoundMessage",
+            "printedName": "methodNotFoundMessage",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCheckoutProtocol0bC0O21methodNotFoundMessageSSvpZ",
+            "mangledName": "$s23ShopifyCheckoutProtocol0bC0O21methodNotFoundMessageSSvpZ",
+            "moduleName": "ShopifyCheckoutProtocol",
+            "static": true,
+            "isInternal": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCheckoutProtocol0bC0O21methodNotFoundMessageSSvgZ",
+                "mangledName": "$s23ShopifyCheckoutProtocol0bC0O21methodNotFoundMessageSSvgZ",
+                "moduleName": "ShopifyCheckoutProtocol",
+                "static": true,
+                "implicit": true,
+                "isInternal": true,
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "complete",
             "printedName": "complete",
             "children": [
@@ -689,6 +785,40 @@
             "declKind": "Func",
             "usr": "s:23ShopifyCheckoutProtocol0bC0O09supportedC6MethodySSSgSSFZ",
             "mangledName": "$s23ShopifyCheckoutProtocol0bC0O09supportedC6MethodySSSgSSFZ",
+            "moduleName": "ShopifyCheckoutProtocol",
+            "static": true,
+            "isInternal": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "methodNotFoundResponse",
+            "printedName": "methodNotFoundResponse(forUnsupportedProtocolRequest:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCheckoutProtocol0bC0O22methodNotFoundResponse014forUnsupportedC7RequestSSSgSS_tFZ",
+            "mangledName": "$s23ShopifyCheckoutProtocol0bC0O22methodNotFoundResponse014forUnsupportedC7RequestSSSgSS_tFZ",
             "moduleName": "ShopifyCheckoutProtocol",
             "static": true,
             "isInternal": true,

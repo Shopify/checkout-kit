@@ -593,16 +593,48 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
-    func testUnsupportedProtocolMethodsDoNotInvokeClient() async {
+    func testUnsupportedProtocolRequestsReturnMethodNotFoundAndDoNotInvokeClient() async throws {
+        let client = RecordingBridgeClient(response: #"{"jsonrpc":"2.0","id":"raw","result":{}}"#)
+        view.client = client
+        let responseSent = expectation(description: "method-not-found responses sent")
+        responseSent.expectedFulfillmentCount = 3
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let messages = [
+            (#"{"jsonrpc":"2.0","method":"ec.payment.credential_request","id":"unsupported","params":{}}"#, "unsupported"),
+            (#"{"jsonrpc":"2.0","method":"ep.cart.ready","id":"ep","params":{}}"#, "ep"),
+            (#"{"jsonrpc":"2.0","method":"customMethod","id":"custom","params":{}}"#, "custom")
+        ]
+
+        for (body, _) in messages {
+            view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
+        }
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertEqual(MockCheckoutBridge.sendResponseCount, messages.count)
+        let parsedResponses = try MockCheckoutBridge.responseBodies.map { response -> [String: Any] in
+            try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        }
+        XCTAssertEqual(parsedResponses.map { $0["id"] as? String }, messages.map { $0.1 })
+        for parsed in parsedResponses {
+            let error = try XCTUnwrap(parsed["error"] as? [String: Any])
+            XCTAssertEqual(error["code"] as? Int, -32601)
+            XCTAssertEqual(error["message"] as? String, "Method not found")
+        }
+        let receivedMessages = await client.messages()
+        XCTAssertEqual(receivedMessages, [])
+    }
+
+    @MainActor
+    func testUnsupportedProtocolNotificationsDoNotInvokeClient() async {
         let client = RecordingBridgeClient(response: #"{"jsonrpc":"2.0","id":"raw","result":{}}"#)
         view.client = client
         let notSent = expectation(description: "sendResponse must not fire")
         notSent.isInverted = true
         MockCheckoutBridge.sendResponseExpectation = notSent
         let messages = [
-            #"{"jsonrpc":"2.0","method":"ec.payment.credential_request","id":"unsupported","params":{}}"#,
-            #"{"jsonrpc":"2.0","method":"ep.cart.ready","id":"ep","params":{}}"#,
-            #"{"jsonrpc":"2.0","method":"customMethod","id":"custom","params":{}}"#
+            #"{"jsonrpc":"2.0","method":"ec.payment.credential_request","params":{}}"#,
+            #"{"jsonrpc":"2.0","method":"ep.cart.ready","params":{}}"#,
+            #"{"jsonrpc":"2.0","method":"customMethod","params":{}}"#
         ]
 
         for body in messages {
@@ -854,12 +886,14 @@ class MockCheckoutBridge: CheckoutBridgeProtocol {
     static var sendResponseCalled = false
     static var sendResponseCount = 0
     static var lastResponseBody: String?
+    static var responseBodies: [String] = []
     static var sendResponseExpectation: XCTestExpectation?
 
     static func reset() {
         sendResponseCalled = false
         sendResponseCount = 0
         lastResponseBody = nil
+        responseBodies = []
         sendResponseExpectation = nil
     }
 
@@ -867,6 +901,7 @@ class MockCheckoutBridge: CheckoutBridgeProtocol {
         sendResponseCalled = true
         sendResponseCount += 1
         lastResponseBody = messageBody
+        responseBodies.append(messageBody)
         sendResponseExpectation?.fulfill()
         return true
     }

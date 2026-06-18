@@ -450,6 +450,11 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         guard let method = CheckoutProtocol.supportedProtocolMethod(body) else {
+            if let response = CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: body) {
+                Task { @MainActor in
+                    await checkoutBridge.sendResponse(self, messageBody: response)
+                }
+            }
             return
         }
 

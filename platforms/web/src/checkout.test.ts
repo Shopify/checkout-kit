@@ -763,6 +763,81 @@ describe("<shopify-checkout>", () => {
       });
     });
 
+    describe("unsupported protocol methods", () => {
+      it("posts method-not-found for unsupported requests", () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const targetOrigin = new URL(checkout.src).origin;
+
+        simulateRawMessageEvent(
+          checkout,
+          {
+            jsonrpc: "2.0",
+            method: "ep.cart.ready",
+            id: "unsupported-1",
+            params: {},
+          },
+          { source: mockCheckoutWindow },
+        );
+
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "unsupported-1",
+            error: {
+              code: -32601,
+              message: "Method not found",
+            },
+          },
+          { targetOrigin },
+        );
+      });
+
+      it("ignores unsupported requests with invalid request ids", () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+
+        for (const id of [{}, null, true]) {
+          simulateRawMessageEvent(
+            checkout,
+            {
+              jsonrpc: "2.0",
+              method: "ep.cart.ready",
+              id,
+              params: {},
+            },
+            { source: mockCheckoutWindow },
+          );
+        }
+
+        simulateRawMessageEvent(
+          checkout,
+          {
+            jsonrpc: "2.0",
+            method: "ep.cart.ready",
+            params: {},
+          },
+          { source: mockCheckoutWindow },
+        );
+
+        expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
+      });
+
+      it("ignores unsupported notifications", () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+
+        simulateRawMessageEvent(
+          checkout,
+          {
+            jsonrpc: "2.0",
+            method: "customMethod",
+            params: {},
+          },
+          { source: mockCheckoutWindow },
+        );
+
+        expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
+      });
+    });
+
     describe("checkout:start", () => {
       it("updates the checkout property and dispatches an ec:start event", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
@@ -1599,6 +1674,33 @@ function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMess
       params,
       ...(options?.id && { id: options.id }),
     },
+    origin,
+    source,
+  });
+  window.dispatchEvent(event);
+}
+
+function simulateRawMessageEvent(
+  checkout: ShopifyCheckout,
+  data: unknown,
+  options?: {
+    source?: MessageEventSource | null;
+    origin?: string;
+  },
+) {
+  const source = options?.source !== undefined ? options.source : null;
+
+  let origin = options?.origin;
+  if (origin === undefined) {
+    try {
+      origin = new URL(checkout.src).origin;
+    } catch {
+      origin = "";
+    }
+  }
+
+  const event = new MessageEvent("message", {
+    data,
     origin,
     source,
   });

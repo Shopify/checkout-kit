@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
@@ -55,15 +56,22 @@ internal class EmbeddedCheckoutProtocol(
     @JavascriptInterface
     fun postMessage(message: String) {
         try {
-            val request = decoder.decodeFromString<EcpRequest>(message)
+            val requestObject = decoder.decodeFromString<JsonObject>(message)
+            val request = decoder.decodeFromJsonElement<EcpRequest>(requestObject)
             val method = CheckoutProtocol.supportedProtocolMethod(request)
+            val requestId = jsonRpcRequestId(requestObject["id"])
             log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
             when (method) {
                 CheckoutProtocol.READY_METHOD -> handleReady(request)
                 CheckoutProtocol.windowOpen.method -> handleWindowOpenRequest(message)
                 CheckoutProtocol.start.method -> handleStart(message)
                 CheckoutProtocol.complete.method -> handleComplete(message)
-                null -> log.d(LOG_TAG, "Ignoring unsupported ECP method: ${request.method}.")
+                null -> {
+                    log.d(LOG_TAG, "Ignoring unsupported ECP method: ${request.method}.")
+                    if (requestId != null) {
+                        sendError(requestId, CODE_METHOD_NOT_FOUND, "Method not found")
+                    }
+                }
                 else -> handleClientMessage(method, message)
             }
         } catch (e: SerializationException) {
@@ -236,5 +244,11 @@ internal class EmbeddedCheckoutProtocol(
         private val KIT_SUPPORTED_DELEGATIONS = setOf("window.open")
 
         private const val CODE_PARSE_ERROR = -32700
+        private const val CODE_METHOD_NOT_FOUND = -32601
     }
+}
+
+private fun jsonRpcRequestId(id: JsonElement?): JsonElement? {
+    val primitive = id as? JsonPrimitive ?: return null
+    return primitive.takeIf { it.isString || it.contentOrNull?.toDoubleOrNull() != null }
 }
