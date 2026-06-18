@@ -35,11 +35,6 @@ class CheckoutProtocolTest {
     }
 
     @Test
-    fun `buyerChange descriptor has correct method`() {
-        assertThat(CheckoutProtocol.buyerChange.method).isEqualTo("ec.buyer.change")
-    }
-
-    @Test
     fun `error descriptor has correct method`() {
         assertThat(CheckoutProtocol.error.method).isEqualTo("ec.error")
     }
@@ -65,7 +60,6 @@ class CheckoutProtocolTest {
     @Test
     fun `supported protocol methods exclude internal or unsupported methods`() {
         assertThat(CheckoutProtocol.supportedProtocolMethods).doesNotContain(
-            CheckoutProtocol.buyerChange.method,
             "ec.payment.credential_request",
             "ep.cart.ready",
         )

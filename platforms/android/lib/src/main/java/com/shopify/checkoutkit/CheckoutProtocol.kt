@@ -45,7 +45,6 @@ public object CheckoutProtocol {
     public val complete: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.complete")
     public val messagesChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.messages.change")
     public val lineItemsChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.line_items.change")
-    internal val buyerChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.buyer.change")
     public val totalsChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.totals.change")
     public val error: NotificationDescriptor<ErrorResponse> = NotificationDescriptor(
         method = "ec.error",

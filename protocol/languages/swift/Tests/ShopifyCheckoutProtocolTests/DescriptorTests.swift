@@ -28,10 +28,6 @@ struct DescriptorTests {
             #expect(CheckoutProtocol.lineItemsChange.method == "ec.line_items.change")
         }
 
-        @Test func buyerChangeMethod() {
-            #expect(CheckoutProtocol.buyerChange.method == "ec.buyer.change")
-        }
-
         @Test func totalsChangeMethod() {
             #expect(CheckoutProtocol.totalsChange.method == "ec.totals.change")
         }
@@ -57,7 +53,6 @@ struct DescriptorTests {
         }
 
         @Test func excludesInternalOrUnsupportedMethods() {
-            #expect(!CheckoutProtocol.supportedProtocolMethods.contains(CheckoutProtocol.buyerChange.method))
             #expect(!CheckoutProtocol.supportedProtocolMethods.contains("ec.payment.credential_request"))
             #expect(!CheckoutProtocol.supportedProtocolMethods.contains("ep.cart.ready"))
         }
