@@ -663,6 +663,27 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
+    func testMalformedReadyParamsReturnParseError() async throws {
+        view.client = MockBridgeClient(responseMessage: "client-response")
+        let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"ready-bad","params":{"delegate":[null]}}"#
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let message = MockScriptMessage(body: body)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+
+        let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
+        XCTAssertNotEqual(response, "client-response")
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["id"] as? String, "ready-bad")
+        let error = try XCTUnwrap(parsed["error"] as? [String: Any])
+        XCTAssertEqual(error["code"] as? Int, -32700)
+        XCTAssertEqual(error["message"] as? String, "Parse error")
+    }
+
+    @MainActor
     func testSupportedRequestUsesRawClientResponse() async {
         let id = "req-window-raw"
         let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"\#(id)","params":{"url":"https://example.com/terms"}}"#
@@ -726,17 +747,21 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
-    func testWindowOpenRequestIgnoresMalformedBody() async {
+    func testWindowOpenRequestReturnsInvalidParamsForMalformedBody() async throws {
         view.client = nil
-        let notFired = expectation(description: "sendResponse must not fire")
-        notFired.isInverted = true
-        MockCheckoutBridge.sendResponseExpectation = notFired
+        let responseSent = expectation(description: "sendResponse fires")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"r","params":{}}"#)
 
         view.userContentController(WKUserContentController(), didReceive: message)
 
-        await fulfillment(of: [notFired], timeout: 1.0)
-        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+        await fulfillment(of: [responseSent], timeout: 1.0)
+        let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["id"] as? String, "r")
+        let error = try XCTUnwrap(parsed["error"] as? [String: Any])
+        XCTAssertEqual(error["code"] as? Int, -32602)
+        XCTAssertEqual(error["message"] as? String, "Invalid params")
     }
 
     // MARK: - ec.error severity-based dismissal

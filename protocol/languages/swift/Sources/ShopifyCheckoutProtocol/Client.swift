@@ -52,6 +52,9 @@ extension CheckoutProtocol {
                 let accepted = requested.filter(Set(delegations).contains)
                 return CheckoutProtocol.encodeReadyResponse(id: id, acceptedDelegations: accepted)
 
+            case let .error(id, code, message):
+                return CheckoutProtocol.encodeErrorResponse(id: id, code: code, message: message)
+
             case let .notification(method, payload):
                 await notificationHandlers[method]?(payload)
                 return nil
@@ -70,6 +73,6 @@ extension CheckoutProtocol {
 
     struct DelegationEntry {
         let delegation: String
-        let handler: @MainActor @Sendable (String, Data) async -> String?
+        let handler: @MainActor @Sendable (JSONRPCID, Data) async -> String?
     }
 }

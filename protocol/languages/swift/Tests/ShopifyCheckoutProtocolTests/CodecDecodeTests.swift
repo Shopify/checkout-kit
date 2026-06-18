@@ -75,6 +75,22 @@ struct CodecDecodeTests {
         #expect(payload.url == URL(string: "https://example.com/terms"))
     }
 
+    @Test func windowOpenRequestDropsUnknownParamsBeforeDispatch() throws {
+        let json = #"""
+        {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":"https://example.com/terms","unknown":"value"}}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .request(_, _, params) = message else {
+            Issue.record("Expected .request, got \(message)")
+            return
+        }
+
+        let parsed = try #require(JSONSerialization.jsonObject(with: params) as? [String: Any])
+        #expect(parsed["url"] as? String == "https://example.com/terms")
+        #expect(parsed["unknown"] == nil)
+    }
+
     @Test func windowOpenDescriptorRejectsEmptyURL() {
         let params = Data(#"{"url":""}"#.utf8)
         #expect(CheckoutProtocol.windowOpen.decode(params) == nil)
@@ -83,6 +99,27 @@ struct CodecDecodeTests {
     @Test func windowOpenDescriptorRejectsMissingURL() {
         let params = Data("{}".utf8)
         #expect(CheckoutProtocol.windowOpen.decode(params) == nil)
+    }
+
+    @Test func windowOpenDescriptorRejectsNullURL() {
+        let params = Data(#"{"url":null}"#.utf8)
+        #expect(CheckoutProtocol.windowOpen.decode(params) == nil)
+    }
+
+    @Test func decodesMalformedWindowOpenParamsAsInvalidParamsError() {
+        let json = #"""
+        {"jsonrpc":"2.0","id":"req-window-bad","method":"ec.window.open_request","params":{"url":null}}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .error(id, code, responseMessage) = message else {
+            Issue.record("Expected .error, got \(message)")
+            return
+        }
+
+        #expect(id == "req-window-bad")
+        #expect(code == -32602)
+        #expect(responseMessage == "Invalid params")
     }
 
     @Test func decodesUnknownMethod() {
@@ -97,6 +134,97 @@ struct CodecDecodeTests {
         }
 
         #expect(method == "ec.unknown")
+    }
+
+    @Test func decodesReadyRequestWithNumericID() {
+        let json = #"""
+        {"jsonrpc":"2.0","id":1,"method":"ec.ready","params":{"delegate":[]}}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .ready(id, delegations) = message else {
+            Issue.record("Expected .ready, got \(message)")
+            return
+        }
+
+        #expect(id == .int(1))
+        #expect(delegations.isEmpty)
+    }
+
+    @Test func decodesReadyRequestWithNullID() {
+        let json = #"""
+        {"jsonrpc":"2.0","id":null,"method":"ec.ready","params":{"delegate":[]}}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .ready(id, delegations) = message else {
+            Issue.record("Expected .ready, got \(message)")
+            return
+        }
+
+        #expect(id == .null)
+        #expect(delegations.isEmpty)
+    }
+
+    @Test func decodesReadyRequestWithMissingParamsAsEmptyDelegations() {
+        let json = #"""
+        {"jsonrpc":"2.0","id":"ready-no-params","method":"ec.ready"}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .ready(id, delegations) = message else {
+            Issue.record("Expected .ready, got \(message)")
+            return
+        }
+
+        #expect(id == "ready-no-params")
+        #expect(delegations.isEmpty)
+    }
+
+    @Test func decodesMalformedReadyParamsAsParseError() {
+        let json = #"""
+        {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .error(id, code, responseMessage) = message else {
+            Issue.record("Expected .error, got \(message)")
+            return
+        }
+
+        #expect(id == "ready-bad")
+        #expect(code == CheckoutProtocol.parseErrorCode)
+        #expect(responseMessage == CheckoutProtocol.parseErrorMessage)
+    }
+
+    @Test func decodesNullReadyParamsAsParseError() {
+        let json = #"""
+        {"jsonrpc":"2.0","id":"ready-null","method":"ec.ready","params":null}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .error(id, code, responseMessage) = message else {
+            Issue.record("Expected .error, got \(message)")
+            return
+        }
+
+        #expect(id == "ready-null")
+        #expect(code == CheckoutProtocol.parseErrorCode)
+        #expect(responseMessage == CheckoutProtocol.parseErrorMessage)
+    }
+
+    @Test func rejectsFractionalJSONRPCID() {
+        let json = #"""
+        {"jsonrpc":"2.0","id":1.5,"method":"ec.ready","params":{"delegate":[]}}
+        """#
+        let message = CheckoutProtocol.decode(jsonRpc: json)
+
+        guard case let .unknown(method, _) = message else {
+            Issue.record("Expected .unknown for fractional id, got \(message)")
+            return
+        }
+
+        #expect(method == "")
     }
 
     @Test func handlesMalformedJSON() {

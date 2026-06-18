@@ -52,6 +52,20 @@ struct CodecEncodeTests {
         #expect(delegate == ["window.open"])
     }
 
+    @Test func encodesReadyResponseWithNumericID() throws {
+        let json = CheckoutProtocol.encodeReadyResponse(id: 7, acceptedDelegations: [])
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+
+        #expect(parsed["id"] as? Int == 7)
+    }
+
+    @Test func encodesReadyResponseWithNullID() throws {
+        let json = CheckoutProtocol.encodeReadyResponse(id: .null, acceptedDelegations: [])
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+
+        #expect(parsed["id"] is NSNull)
+    }
+
     @Test func acknowledgeReadyReturnsResponseForReadyMessage() throws {
         let message = #"""
         {"jsonrpc":"2.0","id":"ready-1","method":"ec.ready","params":{"delegate":["payment.credential"]}}
@@ -90,6 +104,47 @@ struct CodecEncodeTests {
 
         let result = try #require(parsed["result"] as? [String: Any])
         #expect(result["delegate"] == nil)
+    }
+
+    @Test func acknowledgeReadyAcceptsMissingParamsAsEmptyDelegations() throws {
+        let message = #"""
+        {"jsonrpc":"2.0","id":"ready-no-params","method":"ec.ready"}
+        """#
+
+        let response = try #require(CheckoutProtocol.acknowledgeReady(message))
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+
+        #expect(parsed["id"] as? String == "ready-no-params")
+        let result = try #require(parsed["result"] as? [String: Any])
+        #expect(result["delegate"] == nil)
+    }
+
+    @Test func acknowledgeReadyReturnsParseErrorForMalformedParams() throws {
+        let message = #"""
+        {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
+        """#
+
+        let response = try #require(CheckoutProtocol.acknowledgeReady(message))
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+
+        #expect(parsed["id"] as? String == "ready-bad")
+        let error = try #require(parsed["error"] as? [String: Any])
+        #expect(error["code"] as? Int == CheckoutProtocol.parseErrorCode)
+        #expect(error["message"] as? String == CheckoutProtocol.parseErrorMessage)
+    }
+
+    @Test func acknowledgeReadyReturnsParseErrorForNullParams() throws {
+        let message = #"""
+        {"jsonrpc":"2.0","id":"ready-null","method":"ec.ready","params":null}
+        """#
+
+        let response = try #require(CheckoutProtocol.acknowledgeReady(message))
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+
+        #expect(parsed["id"] as? String == "ready-null")
+        let error = try #require(parsed["error"] as? [String: Any])
+        #expect(error["code"] as? Int == CheckoutProtocol.parseErrorCode)
+        #expect(error["message"] as? String == CheckoutProtocol.parseErrorMessage)
     }
 
     @Test func acknowledgeReadyReturnsNilForNonReadyMessage() {
