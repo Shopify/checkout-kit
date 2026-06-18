@@ -20,6 +20,7 @@
 - [Present checkout](#present-checkout)
   - [UIKit](#uikit)
   - [SwiftUI](#swiftui)
+- [Preload checkout](#preload-checkout)
 - [Configure checkout](#configure-checkout)
   - [Current configuration](#current-configuration)
 - [Checkout lifecycle](#checkout-lifecycle)
@@ -159,6 +160,42 @@ struct CartView: View {
 
 Checkout Kit adds the required UCP query parameters automatically when it loads checkout.
 
+## Preload checkout
+
+Call `preload` when your app has a strong signal that the buyer is likely to check out soon, such as when they open the cart screen or move toward a checkout action:
+
+```swift
+ShopifyCheckoutKit.preload(checkout: checkoutURL)
+```
+
+Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
+
+```swift
+ShopifyCheckoutKit.present(
+  checkout: checkoutURL,
+  from: self,
+  delegate: self
+)
+```
+
+Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart represented by the URL passed to `preload`, so call `preload` again after cart changes produce a new checkout URL.
+
+Avoid preloading on every add-to-cart or cart mutation. Preload only when buyer intent is strong enough to justify the additional client and network work.
+
+Clear unused preloaded checkout work with `invalidate`:
+
+```swift
+ShopifyCheckoutKit.invalidate()
+```
+
+Preloading is enabled by default. Disable it when appropriate, for example for data-saver modes or app-specific runtime conditions:
+
+```swift
+ShopifyCheckoutKit.configure {
+  $0.preloading.enabled = false
+}
+```
+
 ## Configure checkout
 
 Configure global presentation defaults before presenting checkout:
@@ -183,6 +220,7 @@ ShopifyCheckoutKit.configure {
 | `title` | Localized `shopify_checkout_kit_title` or `Checkout` | Navigation title for the checkout sheet. |
 | `closeButtonTintColor` | `nil` | Optional tint for the close button. |
 | `logLevel` | `.error` | SDK logging verbosity. Use `.debug` or `.all` during integration. |
+| `preloading.enabled` | `true` | Enables best-effort checkout preloading before presentation. |
 
 To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.
 

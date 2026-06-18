@@ -5,6 +5,199 @@ import UIKit
 import WebKit
 
 @MainActor
+struct PreloadKey: Hashable {
+    let url: URL
+    let entryPoint: MetaData.EntryPoint?
+}
+
+@MainActor
+final class PreloadCache {
+    private struct Entry {
+        let key: PreloadKey
+        let view: CheckoutWebView
+        let createdAt: Date
+
+        private static let ttl: TimeInterval = 5 * 60
+
+        init(key: PreloadKey, view: CheckoutWebView, createdAt: Date = Date()) {
+            self.key = key
+            self.view = view
+            self.createdAt = createdAt
+        }
+
+        var isStale: Bool {
+            remainingTTL <= 0
+        }
+
+        var remainingTTL: TimeInterval {
+            Self.ttl - Date().timeIntervalSince(createdAt)
+        }
+    }
+
+    private static let keepAliveInterval: TimeInterval = 0.5
+
+    private var entry: Entry?
+    private var keepAliveTimer: Timer?
+    private var expiryTimer: Timer?
+
+    func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
+        if let entry, entry.key == key, !entry.isStale {
+            return true
+        }
+
+        invalidate()
+
+        let entry = Entry(key: key, view: view, createdAt: createdAt)
+        guard !entry.isStale else {
+            return false
+        }
+
+        view.frame = Self.preloadFrame()
+        self.entry = entry
+        startKeepAlive(for: view)
+        startExpiryTimer(after: entry.remainingTTL)
+        return true
+    }
+
+    func view(for key: PreloadKey) -> CheckoutWebView? {
+        guard let entry, entry.key == key, !entry.isStale else {
+            invalidate()
+            return nil
+        }
+
+        stopKeepAlive()
+        stopExpiryTimer()
+        return entry.view
+    }
+
+    func invalidate(disconnect: Bool = true) {
+        OSLogger.shared.debug("Invalidating preload cache, disconnect: \(disconnect)")
+
+        let cachedView = entry?.view
+        stopKeepAlive()
+        stopExpiryTimer()
+        entry = nil
+
+        if disconnect {
+            cachedView?.detachBridge()
+        }
+    }
+
+    func hasEntry() -> Bool {
+        if entry?.isStale == true {
+            invalidate()
+            return false
+        }
+
+        return entry != nil
+    }
+
+    func hasEntry(for key: PreloadKey) -> Bool {
+        guard let entry, entry.key == key, !entry.isStale else {
+            return false
+        }
+
+        return true
+    }
+
+    func contains(_ view: CheckoutWebView) -> Bool {
+        guard let entry, !entry.isStale else {
+            return false
+        }
+
+        return entry.view === view
+    }
+
+    func hasActiveKeepAlive() -> Bool {
+        return keepAliveTimer != nil
+    }
+
+    /// While the preloaded webview is unparented, WebKit can suspend its web process before
+    /// the page finishes loading. Periodically evaluating a no-op keeps the process scheduled
+    /// so the preloaded page can finish loading before it is presented. The 500ms cadence is
+    /// empirical and intentionally conservative rather than a documented WebKit guarantee.
+    private func startKeepAlive(for view: CheckoutWebView) {
+        stopKeepAlive()
+        let timer = Timer.scheduledTimer(withTimeInterval: Self.keepAliveInterval, repeats: true) { [weak self, weak view] _ in
+            Task { @MainActor in
+                do {
+                    _ = try await view?.evaluateJavaScript("void 0")
+                } catch {
+                    OSLogger.shared.debug("Preload keep-alive failed; invalidating preload cache")
+                    self?.invalidate()
+                }
+            }
+        }
+        timer.tolerance = Self.keepAliveInterval / 2
+        keepAliveTimer = timer
+    }
+
+    private func startExpiryTimer(after interval: TimeInterval) {
+        stopExpiryTimer()
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.invalidate()
+            }
+        }
+        timer.tolerance = min(interval / 2, 1)
+        expiryTimer = timer
+    }
+
+    private func stopKeepAlive() {
+        keepAliveTimer?.invalidate()
+        keepAliveTimer = nil
+    }
+
+    private func stopExpiryTimer() {
+        expiryTimer?.invalidate()
+        expiryTimer = nil
+    }
+
+    private static func preloadFrame() -> CGRect {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        return scene?.coordinateSpace.bounds ?? UIScreen.main.bounds
+    }
+}
+
+private enum LogSafeURL {
+    private static let redactedQueryItemNames = Set([
+        "checkout[email]",
+        "checkout[phone]",
+        "ec_auth",
+        "key",
+        "multipass",
+        "token"
+    ])
+
+    static func string(_ url: URL?) -> String {
+        guard let url else {
+            return "unknown URL"
+        }
+
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return "redacted URL"
+        }
+
+        components.user = components.user.map { _ in "redacted" }
+        components.password = components.password.map { _ in "redacted" }
+        components.queryItems = components.queryItems?.map(redactedQueryItem)
+        components.fragment = nil
+
+        return components.string ?? "redacted URL"
+    }
+
+    private static func redactedQueryItem(_ item: URLQueryItem) -> URLQueryItem {
+        guard redactedQueryItemNames.contains(item.name) || item.name.hasPrefix("checkout[") else {
+            return item
+        }
+
+        return URLQueryItem(name: item.name, value: "redacted")
+    }
+}
+
+@MainActor
 protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidStartNavigation()
     func checkoutViewDidFinishNavigation()
@@ -13,6 +206,10 @@ protocol CheckoutWebViewDelegate: AnyObject {
 
 @MainActor
 class CheckoutWebView: WKWebView {
+    static let preloadCache = PreloadCache()
+    private static let purposeHeader = "Shopify-Purpose"
+    private static let prefetchPurpose = "prefetch"
+
     var timer: Date?
 
     var checkoutBridge: CheckoutBridgeProtocol.Type = CheckoutBridge.self
@@ -34,6 +231,9 @@ class CheckoutWebView: WKWebView {
     ///     resource exists to act on, so consumers don't have to wire dismissal in
     ///     every error handler.
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
+        .on(CheckoutProtocol.complete) { _ in
+            CheckoutWebView.invalidate(disconnect: false)
+        }
         .on(CheckoutProtocol.windowOpen) { request in
             guard UIApplication.shared.canOpenURL(request.url) else {
                 return .rejected(reason: "canOpenURL returned false")
@@ -43,6 +243,7 @@ class CheckoutWebView: WKWebView {
         }
         .on(CheckoutProtocol.error) { [weak self] payload in
             guard payload.messages.contains(where: { $0.severity == .unrecoverable }) else { return }
+            CheckoutWebView.invalidate()
             self?.viewDelegate?.checkoutViewDidFailWithError(
                 error: .checkoutUnavailable(
                     message: "Embedded checkout reported unrecoverable error.",
@@ -53,6 +254,10 @@ class CheckoutWebView: WKWebView {
 
     var defaultClientBindings: [String: DefaultClientBinding] {
         [
+            CheckoutProtocol.complete.method: DefaultClientBinding(
+                client: defaultsClient,
+                policy: .alwaysRunAfterMerchant
+            ),
             CheckoutProtocol.windowOpen.method: DefaultClientBinding(
                 client: defaultsClient,
                 policy: .runIfUnhandled
@@ -65,19 +270,62 @@ class CheckoutWebView: WKWebView {
     }
 
     static func `for`(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
-        OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString)")
-        return CheckoutWebView(entryPoint: entryPoint)
+        OSLogger.shared.debug("Creating webview for URL: \(LogSafeURL.string(url))")
+
+        guard ShopifyCheckoutKit.configuration.preloading.enabled else {
+            OSLogger.shared.debug("Preloading not enabled")
+            return CheckoutWebView(entryPoint: entryPoint)
+        }
+
+        guard let cachedView = preloadCache.view(for: PreloadKey(url: url, entryPoint: entryPoint)) else {
+            return CheckoutWebView(entryPoint: entryPoint)
+        }
+
+        OSLogger.shared.debug("Presenting cached entry")
+        return cachedView
+    }
+
+    static func preload(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil, createdAt: Date = Date()) {
+        guard ShopifyCheckoutKit.configuration.preloading.enabled else {
+            return
+        }
+
+        let key = PreloadKey(url: url, entryPoint: entryPoint)
+        guard !preloadCache.hasEntry(for: key) else {
+            OSLogger.shared.debug("Preload cache already has matching entry")
+            return
+        }
+
+        let view = CheckoutWebView(entryPoint: entryPoint)
+        // Keep the preloaded webview out of any window. WebKit derives
+        // `document.visibilityState` from window membership, so an unparented webview reports
+        // `hidden` while still running JS to completion; adding it to a window at presentation
+        // flips it to `visible`. Size it to the presentation viewport so it loads at the right
+        // dimensions and avoids a reflow when shown.
+        if preloadCache.store(view, for: key, createdAt: createdAt) {
+            view.load(checkout: url, isPreload: true)
+        }
+    }
+
+    static func invalidate(disconnect: Bool = true) {
+        preloadCache.invalidate(disconnect: disconnect)
     }
 
     // MARK: Properties
 
     weak var viewDelegate: CheckoutWebViewDelegate?
 
+    var isPreloadRequest = false
+
     private var entryPoint: MetaData.EntryPoint?
 
     // MARK: Initializers
 
-    init(frame: CGRect = .zero, configuration: WKWebViewConfiguration = WKWebViewConfiguration(), entryPoint: MetaData.EntryPoint? = nil) {
+    convenience init(frame: CGRect = .zero, entryPoint: MetaData.EntryPoint? = nil) {
+        self.init(frame: frame, configuration: WKWebViewConfiguration(), entryPoint: entryPoint)
+    }
+
+    init(frame: CGRect = .zero, configuration: WKWebViewConfiguration, entryPoint: MetaData.EntryPoint? = nil) {
         OSLogger.shared.debug("Initializing webview")
         configuration.allowsInlineMediaPlayback = true
         self.entryPoint = entryPoint
@@ -127,18 +375,34 @@ class CheckoutWebView: WKWebView {
         isBridgeAttached = false
     }
 
+    func cleanUpForDismissal() {
+        stopLoading()
+        navigationDelegate = nil
+        uiDelegate = nil
+        viewDelegate = nil
+        client = nil
+        removeFromSuperview()
+        detachBridge()
+    }
+
     private func setBackgroundColor() {
         isOpaque = false
         backgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
-
         underPageBackgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
     }
 
     // MARK: -
 
-    func load(checkout url: URL) {
-        OSLogger.shared.info("Loading checkout URL: \(url.absoluteString)")
-        load(URLRequest(url: url))
+    func load(checkout url: URL, isPreload: Bool = false) {
+        OSLogger.shared.info("Loading checkout URL: \(LogSafeURL.string(url)), isPreload: \(isPreload)")
+        var request = URLRequest(url: url)
+
+        if isPreload, ShopifyCheckoutKit.configuration.preloading.enabled {
+            isPreloadRequest = true
+            request.setValue(Self.prefetchPurpose, forHTTPHeaderField: Self.purposeHeader)
+        }
+
+        load(request)
     }
 }
 
@@ -190,6 +454,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         if method == CheckoutProtocol.readyMethod, let response = CheckoutProtocol.acknowledgeReady(body) {
+            OSLogger.shared.debug("Handling ec.ready: sending UCP ready acknowledgement, isPreload: \(isPreloadRequest)")
             Task { @MainActor in
                 await checkoutBridge.sendResponse(self, messageBody: response)
             }
@@ -224,10 +489,10 @@ extension CheckoutWebView: WKNavigationDelegate {
         if CheckoutURL(from: url).isDeepLink() {
             if canOpenExternalURL(url) {
                 openExternalURL(url)
-                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - opened externally")
+                OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - opened externally")
                 return decisionHandler(.cancel)
             } else {
-                OSLogger.shared.error("Deep link rejected: \(url.absoluteString). If you're expecting this scheme, it must be listed under LSApplicationSchemeQueries in Info.plist.")
+                OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). If you're expecting this scheme, it must be listed under LSApplicationSchemeQueries in Info.plist.")
                 return decisionHandler(.cancel)
             }
         }
@@ -254,7 +519,8 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         if statusCode >= 400 {
-            OSLogger.shared.debug("Handling response for URL: \(response.url?.absoluteString ?? "unknown URL"), status code: \(statusCode)")
+            CheckoutWebView.invalidate()
+            OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
 
             switch statusCode {
             case 410:
@@ -277,14 +543,14 @@ extension CheckoutWebView: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation _: WKNavigation!) {
-        let url = webView.url?.absoluteString ?? ""
+        let url = LogSafeURL.string(webView.url)
         OSLogger.shared.info("Started provisional navigation - url:\(url)")
         timer = Date()
         viewDelegate?.checkoutViewDidStartNavigation()
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
-        let url = webView.url?.absoluteString ?? ""
+        let url = LogSafeURL.string(webView.url)
         OSLogger.shared.debug("Failed provisional navigation with error: \(error.localizedDescription) url:\(url)")
         timer = nil
     }
@@ -314,9 +580,8 @@ extension CheckoutWebView: WKNavigationDelegate {
             return
         }
 
-        viewDelegate?.checkoutViewDidFailWithError(
-            error: .sdkError(underlying: error)
-        )
+        CheckoutWebView.invalidate()
+        viewDelegate?.checkoutViewDidFailWithError(error: .sdkError(underlying: error))
     }
 
     private func isCheckout(url: URL?) -> Bool {

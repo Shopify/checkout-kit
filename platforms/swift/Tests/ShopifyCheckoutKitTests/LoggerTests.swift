@@ -4,7 +4,7 @@ import XCTest
 
 final class TestableOSLogger: Sendable {
     private let capturedMessagesStorage = LockedValue([(message: String, type: OSLogType)]())
-    private let logger: OSLogger
+    let logger: OSLogger
 
     var capturedMessages: [(message: String, type: OSLogType)] {
         capturedMessagesStorage.get()

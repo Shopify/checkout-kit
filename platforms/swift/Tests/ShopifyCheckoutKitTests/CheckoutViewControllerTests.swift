@@ -1,4 +1,5 @@
 @testable import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import WebKit
 import XCTest
 

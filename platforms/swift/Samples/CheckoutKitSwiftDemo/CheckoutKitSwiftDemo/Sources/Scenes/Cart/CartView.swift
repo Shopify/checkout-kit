@@ -20,6 +20,9 @@ struct CartView: View {
     @AppStorage(AppStorageKeys.windowOpenHandler.rawValue)
     var windowOpenHandler: WindowOpenHandlerOption = .default
 
+    @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
+    var checkoutPreloadingEnabled = true
+
     private var client: CheckoutProtocol.Client {
         .with(windowOpen: windowOpenHandler)
     }
@@ -127,6 +130,15 @@ struct CartView: View {
                     }
                 }
             }
+            .onAppear {
+                preloadCheckoutIfNeeded()
+            }
+            .onChange(of: cartManager.cart?.checkoutURL) { _ in
+                preloadCheckoutIfNeeded()
+            }
+            .onChange(of: checkoutPreloadingEnabled) { _ in
+                preloadCheckoutIfNeeded()
+            }
         } else {
             EmptyState()
         }
@@ -136,6 +148,12 @@ struct CartView: View {
         guard let url = CartManager.shared.cart?.checkoutURL else { return }
 
         CheckoutCoordinator.shared?.present(checkout: url)
+    }
+
+    private func preloadCheckoutIfNeeded() {
+        guard checkoutPreloadingEnabled, let url = cartManager.cart?.checkoutURL else { return }
+
+        ShopifyCheckoutKit.preload(checkout: url)
     }
 }
 

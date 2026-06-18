@@ -59,6 +59,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         )
         XCTAssertTrue(webViewController.delegate === delegate)
         XCTAssertNotNil(webViewController.client)
+        XCTAssertNotNil(webViewController.checkoutView?.client)
     }
 
     func test_logger_withDifferentLogLevels_shouldHaveCorrectLogLevel() {

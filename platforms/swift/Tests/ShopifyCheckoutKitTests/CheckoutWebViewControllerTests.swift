@@ -1,4 +1,5 @@
 @testable import ShopifyCheckoutKit
+import ShopifyCheckoutProtocol
 import WebKit
 import XCTest
 
@@ -6,11 +7,16 @@ import XCTest
 class TestableCheckoutWebViewController: CheckoutWebViewController {
     var dismissCalled = false
     var dismissAnimated: Bool = false
+    var testIsBeingDismissed = false
 
     override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
         dismissCalled = true
         dismissAnimated = flag
         completion?()
+    }
+
+    override var isBeingDismissed: Bool {
+        testIsBeingDismissed
     }
 }
 
@@ -25,7 +31,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
 
         let expectedUserAgent = CheckoutBridge.applicationName(entryPoint: nil)
 
-        XCTAssertEqual(viewController.checkoutView.configuration.applicationNameForUserAgent, expectedUserAgent)
+        XCTAssertEqual(viewController.checkoutView?.configuration.applicationNameForUserAgent, expectedUserAgent)
     }
 
     func test_init_withAcceleratedCheckoutsEntryPoint_shouldSetCorrectUserAgent() {
@@ -33,7 +39,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
 
         let expectedUserAgent = CheckoutBridge.applicationName(entryPoint: .acceleratedCheckouts)
 
-        XCTAssertEqual(viewController.checkoutView.configuration.applicationNameForUserAgent, expectedUserAgent)
+        XCTAssertEqual(viewController.checkoutView?.configuration.applicationNameForUserAgent, expectedUserAgent)
     }
 
     func test_checkoutViewDidFailWithError_dismissesAndInvokesOnFail() {
@@ -64,5 +70,70 @@ class CheckoutWebViewControllerTests: XCTestCase {
         viewController.presentationControllerDidDismiss(UIPresentationController(presentedViewController: viewController, presenting: nil))
 
         XCTAssertEqual(delegate.didCancelCount, 1)
+    }
+
+    func test_presentationControllerDidDismiss_doesNotCleanUpBeforeViewDisappears() throws {
+        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.preload(checkout: url)
+        let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutProtocol.url(for: url), entryPoint: nil)
+        viewController.loadViewIfNeeded()
+
+        let checkoutView = try XCTUnwrap(viewController.checkoutView)
+        XCTAssertTrue(checkoutView.isBridgeAttached)
+        XCTAssertNotNil(checkoutView.superview)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+
+        viewController.presentationControllerDidDismiss(UIPresentationController(presentedViewController: viewController, presenting: nil))
+
+        XCTAssertNotNil(viewController.checkoutView)
+        XCTAssertNotNil(checkoutView.superview)
+        XCTAssertTrue(checkoutView.isBridgeAttached)
+    }
+
+    func test_viewDidDisappear_cleansUpConsumedPreloadedWebViewWhenDismissed() throws {
+        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.preload(checkout: url)
+        let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutProtocol.url(for: url), entryPoint: nil)
+        viewController.loadViewIfNeeded()
+
+        let checkoutView = try XCTUnwrap(viewController.checkoutView)
+        XCTAssertTrue(checkoutView.isBridgeAttached)
+        XCTAssertNotNil(checkoutView.superview)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+
+        viewController.testIsBeingDismissed = true
+        viewController.viewDidDisappear(false)
+
+        XCTAssertNil(viewController.checkoutView)
+        XCTAssertNil(checkoutView.superview)
+        XCTAssertNil(checkoutView.viewDelegate)
+        XCTAssertNil(checkoutView.client)
+        XCTAssertTrue(checkoutView.isBridgeAttached)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func test_checkoutViewDidFailWithError_doesNotCleanUpBeforeViewDisappears() throws {
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.loadViewIfNeeded()
+        let checkoutView = try XCTUnwrap(viewController.checkoutView)
+
+        viewController.checkoutViewDidFailWithError(error: sampleError)
+
+        XCTAssertNotNil(viewController.checkoutView)
+        XCTAssertNotNil(checkoutView.superview)
+        XCTAssertTrue(checkoutView.isBridgeAttached)
+    }
+
+    func test_viewDidDisappear_cleansUpPresentedWebViewWhenDismissed() throws {
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.loadViewIfNeeded()
+        let checkoutView = try XCTUnwrap(viewController.checkoutView)
+
+        viewController.testIsBeingDismissed = true
+        viewController.viewDidDisappear(false)
+
+        XCTAssertNil(viewController.checkoutView)
+        XCTAssertNil(checkoutView.superview)
+        XCTAssertFalse(checkoutView.isBridgeAttached)
     }
 }

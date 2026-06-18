@@ -12,20 +12,50 @@ private let lockedCheckoutKitConfiguration = LockedValue(Configuration())
 public var configuration: Configuration {
     get { lockedCheckoutKitConfiguration.get() }
     set {
+        let previousConfiguration = lockedCheckoutKitConfiguration.get()
         lockedCheckoutKitConfiguration.set(newValue)
-        applyConfigurationChange()
+        applyConfigurationChange(
+            configuration: newValue,
+            previousConfiguration: previousConfiguration
+        )
     }
 }
 
 /// A convienence function for configuring the `ShopifyCheckoutKit` library.
 public func configure(_ block: (inout Configuration) -> Void) {
+    let previousConfiguration = lockedCheckoutKitConfiguration.get()
     lockedCheckoutKitConfiguration.update(block)
-    applyConfigurationChange()
+    applyConfigurationChange(
+        configuration: lockedCheckoutKitConfiguration.get(),
+        previousConfiguration: previousConfiguration
+    )
 }
 
-private func applyConfigurationChange() {
-    let configuration = lockedCheckoutKitConfiguration.get()
+private func applyConfigurationChange(configuration: Configuration, previousConfiguration: Configuration) {
     OSLogger.shared.logLevel = configuration.logLevel
+
+    if configuration.preloading.enabled != previousConfiguration.preloading.enabled {
+        Task { @MainActor in
+            CheckoutWebView.invalidate()
+        }
+    }
+}
+
+/// Preloads the checkout for faster presentation.
+@MainActor
+public func preload(checkout url: URL) {
+    guard configuration.preloading.enabled else {
+        return
+    }
+
+    let decorated = CheckoutProtocol.url(for: url)
+    CheckoutWebView.preload(checkout: decorated)
+}
+
+/// Invalidates any cached checkout created by preload calls.
+@MainActor
+public func invalidate() {
+    CheckoutWebView.invalidate(disconnect: true)
 }
 
 @MainActor

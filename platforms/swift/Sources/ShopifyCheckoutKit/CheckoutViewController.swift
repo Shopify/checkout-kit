@@ -57,7 +57,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         }
 
         webViewController.client = client
-        webViewController.checkoutView.client = client
+        webViewController.checkoutView?.client = client
         webViewController.onCancel = onCancelAction
         webViewController.onFail = onFailAction
     }
