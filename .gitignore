@@ -30,6 +30,11 @@ platforms/react-native/test/rct-integration-app/*.xcworkspace/
 platforms/swift/Samples/**/Info.plist
 platforms/react-native/test/rct-integration-app/**/Info.plist
 
+# Generated React Native sample native projects
+platforms/react-native/sample/.expo/
+platforms/react-native/sample/ios/
+platforms/react-native/sample/android/
+
 # Apollo / GraphQL
 *.graphqls
 !platforms/android/samples/MobileBuyIntegration/app/src/main/graphql/schema.graphqls

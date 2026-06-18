@@ -6,8 +6,6 @@ module.exports = {
     '^react$': '<rootDir>/node_modules/react',
     '^react-test-renderer$': '<rootDir>/node_modules/react-test-renderer',
     '^react-native$': '<rootDir>/__mocks__/react-native.ts',
-    '^react-native/Libraries/Utilities/codegenNativeComponent$': '<rootDir>/__mocks__/codegenNativeComponent.ts',
-    '^react-native/Libraries/TurboModule/TurboModuleRegistry$': '<rootDir>/__mocks__/TurboModuleRegistry.ts',
   },
   setupFiles: ['<rootDir>/jest.setup.ts'],
   transform: {

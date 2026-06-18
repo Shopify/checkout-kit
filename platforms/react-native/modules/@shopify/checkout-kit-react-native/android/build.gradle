@@ -121,13 +121,7 @@ repositories {
   if (useLocalSdk) {
     exclusiveContent {
       forRepository {
-        mavenLocal {
-          metadataSources {
-            mavenPom()
-            artifact()
-            ignoreGradleMetadataRedirection()
-          }
-        }
+        mavenLocal()
       }
       filter {
         includeModule("com.shopify", "checkout-kit")
