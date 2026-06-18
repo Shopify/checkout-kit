@@ -12,6 +12,7 @@ export const generatedCheckoutProtocol = {
   buyerChange: 'ec.buyer.change',
   totalsChange: 'ec.totals.change',
   paymentChange: 'ec.payment.change',
+  fulfillmentChange: 'ec.fulfillment.change',
 } as const;
 
 export type GeneratedCheckoutProtocolMethod =
@@ -26,6 +27,7 @@ export interface GeneratedCheckoutProtocolPayloads {
   'ec.buyer.change': Checkout;
   'ec.totals.change': Checkout;
   'ec.payment.change': Checkout;
+  'ec.fulfillment.change': Checkout;
 }
 
 export type GeneratedCheckoutProtocolPayloadDecoder<
@@ -41,6 +43,7 @@ export const generatedCheckoutProtocolPayloadDecoders = {
   [generatedCheckoutProtocol.buyerChange]: decodeWith(Convert.toCheckout),
   [generatedCheckoutProtocol.totalsChange]: decodeWith(Convert.toCheckout),
   [generatedCheckoutProtocol.paymentChange]: decodeWith(Convert.toCheckout),
+  [generatedCheckoutProtocol.fulfillmentChange]: decodeWith(Convert.toCheckout),
 } satisfies {
   [K in keyof GeneratedCheckoutProtocolPayloads]:
     GeneratedCheckoutProtocolPayloadDecoder<K>;
