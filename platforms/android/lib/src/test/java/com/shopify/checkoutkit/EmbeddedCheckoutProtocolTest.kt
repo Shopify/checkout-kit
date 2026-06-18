@@ -77,6 +77,24 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
+    fun `ec ready ACK echoes null request id`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":null,"params":{"delegate":[]}}""")
+        }
+        assertThat(js).contains("\"id\":null")
+    }
+
+    @Test
+    fun `ec ready without request id sends no response`() {
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ec.ready","params":{"delegate":[]}}""")
+    }
+
+    @Test
+    fun `ec ready with fractional request id sends no response`() {
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ec.ready","id":1.5,"params":{"delegate":[]}}""")
+    }
+
+    @Test
     fun `ec ready response dispatches via window EmbeddedCheckoutProtocol`() {
         val js = captureEvaluatedJs {
             ecp.postMessage(ecReadyMessage())
@@ -108,15 +126,15 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
-    fun `ec ready ignores null and non-string delegate values`() {
+    fun `ec ready with non-string delegate values sends parse error`() {
         val js = captureEvaluatedJs {
             ecp.postMessage(
                 """{"jsonrpc":"2.0","method":"ec.ready","id":"r2","params":{"delegate":["window.open",null,{}]}}"""
             )
         }
-        assertThat(js).contains("\"delegate\":[\"window.open\"]")
-        assertThat(js).contains("\"status\":\"success\"")
-        assertThat(js).doesNotContain("\"error\"")
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32700")
+        assertThat(js).contains(""""id":"r2"""")
     }
 
     @Test
@@ -298,10 +316,21 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
+    fun `window open emits invalid params when params url is null`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage(
+                """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"10","params":{"url":null}}"""
+            )
+        }
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32602")
+    }
+
+    @Test
     fun `window open emits invalid params when params url is not a string`() {
         val js = captureEvaluatedJs {
             ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"10","params":{"url":{}}}"""
+                """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"11","params":{"url":{}}}"""
             )
         }
         assertThat(js).contains("\"error\"")
@@ -311,10 +340,36 @@ class EmbeddedCheckoutProtocolTest {
     @Test
     fun `window open emits invalid params when params is not an object`() {
         val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"11","params":[]}""")
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"12","params":[]}""")
         }
         assertThat(js).contains("\"error\"")
         assertThat(js).contains("-32602")
+    }
+
+    @Test
+    fun `window open response echoes null request id`() {
+        val merchantClient = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { WindowOpenResult.Success }
+        ecp.setClient(merchantClient)
+
+        val js = captureEvaluatedJs {
+            ecp.postMessage(windowOpenRequest(id = "null", url = "https://example.com"))
+        }
+
+        assertThat(js).contains("\"id\":null")
+        assertThat(js).contains("\"status\":\"success\"")
+    }
+
+    @Test
+    fun `window open without request id sends no response`() {
+        assertIgnoredByBridge(
+            """{"jsonrpc":"2.0","method":"ec.window.open_request","params":{"url":"https://example.com"}}"""
+        )
+    }
+
+    @Test
+    fun `window open with fractional request id sends no response`() {
+        assertIgnoredByBridge(windowOpenRequest(id = "1.5", url = "https://example.com"))
     }
 
     // endregion
@@ -563,9 +618,21 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
+    fun `unknown request with null id returns method not found`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage("""{"jsonrpc":"2.0","method":"unknownMethod","id":null}""")
+        }
+
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32601")
+        assertThat(js).contains("Method not found")
+        assertThat(js).contains("\"id\":null")
+    }
+
+    @Test
     fun `unknown request with invalid id sends no response`() {
         assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"unknownMethod","id":{},"params":{}}""")
-        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"unknownMethod","id":null,"params":{}}""")
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"unknownMethod","id":1.5,"params":{}}""")
         assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"unknownMethod","id":true,"params":{}}""")
     }
 
@@ -598,6 +665,7 @@ class EmbeddedCheckoutProtocolTest {
         }
         assertThat(js).contains("\"error\"")
         assertThat(js).contains("-32700")
+        assertThat(js).contains(""""id":"13"""")
     }
 
     @Test
@@ -607,6 +675,7 @@ class EmbeddedCheckoutProtocolTest {
         }
         assertThat(js).contains("\"error\"")
         assertThat(js).contains("-32700")
+        assertThat(js).contains(""""id":"14"""")
     }
 
     // endregion

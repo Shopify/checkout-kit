@@ -79,6 +79,25 @@ class CheckoutProtocolTest {
         assertThat(CheckoutProtocol.supportedProtocolMethod("not json")).isNull()
     }
 
+    @Test
+    fun `supported protocol method rejects invalid request ids`() {
+        assertThat(
+            CheckoutProtocol.supportedProtocolMethod(
+                """{"jsonrpc":"2.0","method":"ec.start","id":true,"params":{"checkout":{}}}"""
+            )
+        ).isNull()
+        assertThat(
+            CheckoutProtocol.supportedProtocolMethod(
+                """{"jsonrpc":"2.0","method":"ec.start","id":{},"params":{"checkout":{}}}"""
+            )
+        ).isNull()
+        assertThat(
+            CheckoutProtocol.supportedProtocolMethod(
+                """{"jsonrpc":"2.0","method":"ec.start","id":1.5,"params":{"checkout":{}}}"""
+            )
+        ).isNull()
+    }
+
     // endregion
 
     // region process — notification dispatch
@@ -142,6 +161,60 @@ class CheckoutProtocolTest {
     fun `process returns null for malformed JSON`() {
         val client = CheckoutProtocol.Client()
         assertThat(client.process("not valid json {{{")).isNull()
+    }
+
+    @Test
+    fun `process preserves null id for registered delegations`() {
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { WindowOpenResult.Success }
+
+        val response = client.process(windowOpenMessage(id = "null"))
+
+        assertThat(response).contains("\"id\":null")
+        assertThat(response).contains("\"status\":\"success\"")
+    }
+
+    @Test
+    fun `process preserves integer id for registered delegations`() {
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { WindowOpenResult.Success }
+
+        val response = client.process(windowOpenMessage(id = "7"))
+
+        assertThat(response).contains("\"id\":7")
+        assertThat(response).contains("\"status\":\"success\"")
+    }
+
+    @Test
+    fun `process ignores registered delegations with fractional id`() {
+        var handled = false
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) {
+                handled = true
+                WindowOpenResult.Success
+            }
+
+        val response = client.process(windowOpenMessage(id = "1.5"))
+
+        assertThat(response).isNull()
+        assertThat(handled).isFalse()
+    }
+
+    @Test
+    fun `process ignores registered delegations without id`() {
+        var handled = false
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) {
+                handled = true
+                WindowOpenResult.Success
+            }
+
+        val response = client.process(
+            """{"jsonrpc":"2.0","method":"ec.window.open_request","params":{"url":"https://example.com"}}"""
+        )
+
+        assertThat(response).isNull()
+        assertThat(handled).isFalse()
     }
 
     // endregion
@@ -300,7 +373,7 @@ class CheckoutProtocolTest {
     }
 
     @Test
-    fun `process does not dispatch when params has no checkout field`() {
+    fun `process does not dispatch when checkout params are invalid`() {
         val received = mutableListOf<Checkout>()
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.start) { checkout -> received.add(checkout) }
@@ -350,6 +423,9 @@ class CheckoutProtocolTest {
 
     private fun ecCompleteMessage(): String =
         """{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":${checkoutJson(status = "completed")}}}"""
+
+    private fun windowOpenMessage(id: String, url: String = "https://example.com"): String =
+        """{"jsonrpc":"2.0","method":"ec.window.open_request","id":$id,"params":{"url":"$url"}}"""
 
     private fun checkoutJson(
         id: String = "chk1",
