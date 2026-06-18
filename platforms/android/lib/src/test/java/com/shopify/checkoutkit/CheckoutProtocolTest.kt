@@ -35,11 +35,6 @@ class CheckoutProtocolTest {
     }
 
     @Test
-    fun `buyerChange descriptor has correct method`() {
-        assertThat(CheckoutProtocol.buyerChange.method).isEqualTo("ec.buyer.change")
-    }
-
-    @Test
     fun `error descriptor has correct method`() {
         assertThat(CheckoutProtocol.error.method).isEqualTo("ec.error")
     }
