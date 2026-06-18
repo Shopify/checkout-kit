@@ -6,14 +6,19 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SAMPLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 . "$SCRIPT_DIR/android_sccache"
 
+prebuild_args=()
 for arg in "$@"; do
   if [ "$arg" = "--local" ]; then
     export USE_LOCAL_SDK=1
+    prebuild_args+=("--local")
   fi
 done
 
-"$SCRIPT_DIR/../../scripts/publish_android_snapshot"
-"$SCRIPT_DIR/prebuild" android
+if [ "${USE_LOCAL_SDK:-0}" = "1" ] && [ "${#prebuild_args[@]}" -eq 0 ]; then
+  prebuild_args+=("--local")
+fi
+
+"$SCRIPT_DIR/../../scripts/prebuild" android "${prebuild_args[@]}"
 
 set -x
 

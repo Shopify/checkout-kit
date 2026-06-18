@@ -35,6 +35,7 @@
     "clean": "rm -rf node_modules; watchman watch-del . || true",
     "sample": "pnpm --filter sample",
     "module": "pnpm --filter @shopify/checkout-kit-react-native",
+    "prebuild": "bash ./scripts/prebuild",
     "pod-install": "bash ./scripts/pod_install",
     "snapshot": "./scripts/create_snapshot",
     "compare-snapshot": "./scripts/compare_snapshot",

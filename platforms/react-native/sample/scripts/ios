@@ -6,16 +6,16 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SAMPLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 args=()
-pod_install_args=()
+prebuild_args=()
 for arg in "$@"; do
   if [ "$arg" = "--local" ]; then
     export USE_LOCAL_SDK=1
-    pod_install_args+=("--local")
+    prebuild_args+=("--local")
   else
     args+=("$arg")
   fi
 done
 
-(cd "$SCRIPT_DIR/../.." && pnpm run pod-install -- "${pod_install_args[@]}")
+"$SCRIPT_DIR/../../scripts/prebuild" ios "${prebuild_args[@]}"
 cd "$SAMPLE_DIR"
 exec pnpm exec expo run:ios --no-install "${args[@]}"

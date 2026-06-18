@@ -24,9 +24,9 @@ interface Context {
   removeFromCart: (variantId: string) => Promise<void>;
 }
 
-const defaultCartId = undefined;
-const defaultCheckoutURL = undefined;
-const defaultTotalQuantity = 0;
+const defaultCartId: Context['cartId'] = undefined;
+const defaultCheckoutURL: Context['checkoutURL'] = undefined;
+const defaultTotalQuantity: Context['totalQuantity'] = 0;
 
 const CartContext = createContext<Context>({
   cartId: defaultCartId,

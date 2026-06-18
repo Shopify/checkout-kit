@@ -79,9 +79,12 @@ export type AccountStackParamList = {
   Login: undefined;
 };
 
-const Tab = createBottomTabNavigator<RootStackParamList>();
-const Stack = createNativeStackNavigator<RootStackParamList>();
-const AccountStack = createNativeStackNavigator<AccountStackParamList>();
+const Tab = createBottomTabNavigator<RootStackParamList, undefined>();
+const Stack = createNativeStackNavigator<RootStackParamList, undefined>();
+const AccountStack = createNativeStackNavigator<
+  AccountStackParamList,
+  undefined
+>();
 
 export const cache = new InMemoryCache();
 
@@ -192,6 +195,7 @@ function AppWithContext({children}: PropsWithChildren) {
 function CatalogStack() {
   return (
     <Stack.Navigator
+      id={undefined}
       screenOptions={({navigation}) => ({
         headerBackTitle: 'Back',
         // eslint-disable-next-line react/no-unstable-nested-components
@@ -246,7 +250,7 @@ function CartIcon({onPress}: {onPress: () => void}) {
 
 function AccountStackScreen() {
   return (
-    <AccountStack.Navigator>
+    <AccountStack.Navigator id={undefined}>
       <AccountStack.Screen
         name="AccountHome"
         component={AccountScreen}
@@ -459,7 +463,7 @@ function Routes() {
   }, [initialUrl, shopify, navigation, eventHandlers]);
 
   return (
-    <Tab.Navigator>
+    <Tab.Navigator id={undefined}>
       <Tab.Screen
         name="Catalog"
         component={CatalogStack}

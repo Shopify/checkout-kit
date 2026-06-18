@@ -468,16 +468,33 @@ commands:
           optional: --local
         run: cd platforms/react-native && pnpm sample android "$@"
 
-      pod-install:
-        desc: Install CocoaPods for the iOS sample.
+      prebuild:
+        desc: Prebuild generated native sample projects.
         long_desc: |
-          Runs pod install for the iOS sample app.
+          Runs Expo prebuild for the React Native sample and prepares platform-specific native dependencies.
+
+            dev rn prebuild                 Prebuild iOS and Android
+            dev rn prebuild ios             Prebuild iOS and install CocoaPods
+            dev rn prebuild android         Prebuild Android
+            dev rn prebuild ios --local     Prebuild iOS against in-repo Swift SDK sources
+            dev rn prebuild android --local Prebuild Android against in-repo Android SDK artifacts
 
           --local
-            Wire the Podfile against in-repo Swift SDK sources.
+            Use in-repo native SDKs where supported.
+        syntax:
+          optional: "[ios|android|all] [--local]"
+        run: cd platforms/react-native && pnpm run prebuild -- "$@"
+
+      pod-install:
+        desc: Compatibility alias for `dev rn prebuild ios`.
+        long_desc: |
+          Compatibility alias for `dev rn prebuild ios`.
+
+          --local
+            Wire the generated Podfile against in-repo Swift SDK sources.
         syntax:
           optional: --local
-        run: cd platforms/react-native && pnpm run pod-install -- "$@"
+        run: cd platforms/react-native && pnpm run prebuild -- ios "$@"
 
       open:
         desc: Open the React Native workspace root or native sample projects
