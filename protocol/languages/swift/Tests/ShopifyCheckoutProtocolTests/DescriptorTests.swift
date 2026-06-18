@@ -36,4 +36,38 @@ struct DescriptorTests {
             #expect(CheckoutProtocol.error.method == "ec.error")
         }
     }
+
+    @Suite("Supported Protocol Methods")
+    struct SupportedProtocolMethods {
+        @Test func includesReadyNotificationsAndDelegations() {
+            #expect(CheckoutProtocol.supportedProtocolMethods == [
+                CheckoutProtocol.readyMethod,
+                CheckoutProtocol.start.method,
+                CheckoutProtocol.complete.method,
+                CheckoutProtocol.error.method,
+                CheckoutProtocol.lineItemsChange.method,
+                CheckoutProtocol.messagesChange.method,
+                CheckoutProtocol.totalsChange.method,
+                CheckoutProtocol.windowOpen.method
+            ])
+        }
+
+        @Test func excludesInternalOrUnsupportedMethods() {
+            #expect(!CheckoutProtocol.supportedProtocolMethods.contains(CheckoutProtocol.buyerChange.method))
+            #expect(!CheckoutProtocol.supportedProtocolMethods.contains("ec.payment.credential_request"))
+            #expect(!CheckoutProtocol.supportedProtocolMethods.contains("ep.cart.ready"))
+        }
+
+        @Test func supportedProtocolMethodParsesValidSupportedMessage() {
+            let message = #"{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}"#
+
+            #expect(CheckoutProtocol.supportedProtocolMethod(message) == CheckoutProtocol.start.method)
+        }
+
+        @Test func supportedProtocolMethodRejectsUnsupportedOrInvalidMessage() {
+            #expect(CheckoutProtocol.supportedProtocolMethod(#"{"jsonrpc":"2.0","method":"custom"}"#) == nil)
+            #expect(CheckoutProtocol.supportedProtocolMethod(#"{"jsonrpc":"1.0","method":"ec.start"}"#) == nil)
+            #expect(CheckoutProtocol.supportedProtocolMethod("not json") == nil)
+        }
+    }
 }

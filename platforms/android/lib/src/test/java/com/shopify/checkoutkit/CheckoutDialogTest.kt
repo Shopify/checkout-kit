@@ -44,8 +44,13 @@ class CheckoutDialogTest {
 
     @After
     fun tearDown() {
+        CheckoutWebView.clearCache()
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
         ShopifyCheckoutKit.configure {
             it.colorScheme = configuration.colorScheme
+            it.preloading = configuration.preloading
+            it.platform = configuration.platform
+            it.logLevel = configuration.logLevel
         }
     }
 
@@ -83,10 +88,29 @@ class CheckoutDialogTest {
     }
 
     @Test
-    fun `cancel() removes checkoutView from the container so that it can be destroyed`() {
+    fun `present uses cached preloaded checkoutView for matching URL`() {
+        CheckoutWebView.preload("https://shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        ShopifyCheckoutKit.present("https://shopify.com/cart/123", activity, processor)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val webView = ShadowDialog.getLatestDialog()
+            .findViewById<RelativeLayout>(R.id.checkoutKitContainer)
+            .children.firstOrNull { it is WebView } as WebView? ?: fail("No WebView found in dialog")
+
+        assertThat(webView).isSameAs(cachedWebView)
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(webView).wasOnResumeCalled()).isTrue()
+    }
+
+    @Test
+    fun `cancel() removes and destroys fresh checkoutView`() {
         ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
 
         val dialog = ShadowDialog.getLatestDialog()
+        val webView = dialog.currentCheckoutWebView()
         assertThat(dialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
 
         dialog.cancel()
@@ -95,6 +119,27 @@ class CheckoutDialogTest {
         await().atMost(2, TimeUnit.SECONDS).until {
             !dialog.containsChildOfType(CheckoutWebView::class.java)
         }
+        assertThat(shadowOf(webView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
+    fun `dismiss() destroys consumed preloaded checkoutView`() {
+        CheckoutWebView.preload("https://shopify.com/cart/123", activity)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        ShopifyCheckoutKit.present("https://shopify.com/cart/123", activity, processor)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val dialog = ShadowDialog.getLatestDialog()
+        val webView = dialog.currentCheckoutWebView()
+        assertThat(webView).isSameAs(cachedWebView)
+
+        dialog.dismiss()
+        ShadowLooper.runUiThreadTasks()
+
+        assertThat(dialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
     }
 
     @Test
@@ -102,6 +147,7 @@ class CheckoutDialogTest {
         val dialogHandle = ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
 
         val dialog = ShadowDialog.getLatestDialog()
+        val webView = dialog.currentCheckoutWebView()
         assertThat(dialog.isShowing).isTrue()
         assertThat(dialog.containsChildOfType(CheckoutWebView::class.java)).isTrue()
 
@@ -112,6 +158,7 @@ class CheckoutDialogTest {
         await().atMost(2, TimeUnit.SECONDS).until {
             !dialog.containsChildOfType(CheckoutWebView::class.java)
         }
+        assertThat(shadowOf(webView).wasDestroyCalled()).isTrue()
     }
 
     @Test
@@ -403,6 +450,10 @@ class CheckoutDialogTest {
         val layout = this.findViewById<RelativeLayout>(R.id.checkoutKitContainer)
         return layout.children.any { clazz.isInstance(it) }
     }
+
+    private fun Dialog.currentCheckoutWebView(): CheckoutWebView =
+        findViewById<RelativeLayout>(R.id.checkoutKitContainer)
+            .children.first { it is CheckoutWebView } as CheckoutWebView
 
     private fun checkoutException(): CheckoutException {
         return CheckoutKitException(

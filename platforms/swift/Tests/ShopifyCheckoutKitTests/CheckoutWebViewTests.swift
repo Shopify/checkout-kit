@@ -61,6 +61,22 @@ class CheckoutWebViewTests: XCTestCase {
         wait(for: [received], timeout: 2.0)
     }
 
+    func testDeepLinkIsCancelledAndOpenedExternallyWhenUIApplicationCanOpen() throws {
+        let link = try XCTUnwrap(URL(string: "tel:+15555551234"))
+        var openedURL: URL?
+        view.canOpenExternalURL = { _ in true }
+        view.openExternalURL = { openedURL = $0 }
+        let received = expectation(description: "policy decided")
+
+        view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link)) { policy in
+            XCTAssertEqual(policy, .cancel, "An externally opened deep link must not also navigate the webview")
+            received.fulfill()
+        }
+
+        wait(for: [received], timeout: 2.0)
+        XCTAssertEqual(openedURL, link, "The deep link should be opened via UIApplication exactly once")
+    }
+
     func testHTTPSubframeRequestIsAllowed() throws {
         let link = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
         let received = expectation(description: "policy decided")
@@ -334,6 +350,29 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
+    func testUnsupportedProtocolMethodsDoNotInvokeClient() async {
+        let client = RecordingBridgeClient(response: #"{"jsonrpc":"2.0","id":"raw","result":{}}"#)
+        view.client = client
+        let notSent = expectation(description: "sendResponse must not fire")
+        notSent.isInverted = true
+        MockCheckoutBridge.sendResponseExpectation = notSent
+        let messages = [
+            #"{"jsonrpc":"2.0","method":"ec.payment.credential_request","id":"unsupported","params":{}}"#,
+            #"{"jsonrpc":"2.0","method":"ep.cart.ready","id":"ep","params":{}}"#,
+            #"{"jsonrpc":"2.0","method":"customMethod","id":"custom","params":{}}"#
+        ]
+
+        for body in messages {
+            view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
+        }
+
+        await fulfillment(of: [notSent], timeout: 1.0)
+        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+        let receivedMessages = await client.messages()
+        XCTAssertEqual(receivedMessages, [])
+    }
+
+    @MainActor
     func testReadyAckFiresWhenNoClientIsAttached() async {
         view.client = nil
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
@@ -346,6 +385,24 @@ class CheckoutWebViewTests: XCTestCase {
         await fulfillment(of: [responseSent], timeout: 5.0)
 
         XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
+    func testSupportedRequestUsesRawClientResponse() async {
+        let id = "req-window-raw"
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"\#(id)","params":{"url":"https://example.com/terms"}}"#
+        let rawResponse = #"{"jsonrpc":"2.0","id":"\#(id)","result":{"data":"ok"}}"#
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let client = RecordingBridgeClient(response: rawResponse)
+        view.client = client
+
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertEqual(MockCheckoutBridge.lastResponseBody, rawResponse)
+        let receivedMessages = await client.messages()
+        XCTAssertEqual(receivedMessages, [body])
     }
 
     @MainActor
@@ -511,6 +568,24 @@ class CheckoutWebViewTests: XCTestCase {
         guard case .checkoutUnavailable = mockDelegate.errorReceived else {
             return XCTFail("Expected checkoutUnavailable error")
         }
+    }
+}
+
+private actor RecordingBridgeClient: CheckoutCommunicationProtocol {
+    let response: String?
+    private var receivedMessages: [String] = []
+
+    init(response: String? = nil) {
+        self.response = response
+    }
+
+    func messages() -> [String] {
+        receivedMessages
+    }
+
+    func process(_ message: String) async -> String? {
+        receivedMessages.append(message)
+        return response
     }
 }
 

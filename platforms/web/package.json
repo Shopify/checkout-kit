@@ -76,7 +76,7 @@
     "@custom-elements-manifest/analyzer": "^0.10.4",
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^4.1.0",
-    "happy-dom": "^15.11.7",
+    "happy-dom": "^20.8.9",
     "oxfmt": "^0.47.0",
     "oxlint": "^1.62.0",
     "publint": "^0.3.12",

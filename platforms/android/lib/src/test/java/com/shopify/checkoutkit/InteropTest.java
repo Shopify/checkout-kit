@@ -27,7 +27,12 @@ public class InteropTest {
 
     @After
     public void tearDown() {
-        ShopifyCheckoutKit.configure(config -> config.setColorScheme(initialConfiguration.getColorScheme()));
+        ShopifyCheckoutKit.configure(config -> {
+            config.setColorScheme(initialConfiguration.getColorScheme());
+            config.setPreloading(initialConfiguration.getPreloading());
+            config.setPlatform(initialConfiguration.getPlatform());
+            config.setLogLevel(initialConfiguration.getLogLevel());
+        });
     }
 
     @Test
@@ -54,6 +59,27 @@ public class InteropTest {
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
 
         assertThat(configuration.getColorScheme().getId()).isEqualTo("dark");
+    }
+
+    @Test
+    public void canConfigurePreloading() {
+        ShopifyCheckoutKit.configure(configuration -> {
+            configuration.setPreloading(new Preloading(false));
+        });
+
+        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+
+        assertThat(configuration.getPreloading().getEnabled()).isFalse();
+    }
+
+    @Test
+    public void canPreloadAndInvalidate() {
+        try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
+            ComponentActivity activity = controller.get();
+
+            ShopifyCheckoutKit.preload("https://shopify.dev", activity);
+            ShopifyCheckoutKit.invalidate();
+        }
     }
 
     @Test

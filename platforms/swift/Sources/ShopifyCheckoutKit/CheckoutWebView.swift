@@ -22,6 +22,10 @@ class CheckoutWebView: WKWebView {
 
     var client: (any CheckoutCommunicationProtocol)?
 
+    var canOpenExternalURL: (URL) -> Bool = { UIApplication.shared.canOpenURL($0) }
+
+    var openExternalURL: (URL) -> Void = { UIApplication.shared.open($0) }
+
     /// Kit-owned client that handles delegations and kit-mandated notifications. Currently:
     ///   - `window.open` - falls back to `UIApplication.shared.open(...)` after a
     ///     `canOpenURL` check (consumers may still override via their own client).
@@ -181,7 +185,11 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        if let response = CheckoutProtocol.acknowledgeReady(body) {
+        guard let method = CheckoutProtocol.supportedProtocolMethod(body) else {
+            return
+        }
+
+        if method == CheckoutProtocol.readyMethod, let response = CheckoutProtocol.acknowledgeReady(body) {
             Task { @MainActor in
                 await checkoutBridge.sendResponse(self, messageBody: response)
             }
@@ -214,12 +222,12 @@ extension CheckoutWebView: WKNavigationDelegate {
         // 	- Deep links on offsite payment sites
         //
         if CheckoutURL(from: url).isDeepLink() {
-            if UIApplication.shared.canOpenURL(url) {
-                UIApplication.shared.open(url)
-                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - allowed")
-                return decisionHandler(.allow)
+            if canOpenExternalURL(url) {
+                openExternalURL(url)
+                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - opened externally")
+                return decisionHandler(.cancel)
             } else {
-                OSLogger.shared.debug("Deep link intercepted: \(url.absoluteString) - rejected")
+                OSLogger.shared.error("Deep link rejected: \(url.absoluteString). If you're expecting this scheme, it must be listed under LSApplicationSchemeQueries in Info.plist.")
                 return decisionHandler(.cancel)
             }
         }

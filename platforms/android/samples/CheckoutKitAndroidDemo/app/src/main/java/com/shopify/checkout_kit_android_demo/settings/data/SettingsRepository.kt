@@ -17,6 +17,7 @@ class SettingsRepository(
             Settings(
                 colorScheme = preferences.colorScheme,
                 buyerIdentityDemoEnabled = preferences.buyerIdentityDemoEnabled,
+                checkoutPreloadingEnabled = preferences.checkoutPreloadingEnabled,
                 windowOpenHandler = preferences.windowOpenHandler,
             )
         }
@@ -35,6 +36,10 @@ class SettingsRepository(
      */
     suspend fun setBuyerIdentityDemoEnabled(enabled: Boolean) {
         preferencesManager.setBuyerIdentityDemoEnabled(enabled)
+    }
+
+    suspend fun setCheckoutPreloadingEnabled(enabled: Boolean) {
+        preferencesManager.setCheckoutPreloadingEnabled(enabled)
     }
 
     suspend fun setWindowOpenHandler(handler: WindowOpenHandler) {

@@ -41,7 +41,7 @@ class CartRepository(
             throw RuntimeException("Failed to create cart, $errors")
         }
 
-        Timber.i("cart ${cart.cartFragment.checkoutUrl}")
+        Timber.i("Cart created with checkout URL")
         return cart.cartFragment.toLocal()
     }
 

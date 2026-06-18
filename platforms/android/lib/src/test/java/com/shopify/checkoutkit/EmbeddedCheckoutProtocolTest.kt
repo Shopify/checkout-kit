@@ -34,6 +34,8 @@ class EmbeddedCheckoutProtocolTest {
 
     @Before
     fun setUp() {
+        CheckoutWebView.clearCache()
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         // Mirror real-Android behavior: startActivity throws ActivityNotFoundException when
         // no activity resolves the intent. Robolectric defaults to silently recording the
@@ -148,68 +150,42 @@ class EmbeddedCheckoutProtocolTest {
 
     // endregion
 
-    // region unsupported methods — explicit error response
+    // region unsupported methods — silently ignored
 
     @Test
-    fun `ec auth sends method not supported error`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.auth","id":"1","params":{"type":"oauth"}}""")
-        }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32601")
+    fun `ec auth is silently ignored and not delegated to client`() {
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ec.auth","id":"1","params":{"type":"oauth"}}""")
     }
 
     @Test
-    fun `ec auth does not invoke client`() {
-        val client = mock<CheckoutCommunicationClient>()
-        ecp.setClient(client)
-        ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.auth","id":"1","params":{"type":"oauth"}}""")
-        verify(client, never()).process(any())
+    fun `ec payment instruments change request is silently ignored and not delegated to client`() {
+        assertIgnoredByBridge(
+            """{"jsonrpc":"2.0","method":"ec.payment.instruments_change_request","id":"2","params":{}}"""
+        )
     }
 
     @Test
-    fun `ec payment instruments change request sends method not supported error`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.payment.instruments_change_request","id":"2","params":{}}"""
-            )
-        }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32601")
+    fun `ec payment credential request is silently ignored and not delegated to client`() {
+        assertIgnoredByBridge(
+            """{"jsonrpc":"2.0","method":"ec.payment.credential_request","id":"3","params":{}}"""
+        )
     }
 
     @Test
-    fun `ec payment credential request sends method not supported error`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.payment.credential_request","id":"3","params":{}}"""
-            )
-        }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32601")
+    fun `ec fulfillment address change request is silently ignored and not delegated to client`() {
+        assertIgnoredByBridge(
+            """{"jsonrpc":"2.0","method":"ec.fulfillment.address_change_request","id":"4","params":{}}"""
+        )
     }
 
     @Test
-    fun `ec fulfillment address change request sends method not supported error`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.fulfillment.address_change_request","id":"4","params":{}}"""
-            )
-        }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32601")
+    fun `ec buyer change is silently ignored and not delegated to client`() {
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ec.buyer.change","params":{"checkout":{}}}""")
     }
 
     @Test
-    fun `ep cart methods are silently ignored and not delegated to client`() {
-        val client = mock<CheckoutCommunicationClient>()
-        ecp.setClient(client)
-
-        ecp.postMessage("""{"jsonrpc":"2.0","method":"ep.cart.ready","id":"5","params":{}}""")
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        verify(viewSpy, never()).evaluateJavascript(any(), any())
-        verify(client, never()).process(any())
+    fun `ep cart methods fall through as unsupported and are not delegated to client`() {
+        assertIgnoredByBridge("""{"jsonrpc":"2.0","method":"ep.cart.ready","id":"5","params":{}}""")
     }
 
     // endregion
@@ -394,6 +370,19 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
+    fun `ec error with unrecoverable severity invalidates cached preload`() {
+        CheckoutWebView.preload("https://shopify.dev/cart/123", activity)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        ecp.postMessage(ecErrorMessage(severity = "unrecoverable"))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
     fun `ec error with unrecoverable severity dismisses even when client returns response`() {
         val rawMessage = ecErrorMessage(severity = "unrecoverable")
         val client = mock<CheckoutCommunicationClient>()
@@ -489,26 +478,32 @@ class EmbeddedCheckoutProtocolTest {
         verify(client).process(rawMessage)
     }
 
+    @Test
+    fun `ec complete invalidates cached preload`() {
+        CheckoutWebView.preload("https://shopify.dev/cart/123", activity)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        ecp.postMessage(ecCompleteMessage())
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
+    }
+
     // endregion
 
     // region client delegation — requests
 
     @Test
-    fun `unknown method is delegated to client`() {
+    fun `unknown method is silently ignored and not delegated to client`() {
         val rawMessage = """{"jsonrpc":"2.0","method":"customMethod","id":"8","params":{}}"""
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.process(rawMessage)).thenReturn(null)
-        ecp.setClient(client)
-
-        ecp.postMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        verify(client).process(rawMessage)
+        assertIgnoredByBridge(rawMessage)
     }
 
     @Test
-    fun `non-null client response is sent back to checkout`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"customMethod","id":"9"}"""
+    fun `non-null client response for supported request is sent back to checkout`() {
+        val rawMessage = windowOpenRequest(id = "\"9\"", url = "https://example.com")
         val clientResponse = """{"jsonrpc":"2.0","id":"9","result":{"data":"ok"}}"""
         val client = mock<CheckoutCommunicationClient>()
         whenever(client.process(rawMessage)).thenReturn(clientResponse)
@@ -522,8 +517,8 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
-    fun `null client response sends nothing to checkout`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"customMethod","id":"10"}"""
+    fun `null client response for supported notification sends nothing to checkout`() {
+        val rawMessage = """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":{}}}"""
         val client = mock<CheckoutCommunicationClient>()
         whenever(client.process(rawMessage)).thenReturn(null)
         ecp.setClient(client)
@@ -594,6 +589,17 @@ class EmbeddedCheckoutProtocolTest {
     private fun windowOpenRequest(id: String, url: String): String =
         """{"jsonrpc":"2.0","method":"ec.window.open_request","id":$id,"params":{"url":"$url"}}"""
 
+    private fun assertIgnoredByBridge(rawMessage: String) {
+        val client = mock<CheckoutCommunicationClient>()
+        ecp.setClient(client)
+
+        ecp.postMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(viewSpy, never()).evaluateJavascript(any(), any())
+        verify(client, never()).process(any())
+    }
+
     private fun ecErrorMessage(severity: String): String {
         val messages =
             """[{"type":"error","code":"session_failed","content":"Session failed","severity":"$severity"}]"""
@@ -603,6 +609,18 @@ class EmbeddedCheckoutProtocolTest {
     private fun ecErrorMessageWithMessages(messages: String): String {
         val error = """{$ERROR_RESPONSE_UCP,"messages":$messages}"""
         return """{"jsonrpc":"2.0","method":"ec.error","params":{"error":$error}}"""
+    }
+
+    private fun ecCompleteMessage(): String =
+        """{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":${checkoutJson(status = "completed")}}}"""
+
+    private fun checkoutJson(
+        id: String = "chk1",
+        currency: String = "USD",
+        status: String = "incomplete",
+    ): String {
+        val ucp = """{"payment_handlers":{},"version":"1.0"}"""
+        return """{"id":"$id","currency":"$currency","status":"$status","line_items":[],"totals":[],"links":[],"ucp":$ucp}"""
     }
 
     private companion object {

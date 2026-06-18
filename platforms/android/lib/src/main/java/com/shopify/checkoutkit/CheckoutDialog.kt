@@ -11,7 +11,6 @@ import android.view.View.INVISIBLE
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
-import android.webkit.WebView
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import androidx.activity.ComponentActivity
@@ -31,6 +30,8 @@ internal class CheckoutDialog(
     context: Context,
     private val communicationClient: CheckoutCommunicationClient? = null,
 ) : ComponentDialog(context) {
+
+    private var presentedCheckoutWebView: CheckoutWebView? = null
 
     private val backNavigationCallback = object : OnBackPressedCallback(enabled = true) {
         override fun handleOnBackPressed() {
@@ -55,12 +56,12 @@ internal class CheckoutDialog(
         // properly into the fields. To be investigated further.
         window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
-        log.d(LOG_TAG, "Creating new WebView.")
-        val checkoutWebView = CheckoutWebView(context as Context).apply {
-            loadCheckout(checkoutUrl)
-        }
+        log.d(LOG_TAG, "Finding or creating WebView.")
+        val checkoutWebView = CheckoutWebView.checkoutViewFor(checkoutUrl, context)
+        presentedCheckoutWebView = checkoutWebView
 
         checkoutWebView.onResume()
+        checkoutWebView.markPresented()
         log.d(LOG_TAG, "Setting listener on WebView.")
         checkoutWebView.setListener(webViewListener())
         log.d(LOG_TAG, "Setting communication client on WebView.")
@@ -94,7 +95,7 @@ internal class CheckoutDialog(
 
         setOnDismissListener {
             log.d(LOG_TAG, "Dismiss listener invoked.")
-            removeWebViewFromContainer()
+            destroyPresentedWebView()
         }
 
         log.d(LOG_TAG, "Showing dialog.")
@@ -123,12 +124,12 @@ internal class CheckoutDialog(
         }
     }
 
-    private fun removeWebViewFromContainer() {
-        findViewById<RelativeLayout>(R.id.checkoutKitContainer).apply {
-            this.children.firstOrNull { it is WebView }?.let { webView ->
-                log.d(LOG_TAG, "Removing WebView from container.")
-                this.removeView(webView)
-            }
+    private fun destroyPresentedWebView() {
+        presentedCheckoutWebView?.let { webView ->
+            log.d(LOG_TAG, "Destroying presented WebView.")
+            webView.removeFromParent()
+            webView.destroy()
+            presentedCheckoutWebView = null
         }
     }
 
