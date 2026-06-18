@@ -132,7 +132,7 @@ checkout.src = 'https://your-store.myshopify.com/checkouts/cn/abc123';
 checkout.target = 'popup';
 document.body.append(checkout);
 
-checkout.addEventListener('checkout:complete', (event) => {
+checkout.addEventListener('ec.complete', (event) => {
   console.log('Order complete', event.detail.order.id);
 });
 
@@ -160,7 +160,7 @@ React 19+ has first-class support for custom elements — it renders
 `<shopify-checkout>` and forwards props to it as properties with no extra
 configuration. Reach for a `ref` for the two things that aren't expressible as
 JSX props: calling imperative methods (`open()`, `close()`, `focus()`) and
-subscribing to the `checkout:*` events.
+subscribing to the `ec.*` events.
 
 ```tsx
 import {useEffect, useRef} from 'react';
@@ -179,11 +179,11 @@ export function BuyNowButton({checkoutUrl}: {checkoutUrl: string}) {
     const {signal} = controller;
 
     checkout.addEventListener(
-      'checkout:complete',
+      'ec.complete',
       (event) => console.log('Order complete', event.detail.order.id),
       {signal},
     );
-    checkout.addEventListener('checkout:close', () => console.log('Dismissed'), {
+    checkout.addEventListener('ec.close', () => console.log('Dismissed'), {
       signal,
     });
 
@@ -200,7 +200,7 @@ export function BuyNowButton({checkoutUrl}: {checkoutUrl: string}) {
 ```
 
 `event` is fully typed inside each listener — `event.detail.order` on
-`checkout:complete`, and so on — courtesy of the element's overloaded
+`ec.complete`, and so on — courtesy of the element's overloaded
 `addEventListener` signatures. See [Checkout lifecycle](#checkout-lifecycle)
 for the full event list.
 
@@ -382,38 +382,38 @@ shopify-checkout::part(overlay) {
 
 ## Checkout lifecycle
 
-The element dispatches `checkout:*` `CustomEvent`s at every meaningful moment
+The element dispatches `ec.*` `CustomEvent`s at every meaningful moment
 of the checkout session. All events bubble, so you can listen anywhere in your
 DOM — including a single delegated listener at `document` if you have many
 elements on the page. Each event carries a typed `event.detail` payload with
 exactly the fields relevant to that moment.
 
-| Event                       | `event.detail`                                  | When it fires                                                              |
-| --------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------- |
-| `checkout:start`            | `{checkout}`                                    | Checkout has loaded and is interactive.                                    |
-| `checkout:complete`         | `{checkout, order}`                             | The buyer completed the order successfully.                                |
-| `checkout:close`            | _(none)_                                        | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
-| `checkout:error`            | `{error}`                                       | Session-level fatal error — tear down the embedded context.                |
-| `checkout:lineItemsChange`  | `{checkout, lineItems}`                         | The cart's line items changed (item added/removed/quantity updated).       |
-| `checkout:buyerChange`      | `{checkout, buyer}`                             | The buyer's information changed (email, address, etc.).                    |
-| `checkout:totalsChange`     | `{checkout, totals}`                            | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
-| `checkout:messagesChange`   | `{checkout, messages}`                          | Checkout-level warnings/errors/info shown inside the checkout changed.     |
+| Event                | `event.detail`          | When it fires                                                              |
+| -------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| `ec.start`           | `{checkout}`            | Checkout has loaded and is interactive.                                    |
+| `ec.complete`        | `{checkout, order}`     | The buyer completed the order successfully.                                |
+| `ec.close`           | _(none)_                | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
+| `ec.error`           | `{error}`               | Session-level fatal error — tear down the embedded context.                |
+| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).       |
+| `ec.buyer.change`    | `{checkout, buyer}`     | The buyer's information changed (email, address, etc.).                    |
+| `ec.totals.change`   | `{checkout, totals}`    | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
+| `ec.messages.change` | `{checkout, messages}`  | Checkout-level warnings/errors/info shown inside the checkout changed.     |
 
-The `checkout` field on every `*Change` event is the full UCP `Checkout`
+The `checkout` field on every change event is the full UCP `Checkout`
 snapshot, included for handlers that want broader context. Most handlers only
 need the named slice (e.g. `event.detail.totals`).
 
 ```ts
-checkout.addEventListener('checkout:complete', (event) => {
+checkout.addEventListener('ec.complete', (event) => {
   const {order} = event.detail;
   analytics.track('checkout_complete', {orderId: order.id});
 });
 
-checkout.addEventListener('checkout:totalsChange', (event) => {
+checkout.addEventListener('ec.totals.change', (event) => {
   miniCart.updateTotals(event.detail.totals);
 });
 
-checkout.addEventListener('checkout:close', () => {
+checkout.addEventListener('ec.close', () => {
   router.back();
 });
 ```
@@ -421,10 +421,10 @@ checkout.addEventListener('checkout:close', () => {
 Reach for `event.detail.checkout` when a handler needs fields beyond the
 named slice. It carries the full UCP `Checkout` snapshot at the moment the
 event was dispatched. For example, rendering an inline cart summary on
-`checkout:start` requires line items, totals, and currency together:
+`ec.start` requires line items, totals, and currency together:
 
 ```ts
-checkout.addEventListener('checkout:start', (event) => {
+checkout.addEventListener('ec.start', (event) => {
   const {checkout: snapshot} = event.detail;
   loadingSpinner.hide();
   cartSummary.render({
@@ -437,17 +437,16 @@ checkout.addEventListener('checkout:start', (event) => {
 
 The full UCP `Checkout` snapshot is also mirrored to the
 [`element.checkout`](#) property every time a payload-carrying event arrives,
-and the latest error is mirrored to [`element.error`](#) when `checkout:error`
+and the latest error is mirrored to [`element.error`](#) when `ec.error`
 fires — useful for handlers that don't have a reference to the originating
 event. TypeScript users get fully typed events via overloaded
 `addEventListener` signatures — no additional setup required.
 
 > [!NOTE]
-> The public `checkout:*` event names are stable. They are not 1:1 with the
-> underlying [Embedded Checkout Protocol](https://ucp.dev/2026-04-08/specification/embedded-checkout/)
-> wire messages — the component speaks ECP internally and translates to these
-> friendlier names so the public surface stays insulated from protocol
-> revisions.
+> Most public `ec.*` DOM event names mirror the underlying
+> [Embedded Checkout Protocol](https://ucp.dev/2026-04-08/specification/embedded-checkout/)
+> JSON-RPC method names. `ec.close` is component-only and synthetic; it is not
+> part of the ECP wire protocol.
 
 ## Explore the sample app
 

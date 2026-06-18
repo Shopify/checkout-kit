@@ -94,48 +94,48 @@ export interface CheckoutEvents {
   /**
    * Dispatched when checkout has started.
    */
-  "checkout:start": CheckoutStartEvent;
+  "ec.start": CheckoutStartEvent;
 
   /**
    * Dispatched when the checkout was successfully completed.
    */
-  "checkout:complete": CheckoutCompleteEvent;
+  "ec.complete": CheckoutCompleteEvent;
 
   /**
    * Dispatched when the checkout overlay is closed, either due to user action or
    * from calling the `close()` method. Synthetic — not part of the ECP wire protocol.
    */
-  "checkout:close": CheckoutCloseEvent;
+  "ec.close": CheckoutCloseEvent;
 
   /**
    * Dispatched on a session-level fatal error. The host should tear down the
    * embedded context.
    */
-  "checkout:error": CheckoutErrorEvent;
+  "ec.error": CheckoutErrorEvent;
 
   /**
    * Dispatched when the cart line items change.
    */
-  "checkout:lineItemsChange": CheckoutLineItemsChangeEvent;
+  "ec.line_items.change": CheckoutLineItemsChangeEvent;
 
   /**
    * Dispatched when the buyer information changes.
    */
-  "checkout:buyerChange": CheckoutBuyerChangeEvent;
+  "ec.buyer.change": CheckoutBuyerChangeEvent;
 
   /**
    * Dispatched when the totals change.
    */
-  "checkout:totalsChange": CheckoutTotalsChangeEvent;
+  "ec.totals.change": CheckoutTotalsChangeEvent;
 
   /**
    * Dispatched when checkout messages (warnings, errors, info) change.
    */
-  "checkout:messagesChange": CheckoutMessagesChangeEvent;
+  "ec.messages.change": CheckoutMessagesChangeEvent;
 }
 
 export interface CheckoutStartEvent {
-  type: "checkout:start";
+  type: "ec.start";
   detail: {
     /** Initial checkout snapshot. */
     checkout: Checkout;
@@ -143,7 +143,7 @@ export interface CheckoutStartEvent {
 }
 
 export interface CheckoutCompleteEvent {
-  type: "checkout:complete";
+  type: "ec.complete";
   detail: {
     /** Final checkout snapshot. */
     checkout: Checkout;
@@ -153,12 +153,12 @@ export interface CheckoutCompleteEvent {
 }
 
 export interface CheckoutCloseEvent {
-  type: "checkout:close";
+  type: "ec.close";
   detail: undefined;
 }
 
 export interface CheckoutErrorEvent {
-  type: "checkout:error";
+  type: "ec.error";
   detail: {
     /** Error payload from the ECP `ec.error` notification. */
     error: UcpErrorResponse;
@@ -166,7 +166,7 @@ export interface CheckoutErrorEvent {
 }
 
 export interface CheckoutLineItemsChangeEvent {
-  type: "checkout:lineItemsChange";
+  type: "ec.line_items.change";
   detail: {
     /** Updated cart line items. */
     lineItems: readonly CheckoutLineItem[];
@@ -176,7 +176,7 @@ export interface CheckoutLineItemsChangeEvent {
 }
 
 export interface CheckoutBuyerChangeEvent {
-  type: "checkout:buyerChange";
+  type: "ec.buyer.change";
   detail: {
     /** Updated buyer (may be undefined when buyer information is cleared). */
     buyer: Buyer | undefined;
@@ -186,7 +186,7 @@ export interface CheckoutBuyerChangeEvent {
 }
 
 export interface CheckoutTotalsChangeEvent {
-  type: "checkout:totalsChange";
+  type: "ec.totals.change";
   detail: {
     /** Updated totals. */
     totals: readonly Total[];
@@ -196,7 +196,7 @@ export interface CheckoutTotalsChangeEvent {
 }
 
 export interface CheckoutMessagesChangeEvent {
-  type: "checkout:messagesChange";
+  type: "ec.messages.change";
   detail: {
     /** Updated checkout-level messages (warnings, errors, info). */
     messages: readonly CheckoutMessage[];

@@ -62,14 +62,14 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @attribute src - The URL of the checkout to load.
  * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
  *
- * @event checkout:start - Dispatched when the checkout has started
- * @event checkout:complete - Dispatched when the checkout was successfully completed
- * @event checkout:error - Dispatched on a session-level fatal error
- * @event checkout:lineItemsChange - Dispatched when cart line items change
- * @event checkout:buyerChange - Dispatched when buyer information changes
- * @event checkout:totalsChange - Dispatched when totals change
- * @event checkout:messagesChange - Dispatched when checkout messages change
- * @event checkout:close - Dispatched when the checkout overlay is closed (synthetic, not part of ECP)
+ * @event ec.start - Dispatched when the checkout has started
+ * @event ec.complete - Dispatched when the checkout was successfully completed
+ * @event ec.error - Dispatched on a session-level fatal error
+ * @event ec.line_items.change - Dispatched when cart line items change
+ * @event ec.buyer.change - Dispatched when buyer information changes
+ * @event ec.totals.change - Dispatched when totals change
+ * @event ec.messages.change - Dispatched when checkout messages change
+ * @event ec.close - Dispatched when the checkout overlay is closed (synthetic, not part of ECP)
  *
  * @example
  * ```js
@@ -197,7 +197,7 @@ export class ShopifyCheckout
    *
    * @returns The current Checkout, or undefined before the first notification.
    * @example
-   * checkout.addEventListener('checkout:start', (event) => {
+   * checkout.addEventListener('ec.start', (event) => {
    *   const {line_items, totals, buyer} = event.detail.checkout;
    * });
    */
@@ -210,7 +210,7 @@ export class ShopifyCheckout
    *
    * @returns The UCP error response, or undefined.
    * @example
-   * checkout.addEventListener('checkout:error', (event) => {
+   * checkout.addEventListener('ec.error', (event) => {
    *   const {messages} = event.detail.error;
    *   console.error(messages[0]?.code, messages[0]?.content);
    * });
@@ -732,49 +732,49 @@ export class ShopifyCheckout
    */
   // we overload these so that the consumer of the component can autocomplete the correct events
   override addEventListener(
-    type: "checkout:start",
+    type: "ec.start",
     listener: TypedEventListener<ShopifyCheckoutStartEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "checkout:close",
+    type: "ec.close",
     listener: TypedEventListener<ShopifyCheckoutCloseEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "checkout:complete",
+    type: "ec.complete",
     listener: TypedEventListener<ShopifyCheckoutCompleteEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "checkout:error",
+    type: "ec.error",
     listener: TypedEventListener<ShopifyCheckoutErrorEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "checkout:lineItemsChange",
+    type: "ec.line_items.change",
     listener: TypedEventListener<ShopifyCheckoutLineItemsChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "checkout:buyerChange",
+    type: "ec.buyer.change",
     listener: TypedEventListener<ShopifyCheckoutBuyerChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "checkout:totalsChange",
+    type: "ec.totals.change",
     listener: TypedEventListener<ShopifyCheckoutTotalsChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "checkout:messagesChange",
+    type: "ec.messages.change",
     listener: TypedEventListener<ShopifyCheckoutMessagesChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
@@ -845,66 +845,66 @@ export interface ShopifyCheckoutMessagesChangeEventDetail {
  */
 
 export class ShopifyCheckoutStartEvent extends CustomEvent<ShopifyCheckoutStartEventDetail> {
-  declare type: "checkout:start";
+  declare type: "ec.start";
 
   constructor(detail: ShopifyCheckoutStartEventDetail) {
-    super("checkout:start", { detail, bubbles: true });
+    super("ec.start", { detail, bubbles: true });
   }
 }
 
 export class ShopifyCheckoutCompleteEvent extends CustomEvent<ShopifyCheckoutCompleteEventDetail> {
-  declare type: "checkout:complete";
+  declare type: "ec.complete";
 
   constructor(detail: ShopifyCheckoutCompleteEventDetail) {
-    super("checkout:complete", { detail, bubbles: true });
+    super("ec.complete", { detail, bubbles: true });
   }
 }
 
 export class ShopifyCheckoutCloseEvent extends CustomEvent<undefined> {
-  declare type: "checkout:close";
+  declare type: "ec.close";
 
   constructor() {
-    super("checkout:close", { bubbles: true });
+    super("ec.close", { bubbles: true });
   }
 }
 
 export class ShopifyCheckoutErrorEvent extends CustomEvent<ShopifyCheckoutErrorEventDetail> {
-  declare type: "checkout:error";
+  declare type: "ec.error";
 
   constructor(detail: ShopifyCheckoutErrorEventDetail) {
-    super("checkout:error", { detail, bubbles: true });
+    super("ec.error", { detail, bubbles: true });
   }
 }
 
 export class ShopifyCheckoutLineItemsChangeEvent extends CustomEvent<ShopifyCheckoutLineItemsChangeEventDetail> {
-  declare type: "checkout:lineItemsChange";
+  declare type: "ec.line_items.change";
 
   constructor(detail: ShopifyCheckoutLineItemsChangeEventDetail) {
-    super("checkout:lineItemsChange", { detail, bubbles: true });
+    super("ec.line_items.change", { detail, bubbles: true });
   }
 }
 
 export class ShopifyCheckoutBuyerChangeEvent extends CustomEvent<ShopifyCheckoutBuyerChangeEventDetail> {
-  declare type: "checkout:buyerChange";
+  declare type: "ec.buyer.change";
 
   constructor(detail: ShopifyCheckoutBuyerChangeEventDetail) {
-    super("checkout:buyerChange", { detail, bubbles: true });
+    super("ec.buyer.change", { detail, bubbles: true });
   }
 }
 
 export class ShopifyCheckoutTotalsChangeEvent extends CustomEvent<ShopifyCheckoutTotalsChangeEventDetail> {
-  declare type: "checkout:totalsChange";
+  declare type: "ec.totals.change";
 
   constructor(detail: ShopifyCheckoutTotalsChangeEventDetail) {
-    super("checkout:totalsChange", { detail, bubbles: true });
+    super("ec.totals.change", { detail, bubbles: true });
   }
 }
 
 export class ShopifyCheckoutMessagesChangeEvent extends CustomEvent<ShopifyCheckoutMessagesChangeEventDetail> {
-  declare type: "checkout:messagesChange";
+  declare type: "ec.messages.change";
 
   constructor(detail: ShopifyCheckoutMessagesChangeEventDetail) {
-    super("checkout:messagesChange", { detail, bubbles: true });
+    super("ec.messages.change", { detail, bubbles: true });
   }
 }
 
