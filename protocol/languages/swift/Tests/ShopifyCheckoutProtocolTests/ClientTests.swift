@@ -125,6 +125,22 @@ struct ClientTests {
         #expect(response == nil)
     }
 
+    @Test @MainActor func windowOpenRequestWithNullURLReturnsInvalidParamsError() async throws {
+        let client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { _ in .success }
+        let request = #"""
+        {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":null}}
+        """#
+
+        let response = try #require(await client.process(request))
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+
+        #expect(parsed["id"] as? String == "req-window-1")
+        let error = try #require(parsed["error"] as? [String: Any])
+        #expect(error["code"] as? Int == -32602)
+        #expect(error["message"] as? String == "Invalid params")
+    }
+
     @Test @MainActor func windowOpenRequestLastHandlerWins() async throws {
         let request = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":"https://example.com"}}
@@ -154,6 +170,21 @@ struct ClientTests {
         let result = try #require(parsed["result"] as? [String: Any])
         let delegate = try #require(result["delegate"] as? [String])
         #expect(delegate == ["window.open"])
+    }
+
+    @Test @MainActor func malformedReadyParamsReturnParseError() async throws {
+        let ready = #"""
+        {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
+        """#
+
+        let client = CheckoutProtocol.Client()
+
+        let response = try #require(await client.process(ready))
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        #expect(parsed["id"] as? String == "ready-bad")
+        let error = try #require(parsed["error"] as? [String: Any])
+        #expect(error["code"] as? Int == CheckoutProtocol.parseErrorCode)
+        #expect(error["message"] as? String == CheckoutProtocol.parseErrorMessage)
     }
 
     @Test @MainActor func readyReturnsResponse() async throws {

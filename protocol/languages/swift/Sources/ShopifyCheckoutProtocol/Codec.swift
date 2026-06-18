@@ -8,9 +8,17 @@ extension CheckoutProtocol {
         _ message: String,
         supportedDelegations: [String] = CheckoutProtocol.defaultDelegations
     ) -> String? {
-        guard case let .ready(id, requested) = decode(jsonRpc: message) else { return nil }
-        let accepted = requested.filter(Set(supportedDelegations).contains)
-        return encodeReadyResponse(id: id, acceptedDelegations: accepted)
+        switch decode(jsonRpc: message) {
+        case let .ready(id, requested):
+            let accepted = requested.filter(Set(supportedDelegations).contains)
+            return encodeReadyResponse(id: id, acceptedDelegations: accepted)
+
+        case let .error(id, code, message):
+            return encodeErrorResponse(id: id, code: code, message: message)
+
+        default:
+            return nil
+        }
     }
 }
 
@@ -20,46 +28,60 @@ extension CheckoutProtocol {
             return .unknown(method: "", rawParams: jsonRpc)
         }
 
-        guard let request = try? JSONDecoder().decode(JSONRPCRequest.self, from: data) else {
+        guard let envelope = try? JSONDecoder().decode(JSONRPCEnvelope.self, from: data) else {
             return .unknown(method: "", rawParams: jsonRpc)
         }
 
         // Special case so we may intercept and send expected response to initialise the checkout
-        if request.method == "ec.ready", let id = request.id {
-            return .ready(id: id, delegations: request.params?.delegate ?? [])
+        if envelope.method == "ec.ready", let id = envelope.id {
+            guard let request = try? JSONDecoder().decode(JSONRPCReadyRequest.self, from: data) else {
+                return .error(id: id, code: parseErrorCode, message: parseErrorMessage)
+            }
+            return .ready(id: id, delegations: request.params.delegate)
         }
 
-        if request.method == "ec.error", let error = request.params?.error {
-            return .notification(method: request.method, payload: error)
+        if envelope.method == "ec.error",
+           let request = try? JSONDecoder().decode(JSONRPCRequest<JSONRPCErrorParams>.self, from: data) {
+            return .notification(method: envelope.method, payload: request.params.error)
         }
 
-        if let id = request.id {
-            return .request(
-                id: id,
-                method: request.method,
-                params: extractParamsData(from: data)
-            )
+        if let id = envelope.id,
+           let params = requestParamsData(for: envelope.method, from: data) {
+            return .request(id: id, method: envelope.method, params: params)
         }
 
-        if let checkout = request.params?.checkout {
-            return .notification(method: request.method, payload: checkout)
+        if let id = envelope.id,
+           envelope.method == "ec.window.open_request" {
+            return .error(id: id, code: invalidParamsCode, message: invalidParamsMessage)
         }
 
-        return .unknown(method: request.method, rawParams: jsonRpc)
+        if let request = try? JSONDecoder().decode(JSONRPCRequest<JSONRPCCheckoutParams>.self, from: data) {
+            return .notification(method: envelope.method, payload: request.params.checkout)
+        }
+
+        return .unknown(method: envelope.method, rawParams: jsonRpc)
     }
 
-    private static func extractParamsData(from envelope: Data) -> Data {
-        guard
-            let object = try? JSONSerialization.jsonObject(with: envelope) as? [String: Any],
-            let params = object["params"],
-            let data = try? JSONSerialization.data(withJSONObject: params)
-        else {
-            return Data("{}".utf8)
+    private static func requestParamsData(for method: String, from data: Data) -> Data? {
+        switch method {
+        case "ec.window.open_request":
+            return try? encodeParams(JSONDecoder().decode(JSONRPCRequest<JSONRPCWindowOpenParams>.self, from: data).params)
+        default:
+            return try? encodeParams(JSONDecoder().decode(JSONRPCRequest<JSONRPCCheckoutParams>.self, from: data).params)
         }
-        return data
+    }
+
+    private static func encodeParams(_ params: some Encodable) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(params)
     }
 
     static func encodeResponse(id: String, result: some Encodable) -> String {
+        encodeResponse(id: .string(id), result: result)
+    }
+
+    static func encodeResponse(id: JSONRPCID, result: some Encodable) -> String {
         let wrapper = JSONRPCResponse(id: id, result: result)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
@@ -68,18 +90,24 @@ extension CheckoutProtocol {
     }
 
     static func encodeReadyResponse(id: String, acceptedDelegations: [String]) -> String {
+        encodeReadyResponse(id: .string(id), acceptedDelegations: acceptedDelegations)
+    }
+
+    static func encodeReadyResponse(id: JSONRPCID, acceptedDelegations: [String]) -> String {
         let result = UCPSuccessResult(
             ucp: UCPSuccess(version: specVersion),
             delegate: acceptedDelegations.isEmpty ? nil : acceptedDelegations
         )
         return encodeResponse(id: id, result: result)
     }
-}
 
-private struct JSONRPCResponse<R: Encodable>: Encodable {
-    let jsonrpc = "2.0"
-    let id: String
-    let result: R
+    static func encodeErrorResponse(id: JSONRPCID, code: Int, message: String) -> String {
+        let wrapper = JSONRPCErrorResponse(id: id, error: JSONRPCError(code: code, message: message))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(wrapper) else { return "{}" }
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
 }
 
 struct UCPSuccessResult: Encodable {
@@ -101,3 +129,6 @@ struct UCPError: Encodable {
     let version: String
     let status = "error"
 }
+
+private let invalidParamsCode = -32602
+private let invalidParamsMessage = "Invalid params"

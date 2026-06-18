@@ -8,30 +8,29 @@ struct ModelDecodingTests {
         let json = try fixtureString("notification")
         let data = Data(json.utf8)
 
-        let envelope = try JSONDecoder().decode(JSONRPCRequest.self, from: data)
-        let checkout = envelope.params?.checkout
+        let envelope = try JSONDecoder().decode(JSONRPCRequest<JSONRPCCheckoutParams>.self, from: data)
+        let checkout = envelope.params.checkout
 
-        #expect(checkout != nil)
-        #expect(checkout?.id == "checkout-123")
-        #expect(checkout?.status == .incomplete)
-        #expect(checkout?.currency == "USD")
-        #expect(checkout?.totals.first?.amount == 2999)
-        #expect(checkout?.links.first?.type == "privacy_policy")
+        #expect(checkout.id == "checkout-123")
+        #expect(checkout.status == .incomplete)
+        #expect(checkout.currency == "USD")
+        #expect(checkout.totals.first?.amount == 2999)
+        #expect(checkout.links.first?.type == "privacy_policy")
 
         let reEncoded = try JSONEncoder().encode(checkout)
         let reDecoded = try JSONDecoder().decode(Checkout.self, from: reEncoded)
 
-        #expect(reDecoded.id == checkout?.id)
-        #expect(reDecoded.currency == checkout?.currency)
-        #expect(reDecoded.lineItems.count == checkout?.lineItems.count)
+        #expect(reDecoded.id == checkout.id)
+        #expect(reDecoded.currency == checkout.currency)
+        #expect(reDecoded.lineItems.count == checkout.lineItems.count)
     }
 
     @Test func decodesLineItemDetails() throws {
         let json = try fixtureString("notification")
         let data = Data(json.utf8)
 
-        let envelope = try JSONDecoder().decode(JSONRPCRequest.self, from: data)
-        let lineItem = try #require(envelope.params?.checkout?.lineItems[0])
+        let envelope = try JSONDecoder().decode(JSONRPCRequest<JSONRPCCheckoutParams>.self, from: data)
+        let lineItem = envelope.params.checkout.lineItems[0]
 
         #expect(lineItem.id == "li-1")
         #expect(lineItem.quantity == 1)

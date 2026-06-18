@@ -86,10 +86,34 @@ struct DescriptorTests {
             #expect(error["message"] as? String == CheckoutProtocol.methodNotFoundMessage)
         }
 
+        @Test func methodNotFoundResponsePreservesNumericRequestID() throws {
+            let response = try #require(
+                CheckoutProtocol.methodNotFoundResponse(
+                    forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":7,"params":{}}"#
+                )
+            )
+            let data = try #require(response.data(using: .utf8))
+            let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+            #expect(object["id"] as? Int == 7)
+        }
+
+        @Test func methodNotFoundResponsePreservesNullRequestID() throws {
+            let response = try #require(
+                CheckoutProtocol.methodNotFoundResponse(
+                    forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":null,"params":{}}"#
+                )
+            )
+            let data = try #require(response.data(using: .utf8))
+            let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+            #expect(object["id"] is NSNull)
+        }
+
         @Test func methodNotFoundResponseRejectsInvalidRequestIDs() {
             #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":true,"params":{}}"#) == nil)
-            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":null,"params":{}}"#) == nil)
             #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":{},"params":{}}"#) == nil)
+            #expect(CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: #"{"jsonrpc":"2.0","method":"custom","id":1.5,"params":{}}"#) == nil)
         }
 
         @Test func methodNotFoundResponseRejectsSupportedNotificationsOrInvalidMessages() {

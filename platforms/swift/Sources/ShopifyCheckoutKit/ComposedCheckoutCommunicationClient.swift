@@ -37,13 +37,13 @@ struct ComposedCheckoutCommunicationClient: CheckoutCommunicationProtocol {
     }
 
     private static func method(_ message: String) -> String? {
-        guard
-            let object = try? JSONSerialization.jsonObject(with: Data(message.utf8)) as? [String: Any]
-        else {
-            return nil
-        }
-        return object["method"] as? String
+        guard let request = try? JSONDecoder().decode(MethodEnvelope.self, from: Data(message.utf8)) else { return nil }
+        return request.method
     }
+}
+
+private struct MethodEnvelope: Decodable {
+    let method: String
 }
 
 struct DefaultClientBinding {
