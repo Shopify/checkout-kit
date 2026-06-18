@@ -185,7 +185,11 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        if let response = CheckoutProtocol.acknowledgeReady(body) {
+        guard let method = CheckoutProtocol.supportedProtocolMethod(body) else {
+            return
+        }
+
+        if method == CheckoutProtocol.readyMethod, let response = CheckoutProtocol.acknowledgeReady(body) {
             Task { @MainActor in
                 await checkoutBridge.sendResponse(self, messageBody: response)
             }

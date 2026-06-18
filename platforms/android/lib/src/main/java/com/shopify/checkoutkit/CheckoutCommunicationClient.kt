@@ -10,10 +10,10 @@ public interface CheckoutCommunicationClient {
     /**
      * Process a JSON-RPC 2.0 ECP message from the checkout web page.
      *
-     * Called for EC notifications (ec.start, ec.error, ec.complete, ec.*.change),
-     * merchant-overridable delegations such as `ec.window.open_request`, and any
-     * unknown methods the kit doesn't handle natively. For requests, return a JSON-RPC
-     * 2.0 response string; for notifications, return null (no response is sent).
+     * Called for supported EC notifications (ec.start, ec.error, ec.complete,
+     * ec.*.change) and merchant-overridable delegations such as
+     * `ec.window.open_request`. For requests, return a JSON-RPC 2.0 response string;
+     * for notifications, return null (no response is sent).
      *
      * @param message JSON-RPC 2.0 encoded message string
      * @return JSON-RPC 2.0 encoded response string, or null to send no response

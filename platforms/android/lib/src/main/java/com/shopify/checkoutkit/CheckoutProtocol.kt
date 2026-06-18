@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch
 public object CheckoutProtocol {
 
     public const val SPEC_VERSION: String = "2026-04-08"
+    internal const val READY_METHOD: String = "ec.ready"
 
     // Notifications — checkout carries the full current state
     public val start: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.start")
@@ -73,6 +74,31 @@ public object CheckoutProtocol {
         },
         encode = { result -> encodeWindowOpenResult(result) },
     )
+
+    internal val supportedProtocolMethods: Set<String> = setOf(
+        READY_METHOD,
+        start.method,
+        complete.method,
+        error.method,
+        lineItemsChange.method,
+        messagesChange.method,
+        totalsChange.method,
+        windowOpen.method,
+    )
+
+    internal fun supportedProtocolMethod(message: String): String? =
+        decodeProtocolRequest(message)?.let(::supportedProtocolMethod)
+
+    internal fun supportedProtocolMethod(request: EcpRequest): String? =
+        request.method.takeIf {
+            request.jsonrpc == "2.0" && request.method in supportedProtocolMethods
+        }
+
+    private fun decodeProtocolRequest(message: String): EcpRequest? = try {
+        json.decodeFromString<EcpRequest>(message)
+    } catch (_: SerializationException) {
+        null
+    }
 
     private fun checkoutDescriptor(method: String): NotificationDescriptor<Checkout> =
         NotificationDescriptor(
@@ -290,6 +316,14 @@ public class DelegationDescriptor<P : Any, R : Any> internal constructor(
     public val method: String,
     internal val decode: (JsonElement?) -> P?,
     internal val encode: (R) -> JsonElement,
+)
+
+@Serializable
+internal data class EcpRequest(
+    val jsonrpc: String = "2.0",
+    val method: String,
+    val id: JsonElement? = null,
+    val params: JsonElement? = null,
 )
 
 /** Payload delivered with the [CheckoutProtocol.windowOpen] delegation. */

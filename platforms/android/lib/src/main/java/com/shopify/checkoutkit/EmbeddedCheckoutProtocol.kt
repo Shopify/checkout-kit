@@ -2,7 +2,6 @@ package com.shopify.checkoutkit
 
 import android.webkit.JavascriptInterface
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -57,19 +56,15 @@ internal class EmbeddedCheckoutProtocol(
     fun postMessage(message: String) {
         try {
             val request = decoder.decodeFromString<EcpRequest>(message)
+            val method = CheckoutProtocol.supportedProtocolMethod(request)
             log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
-            when {
-                request.method == METHOD_READY -> handleReady(request)
-                // Respond with explicit "not supported" so web-side promises don't hang
-                request.method in UNSUPPORTED_METHODS ->
-                    sendError(request.id, CODE_METHOD_NOT_SUPPORTED, "Method not supported by this SDK")
-                // ep.cart.* is out of scope for the checkout bridge
-                request.method.startsWith("ep.") ->
-                    log.d(LOG_TAG, "Ignoring out-of-scope ep method: ${request.method}.")
-                request.method == CheckoutProtocol.windowOpen.method -> handleWindowOpenRequest(message)
-                request.method == CheckoutProtocol.start.method -> handleStart(message)
-                request.method == CheckoutProtocol.complete.method -> handleComplete(message)
-                else -> handleClientMessage(request.method, message)
+            when (method) {
+                CheckoutProtocol.READY_METHOD -> handleReady(request)
+                CheckoutProtocol.windowOpen.method -> handleWindowOpenRequest(message)
+                CheckoutProtocol.start.method -> handleStart(message)
+                CheckoutProtocol.complete.method -> handleComplete(message)
+                null -> log.d(LOG_TAG, "Ignoring unsupported ECP method: ${request.method}.")
+                else -> handleClientMessage(method, message)
             }
         } catch (e: SerializationException) {
             log.d(LOG_TAG, "Failed to decode ECP message: $e  raw=$message")
@@ -82,7 +77,7 @@ internal class EmbeddedCheckoutProtocol(
         val negotiatedDelegations = checkoutAcceptedDelegations.filter { it in KIT_SUPPORTED_DELEGATIONS }
         log.d(
             LOG_TAG,
-            "Handling $METHOD_READY, " +
+            "Handling ${CheckoutProtocol.READY_METHOD}, " +
                 "isPreload=${view.isPreloadRequest} " +
                 "checkoutAcceptedDelegations=$checkoutAcceptedDelegations " +
                 "checkoutKitSupportedDelegations=$KIT_SUPPORTED_DELEGATIONS " +
@@ -93,12 +88,13 @@ internal class EmbeddedCheckoutProtocol(
 
     private fun checkoutAcceptedDelegations(params: JsonElement?): List<String> = when (params) {
         null -> emptyList()
-        !is JsonObject -> throw SerializationException("$METHOD_READY params must be an object")
+        !is JsonObject -> throw SerializationException("${CheckoutProtocol.READY_METHOD} params must be an object")
         else -> params["delegate"]?.let(::delegationStrings) ?: emptyList()
     }
 
     private fun delegationStrings(delegate: JsonElement): List<String> {
-        val delegateArray = delegate as? JsonArray ?: throw SerializationException("$METHOD_READY delegate must be an array")
+        val delegateArray = delegate as? JsonArray
+            ?: throw SerializationException("${CheckoutProtocol.READY_METHOD} delegate must be an array")
         return delegateArray.mapNotNull(::delegationStringOrNull)
     }
 
@@ -150,9 +146,10 @@ internal class EmbeddedCheckoutProtocol(
     }
 
     /**
-     * Dispatch a message through the consumer client. `ec.error` also runs through the
-     * kit-owned [defaultClient] regardless of the consumer response so unrecoverable
-     * session errors always close checkout while still reaching `CheckoutProtocol.error`.
+     * Dispatch a supported protocol message through the consumer client. `ec.error` also
+     * runs through the kit-owned [defaultClient] regardless of the consumer response so
+     * unrecoverable session errors always close checkout while still reaching
+     * `CheckoutProtocol.error`.
      */
     private fun handleClientMessage(method: String, message: String) {
         log.d(LOG_TAG, "Delegating $method to client.")
@@ -233,31 +230,11 @@ internal class EmbeddedCheckoutProtocol(
         /** Global JS object the checkout uses to receive responses. */
         private const val ECP_RESPONSE_GLOBAL = "EmbeddedCheckoutProtocol"
 
-        internal const val METHOD_READY = "ec.ready"
-
         // Delegations this SDK supports. Echoed back in the ec.ready response as the
         // intersection of checkout-accepted ∩ kit-supported. Must align with the
         // `ec_delegate` URL param emitted from [UriExtensions.appendEcpParams].
         private val KIT_SUPPORTED_DELEGATIONS = setOf("window.open")
 
-        // Requests the SDK explicitly does not support — send a protocol-level error so the
-        // web-side promise resolves rather than hanging indefinitely.
-        private val UNSUPPORTED_METHODS = setOf(
-            "ec.auth",
-            "ec.payment.instruments_change_request",
-            "ec.payment.credential_request",
-            "ec.fulfillment.address_change_request",
-        )
-
         private const val CODE_PARSE_ERROR = -32700
-        private const val CODE_METHOD_NOT_SUPPORTED = -32601
     }
 }
-
-@Serializable
-internal data class EcpRequest(
-    val jsonrpc: String = "2.0",
-    val method: String,
-    val id: JsonElement? = null,
-    val params: JsonElement? = null,
-)
