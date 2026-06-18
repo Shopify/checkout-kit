@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-android-metro.log"
+METRO_PID=""
+
+metro_running() {
+  curl --silent --fail http://localhost:8081/status | grep -q "packager-status:running"
+}
+
+cleanup() {
+  if [ -n "$METRO_PID" ]; then
+    kill "$METRO_PID" 2>/dev/null || true
+  fi
+}
+
+wait_for_metro() {
+  for _ in $(seq 1 60); do
+    if metro_running; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "Timed out waiting for Metro. Last log lines:" >&2
+  tail -n 40 "$METRO_LOG" >&2 || true
+  return 1
+}
+
+cd "$ROOT_DIR"
+
+if ! metro_running; then
+  pnpm sample start --reset-cache >"$METRO_LOG" 2>&1 &
+  METRO_PID="$!"
+  trap cleanup EXIT
+fi
+
+wait_for_metro
+pnpm sample android
+pnpm e2e:android

@@ -10,26 +10,33 @@ platform-specific checkout field handling.
 
 ## Run locally
 
-Build and install the target sample app first, then run the matching Maestro
-command.
+Run the matching command from the repo root.
 
-From `platforms/react-native`:
+React Native:
+
+The React Native commands start Metro if needed, build and launch the target
+sample app, then run Maestro.
 
 ```bash
-pnpm e2e:ios
-pnpm e2e:android
+dev e2e rn-ios
+dev e2e rn-android
 ```
 
-From `platforms/swift`:
+Swift:
+
+Build and install the Swift sample app first, then run:
 
 ```bash
-./Scripts/e2e_maestro_ios
+dev e2e swift-ios
 ```
 
-From `platforms/android`:
+Android:
+
+The Android command builds and installs the native sample app, then runs
+Maestro.
 
 ```bash
-./scripts/e2e_maestro_android
+dev e2e android
 ```
 
 ## Files
