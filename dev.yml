@@ -120,13 +120,21 @@ commands:
     desc: "Checkout protocol commands"
     subcommands:
       build:
-        desc: Build the Swift protocol target
+        desc: Build the protocol target
         run: cd protocol/languages/swift && swift build
       test:
-        desc: Run Swift protocol package tests
-        run: cd protocol/languages/swift && swift test
+        desc: Run protocol package tests
+        run: |
+          root=$(pwd)
+          cd protocol/languages/swift
+          echo "Running tests for Swift..."
+          swift test
+          cd $root/protocol
+          echo "Running tests for TypeScript..."
+          pnpm test
+
       check:
-        desc: Build and test the Swift protocol package
+        desc: Build and test the protocol package
         run: |
           set -e
           /opt/dev/bin/dev protocol build
