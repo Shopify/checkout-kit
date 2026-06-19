@@ -2,6 +2,49 @@ import Foundation
 @testable import ShopifyCheckoutProtocol
 import Testing
 
+private struct TestURLPayload: EventPayload {
+    let url: URL?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let raw = try container.decode(String.self, forKey: .url)
+        url = URL(string: raw)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case url
+    }
+}
+
+private enum TestDelegationResult: ResponsePayload {
+    case success
+    case rejected(reason: String)
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .success:
+            try container.encode(["status": "success"], forKey: .ucp)
+        case let .rejected(reason):
+            try container.encode(["status": "error"], forKey: .ucp)
+            try container.encode([["content": reason]], forKey: .messages)
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ucp
+        case messages
+    }
+}
+
+private let windowOpenDescriptor = DelegationDescriptor<TestURLPayload, TestDelegationResult>(
+    method: GeneratedProtocolCatalog.ecWindowOpenRequest.method,
+    delegation: "window.open",
+    decode: { params in
+        try? JSONDecoder().decode(TestURLPayload.self, from: params)
+    }
+)
+
 @Suite("Client Tests")
 struct ClientTests {
     private func notificationFixture() throws -> String {
@@ -16,8 +59,8 @@ struct ClientTests {
 
     @Test @MainActor func notificationDispatchesToRegisteredHandler() async throws {
         var receivedCheckout: Checkout?
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.start) { checkout in
+        let client = CheckoutTransport.Client()
+            .on(GeneratedProtocolCatalog.ecStart) { checkout in
                 receivedCheckout = checkout
             }
 
@@ -30,8 +73,8 @@ struct ClientTests {
 
     @Test @MainActor func notificationDoesNotFireUnregisteredHandler() async throws {
         var completeFired = false
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.complete) { (_: Checkout) in
+        let client = CheckoutTransport.Client()
+            .on(GeneratedProtocolCatalog.ecComplete) { (_: Checkout) in
                 completeFired = true
             }
 
@@ -42,8 +85,8 @@ struct ClientTests {
     }
 
     @Test @MainActor func notificationReturnsNil() async throws {
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.start) { (_: Checkout) in }
+        let client = CheckoutTransport.Client()
+            .on(GeneratedProtocolCatalog.ecStart) { (_: Checkout) in }
 
         let response = try await client.process(notificationFixture())
 
@@ -53,9 +96,9 @@ struct ClientTests {
     @Test @MainActor func multipleNotificationHandlersOnDifferentEvents() async throws {
         var startFired = false
         var completeFired = false
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.start) { (_: Checkout) in startFired = true }
-            .on(CheckoutProtocol.complete) { (_: Checkout) in completeFired = true }
+        let client = CheckoutTransport.Client()
+            .on(GeneratedProtocolCatalog.ecStart) { (_: Checkout) in startFired = true }
+            .on(GeneratedProtocolCatalog.ecComplete) { (_: Checkout) in completeFired = true }
 
         _ = try await client.process(notificationFixture())
 
@@ -64,24 +107,22 @@ struct ClientTests {
     }
 
     @Test @MainActor func unknownMessageReturnsNil() async {
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.start) { (_: Checkout) in }
+        let client = CheckoutTransport.Client()
+            .on(GeneratedProtocolCatalog.ecStart) { (_: Checkout) in }
 
         let response = await client.process("not valid json")
 
         #expect(response == nil)
     }
 
-    @Test @MainActor func windowOpenRequestDispatchesToRegisteredHandler() async throws {
+    @Test @MainActor func delegationRequestDispatchesToRegisteredHandler() async throws {
         let request = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":"https://example.com/terms"}}
         """#
 
-        var receivedURL: URL?
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { payload in
-                receivedURL = payload.url
-                return .success
+        let client = CheckoutTransport.Client()
+            .on(windowOpenDescriptor) { payload in
+                payload.url == URL(string: "https://example.com/terms") ? .success : .rejected(reason: "unexpected url")
             }
 
         let response = try #require(await client.process(request))
@@ -91,16 +132,15 @@ struct ClientTests {
         let result = try #require(parsed["result"] as? [String: Any])
         let ucp = try #require(result["ucp"] as? [String: Any])
         #expect(ucp["status"] as? String == "success")
-        #expect(receivedURL == URL(string: "https://example.com/terms"))
     }
 
-    @Test @MainActor func windowOpenRequestEncodesRejectedResult() async throws {
+    @Test @MainActor func delegationRequestEncodesRejectedResult() async throws {
         let request = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":"https://example.com"}}
         """#
 
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { _ in
+        let client = CheckoutTransport.Client()
+            .on(windowOpenDescriptor) { _ in
                 .rejected(reason: "no presenter available")
             }
 
@@ -115,8 +155,8 @@ struct ClientTests {
         #expect(messages[0]["content"] as? String == "no presenter available")
     }
 
-    @Test @MainActor func windowOpenRequestReturnsNilWhenHandlerNotRegistered() async {
-        let client = CheckoutProtocol.Client()
+    @Test @MainActor func delegationRequestReturnsNilWhenHandlerNotRegistered() async {
+        let client = CheckoutTransport.Client()
         let request = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":"https://example.com"}}
         """#
@@ -125,9 +165,9 @@ struct ClientTests {
         #expect(response == nil)
     }
 
-    @Test @MainActor func windowOpenRequestWithNullURLReturnsInvalidParamsError() async throws {
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { _ in .success }
+    @Test @MainActor func delegationRequestWithNullURLReturnsInvalidParamsError() async throws {
+        let client = CheckoutTransport.Client()
+            .on(windowOpenDescriptor) { _ in .success }
         let request = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":null}}
         """#
@@ -141,14 +181,14 @@ struct ClientTests {
         #expect(error["message"] as? String == "Invalid params")
     }
 
-    @Test @MainActor func windowOpenRequestLastHandlerWins() async throws {
+    @Test @MainActor func delegationRequestLastHandlerWins() async throws {
         let request = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":"https://example.com"}}
         """#
 
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { _ in .rejected(reason: "first") }
-            .on(CheckoutProtocol.windowOpen) { _ in .success }
+        let client = CheckoutTransport.Client()
+            .on(windowOpenDescriptor) { _ in .rejected(reason: "first") }
+            .on(windowOpenDescriptor) { _ in .success }
 
         let response = try #require(await client.process(request))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
@@ -157,13 +197,13 @@ struct ClientTests {
         #expect(ucp["status"] as? String == "success")
     }
 
-    @Test @MainActor func windowOpenRequestAdvertisesDelegationInReadyResponse() async throws {
+    @Test @MainActor func delegationAdvertisesDelegationInReadyResponse() async throws {
         let ready = #"""
         {"jsonrpc":"2.0","id":"ready-1","method":"ec.ready","params":{"delegate":["window.open"]}}
         """#
 
-        let client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { _ in .success }
+        let client = CheckoutTransport.Client()
+            .on(windowOpenDescriptor) { _ in .success }
 
         let response = try #require(await client.process(ready))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
@@ -177,18 +217,18 @@ struct ClientTests {
         {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
         """#
 
-        let client = CheckoutProtocol.Client()
+        let client = CheckoutTransport.Client()
 
         let response = try #require(await client.process(ready))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
         #expect(parsed["id"] as? String == "ready-bad")
         let error = try #require(parsed["error"] as? [String: Any])
-        #expect(error["code"] as? Int == CheckoutProtocol.parseErrorCode)
-        #expect(error["message"] as? String == CheckoutProtocol.parseErrorMessage)
+        #expect(error["code"] as? Int == CheckoutTransport.parseErrorCode)
+        #expect(error["message"] as? String == CheckoutTransport.parseErrorMessage)
     }
 
     @Test @MainActor func readyReturnsResponse() async throws {
-        let client = CheckoutProtocol.Client()
+        let client = CheckoutTransport.Client()
 
         let response = try await client.process(readyFixture())
 
@@ -199,7 +239,7 @@ struct ClientTests {
         #expect(parsed["params"] == nil)
         let result = try #require(parsed["result"] as? [String: Any])
         let ucp = try #require(result["ucp"] as? [String: Any])
-        #expect(ucp["version"] as? String == CheckoutProtocol.specVersion)
+        #expect(ucp["version"] as? String == CheckoutTransport.specVersion)
         #expect(ucp["status"] as? String == "success")
     }
 }

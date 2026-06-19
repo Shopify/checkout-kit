@@ -14,12 +14,12 @@ struct CodecEncodeTests {
                 paymentHandlers: nil,
                 services: nil,
                 status: .success,
-                version: CheckoutProtocol.specVersion
+                version: CheckoutTransport.specVersion
             ),
             continueURL: nil,
             messages: nil
         )
-        let json = CheckoutProtocol.encodeResponse(id: "req-456", result: result)
+        let json = CheckoutTransport.encodeResponse(id: "req-456", result: result)
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
         #expect(parsed["jsonrpc"] as? String == "2.0")
@@ -28,7 +28,7 @@ struct CodecEncodeTests {
     }
 
     @Test func encodesReadyResponseWithResultEnvelope() throws {
-        let json = CheckoutProtocol.encodeReadyResponse(id: "ready-1", acceptedDelegations: [])
+        let json = CheckoutTransport.encodeReadyResponse(id: "ready-1", acceptedDelegations: [])
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
         #expect(parsed["jsonrpc"] as? String == "2.0")
@@ -38,13 +38,13 @@ struct CodecEncodeTests {
 
         let result = try #require(parsed["result"] as? [String: Any])
         let ucp = try #require(result["ucp"] as? [String: Any])
-        #expect(ucp["version"] as? String == CheckoutProtocol.specVersion)
+        #expect(ucp["version"] as? String == CheckoutTransport.specVersion)
         #expect(ucp["status"] as? String == "success")
         #expect(result["delegate"] == nil, "Empty delegate list must be omitted")
     }
 
     @Test func encodesReadyResponseEchoesAcceptedDelegations() throws {
-        let json = CheckoutProtocol.encodeReadyResponse(id: "ready-1", acceptedDelegations: ["window.open"])
+        let json = CheckoutTransport.encodeReadyResponse(id: "ready-1", acceptedDelegations: ["window.open"])
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
         let result = try #require(parsed["result"] as? [String: Any])
@@ -53,14 +53,14 @@ struct CodecEncodeTests {
     }
 
     @Test func encodesReadyResponseWithNumericID() throws {
-        let json = CheckoutProtocol.encodeReadyResponse(id: 7, acceptedDelegations: [])
+        let json = CheckoutTransport.encodeReadyResponse(id: 7, acceptedDelegations: [])
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
         #expect(parsed["id"] as? Int == 7)
     }
 
     @Test func encodesReadyResponseWithNullID() throws {
-        let json = CheckoutProtocol.encodeReadyResponse(id: .null, acceptedDelegations: [])
+        let json = CheckoutTransport.encodeReadyResponse(id: .null, acceptedDelegations: [])
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
         #expect(parsed["id"] is NSNull)
@@ -71,13 +71,13 @@ struct CodecEncodeTests {
         {"jsonrpc":"2.0","id":"ready-1","method":"ec.ready","params":{"delegate":["payment.credential"]}}
         """#
 
-        let response = try #require(CheckoutProtocol.acknowledgeReady(message))
+        let response = try #require(CheckoutTransport.acknowledgeReady(message))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
 
         #expect(parsed["id"] as? String == "ready-1")
         let result = try #require(parsed["result"] as? [String: Any])
         let ucp = try #require(result["ucp"] as? [String: Any])
-        #expect(ucp["version"] as? String == CheckoutProtocol.specVersion)
+        #expect(ucp["version"] as? String == CheckoutTransport.specVersion)
         #expect(ucp["status"] as? String == "success")
     }
 
@@ -86,7 +86,7 @@ struct CodecEncodeTests {
         {"jsonrpc":"2.0","id":"ready-1","method":"ec.ready","params":{"delegate":["payment.credential","window.open","fulfillment.address_change"]}}
         """#
 
-        let response = try #require(CheckoutProtocol.acknowledgeReady(message, supportedDelegations: ["window.open"]))
+        let response = try #require(CheckoutTransport.acknowledgeReady(message, supportedDelegations: ["window.open"]))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
 
         let result = try #require(parsed["result"] as? [String: Any])
@@ -99,7 +99,7 @@ struct CodecEncodeTests {
         {"jsonrpc":"2.0","id":"ready-1","method":"ec.ready","params":{"delegate":["payment.credential"]}}
         """#
 
-        let response = try #require(CheckoutProtocol.acknowledgeReady(message, supportedDelegations: ["window.open"]))
+        let response = try #require(CheckoutTransport.acknowledgeReady(message, supportedDelegations: ["window.open"]))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
 
         let result = try #require(parsed["result"] as? [String: Any])
@@ -111,7 +111,7 @@ struct CodecEncodeTests {
         {"jsonrpc":"2.0","id":"ready-no-params","method":"ec.ready"}
         """#
 
-        let response = try #require(CheckoutProtocol.acknowledgeReady(message))
+        let response = try #require(CheckoutTransport.acknowledgeReady(message))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
 
         #expect(parsed["id"] as? String == "ready-no-params")
@@ -124,13 +124,13 @@ struct CodecEncodeTests {
         {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
         """#
 
-        let response = try #require(CheckoutProtocol.acknowledgeReady(message))
+        let response = try #require(CheckoutTransport.acknowledgeReady(message))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
 
         #expect(parsed["id"] as? String == "ready-bad")
         let error = try #require(parsed["error"] as? [String: Any])
-        #expect(error["code"] as? Int == CheckoutProtocol.parseErrorCode)
-        #expect(error["message"] as? String == CheckoutProtocol.parseErrorMessage)
+        #expect(error["code"] as? Int == CheckoutTransport.parseErrorCode)
+        #expect(error["message"] as? String == CheckoutTransport.parseErrorMessage)
     }
 
     @Test func acknowledgeReadyReturnsParseErrorForNullParams() throws {
@@ -138,13 +138,13 @@ struct CodecEncodeTests {
         {"jsonrpc":"2.0","id":"ready-null","method":"ec.ready","params":null}
         """#
 
-        let response = try #require(CheckoutProtocol.acknowledgeReady(message))
+        let response = try #require(CheckoutTransport.acknowledgeReady(message))
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
 
         #expect(parsed["id"] as? String == "ready-null")
         let error = try #require(parsed["error"] as? [String: Any])
-        #expect(error["code"] as? Int == CheckoutProtocol.parseErrorCode)
-        #expect(error["message"] as? String == CheckoutProtocol.parseErrorMessage)
+        #expect(error["code"] as? Int == CheckoutTransport.parseErrorCode)
+        #expect(error["message"] as? String == CheckoutTransport.parseErrorMessage)
     }
 
     @Test func acknowledgeReadyReturnsNilForNonReadyMessage() {
@@ -152,54 +152,10 @@ struct CodecEncodeTests {
         {"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{"id":"c"}}}
         """#
 
-        #expect(CheckoutProtocol.acknowledgeReady(message) == nil)
+        #expect(CheckoutTransport.acknowledgeReady(message) == nil)
     }
 
     @Test func acknowledgeReadyReturnsNilForMalformedJSON() {
-        #expect(CheckoutProtocol.acknowledgeReady("not json") == nil)
-    }
-
-    @Test func windowOpenResultEncodesSuccessBody() throws {
-        let json = CheckoutProtocol.encodeResponse(id: "req-window-1", result: WindowOpenResult.success)
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
-
-        #expect(parsed["jsonrpc"] as? String == "2.0")
-        #expect(parsed["id"] as? String == "req-window-1")
-        let result = try #require(parsed["result"] as? [String: Any])
-        let ucp = try #require(result["ucp"] as? [String: Any])
-        #expect(ucp["status"] as? String == "success")
-        #expect(ucp["version"] as? String == CheckoutProtocol.specVersion)
-    }
-
-    @Test func windowOpenResultEncodesRejectedBody() throws {
-        let json = CheckoutProtocol.encodeResponse(
-            id: "req-window-1",
-            result: WindowOpenResult.rejected(reason: "canOpenURL returned false")
-        )
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
-
-        #expect(parsed["id"] as? String == "req-window-1")
-        let result = try #require(parsed["result"] as? [String: Any])
-        let ucp = try #require(result["ucp"] as? [String: Any])
-        #expect(ucp["status"] as? String == "error")
-
-        let messages = try #require(result["messages"] as? [[String: Any]])
-        #expect(messages.count == 1)
-        #expect(messages[0]["type"] as? String == "error")
-        #expect(messages[0]["code"] as? String == "window_open_rejected_error")
-        #expect(messages[0]["severity"] as? String == "unrecoverable")
-        #expect(messages[0]["content"] as? String == "canOpenURL returned false")
-    }
-
-    @Test func windowOpenResultEncodesRejectedWithNilReason() throws {
-        let json = CheckoutProtocol.encodeResponse(
-            id: "req-window-1",
-            result: WindowOpenResult.rejected(reason: nil)
-        )
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
-
-        let result = try #require(parsed["result"] as? [String: Any])
-        let messages = try #require(result["messages"] as? [[String: Any]])
-        #expect(messages[0]["content"] as? String != "", "Content is required per message_error schema")
+        #expect(CheckoutTransport.acknowledgeReady("not json") == nil)
     }
 }

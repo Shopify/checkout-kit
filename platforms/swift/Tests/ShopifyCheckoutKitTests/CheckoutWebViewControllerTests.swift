@@ -75,7 +75,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
     func test_presentationControllerDidDismiss_doesNotCleanUpBeforeViewDisappears() throws {
         ShopifyCheckoutKit.configuration.preloading.enabled = true
         ShopifyCheckoutKit.preload(checkout: url)
-        let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutProtocol.url(for: url), entryPoint: nil)
+        let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutTransport.url(for: url), entryPoint: nil)
         viewController.loadViewIfNeeded()
 
         let checkoutView = try XCTUnwrap(viewController.checkoutView)
@@ -93,7 +93,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
     func test_viewDidDisappear_cleansUpConsumedPreloadedWebViewWhenDismissed() throws {
         ShopifyCheckoutKit.configuration.preloading.enabled = true
         ShopifyCheckoutKit.preload(checkout: url)
-        let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutProtocol.url(for: url), entryPoint: nil)
+        let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutTransport.url(for: url), entryPoint: nil)
         viewController.loadViewIfNeeded()
 
         let checkoutView = try XCTUnwrap(viewController.checkoutView)

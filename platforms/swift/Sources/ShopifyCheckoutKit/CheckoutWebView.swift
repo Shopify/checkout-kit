@@ -230,7 +230,7 @@ class CheckoutWebView: WKWebView {
     ///     the kit via `viewDelegate`. Per UCP spec, `unrecoverable` means no valid
     ///     resource exists to act on, so consumers don't have to wire dismissal in
     ///     every error handler.
-    lazy var defaultsClient: CheckoutProtocol.Client = .init()
+    lazy var defaultsClient: CheckoutTransport.Client = .init()
         .on(CheckoutProtocol.complete) { _ in
             CheckoutWebView.invalidate(disconnect: false)
         }
@@ -458,7 +458,8 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        if method == CheckoutProtocol.readyMethod, let response = CheckoutProtocol.acknowledgeReady(body) {
+        if method == CheckoutTransport.readyMethod,
+           let response = CheckoutTransport.acknowledgeReady(body, supportedDelegations: CheckoutProtocol.defaultDelegations) {
             OSLogger.shared.debug("Handling ec.ready: sending UCP ready acknowledgement, isPreload: \(isPreloadRequest)")
             Task { @MainActor in
                 await checkoutBridge.sendResponse(self, messageBody: response)

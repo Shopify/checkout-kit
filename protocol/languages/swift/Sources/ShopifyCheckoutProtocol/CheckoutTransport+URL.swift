@@ -1,12 +1,12 @@
 import Foundation
 
-extension CheckoutProtocol {
+extension CheckoutTransport {
     /// Returns the given checkout URL with the query parameters required to
     /// initiate the Embedded Checkout Protocol handshake (`ec_version`,
     /// `ec_delegate`).
     public static func url(
         for url: URL,
-        delegations: [String] = defaultDelegations
+        delegations: [String] = []
     ) -> URL {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return url
