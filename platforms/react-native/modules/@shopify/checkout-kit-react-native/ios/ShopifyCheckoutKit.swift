@@ -1,8 +1,6 @@
 import Foundation
 import PassKit
-#if canImport(React)
-    import React
-#endif
+import React
 import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
@@ -260,7 +258,7 @@ class RCTShopifyCheckoutKit: NSObject {
     @available(iOS 16.0, *)
     private func contactFieldsToRequiredContactFields(_ contactFields: [String]) throws -> [ShopifyAcceleratedCheckouts.RequiredContactFields] {
         return try contactFields.compactMap {
-            guard let field = ShopifyAcceleratedCheckouts.RequiredContactFields(rawValue: $0) else {
+            guard let field = ShopifyAcceleratedCheckouts.RequiredContactFields(rawValue: $0), field != nil else {
                 let message = "Unknown contactField option: \(String(describing: $0))"
                 print("[ShopifyCheckoutKit] \(message)")
                 throw NSError(domain: "ShopifyCheckoutKit", code: 1, userInfo: ["message": message])
@@ -327,9 +325,7 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
 
 extension RCTShopifyCheckoutKit {
     private func emitDispatchEvent(_ json: String) {
-        let selector = NSSelectorFromString("emitOnDispatchFromSwift:")
-        guard responds(to: selector) else { return }
-        perform(selector, with: json)
+        perform(NSSelectorFromString("emitOnDispatchFromSwift:"), with: json)
     }
 
     /// Builds a `{ "type": ..., "payload": ... }` envelope and forwards
