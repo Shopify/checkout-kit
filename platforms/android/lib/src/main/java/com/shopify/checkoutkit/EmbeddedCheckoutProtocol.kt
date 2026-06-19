@@ -4,13 +4,10 @@ import android.webkit.JavascriptInterface
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
@@ -62,8 +59,8 @@ internal class EmbeddedCheckoutProtocol(
             val requestId = jsonRpcRequestId(requestObject["id"])
             log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
             when (method) {
-                CheckoutProtocol.READY_METHOD -> handleReady(request)
-                CheckoutProtocol.windowOpen.method -> handleWindowOpenRequest(message)
+                CheckoutProtocol.READY_METHOD -> requestId?.let { handleReady(request, it) }
+                CheckoutProtocol.windowOpen.method -> requestId?.let { handleWindowOpenRequest(message) }
                 CheckoutProtocol.start.method -> handleStart(message)
                 CheckoutProtocol.complete.method -> handleComplete(message)
                 null -> {
@@ -80,8 +77,11 @@ internal class EmbeddedCheckoutProtocol(
         }
     }
 
-    private fun handleReady(request: EcpRequest) {
-        val checkoutAcceptedDelegations = checkoutAcceptedDelegations(request.params)
+    private fun handleReady(request: EcpRequest, requestId: JsonElement) {
+        val checkoutAcceptedDelegations = readyParams(request.params)?.delegate ?: run {
+            sendError(requestId, CODE_PARSE_ERROR, "Parse error")
+            return
+        }
         val negotiatedDelegations = checkoutAcceptedDelegations.filter { it in KIT_SUPPORTED_DELEGATIONS }
         log.d(
             LOG_TAG,
@@ -91,23 +91,16 @@ internal class EmbeddedCheckoutProtocol(
                 "checkoutKitSupportedDelegations=$KIT_SUPPORTED_DELEGATIONS " +
                 "negotiatedDelegations=$negotiatedDelegations"
         )
-        sendResult(request.id, ucpReadyResult(negotiatedDelegations))
+        sendResult(requestId, ucpReadyResult(negotiatedDelegations))
     }
 
-    private fun checkoutAcceptedDelegations(params: JsonElement?): List<String> = when (params) {
-        null -> emptyList()
-        !is JsonObject -> throw SerializationException("${CheckoutProtocol.READY_METHOD} params must be an object")
-        else -> params["delegate"]?.let(::delegationStrings) ?: emptyList()
-    }
-
-    private fun delegationStrings(delegate: JsonElement): List<String> {
-        val delegateArray = delegate as? JsonArray
-            ?: throw SerializationException("${CheckoutProtocol.READY_METHOD} delegate must be an array")
-        return delegateArray.mapNotNull(::delegationStringOrNull)
-    }
-
-    private fun delegationStringOrNull(delegate: JsonElement): String? =
-        (delegate as? JsonPrimitive)?.contentOrNull
+    private fun readyParams(params: JsonElement?): ReadyParams? =
+        try {
+            decoder.decodeFromJsonElement(params ?: JsonObject(emptyMap()))
+        } catch (e: SerializationException) {
+            log.d(LOG_TAG, "Failed to decode ${CheckoutProtocol.READY_METHOD} params: $e  raw=$params")
+            null
+        }
 
     private fun ucpReadyResult(negotiatedDelegations: List<String>): String =
         decoder.encodeToString(
@@ -246,9 +239,4 @@ internal class EmbeddedCheckoutProtocol(
         private const val CODE_PARSE_ERROR = -32700
         private const val CODE_METHOD_NOT_FOUND = -32601
     }
-}
-
-private fun jsonRpcRequestId(id: JsonElement?): JsonElement? {
-    val primitive = id as? JsonPrimitive ?: return null
-    return primitive.takeIf { it.isString || it.contentOrNull?.toDoubleOrNull() != null }
 }

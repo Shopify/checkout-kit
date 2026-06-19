@@ -12,7 +12,6 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
@@ -49,13 +48,11 @@ public object CheckoutProtocol {
     public val error: NotificationDescriptor<ErrorResponse> = NotificationDescriptor(
         method = "ec.error",
         decode = { params ->
-            (params as? JsonObject)?.get("error")?.let {
-                try {
-                    json.decodeFromJsonElement<ErrorResponse>(it)
-                } catch (e: SerializationException) {
-                    log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ec.error params: $e  raw=$it")
-                    null
-                }
+            try {
+                json.decodeFromJsonElement<ErrorParams>(params ?: JsonNull).error
+            } catch (e: SerializationException) {
+                log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ec.error params: $e  raw=$params")
+                null
             }
         }
     )
@@ -66,10 +63,15 @@ public object CheckoutProtocol {
     public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult> = DelegationDescriptor(
         method = "ec.window.open_request",
         decode = { params ->
-            ((params as? JsonObject)?.get("url") as? JsonPrimitive)?.contentOrNull
-                ?.takeIf { it.isNotBlank() }
-                ?.let { runCatching { it.toUri() }.getOrNull() }
-                ?.let(::WindowOpenRequest)
+            try {
+                json.decodeFromJsonElement<WindowOpenParams>(params ?: JsonNull).url
+                    .takeIf { it.isNotBlank() }
+                    ?.let { runCatching { it.toUri() }.getOrNull() }
+                    ?.let(::WindowOpenRequest)
+            } catch (e: SerializationException) {
+                log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ${windowOpen.method} params: $e  raw=$params")
+                null
+            }
         },
         encode = { result -> encodeWindowOpenResult(result) },
     )
@@ -90,11 +92,13 @@ public object CheckoutProtocol {
 
     internal fun supportedProtocolMethod(request: EcpRequest): String? =
         request.method.takeIf {
-            request.jsonrpc == "2.0" && request.method in supportedProtocolMethods
+            request.jsonrpc == "2.0" &&
+                request.method in supportedProtocolMethods &&
+                request.hasValidJsonRpcRequestId()
         }
 
     private fun decodeProtocolRequest(message: String): EcpRequest? = try {
-        json.decodeFromString<EcpRequest>(message)
+        decodeEcpRequest(message)
     } catch (_: SerializationException) {
         null
     }
@@ -103,13 +107,11 @@ public object CheckoutProtocol {
         NotificationDescriptor(
             method = method,
             decode = { params ->
-                (params as? JsonObject)?.get("checkout")?.let {
-                    try {
-                        json.decodeFromJsonElement<Checkout>(it)
-                    } catch (e: SerializationException) {
-                        log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode $method checkout payload: $e  raw=$it")
-                        null
-                    }
+                try {
+                    json.decodeFromJsonElement<CheckoutParams>(params ?: JsonNull).checkout
+                } catch (e: SerializationException) {
+                    log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode $method checkout params: $e  raw=$params")
+                    null
                 }
             }
         )
@@ -185,14 +187,18 @@ public object CheckoutProtocol {
         /** Called by [EmbeddedCheckoutProtocol] for every delegated EC message. */
         override fun process(message: String): String? =
             decodeRequest(message)?.let { request ->
-                delegations[request.method]?.dispatch(request) ?: run {
+                val delegation = delegations[request.method]
+                if (delegation != null) {
+                    jsonRpcRequestId(request.id)?.let { delegation.dispatch(request) }
+                } else {
                     dispatchNotification(request)
                     null
                 }
             }
 
         private fun decodeRequest(message: String): EcpRequest? = try {
-            json.decodeFromString<EcpRequest>(message)
+            decodeEcpRequest(message)
+                .takeIf { it.hasValidJsonRpcRequestId() }
         } catch (e: SerializationException) {
             log.d(LOG_TAG, "Error processing ECP message in typed client: $e")
             null
@@ -257,6 +263,11 @@ public object CheckoutProtocol {
     private const val LOG_TAG = BaseWebView.ECP_LOG_TAG
     private const val CODE_INVALID_PARAMS = -32602
 
+    private fun decodeEcpRequest(message: String): EcpRequest {
+        val requestObject = json.decodeFromString<JsonObject>(message)
+        return json.decodeFromJsonElement<EcpRequest>(requestObject).copy(id = requestObject["id"])
+    }
+
     private fun jsonRpcResult(id: JsonElement?, result: JsonElement): String =
         json.encodeToString(
             JsonObject.serializer(),
@@ -293,6 +304,21 @@ public object CheckoutProtocol {
     }
 }
 
+internal fun EcpRequest.hasValidJsonRpcRequestId(): Boolean =
+    id == null || jsonRpcRequestId(id) != null
+
+internal fun jsonRpcRequestId(id: JsonElement?): JsonElement? =
+    when (id) {
+        JsonNull -> JsonNull
+        is JsonPrimitive -> id.takeIf {
+            it.isString ||
+                (!it.isString && JSON_RPC_INTEGER.matches(it.content) && it.content.toLongOrNull() != null)
+        }
+        else -> null
+    }
+
+private val JSON_RPC_INTEGER = Regex("-?(0|[1-9]\\d*)")
+
 /**
  * Describes a typed EC notification handler binding.
  *
@@ -323,6 +349,26 @@ internal data class EcpRequest(
     val method: String,
     val id: JsonElement? = null,
     val params: JsonElement? = null,
+)
+
+@Serializable
+internal data class ReadyParams(
+    val delegate: List<String> = emptyList(),
+)
+
+@Serializable
+internal data class CheckoutParams(
+    val checkout: Checkout,
+)
+
+@Serializable
+internal data class ErrorParams(
+    val error: ErrorResponse,
+)
+
+@Serializable
+internal data class WindowOpenParams(
+    val url: String,
 )
 
 /** Payload delivered with the [CheckoutProtocol.windowOpen] delegation. */
