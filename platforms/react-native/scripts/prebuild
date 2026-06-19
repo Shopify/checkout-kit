@@ -36,7 +36,8 @@ while [ "$#" -gt 0 ]; do
       ;;
     --)
       shift
-      continue
+      expo_args+=("$@")
+      break
       ;;
     *)
       expo_args+=("$1")
@@ -58,7 +59,7 @@ if [ "${USE_LOCAL_SDK:-0}" = "1" ] && { [ "$platform" = "android" ] || [ "$platf
 fi
 
 cd "$SAMPLE_DIR"
-pnpm exec expo prebuild --platform "$platform" --no-install --clean "${expo_args[@]}"
+pnpm exec expo prebuild --platform "$platform" --no-install "${expo_args[@]}"
 
 if [ "$platform" = "ios" ] || [ "$platform" = "all" ]; then
   bundle check || bundle install

@@ -9,8 +9,6 @@ import {
   RenderState,
 } from '../src';
 
-jest.mock('react-native');
-
 const mockLog = jest.fn();
 // Silence console.error
 const mockError = jest.fn();

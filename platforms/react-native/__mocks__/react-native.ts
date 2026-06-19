@@ -106,6 +106,12 @@ module.exports = {
   requireNativeComponent,
   codegenNativeComponent,
   TurboModuleRegistry: {
+    get: jest.fn((name: string) => {
+      if (name === 'ShopifyCheckoutKit') {
+        return ShopifyCheckoutKit;
+      }
+      return null;
+    }),
     getEnforcing: jest.fn((name: string) => {
       if (name === 'ShopifyCheckoutKit') {
         return ShopifyCheckoutKit;

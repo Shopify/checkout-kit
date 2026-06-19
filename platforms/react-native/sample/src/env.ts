@@ -13,8 +13,6 @@ export type Env = {
   CUSTOMER_ACCOUNT_API_GRAPHQL_BASE_URL?: string;
   EMAIL?: string;
   PHONE?: string;
-  ADDRESS1?: string;
-  ADDRESS2?: string;
   ADDRESS_1?: string;
   ADDRESS_2?: string;
   COMPANY?: string;

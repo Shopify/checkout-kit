@@ -6,16 +6,15 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SAMPLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 args=()
-prebuild_args=()
 for arg in "$@"; do
   if [ "$arg" = "--local" ]; then
     export USE_LOCAL_SDK=1
-    prebuild_args+=("--local")
   else
     args+=("$arg")
   fi
 done
 
-"$SCRIPT_DIR/../../scripts/prebuild" ios "${prebuild_args[@]}"
 cd "$SAMPLE_DIR"
+bundle check || bundle install
+(cd ios && bundle exec pod install)
 exec pnpm exec expo run:ios --no-install "${args[@]}"

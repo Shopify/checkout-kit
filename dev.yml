@@ -27,6 +27,10 @@ up:
       name: Run Checkout Kit workspace setup
       met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts
       meet: ./scripts/setup_dev_workspace --skip-optional-prompts
+  - custom:
+      name: Prebuild React Native sample native projects
+      met?: "false"
+      meet: cd platforms/react-native && pnpm run prebuild -- all -- --clean
 
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
@@ -441,10 +445,10 @@ commands:
           fi
           echo "Cleaned root, module and sample workspaces"
 
-      server:
+      start:
         desc: Start Metro development server
-        aliases: [s]
-        run: cd platforms/react-native && pnpm sample start --reset-cache
+        aliases: [s, server]
+        run: cd platforms/react-native && pnpm sample start "$@"
 
       ios:
         desc: Run the iOS sample app in the simulator.
@@ -472,17 +476,19 @@ commands:
         desc: Prebuild generated native sample projects.
         long_desc: |
           Runs Expo prebuild for the React Native sample and prepares platform-specific native dependencies.
+          Existing native folders are preserved unless Expo's --clean arg is passed through.
 
-            dev rn prebuild                 Prebuild iOS and Android
-            dev rn prebuild ios             Prebuild iOS and install CocoaPods
-            dev rn prebuild android         Prebuild Android
-            dev rn prebuild ios --local     Prebuild iOS against in-repo Swift SDK sources
-            dev rn prebuild android --local Prebuild Android against in-repo Android SDK artifacts
+            dev rn prebuild                         Prebuild iOS and Android
+            dev rn prebuild ios                     Prebuild iOS and install CocoaPods
+            dev rn prebuild android                 Prebuild Android
+            dev rn prebuild all -- --clean          Regenerate iOS and Android native projects
+            dev rn prebuild ios --local             Prebuild iOS against in-repo Swift SDK sources
+            dev rn prebuild android --local         Prebuild Android against in-repo Android SDK artifacts
 
           --local
             Use in-repo native SDKs where supported.
         syntax:
-          optional: "[ios|android|all] [--local]"
+          optional: "[ios|android|all] [--local] [-- <expo prebuild args>]"
         run: cd platforms/react-native && pnpm run prebuild -- "$@"
 
       open:

@@ -2,8 +2,6 @@ declare global {
   var __fbBatchedBridgeConfig: unknown;
 }
 
-jest.mock('react-native');
-
 const platformConstants = {
   forceTouchAvailable: false,
   interfaceIdiom: 'phone',
