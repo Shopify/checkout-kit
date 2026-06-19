@@ -181,18 +181,22 @@ setup_swift() {
       cd platforms/swift
       expected_swiftlint="$(sed -n "s#^realm/SwiftLint@##p" Mintfile)"
       expected_swiftformat="$(sed -n "s#^nicklockwood/SwiftFormat@##p" Mintfile)"
+      expected_xcodegen="$(sed -n "s#^yonaskolb/XcodeGen@##p" Mintfile)"
       swiftlint_bin="$(mint which swiftlint)"
       swiftformat_bin="$(mint which swiftformat)"
+      xcodegen_bin="$(mint which xcodegen)"
       test -n "$expected_swiftlint"
       test -n "$expected_swiftformat"
+      test -n "$expected_xcodegen"
       test "$("$swiftlint_bin" version)" = "$expected_swiftlint"
       test "$("$swiftformat_bin" --version)" = "$expected_swiftformat"
+      test "$("$xcodegen_bin" version | sed "s/^Version: //")" = "$expected_xcodegen"
     ' || true
-    run_shell "Swift sample entitlements" 'cd platforms/swift && ./Scripts/setup_entitlements' || true
+    run_shell "Swift sample Xcode projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects --check' || true
   else
     run_shell "Swift bundle packages" 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check || BUNDLE_GEMFILE=platforms/swift/Gemfile bundle install' || true
     run_shell "Swift Mint packages" 'cd platforms/swift && mint bootstrap' || true
-    run_shell "Swift sample entitlements" 'cd platforms/swift && ./Scripts/setup_entitlements' || true
+    run_shell "Swift sample Xcode projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects' || true
   fi
 }
 

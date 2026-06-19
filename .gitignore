@@ -20,10 +20,12 @@ node_modules/
 .build/
 .swiftpm/
 xcuserdata/
+platforms/swift/Samples/**/*.xcodeproj/
 
-# Sample app secrets (Swift)
+# Sample app generated configuration (Swift)
 **/Storefront.xcconfig
 **/*.entitlements
+platforms/swift/Samples/**/Info.plist
 # Exception: the React Native sample's entitlements are source code (associated
 # domains + in-app payments merchant ID), not secrets — Xcode requires this file
 # at build time and CI fails without it.

@@ -79,5 +79,13 @@ jobs:
           STOREFRONT_ACCESS_TOKEN: test-token
         run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
 
+      - name: Install Mint
+        if: ${{ inputs.setup-storefront-env }}
+        run: brew install mint
+
+      - name: Bootstrap Mint packages
+        if: ${{ inputs.setup-storefront-env }}
+        run: mint bootstrap
+
       - name: Run Tests
         run: ${{ inputs.test-path }}

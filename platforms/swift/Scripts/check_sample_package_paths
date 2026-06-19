@@ -6,26 +6,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SWIFT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SAMPLES_DIR="$SWIFT_DIR/Samples"
 EXPECTED_RELATIVE_PATH="../../../.."
-
 status=0
 
-while IFS= read -r -d '' project_file; do
-	while IFS= read -r line; do
-		relative_path="${line#*relativePath = }"
-		relative_path="${relative_path%;}"
-		relative_path="${relative_path%\"}"
-		relative_path="${relative_path#\"}"
-
-		if [[ "$relative_path" != "$EXPECTED_RELATIVE_PATH" ]]; then
-			echo "❌ $project_file uses local Swift package path '$relative_path'."
-			echo "   Use '$EXPECTED_RELATIVE_PATH' so sample projects resolve the repo-root package from any worktree directory."
-			status=1
-		fi
-	done < <(grep -E '^[[:space:]]*relativePath = ' "$project_file" || true)
-done < <(find "$SAMPLES_DIR" -path '*/project.pbxproj' -print0)
+while IFS= read -r -d '' spec_file; do
+    if ! grep -Eq "^[[:space:]]+path:[[:space:]]+$EXPECTED_RELATIVE_PATH$" "$spec_file"; then
+        echo "❌ $spec_file does not use local Swift package path '$EXPECTED_RELATIVE_PATH'."
+        echo "   Use '$EXPECTED_RELATIVE_PATH' so sample projects resolve the repo-root package from any worktree directory."
+        status=1
+    fi
+done < <(find "$SAMPLES_DIR" -maxdepth 2 -name project.yml -print0)
 
 if [[ $status -ne 0 ]]; then
-	exit $status
+    exit $status
 fi
 
 echo "✅ Swift sample package paths are worktree-safe."

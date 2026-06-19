@@ -1,0 +1,130 @@
+name: CheckoutKitSwiftDemo
+options:
+  minimumXcodeGenVersion: 2.45.0
+  deploymentTarget:
+    iOS: "15.0"
+  xcodeVersion: "26.2"
+  projectFormat: xcode16_0
+packages:
+  ShopifyCheckoutKit:
+    path: ../../../..
+  Apollo:
+    url: https://github.com/apollographql/apollo-ios.git
+    from: 2.0.0
+configs:
+  Debug: debug
+  Release: release
+schemes:
+  CheckoutKitSwiftDemo:
+    build:
+      targets:
+        CheckoutKitSwiftDemo: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+    management:
+      shared: true
+      orderHint: 4
+
+targets:
+  CheckoutKitSwiftDemo:
+    type: application
+    platform: iOS
+    sources:
+      - path: CheckoutKitSwiftDemo/Sources
+      - path: CheckoutKitSwiftDemo/Assets.xcassets
+      - path: CheckoutKitSwiftDemo/Base.lproj/LaunchScreen.storyboard
+    configFiles:
+      Debug: Storefront.xcconfig
+      Release: Storefront.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.shopify.checkoutkit.swiftdemo
+        DEVELOPMENT_TEAM: A7XGC83MZE
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Plant
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
+        INFOPLIST_KEY_UIRequiresFullScreen: NO
+        INFOPLIST_KEY_UIStatusBarHidden: NO
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/Frameworks"
+    dependencies:
+      - package: Apollo
+        product: Apollo
+      - package: Apollo
+        product: ApolloAPI
+      - package: ShopifyCheckoutKit
+        product: ShopifyCheckoutKit
+      - package: ShopifyCheckoutKit
+        product: ShopifyAcceleratedCheckouts
+      - package: ShopifyCheckoutKit
+        product: ShopifyCheckoutProtocol
+    info:
+      path: CheckoutKitSwiftDemo/Info.plist
+      properties:
+        StorefrontMerchantIdentifier: $(STOREFRONT_MERCHANT_IDENTIFIER)
+        StorefrontDomain: $(STOREFRONT_DOMAIN)
+        StorefrontAccessToken: $(STOREFRONT_ACCESS_TOKEN)
+        CustomerAccountApiClientId: $(CUSTOMER_ACCOUNT_API_CLIENT_ID)
+        CustomerAccountApiShopId: $(CUSTOMER_ACCOUNT_API_SHOP_ID)
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - shop.$(CUSTOMER_ACCOUNT_API_SHOP_ID).app
+        Address1: $(ADDRESS_1)
+        Address2: $(ADDRESS_2)
+        City: $(CITY)
+        Country: $(COUNTRY)
+        FirstName: $(FIRST_NAME)
+        LastName: $(LAST_NAME)
+        Province: $(PROVINCE)
+        Zip: $(ZIP)
+        Email: $(EMAIL)
+        Phone: $(PHONE)
+        CFBundleDisplayName: Plant
+        NSLocationWhenInUseUsageDescription: Your location may be required to locate pickup points near you when you request this shipping option.
+        ITSAppUsesNonExemptEncryption: false
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchStoryboardName: LaunchScreen
+        UIRequiresFullScreen: false
+        UIStatusBarHidden: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).SceneDelegate
+        API_VERSION: $(API_VERSION)
+    entitlements:
+      path: CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.entitlements
+      properties:
+        com.apple.developer.in-app-payments:
+          - merchant.com.shopify.checkoutkit.swiftdemo
+        com.apple.developer.associated-domains:
+          - webcredentials:$(STOREFRONT_DOMAIN)?mode=developer
+          - applinks:$(STOREFRONT_DOMAIN)?mode=developer

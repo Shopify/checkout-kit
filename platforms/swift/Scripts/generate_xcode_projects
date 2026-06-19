@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SWIFT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+mode="generate"
+
+usage() {
+    cat <<EOF
+Usage: Scripts/generate_xcode_projects [--check]
+
+Generates Swift sample Xcode projects, Info.plist files, and entitlements from XcodeGen specs.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --check)
+            mode="check"
+            ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        *)
+            usage >&2
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+sample_specs=(
+    "Samples/CheckoutKitSwiftDemo/project.yml"
+    "Samples/ShopifyAcceleratedCheckoutsApp/project.yml"
+)
+
+required_outputs=(
+    "Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj/project.pbxproj"
+    "Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo/Info.plist"
+    "Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.entitlements"
+    "Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.xcodeproj/project.pbxproj"
+    "Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp/Info.plist"
+    "Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.entitlements"
+)
+
+ensure_xcodegen_available() {
+    if ! command -v mint >/dev/null 2>&1; then
+        echo "Mint is required to run XcodeGen. Run dev up from the repo root." >&2
+        exit 1
+    fi
+
+    if ! (cd "$SWIFT_DIR" && mint which xcodegen >/dev/null 2>&1); then
+        echo "XcodeGen is not installed through Mint. Run dev up from the repo root." >&2
+        exit 1
+    fi
+}
+
+check_generated_outputs() {
+    local missing=0
+    local output
+
+    for output in "${required_outputs[@]}"; do
+        if [[ ! -e "$SWIFT_DIR/$output" ]]; then
+            echo "Missing generated Swift sample file: platforms/swift/$output" >&2
+            missing=1
+        fi
+    done
+
+    if [[ "$missing" -ne 0 ]]; then
+        exit 1
+    fi
+}
+
+generate_projects() {
+    local spec
+
+    ensure_xcodegen_available
+
+    for spec in "${sample_specs[@]}"; do
+        (cd "$SWIFT_DIR" && mint run xcodegen xcodegen generate --spec "$spec" --quiet)
+    done
+}
+
+if [[ "$mode" == "check" ]]; then
+    ensure_xcodegen_available
+    check_generated_outputs
+else
+    generate_projects
+fi
