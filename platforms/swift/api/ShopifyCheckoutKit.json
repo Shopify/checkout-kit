@@ -1087,7 +1087,7 @@
           {
             "kind": "Function",
             "name": "url",
-            "printedName": "url(for:delegations:)",
+            "printedName": "url(for:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -1100,94 +1100,14 @@
                 "name": "URL",
                 "printedName": "Foundation.URL",
                 "usr": "s:10Foundation3URLV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Array",
-                "printedName": "[Swift.String]",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "hasDefaultArg": true,
-                "usr": "s:Sa"
               }
             ],
             "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO3url3for11delegations10Foundation3URLVAI_SaySSGtFZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO3url3for11delegations10Foundation3URLVAI_SaySSGtFZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO3url3for10Foundation3URLVAH_tFZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO3url3for10Foundation3URLVAH_tFZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "funcSelfKind": "NonMutating"
-          },
-          {
-            "kind": "Var",
-            "name": "defaultDelegations",
-            "printedName": "defaultDelegations",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Array",
-                "printedName": "[Swift.String]",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "usr": "s:Sa"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO18defaultDelegationsSaySSGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO18defaultDelegationsSaySSGvpZ",
-            "moduleName": "ShopifyCheckoutKit",
-            "static": true,
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Array",
-                    "printedName": "[Swift.String]",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "usr": "s:Sa"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO18defaultDelegationsSaySSGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO18defaultDelegationsSaySSGvgZ",
-                "moduleName": "ShopifyCheckoutKit",
-                "static": true,
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "accessorKind": "get"
-              }
-            ]
           },
           {
             "kind": "Var",
