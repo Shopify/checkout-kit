@@ -58,13 +58,20 @@ jobs:
           path: platforms/react-native/sample/ios/Pods
           key: ${{ runner.os }}-cocoapods-${{ hashFiles('platforms/react-native/sample/ios/Podfile.lock', 'platforms/react-native/sample/Gemfile.lock', 'platforms/react-native/sample/Gemfile', 'platforms/react-native/package.json', 'platforms/react-native/sample/package.json', 'platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json', 'platforms/react-native/pnpm-lock.yaml') }}
 
+      # Build the RN sample against the in-repo platforms/swift SDK (USE_LOCAL_SDK)
+      # so bridge/SDK incompatibilities are caught before the SDK ships a versioned
+      # pod. `pod update` (not install) repoints the pinned pod at the local :path
+      # dev pod and rewrites Podfile.lock on the runner only; the committed lockfile
+      # stays on the published pod. Remove once a versioned SDK pod is published.
       - name: Install cocoapods
         working-directory: platforms/react-native/sample
+        env:
+          USE_LOCAL_SDK: "1"
         run: |
           set -euo pipefail
           bundle install
           cd ios
-          bundle exec pod install --deployment --repo-update
+          bundle exec pod update ShopifyCheckoutKit --repo-update
 
       - name: Build module
         run: pnpm module build
