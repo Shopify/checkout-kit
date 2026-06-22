@@ -626,6 +626,46 @@
             ]
           },
           {
+            "kind": "Function",
+            "name": "url",
+            "printedName": "url(for:delegations:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.String]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O3url3for11delegations10Foundation3URLVAI_SaySSGtFZ",
+            "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O3url3for11delegations10Foundation3URLVAI_SaySSGtFZ",
+            "moduleName": "ShopifyCheckoutProtocol",
+            "static": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
             "kind": "TypeDecl",
             "name": "Client",
             "printedName": "Client",
@@ -877,47 +917,6 @@
             "declKind": "Func",
             "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O16acknowledgeReady_20supportedDelegationsSSSgSS_SaySSGtFZ",
             "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O16acknowledgeReady_20supportedDelegationsSSSgSS_SaySSGtFZ",
-            "moduleName": "ShopifyCheckoutProtocol",
-            "static": true,
-            "isFromExtension": true,
-            "funcSelfKind": "NonMutating"
-          },
-          {
-            "kind": "Function",
-            "name": "url",
-            "printedName": "url(for:delegations:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "URL",
-                "printedName": "Foundation.URL",
-                "usr": "s:10Foundation3URLV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "URL",
-                "printedName": "Foundation.URL",
-                "usr": "s:10Foundation3URLV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Array",
-                "printedName": "[Swift.String]",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "hasDefaultArg": true,
-                "usr": "s:Sa"
-              }
-            ],
-            "declKind": "Func",
-            "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O3url3for11delegations10Foundation3URLVAI_SaySSGtFZ",
-            "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O3url3for11delegations10Foundation3URLVAI_SaySSGtFZ",
             "moduleName": "ShopifyCheckoutProtocol",
             "static": true,
             "isFromExtension": true,

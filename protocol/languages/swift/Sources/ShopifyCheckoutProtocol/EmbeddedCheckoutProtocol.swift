@@ -6,4 +6,26 @@ public enum EmbeddedCheckoutProtocol {
     package static let readyMethod = "ec.ready"
     package static let parseErrorCode = -32700
     package static let parseErrorMessage = "Parse error"
+
+    /// Returns the given checkout URL with the query parameters required to
+    /// initiate the Embedded Checkout Protocol handshake (`ec_version`,
+    /// `ec_delegate`).
+    public static func url(
+        for url: URL,
+        delegations: [String] = []
+    ) -> URL {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == "ec_version" || $0.name == "ec_delegate" }
+
+        queryItems.append(URLQueryItem(name: "ec_version", value: specVersion))
+        if !delegations.isEmpty {
+            queryItems.append(URLQueryItem(name: "ec_delegate", value: delegations.joined(separator: ",")))
+        }
+
+        components.queryItems = queryItems
+        return components.url ?? url
+    }
 }
