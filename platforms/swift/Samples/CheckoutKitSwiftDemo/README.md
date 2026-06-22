@@ -10,7 +10,7 @@ This sample demonstrates how to integrate Checkout Kit with the Shopify Storefro
 - Checkout lifecycle and completion through `CheckoutProtocol.Client`
 - Buyer identity demo data for checkout prefill
 - Customer Account API sign-in and customer access token cart identity
-- Universal Links entitlement generation for checkout/offsite-payment returns
+- Universal Links entitlements for checkout/offsite-payment returns
 
 ## Architecture
 
@@ -47,8 +47,7 @@ CheckoutKitSwiftDemo/
 |   |   |   |-- CheckoutCoordinator.swift Checkout presentation
 |   |   |   `-- CartResettingCheckoutDelegate.swift
 |   |   `-- Scenes/                      SwiftUI screens
-|-- Scripts/
-|   `-- generate_entitlements.sh         Universal Links entitlement generation
+|-- project.yml                          XcodeGen project, Info.plist, and entitlements spec
 `-- Storefront.xcconfig                  Local store configuration, not checked in
 ```
 
@@ -86,7 +85,7 @@ EMAIL=test.buyer@example.com
 PHONE=+16135550123
 ```
 
-The setup script generates this sample's `Storefront.xcconfig`.
+The setup script generates this sample's `Storefront.xcconfig` and Xcode project files.
 
 Open the project in Xcode, let Swift Package Manager resolve dependencies, then build and run.
 
@@ -152,4 +151,4 @@ All commands are run from the **repo root** (`checkout-kit/`):
 | `CheckoutKitSwiftDemo/Sources/App/CartManager.swift` | Cart state and Storefront API mutations. |
 | `CheckoutKitSwiftDemo/Sources/App/CheckoutCoordinator.swift` | Checkout presentation. |
 | `CheckoutKitSwiftDemo/Sources/CheckoutProtocolClient.swift` | Typed checkout lifecycle handlers. |
-| `Scripts/generate_entitlements.sh` | Generates Associated Domains entitlements for checkout and offsite-payment return links. |
+| `project.yml` | Generates the Xcode project, Info.plist, and Associated Domains entitlements through XcodeGen. |

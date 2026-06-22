@@ -11,27 +11,14 @@ if ! "$REPO_ROOT/scripts/setup_storefront_env" --check; then
     exit 1
 fi
 
-cd "$SAMPLES_DIR"
+"$SCRIPT_DIR/generate_xcode_projects"
 
-EMPTY_ENTITLEMENTS="""
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-<plist version=\"1.0\">
-<dict/>
-</plist>
-"""
+cd "$SAMPLES_DIR"
 
 build_app() {
     if [[ ! -f "$1/Storefront.xcconfig" ]]; then
         echo "Missing Storefront.xcconfig for $1. Run dev up from the repo root."
         exit 1
-    fi
-
-    # Create an empty entitlements file if it doesn't already exist
-    if [[ ! -f "$1/$1/$1.entitlements" ]]; then
-        printf '%s\n' "$EMPTY_ENTITLEMENTS" > "$1/$1/$1.entitlements"
-    else
-        echo "Entitlements file already exists for $1 project."
     fi
 
     "$SCRIPT_DIR/xcode_run" "clean build" "$1"

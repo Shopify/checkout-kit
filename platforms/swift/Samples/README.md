@@ -32,14 +32,13 @@ them from the shared `.env`.
 2. If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
 fill in local values, then run `scripts/setup_storefront_env`.
 
-The setup script generates `platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig`.
+The setup script generates `platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig` and the sample Xcode project files from XcodeGen specs.
 
 Open `Samples/Samples.xcworkspace` or
 `Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj` in Xcode, then
 build and run the `CheckoutKitSwiftDemo` scheme.
 
-The project generates associated-domain entitlements from
-`Storefront.xcconfig` during the Xcode build pre-action.
+XcodeGen generates associated-domain entitlements that read `STOREFRONT_DOMAIN` from `Storefront.xcconfig` at build time.
 
 ## ShopifyAcceleratedCheckoutsApp
 
@@ -63,11 +62,8 @@ in Xcode, then build and run the `ShopifyAcceleratedCheckoutsApp` scheme.
 
 ## Troubleshooting
 
-If the build pre-action fails, Xcode usually shows `exited with status code 1`.
-Open the build log and check the script output.
-
 | Build log output | Cause | Fix |
 | --- | --- | --- |
-| `grep: Storefront.xcconfig: No such file or directory` | `Storefront.xcconfig` file is missing. | Run `dev up` from the repo root or any platform directory. |
-| `Error: STOREFRONT_DOMAIN is not set in Storefront.xcconfig` | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank. | Update root `.env`, then run `dev up`. |
+| `Storefront.xcconfig: no such file or directory` | `Storefront.xcconfig` file is missing. | Run `dev up` from the repo root or any platform directory. |
+| `STOREFRONT_DOMAIN` is blank in generated entitlements | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank. | Update root `.env`, then run `dev up`. |
 | Associated domains not working at runtime | Domain value is incorrect. | Update root `.env`, then run `dev up`. |

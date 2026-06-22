@@ -333,7 +333,10 @@ commands:
           fi
 
           case "${1:-demo}" in
-            demo|sample|samples) workspace="platforms/swift/Samples/Samples.xcworkspace" ;;
+            demo|sample|samples)
+              platforms/swift/Scripts/generate_xcode_projects
+              workspace="platforms/swift/Samples/Samples.xcworkspace"
+              ;;
             lib|library|package|module) workspace="platforms/swift" ;;
             *)
               echo "Usage: dev swift open [lib|demo]" >&2
