@@ -6,11 +6,11 @@ import Foundation
 public enum CheckoutProtocol {
     public typealias Client = CheckoutTransport.Client
 
-    public static func url(for url: URL, delegations: [String] = []) -> URL {
-        CheckoutTransport.url(for: url, delegations: delegations)
+    public static func url(for url: URL) -> URL {
+        CheckoutTransport.url(for: url, delegations: defaultDelegations)
     }
 
-    public static let defaultDelegations: [String] = ["window.open"]
+    static let defaultDelegations: [String] = ["window.open"]
 
     static let methodNotFoundCode = -32601
     static let methodNotFoundMessage = "Method not found"

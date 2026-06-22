@@ -48,7 +48,7 @@ public func preload(checkout url: URL) {
         return
     }
 
-    let decorated = CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations)
+    let decorated = CheckoutProtocol.url(for: url)
     CheckoutWebView.preload(checkout: decorated)
 }
 
@@ -61,7 +61,7 @@ public func invalidate() {
 @MainActor
 @discardableResult
 public func present(checkout url: URL, from: UIViewController, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
-    let decorated = CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations)
+    let decorated = CheckoutProtocol.url(for: url)
     let viewController = CheckoutViewController(checkout: decorated, delegate: delegate, client: client)
     from.present(viewController, animated: true)
     return viewController
@@ -70,7 +70,7 @@ public func present(checkout url: URL, from: UIViewController, delegate: (any Ch
 @MainActor
 @discardableResult
 package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
-    let decorated = CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations)
+    let decorated = CheckoutProtocol.url(for: url)
     let viewController = CheckoutViewController(checkout: decorated, delegate: delegate, client: client, entryPoint: entryPoint)
     from.present(viewController, animated: true)
     return viewController
