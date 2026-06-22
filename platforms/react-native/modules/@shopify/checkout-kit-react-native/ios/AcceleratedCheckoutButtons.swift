@@ -288,9 +288,9 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
 
         // Attach config (and Apple Pay config if available)
         if let applePayConfig = AcceleratedCheckoutConfiguration.shared.applePayConfiguration {
-            view = AnyView(buttons.environmentObject(config).environmentObject(applePayConfig).environment(\.colorScheme, colorScheme))
+            view = AnyView(buttons.environment(\.shopifyAcceleratedCheckoutsConfiguration, config).environment(\.shopifyApplePayConfiguration, applePayConfig).environment(\.colorScheme, colorScheme))
         } else {
-            view = AnyView(buttons.environmentObject(config).environment(\.colorScheme, colorScheme))
+            view = AnyView(buttons.environment(\.shopifyAcceleratedCheckoutsConfiguration, config).environment(\.colorScheme, colorScheme))
         }
 
         if let hostingController {
