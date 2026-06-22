@@ -1075,8 +1075,8 @@
               {
                 "kind": "TypeNominal",
                 "name": "Client",
-                "printedName": "ShopifyCheckoutProtocol.CheckoutTransport.Client",
-                "usr": "s:23ShopifyCheckoutProtocol0B9TransportO6ClientV"
+                "printedName": "ShopifyCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
+                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV"
               }
             ],
             "declKind": "TypeAlias",
@@ -7067,8 +7067,8 @@
         "name": "Client",
         "printedName": "Client",
         "declKind": "Struct",
-        "usr": "s:23ShopifyCheckoutProtocol0B9TransportO6ClientV",
-        "mangledName": "$s23ShopifyCheckoutProtocol0B9TransportO6ClientV",
+        "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV",
+        "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV",
         "moduleName": "ShopifyCheckoutProtocol",
         "isFromExtension": true,
         "isExternal": true,

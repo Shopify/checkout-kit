@@ -1,6 +1,6 @@
 import Foundation
 
-public enum CheckoutTransport {
+public enum EmbeddedCheckoutProtocol {
     public static let specVersion = "2026-04-08"
 
     package static let readyMethod = "ec.ready"

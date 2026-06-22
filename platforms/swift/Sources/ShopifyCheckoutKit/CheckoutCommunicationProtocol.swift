@@ -7,4 +7,4 @@ public protocol CheckoutCommunicationProtocol: Sendable {
     func process(_ message: String) async -> String?
 }
 
-extension CheckoutTransport.Client: CheckoutCommunicationProtocol {}
+extension EmbeddedCheckoutProtocol.Client: CheckoutCommunicationProtocol {}

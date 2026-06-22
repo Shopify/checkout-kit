@@ -13,7 +13,7 @@ struct CheckoutProtocolTests {
 
     @Test func supportedProtocolMethodsCoverReadyCuratedNotificationsAndWindowOpen() {
         #expect(CheckoutProtocol.supportedProtocolMethods == [
-            CheckoutTransport.readyMethod,
+            EmbeddedCheckoutProtocol.readyMethod,
             "ec.start",
             "ec.complete",
             "ec.error",
@@ -133,7 +133,7 @@ struct WindowOpenDelegationTests {
         let body = try encode(.success)
         let ucp = try #require(body["ucp"] as? [String: Any])
         #expect(ucp["status"] as? String == "success")
-        #expect(ucp["version"] as? String == CheckoutTransport.specVersion)
+        #expect(ucp["version"] as? String == EmbeddedCheckoutProtocol.specVersion)
     }
 
     @Test func resultEncodesRejectedBody() throws {

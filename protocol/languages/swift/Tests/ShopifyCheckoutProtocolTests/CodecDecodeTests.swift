@@ -6,7 +6,7 @@ import Testing
 struct CodecDecodeTests {
     @Test func decodesNotification() throws {
         let json = try fixtureString("notification")
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .notification(method, payload) = message else {
             Issue.record("Expected .notification, got \(message)")
@@ -25,7 +25,7 @@ struct CodecDecodeTests {
         let json = #"""
         {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":[{"type":"error","code":"unrecoverable","content":"Boom.","severity":"recoverable"}]}}}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .notification(method, payload) = message else {
             Issue.record("Expected .notification, got \(message)")
@@ -41,7 +41,7 @@ struct CodecDecodeTests {
 
     @Test func decodesRequestCarriesRawParams() throws {
         let json = try fixtureString("request")
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .request(id, method, params) = message else {
             Issue.record("Expected .request, got \(message)")
@@ -61,7 +61,7 @@ struct CodecDecodeTests {
 
     @Test func decodesWindowOpenRequestAsRawRequest() throws {
         let json = try fixtureString("window_open_request")
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .request(id, method, params) = message else {
             Issue.record("Expected .request, got \(message)")
@@ -79,7 +79,7 @@ struct CodecDecodeTests {
         let json = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":"https://example.com/terms","unknown":"value"}}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .request(_, _, params) = message else {
             Issue.record("Expected .request, got \(message)")
@@ -95,7 +95,7 @@ struct CodecDecodeTests {
         let json = #"""
         {"jsonrpc":"2.0","id":"req-window-bad","method":"ec.window.open_request","params":{"url":null}}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .error(id, code, responseMessage) = message else {
             Issue.record("Expected .error, got \(message)")
@@ -111,7 +111,7 @@ struct CodecDecodeTests {
         let json = """
         {"jsonrpc":"2.0","method":"ec.unknown","params":{"something":"else"}}
         """
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .unknown(method, _) = message else {
             Issue.record("Expected .unknown, got \(message)")
@@ -125,7 +125,7 @@ struct CodecDecodeTests {
         let json = #"""
         {"jsonrpc":"2.0","id":1,"method":"ec.ready","params":{"delegate":[]}}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .ready(id, delegations) = message else {
             Issue.record("Expected .ready, got \(message)")
@@ -140,7 +140,7 @@ struct CodecDecodeTests {
         let json = #"""
         {"jsonrpc":"2.0","id":null,"method":"ec.ready","params":{"delegate":[]}}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .ready(id, delegations) = message else {
             Issue.record("Expected .ready, got \(message)")
@@ -155,7 +155,7 @@ struct CodecDecodeTests {
         let json = #"""
         {"jsonrpc":"2.0","id":"ready-no-params","method":"ec.ready"}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .ready(id, delegations) = message else {
             Issue.record("Expected .ready, got \(message)")
@@ -170,7 +170,7 @@ struct CodecDecodeTests {
         let json = #"""
         {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .error(id, code, responseMessage) = message else {
             Issue.record("Expected .error, got \(message)")
@@ -178,15 +178,15 @@ struct CodecDecodeTests {
         }
 
         #expect(id == "ready-bad")
-        #expect(code == CheckoutTransport.parseErrorCode)
-        #expect(responseMessage == CheckoutTransport.parseErrorMessage)
+        #expect(code == EmbeddedCheckoutProtocol.parseErrorCode)
+        #expect(responseMessage == EmbeddedCheckoutProtocol.parseErrorMessage)
     }
 
     @Test func decodesNullReadyParamsAsParseError() {
         let json = #"""
         {"jsonrpc":"2.0","id":"ready-null","method":"ec.ready","params":null}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .error(id, code, responseMessage) = message else {
             Issue.record("Expected .error, got \(message)")
@@ -194,15 +194,15 @@ struct CodecDecodeTests {
         }
 
         #expect(id == "ready-null")
-        #expect(code == CheckoutTransport.parseErrorCode)
-        #expect(responseMessage == CheckoutTransport.parseErrorMessage)
+        #expect(code == EmbeddedCheckoutProtocol.parseErrorCode)
+        #expect(responseMessage == EmbeddedCheckoutProtocol.parseErrorMessage)
     }
 
     @Test func rejectsFractionalJSONRPCID() {
         let json = #"""
         {"jsonrpc":"2.0","id":1.5,"method":"ec.ready","params":{"delegate":[]}}
         """#
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .unknown(method, _) = message else {
             Issue.record("Expected .unknown for fractional id, got \(message)")
@@ -214,7 +214,7 @@ struct CodecDecodeTests {
 
     @Test func handlesMalformedJSON() {
         let json = "not valid json at all"
-        let message = CheckoutTransport.decode(jsonRpc: json)
+        let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .unknown(method, _) = message else {
             Issue.record("Expected .unknown for malformed JSON, got \(message)")

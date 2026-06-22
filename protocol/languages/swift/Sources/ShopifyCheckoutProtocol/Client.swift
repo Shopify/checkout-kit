@@ -1,6 +1,6 @@
 import Foundation
 
-extension CheckoutTransport {
+extension EmbeddedCheckoutProtocol {
     public struct Client: Sendable, MutableCopyable {
         private var notificationHandlers: [String: @MainActor @Sendable (any EventPayload) -> Void]
         private var delegationEntries: [String: DelegationEntry]
@@ -38,22 +38,22 @@ extension CheckoutTransport {
                     handler: { id, params in
                         guard let payload = descriptor.decode(params) else { return nil }
                         let result = await perform(payload)
-                        return CheckoutTransport.encodeResponse(id: id, result: result)
+                        return EmbeddedCheckoutProtocol.encodeResponse(id: id, result: result)
                     }
                 )
             }
         }
 
         public func process(_ message: String) async -> String? {
-            let decoded = CheckoutTransport.decode(jsonRpc: message)
+            let decoded = EmbeddedCheckoutProtocol.decode(jsonRpc: message)
 
             switch decoded {
             case let .ready(id, requested):
                 let accepted = requested.filter(Set(delegations).contains)
-                return CheckoutTransport.encodeReadyResponse(id: id, acceptedDelegations: accepted)
+                return EmbeddedCheckoutProtocol.encodeReadyResponse(id: id, acceptedDelegations: accepted)
 
             case let .error(id, code, message):
-                return CheckoutTransport.encodeErrorResponse(id: id, code: code, message: message)
+                return EmbeddedCheckoutProtocol.encodeErrorResponse(id: id, code: code, message: message)
 
             case let .notification(method, payload):
                 await notificationHandlers[method]?(payload)

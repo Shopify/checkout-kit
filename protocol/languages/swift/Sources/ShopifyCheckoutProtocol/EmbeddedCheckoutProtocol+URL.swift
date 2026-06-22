@@ -1,6 +1,6 @@
 import Foundation
 
-extension CheckoutTransport {
+extension EmbeddedCheckoutProtocol {
     /// Returns the given checkout URL with the query parameters required to
     /// initiate the Embedded Checkout Protocol handshake (`ec_version`,
     /// `ec_delegate`).

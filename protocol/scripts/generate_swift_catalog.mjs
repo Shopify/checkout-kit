@@ -12,7 +12,7 @@ const openRpcPath = path.resolve(
 );
 const outputPath = path.resolve(
   protocolRoot,
-  'languages/swift/Sources/ShopifyCheckoutProtocol/Generated/Catalog.swift',
+  'languages/swift/Sources/ShopifyCheckoutProtocol/Generated/EmbeddedCheckoutProtocol+Event.swift',
 );
 
 const fallbackPayload = 'JSONAny';
@@ -32,7 +32,9 @@ function normalizeRef(ref) {
 }
 
 function methodNameToIdentifier(methodName) {
-  const parts = methodName.split(/[._]/g).filter(Boolean);
+  // Drop the leading `ec` capability segment; the enclosing
+  // EmbeddedCheckoutProtocol.Event namespace already conveys it.
+  const [, ...parts] = methodName.split(/[._]/g).filter(Boolean);
 
   return parts
     .map((part, index) =>
@@ -88,6 +90,13 @@ for (const rawMethod of openRpc.methods ?? []) {
     throw new Error('Encountered OpenRPC method without a name');
   }
 
+  // Scope the Swift catalog to the Embedded Checkout (`ec.*`) capability.
+  // Sibling capabilities (e.g. `ep.cart.*`) are excluded until they have a
+  // typed payload and a consumer.
+  if (!method.name.startsWith('ec.')) {
+    continue;
+  }
+
   entries.push({
     identifier: methodNameToIdentifier(method.name),
     method: method.name,
@@ -118,17 +127,19 @@ import Foundation
 
 ${conformances}
 
-public enum GeneratedProtocolCatalog {
+extension EmbeddedCheckoutProtocol {
+    public enum Event {
 ${entries
   .map(
     entry =>
-      `    public static let ${entry.identifier} = NotificationDescriptor<${entry.payload}>(method: "${entry.method}")`,
+      `        public static let ${entry.identifier} = NotificationDescriptor<${entry.payload}>(method: "${entry.method}")`,
   )
   .join('\n')}
 
-    public static let allMethods: [String] = [
-${entries.map(entry => `        ${entry.identifier}.method,`).join('\n')}
-    ]
+        public static let all: [String] = [
+${entries.map(entry => `            ${entry.identifier}.method,`).join('\n')}
+        ]
+    }
 }
 `;
 

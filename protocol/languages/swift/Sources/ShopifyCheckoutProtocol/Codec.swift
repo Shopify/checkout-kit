@@ -1,6 +1,6 @@
 import Foundation
 
-extension CheckoutTransport {
+extension EmbeddedCheckoutProtocol {
     /// Returns an `ec.ready` response if the given message is an `ec.ready` request,
     /// otherwise `nil`. The response echoes the intersection of the merchant's
     /// requested delegations with `supportedDelegations` under a `delegate` array.
@@ -22,7 +22,7 @@ extension CheckoutTransport {
     }
 }
 
-extension CheckoutTransport {
+extension EmbeddedCheckoutProtocol {
     static func decode(jsonRpc: String) -> UCPMessage {
         guard let data = jsonRpc.data(using: .utf8) else {
             return .unknown(method: "", rawParams: jsonRpc)

@@ -7,35 +7,35 @@ struct DescriptorTests {
     @Suite("Spec Version")
     struct SpecVersion {
         @Test func matchesOpenRPCInfoVersion() {
-            #expect(CheckoutTransport.specVersion == "2026-04-08")
+            #expect(EmbeddedCheckoutProtocol.specVersion == "2026-04-08")
         }
     }
 
-    @Suite("Generated Catalog")
-    struct GeneratedCatalog {
+    @Suite("Event Catalog")
+    struct EventCatalog {
         @Test func bindsNotificationMethods() {
-            #expect(GeneratedProtocolCatalog.ecStart.method == "ec.start")
-            #expect(GeneratedProtocolCatalog.ecComplete.method == "ec.complete")
-            #expect(GeneratedProtocolCatalog.ecMessagesChange.method == "ec.messages.change")
-            #expect(GeneratedProtocolCatalog.ecLineItemsChange.method == "ec.line_items.change")
-            #expect(GeneratedProtocolCatalog.ecTotalsChange.method == "ec.totals.change")
-            #expect(GeneratedProtocolCatalog.ecError.method == "ec.error")
+            #expect(EmbeddedCheckoutProtocol.Event.start.method == "ec.start")
+            #expect(EmbeddedCheckoutProtocol.Event.complete.method == "ec.complete")
+            #expect(EmbeddedCheckoutProtocol.Event.messagesChange.method == "ec.messages.change")
+            #expect(EmbeddedCheckoutProtocol.Event.lineItemsChange.method == "ec.line_items.change")
+            #expect(EmbeddedCheckoutProtocol.Event.totalsChange.method == "ec.totals.change")
+            #expect(EmbeddedCheckoutProtocol.Event.error.method == "ec.error")
         }
 
         @Test func exposesEveryOpenRPCMethod() {
-            #expect(GeneratedProtocolCatalog.allMethods.contains("ec.start"))
-            #expect(GeneratedProtocolCatalog.allMethods.contains("ec.complete"))
-            #expect(GeneratedProtocolCatalog.allMethods.contains("ec.window.open_request"))
+            #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.start"))
+            #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.complete"))
+            #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.window.open_request"))
         }
 
         @Test func includesMethodsBeyondTheCuratedConsumerSubset() {
-            #expect(GeneratedProtocolCatalog.allMethods.contains("ec.payment.credential_request"))
-            #expect(GeneratedProtocolCatalog.allMethods.contains("ec.fulfillment.change"))
-            #expect(GeneratedProtocolCatalog.allMethods.contains("ep.cart.ready"))
+            #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.payment.credential_request"))
+            #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.fulfillment.change"))
+            #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.buyer.change"))
         }
 
         @Test func methodsAreUnique() {
-            #expect(Set(GeneratedProtocolCatalog.allMethods).count == GeneratedProtocolCatalog.allMethods.count)
+            #expect(Set(EmbeddedCheckoutProtocol.Event.all).count == EmbeddedCheckoutProtocol.Event.all.count)
         }
     }
 }

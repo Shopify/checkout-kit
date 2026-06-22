@@ -276,7 +276,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
         XCTAssertTrue(CheckoutWebView.preloadCache.hasActiveKeepAlive())
 
-        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
+        let cached = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
         XCTAssertFalse(CheckoutWebView.preloadCache.hasActiveKeepAlive())
@@ -286,7 +286,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testRepeatedPreloadForMatchingCheckoutDoesNotReloadCachedWebView() {
         let webView = LoadedRequestObservableWebView()
-        let checkoutURL = CheckoutTransport.url(for: url)
+        let checkoutURL = EmbeddedCheckoutProtocol.url(for: url)
         _ = CheckoutWebView.preloadCache.store(webView, for: PreloadKey(url: checkoutURL, entryPoint: nil))
 
         CheckoutWebView.preload(checkout: checkoutURL)
@@ -297,8 +297,8 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testPresentingMatchingCheckoutReusesCachedWebViewWithoutEvictingIt() {
         ShopifyCheckoutKit.preload(checkout: url)
-        let first = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
-        let second = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
+        let first = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
+        let second = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
 
         XCTAssertTrue(first === second)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
@@ -308,7 +308,7 @@ class CheckoutWebViewTests: XCTestCase {
         ShopifyCheckoutKit.preload(checkout: url)
         let otherURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/456"))
 
-        let fresh = CheckoutWebView.for(checkout: CheckoutTransport.url(for: otherURL))
+        let fresh = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: otherURL))
 
         XCTAssertNil(fresh.url)
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
@@ -316,9 +316,9 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     func testPresentWithDifferentEntryPointDoesNotReusePreloadedWebView() {
-        CheckoutWebView.preload(checkout: CheckoutTransport.url(for: url), entryPoint: .acceleratedCheckouts)
+        CheckoutWebView.preload(checkout: EmbeddedCheckoutProtocol.url(for: url), entryPoint: .acceleratedCheckouts)
 
-        let fresh = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url), entryPoint: nil)
+        let fresh = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: url), entryPoint: nil)
 
         XCTAssertNil(fresh.url)
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
@@ -338,12 +338,12 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testStalePreloadCacheIsRejectedImmediately() {
         let staleCreatedAt = Date(timeIntervalSinceNow: -6 * 60)
-        CheckoutWebView.preload(checkout: CheckoutTransport.url(for: url), createdAt: staleCreatedAt)
+        CheckoutWebView.preload(checkout: EmbeddedCheckoutProtocol.url(for: url), createdAt: staleCreatedAt)
 
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
         XCTAssertFalse(CheckoutWebView.preloadCache.hasActiveKeepAlive())
 
-        let fresh = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url))
+        let fresh = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: url))
 
         XCTAssertNil(fresh.url)
         XCTAssertTrue(fresh.isBridgeAttached)
@@ -353,7 +353,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testPreloadCacheExpiresAndStopsKeepAlive() {
         let nearlyStaleCreatedAt = Date(timeIntervalSinceNow: -(5 * 60 - 0.1))
-        CheckoutWebView.preload(checkout: CheckoutTransport.url(for: url), createdAt: nearlyStaleCreatedAt)
+        CheckoutWebView.preload(checkout: EmbeddedCheckoutProtocol.url(for: url), createdAt: nearlyStaleCreatedAt)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
         XCTAssertTrue(CheckoutWebView.preloadCache.hasActiveKeepAlive())
 
@@ -378,7 +378,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testPreloadKeepAliveFailureInvalidatesCache() {
         let webView = ThrowingEvaluateJavaScriptWebView()
-        _ = CheckoutWebView.preloadCache.store(webView, for: PreloadKey(url: CheckoutTransport.url(for: url), entryPoint: nil))
+        _ = CheckoutWebView.preloadCache.store(webView, for: PreloadKey(url: EmbeddedCheckoutProtocol.url(for: url), entryPoint: nil))
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
         XCTAssertTrue(CheckoutWebView.preloadCache.hasActiveKeepAlive())
 
@@ -403,7 +403,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testInvalidateDetachesCachedPreloadedWebView() {
         ShopifyCheckoutKit.preload(checkout: url)
-        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
+        let cached = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
         XCTAssertTrue(cached.isBridgeAttached)
 
         ShopifyCheckoutKit.invalidate()
@@ -414,7 +414,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testHTTPErrorInvalidatesPreloadCache() throws {
         ShopifyCheckoutKit.preload(checkout: url)
-        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
+        let cached = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
         let link = try XCTUnwrap(cached.url)
         let response = try XCTUnwrap(HTTPURLResponse(url: link, statusCode: 403, httpVersion: nil, headerFields: nil))
 
@@ -536,7 +536,7 @@ class CheckoutWebViewTests: XCTestCase {
         let result = try XCTUnwrap(parsed["result"] as? [String: Any])
         let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
         XCTAssertEqual(ucp["status"] as? String, "success")
-        XCTAssertEqual(ucp["version"] as? String, CheckoutTransport.specVersion)
+        XCTAssertEqual(ucp["version"] as? String, EmbeddedCheckoutProtocol.specVersion)
     }
 
     @MainActor
@@ -707,7 +707,7 @@ class CheckoutWebViewTests: XCTestCase {
         let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"\#(id)","params":{"url":"https://example.com/terms"}}"#
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
-        view.client = CheckoutTransport.Client()
+        view.client = EmbeddedCheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) { _ in
                 .rejected(reason: "consumer override")
             }
@@ -772,7 +772,7 @@ class CheckoutWebViewTests: XCTestCase {
     /// and bypass the handler entirely.
     private func ecErrorBody(severity: String) -> String {
         return """
-        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"status":"error","version":"\(CheckoutTransport.specVersion)"},"messages":[{"type":"error","code":"session_failed","content":"Session failed","severity":"\(severity)"}]}}}
+        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"status":"error","version":"\(EmbeddedCheckoutProtocol.specVersion)"},"messages":[{"type":"error","code":"session_failed","content":"Session failed","severity":"\(severity)"}]}}}
         """
     }
 
@@ -840,7 +840,7 @@ class CheckoutWebViewTests: XCTestCase {
         let consumerHandlerFired = expectation(description: "consumer handler fired")
         let dismissed = expectation(description: "viewDelegate received failure")
         mockDelegate.didFailWithErrorExpectation = dismissed
-        view.client = CheckoutTransport.Client()
+        view.client = EmbeddedCheckoutProtocol.Client()
             .on(CheckoutProtocol.error) { _ in
                 consumerHandlerFired.fulfill()
             }

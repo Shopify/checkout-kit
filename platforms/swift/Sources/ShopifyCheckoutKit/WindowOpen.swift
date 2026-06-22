@@ -41,11 +41,11 @@ public enum WindowOpenResult: ResponsePayload {
         switch self {
         case .success:
             try WindowOpenSuccessBody(
-                ucp: WindowOpenUCP(version: CheckoutTransport.specVersion, status: "success")
+                ucp: WindowOpenUCP(version: EmbeddedCheckoutProtocol.specVersion, status: "success")
             ).encode(to: encoder)
         case let .rejected(reason):
             try WindowOpenRejectedBody(
-                ucp: WindowOpenUCP(version: CheckoutTransport.specVersion, status: "error"),
+                ucp: WindowOpenUCP(version: EmbeddedCheckoutProtocol.specVersion, status: "error"),
                 messages: [
                     WindowOpenRejectedMessage(content: reason ?? "Window open rejected")
                 ]
@@ -56,7 +56,7 @@ public enum WindowOpenResult: ResponsePayload {
 
 extension CheckoutProtocol {
     public static let windowOpen = DelegationDescriptor<WindowOpenRequest, WindowOpenResult>(
-        method: GeneratedProtocolCatalog.ecWindowOpenRequest.method,
+        method: EmbeddedCheckoutProtocol.Event.windowOpenRequest.method,
         delegation: "window.open",
         decode: { params in
             try? JSONDecoder().decode(WindowOpenRequest.self, from: params)
