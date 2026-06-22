@@ -21,21 +21,21 @@ struct CheckoutProtocolURLTests {
     }
 
     @Test func appendsSuppliedDelegate() {
-        let items = queryItems(EmbeddedCheckoutProtocol.url(for: baseURL, delegations: ["window.open"]))
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: baseURL, options: .init(delegations: ["window.open"])))
         #expect(items.contains(URLQueryItem(name: "ec_delegate", value: "window.open")))
     }
 
     @Test func joinsMultipleDelegationsWithComma() {
         let result = EmbeddedCheckoutProtocol.url(
             for: baseURL,
-            delegations: ["window.open", "payment.credential"]
+            options: .init(delegations: ["window.open", "payment.credential"])
         )
         let items = queryItems(result)
         #expect(items.contains(URLQueryItem(name: "ec_delegate", value: "window.open,payment.credential")))
     }
 
     @Test func omitsDelegateWhenEmpty() {
-        let items = queryItems(EmbeddedCheckoutProtocol.url(for: baseURL, delegations: []))
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: baseURL, options: .init(delegations: [])))
         #expect(!items.contains(where: { $0.name == "ec_delegate" }))
     }
 
@@ -49,15 +49,15 @@ struct CheckoutProtocolURLTests {
 
     @Test func replacesCallerSuppliedProtocolQueryItems() throws {
         let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=stale&ec_delegate=custom"))
-        let items = queryItems(EmbeddedCheckoutProtocol.url(for: url, delegations: ["window.open"]))
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: url, options: .init(delegations: ["window.open"])))
 
         #expect(items.filter { $0.name == "ec_version" }.map(\.value) == [EmbeddedCheckoutProtocol.specVersion])
         #expect(items.filter { $0.name == "ec_delegate" }.map(\.value) == ["window.open"])
     }
 
     @Test func isIdempotentOnRecall() {
-        let once = EmbeddedCheckoutProtocol.url(for: baseURL, delegations: ["window.open"])
-        let twice = EmbeddedCheckoutProtocol.url(for: once, delegations: ["window.open"])
+        let once = EmbeddedCheckoutProtocol.url(for: baseURL, options: .init(delegations: ["window.open"]))
+        let twice = EmbeddedCheckoutProtocol.url(for: once, options: .init(delegations: ["window.open"]))
         let items = queryItems(twice)
 
         #expect(items.filter { $0.name == "ec_version" }.count == 1)
@@ -66,9 +66,46 @@ struct CheckoutProtocolURLTests {
 
     @Test func removesExistingDelegationWhenDelegationsAreEmpty() throws {
         let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_delegate=custom"))
-        let items = queryItems(EmbeddedCheckoutProtocol.url(for: url, delegations: []))
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: url, options: .init(delegations: [])))
 
         #expect(items.contains(URLQueryItem(name: "ec_version", value: EmbeddedCheckoutProtocol.specVersion)))
         #expect(!items.contains { $0.name == "ec_delegate" })
+    }
+
+    @Test func omitsAuthByDefault() {
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: baseURL))
+        #expect(!items.contains(where: { $0.name == "ec_auth" }))
+    }
+
+    @Test func appendsSuppliedAuth() {
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: baseURL, options: .init(auth: "token")))
+        #expect(items.contains(URLQueryItem(name: "ec_auth", value: "token")))
+    }
+
+    @Test func omitsColorSchemeByDefault() {
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: baseURL))
+        #expect(!items.contains(where: { $0.name == "ec_color_scheme" }))
+    }
+
+    @Test func appendsSuppliedColorScheme() {
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: baseURL, options: .init(colorScheme: "dark")))
+        #expect(items.contains(URLQueryItem(name: "ec_color_scheme", value: "dark")))
+    }
+
+    @Test func replacesCallerSuppliedAuthAndColorScheme() throws {
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_auth=stale&ec_color_scheme=light"))
+        let items = queryItems(EmbeddedCheckoutProtocol.url(for: url, options: .init(colorScheme: "dark", auth: "token")))
+
+        #expect(items.filter { $0.name == "ec_auth" }.map(\.value) == ["token"])
+        #expect(items.filter { $0.name == "ec_color_scheme" }.map(\.value) == ["dark"])
+    }
+
+    @Test func isIdempotentForAuthAndColorSchemeOnRecall() {
+        let once = EmbeddedCheckoutProtocol.url(for: baseURL, options: .init(colorScheme: "dark", auth: "token"))
+        let twice = EmbeddedCheckoutProtocol.url(for: once, options: .init(colorScheme: "dark", auth: "token"))
+        let items = queryItems(twice)
+
+        #expect(items.filter { $0.name == "ec_auth" }.count == 1)
+        #expect(items.filter { $0.name == "ec_color_scheme" }.count == 1)
     }
 }

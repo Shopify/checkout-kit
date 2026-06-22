@@ -43,3 +43,32 @@ extension EmbeddedCheckoutProtocol {
         ]
     }
 }
+
+extension EmbeddedCheckoutProtocol {
+    /// Delegations the host can request from the business, as declared by the
+    /// service in `x-delegations`. String-backed and open: a host may advertise
+    /// a delegation this build predates, so unknown values round-trip intact.
+    public struct Delegation: RawRepresentable, Hashable, Sendable, ExpressibleByStringLiteral {
+        public let rawValue: String
+
+        public init(rawValue: String) {
+            self.rawValue = rawValue
+        }
+
+        public init(stringLiteral value: String) {
+            self.rawValue = value
+        }
+
+        public static let paymentInstrumentsChange = Delegation(rawValue: "payment.instruments_change")
+        public static let paymentCredential = Delegation(rawValue: "payment.credential")
+        public static let fulfillmentAddressChange = Delegation(rawValue: "fulfillment.address_change")
+        public static let windowOpen = Delegation(rawValue: "window.open")
+
+        public static let all: [Delegation] = [
+            .paymentInstrumentsChange,
+            .paymentCredential,
+            .fulfillmentAddressChange,
+            .windowOpen,
+        ]
+    }
+}

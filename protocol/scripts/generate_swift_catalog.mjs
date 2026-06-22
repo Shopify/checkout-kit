@@ -43,6 +43,16 @@ function methodNameToIdentifier(methodName) {
     .join('');
 }
 
+function delegationToIdentifier(delegation) {
+  return delegation
+    .split(/[._]/g)
+    .filter(Boolean)
+    .map((part, index) =>
+      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
+    )
+    .join('');
+}
+
 function resolveMethod(method, openRpcDir) {
   if (typeof method.$ref !== 'string') {
     return method;
@@ -113,6 +123,19 @@ for (const entry of entries) {
   seen.add(entry.identifier);
 }
 
+const delegations = (openRpc['x-delegations'] ?? []).map(delegation => ({
+  identifier: delegationToIdentifier(delegation),
+  value: delegation,
+}));
+
+const seenDelegations = new Set();
+for (const delegation of delegations) {
+  if (seenDelegations.has(delegation.identifier)) {
+    throw new Error(`Duplicate delegation identifier: ${delegation.identifier}`);
+  }
+  seenDelegations.add(delegation.identifier);
+}
+
 const payloadTypes = Array.from(
   new Set(entries.filter(entry => !entry.isRequest).map(entry => entry.payload)),
 ).sort();
@@ -140,6 +163,34 @@ ${entries
 
         public static let all: [String] = [
 ${entries.map(entry => `            ${entry.identifier}.method,`).join('\n')}
+        ]
+    }
+}
+
+extension EmbeddedCheckoutProtocol {
+    /// Delegations the host can request from the business, as declared by the
+    /// service in \`x-delegations\`. String-backed and open: a host may advertise
+    /// a delegation this build predates, so unknown values round-trip intact.
+    public struct Delegation: RawRepresentable, Hashable, Sendable, ExpressibleByStringLiteral {
+        public let rawValue: String
+
+        public init(rawValue: String) {
+            self.rawValue = rawValue
+        }
+
+        public init(stringLiteral value: String) {
+            self.rawValue = value
+        }
+
+${delegations
+  .map(
+    delegation =>
+      `        public static let ${delegation.identifier} = Delegation(rawValue: "${delegation.value}")`,
+  )
+  .join('\n')}
+
+        public static let all: [Delegation] = [
+${delegations.map(delegation => `            .${delegation.identifier},`).join('\n')}
         ]
     }
 }
