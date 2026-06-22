@@ -94,7 +94,7 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
         guard let config = AcceleratedCheckoutConfiguration.shared.configuration else {
           return XCTFail("configuration missing")
         }
-        XCTAssertEqual(config.customer?.copy().customerAccessToken, token)
+        XCTAssertEqual(config.customer?.customerAccessToken, token)
     }
 
     func testConfigureAcceleratedCheckoutsWithNilCustomerAccessToken() throws {
@@ -102,7 +102,7 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
         guard let config = AcceleratedCheckoutConfiguration.shared.configuration else {
           return XCTFail("configuration missing")
         }
-        XCTAssertNil(config.customer?.copy().customerAccessToken)
+        XCTAssertNil(config.customer?.customerAccessToken)
     }
 
     func testButtonsViewHeightZeroWhenWalletsExplicitEmpty() throws {
