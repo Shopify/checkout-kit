@@ -821,21 +821,24 @@ describe("<shopify-checkout>", () => {
         expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
       });
 
-      it("ignores unsupported notifications", () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+      it.each(["customMethod", "ec.buyer.change"])(
+        "ignores unsupported notification %s",
+        (method) => {
+          const { checkout, mockCheckoutWindow } = openPopupCheckout();
 
-        simulateRawMessageEvent(
-          checkout,
-          {
-            jsonrpc: "2.0",
-            method: "customMethod",
-            params: {},
-          },
-          { source: mockCheckoutWindow },
-        );
+          simulateRawMessageEvent(
+            checkout,
+            {
+              jsonrpc: "2.0",
+              method,
+              params: {},
+            },
+            { source: mockCheckoutWindow },
+          );
 
-        expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
-      });
+          expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
+        },
+      );
     });
 
     describe("ec.start", () => {
@@ -967,23 +970,6 @@ describe("<shopify-checkout>", () => {
       });
     });
 
-    describe("ec.buyer.change", () => {
-      it("updates the checkout property and dispatches an ec.buyer.change event", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const onBuyerChangeSpy = vi.fn();
-        const listenForEvent = waitForEvent(checkout, "ec.buyer.change", onBuyerChangeSpy);
-
-        const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.buyer.change", payload, {
-          source: mockCheckoutWindow,
-        });
-        await listenForEvent;
-
-        expect(checkout.checkout).toBe(payload.checkout);
-        expect(onBuyerChangeSpy).toHaveBeenCalledOnce();
-      });
-    });
-
     describe("ec.totals.change", () => {
       it("updates the checkout property and dispatches an ec.totals.change event", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
@@ -1081,22 +1067,6 @@ describe("<shopify-checkout>", () => {
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
         expect(event.detail.lineItems).toBe(payload.checkout.line_items);
-        expect(event.detail.checkout).toBe(payload.checkout);
-      });
-
-      it("ec.buyer.change carries {buyer, checkout}", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.buyer.change", spy);
-
-        const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.buyer.change", payload, {
-          source: mockCheckoutWindow,
-        });
-        await wait;
-
-        const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail.buyer).toBe(payload.checkout.buyer);
         expect(event.detail.checkout).toBe(payload.checkout);
       });
 

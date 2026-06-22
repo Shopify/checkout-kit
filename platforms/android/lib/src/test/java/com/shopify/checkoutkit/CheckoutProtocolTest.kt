@@ -60,6 +60,7 @@ class CheckoutProtocolTest {
     @Test
     fun `supported protocol methods exclude internal or unsupported methods`() {
         assertThat(CheckoutProtocol.supportedProtocolMethods).doesNotContain(
+            "ec.buyer.change",
             "ec.payment.credential_request",
             "ep.cart.ready",
         )
