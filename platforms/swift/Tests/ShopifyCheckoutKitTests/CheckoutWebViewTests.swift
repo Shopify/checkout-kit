@@ -276,7 +276,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
         XCTAssertTrue(CheckoutWebView.preloadCache.hasActiveKeepAlive())
 
-        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url))
+        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
         XCTAssertFalse(CheckoutWebView.preloadCache.hasActiveKeepAlive())
@@ -297,8 +297,8 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testPresentingMatchingCheckoutReusesCachedWebViewWithoutEvictingIt() {
         ShopifyCheckoutKit.preload(checkout: url)
-        let first = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url))
-        let second = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url))
+        let first = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
+        let second = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
 
         XCTAssertTrue(first === second)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
@@ -403,7 +403,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testInvalidateDetachesCachedPreloadedWebView() {
         ShopifyCheckoutKit.preload(checkout: url)
-        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url))
+        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
         XCTAssertTrue(cached.isBridgeAttached)
 
         ShopifyCheckoutKit.invalidate()
@@ -414,7 +414,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testHTTPErrorInvalidatesPreloadCache() throws {
         ShopifyCheckoutKit.preload(checkout: url)
-        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url))
+        let cached = CheckoutWebView.for(checkout: CheckoutTransport.url(for: url, delegations: CheckoutProtocol.defaultDelegations))
         let link = try XCTUnwrap(cached.url)
         let response = try XCTUnwrap(HTTPURLResponse(url: link, statusCode: 403, httpVersion: nil, headerFields: nil))
 

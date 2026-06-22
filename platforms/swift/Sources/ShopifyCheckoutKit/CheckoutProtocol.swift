@@ -75,6 +75,23 @@ private struct RequestEnvelope: Decodable {
     let jsonrpc: String
     let method: String
     let id: RequestID?
+
+    private enum CodingKeys: String, CodingKey {
+        case jsonrpc
+        case method
+        case id
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        jsonrpc = try container.decode(String.self, forKey: .jsonrpc)
+        method = try container.decode(String.self, forKey: .method)
+        if container.contains(.id) {
+            id = try container.decode(RequestID.self, forKey: .id)
+        } else {
+            id = nil
+        }
+    }
 }
 
 enum RequestID: Codable, Equatable {
