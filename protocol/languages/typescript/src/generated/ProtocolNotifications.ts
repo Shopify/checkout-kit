@@ -3,7 +3,7 @@
 
 import {Convert, type Checkout, type ErrorResponse} from './Models';
 
-export const checkoutProtocolCatalog = {
+export const generatedCheckoutProtocol = {
   error: 'ec.error',
   start: 'ec.start',
   complete: 'ec.complete',
@@ -15,10 +15,10 @@ export const checkoutProtocolCatalog = {
   fulfillmentChange: 'ec.fulfillment.change',
 } as const;
 
-export type CheckoutProtocolCatalogMethod =
-  (typeof checkoutProtocolCatalog)[keyof typeof checkoutProtocolCatalog];
+export type GeneratedCheckoutProtocolMethod =
+  (typeof generatedCheckoutProtocol)[keyof typeof generatedCheckoutProtocol];
 
-export interface CheckoutProtocolCatalogPayloads {
+export interface GeneratedCheckoutProtocolPayloads {
   'ec.error': ErrorResponse;
   'ec.start': Checkout;
   'ec.complete': Checkout;
@@ -30,23 +30,23 @@ export interface CheckoutProtocolCatalogPayloads {
   'ec.fulfillment.change': Checkout;
 }
 
-export type CheckoutProtocolCatalogPayloadDecoder<
-  K extends keyof CheckoutProtocolCatalogPayloads,
-> = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
+export type GeneratedCheckoutProtocolPayloadDecoder<
+  K extends keyof GeneratedCheckoutProtocolPayloads,
+> = (payload: unknown) => GeneratedCheckoutProtocolPayloads[K];
 
-export const checkoutProtocolCatalogPayloadDecoders = {
-  [checkoutProtocolCatalog.error]: decodeWith(Convert.toErrorResponse),
-  [checkoutProtocolCatalog.start]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.complete]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.messagesChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.lineItemsChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.buyerChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.totalsChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.paymentChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.fulfillmentChange]: decodeWith(Convert.toCheckout),
+export const generatedCheckoutProtocolPayloadDecoders = {
+  [generatedCheckoutProtocol.error]: decodeWith(Convert.toErrorResponse),
+  [generatedCheckoutProtocol.start]: decodeWith(Convert.toCheckout),
+  [generatedCheckoutProtocol.complete]: decodeWith(Convert.toCheckout),
+  [generatedCheckoutProtocol.messagesChange]: decodeWith(Convert.toCheckout),
+  [generatedCheckoutProtocol.lineItemsChange]: decodeWith(Convert.toCheckout),
+  [generatedCheckoutProtocol.buyerChange]: decodeWith(Convert.toCheckout),
+  [generatedCheckoutProtocol.totalsChange]: decodeWith(Convert.toCheckout),
+  [generatedCheckoutProtocol.paymentChange]: decodeWith(Convert.toCheckout),
+  [generatedCheckoutProtocol.fulfillmentChange]: decodeWith(Convert.toCheckout),
 } satisfies {
-  [K in keyof CheckoutProtocolCatalogPayloads]:
-    CheckoutProtocolCatalogPayloadDecoder<K>;
+  [K in keyof GeneratedCheckoutProtocolPayloads]:
+    GeneratedCheckoutProtocolPayloadDecoder<K>;
 };
 
 function decodeWith<T>(converter: (json: string) => T): (payload: unknown) => T {

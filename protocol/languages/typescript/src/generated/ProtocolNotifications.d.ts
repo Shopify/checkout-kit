@@ -1,5 +1,5 @@
 import { type Checkout, type ErrorResponse } from './Models';
-export declare const checkoutProtocolCatalog: {
+export declare const generatedCheckoutProtocol: {
     readonly error: "ec.error";
     readonly start: "ec.start";
     readonly complete: "ec.complete";
@@ -8,10 +8,9 @@ export declare const checkoutProtocolCatalog: {
     readonly buyerChange: "ec.buyer.change";
     readonly totalsChange: "ec.totals.change";
     readonly paymentChange: "ec.payment.change";
-    readonly fulfillmentChange: "ec.fulfillment.change";
 };
-export type CheckoutProtocolCatalogMethod = (typeof checkoutProtocolCatalog)[keyof typeof checkoutProtocolCatalog];
-export interface CheckoutProtocolCatalogPayloads {
+export type GeneratedCheckoutProtocolMethod = (typeof generatedCheckoutProtocol)[keyof typeof generatedCheckoutProtocol];
+export interface GeneratedCheckoutProtocolPayloads {
     'ec.error': ErrorResponse;
     'ec.start': Checkout;
     'ec.complete': Checkout;
@@ -20,10 +19,9 @@ export interface CheckoutProtocolCatalogPayloads {
     'ec.buyer.change': Checkout;
     'ec.totals.change': Checkout;
     'ec.payment.change': Checkout;
-    'ec.fulfillment.change': Checkout;
 }
-export type CheckoutProtocolCatalogPayloadDecoder<K extends keyof CheckoutProtocolCatalogPayloads> = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
-export declare const checkoutProtocolCatalogPayloadDecoders: {
+export type GeneratedCheckoutProtocolPayloadDecoder<K extends keyof GeneratedCheckoutProtocolPayloads> = (payload: unknown) => GeneratedCheckoutProtocolPayloads[K];
+export declare const generatedCheckoutProtocolPayloadDecoders: {
     "ec.error": (payload: unknown) => ErrorResponse;
     "ec.start": (payload: unknown) => Checkout;
     "ec.complete": (payload: unknown) => Checkout;
@@ -32,5 +30,4 @@ export declare const checkoutProtocolCatalogPayloadDecoders: {
     "ec.buyer.change": (payload: unknown) => Checkout;
     "ec.totals.change": (payload: unknown) => Checkout;
     "ec.payment.change": (payload: unknown) => Checkout;
-    "ec.fulfillment.change": (payload: unknown) => Checkout;
 };
