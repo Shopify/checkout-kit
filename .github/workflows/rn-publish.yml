@@ -15,8 +15,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Hard gate: build and test the RN sample against the in-repo platforms/swift
+  # SDK before publishing. On PRs these same checks run as soft (non-required)
+  # legs in ci.yml; here they must pass or the npm publish is blocked.
+  verify-ios-build-local:
+    name: Verify iOS build (local SDK)
+    if: |
+      (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'react-native/'))
+      || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/rn-build-ios.yml
+    with:
+      sdk-source: local
+
+  verify-ios-test-local:
+    name: Verify iOS tests (local SDK)
+    if: |
+      (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'react-native/'))
+      || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/rn-test-ios.yml
+    with:
+      sdk-source: local
+
   release:
     name: Publish @shopify/checkout-kit-react-native to npm
+    needs:
+      - verify-ios-build-local
+      - verify-ios-test-local
     if: |
       (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'react-native/'))
       || github.event_name == 'workflow_dispatch'

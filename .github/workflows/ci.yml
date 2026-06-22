@@ -136,6 +136,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.reactNative == 'true'
     uses: ./.github/workflows/rn-test-ios.yml
+    with:
+      sdk-source: published
 
   rn-build-android:
     name: React Native
@@ -148,6 +150,29 @@ jobs:
     needs: changes
     if: needs.changes.outputs.reactNative == 'true'
     uses: ./.github/workflows/rn-build-ios.yml
+    with:
+      sdk-source: published
+
+  # Local-SDK iOS legs build the RN sample against the in-repo platforms/swift
+  # sources. They run in parallel with the published legs but are intentionally
+  # NOT part of ci-required, so a failure surfaces on the PR without blocking the
+  # merge (soft fail). The release flow (rn-publish.yml) runs the same checks as a
+  # hard gate before publishing to npm.
+  rn-build-ios-local:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-build-ios.yml
+    with:
+      sdk-source: local
+
+  rn-test-ios-local:
+    name: React Native
+    needs: changes
+    if: needs.changes.outputs.reactNative == 'true'
+    uses: ./.github/workflows/rn-test-ios.yml
+    with:
+      sdk-source: local
 
   rn-check-packed-files:
     name: React Native

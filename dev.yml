@@ -452,10 +452,12 @@ commands:
         long_desc: |
           Ensures CocoaPods are in sync, then builds and runs the iOS sample app on a simulator.
 
-          --local
-            Build against in-repo Swift SDK sources.
+          Builds against the in-repo Swift SDK sources by default.
+
+          --stable
+            Build against the published Swift SDK release instead.
         syntax:
-          optional: --local
+          optional: --stable
         run: cd platforms/react-native && pnpm sample ios "$@"
 
       android:
@@ -463,10 +465,13 @@ commands:
         long_desc: |
           Builds and runs the Android sample app on an emulator.
 
-          --local
-            Build against in-repo SDK sources (publishes a local Maven snapshot first).
+          Builds against the in-repo SDK sources by default (publishes a local
+          Maven snapshot first).
+
+          --stable
+            Build against the published SDK release instead.
         syntax:
-          optional: --local
+          optional: --stable
         run: cd platforms/react-native && pnpm sample android "$@"
 
       pod-install:
@@ -474,10 +479,12 @@ commands:
         long_desc: |
           Runs pod install for the iOS sample app.
 
-          --local
-            Wire the Podfile against in-repo Swift SDK sources.
+          Wires the Podfile against the in-repo Swift SDK sources by default.
+
+          --stable
+            Wire the Podfile against the published Swift SDK release instead.
         syntax:
-          optional: --local
+          optional: --stable
         run: cd platforms/react-native && pnpm run pod-install -- "$@"
 
       open:

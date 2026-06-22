@@ -6,13 +6,18 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/android_sccache"
 
 args=()
+use_local=1
 for arg in "$@"; do
-  if [ "$arg" = "--local" ]; then
-    export USE_LOCAL_SDK=1
-  else
-    args+=("$arg")
-  fi
+  case "$arg" in
+    --local) use_local=1 ;;
+    --stable) use_local=0 ;;
+    *) args+=("$arg") ;;
+  esac
 done
+
+if [ "$use_local" = "1" ]; then
+  export USE_LOCAL_SDK=1
+fi
 
 "$SCRIPT_DIR/../../scripts/publish_android_snapshot"
 
