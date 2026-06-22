@@ -121,7 +121,15 @@ commands:
     subcommands:
       build:
         desc: Build the protocol target
-        run: cd protocol/languages/swift && swift build
+        run: |
+          set -e
+          root=$(pwd)
+          cd protocol/languages/swift
+          echo "Building Swift protocol..."
+          swift build
+          cd $root/protocol/languages/kotlin
+          echo "Building Kotlin protocol..."
+          ./gradlew :embedded-checkout-protocol:build
       test:
         desc: Run protocol package tests
         run: |
@@ -129,6 +137,9 @@ commands:
           cd protocol/languages/swift
           echo "Running tests for Swift..."
           swift test
+          cd $root/protocol/languages/kotlin
+          echo "Running tests for Kotlin..."
+          ./gradlew :embedded-checkout-protocol:test
           cd $root/protocol
           echo "Running tests for TypeScript..."
           pnpm test
@@ -227,20 +238,30 @@ commands:
           open -a "Android Studio" "$project"
 
       api:
-        desc: Validate or update the public API baseline (lib/api/lib.api)
+        desc: Validate or update the public Android API baselines
         run: |
           echo "Usage: dev android api {check|dump}"
           echo ""
-          echo "  check  Verify public API matches the committed baseline"
-          echo "  dump   Regenerate the baseline after intentional public API changes"
+          echo "  check  Verify public APIs match the committed baselines"
+          echo "  dump   Regenerate the baselines after intentional public API changes"
           exit 1
         subcommands:
           check:
-            desc: Verify public API matches the committed baseline
-            run: cd platforms/android && ./gradlew :lib:apiCheck
+            desc: Verify public APIs match the committed baselines
+            run: |
+              set -e
+              cd platforms/android
+              ./gradlew :lib:apiCheck
+              cd ../../protocol/languages/kotlin
+              ./gradlew :embedded-checkout-protocol:apiCheck
           dump:
-            desc: Regenerate the baseline after intentional public API changes
-            run: cd platforms/android && ./gradlew :lib:apiDump
+            desc: Regenerate the baselines after intentional public API changes
+            run: |
+              set -e
+              cd platforms/android
+              ./gradlew :lib:apiDump
+              cd ../../protocol/languages/kotlin
+              ./gradlew :embedded-checkout-protocol:apiDump
 
   # Swift
   swift:

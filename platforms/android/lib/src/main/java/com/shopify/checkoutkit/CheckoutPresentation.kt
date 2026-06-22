@@ -21,7 +21,7 @@ public class CheckoutPresentation internal constructor() {
     internal var onGeolocationPermissionsShowPrompt:
         ((String, GeolocationPermissions.Callback) -> Unit)? = null
     internal var onGeolocationPermissionsHidePrompt: (() -> Unit)? = null
-    internal var communicationClient: CheckoutCommunicationClient? = null
+    internal var protocolClient: CheckoutProtocol.Client? = null
 
     /**
      * Called when checkout fails.
@@ -74,10 +74,10 @@ public class CheckoutPresentation internal constructor() {
     }
 
     /**
-     * Connects a communication client for Embedded Checkout Protocol messages.
+     * Connects a typed client for supported Embedded Checkout Protocol callbacks.
      */
-    public fun connect(client: CheckoutCommunicationClient?) {
-        communicationClient = client
+    public fun connect(client: CheckoutProtocol.Client?) {
+        protocolClient = client
     }
 
     internal fun buildListener(): DefaultCheckoutListener =

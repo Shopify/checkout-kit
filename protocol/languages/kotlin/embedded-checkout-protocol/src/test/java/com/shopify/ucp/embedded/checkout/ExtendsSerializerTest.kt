@@ -1,4 +1,4 @@
-package com.shopify.checkoutkit
+package com.shopify.ucp.embedded.checkout
 
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json

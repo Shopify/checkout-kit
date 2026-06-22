@@ -52,7 +52,10 @@ jobs:
           java-version: 17
 
       - name: Publish Package
-        run: ./gradlew publishReleasePublicationToOssrh-staging-apiRepository
+        run: |
+          ./gradlew \
+            :embedded-checkout-protocol:publishReleasePublicationToOssrh-staging-apiRepository \
+            :lib:publishReleasePublicationToOssrh-staging-apiRepository
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}

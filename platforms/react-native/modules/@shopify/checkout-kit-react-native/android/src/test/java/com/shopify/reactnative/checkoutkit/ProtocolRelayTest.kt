@@ -2,6 +2,7 @@ package com.shopify.reactnative.checkoutkit
 
 import android.os.Looper
 import android.util.Log
+import com.shopify.checkoutkit.CheckoutProtocol
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -44,7 +45,7 @@ class ProtocolRelayTest {
             DispatchCallback { json -> captured = json },
         )
 
-        client.process(ecStartNotificationFixture)
+        client.processForTest(ecStartNotificationFixture)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val json = captured
@@ -73,7 +74,7 @@ class ProtocolRelayTest {
             DispatchCallback { throw failure },
         )
 
-        client.process(ecStartNotificationFixture)
+        client.processForTest(ecStartNotificationFixture)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val logs = ShadowLog.getLogsForTag("ShopifyCheckoutKit")
@@ -100,7 +101,7 @@ class ProtocolRelayTest {
                 DispatchCallback { json -> captured = json },
             )
 
-            client.process(checkoutNotificationFixture(method))
+            client.processForTest(checkoutNotificationFixture(method))
             shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
             val json = captured
@@ -119,7 +120,7 @@ class ProtocolRelayTest {
             DispatchCallback { json -> captured = json },
         )
 
-        client.process(ecErrorNotificationFixture)
+        client.processForTest(ecErrorNotificationFixture)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         val json = captured
@@ -141,7 +142,7 @@ class ProtocolRelayTest {
             DispatchCallback { json -> captured = json },
         )
 
-        client.process(ecStartNotificationFixture)
+        client.processForTest(ecStartNotificationFixture)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(captured).isNull()
@@ -157,11 +158,23 @@ class ProtocolRelayTest {
         )
 
         dispatch.release()
-        client.process(ecStartNotificationFixture)
+        client.processForTest(ecStartNotificationFixture)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(captured).isNull()
     }
+}
+
+private fun CheckoutProtocol.Client.processForTest(message: String): String? {
+    // `process` is intentionally internal; tests invoke it reflectively to simulate bridge delivery.
+    val process = javaClass.methods
+        .filter { it.parameterTypes.contentEquals(arrayOf(String::class.java)) }
+        .firstOrNull { it.name == "process" }
+        ?: javaClass.methods.single {
+            it.name.startsWith("process\$") &&
+                it.parameterTypes.contentEquals(arrayOf(String::class.java))
+        }
+    return process.invoke(this, message) as String?
 }
 
 @Serializable

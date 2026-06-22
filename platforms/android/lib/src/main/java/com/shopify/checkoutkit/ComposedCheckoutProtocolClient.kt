@@ -1,5 +1,6 @@
 package com.shopify.checkoutkit
 
+import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
 import kotlinx.serialization.SerializationException
 
 /**
@@ -10,11 +11,11 @@ import kotlinx.serialization.SerializationException
  * kit default when the merchant does not return a response, while mandatory kit
  * notifications such as [CheckoutProtocol.error] always run after the merchant client.
  */
-internal class ComposedCheckoutCommunicationClient(
-    private val merchant: CheckoutCommunicationClient?,
+internal class ComposedCheckoutProtocolClient(
+    private val merchant: CheckoutProtocol.Client?,
     private val defaults: Map<String, DefaultClientBinding>,
-) : CheckoutCommunicationClient {
-    override fun process(message: String): String? {
+) {
+    internal fun process(message: String): String? {
         val method = method(message) ?: return merchant?.process(message)
         var response = merchant?.process(message)
 
@@ -35,14 +36,14 @@ internal class ComposedCheckoutCommunicationClient(
     }
 
     private fun method(message: String): String? = try {
-        CheckoutProtocol.json.decodeFromString<EcpRequest>(message).method
+        decodeProtocolRequest(message).method
     } catch (_: SerializationException) {
         null
     }
 }
 
 internal data class DefaultClientBinding(
-    val client: CheckoutCommunicationClient,
+    val client: CheckoutProtocol.Client,
     val policy: DefaultClientPolicy,
 )
 

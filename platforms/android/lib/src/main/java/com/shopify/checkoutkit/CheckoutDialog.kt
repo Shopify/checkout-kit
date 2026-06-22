@@ -28,7 +28,7 @@ internal class CheckoutDialog(
     private val checkoutUrl: String,
     private val checkoutListener: CheckoutListener,
     context: Context,
-    private val communicationClient: CheckoutCommunicationClient? = null,
+    private val protocolClient: CheckoutProtocol.Client? = null,
 ) : ComponentDialog(context) {
 
     private var presentedCheckoutWebView: CheckoutWebView? = null
@@ -64,8 +64,8 @@ internal class CheckoutDialog(
         checkoutWebView.markPresented()
         log.d(LOG_TAG, "Setting listener on WebView.")
         checkoutWebView.setListener(webViewListener())
-        log.d(LOG_TAG, "Setting communication client on WebView.")
-        checkoutWebView.setClient(communicationClient)
+        log.d(LOG_TAG, "Setting protocol client on WebView.")
+        checkoutWebView.setClient(protocolClient)
 
         val colorScheme = ShopifyCheckoutKit.configuration.colorScheme
         log.d(LOG_TAG, "Configured colorScheme $colorScheme")

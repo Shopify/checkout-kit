@@ -12,7 +12,7 @@ import android.webkit.WebView
  * We'd strongly recommend extending DefaultCheckoutListener where possible.
  *
  * Completion (`ec.complete`) and in-checkout state updates (totals, line items,
- * messages) flow through [CheckoutCommunicationClient] / the Embedded Checkout
+ * messages) flow through [CheckoutProtocol.Client] / the Embedded Checkout
  * Protocol — not through this interface. Kit-level failures continue to surface
  * here via [onCheckoutFailed].
  */

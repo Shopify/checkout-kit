@@ -39,6 +39,7 @@ allprojects {
                     mavenLocal()
                 }
                 filter {
+                    includeModule("com.shopify", "embedded-checkout-protocol")
                     includeModule("com.shopify", "checkout-kit")
                 }
             }

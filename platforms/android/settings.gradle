@@ -16,4 +16,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "checkout-kit"
 
+include ':embedded-checkout-protocol'
+project(':embedded-checkout-protocol').projectDir = file('../../protocol/languages/kotlin/embedded-checkout-protocol')
 include ':lib'

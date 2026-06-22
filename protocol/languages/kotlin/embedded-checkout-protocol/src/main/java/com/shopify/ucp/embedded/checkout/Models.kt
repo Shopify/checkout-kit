@@ -1,4 +1,4 @@
-package com.shopify.checkoutkit
+package com.shopify.ucp.embedded.checkout
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
@@ -10,6 +10,8 @@ import kotlinx.serialization.encoding.*
  */
 @Serializable
 public data class Checkout (
+    public val attribution: Map<String, String>? = null,
+
     /**
      * Representation of the buyer.
      */
@@ -714,12 +716,6 @@ public data class Link (
  */
 @Serializable
 public data class Message (
-    /**
-     * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
-     * fulfillment_changed, age_restricted, etc.).
-     *
-     * Info code for programmatic handling.
-     */
     public val code: String? = null,
 
     /**
@@ -1235,6 +1231,12 @@ public data class Order (
      * independently of fulfillment.
      */
     public val adjustments: List<Adjustment>? = null,
+
+    /**
+     * Snapshot of the attribution associated with the originating checkout. Read-only on the
+     * order.
+     */
+    public val attribution: Map<String, String>? = null,
 
     /**
      * Associated checkout ID for reconciliation.

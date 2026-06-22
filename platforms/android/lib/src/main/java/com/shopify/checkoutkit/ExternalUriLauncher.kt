@@ -9,9 +9,9 @@ import android.net.Uri
  * Single point of entry for launching an external `ACTION_VIEW` Intent.
  *
  * Used by both [CheckoutWebView.shouldOverrideUrlLoading] (for `mailto:` / `tel:` / custom-scheme
- * deep links intercepted during navigation) and [EmbeddedCheckoutProtocol.defaultDelegationClient]
- * (for `ec.window.open_request` payloads from the page). Centralizing the resolver check and
- * `startActivity` failure handling keeps the two paths from drifting apart.
+ * deep links intercepted during navigation) and the default `ec.window.open_request` handler.
+ * Centralizing the resolver check and `startActivity` failure handling keeps the two paths from
+ * drifting apart.
  */
 internal object ExternalUriLauncher {
     sealed class Result {

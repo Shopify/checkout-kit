@@ -150,12 +150,17 @@ To check for lint issues without auto-correcting:
 
 ### Public API surface
 
-The library's public API is tracked via a committed baseline at `platforms/android/lib/api/lib.api`, managed by the [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator) Gradle plugin. The unified `Breaking Changes` CI workflow runs `./gradlew :lib:apiCheck` on every PR that touches Android sources and fails if the compiled public API diverges from the baseline.
+The Android-facing public APIs are tracked via committed baselines managed by the [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator) Gradle plugin:
+
+- `platforms/android/lib/api/lib.api` for `com.shopify:checkout-kit`.
+- `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` for `com.shopify:embedded-checkout-protocol`.
+
+The unified `Breaking Changes` CI workflow runs `./gradlew :lib:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocol/languages/kotlin` on every PR that touches Android or Kotlin protocol sources. It fails if either compiled public API diverges from the committed baselines.
 
 If your change intentionally modifies the public API:
 
-1. Run `dev android api dump` from the repo root (or `./gradlew :lib:apiDump` from `platforms/android/`) to regenerate the baseline.
-2. Review the diff in `platforms/android/lib/api/lib.api` alongside your code changes.
+1. Run `dev android api dump` from the repo root to regenerate both baselines. For project-scoped updates, run `./gradlew :lib:apiDump` from `platforms/android/` or `./gradlew :embedded-checkout-protocol:apiDump` from `protocol/languages/kotlin/`.
+2. Review the relevant `.api` diff alongside your code changes.
 3. Commit the updated `.api` file in the same PR.
 
 If you did _not_ intend to change public API and `apiCheck` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
@@ -164,16 +169,16 @@ If you did _not_ intend to change public API and `apiCheck` is failing, the diff
 
 Open a pull request with the following changes:
 
-1. Bump the `versionName` in `platforms/android/lib/build.gradle`.
+1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
 2. Add an entry to the top of `platforms/android/CHANGELOG.md`.
-3. If the React Native package should consume this Android SDK release, update `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the same version.
+3. Update `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the same lowercase SemVer.
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
 Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
 
 1. Select `Android` as the platform.
-2. Enter the expected version. The workflow reads the SDK version from `platforms/android/lib/build.gradle` and fails if the typed version does not match.
+2. Enter the expected version. The workflow reads the SDK version from `platforms/android/gradle/libs.versions.toml` and fails if the typed version does not match.
 3. Select `Dry run` first to review the release plan without creating a release.
 4. Rerun with `Draft release` to create a draft GitHub Release with the `android/`-prefixed tag (e.g. `android/3.0.1`) for human review.
 5. Publish the draft release when ready. Publishing the draft kicks off the [Android publish workflow](../../actions/workflows/android-publish.yml). **A manual approval by a maintainer is required before publication to Maven Central.**
@@ -195,7 +200,7 @@ The React Native package reads its published native SDK dependency versions from
 }
 ```
 
-When updating the Swift or Android SDK version that React Native should consume, update the matching `checkoutKit.nativeSdkVersions` entry in this package file. These values drive `RNShopifyCheckoutKit.podspec` for iOS and the module/sample Gradle dependencies for Android, so they must stay aligned with the published native SDK versions used by the React Native release.
+When updating the Swift or Android SDK version that React Native should consume, update the matching `checkoutKit.nativeSdkVersions` entry in this package file. These values drive `RNShopifyCheckoutKit.podspec` for iOS and the module/sample Gradle dependencies for Android, so they must stay aligned with the published native SDK versions used by the React Native release. Android CI uses the published Maven artifact by default, so `nativeSdkVersions.android` must stay on the published `com.shopify:checkout-kit` lowercase SemVer, not the Kotlin protocol calver.
 
 ### Public API surface
 

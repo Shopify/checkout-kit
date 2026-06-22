@@ -25,12 +25,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
-class EmbeddedCheckoutProtocolTest {
+class EmbeddedCheckoutProtocolBridgeTest {
 
     private lateinit var activity: ComponentActivity
     private lateinit var viewSpy: CheckoutWebView
     private lateinit var mockListener: CheckoutWebViewListener
-    private lateinit var ecp: EmbeddedCheckoutProtocol
+    private lateinit var ecp: EmbeddedCheckoutProtocolBridge
 
     @Before
     fun setUp() {
@@ -44,7 +44,7 @@ class EmbeddedCheckoutProtocolTest {
         viewSpy = Mockito.spy(CheckoutWebView(activity))
         mockListener = mock()
         whenever(viewSpy.getListener()).thenReturn(mockListener)
-        ecp = EmbeddedCheckoutProtocol(viewSpy)
+        ecp = EmbeddedCheckoutProtocolBridge(viewSpy)
     }
 
     // region ec.ready
@@ -385,23 +385,22 @@ class EmbeddedCheckoutProtocolTest {
 
     @Test
     fun `ec start bubbles up to client`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}"""
-        val client = mock<CheckoutCommunicationClient>()
+        var received = false
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.start) { received = true }
         ecp.setClient(client)
 
-        ecp.postMessage(rawMessage)
+        ecp.postMessage(ecStartMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(client).process(rawMessage)
+        assertThat(received).isTrue()
     }
 
     @Test
     fun `ec start sends no response to checkout`() {
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.process(any())).thenReturn(null)
-        ecp.setClient(client)
+        ecp.setClient(CheckoutProtocol.Client())
 
-        ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}""")
+        ecp.postMessage(ecStartMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(viewSpy, never()).evaluateJavascript(any(), any())
@@ -414,25 +413,29 @@ class EmbeddedCheckoutProtocolTest {
     @Test
     fun `ec error is forwarded to client regardless of severity`() {
         val rawMessage = ecErrorMessage(severity = "recoverable")
-        val client = mock<CheckoutCommunicationClient>()
+        var received = false
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.error) { received = true }
         ecp.setClient(client)
 
         ecp.postMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(client).process(rawMessage)
+        assertThat(received).isTrue()
     }
 
     @Test
     fun `ec error with unrecoverable severity dismisses via listener`() {
         val rawMessage = ecErrorMessage(severity = "unrecoverable")
-        val client = mock<CheckoutCommunicationClient>()
+        var received = false
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.error) { received = true }
         ecp.setClient(client)
 
         ecp.postMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(client).process(rawMessage)
+        assertThat(received).isTrue()
         val captor = argumentCaptor<CheckoutException>()
         verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue).isInstanceOf(ClientException::class.java)
@@ -454,16 +457,17 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
-    fun `ec error with unrecoverable severity dismisses even when client returns response`() {
+    fun `ec error with unrecoverable severity dismisses even when merchant handles error`() {
         val rawMessage = ecErrorMessage(severity = "unrecoverable")
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.process(rawMessage)).thenReturn("""{"jsonrpc":"2.0","id":null,"result":{}}""")
+        var received = false
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.error) { received = true }
         ecp.setClient(client)
 
         ecp.postMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(client).process(rawMessage)
+        assertThat(received).isTrue()
         verify(mockListener).onCheckoutViewFailedWithError(
             argThat { this is ClientException },
         )
@@ -472,7 +476,7 @@ class EmbeddedCheckoutProtocolTest {
     @Test
     fun `ec error with recoverable severity does not dismiss`() {
         val rawMessage = ecErrorMessage(severity = "recoverable")
-        ecp.setClient(mock())
+        ecp.setClient(CheckoutProtocol.Client())
 
         ecp.postMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
@@ -483,7 +487,7 @@ class EmbeddedCheckoutProtocolTest {
     @Test
     fun `ec error with requires_buyer_input severity does not dismiss`() {
         val rawMessage = ecErrorMessage(severity = "requires_buyer_input")
-        ecp.setClient(mock())
+        ecp.setClient(CheckoutProtocol.Client())
 
         ecp.postMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
@@ -494,7 +498,7 @@ class EmbeddedCheckoutProtocolTest {
     @Test
     fun `ec error with requires_buyer_review severity does not dismiss`() {
         val rawMessage = ecErrorMessage(severity = "requires_buyer_review")
-        ecp.setClient(mock())
+        ecp.setClient(CheckoutProtocol.Client())
 
         ecp.postMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
@@ -510,7 +514,7 @@ class EmbeddedCheckoutProtocolTest {
         |]
         """.trimMargin()
         val rawMessage = ecErrorMessageWithMessages(messages)
-        ecp.setClient(mock())
+        ecp.setClient(CheckoutProtocol.Client())
 
         ecp.postMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
@@ -539,14 +543,15 @@ class EmbeddedCheckoutProtocolTest {
 
     @Test
     fun `ec complete is delegated to client`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":{}}}"""
-        val client = mock<CheckoutCommunicationClient>()
+        var received = false
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.complete) { received = true }
         ecp.setClient(client)
 
-        ecp.postMessage(rawMessage)
+        ecp.postMessage(ecCompleteMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(client).process(rawMessage)
+        assertThat(received).isTrue()
     }
 
     @Test
@@ -573,25 +578,26 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
-    fun `non-null client response for supported request is sent back to checkout`() {
+    fun `typed delegation response for supported request is sent back to checkout`() {
         val rawMessage = windowOpenRequest(id = "\"9\"", url = "https://example.com")
-        val clientResponse = """{"jsonrpc":"2.0","id":"9","result":{"data":"ok"}}"""
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.process(rawMessage)).thenReturn(clientResponse)
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) {
+                WindowOpenResult.Rejected(reason = "merchant says no")
+            }
         ecp.setClient(client)
 
         val js = captureEvaluatedJs { ecp.postMessage(rawMessage) }
 
         assertThat(js).contains("window.EmbeddedCheckoutProtocol")
         assertThat(js).contains(".postMessage(")
-        assertThat(js).contains("ok")
+        assertThat(js).contains("merchant says no")
     }
 
     @Test
     fun `null client response for supported notification sends nothing to checkout`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":{}}}"""
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.process(rawMessage)).thenReturn(null)
+        val rawMessage = ecMessagesChangeMessage()
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.messagesChange) { /* no-op */ }
         ecp.setClient(client)
 
         ecp.postMessage(rawMessage)
@@ -691,19 +697,16 @@ class EmbeddedCheckoutProtocolTest {
         """{"jsonrpc":"2.0","method":"ec.window.open_request","id":$id,"params":{"url":"$url"}}"""
 
     private fun assertIgnoredByBridge(rawMessage: String) {
-        val client = mock<CheckoutCommunicationClient>()
-        ecp.setClient(client)
+        ecp.setClient(CheckoutProtocol.Client())
 
         ecp.postMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(viewSpy, never()).evaluateJavascript(any(), any())
-        verify(client, never()).process(any())
     }
 
     private fun assertMethodNotFoundByBridge(rawMessage: String, expectedId: String) {
-        val client = mock<CheckoutCommunicationClient>()
-        ecp.setClient(client)
+        ecp.setClient(CheckoutProtocol.Client())
 
         val js = captureEvaluatedJs {
             ecp.postMessage(rawMessage)
@@ -713,7 +716,6 @@ class EmbeddedCheckoutProtocolTest {
         assertThat(js).contains("-32601")
         assertThat(js).contains("Method not found")
         assertThat(js).contains(expectedId)
-        verify(client, never()).process(any())
     }
 
     private fun ecErrorMessage(severity: String): String {
@@ -726,6 +728,12 @@ class EmbeddedCheckoutProtocolTest {
         val error = """{$ERROR_RESPONSE_UCP,"messages":$messages}"""
         return """{"jsonrpc":"2.0","method":"ec.error","params":{"error":$error}}"""
     }
+
+    private fun ecStartMessage(): String =
+        """{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":${checkoutJson()}}}"""
+
+    private fun ecMessagesChangeMessage(): String =
+        """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":${checkoutJson()}}}"""
 
     private fun ecCompleteMessage(): String =
         """{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":${checkoutJson(status = "completed")}}}"""

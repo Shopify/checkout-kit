@@ -106,7 +106,6 @@ android {
 }
 
 
-def useLocalSdk = (System.getenv("USE_LOCAL_SDK") ?: "0") == "1"
 def packageJsonFile = file("../package.json")
 def packageJson = new groovy.json.JsonSlurper().parse(packageJsonFile)
 def shopifySdkVersion = packageJson.checkoutKit?.nativeSdkVersions?.android as String
@@ -118,16 +117,6 @@ if (shopifySdkVersion == null || shopifySdkVersion.trim().isEmpty()) {
 def shopifySdkArtifact = "com.shopify:checkout-kit:$shopifySdkVersion"
 
 repositories {
-  if (useLocalSdk) {
-    exclusiveContent {
-      forRepository {
-        mavenLocal()
-      }
-      filter {
-        includeModule("com.shopify", "checkout-kit")
-      }
-    }
-  }
   mavenCentral()
   google()
 }

@@ -1,7 +1,7 @@
 package com.shopify.checkout_kit_android_demo.common.logs
 
-import com.shopify.checkoutkit.Checkout
 import com.shopify.checkoutkit.CheckoutException
+import com.shopify.ucp.embedded.checkout.Checkout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
