@@ -22,6 +22,26 @@ struct UIApplicationExternalURLHandler: ExternalURLHandling {
     }
 }
 
+protocol InAppBrowserPresenting: Sendable {
+    @MainActor func present(_ url: URL) async -> Bool
+}
+
+struct SafariViewControllerBrowserPresenter: InAppBrowserPresenting {
+    @MainActor
+    func present(_ url: URL) async -> Bool {
+        guard let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController() else {
+            return false
+        }
+
+        let safari = SFSafariViewController(url: url)
+        safari.modalPresentationStyle = .pageSheet
+        safari.modalTransitionStyle = .coverVertical
+        presenter.present(safari, animated: true)
+
+        return true
+    }
+}
+
 class CheckoutWebView: WKWebView {
     var timer: Date?
 
@@ -31,6 +51,7 @@ class CheckoutWebView: WKWebView {
 
     var client: (any CheckoutCommunicationProtocol)?
     var externalURLHandler: any ExternalURLHandling = UIApplicationExternalURLHandler()
+    var inAppBrowser: any InAppBrowserPresenting = SafariViewControllerBrowserPresenter()
 
     static func `for`(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
         OSLogger.shared.debug("Creating webview for URL: \(url.absoluteString)")
@@ -162,23 +183,15 @@ extension CheckoutWebView: WKScriptMessageHandler {
     /// SFSafariViewController and non-web URLs with UIApplication.
     var defaultsClient: CheckoutProtocol.Client {
         CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
+            .on(CheckoutProtocol.windowOpen) { [externalURLHandler, inAppBrowser] request in
                 let scheme = request.url.scheme?.lowercased()
                 guard scheme == "http" || scheme == "https" else {
                     let didOpen = await externalURLHandler.open(request.url)
                     return didOpen ? .success : .rejected(reason: "UIApplication.open returned false")
                 }
 
-                guard let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController() else {
-                    return .rejected(reason: "no presenter available")
-                }
-
-                let safari = SFSafariViewController(url: request.url)
-                safari.modalPresentationStyle = .pageSheet
-                safari.modalTransitionStyle = .coverVertical
-                presenter.present(safari, animated: true)
-
-                return .success
+                let didPresent = await inAppBrowser.present(request.url)
+                return didPresent ? .success : .rejected(reason: "no presenter available")
             }
     }
 }

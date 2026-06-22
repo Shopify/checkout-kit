@@ -396,6 +396,39 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
+    func testDefaultsClientOpensWebSchemeInInAppBrowser() async throws {
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"req-window-1","params":{"url":"https://example.com/policy"}}"#
+        let inAppBrowser = MockInAppBrowser(didPresent: true)
+        view.inAppBrowser = inAppBrowser
+        let externalURLHandler = MockExternalURLHandler(didOpen: true)
+        view.externalURLHandler = externalURLHandler
+
+        let raw = await view.defaultsClient.process(body)
+        let response = try XCTUnwrap(raw)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        let resultBody = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(resultBody["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "success")
+        XCTAssertEqual(inAppBrowser.presentedURL?.absoluteString, "https://example.com/policy")
+        XCTAssertNil(externalURLHandler.openedURL, "Web links must open in-app, not via the external opener")
+    }
+
+    @MainActor
+    func testDefaultsClientRejectsWebSchemeWhenInAppBrowserHasNoPresenter() async throws {
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"req-window-1","params":{"url":"https://example.com/policy"}}"#
+        view.inAppBrowser = MockInAppBrowser(didPresent: false)
+
+        let raw = await view.defaultsClient.process(body)
+        let response = try XCTUnwrap(raw)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        let resultBody = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(resultBody["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "error")
+        let messages = try XCTUnwrap(resultBody["messages"] as? [[String: Any]])
+        XCTAssertEqual(messages.first?["content"] as? String, "no presenter available")
+    }
+
+    @MainActor
     func testWindowOpenRequestIgnoresMalformedBody() async {
         view.client = nil
         let notFired = expectation(description: "sendResponse must not fire")
@@ -464,5 +497,20 @@ final class MockExternalURLHandler: ExternalURLHandling {
     func open(_ url: URL) async -> Bool {
         openedURL = url
         return didOpen
+    }
+}
+
+final class MockInAppBrowser: InAppBrowserPresenting {
+    let didPresent: Bool
+    private(set) var presentedURL: URL?
+
+    init(didPresent: Bool) {
+        self.didPresent = didPresent
+    }
+
+    @MainActor
+    func present(_ url: URL) async -> Bool {
+        presentedURL = url
+        return didPresent
     }
 }
