@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+repo_root=${PACKAGE_SIZE_REPO_ROOT:-"$script_repo_root"}
+
+measure_web=${MEASURE_WEB:-true}
+measure_react_native=${MEASURE_REACT_NATIVE:-true}
+measure_android=${MEASURE_ANDROID:-true}
+
+size_bytes() {
+  local file=$1
+
+  stat -c "%s" "$file" 2>/dev/null || stat -f "%z" "$file"
+}
+
+human_bytes() {
+  local bytes=$1
+
+  awk -v bytes="$bytes" 'BEGIN {
+    split("B KiB MiB GiB", units, " ");
+    value = bytes;
+    unit = 1;
+    while (value >= 1024 && unit < 4) {
+      value = value / 1024;
+      unit++;
+    }
+    if (unit == 1) {
+      printf "%d %s", value, units[unit];
+    } else {
+      printf "%.1f %s", value, units[unit];
+    }
+  }'
+}
+
+record_artifact() {
+  local platform=$1
+  local artifact=$2
+  local file=$3
+  local bytes
+
+  bytes=$(size_bytes "$file")
+  printf "%s\t%s\t%s\n" "$platform" "$artifact" "$bytes" >> "$output_file"
+}
+
+measure_web_package() {
+  local pack_dir
+  local tarball
+
+  pack_dir=$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-web-pack.XXXXXX")
+  (
+    cd "$repo_root/platforms/web"
+    pnpm build
+    pnpm pack --pack-destination "$pack_dir"
+  )
+
+  tarball=$(find "$pack_dir" -name "*.tgz" -type f -print -quit)
+  record_artifact "Web" "npm tarball" "$tarball"
+}
+
+measure_react_native_package() {
+  local pack_dir
+  local tarball
+
+  pack_dir=$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-react-native-pack.XXXXXX")
+  (
+    cd "$repo_root/platforms/react-native"
+    pnpm module clean
+    pnpm module build
+    cd modules/@shopify/checkout-kit-react-native
+    pnpm pack --pack-destination "$pack_dir"
+  )
+
+  tarball=$(find "$pack_dir" -name "*.tgz" -type f -print -quit)
+  record_artifact "React Native" "npm tarball" "$tarball"
+}
+
+measure_android_package() {
+  local aar="$repo_root/platforms/android/lib/build/outputs/aar/lib-release.aar"
+
+  (
+    cd "$repo_root/platforms/android"
+    ./gradlew :lib:assembleRelease --console=plain
+  )
+
+  record_artifact "Android" "release AAR" "$aar"
+}
+
+collect_measurements() {
+  output_file=${1:?usage: measure-package-size collect <output-file>}
+  : > "$output_file"
+
+  if [[ "$measure_web" == "true" ]]; then
+    measure_web_package
+  fi
+
+  if [[ "$measure_react_native" == "true" ]]; then
+    measure_react_native_package
+  fi
+
+  if [[ "$measure_android" == "true" ]]; then
+    measure_android_package
+  fi
+}
+
+render_comment() {
+  local base_file=${1:?usage: measure-package-size render <base-file> <head-file> <output-file>}
+  local head_file=${2:?usage: measure-package-size render <base-file> <head-file> <output-file>}
+  local comment_file=${3:?usage: measure-package-size render <base-file> <head-file> <output-file>}
+
+  awk -F '\t' -v base_path="$base_file" '
+    function human(bytes, units, value, unit) {
+      if (bytes == "") {
+        return "unavailable";
+      }
+
+      split("B KiB MiB GiB", units, " ");
+      value = bytes + 0;
+      unit = 1;
+      while (value >= 1024 && unit < 4) {
+        value = value / 1024;
+        unit++;
+      }
+
+      if (unit == 1) {
+        return sprintf("%d %s", value, units[unit]);
+      }
+
+      return sprintf("%.1f %s", value, units[unit]);
+    }
+
+    function delta(head, base, diff) {
+      if (head == "" || base == "") {
+        return "unavailable";
+      }
+
+      diff = (head + 0) - (base + 0);
+      if (diff > 0) {
+        return "+" human(diff);
+      }
+      if (diff < 0) {
+        return "-" human(-diff);
+      }
+
+      return "0 B";
+    }
+
+    function remember(platform, artifact, key) {
+      key = platform SUBSEP artifact;
+      if (!(key in seen)) {
+        seen[key] = 1;
+        order[++order_count] = key;
+        platforms[key] = platform;
+        artifacts[key] = artifact;
+      }
+      return key;
+    }
+
+    FILENAME == base_path {
+      if (NF >= 3) {
+        key = remember($1, $2);
+        base_bytes[key] = $3;
+      }
+      next;
+    }
+
+    NF >= 3 {
+      key = remember($1, $2);
+      head_bytes[key] = $3;
+      next;
+    }
+
+    END {
+      print "<!-- checkout-kit-package-size -->";
+      print "## Package Size";
+      print "";
+      print "| Platform | Artifact | Base | Head | Delta |";
+      print "| --- | --- | ---: | ---: | ---: |";
+
+      if (order_count == 0) {
+        print "| - | - | - | - | - |";
+      } else {
+        for (i = 1; i <= order_count; i++) {
+          key = order[i];
+          printf "| %s | %s | %s | %s | %s |\n",
+            platforms[key],
+            artifacts[key],
+            human(base_bytes[key]),
+            human(head_bytes[key]),
+            delta(head_bytes[key], base_bytes[key]);
+        }
+      }
+
+      print "";
+      print "_Measured from the PR base SHA and PR head SHA. This comment reports package artifact sizes only; it is not a final app binary-size report._";
+    }
+  ' "$base_file" "$head_file" > "$comment_file"
+}
+
+command=${1:-comment}
+
+case "$command" in
+  collect)
+    collect_measurements "$2"
+    ;;
+  render)
+    render_comment "$2" "$3" "$4"
+    ;;
+  comment)
+    output_file=${2:-"$repo_root/package-size-comment.md"}
+    rows_file=$(mktemp "${TMPDIR:-/tmp}/checkout-kit-package-size-rows.XXXXXX")
+    trap 'rm -f "$rows_file"' EXIT
+    collect_measurements "$rows_file"
+    render_comment /dev/null "$rows_file" "$output_file"
+    ;;
+  *)
+    echo "Usage: measure-package-size {collect <output-file>|render <base-file> <head-file> <comment-file>|comment [comment-file]}" >&2
+    exit 1
+    ;;
+esac
