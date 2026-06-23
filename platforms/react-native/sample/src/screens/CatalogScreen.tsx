@@ -64,7 +64,7 @@ function CatalogScreen({navigation}: Props) {
             <Product
               key={node.id}
               product={node}
-              testID={`product-${index}`}
+              testID={`product-${index}-grid-item`}
               onPress={() => {
                 navigation.navigate('ProductDetails', {
                   product: node,

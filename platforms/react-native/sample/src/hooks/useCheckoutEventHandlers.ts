@@ -15,7 +15,10 @@ interface EventHandlers {
   onClickLink?: (url: string) => void;
 }
 
-export function useShopifyProtocolEventHandlers(name?: string): ProtocolHandlers {
+export function useShopifyProtocolEventHandlers(
+  name?: string,
+  additionalHandlers: Partial<ProtocolHandlers> = {},
+): ProtocolHandlers {
   const log = createDebugLogger(name ?? '');
 
   // Keep the sample subscribed to every public protocol event automatically.
@@ -26,6 +29,11 @@ export function useShopifyProtocolEventHandlers(name?: string): ProtocolHandlers
   >((handlers, method) => {
     handlers[method] = payload => {
       log(method, payload);
+      (
+        additionalHandlers[method as keyof ProtocolHandlers] as
+          | ((payload: unknown) => void)
+          | undefined
+      )?.(payload);
     };
     return handlers;
   }, {}) as ProtocolHandlers;

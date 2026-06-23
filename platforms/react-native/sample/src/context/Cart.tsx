@@ -21,7 +21,8 @@ interface Context {
   totalQuantity: number;
   addingToCart: Set<string>;
   clearCart: () => void;
-  addToCart: (variantId: string) => Promise<void>;
+  addToCart: (variantId: string, quantity?: number) => Promise<void>;
+  seedCart: (variantId: string, quantity?: number) => Promise<void>;
   removeFromCart: (variantId: string) => Promise<void>;
 }
 
@@ -35,6 +36,7 @@ const CartContext = createContext<Context>({
   totalQuantity: 0,
   addingToCart: new Set(),
   addToCart: async () => {},
+  seedCart: async () => {},
   removeFromCart: async () => {},
   clearCart: () => {},
 });
@@ -112,79 +114,94 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
   }, [cartId, fetchCart, setTotalQuantity]);
 
   const addToCart = useCallback(
-    async (variantId: string) => {
-      let id = cartId;
+    async (variantId: string, quantity = 1, forceNewCart = false) => {
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        throw new Error('Cart quantity must be a positive integer');
+      }
+
+      let id = forceNewCart ? undefined : cartId;
 
       dispatch({type: 'add', variantId});
 
-      if (
-        !id &&
-        appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount &&
-        !isAuthenticated
-      ) {
-        dispatch({type: 'remove', variantId});
-        Alert.alert(
-          'Sign in required',
-          'Sign in on the Account tab or change the Buyer Identity setting to add items to your cart.',
-        );
-        return;
-      }
-
-      invalidate();
-
-      if (!id) {
-        let customerAccessToken: string | undefined;
+      try {
         if (
-          appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount
+          !id &&
+          appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount &&
+          !isAuthenticated
         ) {
-          customerAccessToken =
-            (await getValidAccessToken()) ?? undefined;
+          const signInRequiredMessage =
+            'Sign in on the Account tab or change the Buyer Identity setting to add items to your cart.';
+
+          if (forceNewCart) {
+            throw new Error(signInRequiredMessage);
+          }
+
+          Alert.alert('Sign in required', signInRequiredMessage);
+          return;
         }
-        const cartInput = createBuyerIdentityCartInput(
-          appConfig,
-          customerAccessToken,
-        );
-        const cart = await createCart({variables: {input: cartInput}});
-        id = cart.data.cartCreate.cart?.id;
 
-        if (id) {
-          setCartId(id);
+        invalidate();
+
+        if (!id) {
+          let customerAccessToken: string | undefined;
+          if (
+            appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount
+          ) {
+            customerAccessToken =
+              (await getValidAccessToken()) ?? undefined;
+          }
+          const cartInput = createBuyerIdentityCartInput(
+            appConfig,
+            customerAccessToken,
+          );
+          const cart = await createCart({variables: {input: cartInput}});
+          id = cart.data.cartCreate.cart?.id;
+
+          if (!id) {
+            throw new Error('Cart creation did not return a cart ID');
+          }
         }
-      }
 
-      const {data} = await addLineItems({
-        variables: {
-          cartId: id,
-          lines: [{quantity: 1, merchandiseId: variantId}],
-        },
-      });
+        const {data} = await addLineItems({
+          variables: {
+            cartId: id,
+            lines: [{quantity, merchandiseId: variantId}],
+          },
+        });
 
-      dispatch({type: 'remove', variantId});
+        setCartId(id);
+        setCheckoutURL(data.cartLinesAdd.cart.checkoutUrl);
+        setTotalQuantity(data.cartLinesAdd.cart.totalQuantity);
 
-      setCheckoutURL(data.cartLinesAdd.cart.checkoutUrl);
-      setTotalQuantity(data.cartLinesAdd.cart.totalQuantity);
-
-      if (id) {
         fetchCart({
           variables: {
             cartId: id,
           },
         });
+      } finally {
+        dispatch({type: 'remove', variantId});
       }
     },
     [
       cartId,
+      createCart,
       addLineItems,
       invalidate,
+      setCartId,
       setCheckoutURL,
       setTotalQuantity,
       appConfig,
-      createCart,
-      setCartId,
       fetchCart,
       getValidAccessToken,
       isAuthenticated,
     ],
+  );
+
+  const seedCart = useCallback(
+    async (variantId: string, quantity = 1) => {
+      await addToCart(variantId, quantity, true);
+    },
+    [addToCart],
   );
 
   const removeFromCart = useCallback(
@@ -231,6 +248,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       cartId,
       checkoutURL,
       addToCart,
+      seedCart,
       removeFromCart,
       totalQuantity,
       addingToCart,
@@ -240,6 +258,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       cartId,
       checkoutURL,
       addToCart,
+      seedCart,
       removeFromCart,
       totalQuantity,
       addingToCart,
