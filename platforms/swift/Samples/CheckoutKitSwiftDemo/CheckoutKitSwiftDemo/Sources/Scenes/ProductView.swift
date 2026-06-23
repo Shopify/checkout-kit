@@ -116,7 +116,7 @@ struct ProductView: View {
                             if #available(iOS 16, *) {
                                 AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
                                     .wallets([.applePay])
-                                    .applePayStyle(applePayStyle.style)
+                                    .applePayButtonStyle(applePayStyle.style)
                                     .onFail { error in
                                         print("[AcceleratedCheckout] Failed: \(error)")
                                     }

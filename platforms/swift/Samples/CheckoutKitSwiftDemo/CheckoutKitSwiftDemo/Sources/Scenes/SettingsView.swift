@@ -328,7 +328,7 @@ enum ApplePayStyleOption: String, CaseIterable {
     }
 
     @available(iOS 16.0, *)
-    var style: PayWithApplePayButtonStyle {
+    var style: PKPaymentButtonStyle {
         switch self {
         case .automatic: return .automatic
         case .black: return .black

@@ -19,7 +19,7 @@ struct ButtonSet: View {
                     renderState: $cartRenderState
                 ) {
                     AcceleratedCheckoutButtons(cartID: cartID)
-                        .applePayLabel(.plain)
+                        .applePayButtonType(.plain)
                         .onFail { error in
                             print("❌ Checkout failed: \(error)")
                         }
@@ -43,8 +43,8 @@ struct ButtonSet: View {
                         variantID: productVariant.id,
                         quantity: firstVariantQuantity
                     )
-                    .applePayStyle(.whiteOutline)
-                    .applePayLabel(.buy)
+                    .applePayButtonStyle(.whiteOutline)
+                    .applePayButtonType(.buy)
                     .cornerRadius(24)
                     .wallets([.applePay, .shopPay])
                     .onFail { error in

@@ -41,7 +41,7 @@ struct CartView: View {
                     if let cartID = cartManager.cart?.id {
                         if #available(iOS 16, *) {
                             AcceleratedCheckoutButtons(cartID: cartID)
-                                .applePayStyle(applePayStyle.style)
+                                .applePayButtonStyle(applePayStyle.style)
                                 .onFail { error in
                                     print("[AcceleratedCheckout] Failed: \(error)")
                                 }
