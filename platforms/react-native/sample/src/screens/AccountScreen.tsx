@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Entypo';
+import Icon from '@expo/vector-icons/Entypo';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {AccountStackParamList} from '../App';
 import type {Colors} from '../context/Theme';

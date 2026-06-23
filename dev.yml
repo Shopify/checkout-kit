@@ -27,6 +27,10 @@ up:
       name: Run Checkout Kit workspace setup
       met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts
       meet: ./scripts/setup_dev_workspace --skip-optional-prompts
+  - custom:
+      name: Prebuild React Native sample native projects
+      met?: "false"
+      meet: cd platforms/react-native && pnpm run prebuild -- all
 
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
@@ -361,13 +365,12 @@ commands:
           Runs unit tests across all three React Native targets:
             - JS:      Jest tests in `platforms/react-native/modules/@shopify/checkout-kit-react-native/tests/`
             - iOS:     Xcode/CocoaPods tests in `platforms/react-native/test/rct-integration-app/`
-            - Android: Gradle JVM tests for `:shopify_checkout-kit-react-native` (requires a local Maven publish of `:lib`)
+            - Android: Gradle JVM tests for `:shopify_checkout-kit-react-native`
         run: |
           set -e
           cd platforms/react-native && pnpm test
           pnpm sample test:ios
-          USE_LOCAL_SDK=1 ./scripts/publish_android_snapshot
-          cd sample/android && USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
+          pnpm sample test:android -- --refresh-dependencies
         subcommands:
           js:
             desc: Run JS unit tests via jest
@@ -376,13 +379,11 @@ commands:
             desc: Run native iOS unit tests via the RCT integration app
             run: cd platforms/react-native && pnpm sample test:ios
           android:
-            desc: Run native Android unit tests for the RN module (publishes/uses local platforms/android SDK)
+            desc: Run native Android unit tests for the RN module
             run: |
               set -e
               cd platforms/react-native
-              USE_LOCAL_SDK=1 ./scripts/publish_android_snapshot
-              cd sample/android
-              USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
+              pnpm sample test:android -- --refresh-dependencies
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)
         aliases: [style]
@@ -444,10 +445,10 @@ commands:
           fi
           echo "Cleaned root, module and sample workspaces"
 
-      server:
+      start:
         desc: Start Metro development server
-        aliases: [s]
-        run: cd platforms/react-native && pnpm sample start --reset-cache
+        aliases: [s, server]
+        run: cd platforms/react-native && pnpm sample start "$@"
 
       ios:
         desc: Run the iOS sample app in the simulator.
@@ -471,16 +472,24 @@ commands:
           optional: --local
         run: cd platforms/react-native && pnpm sample android "$@"
 
-      pod-install:
-        desc: Install CocoaPods for the iOS sample.
+      prebuild:
+        desc: Prebuild generated native sample projects.
         long_desc: |
-          Runs pod install for the iOS sample app.
+          Runs Expo prebuild for the React Native sample and prepares platform-specific native dependencies.
+          Native folders are regenerated from a clean Expo prebuild on every run.
+
+            dev rn prebuild                         Prebuild iOS and Android
+            dev rn prebuild ios                     Prebuild iOS and install CocoaPods
+            dev rn prebuild android                 Prebuild Android
+            dev rn prebuild all                     Regenerate iOS and Android native projects
+            dev rn prebuild ios --local             Prebuild iOS against in-repo Swift SDK sources
+            dev rn prebuild android --local         Prebuild Android against in-repo Android SDK artifacts
 
           --local
-            Wire the Podfile against in-repo Swift SDK sources.
+            Use in-repo native SDKs where supported.
         syntax:
-          optional: --local
-        run: cd platforms/react-native && pnpm run pod-install -- "$@"
+          optional: "[ios|android|all] [--local] [-- <expo prebuild args>]"
+        run: cd platforms/react-native && pnpm run prebuild -- "$@"
 
       open:
         desc: Open the React Native workspace root or native sample projects

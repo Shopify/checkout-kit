@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REACT_NATIVE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SAMPLE_DIR="$REACT_NATIVE_DIR/sample"
+
+usage() {
+  cat <<EOF
+Usage: scripts/prebuild [ios|android|all] [--local] [-- <expo prebuild args>]
+
+Prebuilds the Expo sample native project and prepares platform-specific native dependencies.
+
+  ios       Generate iOS project and install CocoaPods
+  android   Generate Android project
+  all       Generate both native projects and install CocoaPods
+  --local   Use in-repo native SDKs where supported
+EOF
+}
+
+platform="all"
+expo_args=()
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    ios|android|all)
+      platform="$1"
+      ;;
+    --local)
+      export USE_LOCAL_SDK=1
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      expo_args+=("$@")
+      break
+      ;;
+    *)
+      expo_args+=("$1")
+      ;;
+  esac
+  shift
+done
+
+case "$platform" in
+  ios|android|all) ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac
+
+if [ "${USE_LOCAL_SDK:-0}" = "1" ] && { [ "$platform" = "android" ] || [ "$platform" = "all" ]; }; then
+  "$SCRIPT_DIR/publish_android_snapshot"
+fi
+
+cd "$SAMPLE_DIR"
+pnpm exec expo prebuild --platform "$platform" --no-install --clean "${expo_args[@]}"
+
+if [ "$platform" = "ios" ] || [ "$platform" = "all" ]; then
+  bundle check || bundle install
+  cd ios
+  bundle exec pod install --repo-update
+fi

@@ -205,10 +205,10 @@ setup_react_native() {
 
   if [[ "$mode" == "check" ]]; then
     run_shell "React Native packages" 'test -d platforms/react-native/node_modules' || true
-    run_shell "React Native iOS gems" 'cd platforms/react-native/sample/ios && bundle check' || true
+    run_shell "React Native iOS gems" 'cd platforms/react-native/sample && bundle check' || true
   else
     run_shell "React Native packages" 'test -d platforms/react-native/node_modules || (cd platforms/react-native && pnpm install)' || true
-    run_shell "React Native iOS gems" 'cd platforms/react-native/sample/ios && (bundle check || bundle install)' || true
+    run_shell "React Native iOS gems" 'cd platforms/react-native/sample && (bundle check || bundle install)' || true
   fi
 }
 

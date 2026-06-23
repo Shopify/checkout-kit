@@ -35,8 +35,6 @@ const config: Configuration = {
   colorScheme: ColorScheme.automatic,
 };
 
-jest.mock('react-native');
-
 global.console = {
   ...global.console,
   error: jest.fn(),

@@ -10,7 +10,7 @@ import {
   Pressable,
   RefreshControl,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Entypo';
+import Icon from '@expo/vector-icons/Entypo';
 
 import {
   useShopifyCheckout,

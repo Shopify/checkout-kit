@@ -1,4 +1,4 @@
-import Config from 'react-native-config';
+import env from '../env';
 import {atom, getDefaultStore} from 'jotai';
 import {PKCE} from './pkce';
 import * as tokenStorage from './tokenStorage';
@@ -49,9 +49,9 @@ export class CustomerAccountManager {
     return `shop.${CustomerAccountManager.shopId}.app`;
   }
 
-  buildAuthorizationURL(): string {
+  async buildAuthorizationURL(): Promise<string> {
     const verifier = PKCE.generateCodeVerifier();
-    const challenge = PKCE.generateCodeChallenge(verifier);
+    const challenge = await PKCE.generateCodeChallenge(verifier);
     const state = PKCE.generateState();
 
     this.storedCodeVerifier = verifier;
@@ -132,7 +132,7 @@ export class CustomerAccountManager {
   }
 
   private static get shopId(): string {
-    const shopId = Config.CUSTOMER_ACCOUNT_API_SHOP_ID;
+    const shopId = env.CUSTOMER_ACCOUNT_API_SHOP_ID;
     if (!shopId) {
       throw new Error('CUSTOMER_ACCOUNT_API_SHOP_ID is not configured');
     }
@@ -140,7 +140,7 @@ export class CustomerAccountManager {
   }
 
   private static get clientId(): string {
-    const clientId = Config.CUSTOMER_ACCOUNT_API_CLIENT_ID;
+    const clientId = env.CUSTOMER_ACCOUNT_API_CLIENT_ID;
     if (!clientId) {
       throw new Error('CUSTOMER_ACCOUNT_API_CLIENT_ID is not configured');
     }

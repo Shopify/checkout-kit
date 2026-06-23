@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import pkg from '../../../package.json';
-import Config from 'react-native-config';
+import env from '../env';
 import {useConfig} from '../context/Config';
 import {
   ApplePayStyle,
@@ -179,7 +179,7 @@ function SettingsScreen() {
       {
         title: 'Storefront Domain',
         type: SectionType.Text,
-        value: Config.STOREFRONT_DOMAIN || 'undefined',
+        value: env.STOREFRONT_DOMAIN || 'undefined',
       },
     ],
     [shopify.version],

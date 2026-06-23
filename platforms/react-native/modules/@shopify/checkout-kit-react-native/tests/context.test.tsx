@@ -1,6 +1,6 @@
 import React from 'react';
 import {render, act} from '@testing-library/react-native';
-import {NativeModules, Platform} from 'react-native';
+import {TurboModuleRegistry, Platform} from 'react-native';
 import {
   ShopifyCheckoutProvider,
   useShopifyCheckout,
@@ -18,6 +18,10 @@ const config: Configuration = {
 };
 
 jest.mock('react-native');
+
+const NativeModule = TurboModuleRegistry.getEnforcing(
+  'ShopifyCheckoutKit',
+) as any;
 
 const HookTestComponent = ({
   onHookValue,
@@ -60,7 +64,7 @@ describe('ShopifyCheckoutProvider', () => {
     );
 
     expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
+      NativeModule.setConfig,
     ).toHaveBeenCalledWith(config);
   });
 
@@ -72,17 +76,17 @@ describe('ShopifyCheckoutProvider', () => {
     );
 
     expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
+      NativeModule.setConfig,
     ).not.toHaveBeenCalled();
     expect(
-      NativeModules.ShopifyCheckoutKit.configureAcceleratedCheckouts,
+      NativeModule.configureAcceleratedCheckouts,
     ).not.toHaveBeenCalled();
   });
 
   it('configures accelerated checkouts when provided', async () => {
     (Platform as any).Version = '17.0';
     (
-      NativeModules.ShopifyCheckoutKit
+      NativeModule
         .configureAcceleratedCheckouts as unknown as {mockReturnValue: any}
     ).mockReturnValue(true);
 
@@ -115,7 +119,7 @@ describe('ShopifyCheckoutProvider', () => {
     });
 
     expect(
-      NativeModules.ShopifyCheckoutKit.configureAcceleratedCheckouts,
+      NativeModule.configureAcceleratedCheckouts,
     ).toHaveBeenCalledWith(
       'test-shop.myshopify.com',
       'shpat_test_token',
@@ -142,7 +146,7 @@ describe('ShopifyCheckoutProvider', () => {
     );
 
     expect(
-      NativeModules.ShopifyCheckoutKit.setConfig.mock.calls,
+      NativeModule.setConfig.mock.calls,
     ).toHaveLength(2);
   });
 });
@@ -174,7 +178,7 @@ describe('useShopifyCheckout', () => {
       hookValue.present(checkoutUrl);
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+    expect(NativeModule.present).toHaveBeenCalledWith(
       checkoutUrl,
       [],
     );
@@ -200,10 +204,10 @@ describe('useShopifyCheckout', () => {
       hookValue.present(checkoutUrl, {onClose, onFail, onGeolocationRequest});
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
+    expect(NativeModule.onDispatch).toHaveBeenCalledWith(
       expect.any(Function),
     );
-    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+    expect(NativeModule.present).toHaveBeenCalledWith(
       checkoutUrl,
       [],
     );
@@ -227,10 +231,10 @@ describe('useShopifyCheckout', () => {
       });
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
+    expect(NativeModule.onDispatch).toHaveBeenCalledWith(
       expect.any(Function),
     );
-    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+    expect(NativeModule.present).toHaveBeenCalledWith(
       checkoutUrl,
       [CheckoutProtocol.start],
     );
@@ -253,7 +257,7 @@ describe('useShopifyCheckout', () => {
     });
 
     expect(
-      NativeModules.ShopifyCheckoutKit.present,
+      NativeModule.present,
     ).not.toHaveBeenCalled();
   });
 
@@ -273,7 +277,7 @@ describe('useShopifyCheckout', () => {
       hookValue.dismiss();
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.dismiss).toHaveBeenCalled();
+    expect(NativeModule.dismiss).toHaveBeenCalled();
   });
 
   it('provides setConfig function', () => {
@@ -295,7 +299,7 @@ describe('useShopifyCheckout', () => {
     });
 
     expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
+      NativeModule.setConfig,
     ).toHaveBeenCalledWith(newConfig);
   });
 
@@ -317,7 +321,7 @@ describe('useShopifyCheckout', () => {
       logLevel: 'error',
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.getConfig).toHaveBeenCalled();
+    expect(NativeModule.getConfig).toHaveBeenCalled();
   });
 
   it('provides version from the instance', () => {

@@ -9,7 +9,7 @@ import {
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ApolloClient, InMemoryCache, ApolloProvider} from '@apollo/client';
-import Icon from 'react-native-vector-icons/Entypo';
+import Icon from '@expo/vector-icons/Entypo';
 
 import CatalogScreen from './screens/CatalogScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -40,7 +40,7 @@ import CartScreen from './screens/CartScreen';
 import ProductDetailsScreen from './screens/ProductDetailsScreen';
 import type {ProductVariant, ShopifyProduct} from '../@types';
 import ErrorBoundary from './ErrorBoundary';
-import env from 'react-native-config';
+import env from './env';
 import {createDebugLogger} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
 
@@ -79,9 +79,12 @@ export type AccountStackParamList = {
   Login: undefined;
 };
 
-const Tab = createBottomTabNavigator<RootStackParamList>();
-const Stack = createNativeStackNavigator<RootStackParamList>();
-const AccountStack = createNativeStackNavigator<AccountStackParamList>();
+const Tab = createBottomTabNavigator<RootStackParamList, undefined>();
+const Stack = createNativeStackNavigator<RootStackParamList, undefined>();
+const AccountStack = createNativeStackNavigator<
+  AccountStackParamList,
+  undefined
+>();
 
 export const cache = new InMemoryCache();
 
@@ -106,7 +109,7 @@ function AppWithTheme({children}: PropsWithChildren) {
 }
 
 const createNavigationIcon =
-  (name: string) =>
+  (name: React.ComponentProps<typeof Icon>['name']) =>
   ({
     color,
     size,
@@ -192,6 +195,7 @@ function AppWithContext({children}: PropsWithChildren) {
 function CatalogStack() {
   return (
     <Stack.Navigator
+      id={undefined}
       screenOptions={({navigation}) => ({
         headerBackTitle: 'Back',
         // eslint-disable-next-line react/no-unstable-nested-components
@@ -246,7 +250,7 @@ function CartIcon({onPress}: {onPress: () => void}) {
 
 function AccountStackScreen() {
   return (
-    <AccountStack.Navigator>
+    <AccountStack.Navigator id={undefined}>
       <AccountStack.Screen
         name="AccountHome"
         component={AccountScreen}
@@ -287,7 +291,7 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
 
   const updatedColors = getColors(
     appConfig.colorScheme,
-    Appearance.getColorScheme(),
+    Appearance.getColorScheme() ?? 'light',
   );
 
   const checkoutKitThemeConfig: Configuration = useMemo(() => {
@@ -459,7 +463,7 @@ function Routes() {
   }, [initialUrl, shopify, navigation, eventHandlers]);
 
   return (
-    <Tab.Navigator>
+    <Tab.Navigator id={undefined}>
       <Tab.Screen
         name="Catalog"
         component={CatalogStack}

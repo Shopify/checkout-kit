@@ -27,9 +27,8 @@ function buildIdToken(payload: Record<string, unknown>): string {
 beforeEach(() => {
   jest.restoreAllMocks();
   global.fetch = jest.fn();
-  const EncryptedStorage =
-    require('react-native-encrypted-storage').default;
-  EncryptedStorage.clear();
+  const SecureStore = require('expo-secure-store');
+  SecureStore.clear();
 });
 
 describe('CustomerAccountManager', () => {
@@ -48,9 +47,9 @@ describe('CustomerAccountManager', () => {
   });
 
   describe('buildAuthorizationURL', () => {
-    it('returns a well-formed authorization URL', () => {
+    it('returns a well-formed authorization URL', async () => {
       const manager = new CustomerAccountManager();
-      const url = manager.buildAuthorizationURL();
+      const url = await manager.buildAuthorizationURL();
 
       expect(url).toContain(
         `https://shopify.com/authentication/${SHOP_ID}/oauth/authorize`,
@@ -76,7 +75,7 @@ describe('CustomerAccountManager', () => {
       const manager = new CustomerAccountManager();
       const store = getDefaultStore();
 
-      const url = manager.buildAuthorizationURL();
+      const url = await manager.buildAuthorizationURL();
       const parsed = new URL(url);
       const state = parsed.searchParams.get('state')!;
 
@@ -95,7 +94,7 @@ describe('CustomerAccountManager', () => {
 
     it('throws on state mismatch', async () => {
       const manager = new CustomerAccountManager();
-      manager.buildAuthorizationURL();
+      await manager.buildAuthorizationURL();
 
       await expect(
         manager.handleAuthCallback('test-code', 'wrong-state'),
@@ -108,7 +107,7 @@ describe('CustomerAccountManager', () => {
       const manager = new CustomerAccountManager();
       const store = getDefaultStore();
 
-      const url = manager.buildAuthorizationURL();
+      const url = await manager.buildAuthorizationURL();
       const parsed = new URL(url);
       const state = parsed.searchParams.get('state')!;
 
@@ -137,7 +136,7 @@ describe('CustomerAccountManager', () => {
     it('returns the access token when session is valid', async () => {
       const manager = new CustomerAccountManager();
 
-      const url = manager.buildAuthorizationURL();
+      const url = await manager.buildAuthorizationURL();
       const parsed = new URL(url);
       const state = parsed.searchParams.get('state')!;
 
@@ -161,7 +160,7 @@ describe('CustomerAccountManager', () => {
     it('refreshes the token when expiring soon', async () => {
       const manager = new CustomerAccountManager();
 
-      const url = manager.buildAuthorizationURL();
+      const url = await manager.buildAuthorizationURL();
       const parsed = new URL(url);
       const state = parsed.searchParams.get('state')!;
 

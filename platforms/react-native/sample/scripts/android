@@ -3,6 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SAMPLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 . "$SCRIPT_DIR/android_sccache"
 
 args=()
@@ -14,6 +15,9 @@ for arg in "$@"; do
   fi
 done
 
-"$SCRIPT_DIR/../../scripts/publish_android_snapshot"
+if [ "${USE_LOCAL_SDK:-0}" = "1" ]; then
+  "$SCRIPT_DIR/../../scripts/publish_android_snapshot"
+fi
 
-exec react-native run-android "${args[@]}"
+cd "$SAMPLE_DIR"
+exec pnpm exec expo run:android --no-install "${args[@]}"

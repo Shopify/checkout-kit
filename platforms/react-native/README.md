@@ -223,7 +223,10 @@ Here's an example of how to get started with Apollo:
 
 ```tsx
 import {ApolloClient, gql, ApolloProvider} from '@apollo/client';
-import {API_VERSION, STOREFRONT_DOMAIN, STOREFRONT_ACCESS_TOKEN} from '@env';
+
+const API_VERSION = '2026-04';
+const STOREFRONT_DOMAIN = 'your-store.myshopify.com';
+const STOREFRONT_ACCESS_TOKEN = 'your-public-storefront-access-token';
 
 // Create a new instance of the ApolloClient
 const client = new ApolloClient({

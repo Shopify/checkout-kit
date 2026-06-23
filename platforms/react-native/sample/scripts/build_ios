@@ -1,12 +1,9 @@
- #!/usr/bin/env bash
+#!/usr/bin/env bash
 
 set -ex
 set -eo pipefail
 
-# Add sccache for faster compilation outside of CI environments
-# Can be disabled with SCCACHE=false for debugging or matching CI behavior locally
 if [ "$CI" = "true" ] || [ "$SCCACHE" = "false" ]; then
-    # CI detected or sccache explicitly disabled - skipping sccache for clean builds
     if command -v sccache >/dev/null 2>&1; then
         sccache --stop-server 2>/dev/null || true
     fi
@@ -22,7 +19,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/simulator"
 dest="$(get_sim_destination)"
 
-cd ios
+"$SCRIPT_DIR/../../scripts/prebuild" ios "$@"
+
+if [ "${USE_LOCAL_SDK:-0}" != "1" ]; then
+    "$SCRIPT_DIR/../../scripts/check_published_podfile_lock" "$SCRIPT_DIR/../ios/Podfile.lock"
+fi
+
+cd "$SCRIPT_DIR/../ios"
 
 xcbeautify_args=""
 if [ "$CI" = "true" ]; then
