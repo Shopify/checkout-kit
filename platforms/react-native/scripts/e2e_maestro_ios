@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-ios-metro.log"
+METRO_PID=""
+APP_ID="com.shopify.checkoutkit.reactnativedemo"
+CART_BOOTSTRAP_LINK="${APP_ID}://cart?productIndex=0&quantity=1"
+
+metro_running() {
+  curl --silent --fail http://localhost:8081/status | grep -q "packager-status:running"
+}
+
+cleanup() {
+  if [ -n "$METRO_PID" ]; then
+    kill "$METRO_PID" 2>/dev/null || true
+  fi
+}
+
+wait_for_metro() {
+  for _ in $(seq 1 60); do
+    if metro_running; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "Timed out waiting for Metro. Last log lines:" >&2
+  tail -n 40 "$METRO_LOG" >&2 || true
+  return 1
+}
+
+require_maestro() {
+  if ! maestro --version >/dev/null 2>&1; then
+    echo "Maestro is required to run React Native E2E tests." >&2
+    echo "Install Maestro and make sure maestro --version succeeds." >&2
+    return 1
+  fi
+}
+
+cd "$ROOT_DIR"
+
+require_maestro
+
+if ! metro_running; then
+  /opt/dev/bin/dev react-native start >"$METRO_LOG" 2>&1 &
+  METRO_PID="$!"
+  trap cleanup EXIT
+fi
+
+wait_for_metro
+pnpm sample ios --local
+maestro --platform ios test --config ../../e2e/config.yaml \
+  -e "APP_ID=${APP_ID}" \
+  -e "CART_BOOTSTRAP_LINK=${CART_BOOTSTRAP_LINK}" \
+  ../../e2e/tests/react-native/full-guest-checkout.yaml
