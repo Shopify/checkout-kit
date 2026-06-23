@@ -479,7 +479,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
 }
 
 extension CheckoutWebView: WKNavigationDelegate {
-    func webView(_: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    func webView(_: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
         // Handle rare cases where the url is nil
         guard let url = action.request.url else {
             decisionHandler(.allow)
@@ -505,7 +505,7 @@ extension CheckoutWebView: WKNavigationDelegate {
         decisionHandler(.allow)
     }
 
-    func webView(_: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+    func webView(_: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping @MainActor @Sendable (WKNavigationResponsePolicy) -> Void) {
         if let response = navigationResponse.response as? HTTPURLResponse {
             decisionHandler(handleResponse(response))
             return
