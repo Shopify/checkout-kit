@@ -1,0 +1,5 @@
+appId: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible: "${POST_SUBMIT_RESULT_PATTERN}"
+    timeout: 10000

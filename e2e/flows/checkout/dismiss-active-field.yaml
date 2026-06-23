@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      visible: "selected"
+    commands:
+      - tapOn: "selected"
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Close suggestions"
+    commands:
+      - tapOn: "Close suggestions"
+      - waitForAnimationToEnd

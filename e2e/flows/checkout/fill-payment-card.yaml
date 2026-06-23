@@ -1,0 +1,34 @@
+appId: ${APP_ID}
+---
+- scrollUntilVisible:
+    element:
+      text: "^Card number$"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    text: "^Card number$"
+- waitForAnimationToEnd
+- inputText: "${CARD_NUMBER}"
+- extendedWaitUntil:
+    visible: "^${CARD_NUMBER}$"
+- runFlow: dismiss-active-field.yaml
+- scrollUntilVisible:
+    element:
+      text: "^Expiration date \\(MM / YY\\)$"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    text: "^Expiration date \\(MM / YY\\)$"
+- waitForAnimationToEnd
+- inputText: "1"
+- inputText: "2"
+- waitForAnimationToEnd
+- inputText: "3"
+- inputText: "0"
+- runFlow: dismiss-active-field.yaml
+- tapOn:
+    text: "^Security code$"
+- waitForAnimationToEnd
+- inputText: "${CARD_SECURITY_CODE}"
+- runFlow: dismiss-active-field.yaml
+- waitForAnimationToEnd
