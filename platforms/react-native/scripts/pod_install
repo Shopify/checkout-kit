@@ -10,4 +10,9 @@ done
 
 cd sample/ios
 bundle check || bundle install
-bundle exec pod install --repo-update
+
+if [ "${USE_LOCAL_SDK:-0}" = "1" ]; then
+  bundle exec pod update ShopifyCheckoutKit ShopifyCheckoutKit/AcceleratedCheckouts --repo-update
+else
+  bundle exec pod install --repo-update
+fi
