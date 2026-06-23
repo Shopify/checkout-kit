@@ -1,0 +1,17 @@
+appId: ${APP_ID}
+---
+- tapOn:
+    id: shopify_checkout_kit_close_button
+
+- extendedWaitUntil:
+    visible:
+      id: catalog-tab
+    timeout: 10000
+
+- tapOn:
+    id: cart-tab
+
+- extendedWaitUntil:
+    visible:
+      id: cart-empty-message
+    timeout: 10000

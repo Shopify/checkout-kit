@@ -1,0 +1,9 @@
+appId: ${APP_ID}
+---
+- tapOn:
+    id: checkout-button
+    enabled: true
+- extendedWaitUntil:
+    visible:
+      text: "^Email( or mobile phone number)?$"
+    timeout: 10000
