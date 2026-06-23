@@ -1941,8 +1941,8 @@
           },
           {
             "kind": "Function",
-            "name": "applePayStyle",
-            "printedName": "applePayStyle(_:)",
+            "name": "applePayButtonType",
+            "printedName": "applePayButtonType(_:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -1952,14 +1952,14 @@
               },
               {
                 "kind": "TypeNominal",
-                "name": "PayWithApplePayButtonStyle",
-                "printedName": "_PassKit_SwiftUI.PayWithApplePayButtonStyle",
-                "usr": "s:16_PassKit_SwiftUI012PayWithAppleE11ButtonStyleV"
+                "name": "PKPaymentButtonType",
+                "printedName": "PassKit.PKPaymentButtonType",
+                "usr": "c:@E@PKPaymentButtonType"
               }
             ],
             "declKind": "Func",
-            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV13applePayStyleyAC16_PassKit_SwiftUI0g9WithAppleg6ButtonH0VF",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV13applePayStyleyAC16_PassKit_SwiftUI0g9WithAppleg6ButtonH0VF",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV18applePayButtonTypeyACSo09PKPaymenthI0VF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV18applePayButtonTypeyACSo09PKPaymenthI0VF",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "Preconcurrency",
@@ -1970,8 +1970,8 @@
           },
           {
             "kind": "Function",
-            "name": "applePayLabel",
-            "printedName": "applePayLabel(_:)",
+            "name": "applePayButtonStyle",
+            "printedName": "applePayButtonStyle(_:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -1981,14 +1981,14 @@
               },
               {
                 "kind": "TypeNominal",
-                "name": "PayWithApplePayButtonLabel",
-                "printedName": "_PassKit_SwiftUI.PayWithApplePayButtonLabel",
-                "usr": "s:16_PassKit_SwiftUI012PayWithAppleE11ButtonLabelV"
+                "name": "PKPaymentButtonStyle",
+                "printedName": "PassKit.PKPaymentButtonStyle",
+                "usr": "c:@E@PKPaymentButtonStyle"
               }
             ],
             "declKind": "Func",
-            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV13applePayLabelyAC16_PassKit_SwiftUI0g9WithAppleg6ButtonH0VF",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV13applePayLabelyAC16_PassKit_SwiftUI0g9WithAppleg6ButtonH0VF",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV19applePayButtonStyleyACSo09PKPaymenthI0VF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV19applePayButtonStyleyACSo09PKPaymenthI0VF",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "Preconcurrency",

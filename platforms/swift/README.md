@@ -392,8 +392,8 @@ import ShopifyAcceleratedCheckouts
 
 AcceleratedCheckoutButtons(cartID: cartID)
   .wallets([.shopPay, .applePay])
-  .applePayLabel(.buy)
-  .applePayStyle(.automatic)
+  .applePayButtonType(.buy)
+  .applePayButtonStyle(.automatic)
   .cornerRadius(8)
   .onRenderStateChange { state in
     // loading, rendered, or error(reason:)
