@@ -20,6 +20,11 @@ source "$SCRIPT_DIR/simulator"
 dest="$(get_sim_destination)"
 
 "$SCRIPT_DIR/../../scripts/prebuild" ios "$@"
+
+if [ "${USE_LOCAL_SDK:-0}" != "1" ]; then
+    "$SCRIPT_DIR/../../scripts/check_published_podfile_lock" "$SCRIPT_DIR/../ios/Podfile.lock"
+fi
+
 cd "$SCRIPT_DIR/../ios"
 
 xcbeautify_args=""

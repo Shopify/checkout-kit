@@ -30,7 +30,7 @@ up:
   - custom:
       name: Prebuild React Native sample native projects
       met?: "false"
-      meet: cd platforms/react-native && pnpm run prebuild -- all -- --clean
+      meet: cd platforms/react-native && pnpm run prebuild -- all
 
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
@@ -476,12 +476,12 @@ commands:
         desc: Prebuild generated native sample projects.
         long_desc: |
           Runs Expo prebuild for the React Native sample and prepares platform-specific native dependencies.
-          Existing native folders are preserved unless Expo's --clean arg is passed through.
+          Native folders are regenerated from a clean Expo prebuild on every run.
 
             dev rn prebuild                         Prebuild iOS and Android
             dev rn prebuild ios                     Prebuild iOS and install CocoaPods
             dev rn prebuild android                 Prebuild Android
-            dev rn prebuild all -- --clean          Regenerate iOS and Android native projects
+            dev rn prebuild all                     Regenerate iOS and Android native projects
             dev rn prebuild ios --local             Prebuild iOS against in-repo Swift SDK sources
             dev rn prebuild android --local         Prebuild Android against in-repo Android SDK artifacts
 
