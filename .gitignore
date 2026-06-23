@@ -21,11 +21,14 @@ node_modules/
 .swiftpm/
 xcuserdata/
 platforms/swift/Samples/**/*.xcodeproj/
+platforms/react-native/test/rct-integration-app/*.xcodeproj/
+platforms/react-native/test/rct-integration-app/*.xcworkspace/
 
 # Sample app generated configuration (Swift)
 **/Storefront.xcconfig
 **/*.entitlements
 platforms/swift/Samples/**/Info.plist
+platforms/react-native/test/rct-integration-app/**/Info.plist
 # Exception: the React Native sample's entitlements are source code (associated
 # domains + in-app payments merchant ID), not secrets — Xcode requires this file
 # at build time and CI fails without it.
