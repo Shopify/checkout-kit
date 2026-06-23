@@ -9,27 +9,11 @@
 /* Begin PBXBuildFile section */
 		0A018AC7205EBA49E1E67311 /* libPods-CheckoutKitReactNativeDemo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E0AC43398437CA0E3D05DDF /* libPods-CheckoutKitReactNativeDemo.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		37C6EE1EB87AA54212E67EDE /* libPods-CheckoutKitReactNativeDemoTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 591887D86C91BE07EFFC9303 /* libPods-CheckoutKitReactNativeDemoTests.a */; };
-		6A1F48E72B16900600BA591C /* ShopifyCheckoutKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1F48E62B16900600BA591C /* ShopifyCheckoutKitTests.swift */; };
 		6A58AAE82E607E0200A6AA85 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A58AAE72E607DFB00A6AA85 /* AppDelegate.swift */; };
-		6A86196D2BF36EB900E5EE1A /* CheckoutDidFailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A86196C2BF36EB900E5EE1A /* CheckoutDidFailTests.swift */; };
-		6AEEAAB22C00010100E5EE1B /* AcceleratedCheckouts_SupportedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEEAAB02C00010100E5EE1B /* AcceleratedCheckouts_SupportedTests.swift */; };
-		6AEEAAB32C00010100E5EE1B /* AcceleratedCheckouts_UnsupportedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEEAAB12C00010100E5EE1B /* AcceleratedCheckouts_UnsupportedTests.swift */; };
-		6AF1E0032C00010100E5EE1B /* EventSerializationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF1E0022C00010100E5EE1B /* EventSerializationTests.swift */; };
 		6AFAD2D22BA9DEF8001F9644 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 6AFAD2D12BA9DEF8001F9644 /* Localizable.xcstrings */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		9403907249B4B6D988902B48 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1939D329B2C035D1A15E316B /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		00E356F41AD99517003FC87E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
-			remoteInfo = CheckoutKitReactNativeDemo;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		00E356EE1AD99517003FC87E /* CheckoutKitReactNativeDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CheckoutKitReactNativeDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -61,14 +45,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		00E356EB1AD99517003FC87E /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				37C6EE1EB87AA54212E67EDE /* libPods-CheckoutKitReactNativeDemoTests.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -182,25 +158,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		00E356ED1AD99517003FC87E /* CheckoutKitReactNativeDemoTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "CheckoutKitReactNativeDemoTests" */;
-			buildPhases = (
-				13CD11EE2D19D04D273718C4 /* [CP] Check Pods Manifest.lock */,
-				00E356EA1AD99517003FC87E /* Sources */,
-				00E356EB1AD99517003FC87E /* Frameworks */,
-				00E356EC1AD99517003FC87E /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				00E356F51AD99517003FC87E /* PBXTargetDependency */,
-			);
-			name = CheckoutKitReactNativeDemoTests;
-			productName = CheckoutKitReactNativeDemoTests;
-			productReference = 00E356EE1AD99517003FC87E /* CheckoutKitReactNativeDemoTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		13B07F861A680F5B00A75B9A /* CheckoutKitReactNativeDemo */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "CheckoutKitReactNativeDemo" */;
@@ -255,19 +212,11 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* CheckoutKitReactNativeDemo */,
-				00E356ED1AD99517003FC87E /* CheckoutKitReactNativeDemoTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		00E356EC1AD99517003FC87E /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		13B07F8E1A680F5B00A75B9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -297,28 +246,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"../../node_modules/react-native/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"../../node_modules/react-native/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
-		};
-		13CD11EE2D19D04D273718C4 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-CheckoutKitReactNativeDemoTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
 		};
 		1EF77979E16522DC120150A8 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -379,18 +306,6 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		00E356EA1AD99517003FC87E /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				6A1F48E72B16900600BA591C /* ShopifyCheckoutKitTests.swift in Sources */,
-				6A86196D2BF36EB900E5EE1A /* CheckoutDidFailTests.swift in Sources */,
-				6AEEAAB22C00010100E5EE1B /* AcceleratedCheckouts_SupportedTests.swift in Sources */,
-				6AEEAAB32C00010100E5EE1B /* AcceleratedCheckouts_UnsupportedTests.swift in Sources */,
-				6AF1E0032C00010100E5EE1B /* EventSerializationTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		13B07F871A680F5B00A75B9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -401,237 +316,7 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		00E356F51AD99517003FC87E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 13B07F861A680F5B00A75B9A /* CheckoutKitReactNativeDemo */;
-			targetProxy = 00E356F41AD99517003FC87E /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		00E356F61AD99517003FC87E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = E22D02A7C54F90741A3D90E9 /* Pods-CheckoutKitReactNativeDemoTests.debug.xcconfig */;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_MODULES = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-					"\"${PODS_ROOT}/Headers/Public/CocoaAsyncSocket\"",
-					"\"${PODS_ROOT}/Headers/Public/DoubleConversion\"",
-					"\"${PODS_ROOT}/Headers/Public/FBLazyVector\"",
-					"\"${PODS_ROOT}/Headers/Public/RCT-Folly\"",
-					"\"${PODS_ROOT}/Headers/Public/RCTRequired\"",
-					"\"${PODS_ROOT}/Headers/Public/RCTTypeSafety\"",
-					"\"${PODS_ROOT}/Headers/Public/RNCMaskedView\"",
-					"\"${PODS_ROOT}/Headers/Public/RNGestureHandler\"",
-					"\"${PODS_ROOT}/Headers/Public/RNReanimated\"",
-					"\"${PODS_ROOT}/Headers/Public/RNScreens\"",
-					"\"${PODS_ROOT}/Headers/Public/RNVectorIcons\"",
-					"\"${PODS_ROOT}/Headers/Public/React-Codegen\"",
-					"\"${PODS_ROOT}/Headers/Public/React-Core\"",
-					"\"${PODS_ROOT}/Headers/Public/React-NativeModulesApple\"",
-					"\"${PODS_ROOT}/Headers/Public/React-RCTAnimation\"",
-					"\"${PODS_ROOT}/Headers/Public/React-RCTAppDelegate\"",
-					"\"${PODS_ROOT}/Headers/Public/React-RCTBlob\"",
-					"\"${PODS_ROOT}/Headers/Public/React-RCTText\"",
-					"\"${PODS_ROOT}/Headers/Public/React-callinvoker\"",
-					"\"${PODS_ROOT}/Headers/Public/React-cxxreact\"",
-					"\"${PODS_ROOT}/Headers/Public/React-debug\"",
-					"\"${PODS_ROOT}/Headers/Public/React-hermes\"",
-					"\"${PODS_ROOT}/Headers/Public/React-jsi\"",
-					"\"${PODS_ROOT}/Headers/Public/React-jsiexecutor\"",
-					"\"${PODS_ROOT}/Headers/Public/React-jsinspector\"",
-					"\"${PODS_ROOT}/Headers/Public/React-logger\"",
-					"\"${PODS_ROOT}/Headers/Public/React-perflogger\"",
-					"\"${PODS_ROOT}/Headers/Public/React-runtimeexecutor\"",
-					"\"${PODS_ROOT}/Headers/Public/React-runtimescheduler\"",
-					"\"${PODS_ROOT}/Headers/Public/React-utils\"",
-					"\"${PODS_ROOT}/Headers/Public/ReactCommon\"",
-					"\"${PODS_ROOT}/Headers/Public/SocketRocket\"",
-					"\"${PODS_ROOT}/Headers/Public/Yoga\"",
-					"\"${PODS_ROOT}/Headers/Public/YogaKit\"",
-					"\"${PODS_ROOT}/Headers/Public/fmt\"",
-					"\"${PODS_ROOT}/Headers/Public/glog\"",
-					"\"${PODS_ROOT}/Headers/Public/hermes-engine\"",
-					"\"${PODS_ROOT}/Headers/Public/libevent\"",
-					"\"${PODS_ROOT}/Headers/Public/react-native-safe-area-context\"",
-					"\"${PODS_ROOT}/Headers/Public/RNShopifyCheckoutKit\"",
-					"\"$(PODS_ROOT)/DoubleConversion\"",
-					"\"$(PODS_ROOT)/boost\"",
-					"\"$(PODS_ROOT)/Headers/Private/React-Core\"",
-					"\"$(PODS_TARGET_SRCROOT)/include/\"",
-					"\"$(PODS_ROOT)/boost\"",
-					"\"$(PODS_ROOT)/boost-for-react-native\"",
-					"\"$(PODS_ROOT)/glog\"",
-					"\"$(PODS_ROOT)/RCT-Folly\"",
-					"\"$(PODS_ROOT)/Headers/Public/React-hermes\"",
-					"\"$(PODS_ROOT)/Headers/Public/hermes-engine\"",
-					"\"$(PODS_ROOT)/../../node_modules/react-native/ReactCommon\"",
-					"\"${PODS_ROOT}/Headers/Public/RNShopifyCheckoutKit\"/**",
-				);
-				INFOPLIST_FILE = CheckoutKitReactNativeDemoTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SDKROOT)/usr/lib/swift",
-					"$(inherited)",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/CocoaAsyncSocket\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/DoubleConversion\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/RCTTypeSafety\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/RNCMaskedView\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/RNGestureHandler\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/RNReanimated\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/RNScreens\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/RNVectorIcons\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-Codegen\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-Core-60309c9c\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-CoreModules\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-NativeModulesApple\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTAnimation\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTAppDelegate\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTBlob\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTImage\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTLinking\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTNetwork\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTSettings\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTText\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTVibration\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-debug\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-hermes\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsi\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsiexecutor\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspector\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-logger\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-perflogger\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimescheduler\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/React-utils\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutKit\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/SocketRocket\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/Yoga\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/YogaKit\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/fmt\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/glog\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/libevent\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/react-native-safe-area-context\"",
-					"\"${PODS_CONFIGURATION_BUILD_DIR}/RNShopifyCheckoutKit\"",
-					"\"${TOOLCHAIN_DIR}/usr/lib/swift/${PLATFORM_NAME}\"",
-					/usr/lib/swift,
-				);
-				OTHER_LDFLAGS = (
-					"-ObjC",
-					"-lc++",
-					"$(inherited)",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.shopify.checkoutkit.reactnativedemo.tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_INCLUDE_PATHS = "$(inherited) \"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/YogaKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/RNShopifyCheckoutKit\"/**";
-				SWIFT_OBJC_BRIDGING_HEADER = "CheckoutKitReactNativeDemoTests-Bridging-Header.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CheckoutKitReactNativeDemo.app/CheckoutKitReactNativeDemo";
-			};
-			name = Debug;
-		};
-		00E356F71AD99517003FC87E /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 39099806D4750FF73C4975E3 /* Pods-CheckoutKitReactNativeDemoTests.release.xcconfig */;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_MODULES = YES;
-				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-					"\"${PODS_ROOT}/Headers/Public/CocoaAsyncSocket\"",
-					"\"${PODS_ROOT}/Headers/Public/DoubleConversion\"",
-					"\"${PODS_ROOT}/Headers/Public/FBLazyVector\"",
-					"\"${PODS_ROOT}/Headers/Public/RCT-Folly\"",
-					"\"${PODS_ROOT}/Headers/Public/RCTRequired\"",
-					"\"${PODS_ROOT}/Headers/Public/RCTTypeSafety\"",
-					"\"${PODS_ROOT}/Headers/Public/RNCMaskedView\"",
-					"\"${PODS_ROOT}/Headers/Public/RNGestureHandler\"",
-					"\"${PODS_ROOT}/Headers/Public/RNReanimated\"",
-					"\"${PODS_ROOT}/Headers/Public/RNScreens\"",
-					"\"${PODS_ROOT}/Headers/Public/RNVectorIcons\"",
-					"\"${PODS_ROOT}/Headers/Public/React-Codegen\"",
-					"\"${PODS_ROOT}/Headers/Public/React-Core\"",
-					"\"${PODS_ROOT}/Headers/Public/React-NativeModulesApple\"",
-					"\"${PODS_ROOT}/Headers/Public/React-RCTAnimation\"",
-					"\"${PODS_ROOT}/Headers/Public/React-RCTAppDelegate\"",
-					"\"${PODS_ROOT}/Headers/Public/React-RCTBlob\"",
-					"\"${PODS_ROOT}/Headers/Public/React-RCTText\"",
-					"\"${PODS_ROOT}/Headers/Public/React-callinvoker\"",
-					"\"${PODS_ROOT}/Headers/Public/React-cxxreact\"",
-					"\"${PODS_ROOT}/Headers/Public/React-debug\"",
-					"\"${PODS_ROOT}/Headers/Public/React-hermes\"",
-					"\"${PODS_ROOT}/Headers/Public/React-jsi\"",
-					"\"${PODS_ROOT}/Headers/Public/React-jsiexecutor\"",
-					"\"${PODS_ROOT}/Headers/Public/React-jsinspector\"",
-					"\"${PODS_ROOT}/Headers/Public/React-logger\"",
-					"\"${PODS_ROOT}/Headers/Public/React-perflogger\"",
-					"\"${PODS_ROOT}/Headers/Public/React-runtimeexecutor\"",
-					"\"${PODS_ROOT}/Headers/Public/React-runtimescheduler\"",
-					"\"${PODS_ROOT}/Headers/Public/React-utils\"",
-					"\"${PODS_ROOT}/Headers/Public/ReactCommon\"",
-					"\"${PODS_ROOT}/Headers/Public/SocketRocket\"",
-					"\"${PODS_ROOT}/Headers/Public/Yoga\"",
-					"\"${PODS_ROOT}/Headers/Public/YogaKit\"",
-					"\"${PODS_ROOT}/Headers/Public/fmt\"",
-					"\"${PODS_ROOT}/Headers/Public/glog\"",
-					"\"${PODS_ROOT}/Headers/Public/hermes-engine\"",
-					"\"${PODS_ROOT}/Headers/Public/libevent\"",
-					"\"${PODS_ROOT}/Headers/Public/react-native-safe-area-context\"",
-					"\"${PODS_ROOT}/Headers/Public/RNShopifyCheckoutKit\"",
-					"\"$(PODS_ROOT)/DoubleConversion\"",
-					"\"$(PODS_ROOT)/boost\"",
-					"\"$(PODS_ROOT)/Headers/Private/React-Core\"",
-					"\"$(PODS_TARGET_SRCROOT)/include/\"",
-					"\"$(PODS_ROOT)/boost\"",
-					"\"$(PODS_ROOT)/boost-for-react-native\"",
-					"\"$(PODS_ROOT)/glog\"",
-					"\"$(PODS_ROOT)/RCT-Folly\"",
-					"\"$(PODS_ROOT)/Headers/Public/React-hermes\"",
-					"\"$(PODS_ROOT)/Headers/Public/hermes-engine\"",
-					"\"$(PODS_ROOT)/../../node_modules/react-native/ReactCommon\"",
-					"\"${PODS_ROOT}/Headers/Public/RNShopifyCheckoutKit\"/**",
-				);
-				INFOPLIST_FILE = CheckoutKitReactNativeDemoTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				OTHER_LDFLAGS = (
-					"-ObjC",
-					"-lc++",
-					"$(inherited)",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.shopify.checkoutkit.reactnativedemo.tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_INCLUDE_PATHS = "$(inherited) \"${PODS_CONFIGURATION_BUILD_DIR}/ShopifyCheckoutKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/YogaKit\" \"${PODS_CONFIGURATION_BUILD_DIR}/RNShopifyCheckoutKit\"/**";
-				SWIFT_OBJC_BRIDGING_HEADER = "CheckoutKitReactNativeDemoTests-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CheckoutKitReactNativeDemo.app/CheckoutKitReactNativeDemo";
-			};
-			name = Release;
-		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = ED728EF8BB9B5E9BA9D50EBE /* Pods-CheckoutKitReactNativeDemo.debug.xcconfig */;
@@ -976,15 +661,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "CheckoutKitReactNativeDemoTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				00E356F61AD99517003FC87E /* Debug */,
-				00E356F71AD99517003FC87E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "CheckoutKitReactNativeDemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

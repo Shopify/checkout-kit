@@ -381,13 +381,12 @@ commands:
         long_desc: |
           Runs unit tests across all three React Native targets:
             - JS:      Jest tests in `platforms/react-native/modules/@shopify/checkout-kit-react-native/tests/`
-            - iOS:     Swift Package tests at `platforms/react-native/modules/@shopify/checkout-kit-react-native/ios/`
+            - iOS:     Xcode/CocoaPods tests in `platforms/react-native/test/rct-integration-app/`
             - Android: Gradle JVM tests for `:shopify_checkout-kit-react-native` (requires a local Maven publish of `:lib`)
         run: |
           set -e
           cd platforms/react-native && pnpm test
-          cd modules/@shopify/checkout-kit-react-native/ios && swift test
-          cd ../../../../
+          pnpm sample test:ios
           USE_LOCAL_SDK=1 ./scripts/publish_android_snapshot
           cd sample/android && USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
         subcommands:
@@ -395,8 +394,8 @@ commands:
             desc: Run JS unit tests via jest
             run: cd platforms/react-native && pnpm test
           ios:
-            desc: Run native iOS unit tests (Swift Package at modules/.../ios)
-            run: cd platforms/react-native/modules/@shopify/checkout-kit-react-native/ios && swift test
+            desc: Run native iOS unit tests via the RCT integration app
+            run: cd platforms/react-native && pnpm sample test:ios
           android:
             desc: Run native Android unit tests for the RN module (publishes/uses local platforms/android SDK)
             run: |

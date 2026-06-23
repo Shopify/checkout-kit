@@ -192,11 +192,11 @@ setup_swift() {
       test "$("$swiftformat_bin" --version)" = "$expected_swiftformat"
       test "$("$xcodegen_bin" version | sed "s/^Version: //")" = "$expected_xcodegen"
     ' || true
-    run_shell "Swift sample Xcode projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects --check' || true
+    run_shell "XcodeGen projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects --check' || true
   else
     run_shell "Swift bundle packages" 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check || BUNDLE_GEMFILE=platforms/swift/Gemfile bundle install' || true
     run_shell "Swift Mint packages" 'cd platforms/swift && mint bootstrap' || true
-    run_shell "Swift sample Xcode projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects' || true
+    run_shell "XcodeGen projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects' || true
   fi
 }
 
