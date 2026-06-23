@@ -32,6 +32,14 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(view.configuration.allowsInlineMediaPlayback)
     }
 
+    func testImplementsWKNavigationDelegatePolicySelectors() {
+        let navigationActionSelector = NSSelectorFromString("webView:decidePolicyForNavigationAction:decisionHandler:")
+        let navigationResponseSelector = NSSelectorFromString("webView:decidePolicyForNavigationResponse:decisionHandler:")
+
+        XCTAssertTrue(view.responds(to: navigationActionSelector))
+        XCTAssertTrue(view.responds(to: navigationResponseSelector))
+    }
+
     func testDetachBridgeIsIdempotent() {
         XCTAssertTrue(view.isBridgeAttached)
 
