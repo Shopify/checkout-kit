@@ -201,7 +201,7 @@ class CheckoutDialogTest {
 
         // click cancel button
         val header = dialog.findViewById<Toolbar>(R.id.checkoutKitHeader)
-        header.menu.performIdentifierAction(R.id.checkoutKitCloseBtn, 0)
+        header.menu.performIdentifierAction(R.id.shopify_checkout_kit_close_button, 0)
         ShadowLooper.runUiThreadTasks()
 
         verify(mockListener, timeout(2000)).onCheckoutCanceled()
@@ -216,7 +216,7 @@ class CheckoutDialogTest {
 
         // click cancel button
         val header = dialog.findViewById<Toolbar>(R.id.checkoutKitHeader)
-        header.menu.performIdentifierAction(R.id.checkoutKitCloseBtn, 0)
+        header.menu.performIdentifierAction(R.id.shopify_checkout_kit_close_button, 0)
         ShadowLooper.runUiThreadTasks()
 
         assertThat(dialog.containsChildOfType(CheckoutWebView::class.java)).isFalse()
@@ -272,7 +272,7 @@ class CheckoutDialogTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         val toolbar = dialog.findViewById<Toolbar>(R.id.checkoutKitHeader)
-        val closeMenuItem = toolbar.menu.findItem(R.id.checkoutKitCloseBtn)
+        val closeMenuItem = toolbar.menu.findItem(R.id.shopify_checkout_kit_close_button)
 
         assertThat(closeMenuItem).isNotNull
         assertThat(closeMenuItem.icon).isNotNull
@@ -296,7 +296,7 @@ class CheckoutDialogTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         val toolbar = dialog.findViewById<Toolbar>(R.id.checkoutKitHeader)
-        val closeMenuItem = toolbar.menu.findItem(R.id.checkoutKitCloseBtn)
+        val closeMenuItem = toolbar.menu.findItem(R.id.shopify_checkout_kit_close_button)
 
         assertThat(closeMenuItem).isNotNull
         assertThat(closeMenuItem.icon).isNotNull
@@ -319,7 +319,7 @@ class CheckoutDialogTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         val toolbar = dialog.findViewById<Toolbar>(R.id.checkoutKitHeader)
-        val closeMenuItem = toolbar.menu.findItem(R.id.checkoutKitCloseBtn)
+        val closeMenuItem = toolbar.menu.findItem(R.id.shopify_checkout_kit_close_button)
 
         assertThat(closeMenuItem).isNotNull
         assertThat(closeMenuItem.icon).isNotNull
@@ -360,7 +360,7 @@ class CheckoutDialogTest {
 
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         val toolbar = dialog.findViewById<Toolbar>(R.id.checkoutKitHeader)
-        val closeMenuItem = toolbar.menu.findItem(R.id.checkoutKitCloseBtn)
+        val closeMenuItem = toolbar.menu.findItem(R.id.shopify_checkout_kit_close_button)
 
         assertThat(closeMenuItem).isNotNull
         assertThat(closeMenuItem.icon).isNotNull

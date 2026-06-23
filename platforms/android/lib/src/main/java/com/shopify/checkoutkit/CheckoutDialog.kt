@@ -74,7 +74,7 @@ internal class CheckoutDialog(
             setBackgroundColor(colorScheme.headerBackgroundColor())
             setTitleTextColor(colorScheme.headerFontColor())
             inflateMenu(R.menu.checkout_menu)
-            menu.findItem(R.id.checkoutKitCloseBtn).apply { setupCloseButton(colorScheme) }
+            menu.findItem(R.id.shopify_checkout_kit_close_button).apply { setupCloseButton(colorScheme) }
         }
 
         findViewById<ProgressBar>(R.id.progressBar).apply {
