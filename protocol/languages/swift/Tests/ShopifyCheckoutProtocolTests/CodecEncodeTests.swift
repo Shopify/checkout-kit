@@ -27,8 +27,18 @@ struct CodecEncodeTests {
         #expect(parsed["result"] != nil)
     }
 
-    @Test func encodesReadyResultOmittingEmptyDelegate() throws {
-        let json = EmbeddedCheckoutProtocol.encodeResponse(id: "ready-1", result: ReadyResult())
+    @Test func encodesReadyResultCarryingOnlyUCPEnvelope() throws {
+        let json = EmbeddedCheckoutProtocol.encodeResponse(
+            id: "ready-1",
+            result: ReadyResult(
+                checkout: nil,
+                credential: nil,
+                ucp: .success(),
+                upgrade: nil,
+                continueURL: nil,
+                messages: nil
+            )
+        )
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
         #expect(parsed["id"] as? String == "ready-1")
@@ -39,27 +49,21 @@ struct CodecEncodeTests {
         let ucp = try #require(result["ucp"] as? [String: Any])
         #expect(ucp["version"] as? String == EmbeddedCheckoutProtocol.specVersion)
         #expect(ucp["status"] as? String == "success")
-        #expect(result["delegate"] == nil, "Empty delegate list must be omitted")
+        #expect(result["delegate"] == nil, "Ready response no longer echoes a delegate list")
         #expect(result["credential"] == nil, "Absent credential must be omitted")
-    }
-
-    @Test func encodesReadyResultEchoingDelegate() throws {
-        let json = EmbeddedCheckoutProtocol.encodeResponse(
-            id: 7,
-            result: ReadyResult(delegate: ["window.open"])
-        )
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
-
-        #expect(parsed["id"] as? Int == 7)
-        let result = try #require(parsed["result"] as? [String: Any])
-        let delegate = try #require(result["delegate"] as? [String])
-        #expect(delegate == ["window.open"])
     }
 
     @Test func encodesReadyResultIncludingCredential() throws {
         let json = EmbeddedCheckoutProtocol.encodeResponse(
             id: .null,
-            result: ReadyResult(credential: "tok-123")
+            result: ReadyResult(
+                checkout: nil,
+                credential: "tok-123",
+                ucp: .success(),
+                upgrade: nil,
+                continueURL: nil,
+                messages: nil
+            )
         )
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
@@ -71,7 +75,12 @@ struct CodecEncodeTests {
     @Test func encodesAuthResult() throws {
         let json = EmbeddedCheckoutProtocol.encodeResponse(
             id: "auth-1",
-            result: AuthResult(credential: "tok-abc")
+            result: AuthResult(
+                credential: "tok-abc",
+                ucp: .success(),
+                continueURL: nil,
+                messages: nil
+            )
         )
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
