@@ -21,6 +21,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         ShopifyCheckoutKit.configuration.colorScheme = .automatic
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
         ShopifyCheckoutKit.configuration.logLevel = LogLevel.error
+        ShopifyCheckoutKit.configuration.preloading.enabled = true
     }
 
     private func getShopifyCheckoutKit() -> RCTShopifyCheckoutKit {
@@ -34,6 +35,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
         // Verify that getConfig returned the expected result
         XCTAssertEqual(result?["colorScheme"] as? String, "automatic")
+        XCTAssertEqual(result?["preloading"] as? Bool, true)
     }
 
     /// configure
@@ -230,6 +232,54 @@ class ShopifyCheckoutKitTests: XCTestCase {
     result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
     XCTAssertEqual(result?["logLevel"] as? String, "error")
+  }
+
+  func testConfigureCanDisablePreloading() {
+    let configuration: [AnyHashable: Any] = [
+      "preloading": false
+    ]
+
+    shopifyCheckoutKit.setConfig(configuration)
+
+    XCTAssertFalse(ShopifyCheckoutKit.configuration.preloading.enabled)
+  }
+
+  func testGetConfigIncludesPreloading() {
+    let configuration: [AnyHashable: Any] = [
+      "preloading": false
+    ]
+    shopifyCheckoutKit.setConfig(configuration)
+
+    var result: [String: Any]?
+    result = shopifyCheckoutKit.getConfig() as? [String: Any]
+
+    XCTAssertEqual(result?["preloading"] as? Bool, false)
+  }
+
+  func testPreloadWithInvalidURLDoesNotRetainCheckoutSheet() {
+    let preloadAttemptCompleted = expectation(description: "preload attempt completed")
+
+    shopifyCheckoutKit.preload("")
+
+    DispatchQueue.main.async {
+      XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
+      preloadAttemptCompleted.fulfill()
+    }
+
+    wait(for: [preloadAttemptCompleted], timeout: 1)
+  }
+
+  func testInvalidateCacheDoesNotRetainCheckoutSheet() {
+    let invalidateCompleted = expectation(description: "invalidate completed")
+
+    shopifyCheckoutKit.invalidateCache()
+
+    DispatchQueue.main.async {
+      XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
+      invalidateCompleted.fulfill()
+    }
+
+    wait(for: [invalidateCompleted], timeout: 1)
   }
 
   func testGetConfigReturnsDebugForDebugLogLevel() {

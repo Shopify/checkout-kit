@@ -107,6 +107,21 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
+   * Clears any checkout cached by preload calls.
+   */
+  public invalidate(): void {
+    RNShopifyCheckoutKit.invalidateCache();
+  }
+
+  /**
+   * Preloads checkout for a given URL to improve presentation performance.
+   * @param checkoutUrl The URL of the checkout to preload
+   */
+  public preload(checkoutUrl: string): void {
+    RNShopifyCheckoutKit.preload(checkoutUrl);
+  }
+
+  /**
    * Presents the checkout sheet for a given checkout URL.
    *
    * Exactly one of `callbacks.onClose` or `callbacks.onFail` fires per

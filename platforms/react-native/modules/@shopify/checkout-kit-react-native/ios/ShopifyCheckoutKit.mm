@@ -20,6 +20,10 @@ RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration)
 RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
                   subscribedMethods:(NSArray *)subscribedMethods)
 
+RCT_EXTERN_METHOD(preload:(NSString *)checkoutURL)
+
+RCT_EXTERN_METHOD(invalidateCache)
+
 @end
 
 static const void *RCTShopifyCheckoutKitEventEmitterCallbackKey =

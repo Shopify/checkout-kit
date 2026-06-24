@@ -93,6 +93,19 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     }
   }
 
+  @ReactMethod
+  public void preload(String checkoutURL) {
+    Activity currentActivity = getCurrentActivity();
+    if (currentActivity instanceof ComponentActivity) {
+      ShopifyCheckoutKit.preload(checkoutURL, (ComponentActivity) currentActivity);
+    }
+  }
+
+  @ReactMethod
+  public void invalidateCache() {
+    ShopifyCheckoutKit.invalidate();
+  }
+
   private void releaseCheckoutListener() {
     if (checkoutListener != null) {
       checkoutListener.release();
@@ -106,6 +119,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
     resultConfig.putString("colorScheme", colorSchemeToString(checkoutConfig.getColorScheme()));
     resultConfig.putString("logLevel", logLevelToString(checkoutConfig.getLogLevel()));
+    resultConfig.putBoolean("preloading", checkoutConfig.getPreloading().getEnabled());
 
     return resultConfig;
   }
@@ -113,6 +127,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   @ReactMethod
   public void setConfig(ReadableMap config) {
     ShopifyCheckoutKit.configure(configuration -> {
+      if (config.hasKey("preloading")) {
+        configuration.setPreloading(new Preloading(config.getBoolean("preloading")));
+      }
+
       if (config.hasKey("logLevel")) {
         LogLevel logLevel = getLogLevel(config.getString("logLevel"));
         configuration.setLogLevel(logLevel);

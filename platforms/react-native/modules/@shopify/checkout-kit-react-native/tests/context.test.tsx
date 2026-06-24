@@ -257,6 +257,67 @@ describe('useShopifyCheckout', () => {
     ).not.toHaveBeenCalled();
   });
 
+  it('provides preload function', () => {
+    let hookValue: any;
+    const onHookValue = (value: any) => {
+      hookValue = value;
+    };
+
+    render(
+      <Wrapper>
+        <HookTestComponent onHookValue={onHookValue} />
+      </Wrapper>,
+    );
+
+    act(() => {
+      hookValue.preload(checkoutUrl);
+    });
+
+    expect(NativeModules.ShopifyCheckoutKit.preload).toHaveBeenCalledWith(
+      checkoutUrl,
+    );
+  });
+
+  it('does not call preload with empty checkoutUrl', () => {
+    let hookValue: any;
+    const onHookValue = (value: any) => {
+      hookValue = value;
+    };
+
+    render(
+      <Wrapper>
+        <HookTestComponent onHookValue={onHookValue} />
+      </Wrapper>,
+    );
+
+    act(() => {
+      hookValue.preload('');
+    });
+
+    expect(
+      NativeModules.ShopifyCheckoutKit.preload,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('provides invalidate function', () => {
+    let hookValue: any;
+    const onHookValue = (value: any) => {
+      hookValue = value;
+    };
+
+    render(
+      <Wrapper>
+        <HookTestComponent onHookValue={onHookValue} />
+      </Wrapper>,
+    );
+
+    act(() => {
+      hookValue.invalidate();
+    });
+
+    expect(NativeModules.ShopifyCheckoutKit.invalidateCache).toHaveBeenCalled();
+  });
+
   it('provides dismiss function', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
@@ -315,6 +376,7 @@ describe('useShopifyCheckout', () => {
     expect(config).toEqual({
       colorScheme: 'automatic',
       logLevel: 'error',
+      preloading: true,
     });
 
     expect(NativeModules.ShopifyCheckoutKit.getConfig).toHaveBeenCalled();

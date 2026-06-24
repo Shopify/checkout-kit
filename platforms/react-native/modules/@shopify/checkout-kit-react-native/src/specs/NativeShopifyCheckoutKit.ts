@@ -34,12 +34,14 @@ type ConfigurationSpec = {
   title?: string;
   colorScheme?: string;
   logLevel?: string;
+  preloading?: boolean;
   colors?: ColorsSpec;
 };
 
 type ConfigurationResultSpec = {
   colorScheme: string;
   logLevel: string;
+  preloading: boolean;
   title?: string;
   tintColor?: string;
   backgroundColor?: string;
@@ -53,7 +55,9 @@ export interface Spec extends TurboModule {
     checkoutUrl: string,
     subscribedMethods: string[],
   ): void;
+  preload(checkoutUrl: string): void;
   dismiss(): void;
+  invalidateCache(): void;
   setConfig(configuration: ConfigurationSpec): void;
   getConfig(): ConfigurationResultSpec;
   configureAcceleratedCheckouts(

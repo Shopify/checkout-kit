@@ -18,6 +18,7 @@ import {
   ApplePayLabel,
   AcceleratedCheckoutWallet,
 } from '@shopify/checkout-kit-react-native';
+import {useIsFocused} from '@react-navigation/native';
 import {useConfig} from '../context/Config';
 import useShopify from '../hooks/useShopify';
 import type {CartLineItem} from '../../@types';
@@ -31,7 +32,8 @@ import {
 } from '../hooks/useCheckoutEventHandlers';
 
 function CartScreen(): React.JSX.Element {
-  const ShopifyCheckout = useShopifyCheckout();
+  const {present, preload} = useShopifyCheckout();
+  const isFocused = useIsFocused();
   const [refreshing, setRefreshing] = React.useState(false);
   const {cartId, checkoutURL, totalQuantity, removeFromCart, addingToCart} =
     useCart();
@@ -57,6 +59,7 @@ function CartScreen(): React.JSX.Element {
 
   const {colors, cornerRadius} = useTheme();
   const styles = createStyles(colors, cornerRadius);
+  const cartMutationInProgress = addingToCart.size > 0;
 
   useEffect(() => {
     if (cartId) {
@@ -67,6 +70,25 @@ function CartScreen(): React.JSX.Element {
       });
     }
   }, [fetchCart, cartId]);
+
+  useEffect(() => {
+    if (
+      !isFocused ||
+      !appConfig.checkoutPreloadingEnabled ||
+      !checkoutURL ||
+      totalQuantity === 0
+    ) {
+      return;
+    }
+
+    preload(checkoutURL);
+  }, [
+    preload,
+    isFocused,
+    appConfig.checkoutPreloadingEnabled,
+    checkoutURL,
+    totalQuantity,
+  ]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -79,7 +101,7 @@ function CartScreen(): React.JSX.Element {
 
   const presentCheckout = async () => {
     if (checkoutURL) {
-      ShopifyCheckout.present(
+      present(
         checkoutURL,
         {
           onClose: () => sheetEventHandlers.onCancel?.(),
@@ -180,8 +202,11 @@ function CartScreen(): React.JSX.Element {
 
               <Pressable
                 testID="checkout-button"
-                style={styles.cartButton}
-                disabled={totalQuantity === 0}
+                style={[
+                  styles.cartButton,
+                  cartMutationInProgress ? styles.cartButtonDisabled : null,
+                ]}
+                disabled={totalQuantity === 0 || cartMutationInProgress}
                 onPress={presentCheckout}>
                 <Text style={styles.cartButtonText}>Checkout</Text>
                 <Text style={styles.cartButtonTextSubtitle}>
@@ -301,6 +326,9 @@ function createStyles(colors: Colors, cornerRadius: number) {
       paddingVertical: 2,
       backgroundColor: colors.secondary,
       fontWeight: 'bold',
+    },
+    cartButtonDisabled: {
+      opacity: 0.6,
     },
     cartButtonText: {
       fontSize: 22,

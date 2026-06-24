@@ -326,7 +326,9 @@ export class ShopifyCheckout implements ShopifyCheckoutKit {
     configureAcceleratedCheckouts(config: AcceleratedCheckoutConfiguration): boolean;
     dismiss(): void;
     getConfig(): Configuration;
+    invalidate(): void;
     isAcceleratedCheckoutAvailable(): boolean;
+    preload(checkoutUrl: string): void;
     present(checkoutUrl: string, callbacks?: PresentCallbacks, protocol?: ProtocolHandlers): void;
     setConfig(configuration: Configuration): void;
     teardown(): void;
