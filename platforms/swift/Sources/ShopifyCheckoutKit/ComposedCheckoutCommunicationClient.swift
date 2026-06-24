@@ -6,34 +6,35 @@ import Foundation
 /// Composes a merchant-supplied protocol client with kit-owned default handlers.
 ///
 /// The default bindings make the dispatch policy explicit in one place:
-/// request delegations such as `CheckoutProtocol.windowOpen` only fall back to the
-/// kit default when the merchant does not return a response, while mandatory kit
-/// notifications such as `CheckoutProtocol.error` always run after the merchant client.
+/// kit-owned requests such as `CheckoutProtocol.ready` are answered solely by the
+/// kit default and never reach the merchant client; request delegations such as
+/// `CheckoutProtocol.windowOpen` only fall back to the kit default when the merchant
+/// does not return a response; and mandatory kit notifications such as
+/// `CheckoutProtocol.error` always run after the merchant client.
 struct ComposedCheckoutCommunicationClient: CheckoutCommunicationProtocol {
     let merchant: (any CheckoutCommunicationProtocol)?
     let defaults: [String: DefaultClientBinding]
 
     func process(_ message: String) async -> String? {
-        guard let method = Self.method(message) else {
+        guard let method = Self.method(message), let binding = defaults[method] else {
             return await merchant?.process(message)
         }
 
-        var response = await merchant?.process(message)
+        switch binding.policy {
+        case .kitOwned:
+            return await binding.client.process(message)
 
-        if let binding = defaults[method] {
-            switch binding.policy {
-            case .alwaysRunAfterMerchant:
-                let defaultResponse = await binding.client.process(message)
-                response = response ?? defaultResponse
+        case .alwaysRunAfterMerchant:
+            let response = await merchant?.process(message)
+            let defaultResponse = await binding.client.process(message)
+            return response ?? defaultResponse
 
-            case .runIfUnhandled:
-                if response == nil {
-                    response = await binding.client.process(message)
-                }
+        case .runIfUnhandled:
+            if let response = await merchant?.process(message) {
+                return response
             }
+            return await binding.client.process(message)
         }
-
-        return response
     }
 
     private static func method(_ message: String) -> String? {
@@ -52,6 +53,7 @@ struct DefaultClientBinding {
 }
 
 enum DefaultClientPolicy {
+    case kitOwned
     case alwaysRunAfterMerchant
     case runIfUnhandled
 }

@@ -6,6 +6,8 @@ public enum EmbeddedCheckoutProtocol {
     package static let readyMethod = "ec.ready"
     package static let parseErrorCode = -32700
     package static let parseErrorMessage = "Parse error"
+    package static let invalidParamsCode = -32602
+    package static let invalidParamsMessage = "Invalid params"
 
     /// Options controlling the query parameters appended to a checkout URL when
     /// initiating the Embedded Checkout Protocol handshake.

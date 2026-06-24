@@ -3,15 +3,18 @@ import Foundation
 extension EmbeddedCheckoutProtocol {
     public struct Client: Sendable, MutableCopyable {
         private var notificationHandlers: [String: @MainActor @Sendable (any EventPayload) -> Void]
-        private var delegationEntries: [String: DelegationEntry]
+        private var requestEntries: [String: RequestEntry]
 
+        /// The delegation strings this client can fulfill, derived from the
+        /// registered request handlers that carry a delegation. Core requests
+        /// (`ec.ready`, `ec.auth`) have no delegation and are excluded.
         var delegations: [String] {
-            delegationEntries.values.map(\.delegation)
+            requestEntries.values.compactMap(\.delegation)
         }
 
         public init() {
             notificationHandlers = [:]
-            delegationEntries = [:]
+            requestEntries = [:]
         }
 
         @discardableResult
@@ -29,14 +32,20 @@ extension EmbeddedCheckoutProtocol {
 
         @discardableResult
         public func on<P: EventPayload, R: ResponsePayload>(
-            _ descriptor: DelegationDescriptor<P, R>,
+            _ descriptor: RequestDescriptor<P, R>,
             perform: @escaping @MainActor @Sendable (P) async -> R
         ) -> Client {
             return copy {
-                $0.delegationEntries[descriptor.method] = DelegationEntry(
+                $0.requestEntries[descriptor.method] = RequestEntry(
                     delegation: descriptor.delegation,
                     handler: { id, params in
-                        guard let payload = descriptor.decode(params) else { return nil }
+                        guard let payload = descriptor.decode(params) else {
+                            return EmbeddedCheckoutProtocol.encodeErrorResponse(
+                                id: id,
+                                code: EmbeddedCheckoutProtocol.invalidParamsCode,
+                                message: EmbeddedCheckoutProtocol.invalidParamsMessage
+                            )
+                        }
                         let result = await perform(payload)
                         return EmbeddedCheckoutProtocol.encodeResponse(id: id, result: result)
                     }
@@ -48,22 +57,13 @@ extension EmbeddedCheckoutProtocol {
             let decoded = EmbeddedCheckoutProtocol.decode(jsonRpc: message)
 
             switch decoded {
-            case let .ready(id, requested):
-                let accepted = requested.filter(Set(delegations).contains)
-                return EmbeddedCheckoutProtocol.encodeReadyResponse(id: id, acceptedDelegations: accepted)
-
-            case let .error(id, code, message):
-                return EmbeddedCheckoutProtocol.encodeErrorResponse(id: id, code: code, message: message)
-
             case let .notification(method, payload):
                 await notificationHandlers[method]?(payload)
                 return nil
 
             case let .request(id, method, params):
-                if let entry = delegationEntries[method] {
-                    return await entry.handler(id, params)
-                }
-                return nil
+                guard let entry = requestEntries[method] else { return nil }
+                return await entry.handler(id, params)
 
             case .unknown:
                 return nil
@@ -71,8 +71,8 @@ extension EmbeddedCheckoutProtocol {
         }
     }
 
-    struct DelegationEntry {
-        let delegation: String
+    struct RequestEntry {
+        let delegation: String?
         let handler: @MainActor @Sendable (JSONRPCID, Data) async -> String?
     }
 }

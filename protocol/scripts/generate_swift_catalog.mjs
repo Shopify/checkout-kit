@@ -156,7 +156,7 @@ extension EmbeddedCheckoutProtocol {
 ${entries
   .map(entry =>
     entry.isRequest
-      ? `        public static let ${entry.identifier} = RequestDescriptor(method: "${entry.method}")`
+      ? `        public static let ${entry.identifier} = MethodDescriptor(method: "${entry.method}")`
       : `        public static let ${entry.identifier} = NotificationDescriptor<${entry.payload}>(method: "${entry.method}")`,
   )
   .join('\n')}

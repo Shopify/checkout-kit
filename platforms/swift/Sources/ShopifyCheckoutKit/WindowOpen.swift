@@ -55,7 +55,7 @@ public enum WindowOpenResult: ResponsePayload {
 }
 
 extension CheckoutProtocol {
-    public static let windowOpen = DelegationDescriptor<WindowOpenRequest, WindowOpenResult>(
+    public static let windowOpen = RequestDescriptor<WindowOpenRequest, WindowOpenResult>(
         method: EmbeddedCheckoutProtocol.Event.windowOpenRequest.method,
         delegation: "window.open",
         decode: { params in
