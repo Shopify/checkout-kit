@@ -204,7 +204,16 @@ struct ClientTests {
 
     @Test @MainActor func readyRequestDispatchesToRegisteredHandler() async throws {
         let response = try await EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.ready) { _ in ReadyResult() }
+            .on(EmbeddedCheckoutProtocol.ready) { _ in
+                ReadyResult(
+                    checkout: nil,
+                    credential: nil,
+                    ucp: .success(),
+                    upgrade: nil,
+                    continueURL: nil,
+                    messages: nil
+                )
+            }
             .process(readyFixture())
 
         let data = try #require(response?.data(using: .utf8))
@@ -218,28 +227,6 @@ struct ClientTests {
         #expect(ucp["status"] as? String == "success")
     }
 
-    @Test @MainActor func readyHandlerNegotiatesAcceptedDelegations() async throws {
-        let ready = #"""
-        {"jsonrpc":"2.0","id":"ready-1","method":"ec.ready","params":{"delegate":["window.open","payment.credential"]}}
-        """#
-
-        let client = EmbeddedCheckoutProtocol.Client()
-            .on(windowOpenDescriptor) { _ in .success }
-        let supported = Set(client.delegations)
-
-        let response = try #require(
-            await client
-                .on(EmbeddedCheckoutProtocol.ready) { request in
-                    ReadyResult(delegate: request.delegate.filter { supported.contains($0) })
-                }
-                .process(ready)
-        )
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
-        let result = try #require(parsed["result"] as? [String: Any])
-        let delegate = try #require(result["delegate"] as? [String])
-        #expect(delegate == ["window.open"])
-    }
-
     @Test @MainActor func malformedReadyParamsReturnInvalidParamsError() async throws {
         let ready = #"""
         {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
@@ -247,7 +234,16 @@ struct ClientTests {
 
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
-                .on(EmbeddedCheckoutProtocol.ready) { _ in ReadyResult() }
+                .on(EmbeddedCheckoutProtocol.ready) { _ in
+                    ReadyResult(
+                        checkout: nil,
+                        credential: nil,
+                        ucp: .success(),
+                        upgrade: nil,
+                        continueURL: nil,
+                        messages: nil
+                    )
+                }
                 .process(ready)
         )
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
@@ -264,7 +260,14 @@ struct ClientTests {
 
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
-                .on(EmbeddedCheckoutProtocol.auth) { _ in AuthResult(credential: "tok-xyz") }
+                .on(EmbeddedCheckoutProtocol.auth) { _ in
+                    AuthResult(
+                        credential: "tok-xyz",
+                        ucp: .success(),
+                        continueURL: nil,
+                        messages: nil
+                    )
+                }
                 .process(request)
         )
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
@@ -304,7 +307,16 @@ struct ClientTests {
 
     @Test @MainActor func delegationsReflectsOnlyDelegationCarryingHandlers() {
         let client = EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.ready) { _ in ReadyResult() }
+            .on(EmbeddedCheckoutProtocol.ready) { _ in
+                ReadyResult(
+                    checkout: nil,
+                    credential: nil,
+                    ucp: .success(),
+                    upgrade: nil,
+                    continueURL: nil,
+                    messages: nil
+                )
+            }
             .on(windowOpenDescriptor) { _ in .success }
 
         #expect(client.delegations == ["window.open"])

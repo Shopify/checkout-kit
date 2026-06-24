@@ -523,7 +523,7 @@ class CheckoutWebViewTests: XCTestCase {
     // MARK: - ec.ready handshake
 
     @MainActor
-    func testReadyHandshakeNegotiatesSupportedDelegations() async throws {
+    func testReadyHandshakeRespondsWithUCPEnvelope() async throws {
         let id = "req-ready-1"
         let body =
             #"{"jsonrpc":"2.0","method":"ec.ready","id":"\#(id)","params":{"delegate":["window.open","payment.credential"]}}"#
@@ -546,8 +546,7 @@ class CheckoutWebViewTests: XCTestCase {
         let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
         XCTAssertEqual(ucp["status"] as? String, "success")
         XCTAssertEqual(ucp["version"] as? String, EmbeddedCheckoutProtocol.specVersion)
-        let delegate = try XCTUnwrap(result["delegate"] as? [String])
-        XCTAssertEqual(delegate, ["window.open"], "Kit negotiates requested delegations down to its defaults")
+        XCTAssertNil(result["delegate"], "Ready response no longer echoes a delegate list; delegations are announced via the ec_delegate URL param")
     }
 
     @MainActor

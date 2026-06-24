@@ -64,13 +64,3 @@ extension EmbeddedCheckoutProtocol {
         return String(data: data, encoding: .utf8) ?? "{}"
     }
 }
-
-struct UCPSuccess: Encodable {
-    let version: String
-    let status = "success"
-}
-
-struct UCPError: Encodable {
-    let version: String
-    let status = "error"
-}
