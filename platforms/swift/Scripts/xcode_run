@@ -29,6 +29,10 @@ fi
 
 xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destination \"$dest\" -skipPackagePluginValidation"
 
+if [[ "$SCHEME" == "ShopifyCheckoutKit-Package" && "$ACTION" == *"build"* && "$ACTION" != *"test"* ]]; then
+    xcodebuild_cmd="$xcodebuild_cmd SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
+fi
+
 # Package.swift lives at the monorepo root. For SwiftPM package schemes
 # (Xcode's auto-generated "-Package" suffix), cd up to the directory that
 # contains it before invoking xcodebuild — xcodebuild discovers SwiftPM
