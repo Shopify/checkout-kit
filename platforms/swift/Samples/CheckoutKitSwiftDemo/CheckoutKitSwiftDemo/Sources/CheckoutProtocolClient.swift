@@ -25,6 +25,9 @@ extension CheckoutProtocol.Client {
             .on(CheckoutProtocol.totalsChange) { checkout in
                 print("[UCP] ec.totals.change: \(checkout.id)")
             }
+            .on(CheckoutProtocol.fulfillmentChange) { checkout in
+                print("[UCP] ec.fulfillment.change: \(checkout.id)")
+            }
             .on(CheckoutProtocol.error) { error in
                 print("[UCP] ec.error: \(error.messages.first?.content ?? "(no message)")")
             }
