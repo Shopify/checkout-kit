@@ -1,7 +1,5 @@
-import {
-  CART_BOOTSTRAP_ROUTE,
-  parseCartBootstrapLink,
-} from '../cartBootstrap';
+import {CART_BOOTSTRAP_ROUTE, parseCartBootstrapLink} from '../cartBootstrap';
+import {BuyerIdentityMode} from '../../auth/types';
 
 describe('parseCartBootstrapLink', () => {
   it('ignores non-cart-bootstrap URLs', () => {
@@ -58,23 +56,40 @@ describe('parseCartBootstrapLink', () => {
     },
   );
 
+  it.each(['', 'member'])(
+    'rejects invalid buyerIdentityMode %s',
+    buyerIdentityMode => {
+      expect(() =>
+        parseCartBootstrapLink(
+          `${CART_BOOTSTRAP_ROUTE}?productIndex=0&buyerIdentityMode=${buyerIdentityMode}`,
+        ),
+      ).toThrow(
+        'buyerIdentityMode must be guest, hardcoded, or customerAccount',
+      );
+    },
+  );
+
   it('returns a variantId bootstrap link', () => {
     expect(
       parseCartBootstrapLink(
-        `${CART_BOOTSTRAP_ROUTE}?variantId=gid://shopify/ProductVariant/1&quantity=2`,
+        `${CART_BOOTSTRAP_ROUTE}?variantId=gid://shopify/ProductVariant/1&quantity=2&buyerIdentityMode=guest`,
       ),
     ).toEqual({
       variantId: 'gid://shopify/ProductVariant/1',
       quantity: 2,
+      buyerIdentityMode: BuyerIdentityMode.Guest,
     });
   });
 
   it('returns a productIndex bootstrap link with default quantity', () => {
     expect(
-      parseCartBootstrapLink(`${CART_BOOTSTRAP_ROUTE}?productIndex=3`),
+      parseCartBootstrapLink(
+        `${CART_BOOTSTRAP_ROUTE}?productIndex=3&buyerIdentityMode=hardcoded`,
+      ),
     ).toEqual({
       productIndex: 3,
       quantity: 1,
+      buyerIdentityMode: BuyerIdentityMode.Hardcoded,
     });
   });
 

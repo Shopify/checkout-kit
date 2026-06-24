@@ -5,6 +5,7 @@ describe('E2ETestIds', () => {
     expect(E2ETestIds.appReady).toBe('checkout-kit-sample-ready');
     expect(E2ETestIds.tabs.catalog).toBe('catalog-tab');
     expect(E2ETestIds.tabs.cart).toBe('cart-tab');
+    expect(E2ETestIds.cart.checkoutReady).toBe('cart-checkout-ready');
     expect(E2ETestIds.cart.checkoutButton).toBe('checkout-button');
     expect(E2ETestIds.cart.emptyMessage).toBe('cart-empty-message');
   });

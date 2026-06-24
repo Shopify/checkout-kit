@@ -6,12 +6,16 @@ appId: ${APP_ID}
       # iOS-only launch arguments; Android ignores them.
       AppleLocale: en_US
       AppleLanguages: "(en)"
+- extendedWaitUntil:
+    visible:
+      id: checkout-kit-sample-ready
+    timeout: 10000
 # Reset app data before testing the deep-link cold-start path. The app is
 # stopped so openLink is the launch that seeds the cart.
 - stopApp
-- openLink: "${CART_BOOTSTRAP_LINK}"
+- openLink: "${CART_BOOTSTRAP_BASE_LINK}&buyerIdentityMode=${BUYER_IDENTITY_MODE}"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible:
-      id: checkout-button
-    timeout: 30000
+      id: cart-checkout-ready
+    timeout: 10000

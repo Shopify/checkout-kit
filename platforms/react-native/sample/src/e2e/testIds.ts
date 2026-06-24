@@ -26,6 +26,7 @@ export class E2ETestIds {
 
   static readonly cart = {
     emptyMessage: 'cart-empty-message',
+    checkoutReady: 'cart-checkout-ready',
     checkoutButton: 'checkout-button',
   } as const;
 

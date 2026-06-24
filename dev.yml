@@ -437,17 +437,18 @@ commands:
               cd sample/android
               USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
       e2e:
-        desc: Run React Native sample Maestro guest checkout smoke flows
+        desc: Run React Native sample Maestro checkout smoke flows
+        syntax: "{ios|android}"
         run: |
           echo "Usage: dev rn e2e {ios|android}" >&2
           exit 1
         subcommands:
           ios:
-            desc: Run the React Native iOS Maestro guest checkout smoke flow
-            run: cd platforms/react-native && ./scripts/e2e_maestro_ios
+            desc: Run the React Native iOS Maestro checkout smoke flows
+            run: cd platforms/react-native && ./scripts/e2e_maestro_ios "$@"
           android:
-            desc: Run the React Native Android Maestro guest checkout smoke flow
-            run: cd platforms/react-native && ./scripts/e2e_maestro_android
+            desc: Run the React Native Android Maestro checkout smoke flows
+            run: cd platforms/react-native && ./scripts/e2e_maestro_android "$@"
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)
         aliases: [style]

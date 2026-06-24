@@ -1,3 +1,5 @@
+import {BuyerIdentityMode} from '../auth/types';
+
 export const CART_BOOTSTRAP_SCHEME = 'com.shopify.checkoutkit.reactnativedemo:';
 const CART_BOOTSTRAP_HOST = 'cart';
 export const CART_BOOTSTRAP_ROUTE = `${CART_BOOTSTRAP_SCHEME}//cart`;
@@ -8,7 +10,12 @@ export type CartBootstrapLink = {
   variantId?: string;
   productIndex?: number;
   quantity: number;
+  buyerIdentityMode?: BuyerIdentityMode;
 };
+
+function isBuyerIdentityMode(value: string): value is BuyerIdentityMode {
+  return Object.values(BuyerIdentityMode).includes(value as BuyerIdentityMode);
+}
 
 export function parseCartBootstrapLink(url: string): CartBootstrapLink | null {
   if (!url.startsWith(CART_BOOTSTRAP_SCHEME)) {
@@ -51,6 +58,8 @@ export function parseCartBootstrapLink(url: string): CartBootstrapLink | null {
   const searchParams = parsedUrl.searchParams;
   const variantId = searchParams.get('variantId')?.trim();
   const productIndexParam = searchParams.get('productIndex')?.trim();
+  const buyerIdentityModeParam = searchParams.get('buyerIdentityMode')?.trim();
+  let buyerIdentityMode: BuyerIdentityMode | undefined;
 
   const quantityParam = searchParams.get('quantity') ?? '1';
   const quantity = Number(quantityParam);
@@ -59,12 +68,25 @@ export function parseCartBootstrapLink(url: string): CartBootstrapLink | null {
     throw new Error('quantity must be a positive integer');
   }
 
+  if (searchParams.has('buyerIdentityMode')) {
+    if (
+      !buyerIdentityModeParam ||
+      !isBuyerIdentityMode(buyerIdentityModeParam)
+    ) {
+      throw new Error(
+        'buyerIdentityMode must be guest, hardcoded, or customerAccount',
+      );
+    }
+
+    buyerIdentityMode = buyerIdentityModeParam;
+  }
+
   if (variantId && productIndexParam) {
     throw new Error('Use variantId or productIndex, not both');
   }
 
   if (variantId) {
-    return {variantId, quantity};
+    return {variantId, quantity, buyerIdentityMode};
   }
 
   if (!productIndexParam) {
@@ -77,5 +99,5 @@ export function parseCartBootstrapLink(url: string): CartBootstrapLink | null {
     throw new Error('productIndex must be a non-negative integer');
   }
 
-  return {productIndex, quantity};
+  return {productIndex, quantity, buyerIdentityMode};
 }

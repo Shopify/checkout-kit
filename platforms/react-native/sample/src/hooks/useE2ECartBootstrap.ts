@@ -15,9 +15,7 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unknown error';
 }
 
-export function useE2ECartBootstrap({
-  onCartReady,
-}: UseE2ECartBootstrapOptions) {
+export function useE2ECartBootstrap({onCartReady}: UseE2ECartBootstrapOptions) {
   const {seedCart} = useCart();
   const {queries} = useShopify();
   const [fetchProducts] = queries.products;
@@ -52,7 +50,11 @@ export function useE2ECartBootstrap({
           throw new Error('Cart bootstrap product variant was not found');
         }
 
-        await seedCart(variantId, cartBootstrapLink.quantity);
+        await seedCart(
+          variantId,
+          cartBootstrapLink.quantity,
+          cartBootstrapLink.buyerIdentityMode,
+        );
         onCartReady();
       } catch (error) {
         Alert.alert('Cart bootstrap failed', errorMessage(error));
