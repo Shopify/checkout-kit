@@ -1241,6 +1241,71 @@
           },
           {
             "kind": "Var",
+            "name": "fulfillmentChange",
+            "printedName": "fulfillmentChange",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "NotificationDescriptor",
+                "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "ShopifyCheckoutProtocol.Checkout",
+                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                  }
+                ],
+                "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
+            "moduleName": "ShopifyCheckoutKit",
+            "static": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NotificationDescriptor",
+                    "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Checkout",
+                        "printedName": "ShopifyCheckoutProtocol.Checkout",
+                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                      }
+                    ],
+                    "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
+                "moduleName": "ShopifyCheckoutKit",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "lineItemsChange",
             "printedName": "lineItemsChange",
             "children": [
