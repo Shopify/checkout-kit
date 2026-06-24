@@ -19,6 +19,47 @@ import java.nio.charset.StandardCharsets
 public object EmbeddedCheckoutProtocol {
     public const val SPEC_VERSION: String = "2026-04-08"
 
+    /**
+     * Options controlling the query parameters appended to a checkout URL when
+     * initiating the Embedded Checkout Protocol handshake.
+     */
+    public class Options(
+        public val delegations: List<Delegation> = emptyList(),
+        public val colorScheme: String? = null,
+        public val auth: String? = null,
+    )
+
+    /**
+     * Delegations the host can request from the business, as declared by the
+     * service in `x-delegations`. String-backed and extensible: a host may
+     * advertise a delegation this build predates, so unknown values round-trip
+     * intact.
+     */
+    public class Delegation(
+        public val rawValue: String,
+    ) {
+        override fun equals(other: Any?): Boolean =
+            other is Delegation && rawValue == other.rawValue
+
+        override fun hashCode(): Int = rawValue.hashCode()
+
+        override fun toString(): String = rawValue
+
+        public companion object {
+            public val paymentInstrumentsChange: Delegation = Delegation("payment.instruments_change")
+            public val paymentCredential: Delegation = Delegation("payment.credential")
+            public val fulfillmentAddressChange: Delegation = Delegation("fulfillment.address_change")
+            public val windowOpen: Delegation = Delegation("window.open")
+
+            public val all: List<Delegation> = listOf(
+                paymentInstrumentsChange,
+                paymentCredential,
+                fulfillmentAddressChange,
+                windowOpen,
+            )
+        }
+    }
+
     public val start: NotificationDescriptor<Checkout>
         get() = embeddedCheckoutStartDescriptor
 
@@ -42,12 +83,12 @@ public object EmbeddedCheckoutProtocol {
 
     /**
      * Returns the given checkout URL with the query parameters required to
-     * initiate the Embedded Checkout Protocol handshake using ec_version and
-     * ec_delegate query parameters.
+     * initiate the Embedded Checkout Protocol handshake using ec_version,
+     * ec_delegate, ec_auth, and ec_color_scheme query parameters.
      */
     public fun url(
         url: String,
-        delegations: List<String> = emptyList(),
+        options: Options = Options(),
     ): String = runCatching {
         val uri = URI(url)
         if (uri.isOpaque) return@runCatching url
@@ -60,8 +101,14 @@ public object EmbeddedCheckoutProtocol {
             .toMutableList()
 
         queryParameters += "$EC_VERSION_PARAM=$SPEC_VERSION"
-        if (delegations.isNotEmpty()) {
-            queryParameters += "$EC_DELEGATE_PARAM=${delegations.joinToString(",").encodeQueryComponent()}"
+        if (options.delegations.isNotEmpty()) {
+            queryParameters += "$EC_DELEGATE_PARAM=${options.delegations.joinToString(",") { it.rawValue }.encodeQueryComponent()}"
+        }
+        options.auth?.let { auth ->
+            queryParameters += "$EC_AUTH_PARAM=${auth.encodeQueryComponent()}"
+        }
+        options.colorScheme?.let { colorScheme ->
+            queryParameters += "$EC_COLOR_SCHEME_PARAM=${colorScheme.encodeQueryComponent()}"
         }
 
         uri.withRawQuery(queryParameters.joinToString("&"))
@@ -103,10 +150,17 @@ public object EmbeddedCheckoutProtocol {
         )
     }
 
-    private val PROTOCOL_QUERY_PARAMS: Set<String> = setOf(EC_VERSION_PARAM, EC_DELEGATE_PARAM)
+    private val PROTOCOL_QUERY_PARAMS: Set<String> = setOf(
+        EC_VERSION_PARAM,
+        EC_DELEGATE_PARAM,
+        EC_AUTH_PARAM,
+        EC_COLOR_SCHEME_PARAM,
+    )
 
     private const val EC_VERSION_PARAM: String = "ec_version"
     private const val EC_DELEGATE_PARAM: String = "ec_delegate"
+    private const val EC_AUTH_PARAM: String = "ec_auth"
+    private const val EC_COLOR_SCHEME_PARAM: String = "ec_color_scheme"
 
     private fun URI.withRawQuery(rawQuery: String): String = buildString {
         scheme?.let { append(it).append(":") }

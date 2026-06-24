@@ -632,8 +632,25 @@ public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol {
 	public final fun getStart ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getTotalsChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getWindowOpen ()Lcom/shopify/ucp/embedded/checkout/DelegationDescriptor;
-	public final fun url (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
-	public static synthetic fun url$default (Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun url (Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Options;)Ljava/lang/String;
+	public static synthetic fun url$default (Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Options;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Delegation {
+	public static final field Companion Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Delegation$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRawValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Delegation$Companion {
+	public final fun getAll ()Ljava/util/List;
+	public final fun getFulfillmentAddressChange ()Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Delegation;
+	public final fun getPaymentCredential ()Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Delegation;
+	public final fun getPaymentInstrumentsChange ()Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Delegation;
+	public final fun getWindowOpen ()Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Delegation;
 }
 
 public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Event {
@@ -654,6 +671,15 @@ public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Ev
 	public static final field totalsChange Ljava/lang/String;
 	public static final field windowOpenRequest Ljava/lang/String;
 	public final fun getAll ()Ljava/util/Set;
+}
+
+public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Options {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAuth ()Ljava/lang/String;
+	public final fun getColorScheme ()Ljava/lang/String;
+	public final fun getDelegations ()Ljava/util/List;
 }
 
 public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocolKt {

@@ -50,24 +50,64 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
+    fun `delegation catalog exposes embedded checkout delegations`() {
+        assertThat(EmbeddedCheckoutProtocol.Delegation.all).containsExactlyInAnyOrder(
+            EmbeddedCheckoutProtocol.Delegation("payment.instruments_change"),
+            EmbeddedCheckoutProtocol.Delegation("payment.credential"),
+            EmbeddedCheckoutProtocol.Delegation("fulfillment.address_change"),
+            EmbeddedCheckoutProtocol.Delegation("window.open"),
+        )
+        assertThat(EmbeddedCheckoutProtocol.Delegation.windowOpen.rawValue).isEqualTo("window.open")
+    }
+
+    @Test
+    fun `delegation can represent unknown values`() {
+        val delegation = EmbeddedCheckoutProtocol.Delegation("custom.delegation")
+
+        assertThat(delegation.rawValue).isEqualTo("custom.delegation")
+    }
+
+    @Test
     fun `url appends ec version and omits delegation by default`() {
         val result = EmbeddedCheckoutProtocol.url(BASE_URL)
         val params = queryParams(result)
 
         assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
         assertThat(params).doesNotContainKey("ec_delegate")
+        assertThat(params).doesNotContainKey("ec_auth")
+        assertThat(params).doesNotContainKey("ec_color_scheme")
     }
 
     @Test
     fun `url appends supplied delegations`() {
         val result = EmbeddedCheckoutProtocol.url(
             BASE_URL,
-            delegations = listOf("window.open", "payment.credential"),
+            options = EmbeddedCheckoutProtocol.Options(
+                delegations = listOf(
+                    EmbeddedCheckoutProtocol.Delegation.windowOpen,
+                    EmbeddedCheckoutProtocol.Delegation.paymentCredential,
+                ),
+            ),
         )
         val params = queryParams(result)
 
         assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
         assertThat(params["ec_delegate"]).containsExactly("window.open,payment.credential")
+    }
+
+    @Test
+    fun `url appends supplied auth and color scheme`() {
+        val result = EmbeddedCheckoutProtocol.url(
+            BASE_URL,
+            options = EmbeddedCheckoutProtocol.Options(
+                auth = "token",
+                colorScheme = "dark",
+            ),
+        )
+        val params = queryParams(result)
+
+        assertThat(params["ec_auth"]).containsExactly("token")
+        assertThat(params["ec_color_scheme"]).containsExactly("dark")
     }
 
     @Test
@@ -82,22 +122,34 @@ class EmbeddedCheckoutProtocolTest {
 
     @Test
     fun `url replaces caller supplied protocol parameters and is idempotent`() {
-        val callerSupplied = "$BASE_URL?ec_version=override&ec_delegate=custom"
-        val once = EmbeddedCheckoutProtocol.url(callerSupplied, delegations = listOf("window.open"))
-        val twice = EmbeddedCheckoutProtocol.url(once, delegations = listOf("window.open"))
+        val callerSupplied = "$BASE_URL?ec_version=override&ec_delegate=custom&ec_auth=stale&ec_color_scheme=light"
+        val options = EmbeddedCheckoutProtocol.Options(
+            delegations = listOf(EmbeddedCheckoutProtocol.Delegation.windowOpen),
+            auth = "token",
+            colorScheme = "dark",
+        )
+        val once = EmbeddedCheckoutProtocol.url(callerSupplied, options = options)
+        val twice = EmbeddedCheckoutProtocol.url(once, options = options)
         val params = queryParams(twice)
 
         assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
         assertThat(params["ec_delegate"]).containsExactly("window.open")
+        assertThat(params["ec_auth"]).containsExactly("token")
+        assertThat(params["ec_color_scheme"]).containsExactly("dark")
     }
 
     @Test
-    fun `url removes caller supplied delegation when delegations are empty`() {
-        val result = EmbeddedCheckoutProtocol.url("$BASE_URL?ec_delegate=custom", delegations = emptyList())
+    fun `url removes caller supplied optional protocol params when options omit them`() {
+        val result = EmbeddedCheckoutProtocol.url(
+            "$BASE_URL?ec_delegate=custom&ec_auth=stale&ec_color_scheme=dark",
+            options = EmbeddedCheckoutProtocol.Options(delegations = emptyList()),
+        )
         val params = queryParams(result)
 
         assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
         assertThat(params).doesNotContainKey("ec_delegate")
+        assertThat(params).doesNotContainKey("ec_auth")
+        assertThat(params).doesNotContainKey("ec_color_scheme")
     }
 
     @Test

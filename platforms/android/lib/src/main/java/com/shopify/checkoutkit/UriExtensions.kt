@@ -30,7 +30,12 @@ internal fun String.redactedUrlForLogging(): String = toUri().redactedForLogging
  * Applies Checkout Kit's curated Embedded Checkout Protocol query parameters.
  */
 internal fun String.appendEcpParams(): String =
-    EmbeddedCheckoutProtocol.url(this, delegations = listOf(CheckoutProtocol.windowOpen.delegation))
+    EmbeddedCheckoutProtocol.url(
+        this,
+        options = EmbeddedCheckoutProtocol.Options(
+            delegations = CheckoutProtocol.defaultDelegations,
+        ),
+    )
 
 private val CONFIRMATION_PATH_REGEX = Regex(pattern = "^(thank[-_]+you)$", option = RegexOption.IGNORE_CASE)
 
