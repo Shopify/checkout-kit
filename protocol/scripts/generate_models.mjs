@@ -363,6 +363,8 @@ async function generateSwift(specDir, output) {
 
     return `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
   });
+
+  await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);
 }
 
 async function generateTypescript(specDir, output) {

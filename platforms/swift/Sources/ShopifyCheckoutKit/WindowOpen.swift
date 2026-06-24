@@ -1,3 +1,6 @@
+#if !COCOAPODS
+    import ShopifyCheckoutProtocol
+#endif
 import Foundation
 
 public struct WindowOpenRequest: EventPayload {
@@ -37,12 +40,12 @@ public enum WindowOpenResult: ResponsePayload {
     public func encode(to encoder: Encoder) throws {
         switch self {
         case .success:
-            try UCPSuccessResult(
-                ucp: UCPSuccess(version: CheckoutProtocol.specVersion)
+            try WindowOpenSuccessBody(
+                ucp: WindowOpenUCP(version: EmbeddedCheckoutProtocol.specVersion, status: "success")
             ).encode(to: encoder)
         case let .rejected(reason):
             try WindowOpenRejectedBody(
-                ucp: UCPError(version: CheckoutProtocol.specVersion),
+                ucp: WindowOpenUCP(version: EmbeddedCheckoutProtocol.specVersion, status: "error"),
                 messages: [
                     WindowOpenRejectedMessage(content: reason ?? "Window open rejected")
                 ]
@@ -53,7 +56,7 @@ public enum WindowOpenResult: ResponsePayload {
 
 extension CheckoutProtocol {
     public static let windowOpen = DelegationDescriptor<WindowOpenRequest, WindowOpenResult>(
-        method: "ec.window.open_request",
+        method: EmbeddedCheckoutProtocol.Event.windowOpenRequest.method,
         delegation: "window.open",
         decode: { params in
             try? JSONDecoder().decode(WindowOpenRequest.self, from: params)
@@ -61,8 +64,17 @@ extension CheckoutProtocol {
     )
 }
 
+private struct WindowOpenUCP: Encodable {
+    let version: String
+    let status: String
+}
+
+private struct WindowOpenSuccessBody: Encodable {
+    let ucp: WindowOpenUCP
+}
+
 private struct WindowOpenRejectedBody: Encodable {
-    let ucp: UCPError
+    let ucp: WindowOpenUCP
     let messages: [WindowOpenRejectedMessage]
 }
 

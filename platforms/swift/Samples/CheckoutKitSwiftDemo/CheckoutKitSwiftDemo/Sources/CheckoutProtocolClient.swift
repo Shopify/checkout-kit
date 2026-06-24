@@ -1,4 +1,5 @@
 import SafariServices
+import ShopifyCheckoutKit
 import ShopifyCheckoutProtocol
 import UIKit
 

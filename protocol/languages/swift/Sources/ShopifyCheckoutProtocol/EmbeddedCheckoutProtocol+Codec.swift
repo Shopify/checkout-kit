@@ -1,12 +1,12 @@
 import Foundation
 
-extension CheckoutProtocol {
+extension EmbeddedCheckoutProtocol {
     /// Returns an `ec.ready` response if the given message is an `ec.ready` request,
     /// otherwise `nil`. The response echoes the intersection of the merchant's
     /// requested delegations with `supportedDelegations` under a `delegate` array.
     public static func acknowledgeReady(
         _ message: String,
-        supportedDelegations: [String] = CheckoutProtocol.defaultDelegations
+        supportedDelegations: [String] = []
     ) -> String? {
         switch decode(jsonRpc: message) {
         case let .ready(id, requested):
@@ -22,7 +22,7 @@ extension CheckoutProtocol {
     }
 }
 
-extension CheckoutProtocol {
+extension EmbeddedCheckoutProtocol {
     static func decode(jsonRpc: String) -> UCPMessage {
         guard let data = jsonRpc.data(using: .utf8) else {
             return .unknown(method: "", rawParams: jsonRpc)

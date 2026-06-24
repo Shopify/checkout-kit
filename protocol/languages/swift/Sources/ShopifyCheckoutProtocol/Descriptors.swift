@@ -10,12 +10,11 @@ public protocol EventPayload: Decodable, Sendable {}
 /// is explicit — preventing arbitrary `Encodable & Sendable` types from silently matching.
 public protocol ResponsePayload: Encodable, Sendable {}
 
-extension Checkout: EventPayload {}
-extension ErrorResponse: EventPayload {}
-extension InstrumentsChangeResult: ResponsePayload {}
-extension CredentialResult: ResponsePayload {}
-
 public struct NotificationDescriptor<Payload: EventPayload>: Sendable {
+    public let method: String
+}
+
+public struct RequestDescriptor: Sendable {
     public let method: String
 }
 

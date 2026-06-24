@@ -235,10 +235,10 @@ class CheckoutWebView: WKWebView {
             CheckoutWebView.invalidate(disconnect: false)
         }
         .on(CheckoutProtocol.windowOpen) { request in
-            guard UIApplication.shared.canOpenURL(request.url) else {
+            guard self.canOpenExternalURL(request.url) else {
                 return .rejected(reason: "canOpenURL returned false")
             }
-            UIApplication.shared.open(request.url)
+            self.openExternalURL(request.url)
             return .success
         }
         .on(CheckoutProtocol.error) { [weak self] payload in
@@ -458,7 +458,9 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        if method == CheckoutProtocol.readyMethod, let response = CheckoutProtocol.acknowledgeReady(body) {
+        if method == EmbeddedCheckoutProtocol.readyMethod,
+           let response = EmbeddedCheckoutProtocol.acknowledgeReady(body, supportedDelegations: CheckoutProtocol.defaultDelegations)
+        {
             OSLogger.shared.debug("Handling ec.ready: sending UCP ready acknowledgement, isPreload: \(isPreloadRequest)")
             Task { @MainActor in
                 await checkoutBridge.sendResponse(self, messageBody: response)

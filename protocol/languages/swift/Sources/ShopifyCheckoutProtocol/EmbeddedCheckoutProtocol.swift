@@ -1,12 +1,18 @@
 import Foundation
 
-extension CheckoutProtocol {
+public enum EmbeddedCheckoutProtocol {
+    public static let specVersion = "2026-04-08"
+
+    package static let readyMethod = "ec.ready"
+    package static let parseErrorCode = -32700
+    package static let parseErrorMessage = "Parse error"
+
     /// Returns the given checkout URL with the query parameters required to
     /// initiate the Embedded Checkout Protocol handshake (`ec_version`,
     /// `ec_delegate`).
     public static func url(
         for url: URL,
-        delegations: [String] = defaultDelegations
+        delegations: [String] = []
     ) -> URL {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return url
