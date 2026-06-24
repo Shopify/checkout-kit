@@ -10,9 +10,10 @@ on:
         options:
           - iOS
           - Android
+          - Embedded Checkout Protocol
           - React Native
       version:
-        description: Expected SDK version. Must match the checked-in SDK version for the selected platform.
+        description: Expected package version. Must match the checked-in version for the selected platform.
         required: true
         type: string
       mode:
@@ -88,11 +89,15 @@ jobs:
           RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
+          ANDROID_PROTOCOL_VERSION: ${{ steps.release.outputs.android_protocol_version }}
         run: |
           set -euo pipefail
           echo "Release plan:"
           echo "  Platform: ${DISPLAY_PLATFORM}"
           echo "  Version: ${VERSION}"
+          if [ -n "$ANDROID_PROTOCOL_VERSION" ]; then
+            echo "  Embedded Checkout Protocol version: ${ANDROID_PROTOCOL_VERSION}"
+          fi
           echo "  Tag: ${TAG}"
           echo "  Title: ${RELEASE_TITLE}"
           echo "  Prerelease: ${PRERELEASE}"
@@ -152,6 +157,7 @@ jobs:
           TAG: ${{ steps.release.outputs.tag }}
           RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
+          ANDROID_PROTOCOL_VERSION: ${{ steps.release.outputs.android_protocol_version }}
           REF_NAME: ${{ github.ref_name }}
           PLATFORM: ${{ inputs.platform }}
         run: |
@@ -169,6 +175,12 @@ jobs:
           - Title: ${RELEASE_TITLE}
           - Publish workflow: \`${PUBLISH_WORKFLOW}\`
           SUMMARY
+
+          if [ -n "$ANDROID_PROTOCOL_VERSION" ]; then
+            cat >> "$GITHUB_STEP_SUMMARY" <<SUMMARY
+          - Embedded Checkout Protocol version: \`${ANDROID_PROTOCOL_VERSION}\`
+          SUMMARY
+          fi
 
           if [ "$MODE" = "Dry run" ]; then
             cat >> "$GITHUB_STEP_SUMMARY" <<SUMMARY

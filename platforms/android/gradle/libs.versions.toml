@@ -1,6 +1,6 @@
 [versions]
 checkoutKitAndroid = "4.0.0-alpha.1"
-embeddedCheckoutProtocolAndroid = "2026.04.08-alpha.1"
+embeddedCheckoutProtocolAndroid = "2026.04.08.1-alpha.1"
 
 androidApplicationGradlePlugin = "9.2.1"
 androidLibraryGradlePlugin = "9.1.1"

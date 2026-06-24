@@ -42,8 +42,12 @@ jobs:
             android:
               - 'platforms/android/**'
               - 'protocol/**'
+              - '.github/workflows/android-publish.yml'
+              - '.github/workflows/android-protocol-publish.yml'
               - '.github/workflows/android-test.yml'
               - '.github/workflows/breaking-changes.yml'
+              - '.github/workflows/release.yml'
+              - '.github/scripts/validate-release-version'
               - '.github/workflows/ci.yml'
             swift:
               - 'platforms/swift/**'

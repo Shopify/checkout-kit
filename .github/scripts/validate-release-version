@@ -8,7 +8,7 @@ Usage: validate-release-version <platform> [expected-version] [expected-tag]
 Validates the selected SDK's checked-in version declarations, optional user
 version input, optional git tag, and prints GitHub Actions outputs to stdout.
 
-Platforms: iOS, Android, React Native
+Platforms: iOS, Android, Embedded Checkout Protocol, React Native
 USAGE
 }
 
@@ -22,6 +22,12 @@ EXPECTED_VERSION="${2:-}"
 EXPECTED_TAG="${3:-}"
 
 SEMVER_REGEX='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$'
+CALVER_REGEX='^[0-9]{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$'
+
+# Most release targets are SemVer. Embedded Checkout Protocol overrides these
+# defaults to CalVer in its platform branch below.
+VERSION_REGEX="$SEMVER_REGEX"
+VERSION_FORMAT="X.Y.Z or X.Y.Z-{alpha|beta|rc}.N"
 
 extract_first_match() {
   local file="$1"
@@ -109,9 +115,24 @@ case "$PLATFORM_INPUT" in
     RN_PACKAGE_FILE="platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json"
 
     VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "checkoutKitAndroid")
+    ANDROID_PROTOCOL_VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroid")
     RN_ANDROID_VERSION=$(json_string_field "$RN_PACKAGE_FILE" '.checkoutKit.nativeSdkVersions.android')
 
     check_same_version "$VERSION" "$RN_PACKAGE_FILE" "$RN_ANDROID_VERSION"
+    ;;
+
+  "Embedded Checkout Protocol"|embedded-checkout-protocol|EmbeddedCheckoutProtocol|ecp|ECP)
+    PLATFORM="embedded-checkout-protocol"
+    DISPLAY_PLATFORM="Embedded Checkout Protocol"
+    RELEASE_TITLE_PREFIX="Embedded Checkout Protocol"
+    TAG_PREFIX="embedded-checkout-protocol/"
+    PUBLISH_WORKFLOW="android-protocol-publish.yml"
+    VERSION_REGEX="$CALVER_REGEX"
+    VERSION_FORMAT="YYYY.MM.DD.PATCH or YYYY.MM.DD.PATCH-{alpha|beta|rc}.N"
+
+    ANDROID_VERSION_FILE="platforms/android/gradle/libs.versions.toml"
+
+    VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroid")
     ;;
 
   "React Native"|react-native|ReactNative|rn|RN)
@@ -126,18 +147,23 @@ case "$PLATFORM_INPUT" in
     ;;
 
   *)
-    echo "::error::Unsupported platform '$PLATFORM_INPUT'. Expected one of: iOS, Android, React Native." >&2
+    echo "::error::Unsupported platform '$PLATFORM_INPUT'. Expected one of: iOS, Android, Embedded Checkout Protocol, React Native." >&2
     exit 1
     ;;
 esac
 
-if [[ ! "$VERSION" =~ $SEMVER_REGEX ]]; then
-  echo "::error::${DISPLAY_PLATFORM} SDK version '$VERSION' is invalid. Expected X.Y.Z or X.Y.Z-{alpha|beta|rc}.N." >&2
+if [[ ! "$VERSION" =~ $VERSION_REGEX ]]; then
+  echo "::error::${DISPLAY_PLATFORM} version '$VERSION' is invalid. Expected $VERSION_FORMAT." >&2
+  exit 1
+fi
+
+if [ -n "${ANDROID_PROTOCOL_VERSION:-}" ] && [[ ! "$ANDROID_PROTOCOL_VERSION" =~ $CALVER_REGEX ]]; then
+  echo "::error::Embedded Checkout Protocol version '$ANDROID_PROTOCOL_VERSION' is invalid. Expected YYYY.MM.DD.PATCH or YYYY.MM.DD.PATCH-{alpha|beta|rc}.N." >&2
   exit 1
 fi
 
 if [ -n "$EXPECTED_VERSION" ] && [ "$EXPECTED_VERSION" != "$VERSION" ]; then
-  echo "::error::Requested version '$EXPECTED_VERSION' does not match ${DISPLAY_PLATFORM} SDK version '$VERSION'. Bump the SDK version in a PR first, or rerun with '$VERSION'." >&2
+  echo "::error::Requested version '$EXPECTED_VERSION' does not match ${DISPLAY_PLATFORM} version '$VERSION'. Bump the version in a PR first, or rerun with '$VERSION'." >&2
   exit 1
 fi
 
@@ -145,7 +171,7 @@ TAG="${TAG_PREFIX}${VERSION}"
 RELEASE_TITLE="[${RELEASE_TITLE_PREFIX}] ${VERSION}"
 
 if [ -n "$EXPECTED_TAG" ] && [ "$EXPECTED_TAG" != "$TAG" ]; then
-  echo "::error::Git tag '$EXPECTED_TAG' does not match ${DISPLAY_PLATFORM} SDK version '$VERSION'. Expected tag '$TAG'." >&2
+  echo "::error::Git tag '$EXPECTED_TAG' does not match ${DISPLAY_PLATFORM} version '$VERSION'. Expected tag '$TAG'." >&2
   exit 1
 fi
 
@@ -166,6 +192,9 @@ fi
   echo "publish_workflow=$PUBLISH_WORKFLOW"
   echo "prerelease=$PRERELEASE"
   echo "npm_tag=$NPM_TAG"
+  if [ -n "${ANDROID_PROTOCOL_VERSION:-}" ]; then
+    echo "android_protocol_version=$ANDROID_PROTOCOL_VERSION"
+  fi
 }
 
 echo "✓ ${DISPLAY_PLATFORM} version '$VERSION' validates and maps to tag '$TAG'." >&2
