@@ -186,6 +186,7 @@ dependencies {
 }
 
 project.ext.vectoricons = [
+    iconFontsDir: "${vectorIconsDirPath}/Fonts",
     iconFontNames: [ 'Entypo.ttf' ]
 ]
 
