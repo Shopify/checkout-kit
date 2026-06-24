@@ -1571,8 +1571,8 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "DelegationDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.DelegationDescriptor<ShopifyCheckoutKit.WindowOpenRequest, ShopifyCheckoutKit.WindowOpenResult>",
+                "name": "RequestDescriptor",
+                "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutKit.WindowOpenRequest, ShopifyCheckoutKit.WindowOpenResult>",
                 "children": [
                   {
                     "kind": "TypeNominal",
@@ -1587,12 +1587,12 @@
                     "usr": "s:18ShopifyCheckoutKit16WindowOpenResultO"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol20DelegationDescriptorV"
+                "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD020DelegationDescriptorVyAA06WindowF7RequestVAA0iF6ResultOGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD020DelegationDescriptorVyAA06WindowF7RequestVAA0iF6ResultOGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD017RequestDescriptorVyAA06WindowfG0VAA0iF6ResultOGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD017RequestDescriptorVyAA06WindowfG0VAA0iF6ResultOGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1610,8 +1610,8 @@
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "DelegationDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.DelegationDescriptor<ShopifyCheckoutKit.WindowOpenRequest, ShopifyCheckoutKit.WindowOpenResult>",
+                    "name": "RequestDescriptor",
+                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutKit.WindowOpenRequest, ShopifyCheckoutKit.WindowOpenResult>",
                     "children": [
                       {
                         "kind": "TypeNominal",
@@ -1626,12 +1626,12 @@
                         "usr": "s:18ShopifyCheckoutKit16WindowOpenResultO"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol20DelegationDescriptorV"
+                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD020DelegationDescriptorVyAA06WindowF7RequestVAA0iF6ResultOGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD020DelegationDescriptorVyAA06WindowF7RequestVAA0iF6ResultOGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD017RequestDescriptorVyAA06WindowfG0VAA0iF6ResultOGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD017RequestDescriptorVyAA06WindowfG0VAA0iF6ResultOGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
