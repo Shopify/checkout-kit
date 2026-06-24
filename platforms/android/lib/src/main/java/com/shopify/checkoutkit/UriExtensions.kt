@@ -2,6 +2,7 @@ package com.shopify.checkoutkit
 
 import android.net.Uri
 import androidx.core.net.toUri
+import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
 
 internal fun Uri?.isWebLink(): Boolean = setOf(Scheme.HTTP, Scheme.HTTPS).contains(this?.scheme)
 internal fun Uri?.isMailtoLink(): Boolean = this?.scheme == Scheme.MAILTO
@@ -26,34 +27,13 @@ internal fun Uri?.redactedForLogging(): String? = when {
 internal fun String.redactedUrlForLogging(): String = toUri().redactedForLogging().orEmpty()
 
 /**
- * Applies Embedded Checkout Protocol query parameters to a checkout URL, replacing
- * any existing SDK-owned protocol params. Idempotent on re-call.
- *
- * - `ec_version`   — the ECP spec version the SDK speaks
- * - `ec_delegate`  — fixed to the supported window-open delegation so checkout delegates link opens to the bridge
+ * Applies Checkout Kit's curated Embedded Checkout Protocol query parameters.
  */
-internal fun String.appendEcpParams(specVersion: String): String {
-    val uri = this.toUri()
-    val builder = uri.buildUpon().clearQuery()
-
-    uri.queryParameterNames
-        .filterNot { it == EC_VERSION_PARAM || it == EC_DELEGATE_PARAM }
-        .forEach { name ->
-            uri.getQueryParameters(name).forEach { value ->
-                builder.appendQueryParameter(name, value)
-            }
-        }
-
-    builder.appendQueryParameter(EC_VERSION_PARAM, specVersion)
-    builder.appendQueryParameter(EC_DELEGATE_PARAM, CheckoutProtocol.windowOpen.delegation)
-
-    return builder.build().toString()
-}
+internal fun String.appendEcpParams(): String =
+    EmbeddedCheckoutProtocol.url(this, delegations = listOf(CheckoutProtocol.windowOpen.delegation))
 
 private val CONFIRMATION_PATH_REGEX = Regex(pattern = "^(thank[-_]+you)$", option = RegexOption.IGNORE_CASE)
 
-private const val EC_VERSION_PARAM = "ec_version"
-private const val EC_DELEGATE_PARAM = "ec_delegate"
 private const val REDACTED_QUERY_VALUE = "[REDACTED]"
 
 internal object Scheme {

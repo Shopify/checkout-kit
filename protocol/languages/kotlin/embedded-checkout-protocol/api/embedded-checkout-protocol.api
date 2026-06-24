@@ -632,6 +632,8 @@ public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol {
 	public final fun getStart ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getTotalsChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getWindowOpen ()Lcom/shopify/ucp/embedded/checkout/DelegationDescriptor;
+	public final fun url (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
+	public static synthetic fun url$default (Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Ljava/lang/String;
 }
 
 public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Event {

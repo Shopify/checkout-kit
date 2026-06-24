@@ -3,7 +3,7 @@ package com.shopify.checkoutkit
 internal data class PreloadKey(val url: String) {
     companion object {
         fun forUrl(url: String): PreloadKey {
-            return PreloadKey(url.appendEcpParams(specVersion = CheckoutProtocol.SPEC_VERSION))
+            return PreloadKey(url.appendEcpParams())
         }
     }
 }

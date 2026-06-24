@@ -8,6 +8,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
+import java.net.URI
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 class EmbeddedCheckoutProtocolTest {
     @Test
@@ -44,6 +47,57 @@ class EmbeddedCheckoutProtocolTest {
     @Test
     fun `event catalog excludes sibling capabilities`() {
         assertThat(EmbeddedCheckoutProtocol.Event.all).doesNotContain("ep.cart.ready")
+    }
+
+    @Test
+    fun `url appends ec version and omits delegation by default`() {
+        val result = EmbeddedCheckoutProtocol.url(BASE_URL)
+        val params = queryParams(result)
+
+        assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
+        assertThat(params).doesNotContainKey("ec_delegate")
+    }
+
+    @Test
+    fun `url appends supplied delegations`() {
+        val result = EmbeddedCheckoutProtocol.url(
+            BASE_URL,
+            delegations = listOf("window.open", "payment.credential"),
+        )
+        val params = queryParams(result)
+
+        assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
+        assertThat(params["ec_delegate"]).containsExactly("window.open,payment.credential")
+    }
+
+    @Test
+    fun `url preserves existing query parameters`() {
+        val result = EmbeddedCheckoutProtocol.url("$BASE_URL?key=cart_token&utm_source=email")
+        val params = queryParams(result)
+
+        assertThat(params["key"]).containsExactly("cart_token")
+        assertThat(params["utm_source"]).containsExactly("email")
+        assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
+    }
+
+    @Test
+    fun `url replaces caller supplied protocol parameters and is idempotent`() {
+        val callerSupplied = "$BASE_URL?ec_version=override&ec_delegate=custom"
+        val once = EmbeddedCheckoutProtocol.url(callerSupplied, delegations = listOf("window.open"))
+        val twice = EmbeddedCheckoutProtocol.url(once, delegations = listOf("window.open"))
+        val params = queryParams(twice)
+
+        assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
+        assertThat(params["ec_delegate"]).containsExactly("window.open")
+    }
+
+    @Test
+    fun `url removes caller supplied delegation when delegations are empty`() {
+        val result = EmbeddedCheckoutProtocol.url("$BASE_URL?ec_delegate=custom", delegations = emptyList())
+        val params = queryParams(result)
+
+        assertThat(params["ec_version"]).containsExactly(EmbeddedCheckoutProtocol.SPEC_VERSION)
+        assertThat(params).doesNotContainKey("ec_delegate")
     }
 
     @Test
@@ -206,6 +260,24 @@ class EmbeddedCheckoutProtocolTest {
     fun `json rpc request id rejects unsupported id shapes`() {
         assertThat(jsonRpcRequestId(JsonPrimitive(1.5))).isNull()
         assertThat(jsonRpcRequestId(JsonPrimitive(true))).isNull()
+    }
+
+    private fun queryParams(url: String): Map<String, List<String>> =
+        URI(url).rawQuery
+            ?.split("&")
+            ?.filter { it.isNotEmpty() }
+            ?.map { it.substringBefore("=") to it.substringAfter("=", "") }
+            ?.groupBy(
+                keySelector = { it.first.decodeQueryComponent() },
+                valueTransform = { it.second.decodeQueryComponent() },
+            )
+            .orEmpty()
+
+    private fun String.decodeQueryComponent(): String =
+        URLDecoder.decode(this, StandardCharsets.UTF_8.name())
+
+    private companion object {
+        private const val BASE_URL = "https://shop.com/cart/c/abc"
     }
 
     @Serializable
