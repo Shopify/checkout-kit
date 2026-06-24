@@ -230,15 +230,15 @@ class CheckoutWebView: WKWebView {
     ///     the kit via `viewDelegate`. Per UCP spec, `unrecoverable` means no valid
     ///     resource exists to act on, so consumers don't have to wire dismissal in
     ///     every error handler.
-    lazy var defaultsClient: EmbeddedCheckoutProtocol.Client = .init()
+    lazy var defaultsClient: CheckoutProtocol.Client = .init()
         .on(CheckoutProtocol.complete) { _ in
             CheckoutWebView.invalidate(disconnect: false)
         }
         .on(CheckoutProtocol.windowOpen) { request in
-            guard UIApplication.shared.canOpenURL(request.url) else {
+            guard self.canOpenExternalURL(request.url) else {
                 return .rejected(reason: "canOpenURL returned false")
             }
-            UIApplication.shared.open(request.url)
+            self.openExternalURL(request.url)
             return .success
         }
         .on(CheckoutProtocol.error) { [weak self] payload in
