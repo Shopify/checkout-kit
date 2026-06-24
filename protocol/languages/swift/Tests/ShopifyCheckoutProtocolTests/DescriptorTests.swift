@@ -35,7 +35,7 @@ struct DescriptorTests {
         }
 
         @Test func requestMethodsBindAsRequestsNotNotifications() {
-            func method(of descriptor: RequestDescriptor) -> String { descriptor.method }
+            func method(of descriptor: MethodDescriptor) -> String { descriptor.method }
 
             #expect(method(of: EmbeddedCheckoutProtocol.Event.windowOpenRequest) == "ec.window.open_request")
             #expect(method(of: EmbeddedCheckoutProtocol.Event.paymentCredentialRequest) == "ec.payment.credential_request")

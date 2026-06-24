@@ -90,6 +90,28 @@ final class ComposedCheckoutCommunicationClientTests: XCTestCase {
         XCTAssertEqual(defaultMessages, [Self.errorNotification])
     }
 
+    func testKitOwnedAnswersWithoutConsultingMerchant() async {
+        let merchant = RecordingClient(response: Self.merchantResponse)
+        let defaultClient = RecordingClient(response: Self.defaultResponse)
+        let client = ComposedCheckoutCommunicationClient(
+            merchant: merchant,
+            defaults: [
+                "ec.ready": DefaultClientBinding(
+                    client: defaultClient,
+                    policy: .kitOwned
+                )
+            ]
+        )
+
+        let response = await client.process(Self.readyRequest)
+        let merchantMessages = await merchant.messages
+        let defaultMessages = await defaultClient.messages
+
+        XCTAssertEqual(response, Self.defaultResponse)
+        XCTAssertEqual(merchantMessages, [], "kit-owned methods must never reach the merchant client")
+        XCTAssertEqual(defaultMessages, [Self.readyRequest])
+    }
+
     func testDefaultBindingOnlyRunsForMatchingMethod() async {
         let defaultClient = RecordingClient(response: Self.defaultResponse)
         let client = ComposedCheckoutCommunicationClient(
@@ -113,6 +135,8 @@ final class ComposedCheckoutCommunicationClientTests: XCTestCase {
     private static let defaultResponse = #"{"jsonrpc":"2.0","id":"default","result":{}}"#
     private static let windowOpenRequest =
         #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"1","params":{"url":"https://example.com"}}"#
+    private static let readyRequest =
+        #"{"jsonrpc":"2.0","method":"ec.ready","id":"1","params":{"delegate":[]}}"#
     private static let errorNotification =
         #"{"jsonrpc":"2.0","method":"ec.error","params":{"error":{"messages":[]}}}"#
 }

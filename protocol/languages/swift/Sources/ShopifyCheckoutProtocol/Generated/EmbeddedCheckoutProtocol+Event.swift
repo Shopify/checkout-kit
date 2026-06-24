@@ -8,8 +8,8 @@ extension ErrorResponse: EventPayload {}
 
 extension EmbeddedCheckoutProtocol {
     public enum Event {
-        public static let ready = RequestDescriptor(method: "ec.ready")
-        public static let auth = RequestDescriptor(method: "ec.auth")
+        public static let ready = MethodDescriptor(method: "ec.ready")
+        public static let auth = MethodDescriptor(method: "ec.auth")
         public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")
         public static let start = NotificationDescriptor<Checkout>(method: "ec.start")
         public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
@@ -18,11 +18,11 @@ extension EmbeddedCheckoutProtocol {
         public static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
         public static let totalsChange = NotificationDescriptor<Checkout>(method: "ec.totals.change")
         public static let paymentChange = NotificationDescriptor<Checkout>(method: "ec.payment.change")
-        public static let paymentInstrumentsChangeRequest = RequestDescriptor(method: "ec.payment.instruments_change_request")
-        public static let paymentCredentialRequest = RequestDescriptor(method: "ec.payment.credential_request")
-        public static let windowOpenRequest = RequestDescriptor(method: "ec.window.open_request")
+        public static let paymentInstrumentsChangeRequest = MethodDescriptor(method: "ec.payment.instruments_change_request")
+        public static let paymentCredentialRequest = MethodDescriptor(method: "ec.payment.credential_request")
+        public static let windowOpenRequest = MethodDescriptor(method: "ec.window.open_request")
         public static let fulfillmentChange = NotificationDescriptor<Checkout>(method: "ec.fulfillment.change")
-        public static let fulfillmentAddressChangeRequest = RequestDescriptor(method: "ec.fulfillment.address_change_request")
+        public static let fulfillmentAddressChangeRequest = MethodDescriptor(method: "ec.fulfillment.address_change_request")
 
         public static let all: [String] = [
             ready.method,
