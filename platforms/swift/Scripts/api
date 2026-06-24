@@ -37,6 +37,7 @@ build_for_digester() {
         -derivedDataPath "$DERIVED_DATA"
         -skipPackagePluginValidation
         build
+        SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
     )
 
     cd "$PACKAGE_ROOT"
