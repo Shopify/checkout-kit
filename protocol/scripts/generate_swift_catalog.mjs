@@ -101,6 +101,7 @@ for (const rawMethod of openRpc.methods ?? []) {
     identifier: methodNameToIdentifier(method.name),
     method: method.name,
     payload: payloadType(method),
+    isRequest: method.result != null,
   });
 }
 
@@ -113,7 +114,7 @@ for (const entry of entries) {
 }
 
 const payloadTypes = Array.from(
-  new Set(entries.map(entry => entry.payload)),
+  new Set(entries.filter(entry => !entry.isRequest).map(entry => entry.payload)),
 ).sort();
 
 const conformances = payloadTypes
@@ -130,9 +131,10 @@ ${conformances}
 extension EmbeddedCheckoutProtocol {
     public enum Event {
 ${entries
-  .map(
-    entry =>
-      `        public static let ${entry.identifier} = NotificationDescriptor<${entry.payload}>(method: "${entry.method}")`,
+  .map(entry =>
+    entry.isRequest
+      ? `        public static let ${entry.identifier} = RequestDescriptor(method: "${entry.method}")`
+      : `        public static let ${entry.identifier} = NotificationDescriptor<${entry.payload}>(method: "${entry.method}")`,
   )
   .join('\n')}
 

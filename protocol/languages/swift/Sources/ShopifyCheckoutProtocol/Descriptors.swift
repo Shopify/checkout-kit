@@ -14,6 +14,10 @@ public struct NotificationDescriptor<Payload: EventPayload>: Sendable {
     public let method: String
 }
 
+public struct RequestDescriptor: Sendable {
+    public let method: String
+}
+
 public struct DelegationDescriptor<Payload: EventPayload, Result: ResponsePayload>: Sendable {
     public let method: String
     public let delegation: String
