@@ -51,6 +51,7 @@ import env from 'react-native-config';
 import {createDebugLogger} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
 import {useE2ECartBootstrap} from './hooks/useE2ECartBootstrap';
+import {E2ETestIds} from './e2e/testIds';
 
 const log = createDebugLogger('ENV');
 
@@ -273,7 +274,7 @@ function CartIcon({onPress}: {onPress: () => void}) {
   const theme = useTheme();
 
   return (
-    <Pressable onPress={onPress} testID="header-cart-icon">
+    <Pressable onPress={onPress} testID={E2ETestIds.catalog.headerCartIcon}>
       <Icon name="shopping-basket" size={24} color={theme.colors.secondary} />
     </Pressable>
   );
@@ -533,14 +534,14 @@ function Routes() {
   return (
     <View
       style={styles.routes}
-      testID={linkingReady ? 'checkout-kit-sample-ready' : undefined}>
+      testID={linkingReady ? E2ETestIds.appReady : undefined}>
       <Tab.Navigator>
         <Tab.Screen
           name="Catalog"
           component={CatalogStack}
           options={{
             headerShown: false,
-            tabBarButtonTestID: 'catalog-tab',
+            tabBarButtonTestID: E2ETestIds.tabs.catalog,
             tabBarIcon: createNavigationIcon('shop'),
           }}
         />
@@ -548,7 +549,7 @@ function Routes() {
           name="Cart"
           component={CartScreen}
           options={{
-            tabBarButtonTestID: 'cart-tab',
+            tabBarButtonTestID: E2ETestIds.tabs.cart,
             tabBarIcon: createNavigationIcon('shopping-bag'),
             tabBarBadge: totalQuantity > 0 ? totalQuantity : undefined,
           }}
@@ -558,7 +559,7 @@ function Routes() {
           component={AccountStackScreen}
           options={{
             headerShown: false,
-            tabBarButtonTestID: 'account-tab',
+            tabBarButtonTestID: E2ETestIds.tabs.account,
             tabBarIcon: createNavigationIcon('user'),
           }}
         />
@@ -566,7 +567,7 @@ function Routes() {
           name="Settings"
           component={SettingsScreen}
           options={{
-            tabBarButtonTestID: 'settings-tab',
+            tabBarButtonTestID: E2ETestIds.tabs.settings,
             tabBarIcon: createNavigationIcon('cog'),
           }}
         />
