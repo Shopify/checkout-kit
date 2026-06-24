@@ -256,6 +256,9 @@ let client = CheckoutProtocol.Client()
   .on(CheckoutProtocol.lineItemsChange) { checkout in
     // React to line item changes.
   }
+  .on(CheckoutProtocol.fulfillmentChange) { checkout in
+    // React to fulfillment changes.
+  }
   .on(CheckoutProtocol.messagesChange) { checkout in
     // React to checkout messages.
   }

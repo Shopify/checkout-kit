@@ -17,6 +17,7 @@ public enum CheckoutProtocol {
 
     public static let complete = EmbeddedCheckoutProtocol.Event.complete
     public static let error = EmbeddedCheckoutProtocol.Event.error
+    public static let fulfillmentChange = EmbeddedCheckoutProtocol.Event.fulfillmentChange
     public static let lineItemsChange = EmbeddedCheckoutProtocol.Event.lineItemsChange
     public static let messagesChange = EmbeddedCheckoutProtocol.Event.messagesChange
     public static let start = EmbeddedCheckoutProtocol.Event.start
@@ -27,6 +28,7 @@ public enum CheckoutProtocol {
         start.method,
         complete.method,
         error.method,
+        fulfillmentChange.method,
         lineItemsChange.method,
         messagesChange.method,
         totalsChange.method,
