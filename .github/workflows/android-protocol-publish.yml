@@ -1,4 +1,4 @@
-name: Android — Publish to Maven Central
+name: Embedded Checkout Protocol — Publish to Maven Central
 
 on:
   release:
@@ -8,9 +8,9 @@ on:
 
 jobs:
   build:
-    # Only run for Android releases. Android releases are tagged `android/X.Y.Z`;
-    # Swift releases use bare semver (`X.Y.Z`).
-    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'android/') }}
+    # Only run for Embedded Checkout Protocol releases. Protocol releases are
+    # tagged `embedded-checkout-protocol/YYYY.MM.DD.PATCH[-prerelease.N]`.
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'embedded-checkout-protocol/') }}
     environment:
       name: Central Repository Deployment
 
@@ -23,7 +23,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: platforms/android
+        working-directory: protocol/languages/kotlin
 
     steps:
       - name: Checkout Repository
@@ -31,8 +31,7 @@ jobs:
         with:
           submodules: true
 
-      - name: Validate release tag matches Android version
-        id: release
+      - name: Validate release tag matches protocol version
         working-directory: ${{ github.workspace }}
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
@@ -44,21 +43,7 @@ jobs:
             TAG="$GITHUB_REF_NAME"
           fi
 
-          .github/scripts/validate-release-version Android "" "$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Verify Embedded Checkout Protocol is published
-        env:
-          PROTOCOL_VERSION: ${{ steps.release.outputs.android_protocol_version }}
-        run: |
-          set -euo pipefail
-          POM_URL="https://repo.maven.apache.org/maven2/com/shopify/embedded-checkout-protocol/${PROTOCOL_VERSION}/embedded-checkout-protocol-${PROTOCOL_VERSION}.pom"
-
-          if ! curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o /dev/null "$POM_URL"; then
-            echo "::error::com.shopify:embedded-checkout-protocol:${PROTOCOL_VERSION} is not available on Maven Central. Publish embedded-checkout-protocol/${PROTOCOL_VERSION} before releasing Android Kit."
-            exit 1
-          fi
-
-          echo "::notice::Found com.shopify:embedded-checkout-protocol:${PROTOCOL_VERSION} on Maven Central."
+          .github/scripts/validate-release-version "Embedded Checkout Protocol" "" "$TAG"
 
       - name: Install JDK 1.17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -67,9 +52,7 @@ jobs:
           java-version: 17
 
       - name: Publish Package
-        run: |
-          ./gradlew \
-            :lib:publishReleasePublicationToOssrh-staging-apiRepository
+        run: ./gradlew :embedded-checkout-protocol:publishReleasePublicationToOssrh-staging-apiRepository
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
@@ -85,7 +68,6 @@ jobs:
             "${OSSRH_API_BASE_URL}/manual/search/repositories?ip=any&state=open")
           echo "Response: $RESPONSE"
 
-          # Extract repository key from JSON response
           REPO_KEY=$(echo "$RESPONSE" | jq -r \
             '.repositories[] | .key' | head -1)
           echo "Repository key: $REPO_KEY"

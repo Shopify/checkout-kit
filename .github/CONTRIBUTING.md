@@ -165,6 +165,23 @@ If your change intentionally modifies the public API:
 
 If you did _not_ intend to change public API and `apiCheck` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
 
+### Releasing a new Embedded Checkout Protocol version
+
+Open a pull request with the following changes:
+
+1. Bump `embeddedCheckoutProtocolAndroid` in `platforms/android/gradle/libs.versions.toml`.
+2. Update `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public protocol API changed.
+
+Supported protocol release versions are `YYYY.MM.DD.PATCH` and prerelease versions are `YYYY.MM.DD.PATCH-{alpha|beta|rc}.N`.
+
+Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
+
+1. Select `Embedded Checkout Protocol` as the platform.
+2. Enter the expected version. The workflow reads the protocol version from `platforms/android/gradle/libs.versions.toml` and fails if the typed version does not match.
+3. Select `Dry run` first to review the release plan without creating a release.
+4. Rerun with `Draft release` to create a draft GitHub Release with the `embedded-checkout-protocol/`-prefixed tag (e.g. `embedded-checkout-protocol/2026.04.08.1-alpha.1`) for human review.
+5. Publish the draft release when ready. Publishing the draft kicks off the [Embedded Checkout Protocol publish workflow](../../actions/workflows/android-protocol-publish.yml). **A manual approval by a maintainer is required before publication to Maven Central.**
+
 ### Releasing a new Android version
 
 Open a pull request with the following changes:
@@ -172,6 +189,7 @@ Open a pull request with the following changes:
 1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
 2. Add an entry to the top of `platforms/android/CHANGELOG.md`.
 3. Update `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the same lowercase SemVer.
+4. If the Android Kit release depends on a new protocol version, release `embeddedCheckoutProtocolAndroid` first.
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
@@ -181,7 +199,7 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 2. Enter the expected version. The workflow reads the SDK version from `platforms/android/gradle/libs.versions.toml` and fails if the typed version does not match.
 3. Select `Dry run` first to review the release plan without creating a release.
 4. Rerun with `Draft release` to create a draft GitHub Release with the `android/`-prefixed tag (e.g. `android/3.0.1`) for human review.
-5. Publish the draft release when ready. Publishing the draft kicks off the [Android publish workflow](../../actions/workflows/android-publish.yml). **A manual approval by a maintainer is required before publication to Maven Central.**
+5. Publish the draft release when ready. Publishing the draft kicks off the [Android publish workflow](../../actions/workflows/android-publish.yml). The workflow verifies that `com.shopify:embedded-checkout-protocol` is already available on Maven Central before publishing `com.shopify:checkout-kit`. **A manual approval by a maintainer is required before publication to Maven Central.**
 
 ---
 

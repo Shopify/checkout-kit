@@ -30,6 +30,14 @@
 </details>
 
 <details>
+<summary>Releasing a new Embedded Checkout Protocol version?</summary>
+
+- [ ] I have bumped `embeddedCheckoutProtocolAndroid` in `platforms/android/gradle/libs.versions.toml`
+- [ ] I have updated `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public API changed
+
+</details>
+
+<details>
 <summary>Releasing a new Android version?</summary>
 
 - [ ] I have bumped `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`
