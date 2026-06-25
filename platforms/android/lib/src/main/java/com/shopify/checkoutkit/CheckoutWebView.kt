@@ -68,7 +68,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         loadComplete = false
         isPreloadRequest = isPreload
         Handler(Looper.getMainLooper()).post {
-            val ecpUrl = url.appendEcpParams(specVersion = CheckoutProtocol.SPEC_VERSION)
+            val ecpUrl = url.appendEcpParams()
             val headers = if (isPreload) {
                 mutableMapOf(SHOPIFY_PURPOSE_HEADER to PREFETCH_PURPOSE)
             } else {

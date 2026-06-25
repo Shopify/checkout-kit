@@ -63,15 +63,15 @@ class UriExtensionsTest {
 
     @Test
     fun `appendEcpParams adds ec_version and ec_delegate`() {
-        val result = BASE_URL.appendEcpParams(SPEC_VERSION).toUri()
-        assertThat(result.getQueryParameter("ec_version")).isEqualTo(SPEC_VERSION)
+        val result = BASE_URL.appendEcpParams().toUri()
+        assertThat(result.getQueryParameter("ec_version")).isEqualTo(CheckoutProtocol.SPEC_VERSION)
         assertThat(result.getQueryParameter("ec_delegate")).isEqualTo("window.open")
     }
 
     @Test
     fun `appendEcpParams is idempotent on re-call`() {
-        val once = BASE_URL.appendEcpParams(SPEC_VERSION)
-        val twice = once.appendEcpParams(SPEC_VERSION).toUri()
+        val once = BASE_URL.appendEcpParams()
+        val twice = once.appendEcpParams().toUri()
         assertThat(twice.getQueryParameters("ec_version")).hasSize(1)
         assertThat(twice.getQueryParameters("ec_delegate")).hasSize(1)
     }
@@ -79,17 +79,17 @@ class UriExtensionsTest {
     @Test
     fun `appendEcpParams preserves existing query parameters`() {
         val url = "$BASE_URL?key=cart_token&utm_source=email"
-        val result = url.appendEcpParams(SPEC_VERSION).toUri()
+        val result = url.appendEcpParams().toUri()
         assertThat(result.getQueryParameter("key")).isEqualTo("cart_token")
         assertThat(result.getQueryParameter("utm_source")).isEqualTo("email")
-        assertThat(result.getQueryParameter("ec_version")).isEqualTo(SPEC_VERSION)
+        assertThat(result.getQueryParameter("ec_version")).isEqualTo(CheckoutProtocol.SPEC_VERSION)
     }
 
     @Test
     fun `appendEcpParams replaces caller-supplied ECP params`() {
         val url = "$BASE_URL?ec_version=override&ec_delegate=custom"
-        val result = url.appendEcpParams(SPEC_VERSION).toUri()
-        assertThat(result.getQueryParameters("ec_version")).containsExactly(SPEC_VERSION)
+        val result = url.appendEcpParams().toUri()
+        assertThat(result.getQueryParameters("ec_version")).containsExactly(CheckoutProtocol.SPEC_VERSION)
         assertThat(result.getQueryParameters("ec_delegate")).containsExactly("window.open")
     }
 
@@ -113,6 +113,5 @@ class UriExtensionsTest {
 
     private companion object {
         private const val BASE_URL = "https://shop.com/cart/c/abc"
-        private const val SPEC_VERSION = "2026-04-08"
     }
 }

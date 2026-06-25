@@ -3,6 +3,11 @@
 
 package com.shopify.ucp.embedded.checkout
 
+import java.net.URI
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 /**
  * Low-level Embedded Checkout Protocol constants, raw method catalog, and
  * typed spec descriptors.
@@ -34,6 +39,33 @@ public object EmbeddedCheckoutProtocol {
 
     public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult>
         get() = embeddedCheckoutWindowOpenDescriptor
+
+    /**
+     * Returns the given checkout URL with the query parameters required to
+     * initiate the Embedded Checkout Protocol handshake using ec_version and
+     * ec_delegate query parameters.
+     */
+    public fun url(
+        url: String,
+        delegations: List<String> = emptyList(),
+    ): String = runCatching {
+        val uri = URI(url)
+        if (uri.isOpaque) return@runCatching url
+
+        val queryParameters = uri.rawQuery
+            ?.split("&")
+            ?.filter { it.isNotEmpty() }
+            ?.filterNot { it.queryParameterName() in PROTOCOL_QUERY_PARAMS }
+            .orEmpty()
+            .toMutableList()
+
+        queryParameters += "$EC_VERSION_PARAM=$SPEC_VERSION"
+        if (delegations.isNotEmpty()) {
+            queryParameters += "$EC_DELEGATE_PARAM=${delegations.joinToString(",").encodeQueryComponent()}"
+        }
+
+        uri.withRawQuery(queryParameters.joinToString("&"))
+    }.getOrElse { url }
 
     public object Event {
         public const val ready: String = "ec.ready"
@@ -70,4 +102,28 @@ public object EmbeddedCheckoutProtocol {
             fulfillmentAddressChangeRequest,
         )
     }
+
+    private val PROTOCOL_QUERY_PARAMS: Set<String> = setOf(EC_VERSION_PARAM, EC_DELEGATE_PARAM)
+
+    private const val EC_VERSION_PARAM: String = "ec_version"
+    private const val EC_DELEGATE_PARAM: String = "ec_delegate"
+
+    private fun URI.withRawQuery(rawQuery: String): String = buildString {
+        scheme?.let { append(it).append(":") }
+        rawAuthority?.let { append("//").append(it) }
+        append(rawPath.orEmpty())
+        if (rawQuery.isNotEmpty()) append("?").append(rawQuery)
+        rawFragment?.let { append("#").append(it) }
+    }
+
+    private fun String.queryParameterName(): String =
+        substringBefore("=").decodeQueryComponent()
+
+    private fun String.decodeQueryComponent(): String =
+        runCatching { URLDecoder.decode(this, StandardCharsets.UTF_8.name()) }.getOrDefault(this)
+
+    private fun String.encodeQueryComponent(): String =
+        URLEncoder.encode(this, StandardCharsets.UTF_8.name())
+            .replace("+", "%20")
+            .replace("%2C", ",")
 }
