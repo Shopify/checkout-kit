@@ -65,7 +65,6 @@ pnpm-debug.log
 # Ruby / CocoaPods
 /**/Pods/
 /vendor/bundle/
-test/rct-integration-app/Podfile.lock
 test/rct-integration-app/.xcode.env
 test/rct-integration-app/PrivacyInfo.xcprivacy
 

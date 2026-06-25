@@ -16,31 +16,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		00E356EE1AD99517003FC87E /* CheckoutKitReactNativeDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CheckoutKitReactNativeDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07F961A680F5B00A75B9A /* CheckoutKitReactNativeDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CheckoutKitReactNativeDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = CheckoutKitReactNativeDemo/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = CheckoutKitReactNativeDemo/Info.plist; sourceTree = "<group>"; };
 		1939D329B2C035D1A15E316B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = CheckoutKitReactNativeDemo/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		39099806D4750FF73C4975E3 /* Pods-CheckoutKitReactNativeDemoTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CheckoutKitReactNativeDemoTests.release.xcconfig"; path = "Target Support Files/Pods-CheckoutKitReactNativeDemoTests/Pods-CheckoutKitReactNativeDemoTests.release.xcconfig"; sourceTree = "<group>"; };
 		4EF1B8B6CA16C991C5BEE2F2 /* Pods-CheckoutKitReactNativeDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CheckoutKitReactNativeDemo.release.xcconfig"; path = "Target Support Files/Pods-CheckoutKitReactNativeDemo/Pods-CheckoutKitReactNativeDemo.release.xcconfig"; sourceTree = "<group>"; };
-		591887D86C91BE07EFFC9303 /* libPods-CheckoutKitReactNativeDemoTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CheckoutKitReactNativeDemoTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		6A1F48E62B16900600BA591C /* ShopifyCheckoutKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopifyCheckoutKitTests.swift; sourceTree = "<group>"; };
 		6A58AAE72E607DFB00A6AA85 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		6A86196C2BF36EB900E5EE1A /* CheckoutDidFailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutDidFailTests.swift; sourceTree = "<group>"; };
 		6A8D64CF2AF25C1200FE4E4A /* CheckoutKitReactNativeDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = CheckoutKitReactNativeDemo.entitlements; path = CheckoutKitReactNativeDemo/CheckoutKitReactNativeDemo.entitlements; sourceTree = "<group>"; };
 		6AABC1942B17417E008240EB /* OpenSSL.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = OpenSSL.xcframework; path = "Pods/OpenSSL-Universal/Frameworks/OpenSSL.xcframework"; sourceTree = "<group>"; };
 		6AAEC3572B067AD500C7099B /* Entypo.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = Entypo.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Entypo.ttf"; sourceTree = "<group>"; };
-		6AEEAAB02C00010100E5EE1B /* AcceleratedCheckouts_SupportedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcceleratedCheckouts_SupportedTests.swift; sourceTree = "<group>"; };
-		6AEEAAB12C00010100E5EE1B /* AcceleratedCheckouts_UnsupportedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcceleratedCheckouts_UnsupportedTests.swift; sourceTree = "<group>"; };
-		6AF1E0022C00010100E5EE1B /* EventSerializationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventSerializationTests.swift; sourceTree = "<group>"; };
 		6AF2B3762B0BCA6600C6CE4F /* CheckoutKitReactNativeDemo-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CheckoutKitReactNativeDemo-Bridging-Header.h"; sourceTree = "<group>"; };
 		6AFAD2D12BA9DEF8001F9644 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Localizable.xcstrings; path = CheckoutKitReactNativeDemo/Localizable.xcstrings; sourceTree = "<group>"; };
 		6AFC2CB62B0D5814003B5A63 /* libShopifyCheckoutKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libShopifyCheckoutKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		7959053DABE1E06BE5CF1255 /* Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests.release.xcconfig"; path = "Target Support Files/Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests/Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests.release.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = CheckoutKitReactNativeDemo/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9E0AC43398437CA0E3D05DDF /* libPods-CheckoutKitReactNativeDemo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CheckoutKitReactNativeDemo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		DF9E097D026528607DDCD7B7 /* Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests.debug.xcconfig"; path = "Target Support Files/Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests/Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests.debug.xcconfig"; sourceTree = "<group>"; };
-		E22D02A7C54F90741A3D90E9 /* Pods-CheckoutKitReactNativeDemoTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CheckoutKitReactNativeDemoTests.debug.xcconfig"; path = "Target Support Files/Pods-CheckoutKitReactNativeDemoTests/Pods-CheckoutKitReactNativeDemoTests.debug.xcconfig"; sourceTree = "<group>"; };
 		ED728EF8BB9B5E9BA9D50EBE /* Pods-CheckoutKitReactNativeDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CheckoutKitReactNativeDemo.debug.xcconfig"; path = "Target Support Files/Pods-CheckoutKitReactNativeDemo/Pods-CheckoutKitReactNativeDemo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -56,26 +45,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		00E356EF1AD99517003FC87E /* CheckoutKitReactNativeDemoTests */ = {
-			isa = PBXGroup;
-			children = (
-				00E356F01AD99517003FC87E /* Supporting Files */,
-				6A1F48E62B16900600BA591C /* ShopifyCheckoutKitTests.swift */,
-				6A86196C2BF36EB900E5EE1A /* CheckoutDidFailTests.swift */,
-				6AEEAAB02C00010100E5EE1B /* AcceleratedCheckouts_SupportedTests.swift */,
-				6AEEAAB12C00010100E5EE1B /* AcceleratedCheckouts_UnsupportedTests.swift */,
-				6AF1E0022C00010100E5EE1B /* EventSerializationTests.swift */,
-			);
-			path = CheckoutKitReactNativeDemoTests;
-			sourceTree = "<group>";
-		};
-		00E356F01AD99517003FC87E /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
 		13B07FAE1A68108700A75B9A /* CheckoutKitReactNativeDemo */ = {
 			isa = PBXGroup;
 			children = (
@@ -98,7 +67,6 @@
 				6AABC1942B17417E008240EB /* OpenSSL.xcframework */,
 				6AFC2CB62B0D5814003B5A63 /* libShopifyCheckoutKit.a */,
 				9E0AC43398437CA0E3D05DDF /* libPods-CheckoutKitReactNativeDemo.a */,
-				591887D86C91BE07EFFC9303 /* libPods-CheckoutKitReactNativeDemoTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -123,7 +91,6 @@
 				6AB7C68F2AF197BE000DB11B /* Packages */,
 				13B07FAE1A68108700A75B9A /* CheckoutKitReactNativeDemo */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
-				00E356EF1AD99517003FC87E /* CheckoutKitReactNativeDemoTests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
 				6A18CE262AF1B119007B1B08 /* Frameworks */,
@@ -137,7 +104,6 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* CheckoutKitReactNativeDemo.app */,
-				00E356EE1AD99517003FC87E /* CheckoutKitReactNativeDemoTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -147,10 +113,6 @@
 			children = (
 				ED728EF8BB9B5E9BA9D50EBE /* Pods-CheckoutKitReactNativeDemo.debug.xcconfig */,
 				4EF1B8B6CA16C991C5BEE2F2 /* Pods-CheckoutKitReactNativeDemo.release.xcconfig */,
-				DF9E097D026528607DDCD7B7 /* Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests.debug.xcconfig */,
-				7959053DABE1E06BE5CF1255 /* Pods-CheckoutKitReactNativeDemo-CheckoutKitReactNativeDemoTests.release.xcconfig */,
-				E22D02A7C54F90741A3D90E9 /* Pods-CheckoutKitReactNativeDemoTests.debug.xcconfig */,
-				39099806D4750FF73C4975E3 /* Pods-CheckoutKitReactNativeDemoTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -188,11 +150,6 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					00E356ED1AD99517003FC87E = {
-						CreatedOnToolsVersion = 6.2;
-						LastSwiftMigration = 1430;
-						TestTargetID = 13B07F861A680F5B00A75B9A;
-					};
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1430;
 					};

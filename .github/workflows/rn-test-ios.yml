@@ -72,6 +72,15 @@ jobs:
       - name: Add Mint to PATH
         run: echo "${{ github.workspace }}/.mint/bin" >> "$GITHUB_PATH"
 
+      - name: Verify iOS lockfile uses published native SDK
+        run: scripts/check_published_podfile_lock test/rct-integration-app/Podfile.lock
+
+      - name: Cache cocoapods
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: platforms/react-native/test/rct-integration-app/Pods
+          key: ${{ runner.os }}-rct-integration-cocoapods-${{ hashFiles('platforms/react-native/test/rct-integration-app/Podfile.lock', 'platforms/react-native/test/rct-integration-app/Podfile', 'platforms/react-native/sample/Gemfile.lock', 'platforms/react-native/sample/Gemfile', 'platforms/react-native/package.json', 'platforms/react-native/test/rct-integration-app/package.json', 'platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json', 'platforms/react-native/pnpm-lock.yaml') }}
+
       - name: Build module
         run: pnpm module build
 

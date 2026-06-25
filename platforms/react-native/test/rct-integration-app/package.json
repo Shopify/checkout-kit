@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "@shopify/checkout-kit-react-native": "workspace:*",
-    "react": "19.2.3",
-    "react-native": "0.85.3"
+    "@shopify/checkout-kit-react-native": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
   }
 }

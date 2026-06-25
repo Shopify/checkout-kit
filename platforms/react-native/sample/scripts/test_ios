@@ -16,7 +16,7 @@ dest="$(get_sim_destination)"
 bundle check || bundle install
 
 cd "$TEST_APP_DIR"
-bundle exec pod install --repo-update
+bundle exec pod install --deployment --repo-update
 
 xcbeautify_args=""
 if [ "$CI" = "true" ]; then

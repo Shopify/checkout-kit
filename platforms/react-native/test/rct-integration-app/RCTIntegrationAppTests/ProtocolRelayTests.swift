@@ -52,7 +52,7 @@ final class ProtocolRelayTests: XCTestCase {
             "ec.line_items.change",
             "ec.messages.change",
             "ec.start",
-            "ec.totals.change",
+            "ec.totals.change"
         ]
 
         for method in methods {

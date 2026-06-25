@@ -457,6 +457,15 @@ commands:
           else
             echo "Skipping CocoaPods cache clean (pod unavailable; run dev up first)"
           fi
+          rm -rf test/rct-integration-app/Pods \
+            test/rct-integration-app/RCTIntegrationApp.xcodeproj \
+            test/rct-integration-app/RCTIntegrationApp.xcworkspace \
+            test/rct-integration-app/RCTIntegrationApp/Info.plist \
+            test/rct-integration-app/RCTIntegrationAppTests/Info.plist \
+            test/rct-integration-app/build \
+            test/rct-integration-app/.xcode.env \
+            test/rct-integration-app/.xcode.env.local \
+            test/rct-integration-app/PrivacyInfo.xcprivacy
           pnpm module clean
           pnpm sample clean
           pnpm clean
