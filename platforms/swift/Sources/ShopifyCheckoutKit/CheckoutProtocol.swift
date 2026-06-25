@@ -25,7 +25,7 @@ public enum CheckoutProtocol {
     public static let totalsChange = EmbeddedCheckoutProtocol.Event.totalsChange
 
     static let supportedProtocolMethods: Set<String> = [
-        EmbeddedCheckoutProtocol.readyMethod,
+        ready.method,
         start.method,
         complete.method,
         error.method,

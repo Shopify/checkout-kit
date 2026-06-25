@@ -34,19 +34,23 @@ struct DescriptorTests {
             #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.buyer.change"))
         }
 
-        @Test func requestMethodsBindAsRequestsNotNotifications() {
-            func method(of descriptor: MethodDescriptor) -> String { descriptor.method }
+        @Test func requestMethodsBindAsTypedDescriptors() {
+            func method<Payload, Result>(of descriptor: RequestDescriptor<Payload, Result>) -> String {
+                descriptor.method
+            }
 
-            #expect(method(of: EmbeddedCheckoutProtocol.Event.windowOpenRequest) == "ec.window.open_request")
-            #expect(method(of: EmbeddedCheckoutProtocol.Event.paymentCredentialRequest) == "ec.payment.credential_request")
+            #expect(method(of: EmbeddedCheckoutProtocol.ready) == "ec.ready")
+            #expect(method(of: EmbeddedCheckoutProtocol.auth) == "ec.auth")
+            #expect(method(of: EmbeddedCheckoutProtocol.paymentCredential) == "ec.payment.credential_request")
             #expect(
-                method(of: EmbeddedCheckoutProtocol.Event.paymentInstrumentsChangeRequest)
+                method(of: EmbeddedCheckoutProtocol.paymentInstrumentsChange)
                     == "ec.payment.instruments_change_request"
             )
             #expect(
-                method(of: EmbeddedCheckoutProtocol.Event.fulfillmentAddressChangeRequest)
+                method(of: EmbeddedCheckoutProtocol.fulfillmentAddressChange)
                     == "ec.fulfillment.address_change_request"
             )
+            #expect(EmbeddedCheckoutProtocol.Event.windowOpenRequest == "ec.window.open_request")
         }
 
         @Test func methodsAreUnique() {

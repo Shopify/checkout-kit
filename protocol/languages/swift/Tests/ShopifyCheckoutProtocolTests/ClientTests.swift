@@ -38,7 +38,7 @@ private enum TestDelegationResult: ResponsePayload {
 }
 
 private let windowOpenDescriptor = RequestDescriptor<TestURLPayload, TestDelegationResult>(
-    method: EmbeddedCheckoutProtocol.Event.windowOpenRequest.method,
+    method: EmbeddedCheckoutProtocol.Event.windowOpenRequest,
     delegation: "window.open",
     decode: { params in
         try? JSONDecoder().decode(TestURLPayload.self, from: params)

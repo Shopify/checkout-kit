@@ -17,11 +17,3 @@ public struct AddressChangeResult: ResponsePayload {
         self.ucp = ucp
     }
 }
-
-extension EmbeddedCheckoutProtocol {
-    public static let fulfillmentAddressChange = RequestDescriptor<Checkout, AddressChangeResult>(
-        method: Event.fulfillmentAddressChangeRequest.method,
-        delegation: Delegation.fulfillmentAddressChange.rawValue,
-        decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
-    )
-}

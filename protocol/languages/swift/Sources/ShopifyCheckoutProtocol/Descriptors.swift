@@ -38,15 +38,3 @@ public struct RequestDescriptor<Payload: EventPayload, Result: ResponsePayload>:
         self.decode = decode
     }
 }
-
-/// Metadata-only descriptor emitted by the generated catalog for result-bearing
-/// methods. The code generator cannot know the hand-authored Swift payload/result
-/// types, so it supplies the method-name constant only; typed responder behavior
-/// comes from the hand-authored `RequestDescriptor` values.
-public struct MethodDescriptor: Sendable {
-    public let method: String
-
-    public init(method: String) {
-        self.method = method
-    }
-}
