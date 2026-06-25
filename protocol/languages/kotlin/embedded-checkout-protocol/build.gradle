@@ -1,0 +1,123 @@
+import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
+plugins {
+    id 'signing'
+    id 'maven-publish'
+    id 'java-library'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+    id 'io.gitlab.arturbosch.detekt'
+}
+
+apply from: file('../../../../platforms/android/gradle/android-library-versions.gradle')
+
+def kotlinCompatibility = kotlinVersionCompatibility
+def versionName = libs.versions.embeddedCheckoutProtocolAndroid.get()
+
+java {
+    sourceCompatibility = JavaVersion.toVersion(kotlinCompatibility.javaVersion)
+    targetCompatibility = JavaVersion.toVersion(kotlinCompatibility.javaVersion)
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(KotlinJvmCompile).configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.valueOf(kotlinCompatibility.kotlinJvmTarget))
+        apiVersion.set(KotlinVersion.valueOf(kotlinCompatibility.kotlinApiVersion))
+        languageVersion.set(KotlinVersion.valueOf(kotlinCompatibility.kotlinLanguageVersion))
+        if (!name.contains("Test")) {
+            freeCompilerArgs.add("-Xexplicit-api=strict")
+        }
+    }
+}
+
+tasks.withType(Test).configureEach {
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        outputs.upToDateWhen { false }
+        showStandardStreams = true
+    }
+}
+
+dependencies {
+    detektPlugins libs.detekt.formatting
+
+    testImplementation libs.junit
+    testImplementation libs.assertj.core
+
+    api libs.kotlin.stdlib
+    api libs.kotlinx.serialization.json
+}
+
+signing {
+    def signingKeyId = findProperty("signingKeyId")
+    def signingKey = findProperty("signingKey")
+    def signingPassword = findProperty("signingPassword")
+    if (signingKey) {
+        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+        sign publishing.publications
+    }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom('../../../../platforms/android/lib/detekt.config.yml')
+    autoCorrect = true
+}
+
+// Generated protocol files are checked through codegen review, not detekt style rules.
+tasks.withType(Detekt).configureEach {
+    exclude('**/Models.kt')
+    exclude('**/EmbeddedCheckoutProtocol.kt')
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            from components.java
+
+            pom {
+                name = "EmbeddedCheckoutProtocol"
+                description = "Shopify Embedded Checkout Protocol models and wire helpers."
+                url = "https://github.com/Shopify/checkout-kit"
+                groupId = "com.shopify"
+                artifactId = "embedded-checkout-protocol"
+                version = versionName
+
+                licenses {
+                    license {
+                        name = "MIT"
+                        url = "https://opensource.org/licenses/MIT"
+                    }
+                }
+
+                developers {
+                    developer {
+                        name = "Shopify Inc."
+                    }
+                }
+
+                scm {
+                    connection = "https://github.com/Shopify/checkout-kit.git"
+                    developerConnection = "https://github.com/Shopify/checkout-kit.git"
+                    url = "https://github.com/Shopify/checkout-kit.git"
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'ossrh-staging-api'
+            url = "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
+            credentials {
+                username = System.getenv("OSSRH_USERNAME")
+                password = System.getenv("OSSRH_PASSWORD")
+            }
+        }
+    }
+}

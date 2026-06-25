@@ -1,0 +1,8 @@
+// Consumer-facing Kotlin/JVM compatibility values shared by published Kotlin artifacts.
+// Keep these centralized so checkout-kit and embedded-checkout-protocol do not drift.
+ext.kotlinVersionCompatibility = [
+    javaVersion: "11",
+    kotlinJvmTarget: "JVM_11",
+    kotlinApiVersion: "KOTLIN_2_0",
+    kotlinLanguageVersion: "KOTLIN_2_0",
+]

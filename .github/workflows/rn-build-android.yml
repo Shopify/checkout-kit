@@ -40,6 +40,8 @@ jobs:
             platforms/android/**/*.gradle*
             platforms/android/**/gradle-wrapper.properties
             platforms/android/gradle.properties
+            protocol/languages/kotlin/**/*.gradle*
+            protocol/languages/kotlin/**/*.toml
             platforms/react-native/package.json
             platforms/react-native/pnpm-lock.yaml
             platforms/react-native/sample/package.json

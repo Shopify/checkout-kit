@@ -19,11 +19,11 @@ import com.shopify.checkout_kit_android_demo.common.navigation.Screen
 import com.shopify.checkout_kit_android_demo.settings.PreferencesManager
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.CustomerRepository
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
-import com.shopify.checkoutkit.Checkout
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.CheckoutException
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.checkoutkit.WindowOpenResult
+import com.shopify.ucp.embedded.checkout.Checkout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -122,7 +122,7 @@ class CartViewModel(
                     mainActivity.onGeolocationPermissionsHidePrompt()
                 }
             }
-            connect(buildCommunicationClient(navController, activity, windowOpenHandler))
+            connect(buildProtocolClient(navController, activity, windowOpenHandler))
         }
     }
 
@@ -168,7 +168,7 @@ class CartViewModel(
         logger.log("Checkout canceled")
     }
 
-    private fun buildCommunicationClient(
+    private fun buildProtocolClient(
         navController: NavController,
         activity: ComponentActivity,
         windowOpenHandler: WindowOpenHandler,

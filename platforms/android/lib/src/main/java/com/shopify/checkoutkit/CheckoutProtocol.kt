@@ -2,82 +2,47 @@ package com.shopify.checkoutkit
 
 import android.net.Uri
 import android.os.Looper
-import androidx.core.net.toUri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
-import kotlinx.serialization.Serializable
+import com.shopify.ucp.embedded.checkout.Checkout
+import com.shopify.ucp.embedded.checkout.DelegationDescriptor
+import com.shopify.ucp.embedded.checkout.EcpRequest
+import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
+import com.shopify.ucp.embedded.checkout.ErrorResponse
+import com.shopify.ucp.embedded.checkout.NotificationDescriptor
+import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
+import com.shopify.ucp.embedded.checkout.encodeJsonRpcError
+import com.shopify.ucp.embedded.checkout.encodeJsonRpcResult
+import com.shopify.ucp.embedded.checkout.jsonRpcRequestId
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 import java.util.concurrent.CountDownLatch
 
 /**
- * Entry point for the typed Embedded Checkout Protocol (ECP) client.
+ * Consumer-facing typed Embedded Checkout Protocol API curated by Checkout Kit.
  *
- * Provides static [NotificationDescriptor] instances for every EC notification method,
- * plus a fluent [Client] builder that implements [CheckoutCommunicationClient].
- *
- * Example usage:
- * ```kotlin
- * val client = CheckoutProtocol.Client()
- *     .on(CheckoutProtocol.start)  { checkout -> showProgressUI(checkout) }
- *     .on(CheckoutProtocol.complete) { checkout -> navigateToConfirmation(checkout) }
- *
- * ShopifyCheckoutKit.present(url, activity, checkoutListener, client)
- * ```
+ * The lower-level `embedded-checkout-protocol` artifact owns generated models and raw wire
+ * method names. Checkout Kit decides which of those methods are supported for app
+ * developers and exposes them through this typed namespace.
  */
 public object CheckoutProtocol {
+    public const val SPEC_VERSION: String = EmbeddedCheckoutProtocol.SPEC_VERSION
 
-    public const val SPEC_VERSION: String = "2026-04-08"
-    internal const val READY_METHOD: String = "ec.ready"
+    public val start: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.start
+    public val complete: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.complete
+    public val messagesChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.messagesChange
+    public val lineItemsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.lineItemsChange
+    public val totalsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.totalsChange
+    public val error: NotificationDescriptor<ErrorResponse> = EmbeddedCheckoutProtocol.error
 
-    // Notifications — checkout carries the full current state
-    public val start: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.start")
-    public val complete: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.complete")
-    public val messagesChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.messages.change")
-    public val lineItemsChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.line_items.change")
-    public val totalsChange: NotificationDescriptor<Checkout> = checkoutDescriptor("ec.totals.change")
-    public val error: NotificationDescriptor<ErrorResponse> = NotificationDescriptor(
-        method = "ec.error",
-        decode = { params ->
-            try {
-                json.decodeFromJsonElement<ErrorParams>(params ?: JsonNull).error
-            } catch (e: SerializationException) {
-                log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ec.error params: $e  raw=$params")
-                null
-            }
-        }
-    )
-
-    // Delegations — request-response. Merchant-overridable: if a consumer registers a
-    // handler via [Client.on], it wins; otherwise [EmbeddedCheckoutProtocol] falls back
-    // to the kit's built-in handler from [EmbeddedCheckoutProtocol.defaultDelegationClient].
-    public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult> = DelegationDescriptor(
-        method = "ec.window.open_request",
-        decode = { params ->
-            try {
-                json.decodeFromJsonElement<WindowOpenParams>(params ?: JsonNull).url
-                    .takeIf { it.isNotBlank() }
-                    ?.let { runCatching { it.toUri() }.getOrNull() }
-                    ?.let(::WindowOpenRequest)
-            } catch (e: SerializationException) {
-                log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode ${windowOpen.method} params: $e  raw=$params")
-                null
-            }
+    public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult> = EmbeddedCheckoutProtocol.windowOpen.map(
+        decode = { request ->
+            request.url.toString().let(Uri::parse).let(::WindowOpenRequest)
         },
-        encode = { result -> encodeWindowOpenResult(result) },
+        encode = ::encodeWindowOpenResult,
     )
 
     internal val supportedProtocolMethods: Set<String> = setOf(
-        READY_METHOD,
+        EmbeddedCheckoutProtocol.Event.ready,
         start.method,
         complete.method,
         error.method,
@@ -87,8 +52,11 @@ public object CheckoutProtocol {
         windowOpen.method,
     )
 
-    internal fun supportedProtocolMethod(message: String): String? =
-        decodeProtocolRequest(message)?.let(::supportedProtocolMethod)
+    internal fun supportedProtocolMethod(message: String): String? = try {
+        supportedProtocolMethod(decodeProtocolRequest(message))
+    } catch (_: SerializationException) {
+        null
+    }
 
     internal fun supportedProtocolMethod(request: EcpRequest): String? =
         request.method.takeIf {
@@ -97,95 +65,64 @@ public object CheckoutProtocol {
                 request.hasValidJsonRpcRequestId()
         }
 
-    private fun decodeProtocolRequest(message: String): EcpRequest? = try {
-        decodeEcpRequest(message)
-    } catch (_: SerializationException) {
-        null
-    }
+    private val supportedNotificationDescriptors: Set<NotificationDescriptor<*>> = setOf(
+        start,
+        complete,
+        messagesChange,
+        lineItemsChange,
+        totalsChange,
+        error,
+    )
 
-    private fun checkoutDescriptor(method: String): NotificationDescriptor<Checkout> =
-        NotificationDescriptor(
-            method = method,
-            decode = { params ->
-                try {
-                    json.decodeFromJsonElement<CheckoutParams>(params ?: JsonNull).checkout
-                } catch (e: SerializationException) {
-                    log.d(BaseWebView.ECP_LOG_TAG, "Failed to decode $method checkout params: $e  raw=$params")
-                    null
-                }
-            }
-        )
+    private val supportedDelegationDescriptors: Set<DelegationDescriptor<*, *>> = setOf(
+        windowOpen,
+    )
 
-    private fun encodeWindowOpenResult(result: WindowOpenResult): JsonObject = when (result) {
+    private fun encodeWindowOpenResult(
+        result: WindowOpenResult,
+    ): com.shopify.ucp.embedded.checkout.WindowOpenResult = when (result) {
         is WindowOpenResult.Success ->
-            json.encodeToJsonElement(
-                WindowOpenSuccessDto(UcpEnvelope(SPEC_VERSION, "success"))
-            ).jsonObject
+            com.shopify.ucp.embedded.checkout.WindowOpenResult.Success
         is WindowOpenResult.Rejected ->
-            json.encodeToJsonElement(
-                WindowOpenErrorDto(
-                    ucp = UcpEnvelope(SPEC_VERSION, "error"),
-                    messages = listOf(
-                        UcpMessage(
-                            type = "error",
-                            code = "window_open_rejected_error",
-                            content = result.reason ?: "Window open rejected",
-                            severity = "unrecoverable",
-                        )
-                    ),
-                )
-            ).jsonObject
+            com.shopify.ucp.embedded.checkout.WindowOpenResult.Rejected(result.reason)
     }
-
-    internal val json: Json = Json { ignoreUnknownKeys = true }
 
     /**
-     * A typed, fluent implementation of [CheckoutCommunicationClient].
+     * A typed, fluent client for supported Checkout Kit protocol callbacks.
      *
-     * Each [on] call returns a new [Client] instance (value semantics),
-     * making it safe to share a base configuration across multiple presents.
+     * Each [on] call returns a new [Client] instance, making it safe to share a
+     * base configuration across multiple checkout presentations.
      */
     public class Client private constructor(
-        private val handlers: Map<String, Handler>,
+        private val handlers: Map<String, NotificationHandler>,
         private val delegations: Map<String, Delegation>,
-    ) : CheckoutCommunicationClient {
-
+    ) {
         public constructor() : this(emptyMap(), emptyMap())
 
-        /**
-         * Register a handler for an EC notification descriptor.
-         *
-         * The handler is invoked on the **main thread** whenever the checkout page
-         * sends the corresponding notification. Returning from the handler sends
-         * no response to the page (notifications are fire-and-forget).
-         */
         public fun <P : Any> on(
             descriptor: NotificationDescriptor<P>,
             handler: (P) -> Unit,
         ): Client {
-            @Suppress("UNCHECKED_CAST")
-            val entry = Handler(
-                decode = descriptor.decode,
-                invoke = { payload -> (payload as? P)?.let { handler(it) } },
+            if (descriptor !in supportedNotificationDescriptors) return this
+            val entry = NotificationHandler(
+                decode = { params -> descriptor.decode(params) },
+                invoke = { payload ->
+                    @Suppress("UNCHECKED_CAST")
+                    (payload as? P)?.let { handler(it) }
+                },
             )
             return Client(handlers + (descriptor.method to entry), delegations)
         }
 
-        /**
-         * Register a handler for an EC delegation descriptor.
-         *
-         * Delegations are request-response: the handler is invoked on the **main thread**
-         * and its typed return value is encoded back to the checkout page as a JSON-RPC
-         * response. If no handler is registered for a descriptor, the kit falls back to
-         * its built-in default (see [EmbeddedCheckoutProtocol.defaultDelegationClient]).
-         */
         public fun <P : Any, R : Any> on(
             descriptor: DelegationDescriptor<P, R>,
             handler: (P) -> R,
-        ): Client = Client(handlers, delegations + (descriptor.method to Delegation.Typed(descriptor, handler)))
+        ): Client {
+            if (descriptor !in supportedDelegationDescriptors) return this
+            return Client(handlers, delegations + (descriptor.method to Delegation.Typed(descriptor, handler)))
+        }
 
-        /** Called by [EmbeddedCheckoutProtocol] for every delegated EC message. */
-        override fun process(message: String): String? =
+        internal fun process(message: String): String? =
             decodeRequest(message)?.let { request ->
                 val delegation = delegations[request.method]
                 if (delegation != null) {
@@ -197,23 +134,12 @@ public object CheckoutProtocol {
             }
 
         private fun decodeRequest(message: String): EcpRequest? = try {
-            decodeEcpRequest(message)
+            decodeProtocolRequest(message)
                 .takeIf { it.hasValidJsonRpcRequestId() }
         } catch (e: SerializationException) {
             log.d(LOG_TAG, "Error processing ECP message in typed client: $e")
             null
         }
-
-        /**
-         * Direct, typed invocation of a registered delegation handler.
-         *
-         * Used by the kit to dispatch synthesized delegations (e.g. direct anchor-tag
-         * clicks intercepted by the WebView) without round-tripping through JSON-RPC.
-         * Returns `null` if no handler is registered for [descriptor].
-         */
-        @Suppress("UNCHECKED_CAST")
-        internal fun <P : Any, R : Any> invoke(descriptor: DelegationDescriptor<P, R>, payload: P): R? =
-            delegations[descriptor.method]?.let { invokeOnMainThread { it.invokeRaw(payload) } } as? R
 
         private fun dispatchNotification(request: EcpRequest) {
             val handler = handlers[request.method]
@@ -221,20 +147,30 @@ public object CheckoutProtocol {
                 log.d(LOG_TAG, "No handler registered for method=${request.method}")
                 return
             }
-            val payload = handler.decode(request.params)
-            log.d(LOG_TAG, "Decoded payload for method=${request.method}: ${payload ?: "null, skipping"}")
+            val payload = try {
+                handler.decode(request.params)
+            } catch (e: SerializationException) {
+                log.d(
+                    LOG_TAG,
+                    "Failed to decode ${request.method} notification params: $e raw=${request.params}",
+                )
+                null
+            }
+            log.d(
+                LOG_TAG,
+                "Decoded payload for method=${request.method}: ${payload ?: "null, skipping"}",
+            )
             payload?.let { onMainThread { handler.invoke(it) } }
         }
     }
 
-    private class Handler(
+    private class NotificationHandler(
         val decode: (JsonElement?) -> Any?,
         val invoke: (Any) -> Unit,
     )
 
     private sealed class Delegation {
         abstract fun dispatch(request: EcpRequest): String
-        abstract fun invokeRaw(payload: Any): Any
 
         class Typed<P : Any, R : Any>(
             private val descriptor: DelegationDescriptor<P, R>,
@@ -244,52 +180,24 @@ public object CheckoutProtocol {
                 val payload = try {
                     descriptor.decode(request.params)
                 } catch (e: SerializationException) {
-                    log.d(LOG_TAG, "Decode failed for ${request.method}: $e")
+                    log.d(
+                        LOG_TAG,
+                        "Failed to decode ${request.method} delegation params: $e raw=${request.params}",
+                    )
                     null
-                } ?: return jsonRpcError(
+                } ?: return encodeJsonRpcError(
                     request.id,
                     CODE_INVALID_PARAMS,
                     "Invalid params for ${request.method}",
                 )
                 val result = invokeOnMainThread { handler(payload) }
-                return jsonRpcResult(request.id, descriptor.encode(result))
+                return encodeJsonRpcResult(request.id, descriptor.encode(result))
             }
-
-            @Suppress("UNCHECKED_CAST")
-            override fun invokeRaw(payload: Any): Any = handler(payload as P)
         }
     }
 
-    private const val LOG_TAG = BaseWebView.ECP_LOG_TAG
-    private const val CODE_INVALID_PARAMS = -32602
-
-    private fun decodeEcpRequest(message: String): EcpRequest {
-        val requestObject = json.decodeFromString<JsonObject>(message)
-        return json.decodeFromJsonElement<EcpRequest>(requestObject).copy(id = requestObject["id"])
-    }
-
-    private fun jsonRpcResult(id: JsonElement?, result: JsonElement): String =
-        json.encodeToString(
-            JsonObject.serializer(),
-            buildJsonObject {
-                put("jsonrpc", "2.0")
-                put("id", id ?: JsonNull)
-                put("result", result)
-            }
-        )
-
-    private fun jsonRpcError(id: JsonElement?, code: Int, message: String): String =
-        json.encodeToString(
-            JsonObject.serializer(),
-            buildJsonObject {
-                put("jsonrpc", "2.0")
-                put("id", id ?: JsonNull)
-                putJsonObject("error") {
-                    put("code", code)
-                    put("message", message)
-                }
-            }
-        )
+    private const val CODE_INVALID_PARAMS: Int = -32602
+    private const val LOG_TAG: String = BaseWebView.ECP_LOG_TAG
 
     private fun <R> invokeOnMainThread(block: () -> R): R {
         if (Looper.myLooper() == Looper.getMainLooper()) return block()
@@ -307,70 +215,6 @@ public object CheckoutProtocol {
 internal fun EcpRequest.hasValidJsonRpcRequestId(): Boolean =
     id == null || jsonRpcRequestId(id) != null
 
-internal fun jsonRpcRequestId(id: JsonElement?): JsonElement? =
-    when (id) {
-        JsonNull -> JsonNull
-        is JsonPrimitive -> id.takeIf {
-            it.isString ||
-                (!it.isString && JSON_RPC_INTEGER.matches(it.content) && it.content.toLongOrNull() != null)
-        }
-        else -> null
-    }
-
-private val JSON_RPC_INTEGER = Regex("-?(0|[1-9]\\d*)")
-
-/**
- * Describes a typed EC notification handler binding.
- *
- * Create instances via [CheckoutProtocol] static properties; do not instantiate directly.
- */
-public class NotificationDescriptor<P : Any> internal constructor(
-    public val method: String,
-    internal val decode: (JsonElement?) -> P?,
-)
-
-/**
- * Describes a typed EC delegation handler binding.
- *
- * Delegations are request-response: the handler returns a typed result that gets
- * encoded into a JSON-RPC response back to the checkout page. Obtain instances via
- * [CheckoutProtocol] static properties (e.g. [CheckoutProtocol.windowOpen]); do not
- * instantiate directly.
- */
-public class DelegationDescriptor<P : Any, R : Any> internal constructor(
-    public val method: String,
-    internal val decode: (JsonElement?) -> P?,
-    internal val encode: (R) -> JsonElement,
-)
-
-@Serializable
-internal data class EcpRequest(
-    val jsonrpc: String = "2.0",
-    val method: String,
-    val id: JsonElement? = null,
-    val params: JsonElement? = null,
-)
-
-@Serializable
-internal data class ReadyParams(
-    val delegate: List<String> = emptyList(),
-)
-
-@Serializable
-internal data class CheckoutParams(
-    val checkout: Checkout,
-)
-
-@Serializable
-internal data class ErrorParams(
-    val error: ErrorResponse,
-)
-
-@Serializable
-internal data class WindowOpenParams(
-    val url: String,
-)
-
 /** Payload delivered with the [CheckoutProtocol.windowOpen] delegation. */
 @ConsistentCopyVisibility
 public data class WindowOpenRequest internal constructor(public val url: Uri)
@@ -379,36 +223,10 @@ public data class WindowOpenRequest internal constructor(public val url: Uri)
  * Outcome a [CheckoutProtocol.windowOpen] handler returns to the checkout page.
  *
  * [Success] indicates the URL was opened externally.
- * [Rejected] indicates the URL could not be (or was deliberately not) opened — the
- * page receives a UCP `window_open_rejected_error` envelope and may surface a
- * fallback message to the buyer.
+ * [Rejected] indicates the URL could not be opened, so checkout receives a UCP
+ * `window_open_rejected_error` envelope and may surface fallback UI.
  */
 public sealed class WindowOpenResult {
     public object Success : WindowOpenResult()
     public data class Rejected(public val reason: String? = null) : WindowOpenResult()
 }
-
-// UCP wire envelopes for delegation responses. Mirror Swift's UCPSuccess / UCPError /
-// WindowOpenRejectedBody (origin/swift/window.open_request: ShopifyCheckoutProtocol/Codec.swift +
-// WindowOpen.swift). UcpEnvelope / UcpMessage are intentionally generic so the next delegation
-// (ec.auth, ec.payment.*) can reuse them; promote out of this file once a second call site lands.
-
-@Serializable
-private data class UcpEnvelope(val version: String, val status: String)
-
-@Serializable
-private data class UcpMessage(
-    val type: String,
-    val code: String,
-    val content: String,
-    val severity: String,
-)
-
-@Serializable
-private data class WindowOpenSuccessDto(val ucp: UcpEnvelope)
-
-@Serializable
-private data class WindowOpenErrorDto(
-    val ucp: UcpEnvelope,
-    val messages: List<UcpMessage>,
-)

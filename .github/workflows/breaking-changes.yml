@@ -71,6 +71,9 @@ jobs:
       - name: Check public Android API baseline
         run: ./gradlew :lib:apiCheck --console=plain
 
+      - name: Check public Kotlin protocol API baseline
+        run: ../../protocol/languages/kotlin/gradlew -p ../../protocol/languages/kotlin :embedded-checkout-protocol:apiCheck --console=plain
+
   react-native:
     name: React Native
     if: inputs.react-native == 'true'

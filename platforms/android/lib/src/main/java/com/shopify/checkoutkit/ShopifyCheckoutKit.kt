@@ -91,7 +91,7 @@ public object ShopifyCheckoutKit {
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
      * @param configure a Kotlin-first builder for fail/cancel callbacks, browser/system hooks,
-     * and an optional communication client
+     * and an optional typed protocol client
      * @return An instance of [CheckoutKitDialog] if the dialog was successfully created and displayed.
      */
     @JvmStatic
@@ -106,7 +106,7 @@ public object ShopifyCheckoutKit {
             checkoutUrl = checkoutUrl,
             context = context,
             checkoutListener = presentation.buildListener(),
-            communicationClient = presentation.communicationClient,
+            protocolClient = presentation.protocolClient,
         )
     }
 
@@ -117,8 +117,8 @@ public object ShopifyCheckoutKit {
      * @param context The context the checkout is being presented from
      * @param checkoutListener provides callbacks to allow clients to listen for and respond to checkout lifecycle events
      * (failure, cancellation, permission prompts, file chooser).
-     * @param communicationClient optional handler for supported Embedded Checkout Protocol (ECP)
-     * messages from the checkout web page. Built-in messages
+     * @param protocolClient optional typed handler for supported Embedded Checkout Protocol (ECP)
+     * callbacks from the checkout web page. Built-in messages
      * (`ec.ready` and [ec.start][CheckoutProtocol.start])
      * are handled automatically by the SDK.
      * @return An instance of [CheckoutKitDialog] if the dialog was successfully created and displayed.
@@ -129,7 +129,7 @@ public object ShopifyCheckoutKit {
         checkoutUrl: String,
         context: ComponentActivity,
         checkoutListener: T,
-        communicationClient: CheckoutCommunicationClient? = null,
+        protocolClient: CheckoutProtocol.Client? = null,
     ): CheckoutKitDialog? {
         log.d("ShopifyCheckoutKit", "Present called with checkoutUrl ${checkoutUrl.redactedUrlForLogging()}.")
         if (context.isDestroyed || context.isFinishing) {
@@ -137,7 +137,7 @@ public object ShopifyCheckoutKit {
             return null
         }
         log.d("ShopifyCheckoutKit", "Constructing Dialog")
-        val dialog = CheckoutDialog(checkoutUrl, checkoutListener, context, communicationClient)
+        val dialog = CheckoutDialog(checkoutUrl, checkoutListener, context, protocolClient)
         context.lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
                 log.d("ShopifyCheckoutKit", "Context is being destroyed, dismissing dialog.")

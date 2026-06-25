@@ -2,6 +2,12 @@ package com.shopify.checkoutkit
 
 import android.webkit.JavascriptInterface
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
+import com.shopify.ucp.embedded.checkout.EcpRequest
+import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
+import com.shopify.ucp.embedded.checkout.ReadyParams
+import com.shopify.ucp.embedded.checkout.Severity
+import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
+import com.shopify.ucp.embedded.checkout.jsonRpcRequestId
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -20,9 +26,9 @@ import kotlinx.serialization.json.putJsonObject
  * `window.EmbeddedCheckoutProtocolConsumer.postMessage(jsonRpcString)`.
  * Responses are sent back via `window.EmbeddedCheckoutProtocol.postMessage(responseString)`.
  */
-internal class EmbeddedCheckoutProtocol(
+internal class EmbeddedCheckoutProtocolBridge(
     private val view: CheckoutWebView,
-    @Volatile private var client: CheckoutCommunicationClient? = null,
+    @Volatile private var client: CheckoutProtocol.Client? = null,
 ) {
     private val decoder = Json { ignoreUnknownKeys = true }
     private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
@@ -40,26 +46,25 @@ internal class EmbeddedCheckoutProtocol(
             policy = DefaultClientPolicy.AlwaysRunAfterMerchant,
         ),
     )
-    private val composedClient: CheckoutCommunicationClient
-        get() = ComposedCheckoutCommunicationClient(
+    private val composedClient: ComposedCheckoutProtocolClient
+        get() = ComposedCheckoutProtocolClient(
             merchant = client,
             defaults = defaultClientBindings,
         )
 
-    internal fun setClient(client: CheckoutCommunicationClient?) {
+    internal fun setClient(client: CheckoutProtocol.Client?) {
         this.client = client
     }
 
     @JavascriptInterface
     fun postMessage(message: String) {
         try {
-            val requestObject = decoder.decodeFromString<JsonObject>(message)
-            val request = decoder.decodeFromJsonElement<EcpRequest>(requestObject)
+            val request = decodeProtocolRequest(message)
             val method = CheckoutProtocol.supportedProtocolMethod(request)
-            val requestId = jsonRpcRequestId(requestObject["id"])
+            val requestId = jsonRpcRequestId(request.id)
             log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
             when (method) {
-                CheckoutProtocol.READY_METHOD -> requestId?.let { handleReady(request, it) }
+                EmbeddedCheckoutProtocol.Event.ready -> requestId?.let { handleReady(request, it) }
                 CheckoutProtocol.windowOpen.method -> requestId?.let { handleWindowOpenRequest(message) }
                 CheckoutProtocol.start.method -> handleStart(message)
                 CheckoutProtocol.complete.method -> handleComplete(message)
@@ -85,7 +90,7 @@ internal class EmbeddedCheckoutProtocol(
         val negotiatedDelegations = checkoutAcceptedDelegations.filter { it in KIT_SUPPORTED_DELEGATIONS }
         log.d(
             LOG_TAG,
-            "Handling ${CheckoutProtocol.READY_METHOD}, " +
+            "Handling ${EmbeddedCheckoutProtocol.Event.ready}, " +
                 "isPreload=${view.isPreloadRequest} " +
                 "checkoutAcceptedDelegations=$checkoutAcceptedDelegations " +
                 "checkoutKitSupportedDelegations=$KIT_SUPPORTED_DELEGATIONS " +
@@ -98,7 +103,7 @@ internal class EmbeddedCheckoutProtocol(
         try {
             decoder.decodeFromJsonElement(params ?: JsonObject(emptyMap()))
         } catch (e: SerializationException) {
-            log.d(LOG_TAG, "Failed to decode ${CheckoutProtocol.READY_METHOD} params: $e  raw=$params")
+            log.d(LOG_TAG, "Failed to decode ${EmbeddedCheckoutProtocol.Event.ready} params: $e  raw=$params")
             null
         }
 
@@ -234,7 +239,7 @@ internal class EmbeddedCheckoutProtocol(
         // Delegations this SDK supports. Echoed back in the ec.ready response as the
         // intersection of checkout-accepted ∩ kit-supported. Must align with the
         // `ec_delegate` URL param emitted from [UriExtensions.appendEcpParams].
-        private val KIT_SUPPORTED_DELEGATIONS = setOf("window.open")
+        private val KIT_SUPPORTED_DELEGATIONS = setOf(CheckoutProtocol.windowOpen.delegation)
 
         private const val CODE_PARSE_ERROR = -32700
         private const val CODE_METHOD_NOT_FOUND = -32601

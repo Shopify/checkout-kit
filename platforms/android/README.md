@@ -378,6 +378,8 @@ For public API changes, run:
 ```sh
 cd platforms/android
 ./gradlew :lib:apiCheck
+cd ../../protocol/languages/kotlin
+./gradlew :embedded-checkout-protocol:apiCheck
 ```
 
 ## License

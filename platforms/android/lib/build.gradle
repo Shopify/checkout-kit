@@ -12,25 +12,10 @@ plugins {
     id 'io.gitlab.arturbosch.detekt'
 }
 
-def versionName = "4.0.0-alpha.1"
+apply from: file('../gradle/android-library-versions.gradle')
 
-ext {
-    app_compat_version = '1.7.1'
-    kotlin_stdlib_version = '2.0.21'
-    kotlin_serialization_version = '1.7.3'
-
-    androidx_test_version = '1.7.0'
-    androidx_junit_ext_version = '1.3.0'
-    androidx_webkit_version = '1.16.0'
-
-    junit_version = '4.13.2'
-    robolectric_version = '4.16.1'
-    mockito_core_version = '5.23.0'
-    mockito_kotlin_version = '6.3.0'
-    assertj_version = '3.27.7'
-    awaitility_version = '4.3.0'
-    detekt_formatting_version = '1.23.8'
-}
+def kotlinCompatibility = kotlinVersionCompatibility
+def versionName = libs.versions.checkoutKitAndroid.get()
 
 android {
     namespace = 'com.shopify.checkoutkit'
@@ -52,6 +37,7 @@ android {
     lint {
         checkDependencies = true
         warningsAsErrors = true
+        disable 'GradleDependency', 'NewerVersionAvailable', 'SimilarGradleDependency'
         warning 'LintBaseline'
         informational 'AndroidGradlePluginVersion'
     }
@@ -64,8 +50,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.toVersion(kotlinCompatibility.javaVersion)
+        targetCompatibility JavaVersion.toVersion(kotlinCompatibility.javaVersion)
     }
     testOptions {
         unitTests.includeAndroidResources = true
@@ -90,14 +76,14 @@ android {
 
 tasks.withType(KotlinJvmCompile).configureEach {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_11)
+        jvmTarget.set(JvmTarget.valueOf(kotlinCompatibility.kotlinJvmTarget))
         // Pin language/API version so bytecode stays consumable by Kotlin 2.0+ consumers
         // even though the compiler is on a newer 2.x. Kotlin 1.9 is deprecated by the 2.x
         // compiler, so 2.0 is the lowest pin we can hold without taking deprecation warnings;
         // keeping the compiler ahead of the pin leaves room to bump kotlinc without re-breaking
         // consumers.
-        apiVersion.set(KotlinVersion.KOTLIN_2_0)
-        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.valueOf(kotlinCompatibility.kotlinApiVersion))
+        languageVersion.set(KotlinVersion.valueOf(kotlinCompatibility.kotlinLanguageVersion))
         if (!name.contains("Test")) {
             freeCompilerArgs.add("-Xexplicit-api=strict")
         }
@@ -105,27 +91,29 @@ tasks.withType(KotlinJvmCompile).configureEach {
 }
 
 dependencies {
-    detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detekt_formatting_version"
+    detektPlugins libs.detekt.formatting
 
-    testImplementation "junit:junit:$junit_version"
-    testImplementation "org.robolectric:robolectric:$robolectric_version"
-    testImplementation "org.mockito:mockito-core:$mockito_core_version"
-    testImplementation "org.mockito.kotlin:mockito-kotlin:$mockito_kotlin_version"
-    testImplementation "org.mockito:mockito-android:$mockito_core_version"
-    testImplementation "org.assertj:assertj-core:$assertj_version"
-    testImplementation "org.awaitility:awaitility:$awaitility_version"
+    api project(':embedded-checkout-protocol')
 
-    androidTestImplementation "androidx.test:core-ktx:$androidx_test_version"
-    androidTestImplementation "androidx.test.ext:junit-ktx:$androidx_junit_ext_version"
+    testImplementation libs.junit
+    testImplementation libs.robolectric
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.kotlin
+    testImplementation libs.mockito.android
+    testImplementation libs.assertj.core
+    testImplementation libs.awaitility
+
+    androidTestImplementation libs.androidx.test.core.ktx
+    androidTestImplementation libs.androidx.test.ext.junit.ktx
 
     // Keep the published stdlib dependency aligned with the Kotlin API/language
     // consumer floor, not the newer compiler used to build the AAR.
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_stdlib_version"
+    implementation libs.kotlin.stdlib
 
     //Implementation
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlin_serialization_version"
-    implementation "androidx.appcompat:appcompat:$app_compat_version"
-    implementation "androidx.webkit:webkit:$androidx_webkit_version"
+    implementation libs.kotlinx.serialization.json
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.webkit
 }
 
 signing {

@@ -1,4 +1,4 @@
-package com.shopify.checkoutkit
+package com.shopify.ucp.embedded.checkout
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
@@ -14,7 +14,7 @@ import kotlinx.serialization.json.JsonPrimitive
 
 internal object ExtendsSerializer : KSerializer<Extends> {
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.checkoutkit.Extends")
+        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Extends")
 
     override fun deserialize(decoder: Decoder): Extends {
         val input = decoder as? JsonDecoder

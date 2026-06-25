@@ -18,7 +18,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     BaseWebView(context, attributeSet) {
 
     private var listener = CheckoutWebViewListener(NoopCheckoutListener())
-    private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocol(this)
+    private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocolBridge(this)
     private var loadComplete = false
     internal var isPresented = false
         private set
@@ -27,7 +27,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
     init {
         webViewClient = CheckoutWebViewClient()
-        addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocol.INTERFACE_NAME)
+        addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)
         settings.userAgentString = "${settings.userAgentString} ${userAgentSuffix()}"
     }
 
@@ -38,8 +38,8 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         this.listener = listener
     }
 
-    fun setClient(client: CheckoutCommunicationClient?) {
-        log.d(LOG_TAG, "Setting communication client $client.")
+    fun setClient(client: CheckoutProtocol.Client?) {
+        log.d(LOG_TAG, "Setting protocol client $client.")
         embeddedCheckoutProtocol.setClient(client)
     }
 
@@ -54,13 +54,13 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         log.d(LOG_TAG, "Attached to window. Adding JavaScript interfaces.")
-        addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocol.INTERFACE_NAME)
+        addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         log.d(LOG_TAG, "Detached from window. Removing JavaScript interfaces.")
-        removeJavascriptInterface(EmbeddedCheckoutProtocol.INTERFACE_NAME)
+        removeJavascriptInterface(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)
     }
 
     fun loadCheckout(url: String, isPreload: Boolean = false) {

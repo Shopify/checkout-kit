@@ -299,7 +299,7 @@ async function generateKotlin(specDir, output) {
     "kotlinx",
     ...commonSchemaSources(specDir),
     "--package",
-    "com.shopify.checkoutkit",
+    "com.shopify.ucp.embedded.checkout",
     "-o",
     output,
   ]);
@@ -452,8 +452,24 @@ async function main() {
 
     switch (lang) {
       case "kotlin": {
-        const target = output || path.join(REPO_ROOT, "platforms", "android", "lib", "src", "main", "java", "com", "shopify", "checkoutkit", "Models.kt");
+        const target = output || path.join(
+          REPO_ROOT,
+          "protocol",
+          "languages",
+          "kotlin",
+          "embedded-checkout-protocol",
+          "src",
+          "main",
+          "java",
+          "com",
+          "shopify",
+          "ucp",
+          "embedded",
+          "checkout",
+          "Models.kt",
+        );
         await generateKotlin(specDir, target);
+        await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_kotlin_catalog.mjs")]);
         console.log(`Generated ${target}`);
         break;
       }

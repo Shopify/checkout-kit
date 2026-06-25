@@ -69,7 +69,7 @@ The flag is opt-in because the in-repo SDKs change as we develop. Default publis
 
 ### How it works
 
-- **Android**: every `--local` invocation runs `scripts/publish_android_snapshot`, which publishes the current local `com.shopify:checkout-kit` version to `~/.m2/` via the lib's own Gradle wrapper. The sample's `build.gradle` declares `mavenLocal()` first in the repository order, so the freshly-published AAR is picked up before falling through to Maven Central.
+- **Android**: every `--local` invocation runs `scripts/publish_android_snapshot`, which publishes the current local `com.shopify:embedded-checkout-protocol` and `com.shopify:checkout-kit` versions to `~/.m2/` via the Android Gradle build. The sample's `build.gradle` uses exclusive Maven Local resolution for those modules, so validation fails rather than falling back to a published artifact if the local publish is missing.
 - **iOS**: with `--local`, the Podfile injects `pod "ShopifyCheckoutKit", :path => "../../../../"` (the repo root, where `ShopifyCheckoutKit.podspec` lives). CocoaPods reads Swift sources from `platforms/swift/` directly.
 
 Internally `--local` exports `USE_LOCAL_SDK=1` before invoking the underlying tool. Setting the env var directly works too:
@@ -85,8 +85,8 @@ CI uses the default (published) path naturally — no special flag handling. Kee
 ### Gotchas
 
 - **iOS**: `dev rn ios` runs `pod install` before launching, so dropping or adding `--local` will re-resolve the pods as needed. You can still run `dev rn pod-install [--local]` directly when you only want to refresh pods.
-- **Android (CLI)**: covered automatically by the publish script — every `--local` run re-publishes the AAR before building.
-- **Android (Android Studio)**: when running the sample via Android Studio's Run button after editing `platforms/android/lib/src/**`, run `platforms/react-native/scripts/publish_android_snapshot` once manually (with `USE_LOCAL_SDK=1`) or run `dev rn android --local` from a terminal to refresh `~/.m2/`.
+- **Android (CLI)**: covered automatically by the publish script — every `--local` run re-publishes the local Android and Kotlin protocol artifacts before building.
+- **Android (Android Studio)**: when running the sample via Android Studio's Run button after editing `platforms/android/**` or `protocol/languages/kotlin/**`, run `platforms/react-native/scripts/publish_android_snapshot` once manually (with `USE_LOCAL_SDK=1`) or run `dev rn android --local` from a terminal to refresh `~/.m2/`.
 - The flag affects **only the RN build**. The standalone Swift and Android SDK builds (`dev android build`, `swift build`, etc.) are unaffected.
 
 ## Optional: Speed up builds with sccache

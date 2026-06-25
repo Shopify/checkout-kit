@@ -30,7 +30,7 @@ internal fun String.redactedUrlForLogging(): String = toUri().redactedForLogging
  * any existing SDK-owned protocol params. Idempotent on re-call.
  *
  * - `ec_version`   — the ECP spec version the SDK speaks
- * - `ec_delegate`  — fixed to `window.open` so checkout delegates link opens to the bridge
+ * - `ec_delegate`  — fixed to the supported window-open delegation so checkout delegates link opens to the bridge
  */
 internal fun String.appendEcpParams(specVersion: String): String {
     val uri = this.toUri()
@@ -45,7 +45,7 @@ internal fun String.appendEcpParams(specVersion: String): String {
         }
 
     builder.appendQueryParameter(EC_VERSION_PARAM, specVersion)
-    builder.appendQueryParameter(EC_DELEGATE_PARAM, EC_DELEGATE_VALUE)
+    builder.appendQueryParameter(EC_DELEGATE_PARAM, CheckoutProtocol.windowOpen.delegation)
 
     return builder.build().toString()
 }
@@ -54,7 +54,6 @@ private val CONFIRMATION_PATH_REGEX = Regex(pattern = "^(thank[-_]+you)$", optio
 
 private const val EC_VERSION_PARAM = "ec_version"
 private const val EC_DELEGATE_PARAM = "ec_delegate"
-private const val EC_DELEGATE_VALUE = "window.open"
 private const val REDACTED_QUERY_VALUE = "[REDACTED]"
 
 internal object Scheme {

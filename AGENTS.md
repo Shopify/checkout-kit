@@ -6,7 +6,7 @@ platforms/
   android/       # Android library and sample apps
   react-native/  # React Native wrapper
   web/           # Web component package and sample app
-protocol/        # cross-platform communication layer based on UCP
+protocol/        # cross-platform communication layer and protocol language artifacts based on UCP
 e2e/             # cross-platform end-to-end tests
 .github/         # workflows, issue templates, CODEOWNERS
 ```
@@ -49,6 +49,7 @@ This applies when changes are made under:
 
 - `platforms/swift/` — the iOS Swift SDK / CocoaPods sources
 - `platforms/android/` — the Android SDK / Maven artifact sources
+- `protocol/languages/kotlin/` — Kotlin protocol artifacts consumed by the Android SDK
 
 It does **not** refer to the React Native wrapper platform folders:
 
@@ -58,7 +59,7 @@ It does **not** refer to the React Native wrapper platform folders:
 ### What `--local` does
 
 - For React Native iOS, `--local` wires CocoaPods to the in-repo `platforms/swift/` sources via a local path instead of a released pod version.
-- For React Native Android, `--local` publishes/uses the in-repo `platforms/android/` SDK through Maven Local so Gradle resolves the local SDK artifact instead of a released Maven version.
+- For React Native Android, `--local` publishes/uses the in-repo Android SDK and Kotlin protocol artifacts through Maven Local so Gradle resolves the local `com.shopify:checkout-kit` and `com.shopify:embedded-checkout-protocol` artifacts instead of released Maven versions.
 
 ### When to use it
 
@@ -66,24 +67,24 @@ Use `--local` whenever you are validating React Native behavior that depends on 
 
 - a new Swift SDK API that the React Native iOS bridge calls
 - a new Android SDK API that the React Native Android bridge calls
-- generated protocol/model changes under the native SDKs that the React Native module consumes
-- any change in `platforms/swift/` or `platforms/android/` that has not yet been released and consumed through normal dependency versions
+- generated protocol/model changes under `protocol/languages/kotlin/` that the React Native module consumes through Android
+- any change in `platforms/swift/`, `platforms/android/`, or `protocol/languages/kotlin/` that has not yet been released and consumed through normal dependency versions
 
-Re-run the relevant local workflow whenever `platforms/swift/` or `platforms/android/` changes, because the React Native sample/tests need to re-resolve those local native SDK sources/artifacts.
+Re-run the relevant local workflow whenever `platforms/swift/`, `platforms/android/`, or `protocol/languages/kotlin/` changes, because the React Native sample/tests need to re-resolve those local native SDK sources/artifacts.
 
 ```bash
 # iOS sample using local platforms/swift sources
 dev rn ios --local
 
-# Android sample using local platforms/android via Maven Local
+# Android sample using local Android and Kotlin protocol artifacts via Maven Local
 dev rn android --local
 
-# React Native Android unit tests using local platforms/android via Maven Local
-# `dev rn test android` publishes platforms/android/lib to ~/.m2 first, then runs the RN module tests.
+# React Native Android unit tests using local Android and Kotlin protocol artifacts via Maven Local
+# `dev rn test android` publishes the Android SDK artifacts to ~/.m2 first, then runs the RN module tests.
 dev rn test android
 ```
 
-For ad-hoc Android Gradle test commands, publish the local Android SDK first and set `USE_LOCAL_SDK=1` so the React Native module resolves `com.shopify:checkout-kit:1.0.0` from Maven Local instead of the unreleased placeholder artifact:
+For ad-hoc Android Gradle test commands, publish the local Android SDK first and set `USE_LOCAL_SDK=1` so the React Native sample resolves the local `com.shopify:checkout-kit` and `com.shopify:embedded-checkout-protocol` artifacts from Maven Local:
 
 ```bash
 cd platforms/react-native
@@ -91,6 +92,8 @@ USE_LOCAL_SDK=1 ./scripts/publish_android_snapshot
 cd sample/android
 USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:testDebugUnitTest
 ```
+
+The React Native Android sample uses exclusive Maven Local resolution for those two `com.shopify` modules when `USE_LOCAL_SDK=1`. Keep that filtering in the sample Gradle build; duplicating exclusive repository filters for the same modules elsewhere can break dependency resolution.
 
 ## Sensitive configuration
 

@@ -1,6 +1,22 @@
 package com.shopify.checkoutkit
 
 import android.os.Looper
+import com.shopify.ucp.embedded.checkout.Checkout
+import com.shopify.ucp.embedded.checkout.DelegationDescriptor
+import com.shopify.ucp.embedded.checkout.DiscountMethod
+import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
+import com.shopify.ucp.embedded.checkout.EmbeddedColorScheme
+import com.shopify.ucp.embedded.checkout.EmbeddedTransportConfig
+import com.shopify.ucp.embedded.checkout.ErrorResponse
+import com.shopify.ucp.embedded.checkout.FulfillmentMethodType
+import com.shopify.ucp.embedded.checkout.LineItemQuantity
+import com.shopify.ucp.embedded.checkout.LineItemStatus
+import com.shopify.ucp.embedded.checkout.Message
+import com.shopify.ucp.embedded.checkout.MessageType
+import com.shopify.ucp.embedded.checkout.NotificationDescriptor
+import com.shopify.ucp.embedded.checkout.OrderLineItem
+import com.shopify.ucp.embedded.checkout.Severity
+import com.shopify.ucp.embedded.checkout.StatusEnum
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
@@ -39,6 +55,12 @@ class CheckoutProtocolTest {
         assertThat(CheckoutProtocol.error.method).isEqualTo("ec.error")
     }
 
+    @Test
+    fun `window open descriptor has correct method and delegation`() {
+        assertThat(CheckoutProtocol.windowOpen.method).isEqualTo("ec.window.open_request")
+        assertThat(CheckoutProtocol.windowOpen.delegation).isEqualTo("window.open")
+    }
+
     // endregion
 
     // region supported protocol methods
@@ -46,7 +68,7 @@ class CheckoutProtocolTest {
     @Test
     fun `supported protocol methods include ready notifications and delegations`() {
         assertThat(CheckoutProtocol.supportedProtocolMethods).containsExactlyInAnyOrder(
-            CheckoutProtocol.READY_METHOD,
+            EmbeddedCheckoutProtocol.Event.ready,
             CheckoutProtocol.start.method,
             CheckoutProtocol.complete.method,
             CheckoutProtocol.error.method,
@@ -140,6 +162,30 @@ class CheckoutProtocolTest {
         assertThat(received).isEmpty()
     }
 
+    @Test
+    fun `process does not dispatch custom uncurated descriptor`() {
+        val received = mutableListOf<Checkout>()
+        val client = CheckoutProtocol.Client()
+            .on(NotificationDescriptor<Checkout>("ec.buyer.change")) { checkout -> received.add(checkout) }
+
+        client.process("""{"jsonrpc":"2.0","method":"ec.buyer.change","params":{"checkout":${checkoutJson()}}}""")
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(received).isEmpty()
+    }
+
+    @Test
+    fun `process does not dispatch custom descriptor with supported method`() {
+        val received = mutableListOf<Checkout>()
+        val client = CheckoutProtocol.Client()
+            .on(NotificationDescriptor<Checkout>(CheckoutProtocol.start.method)) { checkout -> received.add(checkout) }
+
+        client.process(ecStartMessage())
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(received).isEmpty()
+    }
+
     // endregion
 
     // region process — return value semantics
@@ -213,6 +259,46 @@ class CheckoutProtocolTest {
         val response = client.process(
             """{"jsonrpc":"2.0","method":"ec.window.open_request","params":{"url":"https://example.com"}}"""
         )
+
+        assertThat(response).isNull()
+        assertThat(handled).isFalse()
+    }
+
+    @Test
+    fun `process does not dispatch custom delegation descriptor with unsupported delegation`() {
+        var handled = false
+        val client = CheckoutProtocol.Client()
+            .on(
+                DelegationDescriptor<WindowOpenRequest, WindowOpenResult>(
+                    method = CheckoutProtocol.windowOpen.method,
+                    delegation = "custom.delegation",
+                )
+            ) {
+                handled = true
+                WindowOpenResult.Success
+            }
+
+        val response = client.process(windowOpenMessage(id = "7"))
+
+        assertThat(response).isNull()
+        assertThat(handled).isFalse()
+    }
+
+    @Test
+    fun `process does not dispatch custom delegation descriptor with supported identity`() {
+        var handled = false
+        val client = CheckoutProtocol.Client()
+            .on(
+                DelegationDescriptor<WindowOpenRequest, WindowOpenResult>(
+                    method = CheckoutProtocol.windowOpen.method,
+                    delegation = CheckoutProtocol.windowOpen.delegation,
+                )
+            ) {
+                handled = true
+                WindowOpenResult.Success
+            }
+
+        val response = client.process(windowOpenMessage(id = "7"))
 
         assertThat(response).isNull()
         assertThat(handled).isFalse()

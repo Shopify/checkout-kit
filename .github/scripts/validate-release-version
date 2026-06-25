@@ -48,6 +48,25 @@ json_version() {
   .github/scripts/package-json-version "$file"
 }
 
+json_string_field() {
+  local file="$1"
+  local jq_filter="$2"
+
+  if ! value=$(jq -er "$jq_filter | strings | select(length > 0)" "$file"); then
+    echo "::error file=$file::Could not extract version field." >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$value"
+}
+
+version_catalog_value() {
+  local file="$1"
+  local key="$2"
+
+  extract_first_match "$file" "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*\"([^\"]+)\".*/\\1/p"
+}
+
 check_same_version() {
   local expected="$1"
   local file="$2"
@@ -86,8 +105,13 @@ case "$PLATFORM_INPUT" in
     TAG_PREFIX="android/"
     PUBLISH_WORKFLOW="android-publish.yml"
 
-    ANDROID_VERSION_FILE="platforms/android/lib/build.gradle"
-    VERSION=$(extract_first_match "$ANDROID_VERSION_FILE" 's/^[[:space:]]*def[[:space:]]+versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p')
+    ANDROID_VERSION_FILE="platforms/android/gradle/libs.versions.toml"
+    RN_PACKAGE_FILE="platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json"
+
+    VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "checkoutKitAndroid")
+    RN_ANDROID_VERSION=$(json_string_field "$RN_PACKAGE_FILE" '.checkoutKit.nativeSdkVersions.android')
+
+    check_same_version "$VERSION" "$RN_PACKAGE_FILE" "$RN_ANDROID_VERSION"
     ;;
 
   "React Native"|react-native|ReactNative|rn|RN)

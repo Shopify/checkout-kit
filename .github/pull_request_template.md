@@ -32,7 +32,7 @@
 <details>
 <summary>Releasing a new Android version?</summary>
 
-- [ ] I have bumped the `versionName` in `platforms/android/lib/build.gradle`
+- [ ] I have bumped `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`
 - [ ] I have updated `platforms/android/CHANGELOG.md`
 - [ ] I have updated the Gradle/Maven version snippets in `platforms/android/README.md`
 

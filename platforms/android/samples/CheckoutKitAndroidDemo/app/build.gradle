@@ -119,47 +119,47 @@ dependencies {
     // Checkout Kit
     implementation project(':lib')
 
-    implementation "androidx.appcompat:appcompat:$app_compat_version"
-    implementation "androidx.browser:browser:$browser_version"
-    implementation "androidx.core:core-ktx:$core_version"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    implementation "androidx.activity:activity-compose:$activity_version"
-    implementation "androidx.compose.ui:ui:$compose_ui_version"
-    implementation "androidx.compose.ui:ui-tooling-preview:$compose_ui_version"
-    implementation "androidx.compose.material:material:$compose_ui_version"
-    implementation "androidx.navigation:navigation-compose:$nav_version"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
-    implementation "androidx.datastore:datastore-preferences:$datastore_version"
-    implementation "io.insert-koin:koin-androidx-compose:$koin_android_compose_version"
-    implementation "androidx.room:room-runtime:$room_version"
-    implementation "androidx.compose.material3:material3-android:$material3_version"
-    implementation "androidx.paging:paging-compose-android:$paging_version"
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.browser
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.lifecycle.runtime.ktx
+    implementation libs.androidx.activity.compose
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.tooling.preview
+    implementation libs.androidx.compose.material
+    implementation libs.androidx.navigation.compose
+    implementation libs.androidx.lifecycle.viewmodel.compose
+    implementation libs.androidx.datastore.preferences
+    implementation libs.koin.androidx.compose
+    implementation libs.androidx.room.runtime
+    implementation libs.androidx.compose.material3
+    implementation libs.androidx.paging.compose
 
-    annotationProcessor "androidx.room:room-compiler:$room_version"
-    ksp "androidx.room:room-compiler:$room_version"
+    annotationProcessor libs.androidx.room.compiler
+    ksp libs.androidx.room.compiler
 
     // Apollo GraphQL client for the Shopify Storefront API
-    implementation "com.apollographql.apollo:apollo-runtime:$apollo_version"
-    implementation "com.apollographql.cache:normalized-cache:$apollo_cache_version"
+    implementation libs.apollo.runtime
+    implementation libs.apollo.cache.normalized
 
     // Image loading library
-    implementation "io.coil-kt:coil-compose:$coil_version"
+    implementation libs.coil.compose
 
     // Logging
-    implementation "com.jakewharton.timber:timber:$timber_version"
+    implementation libs.timber
 
     // Serialization
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlin_serialization_version"
+    implementation libs.kotlinx.serialization.json.demo
 
-    debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
-    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
+    debugImplementation libs.androidx.compose.ui.tooling
+    debugImplementation libs.androidx.compose.ui.test.manifest
 }
 
 apollo {
     service("storefront") {
         packageName.set("com.shopify.checkout_kit_android_demo.graphql")
         srcDir("src/main/graphql")
-        plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:$apollo_cache_version")
+        plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:${libs.versions.apolloCache.get()}")
         pluginArgument("com.apollographql.cache.packageName", packageName.get())
     }
 }

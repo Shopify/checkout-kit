@@ -16,8 +16,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -80,9 +78,9 @@ class CheckoutPresentationTest {
 
     @Test
     fun `present builder forwards connected client to embedded checkout protocol`() {
-        val rawMessage = """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":{}}}"""
-        val client = mock<CheckoutCommunicationClient>()
-        whenever(client.process(rawMessage)).thenReturn(null)
+        var received = false
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.messagesChange) { received = true }
 
         ShopifyCheckoutKit.present("https://shopify.com", activity) {
             connect(client)
@@ -92,10 +90,10 @@ class CheckoutPresentationTest {
         val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         val webView = dialog.currentWebView()
 
-        webView.embeddedCheckoutProtocol().postMessage(rawMessage)
+        webView.embeddedCheckoutProtocol().postMessage(ecMessagesChangeMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(client).process(rawMessage)
+        assertThat(received).isTrue()
     }
 
     @Test
@@ -204,9 +202,18 @@ class CheckoutPresentationTest {
         findViewById<RelativeLayout>(R.id.checkoutKitContainer)
             .children.first { it is CheckoutWebView } as CheckoutWebView
 
-    private fun CheckoutWebView.embeddedCheckoutProtocol(): EmbeddedCheckoutProtocol {
+    private fun CheckoutWebView.embeddedCheckoutProtocol(): EmbeddedCheckoutProtocolBridge {
         val field = CheckoutWebView::class.java.getDeclaredField("embeddedCheckoutProtocol")
         field.isAccessible = true
-        return field.get(this) as EmbeddedCheckoutProtocol
+        return field.get(this) as EmbeddedCheckoutProtocolBridge
+    }
+
+    private fun ecMessagesChangeMessage(): String =
+        """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":$CHECKOUT_JSON}}"""
+
+    private companion object {
+        private const val CHECKOUT_JSON =
+            """{"id":"chk1","currency":"USD","status":"incomplete","line_items":[],"totals":[],"links":[],"ucp":""" +
+                """{"payment_handlers":{},"version":"1.0"}}"""
     }
 }
