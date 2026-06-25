@@ -459,7 +459,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         if method == EmbeddedCheckoutProtocol.readyMethod,
-           let response = EmbeddedCheckoutProtocol.acknowledgeReady(body, supportedDelegations: CheckoutProtocol.defaultDelegations)
+           let response = EmbeddedCheckoutProtocol.acknowledgeReady(body, supportedDelegations: CheckoutProtocol.defaultDelegations.map(\.rawValue))
         {
             OSLogger.shared.debug("Handling ec.ready: sending UCP ready acknowledgement, isPreload: \(isPreloadRequest)")
             Task { @MainActor in

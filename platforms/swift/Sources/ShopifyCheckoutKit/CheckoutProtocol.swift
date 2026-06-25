@@ -7,10 +7,10 @@ public enum CheckoutProtocol {
     public typealias Client = EmbeddedCheckoutProtocol.Client
 
     public static func url(for url: URL) -> URL {
-        EmbeddedCheckoutProtocol.url(for: url, delegations: defaultDelegations)
+        EmbeddedCheckoutProtocol.url(for: url, options: .init(delegations: defaultDelegations))
     }
 
-    static let defaultDelegations: [String] = ["window.open"]
+    static let defaultDelegations: [EmbeddedCheckoutProtocol.Delegation] = [.windowOpen]
 
     static let methodNotFoundCode = -32601
     static let methodNotFoundMessage = "Method not found"
