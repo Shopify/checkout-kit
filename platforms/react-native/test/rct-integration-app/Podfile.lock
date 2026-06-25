@@ -2122,7 +2122,7 @@ PODS:
     - React-perflogger (= 0.80.2)
     - React-utils (= 0.80.2)
     - SocketRocket
-  - RNShopifyCheckoutKit (4.0.0-alpha.1):
+  - RNShopifyCheckoutKit (4.0.0-alpha.2):
     - boost
     - DoubleConversion
     - fast_float
@@ -2149,15 +2149,15 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - ShopifyCheckoutKit (~> 4.0.0-alpha.1)
-    - ShopifyCheckoutKit/AcceleratedCheckouts (~> 4.0.0-alpha.1)
+    - ShopifyCheckoutKit (~> 4.0.0-alpha.2)
+    - ShopifyCheckoutKit/AcceleratedCheckouts (~> 4.0.0-alpha.2)
     - SocketRocket
     - Yoga
-  - ShopifyCheckoutKit (4.0.0-alpha.1):
-    - ShopifyCheckoutKit/Core (= 4.0.0-alpha.1)
-  - ShopifyCheckoutKit/AcceleratedCheckouts (4.0.0-alpha.1):
+  - ShopifyCheckoutKit (4.0.0-alpha.2):
+    - ShopifyCheckoutKit/Core (= 4.0.0-alpha.2)
+  - ShopifyCheckoutKit/AcceleratedCheckouts (4.0.0-alpha.2):
     - ShopifyCheckoutKit/Core
-  - ShopifyCheckoutKit/Core (4.0.0-alpha.1)
+  - ShopifyCheckoutKit/Core (4.0.0-alpha.2)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
 
@@ -2464,8 +2464,8 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 8df342c127fd0c1e30e8b9f71ff814c22414a7c0
   ReactCodegen: 3ba2a79bc32ff858814c17ade10931b33b09dcf4
   ReactCommon: 592ef441605638b95e533653259254b4bd35ff4f
-  RNShopifyCheckoutKit: 706fe8c182c7517f1c5c27d4b65970984b25763e
-  ShopifyCheckoutKit: ffd719db529ac48907536d855182d7c57c85659f
+  RNShopifyCheckoutKit: 7c4b71e0e8038a827b5c801746898749683e5041
+  ShopifyCheckoutKit: 7be627d99412b3ee6839cbbea090379708fe212d
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: a742cc68e8366fcfc681808162492bc0aa7a9498
 
