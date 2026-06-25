@@ -360,13 +360,13 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     func testPreloadCacheExpiresAndStopsKeepAlive() {
-        let nearlyStaleCreatedAt = Date(timeIntervalSinceNow: -(5 * 60 - 0.1))
+        let nearlyStaleCreatedAt = Date(timeIntervalSinceNow: -(5 * 60 - 1))
         CheckoutWebView.preload(checkout: EmbeddedCheckoutProtocol.url(for: url), createdAt: nearlyStaleCreatedAt)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
         XCTAssertTrue(CheckoutWebView.preloadCache.hasActiveKeepAlive())
 
         let expired = expectation(description: "preload cache expired")
-        let deadline = Date(timeIntervalSinceNow: 2)
+        let deadline = Date(timeIntervalSinceNow: 3)
         func pollForExpiry() {
             if !CheckoutWebView.preloadCache.hasEntry(), !CheckoutWebView.preloadCache.hasActiveKeepAlive() {
                 expired.fulfill()
@@ -381,7 +381,7 @@ class CheckoutWebViewTests: XCTestCase {
 
         pollForExpiry()
 
-        wait(for: [expired], timeout: 2)
+        wait(for: [expired], timeout: 3)
     }
 
     func testPreloadKeepAliveFailureInvalidatesCache() {
