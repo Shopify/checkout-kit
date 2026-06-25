@@ -239,6 +239,14 @@ class EmbeddedCheckoutProtocolTest {
     }
 
     @Test
+    fun `embedded checkout fulfillment change descriptor decodes checkout notifications`() {
+        val payload = EmbeddedCheckoutProtocol.fulfillmentChange.decode(Json.parseToJsonElement(checkoutParamsFixture))
+
+        assertThat(payload?.id).isEqualTo("checkout-123")
+        assertThat(payload?.currency).isEqualTo("USD")
+    }
+
+    @Test
     fun `embedded checkout descriptors decode error notifications`() {
         val payload = EmbeddedCheckoutProtocol.error.decode(Json.parseToJsonElement(errorParamsFixture))
 

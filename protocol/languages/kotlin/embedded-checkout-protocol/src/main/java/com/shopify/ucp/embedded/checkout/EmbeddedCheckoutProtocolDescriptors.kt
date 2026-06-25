@@ -13,6 +13,8 @@ internal val embeddedCheckoutLineItemsChangeDescriptor: NotificationDescriptor<C
     checkoutDescriptor(EmbeddedCheckoutProtocol.Event.lineItemsChange)
 internal val embeddedCheckoutTotalsChangeDescriptor: NotificationDescriptor<Checkout> =
     checkoutDescriptor(EmbeddedCheckoutProtocol.Event.totalsChange)
+internal val embeddedCheckoutFulfillmentChangeDescriptor: NotificationDescriptor<Checkout> =
+    checkoutDescriptor(EmbeddedCheckoutProtocol.Event.fulfillmentChange)
 internal val embeddedCheckoutErrorDescriptor: NotificationDescriptor<ErrorResponse> = notificationDescriptor(
     method = EmbeddedCheckoutProtocol.Event.error,
     paramsSerializer = ErrorParams.serializer(),

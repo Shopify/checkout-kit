@@ -32,6 +32,7 @@ public object CheckoutProtocol {
     public val messagesChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.messagesChange
     public val lineItemsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.lineItemsChange
     public val totalsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.totalsChange
+    public val fulfillmentChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.fulfillmentChange
     public val error: NotificationDescriptor<ErrorResponse> = EmbeddedCheckoutProtocol.error
 
     public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult> = EmbeddedCheckoutProtocol.windowOpen.map(
@@ -53,6 +54,7 @@ public object CheckoutProtocol {
         lineItemsChange.method,
         messagesChange.method,
         totalsChange.method,
+        fulfillmentChange.method,
         windowOpen.method,
     )
 
@@ -75,6 +77,7 @@ public object CheckoutProtocol {
         messagesChange,
         lineItemsChange,
         totalsChange,
+        fulfillmentChange,
         error,
     )
 
