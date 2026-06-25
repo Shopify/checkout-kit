@@ -132,7 +132,7 @@ struct CodecDecodeTests {
         }
 
         #expect(id == .int(1))
-        #expect(method == EmbeddedCheckoutProtocol.readyMethod)
+        #expect(method == EmbeddedCheckoutProtocol.Event.ready)
     }
 
     @Test func decodesReadyRequestWithNullID() throws {
@@ -147,7 +147,7 @@ struct CodecDecodeTests {
         }
 
         #expect(id == .null)
-        #expect(method == EmbeddedCheckoutProtocol.readyMethod)
+        #expect(method == EmbeddedCheckoutProtocol.Event.ready)
     }
 
     @Test func decodesReadyRequestWithMissingParamsAsEmptyObject() throws {

@@ -35,6 +35,7 @@ import {
   requireQuicktype,
   run,
 } from "./codegen_tools.mjs";
+import {MODEL_EXTRACTIONS} from "./method_catalog.mjs";
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
@@ -482,63 +483,20 @@ async function main() {
   try {
     const specDir = await prepareCodegenSchemas(tempDir);
 
-    await extractResultSchema(
-      specDir,
-      "ec.payment.instruments_change_request",
-      "instruments_change_result.json",
-      "InstrumentsChangeResult",
-      "InstrumentsChangeCheckout",
-      {
-        title: "InstrumentsChangePayment",
-        description: "Payment instruments with selected instrument ID.",
-        allOf: [
-          {$ref: "checkout.json#/properties/payment"},
-          {
-            type: "object",
-            properties: {
-              selected_instrument_id: {
-                type: "string",
-                description: "ID of the selected payment instrument.",
-              },
-            },
-          },
-        ],
-      },
-    );
-    await extractResultSchema(
-      specDir,
-      "ec.payment.credential_request",
-      "credential_result.json",
-      "CredentialResult",
-      "CredentialCheckout",
-      {$ref: "checkout.json#/properties/payment"},
-    );
-    await extractParamsSchema(specDir, "ec.ready", "ready_request.json", "ReadyRequest");
-    await extractResultSchema(
-      specDir,
-      "ec.ready",
-      "ready_result.json",
-      "ReadyResult",
-      "ReadyCheckout",
-      {
-        title: "ReadyPayment",
-        description: "Payment instruments with selected instrument ID.",
-        allOf: [
-          {$ref: "checkout.json#/properties/payment"},
-          {
-            type: "object",
-            properties: {
-              selected_instrument_id: {
-                type: "string",
-                description: "ID of the selected payment instrument.",
-              },
-            },
-          },
-        ],
-      },
-    );
-    await extractParamsSchema(specDir, "ec.auth", "auth_request.json", "AuthRequest");
-    await extractResultSchema(specDir, "ec.auth", "auth_result.json", "AuthResult");
+    for (const extraction of MODEL_EXTRACTIONS) {
+      if (extraction.kind === "params") {
+        await extractParamsSchema(specDir, extraction.method, extraction.outputFile, extraction.rootTitle);
+      } else {
+        await extractResultSchema(
+          specDir,
+          extraction.method,
+          extraction.outputFile,
+          extraction.rootTitle,
+          extraction.checkoutTitle,
+          extraction.paymentSchema,
+        );
+      }
+    }
 
     switch (lang) {
       case "kotlin": {

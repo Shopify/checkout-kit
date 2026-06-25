@@ -3,13 +3,20 @@
 
 import Foundation
 
+extension AuthRequest: EventPayload {}
 extension Checkout: EventPayload {}
 extension ErrorResponse: EventPayload {}
+extension ReadyRequest: EventPayload {}
+extension AuthResult: ResponsePayload {}
+extension CredentialResult: ResponsePayload {}
+extension InstrumentsChangeResult: ResponsePayload {}
+extension ReadyResult: ResponsePayload {}
 
 extension EmbeddedCheckoutProtocol {
+    /// Every `ec.*` method the protocol defines. Notifications resolve to typed
+    /// `NotificationDescriptor`s; requests resolve to their wire method name,
+    /// shared by the typed request descriptors and the kit's hand-authored ones.
     public enum Event {
-        public static let ready = MethodDescriptor(method: "ec.ready")
-        public static let auth = MethodDescriptor(method: "ec.auth")
         public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")
         public static let start = NotificationDescriptor<Checkout>(method: "ec.start")
         public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
@@ -18,15 +25,18 @@ extension EmbeddedCheckoutProtocol {
         public static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
         public static let totalsChange = NotificationDescriptor<Checkout>(method: "ec.totals.change")
         public static let paymentChange = NotificationDescriptor<Checkout>(method: "ec.payment.change")
-        public static let paymentInstrumentsChangeRequest = MethodDescriptor(method: "ec.payment.instruments_change_request")
-        public static let paymentCredentialRequest = MethodDescriptor(method: "ec.payment.credential_request")
-        public static let windowOpenRequest = MethodDescriptor(method: "ec.window.open_request")
         public static let fulfillmentChange = NotificationDescriptor<Checkout>(method: "ec.fulfillment.change")
-        public static let fulfillmentAddressChangeRequest = MethodDescriptor(method: "ec.fulfillment.address_change_request")
+
+        public static let ready = "ec.ready"
+        public static let auth = "ec.auth"
+        public static let paymentInstrumentsChangeRequest = "ec.payment.instruments_change_request"
+        public static let paymentCredentialRequest = "ec.payment.credential_request"
+        public static let windowOpenRequest = "ec.window.open_request"
+        public static let fulfillmentAddressChangeRequest = "ec.fulfillment.address_change_request"
 
         public static let all: [String] = [
-            ready.method,
-            auth.method,
+            ready,
+            auth,
             error.method,
             start.method,
             complete.method,
@@ -35,13 +45,45 @@ extension EmbeddedCheckoutProtocol {
             buyerChange.method,
             totalsChange.method,
             paymentChange.method,
-            paymentInstrumentsChangeRequest.method,
-            paymentCredentialRequest.method,
-            windowOpenRequest.method,
+            paymentInstrumentsChangeRequest,
+            paymentCredentialRequest,
+            windowOpenRequest,
             fulfillmentChange.method,
-            fulfillmentAddressChangeRequest.method,
+            fulfillmentAddressChangeRequest,
         ]
     }
+}
+
+extension EmbeddedCheckoutProtocol {
+    public static let ready = RequestDescriptor<ReadyRequest, ReadyResult>(
+        method: Event.ready,
+        delegation: nil,
+        decode: { try? JSONDecoder().decode(ReadyRequest.self, from: $0) }
+    )
+
+    public static let auth = RequestDescriptor<AuthRequest, AuthResult>(
+        method: Event.auth,
+        delegation: nil,
+        decode: { try? JSONDecoder().decode(AuthRequest.self, from: $0) }
+    )
+
+    public static let paymentInstrumentsChange = RequestDescriptor<Checkout, InstrumentsChangeResult>(
+        method: Event.paymentInstrumentsChangeRequest,
+        delegation: "payment.instruments_change",
+        decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+    )
+
+    public static let paymentCredential = RequestDescriptor<Checkout, CredentialResult>(
+        method: Event.paymentCredentialRequest,
+        delegation: "payment.credential",
+        decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+    )
+
+    public static let fulfillmentAddressChange = RequestDescriptor<Checkout, AddressChangeResult>(
+        method: Event.fulfillmentAddressChangeRequest,
+        delegation: "fulfillment.address_change",
+        decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+    )
 }
 
 extension EmbeddedCheckoutProtocol {
