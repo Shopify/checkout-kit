@@ -7,9 +7,10 @@ import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Color
 import android.os.Build
 import android.view.MenuItem
+import android.view.View
 import android.view.View.INVISIBLE
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.view.Window
 import android.view.WindowManager
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
@@ -17,10 +18,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.ComponentDialog
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.ColorInt
+import androidx.annotation.RequiresApi
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.Toolbar
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 
@@ -32,6 +37,7 @@ internal class CheckoutDialog(
 ) : ComponentDialog(context) {
 
     private var presentedCheckoutWebView: CheckoutWebView? = null
+    private lateinit var keyboardInsets: CheckoutDialogKeyboardInsets
 
     private val backNavigationCallback = object : OnBackPressedCallback(enabled = true) {
         override fun handleOnBackPressed() {
@@ -46,15 +52,9 @@ internal class CheckoutDialog(
 
     fun start(context: ComponentActivity) {
         log.d(LOG_TAG, "Dialog start called.")
+        window?.configureForCheckoutDialog()
         setContentView(R.layout.dialog_checkout)
-        window?.setLayout(MATCH_PARENT, WRAP_CONTENT)
-        window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-        // Although this flag is deprecated in newest targets, it's properly
-        // addressing the keyboard focus on the WebView within the dialog.
-        // The non-deprecated alternative (insets listener) does notify about
-        // keyboard insets when visible, but it is not adjusting the pan
-        // properly into the fields. To be investigated further.
-        window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        keyboardInsets = CheckoutDialogKeyboardInsets(findViewById(R.id.checkoutKitRoot))
 
         log.d(LOG_TAG, "Finding or creating WebView.")
         val checkoutWebView = CheckoutWebView.checkoutViewFor(checkoutUrl, context)
@@ -100,6 +100,13 @@ internal class CheckoutDialog(
 
         log.d(LOG_TAG, "Showing dialog.")
         show()
+        // Dialog window size is only applied reliably after show().
+        window?.setLayout(MATCH_PARENT, MATCH_PARENT)
+        keyboardInsets.requestApplyInsets()
+    }
+
+    internal fun applyKeyboardInset(imeBottom: Int) {
+        keyboardInsets.applyKeyboardInset(imeBottom)
     }
 
     private fun MenuItem.setupCloseButton(colorScheme: ColorScheme) {
@@ -140,7 +147,7 @@ internal class CheckoutDialog(
         findViewById<RelativeLayout>(R.id.checkoutKitContainer).apply {
             log.d(LOG_TAG, "Found parent view, setting its colors and layout params.")
             setBackgroundColor(colorScheme.webViewBackgroundColor())
-            val layoutParams = RelativeLayout.LayoutParams(WRAP_CONTENT, MATCH_PARENT)
+            val layoutParams = RelativeLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
             layoutParams.addRule(RelativeLayout.BELOW, R.id.progressBar)
             checkoutWebView.removeFromParent()
             log.d(LOG_TAG, "Adding WebView to parent view.")
@@ -198,5 +205,82 @@ internal class CheckoutDialog(
 
     companion object {
         private const val LOG_TAG = "CheckoutDialog"
+    }
+}
+
+internal fun Window.configureForCheckoutDialog() {
+    setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+    setLayout(MATCH_PARENT, MATCH_PARENT)
+    WindowCompat.setDecorFitsSystemWindows(this, false)
+    setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        clearFitInsets()
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
+private fun Window.clearFitInsets() {
+    attributes = attributes.apply {
+        setFitInsetsTypes(0)
+        setFitInsetsSides(0)
+    }
+}
+
+internal class CheckoutDialogKeyboardInsets(
+    private val root: View,
+) {
+    private val rootPaddingTop = root.paddingTop
+    private val rootPaddingBottom = root.paddingBottom
+
+    init {
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottomInset = if (imeBottom > 0) imeBottom else systemBars.bottom
+            applyInsets(
+                top = unappliedTopInset(systemBars.top),
+                bottom = unappliedBottomInset(bottomInset),
+            )
+            insets
+        }
+    }
+
+    fun requestApplyInsets() {
+        ViewCompat.requestApplyInsets(root)
+    }
+
+    fun applyKeyboardInset(imeBottom: Int) {
+        applyInsets(top = 0, bottom = imeBottom.coerceAtLeast(0))
+    }
+
+    private fun applyInsets(top: Int, bottom: Int) {
+        root.setPadding(
+            root.paddingLeft,
+            rootPaddingTop + top.coerceAtLeast(0),
+            root.paddingRight,
+            rootPaddingBottom + bottom.coerceAtLeast(0),
+        )
+    }
+
+    private fun unappliedTopInset(inset: Int): Int {
+        if (inset <= 0 || root.height == 0) return inset
+        return if (root.locationOnScreenY() >= inset - INSET_APPLIED_TOLERANCE_PX) 0 else inset
+    }
+
+    private fun unappliedBottomInset(inset: Int): Int {
+        if (inset <= 0 || root.height == 0) return inset
+        val rootBottom = root.locationOnScreenY() + root.height
+        val insetTop = root.resources.displayMetrics.heightPixels - inset
+        return if (rootBottom <= insetTop + INSET_APPLIED_TOLERANCE_PX) 0 else inset
+    }
+
+    private fun View.locationOnScreenY(): Int {
+        val location = IntArray(2)
+        getLocationOnScreen(location)
+        return location[1]
+    }
+
+    private companion object {
+        private const val INSET_APPLIED_TOLERANCE_PX = 2
     }
 }

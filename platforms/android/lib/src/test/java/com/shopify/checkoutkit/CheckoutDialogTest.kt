@@ -4,7 +4,10 @@ import android.app.Dialog
 import android.graphics.drawable.ColorDrawable
 import android.os.Looper
 import android.view.View
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.WindowManager
 import android.webkit.WebView
+import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import androidx.activity.ComponentActivity
 import androidx.appcompat.widget.Toolbar
@@ -64,6 +67,24 @@ class CheckoutDialogTest {
     }
 
     @Test
+    fun `dialog fills height and handles keyboard with insets`() {
+        ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
+
+        val dialog = ShadowDialog.getLatestDialog()
+        val attributes = dialog.window?.attributes
+        val root = dialog.findViewById<View>(R.id.checkoutKitRoot)
+        val container = dialog.findViewById<RelativeLayout>(R.id.checkoutKitContainer)
+        val containerLayoutParams = container.layoutParams as LinearLayout.LayoutParams
+
+        assertThat(root).isInstanceOf(LinearLayout::class.java)
+        assertThat(attributes?.height).isEqualTo(MATCH_PARENT)
+        assertThat(attributes?.softInputMode?.and(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING))
+            .isEqualTo(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        assertThat(containerLayoutParams.height).isZero()
+        assertThat(containerLayoutParams.weight).isEqualTo(1f)
+    }
+
+    @Test
     fun `checkoutView is added to the container when dialog is presented`() {
         ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
 
@@ -83,8 +104,26 @@ class CheckoutDialogTest {
         val webView: WebView = ShadowDialog.getLatestDialog()
             .findViewById<RelativeLayout>(R.id.checkoutKitContainer)
             .children.firstOrNull { it is WebView } as WebView? ?: fail("No WebVew found in dialog")
+        val layoutParams = webView.layoutParams as RelativeLayout.LayoutParams
 
         assertThat(shadowOf(webView).wasOnResumeCalled()).isTrue()
+        assertThat(layoutParams.width).isEqualTo(MATCH_PARENT)
+        assertThat(layoutParams.height).isEqualTo(MATCH_PARENT)
+    }
+
+    @Test
+    fun `ime inset changes pad checkout content without resizing window`() {
+        ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
+        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
+        val root = dialog.findViewById<View>(R.id.checkoutKitRoot)
+        dialog.window?.setLayout(MATCH_PARENT, 400)
+
+        assertThat(root.paddingBottom).isZero()
+
+        dialog.applyKeyboardInset(100)
+
+        assertThat(dialog.window?.attributes?.height).isEqualTo(400)
+        assertThat(root.paddingBottom).isEqualTo(100)
     }
 
     @Test
@@ -238,7 +277,7 @@ class CheckoutDialogTest {
     }
 
     @Test
-    fun `sets WebView container background color based on current configuration`() {
+    fun `sets checkout content background color based on current configuration`() {
         val customColors = customColors()
         ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Web(customColors)
 

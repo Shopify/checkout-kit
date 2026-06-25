@@ -1,8 +1,10 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/checkoutKitRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent">
+    android:background="@android:color/transparent"
+    android:orientation="vertical">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/checkoutKitHeader"
@@ -18,9 +20,9 @@
     <RelativeLayout
         android:id="@+id/checkoutKitContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:background="@android:color/transparent"
-        android:layout_below="@id/checkoutKitHeader"
         android:visibility="visible">
 
         <ProgressBar
@@ -32,4 +34,4 @@
             android:indeterminate="false" />
 
     </RelativeLayout>
-</RelativeLayout>
+</LinearLayout>
