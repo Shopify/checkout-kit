@@ -183,6 +183,7 @@ class CartViewModel(
             .on(CheckoutProtocol.totalsChange) { Timber.i("ECP ec.totals.change: $it") }
             .on(CheckoutProtocol.lineItemsChange) { Timber.i("ECP ec.line_items.change: $it") }
             .on(CheckoutProtocol.messagesChange) { Timber.i("ECP ec.messages.change: $it") }
+            .on(CheckoutProtocol.fulfillmentChange) { Timber.i("ECP ec.fulfillment.change: $it") }
 
         return when (windowOpenHandler) {
             WindowOpenHandler.Default -> base

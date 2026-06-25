@@ -75,6 +75,9 @@ public object EmbeddedCheckoutProtocol {
     public val totalsChange: NotificationDescriptor<Checkout>
         get() = embeddedCheckoutTotalsChangeDescriptor
 
+    public val fulfillmentChange: NotificationDescriptor<Checkout>
+        get() = embeddedCheckoutFulfillmentChangeDescriptor
+
     public val error: NotificationDescriptor<ErrorResponse>
         get() = embeddedCheckoutErrorDescriptor
 

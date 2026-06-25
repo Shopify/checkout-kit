@@ -51,6 +51,11 @@ class CheckoutProtocolTest {
     }
 
     @Test
+    fun `fulfillmentChange descriptor has correct method`() {
+        assertThat(CheckoutProtocol.fulfillmentChange.method).isEqualTo("ec.fulfillment.change")
+    }
+
+    @Test
     fun `error descriptor has correct method`() {
         assertThat(CheckoutProtocol.error.method).isEqualTo("ec.error")
     }
@@ -75,6 +80,7 @@ class CheckoutProtocolTest {
             CheckoutProtocol.lineItemsChange.method,
             CheckoutProtocol.messagesChange.method,
             CheckoutProtocol.totalsChange.method,
+            CheckoutProtocol.fulfillmentChange.method,
             CheckoutProtocol.windowOpen.method,
         )
     }
@@ -145,6 +151,18 @@ class CheckoutProtocolTest {
             .on(CheckoutProtocol.complete) { checkout -> received.add(checkout) }
 
         client.process(ecCompleteMessage())
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(received).hasSize(1)
+    }
+
+    @Test
+    fun `process dispatches ec fulfillment change to registered handler`() {
+        val received = mutableListOf<Checkout>()
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.fulfillmentChange) { checkout -> received.add(checkout) }
+
+        client.process(checkoutMessage(method = CheckoutProtocol.fulfillmentChange.method))
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received).hasSize(1)
@@ -506,10 +524,22 @@ class CheckoutProtocolTest {
     // region helpers
 
     private fun ecStartMessage(currency: String = "USD"): String =
-        """{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":${checkoutJson(currency = currency)}}}"""
+        checkoutMessage(method = "ec.start", currency = currency)
 
     private fun ecCompleteMessage(): String =
-        """{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":${checkoutJson(status = "completed")}}}"""
+        checkoutMessage(method = "ec.complete", status = "completed")
+
+    private fun checkoutMessage(
+        method: String,
+        currency: String = "USD",
+        status: String = "incomplete",
+    ): String {
+        val checkout = checkoutJson(
+            currency = currency,
+            status = status,
+        )
+        return """{"jsonrpc":"2.0","method":"$method","params":{"checkout":$checkout}}"""
+    }
 
     private fun windowOpenMessage(id: String, url: String = "https://example.com"): String =
         """{"jsonrpc":"2.0","method":"ec.window.open_request","id":$id,"params":{"url":"$url"}}"""
