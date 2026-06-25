@@ -294,19 +294,19 @@ class CheckoutWebViewTest {
 
     @Test
     fun `present discards cached checkout view for mismatched query params`() {
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123?ec_auth=first", activity)
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123?cart=first", activity)
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         val presentedView = CheckoutWebView.checkoutViewFor(
-            "https://checkout.shopify.com/cart/123?ec_auth=second",
+            "https://checkout.shopify.com/cart/123?cart=second",
             activity,
         )
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isNotSameAs(cachedView)
         assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
-        assertThat(shadowOf(presentedView).lastLoadedUrl).contains("ec_auth=second")
+        assertThat(shadowOf(presentedView).lastLoadedUrl).contains("cart=second")
     }
 
     @Test

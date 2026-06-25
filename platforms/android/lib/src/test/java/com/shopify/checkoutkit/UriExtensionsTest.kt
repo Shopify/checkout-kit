@@ -86,11 +86,13 @@ class UriExtensionsTest {
     }
 
     @Test
-    fun `appendEcpParams replaces caller-supplied ECP params`() {
-        val url = "$BASE_URL?ec_version=override&ec_delegate=custom"
+    fun `appendEcpParams replaces caller-supplied supported ECP params and strips unsupported ECP params`() {
+        val url = "$BASE_URL?ec_version=override&ec_delegate=custom&ec_auth=token&ec_color_scheme=dark"
         val result = url.appendEcpParams().toUri()
         assertThat(result.getQueryParameters("ec_version")).containsExactly(CheckoutProtocol.SPEC_VERSION)
         assertThat(result.getQueryParameters("ec_delegate")).containsExactly("window.open")
+        assertThat(result.getQueryParameters("ec_auth")).isEmpty()
+        assertThat(result.getQueryParameters("ec_color_scheme")).isEmpty()
     }
 
     @Test

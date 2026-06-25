@@ -41,6 +41,10 @@ public object CheckoutProtocol {
         encode = ::encodeWindowOpenResult,
     )
 
+    internal val defaultDelegations: List<EmbeddedCheckoutProtocol.Delegation> = listOf(
+        EmbeddedCheckoutProtocol.Delegation(windowOpen.delegation),
+    )
+
     internal val supportedProtocolMethods: Set<String> = setOf(
         EmbeddedCheckoutProtocol.Event.ready,
         start.method,
