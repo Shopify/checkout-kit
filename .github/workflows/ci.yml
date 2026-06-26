@@ -28,30 +28,33 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     outputs:
-      android: ${{ steps.filter.outputs.android }}
-      swift: ${{ steps.filter.outputs.swift }}
-      reactNative: ${{ steps.filter.outputs.reactNative }}
-      web: ${{ steps.filter.outputs.web }}
+      android: ${{ steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.android == 'true' }}
+      swift: ${{ steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.swift == 'true' }}
+      reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNative == 'true' }}
+      web: ${{ steps.platform.outputs.web == 'true' || steps.infra.outputs.web == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
-        id: filter
+        id: platform
+        with:
+          predicate-quantifier: every
+          filters: .github/filters/platform-non-docs.yml
+
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        id: infra
         with:
           filters: |
             android:
-              - 'platforms/android/**'
-              - 'protocol/**'
               - '.github/workflows/android-publish.yml'
               - '.github/workflows/android-protocol-publish.yml'
               - '.github/workflows/android-test.yml'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/release.yml'
               - '.github/scripts/validate-release-version'
+              - '.github/filters/**'
               - '.github/workflows/ci.yml'
             swift:
-              - 'platforms/swift/**'
-              - 'protocol/**'
               - 'Package.swift'
               - 'Package.resolved'
               - '.github/workflows/swift-test-package.yml'
@@ -59,12 +62,9 @@ jobs:
               - '.github/workflows/swift-test-workflow.yml'
               - '.github/workflows/swift-lint.yml'
               - '.github/workflows/breaking-changes.yml'
+              - '.github/filters/**'
               - '.github/workflows/ci.yml'
             reactNative:
-              - 'platforms/react-native/**'
-              - 'platforms/swift/**'
-              - 'platforms/android/**'
-              - 'protocol/**'
               - 'Package.swift'
               - 'Package.resolved'
               - '.github/workflows/rn-test.yml'
@@ -79,12 +79,13 @@ jobs:
               - '.github/scripts/package-json-version'
               - '.github/scripts/validate-release-version'
               - '.github/actions/setup/**'
+              - '.github/filters/**'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             web:
-              - 'platforms/web/**'
               - '.github/workflows/web.yml'
               - '.github/actions/setup/**'
+              - '.github/filters/**'
               - '.github/workflows/ci.yml'
 
   android-test:
