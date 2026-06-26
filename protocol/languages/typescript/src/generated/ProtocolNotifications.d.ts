@@ -1,5 +1,5 @@
 import { type Checkout, type ErrorResponse } from './Models';
-export declare const generatedCheckoutProtocol: {
+export declare const checkoutProtocolCatalog: {
     readonly error: "ec.error";
     readonly start: "ec.start";
     readonly complete: "ec.complete";
@@ -10,8 +10,8 @@ export declare const generatedCheckoutProtocol: {
     readonly paymentChange: "ec.payment.change";
     readonly fulfillmentChange: "ec.fulfillment.change";
 };
-export type GeneratedCheckoutProtocolMethod = (typeof generatedCheckoutProtocol)[keyof typeof generatedCheckoutProtocol];
-export interface GeneratedCheckoutProtocolPayloads {
+export type CheckoutProtocolCatalogMethod = (typeof checkoutProtocolCatalog)[keyof typeof checkoutProtocolCatalog];
+export interface CheckoutProtocolCatalogPayloads {
     'ec.error': ErrorResponse;
     'ec.start': Checkout;
     'ec.complete': Checkout;
@@ -22,8 +22,8 @@ export interface GeneratedCheckoutProtocolPayloads {
     'ec.payment.change': Checkout;
     'ec.fulfillment.change': Checkout;
 }
-export type GeneratedCheckoutProtocolPayloadDecoder<K extends keyof GeneratedCheckoutProtocolPayloads> = (payload: unknown) => GeneratedCheckoutProtocolPayloads[K];
-export declare const generatedCheckoutProtocolPayloadDecoders: {
+export type CheckoutProtocolCatalogPayloadDecoder<K extends keyof CheckoutProtocolCatalogPayloads> = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
+export declare const checkoutProtocolCatalogPayloadDecoders: {
     "ec.error": (payload: unknown) => ErrorResponse;
     "ec.start": (payload: unknown) => Checkout;
     "ec.complete": (payload: unknown) => Checkout;

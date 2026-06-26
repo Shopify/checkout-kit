@@ -1,2 +1,2 @@
 export * from './generated/Models';
-export * from './notifications';
+export * from './generated/ProtocolNotifications';

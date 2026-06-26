@@ -5,8 +5,7 @@
 ```ts
 
 import { Checkout } from '@shopify/checkout-kit-protocol';
-import { CheckoutProtocol } from '@shopify/checkout-kit-protocol';
-import { CheckoutProtocolPayloads } from '@shopify/checkout-kit-protocol';
+import { CheckoutProtocolCatalogPayloads } from '@shopify/checkout-kit-protocol';
 import { ErrorResponse } from '@shopify/checkout-kit-protocol';
 import type { PropsWithChildren } from 'react';
 import { default as React_2 } from 'react';
@@ -185,9 +184,22 @@ export enum CheckoutNativeErrorType {
     UnknownError = "UnknownError"
 }
 
-export { CheckoutProtocol }
+// @public (undocumented)
+export const CheckoutProtocol: {
+    readonly complete: "ec.complete";
+    readonly error: "ec.error";
+    readonly fulfillmentChange: "ec.fulfillment.change";
+    readonly lineItemsChange: "ec.line_items.change";
+    readonly messagesChange: "ec.messages.change";
+    readonly start: "ec.start";
+    readonly totalsChange: "ec.totals.change";
+};
 
-export { CheckoutProtocolPayloads }
+// @public (undocumented)
+export type CheckoutProtocolMethod = (typeof CheckoutProtocol)[keyof typeof CheckoutProtocol];
+
+// @public (undocumented)
+export type CheckoutProtocolPayloads = Pick<CheckoutProtocolCatalogPayloads, CheckoutProtocolMethod>;
 
 // @public (undocumented)
 export enum ColorScheme {

@@ -133,7 +133,7 @@ function renderModule(notifications) {
 
 import {Convert, type ${typeNames.join(', type ')}} from './Models';
 
-export const generatedCheckoutProtocol = {
+export const checkoutProtocolCatalog = {
 ${notifications
   .map(
     notification => `  ${notification.identifier}: '${notification.method}',`,
@@ -141,10 +141,10 @@ ${notifications
   .join('\n')}
 } as const;
 
-export type GeneratedCheckoutProtocolMethod =
-  (typeof generatedCheckoutProtocol)[keyof typeof generatedCheckoutProtocol];
+export type CheckoutProtocolCatalogMethod =
+  (typeof checkoutProtocolCatalog)[keyof typeof checkoutProtocolCatalog];
 
-export interface GeneratedCheckoutProtocolPayloads {
+export interface CheckoutProtocolCatalogPayloads {
 ${notifications
   .map(
     notification => `  '${notification.method}': ${notification.typeName};`,
@@ -152,20 +152,20 @@ ${notifications
   .join('\n')}
 }
 
-export type GeneratedCheckoutProtocolPayloadDecoder<
-  K extends keyof GeneratedCheckoutProtocolPayloads,
-> = (payload: unknown) => GeneratedCheckoutProtocolPayloads[K];
+export type CheckoutProtocolCatalogPayloadDecoder<
+  K extends keyof CheckoutProtocolCatalogPayloads,
+> = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
 
-export const generatedCheckoutProtocolPayloadDecoders = {
+export const checkoutProtocolCatalogPayloadDecoders = {
 ${notifications
   .map(
     notification =>
-      `  [generatedCheckoutProtocol.${notification.identifier}]: decodeWith(${notification.converter}),`,
+      `  [checkoutProtocolCatalog.${notification.identifier}]: decodeWith(${notification.converter}),`,
   )
   .join('\n')}
 } satisfies {
-  [K in keyof GeneratedCheckoutProtocolPayloads]:
-    GeneratedCheckoutProtocolPayloadDecoder<K>;
+  [K in keyof CheckoutProtocolCatalogPayloads]:
+    CheckoutProtocolCatalogPayloadDecoder<K>;
 };
 
 function decodeWith<T>(converter: (json: string) => T): (payload: unknown) => T {

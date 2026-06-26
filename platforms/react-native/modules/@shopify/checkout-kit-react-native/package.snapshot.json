@@ -96,8 +96,6 @@
   "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolNotifications.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/index.d.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/index.ts",
-  "node_modules/@shopify/checkout-kit-protocol/src/notifications.d.ts",
-  "node_modules/@shopify/checkout-kit-protocol/src/notifications.ts",
   "package.json",
   "RNShopifyCheckoutKit.podspec",
   "src/components/AcceleratedCheckoutButtons.tsx",
