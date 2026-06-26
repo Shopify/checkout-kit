@@ -232,10 +232,6 @@ class CheckoutWebView: WKWebView {
     var client: (any CheckoutCommunicationProtocol)?
     var externalURLHandler: any ExternalURLHandling = UIApplicationExternalURLHandler()
 
-    var canOpenExternalURL: (URL) -> Bool = { UIApplication.shared.canOpenURL($0) }
-
-    var openExternalURL: (URL) -> Void = { UIApplication.shared.open($0) }
-
     /// Kit-owned client that handles delegations and kit-mandated notifications. Currently:
     ///   - `window.open` - opens web URLs in `SFSafariViewController` so buyers stay in an
     ///     in-app browser surface, and routes non-web URLs through `externalURLHandler`
@@ -250,13 +246,11 @@ class CheckoutWebView: WKWebView {
         }
         .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
             let scheme = request.url.scheme?.lowercased()
-            guard scheme == "http" || scheme == "https" else {
+            guard scheme == "http" || scheme == "https",
+                  let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController()
+            else {
                 let didOpen = await externalURLHandler.open(request.url)
-                return didOpen ? .success : .rejected(reason: "UIApplication.open returned false")
-            }
-
-            guard let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController() else {
-                return .rejected(reason: "no presenter available")
+                return didOpen ? .success : .rejected(reason: "failed to open URL")
             }
 
             let safari = SFSafariViewController(url: request.url)
@@ -555,14 +549,15 @@ extension CheckoutWebView: WKNavigationDelegate {
         // 	- Deep links on offsite payment sites
         //
         if CheckoutURL(from: url).isDeepLink() {
-            if canOpenExternalURL(url) {
-                openExternalURL(url)
-                OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - opened externally")
-                return decisionHandler(.cancel)
-            } else {
-                OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). If you're expecting this scheme, it must be listed under LSApplicationSchemeQueries in Info.plist.")
-                return decisionHandler(.cancel)
+            Task { @MainActor [externalURLHandler] in
+                if await externalURLHandler.open(url) {
+                    OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - opened externally")
+                } else {
+                    OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). No installed app can open this scheme.")
+                }
+                decisionHandler(.cancel)
             }
+            return
         }
 
         decisionHandler(.allow)

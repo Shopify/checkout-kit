@@ -31,7 +31,9 @@ internal object ExternalUriLauncher {
 
     private fun launchCustomTab(context: Context, uri: Uri): Result {
         return try {
-            CustomTabsIntent.Builder().build().launchUrl(context, uri)
+            val customTabsIntent = CustomTabsIntent.Builder().build()
+            customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            customTabsIntent.launchUrl(context, uri)
             Result.Launched
         } catch (e: ActivityNotFoundException) {
             Result.Rejected(reason = e.message ?: "No activity resolves $uri")
