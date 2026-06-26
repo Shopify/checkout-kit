@@ -7,7 +7,7 @@
 
 > [!WARNING]
 > **Alpha - early preview.** This software is an early preview and is **not**
-> production-ready. The first Checkout Kit for Android alpha is `4.0.0-alpha.1`.
+> production-ready. The current Checkout Kit for Android alpha is `4.0.0-alpha.2`.
 > Stability is not guaranteed, and breaking changes may occur in any release.
 
 **Checkout Kit for Android** lets Android apps present Shopify checkout in a native dialog while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods.
@@ -44,13 +44,13 @@
 
 ## Install
 
-For alpha testing, install the exact version shown below. The first Checkout Kit for Android alpha is `4.0.0-alpha.1`.
+For alpha testing, install the exact version shown below. The current Checkout Kit for Android alpha is `4.0.0-alpha.2`.
 
 ### Gradle
 
 ```groovy
 dependencies {
-    implementation "com.shopify:checkout-kit:4.0.0-alpha.1"
+    implementation "com.shopify:checkout-kit:4.0.0-alpha.2"
 }
 ```
 
@@ -60,7 +60,7 @@ dependencies {
 <dependency>
   <groupId>com.shopify</groupId>
   <artifactId>checkout-kit</artifactId>
-  <version>4.0.0-alpha.1</version>
+  <version>4.0.0-alpha.2</version>
 </dependency>
 ```
 
