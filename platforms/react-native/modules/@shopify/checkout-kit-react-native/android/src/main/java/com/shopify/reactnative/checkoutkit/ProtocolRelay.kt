@@ -45,6 +45,11 @@ object ProtocolRelay {
                         forwardEnvelope(method, error, dispatch)
                     }
                 }
+                CheckoutProtocol.fulfillmentChange.method -> {
+                    client = client.on(CheckoutProtocol.fulfillmentChange) { checkout ->
+                        forwardEnvelope(method, checkout, dispatch)
+                    }
+                }
                 CheckoutProtocol.lineItemsChange.method -> {
                     client = client.on(CheckoutProtocol.lineItemsChange) { checkout ->
                         forwardEnvelope(method, checkout, dispatch)

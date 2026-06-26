@@ -59,6 +59,7 @@ const UIManager = {
           checkoutProtocolEventTypes: [
             'ec.complete',
             'ec.error',
+            'ec.fulfillment.change',
             'ec.line_items.change',
             'ec.messages.change',
             'ec.start',

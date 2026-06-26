@@ -9,6 +9,7 @@ import {decodeProtocolPayload} from '../src/protocol';
 
 const checkoutPayloadMethods = [
   CheckoutProtocol.complete,
+  CheckoutProtocol.fulfillmentChange,
   CheckoutProtocol.lineItemsChange,
   CheckoutProtocol.messagesChange,
   CheckoutProtocol.start,
@@ -21,6 +22,7 @@ describe('CheckoutProtocol', () => {
       expect(CheckoutProtocol).toEqual({
         complete: 'ec.complete',
         error: 'ec.error',
+        fulfillmentChange: 'ec.fulfillment.change',
         lineItemsChange: 'ec.line_items.change',
         messagesChange: 'ec.messages.change',
         start: 'ec.start',
@@ -291,6 +293,9 @@ describe('CheckoutProtocol', () => {
         [CheckoutProtocol.error]: error => {
           expect(error.messages).toBeDefined();
         },
+        [CheckoutProtocol.fulfillmentChange]: checkout => {
+          expect(typeof checkout.id).toBe('string');
+        },
         [CheckoutProtocol.lineItemsChange]: checkout => {
           expect(typeof checkout.id).toBe('string');
         },
@@ -307,6 +312,9 @@ describe('CheckoutProtocol', () => {
 
       expect(typeof handlers[CheckoutProtocol.complete]).toBe('function');
       expect(typeof handlers[CheckoutProtocol.error]).toBe('function');
+      expect(typeof handlers[CheckoutProtocol.fulfillmentChange]).toBe(
+        'function',
+      );
       expect(typeof handlers[CheckoutProtocol.lineItemsChange]).toBe(
         'function',
       );
