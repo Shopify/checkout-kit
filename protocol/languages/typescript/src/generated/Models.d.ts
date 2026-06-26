@@ -2,6 +2,9 @@
  * Base checkout schema. Extensions compose onto this using allOf.
  */
 export interface Checkout {
+    attribution?: {
+        [key: string]: string;
+    };
     /**
      * Representation of the buyer.
      */
@@ -559,12 +562,6 @@ export interface Link {
  * Container for error, warning, or info messages.
  */
 export interface Message {
-    /**
-     * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
-     * fulfillment_changed, age_restricted, etc.).
-     *
-     * Info code for programmatic handling.
-     */
     code?: string;
     /**
      * Human-readable message.
@@ -971,6 +968,13 @@ export interface Order {
      * independently of fulfillment.
      */
     adjustments?: Adjustment[];
+    /**
+     * Snapshot of the attribution associated with the originating checkout. Read-only on the
+     * order.
+     */
+    attribution?: {
+        [key: string]: string;
+    };
     /**
      * Associated checkout ID for reconciliation.
      */

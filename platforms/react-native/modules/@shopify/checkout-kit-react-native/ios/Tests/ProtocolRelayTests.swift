@@ -52,6 +52,7 @@ struct ProtocolRelayTests {
     @Test func relayDispatchesEnvelopeForEveryPublicCheckoutStateEvent() async throws {
         let methods = [
             "ec.complete",
+            "ec.fulfillment.change",
             "ec.line_items.change",
             "ec.messages.change",
             "ec.start",

@@ -88,6 +88,7 @@ class ProtocolRelayTest {
     fun `relay dispatches envelope for every public checkout state event`() {
         val methods = listOf(
             "ec.complete",
+            "ec.fulfillment.change",
             "ec.line_items.change",
             "ec.messages.change",
             "ec.start",

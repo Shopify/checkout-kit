@@ -18,6 +18,7 @@ struct DispatchEnvelope<Payload: Encodable>: Encodable {
 let supportedProtocolRelayMethods = [
     CheckoutProtocol.complete.method,
     CheckoutProtocol.error.method,
+    CheckoutProtocol.fulfillmentChange.method,
     CheckoutProtocol.lineItemsChange.method,
     CheckoutProtocol.messagesChange.method,
     CheckoutProtocol.start.method,
@@ -39,6 +40,10 @@ func makeRelayClient(
         case CheckoutProtocol.error.method:
             client = client.on(CheckoutProtocol.error) { error in
                 forwardEnvelope(type: method, payload: error, dispatch: dispatch)
+            }
+        case CheckoutProtocol.fulfillmentChange.method:
+            client = client.on(CheckoutProtocol.fulfillmentChange) { checkout in
+                forwardEnvelope(type: method, payload: checkout, dispatch: dispatch)
             }
         case CheckoutProtocol.lineItemsChange.method:
             client = client.on(CheckoutProtocol.lineItemsChange) { checkout in

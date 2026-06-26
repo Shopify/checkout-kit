@@ -15,6 +15,7 @@
  * Base checkout schema. Extensions compose onto this using allOf.
  */
 export interface Checkout {
+    attribution?: { [key: string]: string };
     /**
      * Representation of the buyer.
      */
@@ -591,12 +592,6 @@ export interface Link {
  * Container for error, warning, or info messages.
  */
 export interface Message {
-    /**
-     * Warning code. Machine-readable identifier for the warning type (e.g., final_sale, prop65,
-     * fulfillment_changed, age_restricted, etc.).
-     *
-     * Info code for programmatic handling.
-     */
     code?: string;
     /**
      * Human-readable message.
@@ -1010,6 +1005,11 @@ export interface Order {
      * independently of fulfillment.
      */
     adjustments?: Adjustment[];
+    /**
+     * Snapshot of the attribution associated with the originating checkout. Read-only on the
+     * order.
+     */
+    attribution?: { [key: string]: string };
     /**
      * Associated checkout ID for reconciliation.
      */
@@ -1848,6 +1848,7 @@ function r(name: string) {
 
 const typeMap: any = {
     "Checkout": o([
+        { json: "attribution", js: "attribution", typ: u(undefined, m("")) },
         { json: "buyer", js: "buyer", typ: u(undefined, r("Buyer")) },
         { json: "context", js: "context", typ: u(undefined, r("Context")) },
         { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
@@ -2068,6 +2069,7 @@ const typeMap: any = {
     ], "any"),
     "Order": o([
         { json: "adjustments", js: "adjustments", typ: u(undefined, a(r("Adjustment"))) },
+        { json: "attribution", js: "attribution", typ: u(undefined, m("")) },
         { json: "checkout_id", js: "checkoutId", typ: "" },
         { json: "currency", js: "currency", typ: "" },
         { json: "fulfillment", js: "fulfillment", typ: r("Fulfillment") },

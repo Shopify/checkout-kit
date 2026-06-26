@@ -10,6 +10,7 @@ import {
 type PublicCheckoutProtocolKey =
   | 'complete'
   | 'error'
+  | 'fulfillmentChange'
   | 'lineItemsChange'
   | 'messagesChange'
   | 'start'
@@ -18,6 +19,7 @@ type PublicCheckoutProtocolKey =
 export const CheckoutProtocol = {
   complete: generatedCheckoutProtocol.complete,
   error: generatedCheckoutProtocol.error,
+  fulfillmentChange: generatedCheckoutProtocol.fulfillmentChange,
   lineItemsChange: generatedCheckoutProtocol.lineItemsChange,
   messagesChange: generatedCheckoutProtocol.messagesChange,
   start: generatedCheckoutProtocol.start,
@@ -41,6 +43,8 @@ const checkoutProtocolPayloadDecoders = {
     generatedCheckoutProtocolPayloadDecoders[CheckoutProtocol.complete],
   [CheckoutProtocol.error]:
     generatedCheckoutProtocolPayloadDecoders[CheckoutProtocol.error],
+  [CheckoutProtocol.fulfillmentChange]:
+    generatedCheckoutProtocolPayloadDecoders[CheckoutProtocol.fulfillmentChange],
   [CheckoutProtocol.lineItemsChange]:
     generatedCheckoutProtocolPayloadDecoders[CheckoutProtocol.lineItemsChange],
   [CheckoutProtocol.messagesChange]:

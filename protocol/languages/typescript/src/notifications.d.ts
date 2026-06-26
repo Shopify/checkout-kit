@@ -2,6 +2,7 @@ import { type GeneratedCheckoutProtocolPayloads } from './generated/ProtocolNoti
 export declare const CheckoutProtocol: {
     readonly complete: "ec.complete";
     readonly error: "ec.error";
+    readonly fulfillmentChange: "ec.fulfillment.change";
     readonly lineItemsChange: "ec.line_items.change";
     readonly messagesChange: "ec.messages.change";
     readonly start: "ec.start";
