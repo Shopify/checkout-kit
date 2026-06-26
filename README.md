@@ -27,8 +27,8 @@ This repository contains the Checkout Kit implementations, samples, and protocol
 
 | Package | Checkout Kit release | Install channel | Status | Description | README |
 | --- | --- | --- | --- | --- | --- |
-| `ShopifyCheckoutKit` | `4.0.0-alpha.1` | Swift Package Manager, CocoaPods | Alpha | iOS checkout presentation SDK. | [Swift](platforms/swift/README.md) |
-| `ShopifyAcceleratedCheckouts` | `4.0.0-alpha.1` | Swift Package Manager, CocoaPods subspec | Alpha | SwiftUI Shop Pay and Apple Pay accelerated checkout buttons for iOS 16+. | [Swift](platforms/swift/README.md#accelerated-checkouts) |
+| `ShopifyCheckoutKit` | `4.0.0-alpha.2` | Swift Package Manager, CocoaPods | Alpha | iOS checkout presentation SDK. | [Swift](platforms/swift/README.md) |
+| `ShopifyAcceleratedCheckouts` | `4.0.0-alpha.2` | Swift Package Manager, CocoaPods subspec | Alpha | SwiftUI Shop Pay and Apple Pay accelerated checkout buttons for iOS 16+. | [Swift](platforms/swift/README.md#accelerated-checkouts) |
 | `com.shopify:checkout-kit` | `4.0.0-alpha.1` | Maven Central | Alpha | Android checkout dialog SDK. | [Android](platforms/android/README.md) |
 | `@shopify/checkout-kit-react-native` | `4.0.0-alpha.1` | npm `next` dist-tag | Alpha | React Native wrapper for the iOS and Android native SDKs. | [React Native](platforms/react-native/README.md) |
 | `@shopify/checkout-kit` | `4.0.0-alpha.2` | npm `next` dist-tag | Alpha | Web component for opening Shopify checkout from a web page. | [Web](platforms/web/README.md) |
@@ -80,7 +80,7 @@ Use the Shopify.dev guides for broader product workflows:
 
 Checkout Kit is the current home for the SDKs that were previously published as Checkout Sheet Kit. The renamed packages use a shared `4.0.0-alpha.X` version format while the new package line settles:
 
-- Swift, Android, and React Native start at `4.0.0-alpha.1`.
+- Swift is currently `4.0.0-alpha.2`; Android and React Native start at `4.0.0-alpha.1`.
 - Web is currently `4.0.0-alpha.2` and is published under the npm `next` dist-tag.
 - React Native requires React Native New Architecture.
 - Stable releases will continue on the same `4.x` package line after the alpha period.
