@@ -54,18 +54,6 @@ json_version() {
   .github/scripts/package-json-version "$file"
 }
 
-json_string_field() {
-  local file="$1"
-  local jq_filter="$2"
-
-  if ! value=$(jq -er "$jq_filter | strings | select(length > 0)" "$file"); then
-    echo "::error file=$file::Could not extract version field." >&2
-    exit 1
-  fi
-
-  printf '%s\n' "$value"
-}
-
 version_catalog_value() {
   local file="$1"
   local key="$2"
@@ -112,13 +100,9 @@ case "$PLATFORM_INPUT" in
     PUBLISH_WORKFLOW="android-publish.yml"
 
     ANDROID_VERSION_FILE="platforms/android/gradle/libs.versions.toml"
-    RN_PACKAGE_FILE="platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json"
 
     VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "checkoutKitAndroid")
     ANDROID_PROTOCOL_VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroid")
-    RN_ANDROID_VERSION=$(json_string_field "$RN_PACKAGE_FILE" '.checkoutKit.nativeSdkVersions.android')
-
-    check_same_version "$VERSION" "$RN_PACKAGE_FILE" "$RN_ANDROID_VERSION"
     ;;
 
   "Embedded Checkout Protocol"|embedded-checkout-protocol|EmbeddedCheckoutProtocol|ecp|ECP)

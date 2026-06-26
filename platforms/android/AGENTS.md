@@ -98,7 +98,8 @@ Published Android artifact versions are bumped via:
 
 1. `gradle/libs.versions.toml` (`checkoutKitAndroid` and `embeddedCheckoutProtocolAndroid`).
 2. The install snippets in `README.md` (Gradle and Maven).
-3. `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` (`checkoutKit.nativeSdkVersions.android`) for the published `com.shopify:checkout-kit` SemVer that RN CI resolves from Maven.
+
+After the Android artifact is published, update `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` (`checkoutKit.nativeSdkVersions.android`) in the React Native release flow if RN should consume that published `com.shopify:checkout-kit` SemVer. RN CI resolves this value from Maven, so do not point it at an unpublished Android version.
 
 Embedded Checkout Protocol releases are tagged `embedded-checkout-protocol/YYYY.MM.DD.PATCH[-prerelease.N]` and publish only `com.shopify:embedded-checkout-protocol`. Android Kit releases are tagged `android/X.Y.Z` and publish only `com.shopify:checkout-kit`; the Android publish workflow fails if the referenced protocol version is not already available on Maven Central. Swift releases use bare `X.Y.Z`.
 
