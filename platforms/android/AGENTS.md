@@ -8,7 +8,7 @@ Shopify Checkout Kit for Android publishes Maven artifacts that are consumed by 
 
 The main modules are:
 
-- **`lib/`** — the Checkout Kit library, published as `com.shopify:checkout-kit`. It presents Shopify checkouts as a native, dialog-hosted WebView in consumer apps.
+- **`lib/`** — the Checkout Kit library, published as `com.shopify:checkout-kit`. It presents Shopify checkouts as a native bottom-sheet-hosted WebView in consumer apps.
 - **`../../protocol/languages/kotlin/embedded-checkout-protocol/`** — the Embedded Checkout Protocol Kotlin artifact, published as `com.shopify:embedded-checkout-protocol`. The Android Gradle project path is `:embedded-checkout-protocol`, and the Kotlin package is `com.shopify.ucp.embedded.checkout`.
 - **`samples/CheckoutKitAndroidDemo/`** — a demo app that consumes Checkout Kit and the Kotlin protocol artifact as source dependencies. Changes here never reach consumers; this module is for internal testing and developer onboarding.
 
@@ -25,7 +25,7 @@ The sample is a separate Gradle composite (`samples/CheckoutKitAndroidDemo/setti
 ## Key components
 
 - **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, present).
-- **`CheckoutDialog.kt`** — the dialog that hosts the WebView, including the progress indicator and checkout error coordination.
+- **`CheckoutBottomSheet.kt`** — the bottom sheet that hosts the WebView, including the progress indicator, gesture coordination, and checkout error coordination.
 - **`CheckoutWebView.kt`** — primary WebView. Instruments page loads and attaches the ECP JavaScript interface.
 - **`BaseWebView.kt`** — abstract base class. Any new WebView variant must extend this so shared configuration (user agent suffix, WebChromeClient hooks, navigation error handling) is consistent.
 - **`CheckoutProtocol.kt`** — the curated consumer-facing Checkout Kit protocol API. This is where supported events/delegations are intentionally exposed.

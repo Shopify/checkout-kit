@@ -10,7 +10,7 @@
 > production-ready. The current Checkout Kit for Android alpha is `4.0.0-alpha.2`.
 > Stability is not guaranteed, and breaking changes may occur in any release.
 
-**Checkout Kit for Android** lets Android apps present Shopify checkout in a native dialog while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods.
+**Checkout Kit for Android** lets Android apps present Shopify checkout in a native bottom sheet while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods.
 
 > [!NOTE]
 > This package was previously published as `com.shopify:checkout-sheet-kit`. New integrations should use `com.shopify:checkout-kit`.
@@ -114,14 +114,14 @@ val listener = object : DefaultCheckoutListener() {
 ShopifyCheckoutKit.present(checkoutUrl, activity, listener)
 ```
 
-The `present` call returns a `CheckoutKitDialog?`. Keep it if you need to dismiss the dialog programmatically:
+The `present` call returns a `CheckoutHandle?`. Keep it if you need to dismiss checkout programmatically:
 
 ```kotlin
-val checkoutDialog = ShopifyCheckoutKit.present(checkoutUrl, activity) {
+val checkout = ShopifyCheckoutKit.present(checkoutUrl, activity) {
     onCancel { resetCheckoutUi() }
 }
 
-checkoutDialog?.dismiss()
+checkout?.dismiss()
 ```
 
 ## Preload checkout
@@ -344,6 +344,10 @@ Checkout Kit opens external HTTPS links, `mailto:`, `tel:`, and custom-scheme li
 ## Troubleshooting
 
 - Use `LogLevel.DEBUG` while integrating.
+- For production release builds, use Android app shrinking and optimization
+  when appropriate. Checkout Kit does not require integration-specific R8 rules
+  for normal usage, and app-level shrinking can remove unused dependency code
+  and resources.
 - If checkout reports an expired, completed, or invalid cart, create a fresh cart and use its new `checkoutUrl`.
 - If checkout cannot access camera, file upload, or location features, check your manifest permissions and runtime permission flow.
 - If offsite payment redirects do not return to your app, verify App Links/deep link intent filters and domain association.

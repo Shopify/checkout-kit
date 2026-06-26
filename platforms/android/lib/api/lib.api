@@ -34,7 +34,7 @@ public final class com/shopify/checkoutkit/CheckoutExpiredException : com/shopif
 public final class com/shopify/checkoutkit/CheckoutExpiredException$Companion {
 }
 
-public abstract interface class com/shopify/checkoutkit/CheckoutKitDialog {
+public abstract interface class com/shopify/checkoutkit/CheckoutHandle {
 	public abstract fun dismiss ()V
 }
 
@@ -499,10 +499,10 @@ public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static final fun getConfiguration ()Lcom/shopify/checkoutkit/Configuration;
 	public static final fun invalidate ()V
 	public static final fun preload (Ljava/lang/String;Landroidx/activity/ComponentActivity;)V
-	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
-	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
-	public static final synthetic fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
-	public static synthetic fun present$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
+	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)Lcom/shopify/checkoutkit/CheckoutHandle;
+	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;)Lcom/shopify/checkoutkit/CheckoutHandle;
+	public static final synthetic fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutHandle;
+	public static synthetic fun present$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutHandle;
 }
 
 public final class com/shopify/checkoutkit/WindowOpenRequest {

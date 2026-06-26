@@ -1,6 +1,8 @@
 package com.shopify.checkoutkit
 
+import android.widget.RelativeLayout
 import androidx.activity.ComponentActivity
+import androidx.core.view.children
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -9,6 +11,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
@@ -41,13 +44,36 @@ class ShopifyCheckoutKitTest {
             val activity = activityController.get()
             activity.finish()
 
-            val dialog = ShopifyCheckoutKit.present(
+            val checkout = ShopifyCheckoutKit.present(
                 "https://shopify.dev",
                 activity,
                 noopDefaultCheckoutListener()
             )
 
-            assertThat(dialog).isNull()
+            assertThat(checkout).isNull()
+        }
+    }
+
+    @Test
+    fun `activity destroy dismisses checkout without waiting for sheet animation`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
+            val activity = activityController.get()
+
+            ShopifyCheckoutKit.present(
+                "https://shopify.dev",
+                activity,
+                noopDefaultCheckoutListener()
+            )
+            val sheet = ShadowDialog.getLatestDialog() as CheckoutBottomSheet
+            val checkoutWebView = sheet.findViewById<RelativeLayout>(R.id.checkoutKitContainer)!!
+                .children.first { it is CheckoutWebView } as CheckoutWebView
+            sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+                .layout(0, 0, TEST_SHEET_SIZE, TEST_SHEET_SIZE)
+
+            activityController.destroy()
+
+            assertThat(sheet.isShowing).isFalse()
+            assertThat(shadowOf(checkoutWebView).wasDestroyCalled()).isTrue()
         }
     }
 
@@ -126,5 +152,9 @@ class ShopifyCheckoutKitTest {
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
             assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
         }
+    }
+
+    private companion object {
+        private const val TEST_SHEET_SIZE = 1000
     }
 }
