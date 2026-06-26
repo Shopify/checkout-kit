@@ -114,6 +114,7 @@ dependencies {
     implementation libs.kotlinx.serialization.json
     implementation libs.androidx.appcompat
     implementation libs.androidx.webkit
+    implementation libs.material
 }
 
 signing {

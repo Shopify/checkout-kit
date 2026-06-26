@@ -8,12 +8,25 @@
         android:id="@+id/checkoutKitHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:contentInsetStart="22dp"
-        android:paddingEnd="4dp"
+        android:elevation="0dp"
         android:minHeight="?attr/actionBarSize"
-        app:title="@string/checkout_web_view_title"
+        android:paddingEnd="4dp"
         android:theme="@style/Theme.AppCompat.DayNight"
-        android:elevation="4dp" />
+        app:contentInsetStart="22dp"
+        app:title="">
+
+        <TextView
+            android:id="@+id/checkoutKitHeaderTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:text="@string/checkout_web_view_title"
+            android:textAppearance="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"
+            android:textSize="@dimen/checkout_sheet_title_text_size" />
+    </androidx.appcompat.widget.Toolbar>
 
     <RelativeLayout
         android:id="@+id/checkoutKitContainer"
@@ -23,11 +36,18 @@
         android:layout_below="@id/checkoutKitHeader"
         android:visibility="visible">
 
+        <View
+            android:id="@+id/checkoutKitLoadingBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent" />
+
         <ProgressBar
             android:id="@+id/progressBar"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="4dp"
+            android:layout_alignParentTop="true"
             android:max="100"
             android:indeterminate="false" />
 

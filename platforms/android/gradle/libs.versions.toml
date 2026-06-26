@@ -17,6 +17,7 @@ kotlinxBinaryCompatibilityValidator = "0.18.1"
 kotlinxSerializationJson = "1.7.3"
 kotlinxSerializationJsonDemo = "1.11.0"
 ksp = "2.3.8"
+material = "1.14.0"
 mockitoCore = "5.23.0"
 mockitoKotlin = "6.3.0"
 robolectric = "4.16.1"
@@ -70,6 +71,7 @@ koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", versi
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlinStdlib" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 kotlinx-serialization-json-demo = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJsonDemo" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
 mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoCore" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }

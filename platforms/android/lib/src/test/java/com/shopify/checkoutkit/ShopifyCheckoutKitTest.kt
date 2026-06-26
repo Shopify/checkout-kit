@@ -41,13 +41,13 @@ class ShopifyCheckoutKitTest {
             val activity = activityController.get()
             activity.finish()
 
-            val dialog = ShopifyCheckoutKit.present(
+            val checkout = ShopifyCheckoutKit.present(
                 "https://shopify.dev",
                 activity,
                 noopDefaultCheckoutListener()
             )
 
-            assertThat(dialog).isNull()
+            assertThat(checkout).isNull()
         }
     }
 

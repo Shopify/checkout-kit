@@ -83,10 +83,10 @@ public class InteropTest {
     }
 
     @Test
-    public void presentReturnsAHandleToAllowDismissingDialog() {
+    public void presentReturnsAHandleToAllowDismissingCheckout() {
         try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
             ComponentActivity activity = controller.get();
-            CheckoutKitDialog dialog = ShopifyCheckoutKit.present(
+            CheckoutHandle checkout = ShopifyCheckoutKit.present(
                     "https://shopify.dev",
                     activity,
                     new DefaultCheckoutListener() {
@@ -102,11 +102,12 @@ public class InteropTest {
                     }
             );
 
-            assertThat(dialog).isNotNull();
-            assertThat(ShadowDialog.getLatestDialog().isShowing()).isTrue();
+            assertThat(checkout).isNotNull();
+            CheckoutBottomSheet sheet = (CheckoutBottomSheet) ShadowDialog.getLatestDialog();
+            assertThat(sheet.isShowing()).isTrue();
 
-            dialog.dismiss();
-            assertThat(ShadowDialog.getLatestDialog().isShowing()).isFalse();
+            checkout.dismiss();
+            assertThat(sheet.isShowing()).isFalse();
         }
     }
 

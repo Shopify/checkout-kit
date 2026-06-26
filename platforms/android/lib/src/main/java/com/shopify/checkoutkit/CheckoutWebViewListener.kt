@@ -10,18 +10,19 @@ import android.webkit.WebChromeClient.FileChooserParams
 import android.webkit.WebView
 
 /**
- * Internal wrapper around the consumer-provided CheckoutListener. Handles dialog-internal
+ * Internal wrapper around the consumer-provided CheckoutListener. Handles presentation-internal
  * behavior (progress bar and error close) and delegates the rest to the listener.
  */
 internal class CheckoutWebViewListener(
     private val listener: CheckoutListener,
-    private val closeCheckoutDialogWithError: (CheckoutException) -> Unit = {},
+    private val closeCheckoutWithError: (CheckoutException) -> Unit = {},
     private val setProgressBarVisibility: (Int) -> Unit = {},
+    private val hideLoadingBackground: () -> Unit = {},
     private val updateProgressBarPercentage: (Int) -> Unit = {},
 ) {
     fun onCheckoutViewFailedWithError(error: CheckoutException) {
         onMainThread {
-            closeCheckoutDialogWithError(error)
+            closeCheckoutWithError(error)
         }
     }
 
@@ -50,6 +51,7 @@ internal class CheckoutWebViewListener(
     fun onCheckoutViewLoadComplete() {
         onMainThread {
             setProgressBarVisibility(INVISIBLE)
+            hideLoadingBackground()
         }
     }
 
