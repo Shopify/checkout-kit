@@ -24,7 +24,6 @@
 
 - [ ] I have bumped the version in `ShopifyCheckoutKit.podspec`
 - [ ] I have bumped the version in `platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`
-- [ ] I have updated `platforms/swift/CHANGELOG.md`
 - [ ] I have updated the SwiftPM/CocoaPods version snippets in `platforms/swift/README.md` (major version only)
 
 </details>
