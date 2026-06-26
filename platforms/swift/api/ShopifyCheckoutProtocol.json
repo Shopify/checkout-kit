@@ -1929,14 +1929,28 @@
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
+                    "name": "RequestDescriptor",
+                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.ReadyRequest, ShopifyCheckoutProtocol.ReadyResult>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "ReadyRequest",
+                        "printedName": "ShopifyCheckoutProtocol.ReadyRequest",
+                        "usr": "s:23ShopifyCheckoutProtocol12ReadyRequestV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "ReadyResult",
+                        "printedName": "ShopifyCheckoutProtocol.ReadyResult",
+                        "usr": "s:23ShopifyCheckoutProtocol11ReadyResultV"
+                      }
+                    ],
+                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO5readySSvpZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO5readySSvpZ",
+                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO5readyAA17RequestDescriptorVyAA05ReadyG0VAA0I6ResultVGvpZ",
+                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO5readyAA17RequestDescriptorVyAA05ReadyG0VAA0I6ResultVGvpZ",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1953,14 +1967,28 @@
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
+                        "name": "RequestDescriptor",
+                        "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.ReadyRequest, ShopifyCheckoutProtocol.ReadyResult>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "ReadyRequest",
+                            "printedName": "ShopifyCheckoutProtocol.ReadyRequest",
+                            "usr": "s:23ShopifyCheckoutProtocol12ReadyRequestV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "ReadyResult",
+                            "printedName": "ShopifyCheckoutProtocol.ReadyResult",
+                            "usr": "s:23ShopifyCheckoutProtocol11ReadyResultV"
+                          }
+                        ],
+                        "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO5readySSvgZ",
-                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO5readySSvgZ",
+                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO5readyAA17RequestDescriptorVyAA05ReadyG0VAA0I6ResultVGvgZ",
+                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO5readyAA17RequestDescriptorVyAA05ReadyG0VAA0I6ResultVGvgZ",
                     "moduleName": "ShopifyCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1978,14 +2006,28 @@
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
+                    "name": "RequestDescriptor",
+                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.AuthRequest, ShopifyCheckoutProtocol.AuthResult>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "AuthRequest",
+                        "printedName": "ShopifyCheckoutProtocol.AuthRequest",
+                        "usr": "s:23ShopifyCheckoutProtocol11AuthRequestV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "AuthResult",
+                        "printedName": "ShopifyCheckoutProtocol.AuthResult",
+                        "usr": "s:23ShopifyCheckoutProtocol10AuthResultV"
+                      }
+                    ],
+                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO4authSSvpZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO4authSSvpZ",
+                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO4authAA17RequestDescriptorVyAA04AuthG0VAA0I6ResultVGvpZ",
+                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO4authAA17RequestDescriptorVyAA04AuthG0VAA0I6ResultVGvpZ",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2002,14 +2044,28 @@
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
+                        "name": "RequestDescriptor",
+                        "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.AuthRequest, ShopifyCheckoutProtocol.AuthResult>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "AuthRequest",
+                            "printedName": "ShopifyCheckoutProtocol.AuthRequest",
+                            "usr": "s:23ShopifyCheckoutProtocol11AuthRequestV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "AuthResult",
+                            "printedName": "ShopifyCheckoutProtocol.AuthResult",
+                            "usr": "s:23ShopifyCheckoutProtocol10AuthResultV"
+                          }
+                        ],
+                        "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO4authSSvgZ",
-                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO4authSSvgZ",
+                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO4authAA17RequestDescriptorVyAA04AuthG0VAA0I6ResultVGvgZ",
+                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO4authAA17RequestDescriptorVyAA04AuthG0VAA0I6ResultVGvgZ",
                     "moduleName": "ShopifyCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2022,19 +2078,33 @@
               },
               {
                 "kind": "Var",
-                "name": "paymentInstrumentsChangeRequest",
-                "printedName": "paymentInstrumentsChangeRequest",
+                "name": "paymentInstrumentsChange",
+                "printedName": "paymentInstrumentsChange",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
+                    "name": "RequestDescriptor",
+                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.InstrumentsChangeResult>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Checkout",
+                        "printedName": "ShopifyCheckoutProtocol.Checkout",
+                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "InstrumentsChangeResult",
+                        "printedName": "ShopifyCheckoutProtocol.InstrumentsChangeResult",
+                        "usr": "s:23ShopifyCheckoutProtocol23InstrumentsChangeResultV"
+                      }
+                    ],
+                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO31paymentInstrumentsChangeRequestSSvpZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO31paymentInstrumentsChangeRequestSSvpZ",
+                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0gH6ResultVGvpZ",
+                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0gH6ResultVGvpZ",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2051,14 +2121,28 @@
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
+                        "name": "RequestDescriptor",
+                        "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.InstrumentsChangeResult>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Checkout",
+                            "printedName": "ShopifyCheckoutProtocol.Checkout",
+                            "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "InstrumentsChangeResult",
+                            "printedName": "ShopifyCheckoutProtocol.InstrumentsChangeResult",
+                            "usr": "s:23ShopifyCheckoutProtocol23InstrumentsChangeResultV"
+                          }
+                        ],
+                        "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO31paymentInstrumentsChangeRequestSSvgZ",
-                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO31paymentInstrumentsChangeRequestSSvgZ",
+                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0gH6ResultVGvgZ",
+                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0gH6ResultVGvgZ",
                     "moduleName": "ShopifyCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2071,19 +2155,33 @@
               },
               {
                 "kind": "Var",
-                "name": "paymentCredentialRequest",
-                "printedName": "paymentCredentialRequest",
+                "name": "paymentCredential",
+                "printedName": "paymentCredential",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
+                    "name": "RequestDescriptor",
+                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.CredentialResult>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Checkout",
+                        "printedName": "ShopifyCheckoutProtocol.Checkout",
+                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CredentialResult",
+                        "printedName": "ShopifyCheckoutProtocol.CredentialResult",
+                        "usr": "s:23ShopifyCheckoutProtocol16CredentialResultV"
+                      }
+                    ],
+                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24paymentCredentialRequestSSvpZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24paymentCredentialRequestSSvpZ",
+                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0G6ResultVGvpZ",
+                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0G6ResultVGvpZ",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2100,14 +2198,28 @@
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
+                        "name": "RequestDescriptor",
+                        "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.CredentialResult>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Checkout",
+                            "printedName": "ShopifyCheckoutProtocol.Checkout",
+                            "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "CredentialResult",
+                            "printedName": "ShopifyCheckoutProtocol.CredentialResult",
+                            "usr": "s:23ShopifyCheckoutProtocol16CredentialResultV"
+                          }
+                        ],
+                        "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24paymentCredentialRequestSSvgZ",
-                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24paymentCredentialRequestSSvgZ",
+                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0G6ResultVGvgZ",
+                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0G6ResultVGvgZ",
                     "moduleName": "ShopifyCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2120,19 +2232,33 @@
               },
               {
                 "kind": "Var",
-                "name": "windowOpenRequest",
-                "printedName": "windowOpenRequest",
+                "name": "fulfillmentAddressChange",
+                "printedName": "fulfillmentAddressChange",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
+                    "name": "RequestDescriptor",
+                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.AddressChangeResult>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Checkout",
+                        "printedName": "ShopifyCheckoutProtocol.Checkout",
+                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "AddressChangeResult",
+                        "printedName": "ShopifyCheckoutProtocol.AddressChangeResult",
+                        "usr": "s:23ShopifyCheckoutProtocol19AddressChangeResultV"
+                      }
+                    ],
+                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO17windowOpenRequestSSvpZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO17windowOpenRequestSSvpZ",
+                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0gH6ResultVGvpZ",
+                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0gH6ResultVGvpZ",
                 "moduleName": "ShopifyCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2149,63 +2275,28 @@
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
+                        "name": "RequestDescriptor",
+                        "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.AddressChangeResult>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Checkout",
+                            "printedName": "ShopifyCheckoutProtocol.Checkout",
+                            "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "AddressChangeResult",
+                            "printedName": "ShopifyCheckoutProtocol.AddressChangeResult",
+                            "usr": "s:23ShopifyCheckoutProtocol19AddressChangeResultV"
+                          }
+                        ],
+                        "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO17windowOpenRequestSSvgZ",
-                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO17windowOpenRequestSSvgZ",
-                    "moduleName": "ShopifyCheckoutProtocol",
-                    "static": true,
-                    "implicit": true,
-                    "declAttributes": [
-                      "Transparent"
-                    ],
-                    "accessorKind": "get"
-                  }
-                ]
-              },
-              {
-                "kind": "Var",
-                "name": "fulfillmentAddressChangeRequest",
-                "printedName": "fulfillmentAddressChangeRequest",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Var",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO31fulfillmentAddressChangeRequestSSvpZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO31fulfillmentAddressChangeRequestSSvpZ",
-                "moduleName": "ShopifyCheckoutProtocol",
-                "static": true,
-                "declAttributes": [
-                  "HasInitialValue",
-                  "HasStorage"
-                ],
-                "isLet": true,
-                "hasStorage": true,
-                "accessors": [
-                  {
-                    "kind": "Accessor",
-                    "name": "Get",
-                    "printedName": "Get()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO31fulfillmentAddressChangeRequestSSvgZ",
-                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO31fulfillmentAddressChangeRequestSSvgZ",
+                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0gH6ResultVGvgZ",
+                    "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0gH6ResultVGvgZ",
                     "moduleName": "ShopifyCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2302,401 +2393,6 @@
                 "printedName": "Escapable",
                 "usr": "s:s9EscapableP",
                 "mangledName": "$ss9EscapableP"
-              }
-            ]
-          },
-          {
-            "kind": "Var",
-            "name": "ready",
-            "printedName": "ready",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "RequestDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.ReadyRequest, ShopifyCheckoutProtocol.ReadyResult>",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "ReadyRequest",
-                    "printedName": "ShopifyCheckoutProtocol.ReadyRequest",
-                    "usr": "s:23ShopifyCheckoutProtocol12ReadyRequestV"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "ReadyResult",
-                    "printedName": "ShopifyCheckoutProtocol.ReadyResult",
-                    "usr": "s:23ShopifyCheckoutProtocol11ReadyResultV"
-                  }
-                ],
-                "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5readyAA17RequestDescriptorVyAA05ReadyF0VAA0H6ResultVGvpZ",
-            "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5readyAA17RequestDescriptorVyAA05ReadyF0VAA0H6ResultVGvpZ",
-            "moduleName": "ShopifyCheckoutProtocol",
-            "static": true,
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "isFromExtension": true,
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "RequestDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.ReadyRequest, ShopifyCheckoutProtocol.ReadyResult>",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "ReadyRequest",
-                        "printedName": "ShopifyCheckoutProtocol.ReadyRequest",
-                        "usr": "s:23ShopifyCheckoutProtocol12ReadyRequestV"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "ReadyResult",
-                        "printedName": "ShopifyCheckoutProtocol.ReadyResult",
-                        "usr": "s:23ShopifyCheckoutProtocol11ReadyResultV"
-                      }
-                    ],
-                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O5readyAA17RequestDescriptorVyAA05ReadyF0VAA0H6ResultVGvgZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O5readyAA17RequestDescriptorVyAA05ReadyF0VAA0H6ResultVGvgZ",
-                "moduleName": "ShopifyCheckoutProtocol",
-                "static": true,
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "isFromExtension": true,
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "Var",
-            "name": "auth",
-            "printedName": "auth",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "RequestDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.AuthRequest, ShopifyCheckoutProtocol.AuthResult>",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "AuthRequest",
-                    "printedName": "ShopifyCheckoutProtocol.AuthRequest",
-                    "usr": "s:23ShopifyCheckoutProtocol11AuthRequestV"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "AuthResult",
-                    "printedName": "ShopifyCheckoutProtocol.AuthResult",
-                    "usr": "s:23ShopifyCheckoutProtocol10AuthResultV"
-                  }
-                ],
-                "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O4authAA17RequestDescriptorVyAA04AuthF0VAA0H6ResultVGvpZ",
-            "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O4authAA17RequestDescriptorVyAA04AuthF0VAA0H6ResultVGvpZ",
-            "moduleName": "ShopifyCheckoutProtocol",
-            "static": true,
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "isFromExtension": true,
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "RequestDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.AuthRequest, ShopifyCheckoutProtocol.AuthResult>",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "AuthRequest",
-                        "printedName": "ShopifyCheckoutProtocol.AuthRequest",
-                        "usr": "s:23ShopifyCheckoutProtocol11AuthRequestV"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "AuthResult",
-                        "printedName": "ShopifyCheckoutProtocol.AuthResult",
-                        "usr": "s:23ShopifyCheckoutProtocol10AuthResultV"
-                      }
-                    ],
-                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O4authAA17RequestDescriptorVyAA04AuthF0VAA0H6ResultVGvgZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O4authAA17RequestDescriptorVyAA04AuthF0VAA0H6ResultVGvgZ",
-                "moduleName": "ShopifyCheckoutProtocol",
-                "static": true,
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "isFromExtension": true,
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "Var",
-            "name": "paymentInstrumentsChange",
-            "printedName": "paymentInstrumentsChange",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "RequestDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.InstrumentsChangeResult>",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "InstrumentsChangeResult",
-                    "printedName": "ShopifyCheckoutProtocol.InstrumentsChangeResult",
-                    "usr": "s:23ShopifyCheckoutProtocol23InstrumentsChangeResultV"
-                  }
-                ],
-                "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvpZ",
-            "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvpZ",
-            "moduleName": "ShopifyCheckoutProtocol",
-            "static": true,
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "isFromExtension": true,
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "RequestDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.InstrumentsChangeResult>",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "InstrumentsChangeResult",
-                        "printedName": "ShopifyCheckoutProtocol.InstrumentsChangeResult",
-                        "usr": "s:23ShopifyCheckoutProtocol23InstrumentsChangeResultV"
-                      }
-                    ],
-                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvgZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvgZ",
-                "moduleName": "ShopifyCheckoutProtocol",
-                "static": true,
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "isFromExtension": true,
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "Var",
-            "name": "paymentCredential",
-            "printedName": "paymentCredential",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "RequestDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.CredentialResult>",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "CredentialResult",
-                    "printedName": "ShopifyCheckoutProtocol.CredentialResult",
-                    "usr": "s:23ShopifyCheckoutProtocol16CredentialResultV"
-                  }
-                ],
-                "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0F6ResultVGvpZ",
-            "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0F6ResultVGvpZ",
-            "moduleName": "ShopifyCheckoutProtocol",
-            "static": true,
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "isFromExtension": true,
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "RequestDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.CredentialResult>",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CredentialResult",
-                        "printedName": "ShopifyCheckoutProtocol.CredentialResult",
-                        "usr": "s:23ShopifyCheckoutProtocol16CredentialResultV"
-                      }
-                    ],
-                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0F6ResultVGvgZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0F6ResultVGvgZ",
-                "moduleName": "ShopifyCheckoutProtocol",
-                "static": true,
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "isFromExtension": true,
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "Var",
-            "name": "fulfillmentAddressChange",
-            "printedName": "fulfillmentAddressChange",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "RequestDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.AddressChangeResult>",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "AddressChangeResult",
-                    "printedName": "ShopifyCheckoutProtocol.AddressChangeResult",
-                    "usr": "s:23ShopifyCheckoutProtocol19AddressChangeResultV"
-                  }
-                ],
-                "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvpZ",
-            "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvpZ",
-            "moduleName": "ShopifyCheckoutProtocol",
-            "static": true,
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "isFromExtension": true,
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "RequestDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutProtocol.Checkout, ShopifyCheckoutProtocol.AddressChangeResult>",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "AddressChangeResult",
-                        "printedName": "ShopifyCheckoutProtocol.AddressChangeResult",
-                        "usr": "s:23ShopifyCheckoutProtocol19AddressChangeResultV"
-                      }
-                    ],
-                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvgZ",
-                "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvgZ",
-                "moduleName": "ShopifyCheckoutProtocol",
-                "static": true,
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "isFromExtension": true,
-                "accessorKind": "get"
               }
             ]
           },

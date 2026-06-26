@@ -183,22 +183,26 @@ export const MODEL_EXTRACTIONS = [
   },
 ];
 
+// Delegated requests whose request/response payloads are defined by the host
+// integration rather than this protocol. The spec models them, but the catalog
+// generates no descriptor or method constant for them — the host owns the
+// binding and its own method-name constant. Listed here so that a spec request
+// which is neither host-defined nor bound below fails loudly instead of
+// silently vanishing from the catalog.
+const HOST_DEFINED_REQUESTS = new Set(['ec.window.open_request']);
+
 // Per-request binding the spec cannot express: the Swift payload/result type
-// names and the decode strategy. `home` is `protocol` when the typed descriptor
-// is generated into the protocol package, or `kit` when only the method string
-// is generated and the descriptor is hand-authored in the kit (`window.open`,
-// whose result encoding is host policy).
+// names and the decode strategy.
 //
 // `decode`:
 //   - `whole`          decode the params object into `payload` (ready/auth).
 //   - `checkoutUnwrap` decode `JSONRPCCheckoutParams.checkout` -> `Checkout`.
 const REQUEST_BINDINGS = new Map([
-  ['ec.ready', {payload: 'ReadyRequest', result: 'ReadyResult', decode: 'whole', home: 'protocol'}],
-  ['ec.auth', {payload: 'AuthRequest', result: 'AuthResult', decode: 'whole', home: 'protocol'}],
-  ['ec.payment.instruments_change_request', {payload: 'Checkout', result: 'InstrumentsChangeResult', decode: 'checkoutUnwrap', home: 'protocol'}],
-  ['ec.payment.credential_request', {payload: 'Checkout', result: 'CredentialResult', decode: 'checkoutUnwrap', home: 'protocol'}],
-  ['ec.window.open_request', {payload: 'WindowOpenRequest', result: 'WindowOpenResult', decode: 'whole', home: 'kit'}],
-  ['ec.fulfillment.address_change_request', {payload: 'Checkout', result: 'AddressChangeResult', decode: 'checkoutUnwrap', home: 'protocol'}],
+  ['ec.ready', {payload: 'ReadyRequest', result: 'ReadyResult', decode: 'whole'}],
+  ['ec.auth', {payload: 'AuthRequest', result: 'AuthResult', decode: 'whole'}],
+  ['ec.payment.instruments_change_request', {payload: 'Checkout', result: 'InstrumentsChangeResult', decode: 'checkoutUnwrap'}],
+  ['ec.payment.credential_request', {payload: 'Checkout', result: 'CredentialResult', decode: 'checkoutUnwrap'}],
+  ['ec.fulfillment.address_change_request', {payload: 'Checkout', result: 'AddressChangeResult', decode: 'checkoutUnwrap'}],
 ]);
 
 function buildCatalog() {
@@ -215,6 +219,9 @@ function buildCatalog() {
     const identifier = methodNameToIdentifier(method.name);
 
     if (method.result != null) {
+      if (HOST_DEFINED_REQUESTS.has(method.name)) {
+        continue;
+      }
       const binding = REQUEST_BINDINGS.get(method.name);
       if (binding === undefined) {
         throw new Error(`No request binding for ${method.name}`);
@@ -228,7 +235,6 @@ function buildCatalog() {
         payload: binding.payload,
         result: binding.result,
         decode: binding.decode,
-        home: binding.home,
         delegation,
       });
     } else {
@@ -251,9 +257,9 @@ function buildCatalog() {
 
 const catalog = buildCatalog();
 
-// Ordered catalog of every `ec.*` method, in spec order. Notifications carry a
-// `payload`; requests additionally carry `result`, `decode`, `home`,
-// `delegation`, and `descriptorIdentifier`.
+// Ordered catalog of every `ec.*` method this protocol owns, in spec order
+// (host-defined requests excluded). Notifications carry a `payload`; requests
+// additionally carry `result`, `decode`, `delegation`, and `descriptorIdentifier`.
 export const EC_METHODS = catalog.methods;
 
 // Delegations declared by the service in `x-delegations`, pre-mapped to Swift

@@ -38,7 +38,7 @@ private enum TestDelegationResult: ResponsePayload {
 }
 
 private let windowOpenDescriptor = RequestDescriptor<TestURLPayload, TestDelegationResult>(
-    method: EmbeddedCheckoutProtocol.Event.windowOpenRequest,
+    method: "ec.window.open_request",
     delegation: "window.open",
     decode: { params in
         try? JSONDecoder().decode(TestURLPayload.self, from: params)
@@ -204,7 +204,7 @@ struct ClientTests {
 
     @Test @MainActor func readyRequestDispatchesToRegisteredHandler() async throws {
         let response = try await EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.ready) { _ in
+            .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
                 ReadyResult(
                     checkout: nil,
                     credential: nil,
@@ -234,7 +234,7 @@ struct ClientTests {
 
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
-                .on(EmbeddedCheckoutProtocol.ready) { _ in
+                .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
                     ReadyResult(
                         checkout: nil,
                         credential: nil,
@@ -260,7 +260,7 @@ struct ClientTests {
 
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
-                .on(EmbeddedCheckoutProtocol.auth) { _ in
+                .on(EmbeddedCheckoutProtocol.Event.auth) { _ in
                     AuthResult(
                         credential: "tok-xyz",
                         ucp: .success(),
@@ -281,7 +281,7 @@ struct ClientTests {
         var receivedCheckoutID: String?
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
-                .on(EmbeddedCheckoutProtocol.paymentCredential) { checkout in
+                .on(EmbeddedCheckoutProtocol.Event.paymentCredential) { checkout in
                     receivedCheckoutID = checkout.id
                     return CredentialResult(
                         checkout: nil,
@@ -307,7 +307,7 @@ struct ClientTests {
 
     @Test @MainActor func delegationsReflectsOnlyDelegationCarryingHandlers() {
         let client = EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.ready) { _ in
+            .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
                 ReadyResult(
                     checkout: nil,
                     credential: nil,
