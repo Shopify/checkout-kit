@@ -24,19 +24,12 @@ Use a [semver](https://semver.org/) string. Examples:
 - `4.0.0` — stable
 
 `--no-git-tag-version` is intentional — the tag is created by the GitHub
-Release UI in step 3, not by `pnpm version`.
+Release UI in step 2, not by `pnpm version`.
 
 Open a PR titled like `chore(web): bump to 4.0.0-alpha.2`. Get it reviewed
 and merged into `main`. Wait for CI to be green on `main`.
 
-### 2. (Optional) Add a CHANGELOG entry
-
-This package currently uses GitHub Releases as its canonical changelog —
-release notes appear at <https://github.com/Shopify/checkout-kit/releases>
-and on the package's npm page via the `homepage` field. If your team adopts
-a `CHANGELOG.md` later, add the entry in the same PR as the version bump.
-
-### 3. Draft a GitHub Release
+### 2. Draft a GitHub Release
 
 Go to <https://github.com/Shopify/checkout-kit/releases/new>:
 
@@ -51,7 +44,7 @@ Go to <https://github.com/Shopify/checkout-kit/releases/new>:
 
 Click _Publish release_.
 
-### 4. Approve the publish
+### 3. Approve the publish
 
 The release event triggers `.github/workflows/web-publish.yml`. The job uses
 the `npm-web` environment, which requires a maintainer to approve before the
@@ -60,7 +53,7 @@ publish actually runs.
 You'll see a banner on the workflow run page: _Review pending deployments_.
 Click through and approve.
 
-### 5. Verify
+### 4. Verify
 
 Once approved, the workflow:
 

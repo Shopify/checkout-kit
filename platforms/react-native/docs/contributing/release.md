@@ -8,9 +8,8 @@ following steps:
 
 1. Bump the version in `modules/@shopify/checkout-kit-react-native/package.json` to an
    appropriate value.
-2. Add a [Changelog](./CHANGELOG.md) entry.
-3. Merge your PR to `main`.
-4. Run the [Release package workflow](/actions/workflows/release.yml).
+2. Merge your PR to `main`.
+3. Run the [Release package workflow](/actions/workflows/release.yml).
 
 Supported release versions are:
 
@@ -24,9 +23,9 @@ creates the correctly namespaced `react-native/` tag (for example,
 check; it must match the package version exactly.
 
 Select `Dry run` on the first run to review the planned tag without creating a
-release. Rerun with `Draft release` to create a draft GitHub Release for human
-review; publish the draft release when ready to start the React Native publish
-workflow.
+release. Rerun with `Draft release` to create a draft GitHub Release with
+generated release notes for human review; publish the draft release when ready to
+start the React Native publish workflow.
 
 The publish workflow cleans the module folder, builds a new version, runs
 `pnpm pack --dry-run` to verify the contents, and publishes to the NPM registry.

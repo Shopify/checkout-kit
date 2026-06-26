@@ -117,8 +117,6 @@ Open a pull request with the following changes:
 1. Bump the package version in `platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`.
 2. Bump the metadata version in `platforms/swift/Sources/ShopifyCheckoutKit/MetaData.swift`.
 3. Bump the podspec version in `ShopifyCheckoutKit.podspec` (at the repo root).
-4. Add an entry to the top of `platforms/swift/CHANGELOG.md`.
-5. If the React Native package should consume this Swift SDK release, update `checkoutKit.nativeSdkVersions.ios` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the same version.
 
 All Swift version declarations must match exactly. Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
@@ -127,7 +125,7 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 1. Select `iOS` as the platform.
 2. Enter the expected version. The workflow reads the SDK version from the checked-in files and fails if the typed version does not match.
 3. Select `Dry run` first to review the release plan without creating a release.
-4. Rerun with `Draft release` to create a draft GitHub Release with the bare semver tag (e.g. `3.8.1`) for human review.
+4. Rerun with `Draft release` to create a draft GitHub Release with generated release notes and the bare semver tag (e.g. `4.0.1`) for human review.
 5. Publish the draft release when ready. Publishing the draft kicks off the [Swift publish workflow](../../actions/workflows/swift-publish.yml), which publishes the new version to CocoaPods.
 
 ---
@@ -187,9 +185,7 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 Open a pull request with the following changes:
 
 1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
-2. Add an entry to the top of `platforms/android/CHANGELOG.md`.
-3. Update `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the same lowercase SemVer.
-4. If the Android Kit release depends on a new protocol version, release `embeddedCheckoutProtocolAndroid` first.
+2. If the Android Kit release depends on a new protocol version, release `embeddedCheckoutProtocolAndroid` first.
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
@@ -198,7 +194,7 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 1. Select `Android` as the platform.
 2. Enter the expected version. The workflow reads the SDK version from `platforms/android/gradle/libs.versions.toml` and fails if the typed version does not match.
 3. Select `Dry run` first to review the release plan without creating a release.
-4. Rerun with `Draft release` to create a draft GitHub Release with the `android/`-prefixed tag (e.g. `android/3.0.1`) for human review.
+4. Rerun with `Draft release` to create a draft GitHub Release with generated release notes and the `android/`-prefixed tag (e.g. `android/4.0.1`) for human review.
 5. Publish the draft release when ready. Publishing the draft kicks off the [Android publish workflow](../../actions/workflows/android-publish.yml). The workflow verifies that `com.shopify:embedded-checkout-protocol` is already available on Maven Central before publishing `com.shopify:checkout-kit`. **A manual approval by a maintainer is required before publication to Maven Central.**
 
 ---
@@ -218,7 +214,9 @@ The React Native package reads its published native SDK dependency versions from
 }
 ```
 
-When updating the Swift or Android SDK version that React Native should consume, update the matching `checkoutKit.nativeSdkVersions` entry in this package file. These values drive `RNShopifyCheckoutKit.podspec` for iOS and the module/sample Gradle dependencies for Android, so they must stay aligned with the published native SDK versions used by the React Native release. Android CI uses the published Maven artifact by default, so `nativeSdkVersions.android` must stay on the published `com.shopify:checkout-kit` lowercase SemVer, not the Kotlin protocol calver.
+When updating the Swift or Android SDK version that React Native should consume, update the matching `checkoutKit.nativeSdkVersions` entry in this package file after the native SDK version has been published. These values drive `RNShopifyCheckoutKit.podspec` for iOS and the module/sample Gradle dependencies for Android, so they must stay aligned with the published native SDK versions used by the React Native release. Android CI uses the published Maven artifact by default, so `nativeSdkVersions.android` must reference a `com.shopify:checkout-kit` version that is already available from Maven Central.
+
+For coordinated native and React Native releases, publish Android and Swift first, then update these React Native native SDK version pointers and publish React Native.
 
 ### Public API surface
 
@@ -237,7 +235,7 @@ If you did *not* intend to change public API and `api:check` is failing, the dif
 Open a pull request with the following changes:
 
 1. Bump the `version` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`.
-2. Add an entry to the React Native changelog.
+2. Update `checkoutKit.nativeSdkVersions.ios` and `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the published native SDK versions React Native should consume.
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
@@ -246,5 +244,5 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 1. Select `React Native` as the platform.
 2. Enter the expected version. The workflow reads the SDK version from `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` and fails if the typed version does not match.
 3. Select `Dry run` first to review the release plan without creating a release.
-4. From the dry-run job summary, copy the generated `gh workflow run` command to create a `Draft release` without retyping the validated version. Running it creates a draft GitHub Release with the `react-native/`-prefixed tag (e.g. `react-native/4.0.1`) for human review.
+4. From the dry-run job summary, copy the generated `gh workflow run` command to create a `Draft release` without retyping the validated version. Running it creates a draft GitHub Release with generated release notes and the `react-native/`-prefixed tag (e.g. `react-native/4.0.1`) for human review.
 5. Publish the draft release when ready. Publishing the draft kicks off the [React Native publish workflow](../../actions/workflows/rn-publish.yml), which publishes `@shopify/checkout-kit-react-native` to npm.
