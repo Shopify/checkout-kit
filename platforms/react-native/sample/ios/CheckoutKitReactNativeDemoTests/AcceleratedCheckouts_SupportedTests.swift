@@ -94,7 +94,7 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
         guard let config = AcceleratedCheckoutConfiguration.shared.configuration else {
           return XCTFail("configuration missing")
         }
-        XCTAssertEqual(config.customer?.copy().customerAccessToken, token)
+        XCTAssertEqual(config.customer?.customerAccessToken, token)
     }
 
     func testConfigureAcceleratedCheckoutsWithNilCustomerAccessToken() throws {
@@ -102,7 +102,7 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
         guard let config = AcceleratedCheckoutConfiguration.shared.configuration else {
           return XCTFail("configuration missing")
         }
-        XCTAssertNil(config.customer?.copy().customerAccessToken)
+        XCTAssertNil(config.customer?.customerAccessToken)
     }
 
     func testButtonsViewHeightZeroWhenWalletsExplicitEmpty() throws {
@@ -323,12 +323,12 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
     }
 
     func testApplePayLabelMapping_knownAndUnknownKeys() throws {
-        XCTAssertTrue(PayWithApplePayButtonLabel.from("buy") == .buy)
-        XCTAssertTrue(PayWithApplePayButtonLabel.from("checkout") == .checkout)
-        XCTAssertTrue(PayWithApplePayButtonLabel.from("continue") == .continue)
-        XCTAssertTrue(PayWithApplePayButtonLabel.from("plain") == .plain)
-        XCTAssertTrue(PayWithApplePayButtonLabel.from("unknown") == .plain)
-        XCTAssertTrue(PayWithApplePayButtonLabel.from("unknown", fallback: .buy) == .buy)
+        XCTAssertTrue(PKPaymentButtonType.from("buy") == .buy)
+        XCTAssertTrue(PKPaymentButtonType.from("checkout") == .checkout)
+        XCTAssertTrue(PKPaymentButtonType.from("continue") == .continue)
+        XCTAssertTrue(PKPaymentButtonType.from("plain") == .plain)
+        XCTAssertTrue(PKPaymentButtonType.from("unknown") == .plain)
+        XCTAssertTrue(PKPaymentButtonType.from("unknown", fallback: .buy) == .buy)
     }
 
     func testConfigureAcceleratedCheckoutsReturnsFalseForInvalidApplePayContactField() throws {

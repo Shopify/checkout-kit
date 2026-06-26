@@ -37,7 +37,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   @Override
   protected Map<String, Object> getTypedExportedConstants() {
     final Map<String, Object> constants = new HashMap<>();
-    constants.put("version", ShopifyCheckoutKit.version);
+    constants.put("version", ShopifyCheckoutKit.VERSION);
     // Exposed so the JS layer can verify the SDK lifecycle event set
     // it was built against matches what this native module emits.
     constants.put("dispatchEventTypes", DispatchEventTypes.ALL);
