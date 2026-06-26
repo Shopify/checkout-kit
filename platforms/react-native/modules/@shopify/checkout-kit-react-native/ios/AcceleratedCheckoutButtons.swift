@@ -207,18 +207,18 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         updateView()
     }
 
-    private func attachModifiers(to buttons: AcceleratedCheckoutButtons, wallets: [Wallet]?, applePayLabel: PayWithApplePayButtonLabel?, applePayStyle: PayWithApplePayButtonStyle) -> AcceleratedCheckoutButtons {
+    private func attachModifiers(to buttons: AcceleratedCheckoutButtons, wallets: [Wallet]?, applePayButtonType: PKPaymentButtonType?, applePayButtonStyle: PKPaymentButtonStyle) -> AcceleratedCheckoutButtons {
         var modifiedButtons = buttons
 
         if let wallets {
             modifiedButtons = modifiedButtons.wallets(wallets)
         }
 
-        if let applePayLabel {
-            modifiedButtons = modifiedButtons.applePayLabel(applePayLabel)
+        if let applePayButtonType {
+            modifiedButtons = modifiedButtons.applePayButtonType(applePayButtonType)
         }
 
-        modifiedButtons = modifiedButtons.applePayStyle(applePayStyle)
+        modifiedButtons = modifiedButtons.applePayButtonStyle(applePayButtonStyle)
 
         if let cornerRadius {
             modifiedButtons = modifiedButtons.cornerRadius(CGFloat(cornerRadius.doubleValue))
@@ -270,7 +270,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         }
 
         // Attach modifiers (wallets, applePayLabel, applePayStyle, cornerRadius)
-        buttons = attachModifiers(to: buttons, wallets: shopifyWallets, applePayLabel: PayWithApplePayButtonLabel.from(applePayLabel), applePayStyle: PayWithApplePayButtonStyle.from(applePayStyle))
+        buttons = attachModifiers(to: buttons, wallets: shopifyWallets, applePayButtonType: PKPaymentButtonType.from(applePayLabel), applePayButtonStyle: PKPaymentButtonStyle.from(applePayStyle))
         // Attach event handlers
         buttons = attachEventListeners(to: buttons)
 
@@ -288,9 +288,9 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
 
         // Attach config (and Apple Pay config if available)
         if let applePayConfig = AcceleratedCheckoutConfiguration.shared.applePayConfiguration {
-            view = AnyView(buttons.environmentObject(config).environmentObject(applePayConfig).environment(\.colorScheme, colorScheme))
+            view = AnyView(buttons.environment(\.shopifyAcceleratedCheckoutsConfiguration, config).environment(\.shopifyApplePayConfiguration, applePayConfig).environment(\.colorScheme, colorScheme))
         } else {
-            view = AnyView(buttons.environmentObject(config).environment(\.colorScheme, colorScheme))
+            view = AnyView(buttons.environment(\.shopifyAcceleratedCheckoutsConfiguration, config).environment(\.colorScheme, colorScheme))
         }
 
         if let hostingController {

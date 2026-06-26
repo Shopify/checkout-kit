@@ -1,13 +1,11 @@
-import _PassKit_SwiftUI
 import Foundation
 import PassKit
-import SwiftUI
 
 // MARK: - Apple Pay Button
 
 @available(iOS 16.0, *)
-extension PayWithApplePayButtonLabel {
-    static func from(_ string: String?, fallback: PayWithApplePayButtonLabel = .plain) -> PayWithApplePayButtonLabel {
+extension PKPaymentButtonType {
+    static func from(_ string: String?, fallback: PKPaymentButtonType = .plain) -> PKPaymentButtonType {
         guard let string, let value = map[string] else {
             return fallback
         }
@@ -15,7 +13,7 @@ extension PayWithApplePayButtonLabel {
         return value
     }
 
-    private static let map: [String: PayWithApplePayButtonLabel] = [
+    private static let map: [String: PKPaymentButtonType] = [
         "addMoney": .addMoney,
         "book": .book,
         "buy": .buy,
@@ -39,8 +37,8 @@ extension PayWithApplePayButtonLabel {
 // MARK: - Apple Pay Button Style
 
 @available(iOS 16.0, *)
-extension PayWithApplePayButtonStyle {
-    static func from(_ string: String?, fallback: PayWithApplePayButtonStyle = .automatic) -> PayWithApplePayButtonStyle {
+extension PKPaymentButtonStyle {
+    static func from(_ string: String?, fallback: PKPaymentButtonStyle = .automatic) -> PKPaymentButtonStyle {
         guard let string, let value = map[string] else {
             return fallback
         }
@@ -48,7 +46,7 @@ extension PayWithApplePayButtonStyle {
         return value
     }
 
-    private static let map: [String: PayWithApplePayButtonStyle] = [
+    private static let map: [String: PKPaymentButtonStyle] = [
         "automatic": .automatic,
         "black": .black,
         "white": .white,
