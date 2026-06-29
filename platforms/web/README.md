@@ -34,6 +34,7 @@ Check out our blog to
 - [Configuration](#configuration)
   - [`src`](#src)
   - [`presentation`](#presentation)
+  - [Authentication](#authentication)
   - [`target`](#target)
   - [`debug`](#debug)
   - [Popup dimensions](#popup-dimensions)
@@ -364,6 +365,12 @@ opens a popup, but prefer `presentation="popup"` for new code:
 />
 ```
 
+### Authentication
+
+Authentication for embedded checkout is not available in Checkout Kit yet.
+[Authenticated checkout](https://ucp.dev/latest/specification/embedded-checkout/#authentication)
+via UCP flows will be documented once they are supported.
+
 ### `target`
 
 The browser context target used when `presentation="auto"`. Defaults to
@@ -439,7 +446,7 @@ exactly the fields relevant to that moment.
 | `ec.complete`          | `{checkout, order}`     | The buyer completed the order successfully.                                |
 | `ec.close`             | _(none)_                | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
 | `ec.error`             | `{error}`               | Session-level fatal error — tear down the embedded context.                |
-| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).       |
+| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).      |
 | `ec.totals.change`     | `{checkout, totals}`    | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
 | `ec.messages.change`   | `{checkout, messages}`  | Checkout-level warnings/errors/info shown inside the checkout changed.     |
 

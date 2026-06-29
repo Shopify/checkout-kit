@@ -150,11 +150,19 @@ export interface FulfillmentAvailableMethod {
   readonly [key: string]: unknown;
 }
 
+export interface EcAuthRequest {
+  readonly type?: string;
+  readonly [key: string]: unknown;
+}
+
 /** `ec.ready` request params (handshake). */
 export interface EcReadyParams {
   readonly delegate: readonly string[];
+  readonly auth?: EcAuthRequest;
   readonly [key: string]: unknown;
 }
+
+export interface EcAuthParams extends EcAuthRequest {}
 
 /** Populated on completed checkout (`checkout.order`). */
 export interface OrderConfirmation {
