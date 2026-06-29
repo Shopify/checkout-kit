@@ -21,7 +21,7 @@ fi
 # List all devices and filter
 if [ -n "$SEARCH" ]; then
   # Create a search string with spaces to match exact model (case insensitive)
-  DEVICES=$(xcrun simctl list devices | grep -i "$DEVICE_TYPE")
+  DEVICES=$(xcrun simctl list devices | grep -v -i "unavailable" | grep -i "$DEVICE_TYPE")
   
   # Use grep to find lines containing all search terms (case insensitive)
   for term in $SEARCH; do
@@ -32,7 +32,7 @@ if [ -n "$SEARCH" ]; then
   DEVICE_ID=$(echo "$DEVICES" | head -1 | sed -E 's/.*\(([A-Z0-9-]+)\).*/\1/')
 else
   # If no model specified, get the first device of the type (case insensitive)
-  DEVICE_ID=$(xcrun simctl list devices | grep -i "$DEVICE_TYPE" | head -1 | sed -E 's/.*\(([A-Z0-9-]+)\).*/\1/')
+  DEVICE_ID=$(xcrun simctl list devices | grep -v -i "unavailable" | grep -i "$DEVICE_TYPE" | head -1 | sed -E 's/.*\(([A-Z0-9-]+)\).*/\1/')
 fi
 
 # Check if identifier was found

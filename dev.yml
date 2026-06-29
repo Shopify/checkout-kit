@@ -172,6 +172,10 @@ commands:
             desc: Build all sample applications
             run: cd platforms/android/samples/MobileBuyIntegration && ./gradlew build
 
+      start:
+        desc: Build the android sample app and install it to the booted emulator
+        run: cd platforms/android/samples/CheckoutKitAndroidDemo && ./gradlew installDebug
+
       test:
         desc: Run all tests with clean build
         run: cd platforms/android && ./gradlew clean test --console=plain
@@ -284,6 +288,23 @@ commands:
           samples:
             desc: Build all sample applications to verify integration
             run: cd platforms/swift && ./Scripts/build_samples
+
+      start:
+        desc: Build the swift sample app for the booted simulator (preferably)
+        run: |
+          set -e
+          cd platforms/swift
+          ./Scripts/generate_xcode_projects
+          # Automatically detect if a booted simulator exists, otherwise fallback to default
+          BOOTED_ID=$(xcrun simctl list devices booted | grep -E 'iPhone|iPad|Air' | sed -n -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/p' | head -n1 || true)
+          if [ -n "$BOOTED_ID" ]; then
+            export CURRENT_SIMULATOR_UUID="$BOOTED_ID"
+            echo "Using booted simulator: $BOOTED_ID"
+          else
+            echo "No booted simulator found. Falling back to default simulator."
+          fi
+          cd Samples
+          ../Scripts/xcode_run build CheckoutKitSwiftDemo
       test:
         desc: |
           `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package.
@@ -474,9 +495,9 @@ commands:
           fi
           echo "Cleaned root, module and sample workspaces"
 
-      server:
+      start:
         desc: Start Metro development server
-        aliases: [s]
+        aliases: [s, server]
         run: cd platforms/react-native && pnpm sample start --reset-cache
 
       ios:
@@ -603,9 +624,13 @@ commands:
         desc: Remove dist and coverage directories
         run: cd platforms/web && pnpm clean
 
-      sample:
+      start:
         desc: Start the sample app dev server
         aliases: [s]
+        run: cd platforms/web && pnpm sample
+
+      sample:
+        desc: Start the sample app dev server
         run: cd platforms/web && pnpm sample
         subcommands:
           build:

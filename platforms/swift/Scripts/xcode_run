@@ -22,9 +22,19 @@ fi
 if [[ -n $CURRENT_SIMULATOR_UUID ]]; then
     dest="id=$CURRENT_SIMULATOR_UUID"
 else
-    # Get a valid iPhone simulator ID using get_device_id.sh
-    DEVICE_ID=$("$SCRIPT_DIR/get_device_id" "iPhone 16")
-    dest="id=$DEVICE_ID"
+    # Prefer a currently booted iOS simulator (iPhone, iPad, Air, etc.)
+    BOOTED_ID=$(xcrun simctl list devices booted | grep -v -i "unavailable" | grep -E 'iPhone|iPad|Air' | sed -n -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/p' | head -n1 || true)
+    if [[ -n "$BOOTED_ID" ]]; then
+        dest="id=$BOOTED_ID"
+    else
+        # Fallback to get_device_id
+        DEVICE_ID=$("$SCRIPT_DIR/get_device_id" "iPhone 16" 2>/dev/null || "$SCRIPT_DIR/get_device_id" "iPhone" 2>/dev/null || true)
+        if [[ -n "$DEVICE_ID" ]]; then
+            dest="id=$DEVICE_ID"
+        else
+            dest="platform=iOS Simulator,name=iPhone 15 Pro"
+        fi
+    fi
 fi
 
 xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destination \"$dest\" -skipPackagePluginValidation -disableAutomaticPackageResolution"
