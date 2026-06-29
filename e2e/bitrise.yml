@@ -9,7 +9,6 @@ meta:
 
 app:
   envs:
-    - E2E_STRICT: "false"
     - E2E_BROWSERSTACK_API_RETRIES: "1"
     - E2E_BROWSERSTACK_TIMEOUT_SECONDS: "1800"
     - E2E_BROWSERSTACK_POLL_SECONDS: "30"
@@ -17,6 +16,11 @@ app:
 tools:
   ruby: 3.3.6
   nodejs: 22.14.0
+
+trigger_map:
+  - pull_request_source_branch: "*"
+    draft_pull_request_enabled: false
+    pipeline: e2e
 
 pipelines:
   e2e:
@@ -219,6 +223,7 @@ workflows:
                   --tests-zip "$E2E_TESTS_ZIP" \
                   --output-dir "$results_dir"
       - deploy-to-bitrise-io@2:
+          is_always_run: true
           inputs:
             - pipeline_intermediate_files: |-
                 $BITRISE_DEPLOY_DIR/e2e/results:E2E_BROWSERSTACK_RESULTS_DIR
