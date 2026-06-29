@@ -16,31 +16,95 @@ class BrowserStackRunExecutor
   API_HOST = "api-cloud.browserstack.com"
   TERMINAL_STATUSES = %w[passed failed error timedout stopped done].freeze
 
+  def self.failure_result(context, error)
+    context.merge(
+      "status" => "error",
+      "passed" => false,
+      "failed_tests" => [],
+      "error" => error.message,
+      "error_class" => error.class.name
+    )
+  end
+
+  def self.record_failure!(error, results_dir:, identifier:, context: {})
+    warn "Recording failure for #{identifier}: #{error.class}: #{error.message}"
+    warn error.backtrace.join("\n") if error.backtrace
+    FileUtils.mkdir_p(results_dir)
+    File.write(File.join(results_dir, "result.json"), JSON.pretty_generate(failure_result(context, error)))
+  end
+
+  def self.build_options(argv, env: ENV)
+    cli = parse_cli_options(argv)
+    {
+      run_plan_path: cli[:run_plan_path] || env["E2E_BROWSERSTACK_RUN_PLAN_JSON"] || "browserstack-run-plan.json",
+      run_index: resolve_run_index(cli, env),
+      tests_zip: resolve_tests_zip(cli, env),
+      output_dir: cli[:output_dir] || env["E2E_BROWSERSTACK_RESULTS_DIR"] || File.join(Dir.pwd, "e2e-results")
+    }
+  end
+
+  def self.parse_cli_options(argv)
+    cli = {}
+    OptionParser.new do |opts|
+      opts.on("--run-plan PATH") { |path| cli[:run_plan_path] = path }
+      opts.on("--index INDEX", Integer) { |index| cli[:run_index] = index }
+      opts.on("--tests-zip PATH") { |path| cli[:tests_zip] = path }
+      opts.on("--output-dir PATH") { |path| cli[:output_dir] = path }
+    end.parse!(argv)
+    cli
+  end
+
+  def self.resolve_run_index(cli, env)
+    return cli[:run_index] if cli.key?(:run_index)
+
+    raw = env["BITRISE_IO_PARALLEL_INDEX"]
+    raise ArgumentError, "run_index is required: pass --index or set BITRISE_IO_PARALLEL_INDEX" if raw.nil? || raw.strip.empty?
+
+    Integer(raw)
+  end
+
+  def self.resolve_tests_zip(cli, env)
+    value = cli[:tests_zip] || env["E2E_TESTS_ZIP"]
+    raise ArgumentError, "tests_zip is required: pass --tests-zip or set E2E_TESTS_ZIP" if value.nil? || value.strip.empty?
+
+    value
+  end
+
   def initialize(options)
     @options = options
     @username = ENV.fetch("BROWSERSTACK_USERNAME")
     @access_key = ENV.fetch("BROWSERSTACK_ACCESS_KEY")
-    @client = JsonHttpClient.new(host: API_HOST, error_label: "BrowserStack") do |request|
+    @client = JsonHttpClient.new(
+      host: API_HOST,
+      error_label: "BrowserStack",
+      retries: ENV.fetch("E2E_BROWSERSTACK_API_RETRIES", "1").to_i,
+      retryable: ->(response) { response.code.to_i == 429 || response.code.to_i >= 500 }
+    ) do |request|
       request.basic_auth(@username, @access_key)
     end
   end
 
   def run
     FileUtils.mkdir_p(output_dir)
-    run = run_plan.fetch(run_index)
-    app_path = ENV.fetch(run.fetch("artifact_env"))
-    device = resolve_device(run)
-    app = upload_file("/app-automate/maestro/v2/app", app_path, custom_id(run, "app"))
-    suite = upload_file("/app-automate/maestro/v2/test-suite", tests_zip, custom_id(run, "suite"))
-    build = start_build(run, app.fetch("app_url"), suite.fetch("test_suite_url"), device.fetch("browserstack_device"))
-    build_status = poll_build(build.fetch("build_id"))
+    @run = run_plan.fetch(run_index)
+    app_path = ENV.fetch(@run.fetch("artifact_env"))
+    @device = resolve_device(@run)
+    @app = upload_file("/app-automate/maestro/v2/app", app_path, custom_id(@run, "app"))
+    @suite = upload_file("/app-automate/maestro/v2/test-suite", tests_zip, custom_id(@run, "suite"))
+    @build = start_build(@run, @app.fetch("app_url"), @suite.fetch("test_suite_url"), @device.fetch("browserstack_device"))
+    build_status = poll_build(@build.fetch("build_id"))
     sessions = fetch_sessions(build_status)
-    result = normalize_result(run, device, app, suite, build, build_status, sessions)
+    result = normalize_result(@run, @device, @app, @suite, @build, build_status, sessions)
     write_json("result.json", result)
-    exit(result.fetch("passed") ? 0 : 1)
+  rescue StandardError => error
+    self.class.record_failure!(error, results_dir: output_dir, identifier: failure_identifier, context: failure_context)
   end
 
   private
+
+  def failure_identifier
+    (@run && @run["id"]) || "run #{run_index}"
+  end
 
   def resolve_device(run)
     override = ENV["E2E_DEVICE_OVERRIDE"] || ENV["E2E_#{run.fetch("platform").upcase}_DEVICE_OVERRIDE"]
@@ -90,10 +154,22 @@ class BrowserStackRunExecutor
       response = @client.get("/app-automate/maestro/v2/builds/#{build_id}")
       write_json("build-status.json", response)
       return response if TERMINAL_STATUSES.include?(response.fetch("status").to_s.downcase)
-      raise "BrowserStack build timed out: #{build_id}" if Time.now >= deadline
+      if Time.now >= deadline
+        stop_build(build_id)
+        raise "BrowserStack build timed out: #{build_id}"
+      end
 
       sleep ENV.fetch("E2E_BROWSERSTACK_POLL_SECONDS", "30").to_i
     end
+  end
+
+  # BrowserStack's Maestro stop endpoint omits the "/v2/" segment that the
+  # build-status endpoint uses; this asymmetry is intentional per BrowserStack.
+  # https://www.browserstack.com/docs/app-automate/api-reference/maestro/builds
+  def stop_build(build_id)
+    @client.post_json("/app-automate/maestro/builds/#{build_id}/stop", {})
+  rescue StandardError => error
+    warn "Unable to stop BrowserStack build #{build_id}: #{error.message}"
   end
 
   def fetch_sessions(build_status)
@@ -130,6 +206,26 @@ class BrowserStackRunExecutor
       "status" => status,
       "passed" => status == "passed" && failed_tests.empty?,
       "failed_tests" => failed_tests
+    }
+  end
+
+  def failure_context
+    run = @run || {}
+    device = @device || {}
+    {
+      "id" => run["id"],
+      "status_context" => run["status_context"],
+      "platform" => run["platform"],
+      "target" => run["target"],
+      "os_version_tag" => run["os_version_tag"],
+      "execute" => run["execute"],
+      "device_selector" => run["device_selector"],
+      "resolved_device" => device["resolved_device"] || run["device_selector"],
+      "resolved_os_version" => device["resolved_os_version"],
+      "browserstack_device" => device["browserstack_device"],
+      "app_url" => @app && @app["app_url"],
+      "test_suite_url" => @suite && @suite["test_suite_url"],
+      "build_id" => @build && @build["build_id"]
     }
   end
 
@@ -175,18 +271,13 @@ class BrowserStackRunExecutor
   end
 end
 
-options = {
-  run_plan_path: ENV.fetch("E2E_BROWSERSTACK_RUN_PLAN_JSON", "browserstack-run-plan.json"),
-  run_index: Integer(ENV.fetch("BITRISE_IO_PARALLEL_INDEX")),
-  tests_zip: ENV.fetch("E2E_TESTS_ZIP"),
-  output_dir: ENV.fetch("E2E_BROWSERSTACK_RESULTS_DIR", File.join(Dir.pwd, "e2e-results"))
-}
-
-OptionParser.new do |opts|
-  opts.on("--run-plan PATH") { |path| options[:run_plan_path] = path }
-  opts.on("--index INDEX", Integer) { |index| options[:run_index] = index }
-  opts.on("--tests-zip PATH") { |path| options[:tests_zip] = path }
-  opts.on("--output-dir PATH") { |path| options[:output_dir] = path }
-end.parse!
-
-BrowserStackRunExecutor.new(options).run
+if $PROGRAM_NAME == __FILE__
+  begin
+    options = BrowserStackRunExecutor.build_options(ARGV)
+    BrowserStackRunExecutor.new(options).run
+  rescue StandardError => error
+    results_dir = (options && options[:output_dir]) ||
+      ENV.fetch("E2E_BROWSERSTACK_RESULTS_DIR", File.join(Dir.pwd, "e2e-results"))
+    BrowserStackRunExecutor.record_failure!(error, results_dir: results_dir, identifier: "e2e setup")
+  end
+end

@@ -8,17 +8,16 @@ require_relative "json_http_client"
 class E2EGitHubReporter
   COMMENT_MARKER = "<!-- checkout-kit-e2e-report -->"
 
-  def initialize(results, repository:, sha:, pr_number:, token: nil, strict: false)
+  def initialize(results, repository:, sha:, pr_number:, token: nil, expected: nil)
     @results = results
     @repository = repository
     @sha = sha
     @pr_number = pr_number
     @token = token
-    @strict = strict
+    @expected = expected
   end
 
   def publish!
-    commit_status_payloads.each { |payload| client.post_json("/repos/#{@repository}/statuses/#{@sha}", payload) }
     client.post_json("/repos/#{@repository}/check-runs", check_run_payload)
     sync_failure_comment
   end
@@ -30,38 +29,30 @@ class E2EGitHubReporter
     lines << "| Status | Suite | Target | Platform | OS version tag | Device |"
     lines << "|---|---|---|---|---|---|"
     @results.each do |result|
-      lines << "| #{status_icon(result)} | `#{result.fetch("execute")}` | #{result.fetch("target")} | #{result.fetch("platform")} | #{result.fetch("os_version_tag")} | #{device_cell(result)} |"
+      lines << "| #{status_icon(result)} | `#{result["execute"]}` | #{result["target"]} | #{result["platform"]} | #{result["os_version_tag"]} | #{device_cell(result)} |"
+    end
+    unless complete?
+      lines << ""
+      lines << "> [!WARNING]"
+      lines << "> Expected #{@expected} run#{@expected == 1 ? "" : "s"}, received #{@results.length} — #{missing_count} did not report. Missing runs count as failures until every run reports."
     end
     failure_lines = failed_results.flat_map { |result| failure_details(result) }
     unless failure_lines.empty?
       lines << ""
       lines << "## Failures"
       lines << ""
-      if soft_fail?
-        lines << "> [!CAUTION]"
-        lines << "> These are currently non-blocking, but failures may indicate an issue you need to resolve before merging."
-        lines << "> If you believe there is a flaky assertion, please raise a ticket in the #checkout-kit-devs channel so it can be addressed"
-        lines << ""
-      end
+      lines << "> [!CAUTION]"
+      lines << "> These E2E checks are not yet required, so they do not block merging — but a failure may still indicate a real issue to resolve before merging."
+      lines << "> If you believe an assertion is flaky, please raise a ticket in the #checkout-kit-devs channel so it can be addressed."
+      lines << ""
       lines << "> BrowserStack artifacts require BrowserStack access. Sign in to [BrowserStack App Automate](https://app-automate.browserstack.com/dashboard/v2/builds) before opening artifact links."
       lines.concat(failure_lines)
     end
     lines.join("\n")
   end
 
-  def commit_status_payloads
-    @results.map do |result|
-      {
-        state: result.fetch("passed") ? "success" : "failure",
-        context: result.fetch("status_context"),
-        description: status_description(result),
-        target_url: browserstack_build_url(result)
-      }
-    end
-  end
-
   def failure_comment_body
-    return nil if failed_results.empty?
+    return nil if failed_results.empty? && complete?
 
     [COMMENT_MARKER, markdown_summary].join("\n")
   end
@@ -69,7 +60,7 @@ class E2EGitHubReporter
   private
 
   def check_run_payload
-    conclusion = failed_results.empty? ? "success" : "failure"
+    conclusion = failed_results.empty? && complete? ? "success" : "failure"
     {
       name: "Checkout Kit E2E",
       head_sha: @sha,
@@ -80,6 +71,16 @@ class E2EGitHubReporter
         summary: markdown_summary
       }
     }
+  end
+
+  def complete?
+    @expected.nil? || @results.length >= @expected
+  end
+
+  def missing_count
+    return 0 if @expected.nil?
+
+    [@expected - @results.length, 0].max
   end
 
   def sync_failure_comment
@@ -103,11 +104,11 @@ class E2EGitHubReporter
   end
 
   def failed_results
-    @results.reject { |result| result.fetch("passed") }
+    @results.reject { |result| result.fetch("passed", false) }
   end
 
-  def soft_fail?
-    !@strict
+  def blank?(value)
+    value.nil? || value.to_s.strip.empty?
   end
 
   def failure_details(result)
@@ -129,8 +130,8 @@ class E2EGitHubReporter
   end
 
   def failure_heading(result)
-    suite = File.basename(result.fetch("execute"), ".*")
-    "#{os_label(result.fetch("platform"))} — #{suite}"
+    suite = File.basename(result["execute"].to_s, ".*")
+    "#{os_label(result["platform"])} — #{suite}"
   end
 
   def artifact_links(testcase, result)
@@ -163,26 +164,27 @@ class E2EGitHubReporter
   end
 
   def device_cell(result)
-    name = result.fetch("resolved_device")
+    name = result["resolved_device"]
     version = result["resolved_os_version"]
-    version && !version.empty? ? "#{name}<br>#{os_label(result.fetch("platform"))} #{version}" : name
+    version && !version.empty? ? "#{name}<br>#{os_label(result["platform"])} #{version}" : name
   end
 
   def os_label(platform)
-    platform == "ios" ? "iOS" : "Android"
+    case platform
+    when "ios" then "iOS"
+    when "android" then "Android"
+    else "Unknown"
+    end
   end
 
   def status_icon(result)
-    result.fetch("passed") ? "✅" : "❌"
-  end
-
-  def status_description(result)
-    description = result.fetch("passed") ? "passed" : "#{result.fetch("status")} on #{result.fetch("resolved_device")}" 
-    description[0, 140]
+    result.fetch("passed", false) ? "✅" : "❌"
   end
 
   def browserstack_build_url(result)
-    "https://app-automate.browserstack.com/dashboard/v2/builds/#{result.fetch("build_id")}" 
+    build_id = result["build_id"]
+    base = "https://app-automate.browserstack.com/dashboard/v2/builds"
+    blank?(build_id) ? base : "#{base}/#{build_id}"
   end
 
   def issue_comments

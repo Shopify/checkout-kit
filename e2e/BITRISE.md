@@ -11,14 +11,14 @@ The pipeline runs on the allocated Bitrise app, connected to the Checkout Kit re
 
 Useful Bitrise app URLs:
 
-| Area | URL |
-|---|---|
-| App overview | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76 |
-| Workflow/config editor | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow |
-| Secrets/env vars | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/secrets |
-| Code signing | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/codesigning |
-| Build triggers | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/triggers |
-| Start build | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/start |
+| Area                   | URL                                                                         |
+| ---------------------- | --------------------------------------------------------------------------- |
+| App overview           | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76             |
+| Workflow/config editor | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow    |
+| Secrets/env vars       | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/secrets     |
+| Code signing           | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/codesigning |
+| Build triggers         | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/triggers    |
+| Start build            | https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/start |
 
 If a direct URL does not resolve in the current Bitrise UI, open the app overview and navigate to the matching area from the sidebar.
 
@@ -40,16 +40,23 @@ Validate the configuration locally with:
 bitrise validate -c e2e/bitrise.yml
 ```
 
+## PR trigger
+
+`e2e/bitrise.yml` maps pull requests to the `e2e` pipeline with `trigger_map`. The GitHub checks are kept non-required while the suite stabilizes; merge-blocking will be controlled by branch protections when marked required.
+
+## Duplicate PR build cancellation
+
+Use Bitrise native Rolling builds instead of a repo-owned cancellation script. In Bitrise, open **Project settings > Builds > Build strategy**, enable **Abort builds triggered by pull requests**, and enable **Abort running builds** so duplicate in-progress PR pipelines are cancelled when a newer build starts.
+
 ## Required app environment variables
 
 The non-secret E2E defaults live in `e2e/bitrise.yml` under `app.envs`. Change them in this repository rather than in the Bitrise Workflow Editor.
 
-| Variable | Value | Purpose |
-|---|---|---|
-| `E2E_STRICT` | `false` | Soft/hard failure switch for BrowserStack Maestro runs. |
-| `E2E_BROWSERSTACK_API_RETRIES` | `1` | Retries for transient BrowserStack API responses. |
-| `E2E_BROWSERSTACK_TIMEOUT_SECONDS` | `1800` | BrowserStack build timeout. |
-| `E2E_BROWSERSTACK_POLL_SECONDS` | `30` | BrowserStack status polling interval. |
+| Variable                           | Value  | Purpose                                           |
+| ---------------------------------- | ------ | ------------------------------------------------- |
+| `E2E_BROWSERSTACK_API_RETRIES`     | `1`    | Retries for transient BrowserStack API responses. |
+| `E2E_BROWSERSTACK_TIMEOUT_SECONDS` | `1800` | BrowserStack build timeout.                       |
+| `E2E_BROWSERSTACK_POLL_SECONDS`    | `30`   | BrowserStack status polling interval.             |
 
 Each workflow's main `script` step sets its own wall-clock budget with the Bitrise `timeout` and `no_output_timeout` step properties instead of wrapping individual commands.
 
@@ -59,18 +66,18 @@ The `e2e-execute-browserstack-run` workflow fans out one parallel copy per Brows
 
 These secrets are configured in Bitrise.io; they cannot live in the repository. `scripts/setup_storefront_env` reads them to configure the sample app before builds.
 
-| Secret | Purpose |
-|---|---|
-| `STOREFRONT_DOMAIN` | Storefront domain for sample app builds. |
+| Secret                    | Purpose                                        |
+| ------------------------- | ---------------------------------------------- |
+| `STOREFRONT_DOMAIN`       | Storefront domain for sample app builds.       |
 | `STOREFRONT_ACCESS_TOKEN` | Storefront access token for sample app builds. |
 
 ## BrowserStack secrets
 
 The `e2e-execute-browserstack-run` workflow authenticates with BrowserStack using these secrets, configured in Bitrise.io:
 
-| Secret | Purpose |
-|---|---|
-| `BROWSERSTACK_USERNAME` | BrowserStack API username. |
+| Secret                    | Purpose                      |
+| ------------------------- | ---------------------------- |
+| `BROWSERSTACK_USERNAME`   | BrowserStack API username.   |
 | `BROWSERSTACK_ACCESS_KEY` | BrowserStack API access key. |
 
 BrowserStack artifact links in GitHub reports require access to BrowserStack App Automate. Sign in to [BrowserStack App Automate](https://app-automate.browserstack.com/dashboard/v2/builds) before opening build, video, screenshot, or log links.
@@ -81,13 +88,13 @@ React Native iOS IPA generation uses Bitrise's certificate and profile installer
 
 Upload the signing certificate and provisioning profile for the React Native sample app to the Bitrise app; the iOS artifact workflow installs them before archiving. The iOS build reads the following signing values with the defaults shown, and each can be overridden with a matching Bitrise environment variable:
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `E2E_IOS_EXPORT_METHOD` | `development` | Export method for the React Native iOS IPA. |
-| `E2E_IOS_BUNDLE_ID` | `com.shopify.checkoutkit.reactnativedemo` | Bundle identifier used for iOS archive and export signing. |
-| `E2E_IOS_DEVELOPMENT_TEAM` | `A7XGC83MZE` | Apple development team used for iOS archive signing. |
-| `E2E_IOS_CODE_SIGN_IDENTITY` | `Apple Development` | Code signing identity used for iOS archive and export signing. |
-| `E2E_IOS_PROVISIONING_PROFILE_SPECIFIER` | `bitrise-checkout-kit-e2e` | Provisioning profile specifier installed by Bitrise and passed to `xcodebuild`; override it if the Bitrise-installed profile uses a different name. |
+| Variable                                 | Default                                   | Purpose                                                                                                                                             |
+| ---------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `E2E_IOS_EXPORT_METHOD`                  | `development`                             | Export method for the React Native iOS IPA.                                                                                                         |
+| `E2E_IOS_BUNDLE_ID`                      | `com.shopify.checkoutkit.reactnativedemo` | Bundle identifier used for iOS archive and export signing.                                                                                          |
+| `E2E_IOS_DEVELOPMENT_TEAM`               | `A7XGC83MZE`                              | Apple development team used for iOS archive signing.                                                                                                |
+| `E2E_IOS_CODE_SIGN_IDENTITY`             | `Apple Development`                       | Code signing identity used for iOS archive and export signing.                                                                                      |
+| `E2E_IOS_PROVISIONING_PROFILE_SPECIFIER` | `bitrise-checkout-kit-e2e`                | Provisioning profile specifier installed by Bitrise and passed to `xcodebuild`; override it if the Bitrise-installed profile uses a different name. |
 
 ## BrowserStack execution
 

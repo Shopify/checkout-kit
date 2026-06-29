@@ -11,7 +11,7 @@ options = {
   sha: ENV["BITRISE_GIT_COMMIT"],
   pr_number: ENV["BITRISE_PULL_REQUEST"],
   token: ENV["GITHUB_TOKEN"],
-  strict: ENV.fetch("E2E_STRICT", "false") == "true"
+  expected: ENV["E2E_BROWSERSTACK_RUN_PLAN_COUNT"]
 }
 
 OptionParser.new do |opts|
@@ -19,6 +19,7 @@ OptionParser.new do |opts|
   opts.on("--repository REPOSITORY") { |repository| options[:repository] = repository }
   opts.on("--sha SHA") { |sha| options[:sha] = sha }
   opts.on("--pr NUMBER") { |number| options[:pr_number] = number }
+  opts.on("--expected COUNT", Integer) { |count| options[:expected] = count }
 end.parse!
 
 pr_number = options[:pr_number].to_s.strip
@@ -34,10 +35,15 @@ end
 end
 options[:pr_number] = Integer(options[:pr_number])
 
+expected_raw = options[:expected]
+expected = expected_raw.nil? || expected_raw.to_s.strip.empty? ? nil : Integer(expected_raw)
+
 result_paths = Dir.glob(File.join(options.fetch(:results_root), "**", "result.json"))
 if result_paths.empty?
   warn "No E2E result files found under #{options.fetch(:results_root)}"
-  exit 1
+  exit 1 if expected.nil?
+
+  warn "Publishing an incomplete report: expected #{expected} run(s), found 0"
 end
 
 results = result_paths.sort.map { |path| JSON.parse(File.read(path)) }
@@ -47,7 +53,7 @@ reporter = E2EGitHubReporter.new(
   sha: options.fetch(:sha),
   pr_number: options.fetch(:pr_number),
   token: options.fetch(:token),
-  strict: options.fetch(:strict)
+  expected: expected
 )
 reporter.publish!
 puts reporter.markdown_summary
