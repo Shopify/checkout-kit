@@ -255,6 +255,18 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
 
+  test/rct-integration-app:
+    dependencies:
+      '@shopify/checkout-kit-react-native':
+        specifier: workspace:*
+        version: link:../../modules/@shopify/checkout-kit-react-native
+      react:
+        specifier: '*'
+        version: 19.1.0
+      react-native:
+        specifier: '*'
+        version: 0.80.2(@babel/core@7.29.7)(@react-native-community/cli@19.1.2(typescript@5.9.2))(@types/react@19.1.12)(react@19.1.0)
+
 packages:
 
   '@aashutoshrathi/word-wrap@1.2.6':

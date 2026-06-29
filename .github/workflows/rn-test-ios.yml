@@ -15,6 +15,9 @@ jobs:
     defaults:
       run:
         working-directory: platforms/react-native
+    env:
+      MINT_PATH: ${{ github.workspace }}/.mint/lib
+      MINT_LINK_PATH: ${{ github.workspace }}/.mint/bin
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
@@ -49,22 +52,34 @@ jobs:
           bundler-cache: true
           working-directory: platforms/react-native/sample
 
+      - name: Cache Mint packages
+        id: mint-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: .mint
+          key: ${{ runner.os }}-mint-${{ hashFiles('platforms/swift/Mintfile') }}
+          restore-keys: |
+            ${{ runner.os }}-mint-
+
+      - name: Install Mint
+        run: brew install mint
+
+      - name: Bootstrap Mint packages
+        if: steps.mint-cache.outputs.cache-hit != 'true'
+        working-directory: platforms/swift
+        run: mint bootstrap --link
+
+      - name: Add Mint to PATH
+        run: echo "${{ github.workspace }}/.mint/bin" >> "$GITHUB_PATH"
+
       - name: Verify iOS lockfile uses published native SDK
-        run: scripts/check_published_podfile_lock sample/ios/Podfile.lock
+        run: scripts/check_published_podfile_lock test/rct-integration-app/Podfile.lock
 
       - name: Cache cocoapods
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
-          path: platforms/react-native/sample/ios/Pods
-          key: ${{ runner.os }}-cocoapods-${{ hashFiles('platforms/react-native/sample/ios/Podfile.lock', 'platforms/react-native/sample/Gemfile.lock', 'platforms/react-native/sample/Gemfile', 'platforms/react-native/package.json', 'platforms/react-native/sample/package.json', 'platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json', 'platforms/react-native/pnpm-lock.yaml') }}
-
-      - name: Install cocoapods
-        working-directory: platforms/react-native/sample
-        run: |
-          set -euo pipefail
-          bundle install
-          cd ios
-          bundle exec pod install --deployment --repo-update
+          path: platforms/react-native/test/rct-integration-app/Pods
+          key: ${{ runner.os }}-rct-integration-cocoapods-${{ hashFiles('platforms/react-native/test/rct-integration-app/Podfile.lock', 'platforms/react-native/test/rct-integration-app/Podfile', 'platforms/react-native/sample/Gemfile.lock', 'platforms/react-native/sample/Gemfile', 'platforms/react-native/package.json', 'platforms/react-native/test/rct-integration-app/package.json', 'platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json', 'platforms/react-native/pnpm-lock.yaml') }}
 
       - name: Build module
         run: pnpm module build

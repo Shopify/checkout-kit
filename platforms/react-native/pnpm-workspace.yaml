@@ -1,4 +1,5 @@
 packages:
   - sample
+  - test/rct-integration-app
   - 'modules/**/*'
   - '../../protocol/languages/typescript'

@@ -1,30 +1,26 @@
 import Foundation
-@testable import RNShopifyCheckoutKitProtocolRelay
-import ShopifyCheckoutProtocol
-import Testing
+@testable import RNShopifyCheckoutKit
+import XCTest
 
-@Suite("Protocol Relay Tests")
-struct ProtocolRelayTests {
-    @Test func envelopeEncodesTypeAndWireCasePayload() throws {
+final class ProtocolRelayTests: XCTestCase {
+    func testEnvelopeEncodesTypeAndWireCasePayload() throws {
         let payload = SnakePayload(continueURL: "https://example.com", lineItems: [])
         let envelope = DispatchEnvelope(type: "ec.start", payload: payload)
         let data = try JSONEncoder().encode(envelope)
-        let json = try #require(String(data: data, encoding: .utf8))
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8))
 
-        let parsed = try #require(
-            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
-        )
-        #expect(parsed["type"] as? String == "ec.start")
+        let parsed = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["type"] as? String, "ec.start")
 
-        let payloadDict = try #require(parsed["payload"] as? [String: Any])
-        #expect(payloadDict["continue_url"] as? String == "https://example.com")
-        #expect(payloadDict["line_items"] is [Any])
-        #expect(payloadDict["continueUrl"] == nil)
-        #expect(payloadDict["lineItems"] == nil)
+        let payloadDict = try XCTUnwrap(parsed["payload"] as? [String: Any])
+        XCTAssertEqual(payloadDict["continue_url"] as? String, "https://example.com")
+        XCTAssertTrue(payloadDict["line_items"] is [Any])
+        XCTAssertNil(payloadDict["continueUrl"])
+        XCTAssertNil(payloadDict["lineItems"])
     }
 
     @MainActor
-    @Test func relayDispatchesEnvelopeOnEcStart() async throws {
+    func testRelayDispatchesEnvelopeOnEcStart() async throws {
         var captured: String?
         let client = makeRelayClient(
             subscribedMethods: ["ec.start"],
@@ -33,23 +29,23 @@ struct ProtocolRelayTests {
 
         _ = await client.process(ecStartNotificationFixture)
 
-        let json = try #require(captured)
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
-        #expect(parsed["type"] as? String == "ec.start")
-        let payload = try #require(parsed["payload"] as? [String: Any])
-        #expect(payload["id"] as? String == "checkout-123")
-        #expect(payload["currency"] as? String == "USD")
-        let lineItems = try #require(payload["line_items"] as? [[String: Any]])
-        #expect(lineItems.count == 1)
-        let firstItem = try #require(lineItems.first?["item"] as? [String: Any])
-        #expect(firstItem["image_url"] as? String == "https://example.com/image.png")
-        let ucp = try #require(payload["ucp"] as? [String: Any])
-        let paymentHandlers = try #require(ucp["payment_handlers"] as? [String: Any])
-        #expect(paymentHandlers["com.example.loyalty_gold"] != nil)
+        let json = try XCTUnwrap(captured)
+        let parsed = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["type"] as? String, "ec.start")
+        let payload = try XCTUnwrap(parsed["payload"] as? [String: Any])
+        XCTAssertEqual(payload["id"] as? String, "checkout-123")
+        XCTAssertEqual(payload["currency"] as? String, "USD")
+        let lineItems = try XCTUnwrap(payload["line_items"] as? [[String: Any]])
+        XCTAssertEqual(lineItems.count, 1)
+        let firstItem = try XCTUnwrap(lineItems.first?["item"] as? [String: Any])
+        XCTAssertEqual(firstItem["image_url"] as? String, "https://example.com/image.png")
+        let ucp = try XCTUnwrap(payload["ucp"] as? [String: Any])
+        let paymentHandlers = try XCTUnwrap(ucp["payment_handlers"] as? [String: Any])
+        XCTAssertNotNil(paymentHandlers["com.example.loyalty_gold"])
     }
 
     @MainActor
-    @Test func relayDispatchesEnvelopeForEveryPublicCheckoutStateEvent() async throws {
+    func testRelayDispatchesEnvelopeForEveryPublicCheckoutStateEvent() async throws {
         let methods = [
             "ec.complete",
             "ec.fulfillment.change",
@@ -68,16 +64,16 @@ struct ProtocolRelayTests {
 
             _ = await client.process(checkoutNotificationFixture(method: method))
 
-            let json = try #require(captured)
-            let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
-            #expect(parsed["type"] as? String == method)
-            let payload = try #require(parsed["payload"] as? [String: Any])
-            #expect(payload["id"] as? String == "checkout-123")
+            let json = try XCTUnwrap(captured)
+            let parsed = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+            XCTAssertEqual(parsed["type"] as? String, method)
+            let payload = try XCTUnwrap(parsed["payload"] as? [String: Any])
+            XCTAssertEqual(payload["id"] as? String, "checkout-123")
         }
     }
 
     @MainActor
-    @Test func relayDispatchesEnvelopeOnEcError() async throws {
+    func testRelayDispatchesEnvelopeOnEcError() async throws {
         var captured: String?
         let client = makeRelayClient(
             subscribedMethods: ["ec.error"],
@@ -86,18 +82,18 @@ struct ProtocolRelayTests {
 
         _ = await client.process(ecErrorNotificationFixture)
 
-        let json = try #require(captured)
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
-        #expect(parsed["type"] as? String == "ec.error")
-        let payload = try #require(parsed["payload"] as? [String: Any])
-        let messages = try #require(payload["messages"] as? [[String: Any]])
-        #expect(messages.first?["content"] as? String == "Something went wrong")
-        let ucp = try #require(payload["ucp"] as? [String: Any])
-        #expect(ucp["status"] as? String == "error")
+        let json = try XCTUnwrap(captured)
+        let parsed = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["type"] as? String, "ec.error")
+        let payload = try XCTUnwrap(parsed["payload"] as? [String: Any])
+        let messages = try XCTUnwrap(payload["messages"] as? [[String: Any]])
+        XCTAssertEqual(messages.first?["content"] as? String, "Something went wrong")
+        let ucp = try XCTUnwrap(payload["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "error")
     }
 
     @MainActor
-    @Test func relayIgnoresMethodsNotInSubscribedList() async {
+    func testRelayIgnoresMethodsNotInSubscribedList() async {
         var captured: String?
         let client = makeRelayClient(
             subscribedMethods: [],
@@ -106,7 +102,7 @@ struct ProtocolRelayTests {
 
         _ = await client.process(ecStartNotificationFixture)
 
-        #expect(captured == nil)
+        XCTAssertNil(captured)
     }
 }
 

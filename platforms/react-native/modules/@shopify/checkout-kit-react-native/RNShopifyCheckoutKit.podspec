@@ -17,11 +17,6 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/Shopify/checkout-kit.git", :tag => "react-native/#{s.version}" }
 
   s.source_files = "ios/*.{h,m,mm,swift}"
-  # `ios/Package.swift` is the manifest for the nested SwiftPM test package
-  # (ProtocolRelay unit tests). It imports `PackageDescription` which only
-  # exists in the SwiftPM toolchain, so it must not be compiled by
-  # CocoaPods/Xcode when the RN module is consumed from an iOS app.
-  s.exclude_files = "ios/Package.swift"
 
   s.dependency "React-Core"
 

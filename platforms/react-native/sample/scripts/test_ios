@@ -3,10 +3,20 @@
 set -e -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REACT_NATIVE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$REACT_NATIVE_DIR/../.." && pwd)"
+TEST_APP_DIR="$REACT_NATIVE_DIR/test/rct-integration-app"
+export BUNDLE_GEMFILE="$REACT_NATIVE_DIR/sample/Gemfile"
+
 source "$SCRIPT_DIR/simulator"
 dest="$(get_sim_destination)"
 
-cd ios
+"$REPO_ROOT/platforms/swift/Scripts/generate_xcode_projects" --spec "../react-native/test/rct-integration-app/project.yml"
+
+bundle check || bundle install
+
+cd "$TEST_APP_DIR"
+bundle exec pod install --deployment --repo-update
 
 xcbeautify_args=""
 if [ "$CI" = "true" ]; then
@@ -14,8 +24,8 @@ if [ "$CI" = "true" ]; then
 fi
 
 xcodebuild test \
-    -workspace CheckoutKitReactNativeDemo.xcworkspace \
-    -scheme CheckoutKitReactNativeDemo \
+    -workspace RCTIntegrationApp.xcworkspace \
+    -scheme RCTIntegrationApp \
     -destination "$dest" \
     -skipPackagePluginValidation \
     -sdk iphonesimulator \

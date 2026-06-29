@@ -1,6 +1,10 @@
 #!/bin/bash
 
-DIR=modules/@shopify/checkout-kit-react-native
+SWIFT_PATHS=(
+    modules/@shopify/checkout-kit-react-native
+    test/rct-integration-app/RCTIntegrationApp/AppDelegate.swift
+    test/rct-integration-app/RCTIntegrationAppTests/ProtocolRelayTests.swift
+)
 MODE="${1:-check}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
@@ -64,11 +68,11 @@ fi
 # Run SwiftLint
 if [[ "$MODE" == "check" ]]; then
     echo "🔄 Running SwiftLint in check mode..."
-    "$SWIFTLINT" lint --strict $DIR --config .swiftlint.yml
+    "$SWIFTLINT" lint --strict "${SWIFT_PATHS[@]}" --config .swiftlint.yml
     LINT_STATUS=$?
 else
     echo "🔄 Running SwiftLint in fix mode..."
-    "$SWIFTLINT" lint --fix $DIR --config .swiftlint.yml
+    "$SWIFTLINT" lint --fix "${SWIFT_PATHS[@]}" --config .swiftlint.yml
     LINT_STATUS=$?
 fi
 echo "SwiftLint exit status: $LINT_STATUS"
@@ -76,11 +80,11 @@ echo "SwiftLint exit status: $LINT_STATUS"
 # Run SwiftFormat
 if [[ "$MODE" == "check" ]]; then
     echo "🔄 Running SwiftFormat in check mode..."
-    "$SWIFTFORMAT" $DIR --lint --config .swiftformat
+    "$SWIFTFORMAT" "${SWIFT_PATHS[@]}" --lint --config .swiftformat
     FORMAT_STATUS=$?
 else
     echo "🔄 Running SwiftFormat in fix mode..."
-    "$SWIFTFORMAT" $DIR --config .swiftformat
+    "$SWIFTFORMAT" "${SWIFT_PATHS[@]}" --config .swiftformat
     FORMAT_STATUS=$?
 fi
 echo "SwiftFormat exit status: $FORMAT_STATUS"
