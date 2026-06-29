@@ -27,7 +27,7 @@ else
     dest="id=$DEVICE_ID"
 fi
 
-xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destination \"$dest\" -skipPackagePluginValidation"
+xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destination \"$dest\" -skipPackagePluginValidation -disableAutomaticPackageResolution"
 
 # Package.swift lives at the monorepo root. For SwiftPM package schemes
 # (Xcode's auto-generated "-Package" suffix), cd up to the directory that

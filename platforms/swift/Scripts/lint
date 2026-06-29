@@ -24,7 +24,11 @@ if [[ "$MODE" != "check" && "$MODE" != "fix" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 if ! "$SCRIPT_DIR/check_sample_package_paths"; then
+	exit 1
+fi
+if ! "$REPO_ROOT/scripts/check_xcodebuild_package_resolution"; then
 	exit 1
 fi
 

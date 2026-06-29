@@ -35,6 +35,7 @@ xcodebuild clean build \
     -sdk iphonesimulator \
     -destination "$dest" \
     -skipPackagePluginValidation \
+    -disableAutomaticPackageResolution \
     GCC_PRECOMPILE_PREFIX_HEADER=YES \
     ASSETCATALOG_COMPILER_OPTIMIZATION=time \
     COMPILER_INDEX_STORE_ENABLE=NO \

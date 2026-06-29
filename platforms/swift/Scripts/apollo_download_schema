@@ -13,7 +13,7 @@ download_schema() {
   echo "📡 Downloading schema for $name ($scheme)..."
   cd "$REPO_ROOT/$dir"
 
-  BUILD_SETTINGS=$(xcodebuild -showBuildSettings -scheme "$scheme" -json 2>/dev/null | jq -r '.[0].buildSettings')
+  BUILD_SETTINGS=$(xcodebuild -showBuildSettings -workspace "$REPO_ROOT/Samples/Samples.xcworkspace" -scheme "$scheme" -disableAutomaticPackageResolution -json 2>/dev/null | jq -r '.[0].buildSettings')
   TOKEN=$(echo "$BUILD_SETTINGS" | jq -r '.STOREFRONT_ACCESS_TOKEN')
   DOMAIN=$(echo "$BUILD_SETTINGS" | jq -r '.STOREFRONT_DOMAIN')
   API_VERSION=$(echo "$BUILD_SETTINGS" | jq -r '.API_VERSION')

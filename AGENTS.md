@@ -39,6 +39,15 @@ For cross-platform changes, use the repo-wide aggregates: `dev lint`,
 `dev <platform> format` for formatting; `fix` remains an alias for existing
 workflows.
 
+## Swift Xcode builds
+
+Prefer the `dev swift ...` commands for Swift package and sample builds. When
+running `xcodebuild` directly for Swift package, Swift sample, or React Native
+iOS sample work, always include `-disableAutomaticPackageResolution` so Xcode
+uses the committed `Package.resolved` files instead of silently updating package
+pins. This prevents sample app dependencies such as Apollo iOS from being
+written into the repo-root Swift package lockfile.
+
 ## React Native development with local native SDK changes
 
 Until the new native SDK libraries have stable released versions, assume React Native validation needs the local native SDK workflow. Use `--local` whenever running the React Native sample or native React Native tests that depend on the in-repo Swift/Kotlin SDKs.
