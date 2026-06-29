@@ -1,6 +1,6 @@
 import Foundation
 import Security
-@preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutKit
 
 struct OAuthTokenResult: Codable {
     let accessToken: String

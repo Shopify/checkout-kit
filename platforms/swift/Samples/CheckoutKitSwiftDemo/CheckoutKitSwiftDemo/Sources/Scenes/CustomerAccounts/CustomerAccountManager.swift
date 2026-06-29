@@ -1,6 +1,6 @@
 import CommonCrypto
 import Foundation
-@preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutKit
 
 enum CustomerAccountError: LocalizedError {
     case missingConfiguration
