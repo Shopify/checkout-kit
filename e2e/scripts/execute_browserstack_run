@@ -1,0 +1,206 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "base64"
+require "fileutils"
+require "json"
+require "net/http"
+require "optparse"
+require "securerandom"
+require "uri"
+require_relative "../lib/browserstack_device_resolver"
+
+# Executes one row from the BrowserStack run plan, from artifact upload through
+# build polling and normalized result persistence.
+class BrowserStackRunExecutor
+  API_HOST = "api-cloud.browserstack.com"
+  TERMINAL_STATUSES = %w[passed failed error timedout stopped done].freeze
+
+  def initialize(options)
+    @options = options
+    @username = ENV.fetch("BROWSERSTACK_USERNAME")
+    @access_key = ENV.fetch("BROWSERSTACK_ACCESS_KEY")
+  end
+
+  def run
+    FileUtils.mkdir_p(output_dir)
+    run = run_plan.fetch(run_index)
+    app_path = ENV.fetch(run.fetch("artifact_env"))
+    device = resolve_device(run)
+    app = upload_file("/app-automate/maestro/v2/app", app_path, custom_id(run, "app"))
+    suite = upload_file("/app-automate/maestro/v2/test-suite", tests_zip, custom_id(run, "suite"))
+    build = start_build(run, app.fetch("app_url"), suite.fetch("test_suite_url"), device.fetch("browserstack_device"))
+    build_status = poll_build(build.fetch("build_id"))
+    sessions = fetch_sessions(build_status)
+    result = normalize_result(run, device, app, suite, build, build_status, sessions)
+    write_json("result.json", result)
+    exit(result.fetch("passed") ? 0 : 1)
+  end
+
+  private
+
+  def resolve_device(run)
+    override = ENV["E2E_DEVICE_OVERRIDE"] || ENV["E2E_#{run.fetch("platform").upcase}_DEVICE_OVERRIDE"]
+    if override && !override.empty?
+      return {
+        "device_selector" => run.fetch("device_selector"),
+        "browserstack_device" => override,
+        "resolved_device" => override.split("-").first,
+        "resolved_os_version" => override.split("-").last
+      }
+    end
+
+    devices = get_json("/app-automate/devices.json")
+    limits = get_json("/app-automate/device_tier_limits.json")
+    BrowserStackDeviceResolver.new(devices, limits).resolve(run.fetch("device_selector"))
+  end
+
+  def upload_file(path, file_path, custom_id)
+    response = multipart_post(path, file_path, custom_id)
+    write_json("#{custom_id}.json", response)
+    response
+  end
+
+  def start_build(run, app_url, test_suite_url, device)
+    body = {
+      app: app_url,
+      testSuite: test_suite_url,
+      project: ENV.fetch("E2E_BROWSERSTACK_PROJECT", "checkout-kit-e2e"),
+      buildTag: ENV.fetch("BITRISE_GIT_COMMIT", "local"),
+      customBuildName: run.fetch("id"),
+      devices: [device],
+      execute: [run.fetch("execute")],
+      setEnvVariables: {
+        E2E_APP_ID: run.fetch("app_id"),
+        E2E_READY_MARKER: run.fetch("ready_marker")
+      }
+    }
+    response = post_json("/app-automate/maestro/v2/#{run.fetch("platform")}/build", body)
+    write_json("build-start.json", response)
+    response
+  end
+
+  def poll_build(build_id)
+    deadline = Time.now + ENV.fetch("E2E_BROWSERSTACK_TIMEOUT_SECONDS", "1800").to_i
+    loop do
+      response = get_json("/app-automate/maestro/v2/builds/#{build_id}")
+      write_json("build-status.json", response)
+      return response if TERMINAL_STATUSES.include?(response.fetch("status").to_s.downcase)
+      raise "BrowserStack build timed out: #{build_id}" if Time.now >= deadline
+
+      sleep ENV.fetch("E2E_BROWSERSTACK_POLL_SECONDS", "30").to_i
+    end
+  end
+
+  def fetch_sessions(build_status)
+    build_id = build_status.fetch("id")
+    build_status.fetch("devices", []).flat_map do |device|
+      device.fetch("sessions", []).map do |session|
+        get_json("/app-automate/maestro/v2/builds/#{build_id}/sessions/#{session.fetch("id")}")
+      end
+    end
+  end
+
+  def normalize_result(run, device, app, suite, build, build_status, sessions)
+    status = build_status.fetch("status").to_s.downcase
+    failed_tests = sessions.flat_map do |session|
+      session.dig("testcases", "data").to_a.flat_map do |group|
+        group.fetch("testcases", []).select { |testcase| testcase.fetch("status", "") != "passed" }
+      end
+    end
+
+    {
+      "id" => run.fetch("id"),
+      "status_context" => run.fetch("status_context"),
+      "platform" => run.fetch("platform"),
+      "target" => run.fetch("target"),
+      "os_version_tag" => run.fetch("os_version_tag"),
+      "execute" => run.fetch("execute"),
+      "device_selector" => device.fetch("device_selector"),
+      "resolved_device" => device.fetch("browserstack_device"),
+      "app_url" => app.fetch("app_url"),
+      "test_suite_url" => suite.fetch("test_suite_url"),
+      "build_id" => build.fetch("build_id"),
+      "status" => status,
+      "passed" => status == "passed" && failed_tests.empty?,
+      "failed_tests" => failed_tests
+    }
+  end
+
+  def multipart_post(path, file_path, custom_id)
+    boundary = "----checkout-kit-#{SecureRandom.hex(12)}"
+    file = File.binread(file_path)
+    body = +""
+    body << "--#{boundary}\r\n"
+    body << "Content-Disposition: form-data; name=\"file\"; filename=\"#{File.basename(file_path)}\"\r\n\r\n"
+    body << file
+    body << "\r\n--#{boundary}\r\n"
+    body << "Content-Disposition: form-data; name=\"custom_id\"\r\n\r\n"
+    body << custom_id
+    body << "\r\n--#{boundary}--\r\n"
+    request = Net::HTTP::Post.new(path)
+    request["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
+    request.body = body
+    execute_request(request)
+  end
+
+  def get_json(path)
+    execute_request(Net::HTTP::Get.new(path))
+  end
+
+  def post_json(path, body)
+    request = Net::HTTP::Post.new(path)
+    request["Content-Type"] = "application/json"
+    request.body = JSON.generate(body)
+    execute_request(request)
+  end
+
+  def execute_request(request)
+    request.basic_auth(@username, @access_key)
+    response = Net::HTTP.start(API_HOST, 443, use_ssl: true) { |http| http.request(request) }
+    parsed = JSON.parse(response.body)
+    return parsed if response.is_a?(Net::HTTPSuccess)
+
+    raise "BrowserStack request failed #{response.code}: #{parsed}"
+  end
+
+  def custom_id(run, suffix)
+    ["checkout-kit", run.fetch("id"), ENV.fetch("BITRISE_GIT_COMMIT", "local"), suffix].join("-").gsub(/[^A-Za-z0-9._-]/, "-")[0, 100]
+  end
+
+  def write_json(name, object)
+    File.write(File.join(output_dir, name), JSON.pretty_generate(object))
+  end
+
+  def output_dir
+    @options.fetch(:output_dir)
+  end
+
+  def run_plan
+    @run_plan ||= JSON.parse(File.read(@options.fetch(:run_plan_path)))
+  end
+
+  def run_index
+    @options.fetch(:run_index)
+  end
+
+  def tests_zip
+    @options.fetch(:tests_zip)
+  end
+end
+
+options = {
+  run_plan_path: ENV.fetch("E2E_BROWSERSTACK_RUN_PLAN_JSON", "browserstack-run-plan.json"),
+  run_index: Integer(ENV.fetch("BITRISE_IO_PARALLEL_INDEX", "0")),
+  tests_zip: ENV.fetch("E2E_TESTS_ZIP"),
+  output_dir: ENV.fetch("E2E_BROWSERSTACK_RESULTS_DIR", File.join(Dir.pwd, "e2e-results"))
+}
+
+OptionParser.new do |opts|
+  opts.on("--run-plan PATH") { |path| options[:run_plan_path] = path }
+  opts.on("--index INDEX", Integer) { |index| options[:run_index] = index }
+  opts.on("--tests-zip PATH") { |path| options[:tests_zip] = path }
+  opts.on("--output-dir PATH") { |path| options[:output_dir] = path }
+end.parse!
+
+BrowserStackRunExecutor.new(options).run

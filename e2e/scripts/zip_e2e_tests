@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+output=""
+parent="checkout-kit-e2e-tests"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --output)
+      output="$2"
+      shift 2
+      ;;
+    *)
+      echo "Usage: e2e/scripts/zip_e2e_tests --output PATH" >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [ -z "$output" ]; then
+  echo "Usage: e2e/scripts/zip_e2e_tests --output PATH" >&2
+  exit 1
+fi
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-e2e-tests.XXXXXX")"
+cleanup() {
+  rm -rf "$tmpdir"
+}
+trap cleanup EXIT
+
+suite_root="$tmpdir/$parent"
+mkdir -p "$suite_root"
+
+if [ -d "$repo_root/e2e/tests" ]; then
+  cp -R "$repo_root/e2e/tests" "$suite_root/tests"
+fi
+
+if [ -d "$repo_root/e2e/flows" ]; then
+  cp -R "$repo_root/e2e/flows" "$suite_root/flows"
+fi
+
+if [ -f "$repo_root/e2e/config.yaml" ]; then
+  cp "$repo_root/e2e/config.yaml" "$suite_root/config.yaml"
+fi
+
+mkdir -p "$(dirname "$output")"
+rm -f "$output"
+(
+  cd "$tmpdir"
+  zip -qr "$output" "$parent"
+)
+
+echo "$output"
