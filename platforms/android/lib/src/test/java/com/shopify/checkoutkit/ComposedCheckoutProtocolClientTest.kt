@@ -1,6 +1,9 @@
 package com.shopify.checkoutkit
 
 import android.os.Looper
+import com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp
+import com.shopify.ucp.embedded.checkout.ReadyResult
+import com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -131,6 +134,37 @@ class ComposedCheckoutProtocolClientTest {
 
         assertThat(response).isNull()
         assertThat(defaultHandled).isFalse()
+    }
+
+    @Test
+    fun `KitOwned policy answers solely and never invokes the merchant`() {
+        var merchantCalled = false
+        val merchant = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.ready) { _ ->
+                merchantCalled = true
+                error("merchant ready handler must not run under KitOwned")
+            }
+        val defaults = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.ready) { _ ->
+                ReadyResult(
+                    ucp = InstrumentsChangeResultUcp(
+                        status = UCPCheckoutResponseSchemaStatus.Success,
+                        version = CheckoutProtocol.SPEC_VERSION,
+                    ),
+                )
+            }
+        val composed = ComposedCheckoutProtocolClient(
+            merchant = merchant,
+            defaults = mapOf(
+                CheckoutProtocol.ready.method to DefaultClientBinding(defaults, DefaultClientPolicy.KitOwned),
+            ),
+        )
+
+        val response = composed.process("""{"jsonrpc":"2.0","id":1,"method":"ec.ready","params":{"delegate":[]}}""")
+
+        assertThat(merchantCalled).isFalse()
+        assertThat(response).contains("\"status\":\"success\"")
+        assertThat(response).doesNotContain("delegate")
     }
 
     private companion object {

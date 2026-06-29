@@ -3,123 +3,113 @@ import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 
+import {DELEGATIONS, EC_METHODS} from "./method_catalog.mjs";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const protocolRoot = path.resolve(scriptDir, "..");
-const repoRoot = path.resolve(protocolRoot, "..");
 
-const openRpcPath = path.resolve(
-  protocolRoot,
-  "services/shopping/embedded.openrpc.json",
-);
 const outputPath = path.resolve(
-  repoRoot,
-  "protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol.kt",
+  protocolRoot,
+  "languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol.kt",
 );
 
 const specVersion = "2026-04-08";
 
-function resolvePointer(doc, pointer) {
-  if (!pointer) return doc;
+const notifications = EC_METHODS.filter((entry) => entry.kind === "notification");
+const requests = EC_METHODS.filter((entry) => entry.kind === "request");
 
-  return pointer
-    .split("/")
-    .filter(Boolean)
-    .reduce((node, rawSegment) => {
-      if (node == null) return undefined;
-      const segment = rawSegment.replace(/~1/g, "/").replace(/~0/g, "~");
-      return node[segment];
-    }, doc);
-}
+// Kotlin-specific notification decode wiring. Kotlin needs an explicit
+// KSerializer for the wrapper params object plus the field to extract; Swift
+// gets this for free from Decodable. Mirrors the Swift catalog's decodeClosure.
+const NOTIFICATION_BINDINGS = new Map([
+  ["Checkout", {paramsSerializer: "CheckoutParams.serializer()", extract: "it.checkout"}],
+  ["ErrorResponse", {paramsSerializer: "ErrorParams.serializer()", extract: "it.error"}],
+]);
 
-function resolveMethod(rawMethod, openRpcDir) {
-  const ref = rawMethod?.$ref;
-  if (typeof ref !== "string") {
-    return rawMethod;
+// Kotlin request decode wiring. `whole` decodes params straight into the payload
+// type (identity); `checkoutUnwrap` decodes the `{checkout}` wrapper and extracts
+// it. Mirrors the Swift catalog's decodeClosure.
+function requestDecode(entry) {
+  switch (entry.decode) {
+    case "whole":
+      return {requestSerializer: `${entry.payload}.serializer()`, decode: "it"};
+    case "checkoutUnwrap":
+      return {requestSerializer: "CheckoutParams.serializer()", decode: "it.checkout"};
+    default:
+      throw new Error(`Unknown decode strategy: ${entry.decode}`);
   }
-
-  const [relativePath, pointer = ""] = ref.split("#");
-  const targetPath = path.resolve(openRpcDir, relativePath);
-  const targetDoc = JSON.parse(fs.readFileSync(targetPath, "utf8"));
-  return resolvePointer(targetDoc, pointer);
 }
 
-function methodNameToIdentifier(methodName) {
-  // Drop the leading `ec` capability segment; the enclosing
-  // EmbeddedCheckoutProtocol.Event namespace already conveys it.
-  const [, ...parts] = methodName.split(/[._]/g).filter(Boolean);
-
-  return parts
-    .map((part, index) =>
-      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
-    )
-    .join("");
-}
-
-function delegationToIdentifier(delegation) {
-  return delegation
-    .split(/[._]/g)
-    .filter(Boolean)
-    .map((part, index) =>
-      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
-    )
-    .join("");
-}
-
-function collectEvents(openRpc, openRpcDir) {
-  const events = [];
-
-  for (const rawMethod of openRpc.methods ?? []) {
-    const method = resolveMethod(rawMethod, openRpcDir);
-    if (typeof method?.name !== "string") {
-      throw new Error("Encountered OpenRPC method without a name");
-    }
-
-    // Scope the Android catalog to the Embedded Checkout (`ec.*`) capability,
-    // matching Swift. Sibling capabilities get their own generated namespaces.
-    if (!method.name.startsWith("ec.")) {
-      continue;
-    }
-
-    events.push({
-      identifier: methodNameToIdentifier(method.name),
-      method: method.name,
-    });
+function notificationBinding(entry) {
+  const binding = NOTIFICATION_BINDINGS.get(entry.payload);
+  if (binding === undefined) {
+    throw new Error(
+      `No Kotlin notification binding for payload ${entry.payload} (${entry.method})`,
+    );
   }
-
-  const seen = new Set();
-  for (const event of events) {
-    if (seen.has(event.identifier)) {
-      throw new Error(`Duplicate catalog identifier: ${event.identifier}`);
-    }
-    seen.add(event.identifier);
-  }
-
-  return events;
+  return binding;
 }
 
-function collectDelegations(openRpc) {
-  const delegations = (openRpc["x-delegations"] ?? []).map(delegation => ({
-    identifier: delegationToIdentifier(delegation),
-    value: delegation,
-  }));
-
-  const seen = new Set();
-  for (const delegation of delegations) {
-    if (seen.has(delegation.identifier)) {
-      throw new Error(`Duplicate delegation identifier: ${delegation.identifier}`);
-    }
-    seen.add(delegation.identifier);
+const seenIdentifiers = new Set();
+for (const entry of EC_METHODS) {
+  const member = entry.kind === "request" ? entry.descriptorIdentifier : entry.identifier;
+  if (seenIdentifiers.has(member)) {
+    throw new Error(`Duplicate catalog identifier: ${member}`);
   }
-
-  return delegations;
+  seenIdentifiers.add(member);
 }
 
-function renderModule(events, delegations) {
-  return `// This file is generated by protocol/scripts/generate_kotlin_catalog.mjs.
+const notificationDescriptors = notifications
+  .map((entry) => {
+    const binding = notificationBinding(entry);
+    return `    public val ${entry.identifier}: NotificationDescriptor<${entry.payload}> = notificationDescriptor(
+        method = Event.${entry.identifier},
+        paramsSerializer = ${binding.paramsSerializer},
+        decode = { ${binding.extract} },
+    )`;
+  })
+  .join("\n\n");
+
+const requestDescriptors = requests
+  .map((entry) => {
+    const decode = requestDecode(entry);
+    const delegation = entry.delegation === null ? "null" : `"${entry.delegation}"`;
+    return `    public val ${entry.descriptorIdentifier}: RequestDescriptor<${entry.payload}, ${entry.result}> = requestDescriptor(
+        method = Event.${entry.identifier},
+        delegation = ${delegation},
+        requestSerializer = ${decode.requestSerializer},
+        responseSerializer = ${entry.result}.serializer(),
+        decode = { ${decode.decode} },
+        encode = { it },
+    )`;
+  })
+  .join("\n\n");
+
+const eventConstants = EC_METHODS
+  .map((entry) => `        public const val ${entry.identifier}: String = "${entry.method}"`)
+  .join("\n");
+
+const eventAll = EC_METHODS
+  .map((entry) => `            ${entry.identifier},`)
+  .join("\n");
+
+const delegationConstants = DELEGATIONS
+  .map(
+    (delegation) =>
+      `            public val ${delegation.identifier}: Delegation = Delegation("${delegation.value}")`,
+  )
+  .join("\n");
+
+const delegationAll = DELEGATIONS
+  .map((delegation) => `                ${delegation.identifier},`)
+  .join("\n");
+
+const generated = `// This file is generated by protocol/scripts/generate_kotlin_catalog.mjs.
 // Do not edit directly.
 
 package com.shopify.ucp.embedded.checkout
 
+import kotlinx.serialization.Serializable
 import java.net.URI
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -163,41 +153,17 @@ public object EmbeddedCheckoutProtocol {
         override fun toString(): String = rawValue
 
         public companion object {
-${delegations
-  .map(
-    delegation => `            public val ${delegation.identifier}: Delegation = Delegation("${delegation.value}")`,
-  )
-  .join("\n")}
+${delegationConstants}
 
             public val all: List<Delegation> = listOf(
-${delegations.map(delegation => `                ${delegation.identifier},`).join("\n")}
+${delegationAll}
             )
         }
     }
 
-    public val start: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutStartDescriptor
+${notificationDescriptors}
 
-    public val complete: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutCompleteDescriptor
-
-    public val messagesChange: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutMessagesChangeDescriptor
-
-    public val lineItemsChange: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutLineItemsChangeDescriptor
-
-    public val totalsChange: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutTotalsChangeDescriptor
-
-    public val fulfillmentChange: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutFulfillmentChangeDescriptor
-
-    public val error: NotificationDescriptor<ErrorResponse>
-        get() = embeddedCheckoutErrorDescriptor
-
-    public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult>
-        get() = embeddedCheckoutWindowOpenDescriptor
+${requestDescriptors}
 
     /**
      * Returns the given checkout URL with the query parameters required to
@@ -233,14 +199,10 @@ ${delegations.map(delegation => `                ${delegation.identifier},`).joi
     }.getOrElse { url }
 
     public object Event {
-${events
-  .map(
-    event => `        public const val ${event.identifier}: String = "${event.method}"`,
-  )
-  .join("\n")}
+${eventConstants}
 
         public val all: Set<String> = setOf(
-${events.map(event => `            ${event.identifier},`).join("\n")}
+${eventAll}
         )
     }
 
@@ -275,17 +237,18 @@ ${events.map(event => `            ${event.identifier},`).join("\n")}
             .replace("+", "%20")
             .replace("%2C", ",")
 }
+
+@Serializable
+private data class CheckoutParams(
+    val checkout: Checkout,
+)
+
+@Serializable
+private data class ErrorParams(
+    val error: ErrorResponse,
+)
 `;
-}
 
-function main() {
-  const openRpc = JSON.parse(fs.readFileSync(openRpcPath, "utf8"));
-  const events = collectEvents(openRpc, path.dirname(openRpcPath));
-  const delegations = collectDelegations(openRpc);
-  const generated = renderModule(events, delegations);
-  fs.mkdirSync(path.dirname(outputPath), {recursive: true});
-  fs.writeFileSync(outputPath, generated);
-  console.log(`Generated ${outputPath}`);
-}
-
-main();
+fs.mkdirSync(path.dirname(outputPath), {recursive: true});
+fs.writeFileSync(outputPath, generated);
+console.log(`Generated ${outputPath}`);

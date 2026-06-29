@@ -50,13 +50,15 @@ class EmbeddedCheckoutProtocolBridgeTest {
     // region ec.ready
 
     @Test
-    fun `ec ready sends UCP success ACK`() {
+    fun `ec ready returns a ucp success result without a delegate echo`() {
         val js = captureEvaluatedJs {
             ecp.postMessage(ecReadyMessage())
         }
         assertThat(js).contains("\"result\"")
         assertThat(js).contains("\"ucp\"")
         assertThat(js).contains("\"status\":\"success\"")
+        assertThat(js).contains("\"version\":\"${CheckoutProtocol.SPEC_VERSION}\"")
+        assertThat(js).doesNotContain("\"delegate\"")
         assertThat(js).doesNotContain("\"error\"")
     }
 
@@ -104,36 +106,14 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `ec ready echoes window open delegation when requested`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":["window.open"]}}"""
-            )
-        }
-        assertThat(js).contains("\"delegate\":[\"window.open\"]")
-        assertThat(js).contains("\"status\":\"success\"")
-    }
-
-    @Test
-    fun `ec ready filters unsupported delegations down to intersection`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
-                """{"jsonrpc":"2.0","method":"ec.ready","id":"r2","params":{"delegate":["window.open","payment.credential"]}}"""
-            )
-        }
-        assertThat(js).contains("\"delegate\":[\"window.open\"]")
-        assertThat(js).doesNotContain("payment.credential")
-    }
-
-    @Test
-    fun `ec ready with non-string delegate values sends parse error`() {
+    fun `ec ready with non-string delegate values sends invalid params`() {
         val js = captureEvaluatedJs {
             ecp.postMessage(
                 """{"jsonrpc":"2.0","method":"ec.ready","id":"r2","params":{"delegate":["window.open",null,{}]}}"""
             )
         }
         assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32700")
+        assertThat(js).contains("-32602")
         assertThat(js).contains(""""id":"r2"""")
     }
 
@@ -158,12 +138,13 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `ec ready omits delegate field when params has no delegate key`() {
+    fun `ec ready without a delegate key sends invalid params`() {
         val js = captureEvaluatedJs {
             ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"r5","params":{}}""")
         }
-        assertThat(js).doesNotContain("\"delegate\"")
-        assertThat(js).contains("\"status\":\"success\"")
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32602")
+        assertThat(js).contains(""""id":"r5"""")
     }
 
     // endregion
@@ -665,22 +646,22 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `ec ready with non-object params sends parse error`() {
+    fun `ec ready with non-object params sends invalid params`() {
         val js = captureEvaluatedJs {
             ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"13","params":[]}""")
         }
         assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32700")
+        assertThat(js).contains("-32602")
         assertThat(js).contains(""""id":"13"""")
     }
 
     @Test
-    fun `ec ready with non-array delegate sends parse error`() {
+    fun `ec ready with non-array delegate sends invalid params`() {
         val js = captureEvaluatedJs {
             ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"14","params":{"delegate":{}}}""")
         }
         assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32700")
+        assertThat(js).contains("-32602")
         assertThat(js).contains(""""id":"14"""")
     }
 

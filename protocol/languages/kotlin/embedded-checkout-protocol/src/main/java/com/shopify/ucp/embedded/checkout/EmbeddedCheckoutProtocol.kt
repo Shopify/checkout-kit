@@ -3,6 +3,7 @@
 
 package com.shopify.ucp.embedded.checkout
 
+import kotlinx.serialization.Serializable
 import java.net.URI
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -60,29 +61,104 @@ public object EmbeddedCheckoutProtocol {
         }
     }
 
-    public val start: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutStartDescriptor
+    public val error: NotificationDescriptor<ErrorResponse> = notificationDescriptor(
+        method = Event.error,
+        paramsSerializer = ErrorParams.serializer(),
+        decode = { it.error },
+    )
 
-    public val complete: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutCompleteDescriptor
+    public val start: NotificationDescriptor<Checkout> = notificationDescriptor(
+        method = Event.start,
+        paramsSerializer = CheckoutParams.serializer(),
+        decode = { it.checkout },
+    )
 
-    public val messagesChange: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutMessagesChangeDescriptor
+    public val complete: NotificationDescriptor<Checkout> = notificationDescriptor(
+        method = Event.complete,
+        paramsSerializer = CheckoutParams.serializer(),
+        decode = { it.checkout },
+    )
 
-    public val lineItemsChange: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutLineItemsChangeDescriptor
+    public val messagesChange: NotificationDescriptor<Checkout> = notificationDescriptor(
+        method = Event.messagesChange,
+        paramsSerializer = CheckoutParams.serializer(),
+        decode = { it.checkout },
+    )
 
-    public val totalsChange: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutTotalsChangeDescriptor
+    public val lineItemsChange: NotificationDescriptor<Checkout> = notificationDescriptor(
+        method = Event.lineItemsChange,
+        paramsSerializer = CheckoutParams.serializer(),
+        decode = { it.checkout },
+    )
 
-    public val fulfillmentChange: NotificationDescriptor<Checkout>
-        get() = embeddedCheckoutFulfillmentChangeDescriptor
+    public val buyerChange: NotificationDescriptor<Checkout> = notificationDescriptor(
+        method = Event.buyerChange,
+        paramsSerializer = CheckoutParams.serializer(),
+        decode = { it.checkout },
+    )
 
-    public val error: NotificationDescriptor<ErrorResponse>
-        get() = embeddedCheckoutErrorDescriptor
+    public val totalsChange: NotificationDescriptor<Checkout> = notificationDescriptor(
+        method = Event.totalsChange,
+        paramsSerializer = CheckoutParams.serializer(),
+        decode = { it.checkout },
+    )
 
-    public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult>
-        get() = embeddedCheckoutWindowOpenDescriptor
+    public val paymentChange: NotificationDescriptor<Checkout> = notificationDescriptor(
+        method = Event.paymentChange,
+        paramsSerializer = CheckoutParams.serializer(),
+        decode = { it.checkout },
+    )
+
+    public val fulfillmentChange: NotificationDescriptor<Checkout> = notificationDescriptor(
+        method = Event.fulfillmentChange,
+        paramsSerializer = CheckoutParams.serializer(),
+        decode = { it.checkout },
+    )
+
+    public val ready: RequestDescriptor<ReadyRequest, ReadyResult> = requestDescriptor(
+        method = Event.ready,
+        delegation = null,
+        requestSerializer = ReadyRequest.serializer(),
+        responseSerializer = ReadyResult.serializer(),
+        decode = { it },
+        encode = { it },
+    )
+
+    public val auth: RequestDescriptor<AuthRequest, AuthResult> = requestDescriptor(
+        method = Event.auth,
+        delegation = null,
+        requestSerializer = AuthRequest.serializer(),
+        responseSerializer = AuthResult.serializer(),
+        decode = { it },
+        encode = { it },
+    )
+
+    public val paymentInstrumentsChange: RequestDescriptor<Checkout, InstrumentsChangeResult> = requestDescriptor(
+        method = Event.paymentInstrumentsChangeRequest,
+        delegation = "payment.instruments_change",
+        requestSerializer = CheckoutParams.serializer(),
+        responseSerializer = InstrumentsChangeResult.serializer(),
+        decode = { it.checkout },
+        encode = { it },
+    )
+
+    public val paymentCredential: RequestDescriptor<Checkout, CredentialResult> = requestDescriptor(
+        method = Event.paymentCredentialRequest,
+        delegation = "payment.credential",
+        requestSerializer = CheckoutParams.serializer(),
+        responseSerializer = CredentialResult.serializer(),
+        decode = { it.checkout },
+        encode = { it },
+    )
+
+    public val fulfillmentAddressChange: RequestDescriptor<Checkout, AddressChangeResult> = requestDescriptor(
+        method = Event.fulfillmentAddressChangeRequest,
+        delegation = "fulfillment.address_change",
+        requestSerializer = CheckoutParams.serializer(),
+        responseSerializer = AddressChangeResult.serializer(),
+        decode = { it.checkout },
+        encode = { it },
+    )
 
     /**
      * Returns the given checkout URL with the query parameters required to
@@ -130,7 +206,6 @@ public object EmbeddedCheckoutProtocol {
         public const val paymentChange: String = "ec.payment.change"
         public const val paymentInstrumentsChangeRequest: String = "ec.payment.instruments_change_request"
         public const val paymentCredentialRequest: String = "ec.payment.credential_request"
-        public const val windowOpenRequest: String = "ec.window.open_request"
         public const val fulfillmentChange: String = "ec.fulfillment.change"
         public const val fulfillmentAddressChangeRequest: String = "ec.fulfillment.address_change_request"
 
@@ -147,7 +222,6 @@ public object EmbeddedCheckoutProtocol {
             paymentChange,
             paymentInstrumentsChangeRequest,
             paymentCredentialRequest,
-            windowOpenRequest,
             fulfillmentChange,
             fulfillmentAddressChangeRequest,
         )
@@ -184,3 +258,13 @@ public object EmbeddedCheckoutProtocol {
             .replace("+", "%20")
             .replace("%2C", ",")
 }
+
+@Serializable
+private data class CheckoutParams(
+    val checkout: Checkout,
+)
+
+@Serializable
+private data class ErrorParams(
+    val error: ErrorResponse,
+)
