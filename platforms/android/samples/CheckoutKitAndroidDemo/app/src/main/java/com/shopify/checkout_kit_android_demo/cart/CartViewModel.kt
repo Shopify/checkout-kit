@@ -1,9 +1,9 @@
 package com.shopify.checkout_kit_android_demo.cart
 
 import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -187,19 +187,15 @@ class CartViewModel(
 
         return when (windowOpenHandler) {
             WindowOpenHandler.Default -> base
-            WindowOpenHandler.CustomTabs -> base.on(CheckoutProtocol.windowOpen) { request ->
-                val scheme = request.url.scheme?.lowercase()
-                Timber.i("ECP ec.window.open_request ($scheme)")
-                if (scheme != "http" && scheme != "https") {
-                    WindowOpenResult.Rejected(reason = "unsupported URL scheme: $scheme")
-                } else {
-                    try {
-                        CustomTabsIntent.Builder().build().launchUrl(activity, request.url)
-                        WindowOpenResult.Success
-                    } catch (e: ActivityNotFoundException) {
-                        Timber.w(e, "No activity resolved URL")
-                        WindowOpenResult.Rejected(reason = "no activity resolved URL")
-                    }
+            WindowOpenHandler.ExternalApp -> base.on(CheckoutProtocol.windowOpen) { request ->
+                Timber.i("ECP ec.window.open_request (${request.url.scheme}) → external app")
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, request.url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    activity.startActivity(intent)
+                    WindowOpenResult.Success
+                } catch (e: ActivityNotFoundException) {
+                    Timber.w(e, "No activity resolved URL")
+                    WindowOpenResult.Rejected(reason = "no activity resolved URL")
                 }
             }
         }
