@@ -36,6 +36,7 @@ build_for_digester() {
         -destination "generic/platform=iOS Simulator"
         -derivedDataPath "$DERIVED_DATA"
         -skipPackagePluginValidation
+        -disableAutomaticPackageResolution
         build
         SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
     )

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+python3 - "$ROOT_DIR" <<'PY'
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+tracked_files = subprocess.check_output(
+    ["git", "-C", str(root), "ls-files", ".github", "scripts", "platforms/swift", "platforms/react-native"],
+    text=True,
+).splitlines()
+
+violations = []
+
+xcodebuild_pattern = re.compile(r"(?<![\w-])(?:xcrun\s+)?xcodebuild(?![\w-])")
+
+for relative_path in tracked_files:
+    if relative_path == "scripts/check_xcodebuild_package_resolution":
+        continue
+
+    path = root / relative_path
+    if path.suffix in {".md", ".resolved", ".json", ".lock", ".png", ".jpg", ".jpeg", ".gif", ".webp"}:
+        continue
+
+    try:
+        lines = path.read_text().splitlines()
+    except UnicodeDecodeError:
+        continue
+
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if not xcodebuild_pattern.search(line):
+            continue
+        if "xcodebuild -version" in line or "xcrun xcodebuild -version" in line:
+            continue
+
+        snippet = "\n".join(lines[index:index + 25])
+        if "-disableAutomaticPackageResolution" not in snippet:
+            violations.append((relative_path, index + 1, stripped))
+
+if violations:
+    print("❌ xcodebuild invocations must include -disableAutomaticPackageResolution")
+    for relative_path, line_number, line in violations:
+        print(f"  {relative_path}:{line_number}: {line}")
+    sys.exit(1)
+
+print("✅ xcodebuild invocations disable automatic package resolution.")
+PY

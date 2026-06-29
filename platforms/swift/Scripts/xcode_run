@@ -27,7 +27,7 @@ else
     dest="id=$DEVICE_ID"
 fi
 
-xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destination \"$dest\" -skipPackagePluginValidation"
+xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destination \"$dest\" -skipPackagePluginValidation -disableAutomaticPackageResolution"
 
 if [[ "$SCHEME" == "ShopifyCheckoutKit-Package" && "$ACTION" == *"build"* && "$ACTION" != *"test"* ]]; then
     xcodebuild_cmd="$xcodebuild_cmd SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
