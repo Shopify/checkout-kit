@@ -103,6 +103,12 @@ interface CommonConfiguration {
    * @default LogLevel.error
    */
   logLevel?: LogLevel;
+  /**
+   * Enables best-effort checkout preloading before presentation.
+   *
+   * @default true
+   */
+  preloading?: boolean;
 }
 
 export type Configuration = CommonConfiguration & {
@@ -268,6 +274,16 @@ export interface ShopifyCheckoutKit {
     callbacks?: PresentCallbacks,
     protocol?: ProtocolHandlers,
   ): void;
+  /**
+   * Preload the checkout for faster presentation.
+   *
+   * @param checkoutURL The URL of the checkout to preload.
+   */
+  preload(checkoutURL: string): void;
+  /**
+   * Clear any checkout cached by `preload`.
+   */
+  invalidate(): void;
   /**
    * Configure the checkout. See README.md for more details.
    */

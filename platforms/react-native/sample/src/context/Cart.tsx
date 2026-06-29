@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {Alert} from 'react-native';
 import {atom, useAtom} from 'jotai';
+import {useShopifyCheckout} from '@shopify/checkout-kit-react-native';
 import useShopify from '../hooks/useShopify';
 import {useConfig} from './Config';
 import {useAuth} from './Auth';
@@ -78,12 +79,14 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
   const [addLineItems] = mutations.cartLinesAdd;
   const [removeLineItems] = mutations.cartLinesRemove;
   const [fetchCart] = queries.cart;
+  const {invalidate} = useShopifyCheckout();
 
   const clearCart = useCallback(() => {
+    invalidate();
     setCartId(defaultCartId);
     setCheckoutURL(undefined);
     setTotalQuantity(0);
-  }, [setCartId, setCheckoutURL, setTotalQuantity]);
+  }, [invalidate, setCartId, setCheckoutURL, setTotalQuantity]);
 
   useEffect(() => {
     clearCart();
@@ -126,6 +129,8 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
         );
         return;
       }
+
+      invalidate();
 
       if (!id) {
         let customerAccessToken: string | undefined;
@@ -170,6 +175,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
     [
       cartId,
       addLineItems,
+      invalidate,
       setCheckoutURL,
       setTotalQuantity,
       appConfig,
@@ -188,6 +194,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       }
 
       dispatch({type: 'add', variantId});
+      invalidate();
 
       const {data} = await removeLineItems({
         variables: {
@@ -212,6 +219,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
     [
       cartId,
       removeLineItems,
+      invalidate,
       setCheckoutURL,
       setTotalQuantity,
       fetchCart,

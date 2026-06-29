@@ -4,6 +4,7 @@ import {
   SafeAreaView,
   SectionList,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -25,8 +26,16 @@ import {
 } from '../auth/types';
 
 enum SectionType {
+  Switch = 'switch',
   SingleSelect = 'single-select',
   Text = 'text',
+}
+
+interface SwitchItem {
+  type: SectionType.Switch;
+  title: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
 }
 
 interface SingleSelectItem {
@@ -42,6 +51,10 @@ interface TextItem {
   value?: string;
 }
 
+function isSwitchItem(item: any): item is SwitchItem {
+  return item.type === SectionType.Switch;
+}
+
 function isSingleSelectItem(item: any): item is SingleSelectItem {
   return item.type === SectionType.SingleSelect;
 }
@@ -53,7 +66,7 @@ function isTextItem(item: any): item is TextItem {
 interface SectionData {
   title: string;
   footer?: string;
-  data: readonly (SingleSelectItem | TextItem)[];
+  data: readonly (SwitchItem | SingleSelectItem | TextItem)[];
 }
 
 function SettingsScreen() {
@@ -74,6 +87,16 @@ function SettingsScreen() {
   );
 
   const {isAuthenticated, customerEmail, tokenExpiresAt, logout} = useAuth();
+
+  const handleCheckoutPreloadingChange = useCallback(
+    (checkoutPreloadingEnabled: boolean) => {
+      setAppConfig({
+        ...appConfig,
+        checkoutPreloadingEnabled,
+      });
+    },
+    [appConfig, setAppConfig],
+  );
 
   const handleApplePayStyleChange = useCallback(
     (item: SingleSelectItem) => {
@@ -111,6 +134,18 @@ function SettingsScreen() {
         selected: appConfig.buyerIdentityMode === mode,
       })),
     [appConfig.buyerIdentityMode],
+  );
+
+  const featureOptions: readonly SwitchItem[] = useMemo(
+    () => [
+      {
+        title: 'Checkout preloading',
+        type: SectionType.Switch,
+        value: appConfig.checkoutPreloadingEnabled,
+        onValueChange: handleCheckoutPreloadingChange,
+      },
+    ],
+    [appConfig.checkoutPreloadingEnabled, handleCheckoutPreloadingChange],
   );
 
   const themeOptions: readonly SingleSelectItem[] = useMemo(
@@ -188,6 +223,10 @@ function SettingsScreen() {
   const sections: SectionData[] = useMemo(
     () => [
       {
+        title: 'Features',
+        data: featureOptions,
+      },
+      {
         title: 'Authentication',
         footer:
           'Prefills buyer identity at checkout. Changing this setting will clear your cart.',
@@ -209,6 +248,7 @@ function SettingsScreen() {
       },
     ],
     [
+      featureOptions,
       themeOptions,
       buyerIdentityOptions,
       applePayStyleOptions,
@@ -222,6 +262,10 @@ function SettingsScreen() {
         sections={sections}
         keyExtractor={item => item.title}
         renderItem={({item, section}) => {
+          if (isSwitchItem(item)) {
+            return <SwitchSettingItem item={item} styles={styles} />;
+          }
+
           if (isSingleSelectItem(item)) {
             const sectionHandlers: Record<string, (item: SingleSelectItem) => void> = {
               Authentication: handleBuyerIdentityModeChange,
@@ -276,6 +320,11 @@ function SettingsScreen() {
   );
 }
 
+interface SwitchSettingItemProps {
+  item: SwitchItem;
+  styles: ReturnType<typeof createStyles>;
+}
+
 interface SelectItemProps {
   item: SingleSelectItem;
   styles: ReturnType<typeof createStyles>;
@@ -285,6 +334,15 @@ interface SelectItemProps {
 interface TextItemProps {
   item: TextItem;
   styles: ReturnType<typeof createStyles>;
+}
+
+function SwitchSettingItem({item, styles}: SwitchSettingItemProps) {
+  return (
+    <View style={styles.listItem}>
+      <Text style={styles.listItemText}>{item.title}</Text>
+      <Switch value={item.value} onValueChange={item.onValueChange} />
+    </View>
+  );
 }
 
 function SelectItem({item, styles, onPress}: SelectItemProps) {

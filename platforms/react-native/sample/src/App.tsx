@@ -356,6 +356,7 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
     return {
       ...checkoutKitConfigDefaults,
       ...checkoutKitThemeConfig,
+      preloading: appConfig.checkoutPreloadingEnabled,
       colors: {
         ...checkoutKitThemeConfig.colors,
         ios: {
@@ -512,6 +513,7 @@ function App() {
             colorScheme:
               checkoutKitConfigDefaults.colorScheme ?? ColorScheme.automatic,
             buyerIdentityMode: BuyerIdentityMode.Guest,
+            checkoutPreloadingEnabled: true,
           }}>
           <AppWithCheckoutKit>
             <AppWithContext>

@@ -15,6 +15,7 @@ export interface AppConfig {
   colorScheme: ColorScheme;
   buyerIdentityMode: BuyerIdentityMode;
   applePayStyle?: ApplePayStyle;
+  checkoutPreloadingEnabled: boolean;
 }
 
 interface Context {
@@ -28,6 +29,7 @@ const defaultAppConfig: AppConfig = {
   colorScheme: ColorScheme.automatic,
   buyerIdentityMode: BuyerIdentityMode.Guest,
   applePayStyle: ApplePayStyle.automatic,
+  checkoutPreloadingEnabled: true,
 };
 
 const ConfigContext = createContext<Context>({

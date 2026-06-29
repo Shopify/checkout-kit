@@ -19,6 +19,7 @@ import com.shopify.checkoutkit.HttpException;
 import com.shopify.checkoutkit.ShopifyCheckoutKit;
 import com.shopify.checkoutkit.ColorScheme;
 import com.shopify.checkoutkit.LogLevel;
+import com.shopify.checkoutkit.Preloading;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
 import com.shopify.reactnative.checkoutkit.CustomCheckoutListener;
 import com.shopify.reactnative.checkoutkit.DispatchCallback;
@@ -57,6 +58,7 @@ public class ShopifyCheckoutKitModuleTest {
   // Store initial configuration to restore after each test
   private ColorScheme initialColorScheme;
   private LogLevel initialLogLevel;
+  private Preloading initialPreloading;
 
   // Mock for Arguments.createMap() to avoid native library loading
   private MockedStatic<Arguments> mockedArguments;
@@ -85,6 +87,7 @@ public class ShopifyCheckoutKitModuleTest {
     // Capture initial configuration state to restore after each test
     initialColorScheme = ShopifyCheckoutKitModule.checkoutConfig.getColorScheme();
     initialLogLevel = ShopifyCheckoutKitModule.checkoutConfig.getLogLevel();
+    initialPreloading = ShopifyCheckoutKitModule.checkoutConfig.getPreloading();
   }
 
   @After
@@ -101,6 +104,7 @@ public class ShopifyCheckoutKitModuleTest {
     ShopifyCheckoutKit.configure(configuration -> {
       configuration.setColorScheme(initialColorScheme);
       configuration.setLogLevel(initialLogLevel);
+      configuration.setPreloading(initialPreloading);
       ShopifyCheckoutKitModule.checkoutConfig = configuration;
     });
   }
@@ -127,6 +131,40 @@ public class ShopifyCheckoutKitModuleTest {
         // when UCP wiring is enabled.
         ShopifyCheckoutKit.present(eq(checkoutUrl), any(), any(), any());
       });
+    }
+  }
+
+  @Test
+  public void testCanPreloadCheckout() {
+    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckoutKit.class)) {
+      String checkoutUrl = "https://shopify.com";
+
+      shopifyCheckoutKitModule.preload(checkoutUrl);
+
+      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckoutKit.preload(checkoutUrl, mockComponentActivity));
+    }
+  }
+
+  @Test
+  public void testPreloadDoesNothingWithoutComponentActivity() {
+    when(mockReactContext.getCurrentActivity()).thenReturn(null);
+
+    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckoutKit.class)) {
+      shopifyCheckoutKitModule.preload("https://shopify.com");
+
+      mockedShopifyCheckoutKit.verifyNoInteractions();
+    }
+  }
+
+  @Test
+  public void testCanInvalidatePreloadCache() {
+    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckoutKit.class)) {
+      shopifyCheckoutKitModule.invalidateCache();
+
+      mockedShopifyCheckoutKit.verify(ShopifyCheckoutKit::invalidate);
     }
   }
 
@@ -240,6 +278,8 @@ public class ShopifyCheckoutKitModuleTest {
     // Test that the module starts with sensible defaults
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
         .isEqualTo("automatic");
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getPreloading().getEnabled())
+        .isTrue();
   }
 
   @Test
@@ -460,6 +500,30 @@ public class ShopifyCheckoutKitModuleTest {
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.ERROR);
+  }
+
+  @Test
+  public void testCanDisablePreloading() {
+    JavaOnlyMap config = new JavaOnlyMap();
+    config.putBoolean("preloading", false);
+
+    shopifyCheckoutKitModule.setConfig(config);
+
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getPreloading().getEnabled())
+        .isFalse();
+  }
+
+  @Test
+  public void testGetConfigIncludesPreloading() {
+    JavaOnlyMap config = new JavaOnlyMap();
+    config.putBoolean("preloading", false);
+
+    shopifyCheckoutKitModule.setConfig(config);
+
+    WritableMap result = shopifyCheckoutKitModule.getConfig();
+
+    assertThat(result).isNotNull();
+    assertThat(result.getBoolean("preloading")).isFalse();
   }
 
   @Test

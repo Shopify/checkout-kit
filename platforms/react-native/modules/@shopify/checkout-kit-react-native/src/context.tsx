@@ -15,6 +15,8 @@ interface Context {
     callbacks?: PresentCallbacks,
     protocol?: ProtocolHandlers,
   ) => void;
+  preload: (checkoutUrl: string) => void;
+  invalidate: () => void;
   dismiss: () => void;
   version: Maybe<string>;
 }
@@ -65,6 +67,16 @@ export function ShopifyCheckoutProvider({
     [],
   );
 
+  const preload = useCallback((checkoutUrl: string) => {
+    if (checkoutUrl) {
+      instance.current?.preload(checkoutUrl);
+    }
+  }, []);
+
+  const invalidate = useCallback(() => {
+    instance.current?.invalidate();
+  }, []);
+
   const dismiss = useCallback(() => {
     instance.current?.dismiss();
   }, []);
@@ -81,12 +93,22 @@ export function ShopifyCheckoutProvider({
     return {
       acceleratedCheckoutsAvailable,
       dismiss,
+      invalidate,
       setConfig,
       getConfig,
       present,
+      preload,
       version: instance.current?.version,
     };
-  }, [acceleratedCheckoutsAvailable, dismiss, getConfig, setConfig, present]);
+  }, [
+    acceleratedCheckoutsAvailable,
+    dismiss,
+    getConfig,
+    invalidate,
+    setConfig,
+    present,
+    preload,
+  ]);
 
   return (
     <ShopifyCheckoutContext.Provider value={context}>

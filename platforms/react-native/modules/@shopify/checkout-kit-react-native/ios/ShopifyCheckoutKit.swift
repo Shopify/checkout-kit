@@ -88,7 +88,9 @@ class RCTShopifyCheckoutKit: NSObject {
     }
 
     @objc func invalidateCache() {
-        // Retained for compatibility with the generated native module interface.
+        DispatchQueue.main.async {
+            ShopifyCheckoutKit.invalidate()
+        }
     }
 
     @objc func present(_ checkoutURL: String, subscribedMethods: [String]) {
@@ -119,7 +121,13 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    @objc func preload(_: String) {}
+    @objc func preload(_ checkoutURL: String) {
+        DispatchQueue.main.async {
+            guard let url = URL(string: checkoutURL) else { return }
+
+            ShopifyCheckoutKit.preload(checkout: url)
+        }
+    }
 
     private func getColorScheme(_ colorScheme: String) -> Configuration.ColorScheme {
         switch colorScheme {
@@ -142,6 +150,10 @@ class RCTShopifyCheckoutKit: NSObject {
 
         if let title = configuration["title"] as? String {
             ShopifyCheckoutKit.configuration.title = title
+        }
+
+        if let preloading = configuration["preloading"] as? Bool {
+            ShopifyCheckoutKit.configuration.preloading.enabled = preloading
         }
 
         if let colorScheme = configuration["colorScheme"] as? String {
@@ -173,6 +185,7 @@ class RCTShopifyCheckoutKit: NSObject {
         return [
             "title": ShopifyCheckoutKit.configuration.title,
             "colorScheme": ShopifyCheckoutKit.configuration.colorScheme.rawValue,
+            "preloading": ShopifyCheckoutKit.configuration.preloading.enabled,
             "tintColor": ShopifyCheckoutKit.configuration.tintColor,
             "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
             "closeButtonColor": ShopifyCheckoutKit.configuration.closeButtonTintColor,

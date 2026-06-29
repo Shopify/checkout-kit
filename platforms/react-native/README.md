@@ -560,7 +560,7 @@ Once enabled, preloading a checkout is as simple as calling
 ```tsx
 // using hooks
 const shopifyCheckout = useShopifyCheckout();
-ShopifyCheckout.preload(checkoutUrl);
+shopifyCheckout.preload(checkoutUrl);
 
 // using a class instance
 const shopifyCheckout = new ShopifyCheckout();
@@ -597,7 +597,7 @@ Instead, a better approach is to call `preload()` when you have a strong enough 
 
 ### Cache invalidation
 
-Should you wish to manually clear the preload cache, there is a `ShopifyCheckoutKit.invalidate()` helper function to do so.
+Should you wish to manually clear the preload cache, call `invalidate()` on your `ShopifyCheckout` instance or the value returned by `useShopifyCheckout()`.
 
 ## Checkout lifecycle
 
