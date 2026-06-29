@@ -156,6 +156,13 @@ export const MODEL_EXTRACTIONS = [
     paymentSchema: {$ref: 'checkout.json#/properties/payment'},
   },
   {
+    kind: 'result',
+    method: 'ec.fulfillment.address_change_request',
+    outputFile: 'address_change_result.json',
+    rootTitle: 'AddressChangeResult',
+    checkoutTitle: 'AddressChangeCheckout',
+  },
+  {
     kind: 'params',
     method: 'ec.ready',
     outputFile: 'ready_request.json',
@@ -204,6 +211,29 @@ const REQUEST_BINDINGS = new Map([
   ['ec.payment.credential_request', {payload: 'Checkout', result: 'CredentialResult', decode: 'checkoutUnwrap'}],
   ['ec.fulfillment.address_change_request', {payload: 'Checkout', result: 'AddressChangeResult', decode: 'checkoutUnwrap'}],
 ]);
+
+// Every request *result* must be generated from the spec (declared in
+// MODEL_EXTRACTIONS), never hand-written. A result bound in REQUEST_BINDINGS but
+// missing from MODEL_EXTRACTIONS — as ec.fulfillment.address_change_request once
+// was — reintroduces a hand-authored type that can silently drift from the spec.
+export function assertResultsAreGenerated(
+  bindings = REQUEST_BINDINGS,
+  extractions = MODEL_EXTRACTIONS,
+) {
+  const generated = new Set(
+    extractions.filter(entry => entry.kind === 'result').map(entry => entry.rootTitle),
+  );
+  for (const [method, binding] of bindings) {
+    if (binding.result && !generated.has(binding.result)) {
+      throw new Error(
+        `Result "${binding.result}" for ${method} is not generated. Add a ` +
+          `MODEL_EXTRACTIONS entry (kind: 'result') so it derives from the spec.`,
+      );
+    }
+  }
+}
+
+assertResultsAreGenerated();
 
 function buildCatalog() {
   const openRpc = JSON.parse(fs.readFileSync(openRpcPath, 'utf8'));

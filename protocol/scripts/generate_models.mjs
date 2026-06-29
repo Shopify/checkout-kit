@@ -239,9 +239,36 @@ async function prepareCodegenSchemas(tempDir) {
   return specDir;
 }
 
+// Finds a method by name in the OpenRPC document, resolving `$ref` method
+// entries (some methods live in shared schema files, e.g. fulfillment.json)
+// against the service directory so they match by their resolved `name`.
+async function findOpenRpcMethod(service, methodName) {
+  for (const entry of service.methods ?? []) {
+    if (entry.name === methodName) {
+      return entry;
+    }
+    if (typeof entry.$ref === "string") {
+      const [relativePath, pointer = ""] = entry.$ref.split("#");
+      const doc = await readJson(path.resolve(SERVICES_DIR, relativePath));
+      const resolved = pointer
+        .split("/")
+        .filter(Boolean)
+        .reduce(
+          (node, segment) =>
+            node?.[segment.replaceAll("~1", "/").replaceAll("~0", "~")],
+          doc,
+        );
+      if (resolved?.name === methodName) {
+        return resolved;
+      }
+    }
+  }
+  return undefined;
+}
+
 async function extractResultSchema(specDir, methodName, outputFile, rootTitle, checkoutTitle, paymentSchema) {
   const service = await readJson(path.join(SERVICES_DIR, "embedded.openrpc.json"));
-  const method = service.methods.find((candidate) => candidate.name === methodName);
+  const method = await findOpenRpcMethod(service, methodName);
   if (method === undefined) {
     throw new Error(`Missing OpenRPC method ${methodName}`);
   }
@@ -272,7 +299,7 @@ async function extractResultSchema(specDir, methodName, outputFile, rootTitle, c
 // `required` list.
 async function extractParamsSchema(specDir, methodName, outputFile, rootTitle) {
   const service = await readJson(path.join(SERVICES_DIR, "embedded.openrpc.json"));
-  const method = service.methods.find((candidate) => candidate.name === methodName);
+  const method = await findOpenRpcMethod(service, methodName);
   if (method === undefined) {
     throw new Error(`Missing OpenRPC method ${methodName}`);
   }
@@ -342,6 +369,8 @@ function commonSchemaSources(specDir) {
     path.join(specDir, "instruments_change_result.json"),
     "--src",
     path.join(specDir, "credential_result.json"),
+    "--src",
+    path.join(specDir, "address_change_result.json"),
     "--src",
     path.join(specDir, "ready_request.json"),
     "--src",

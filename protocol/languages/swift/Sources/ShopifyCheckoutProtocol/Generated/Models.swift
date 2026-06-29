@@ -6,6 +6,7 @@
 //   let errorResponse = try ErrorResponse(json)
 //   let instrumentsChangeResult = try InstrumentsChangeResult(json)
 //   let credentialResult = try CredentialResult(json)
+//   let addressChangeResult = try AddressChangeResult(json)
 //   let readyRequest = try ReadyRequest(json)
 //   let readyResult = try ReadyResult(json)
 //   let authRequest = try AuthRequest(json)
@@ -4134,6 +4135,180 @@ public extension CredentialCheckout {
     }
 }
 
+/// Checkout state after address selection.
+///
+/// Generic error response when business logic prevents resource creation or failed to
+/// retrieve resource. Used when no valid resource can be established.
+// MARK: - AddressChangeResult
+public struct AddressChangeResult: Codable, Sendable {
+    /// Partial checkout update with fulfillment address selection.
+    public let checkout: AddressChangeCheckout?
+    /// UCP protocol metadata. Status MUST be 'error' for error response.
+    public let ucp: InstrumentsChangeResultUcp
+    /// URL for buyer handoff or session recovery.
+    public let continueURL: String?
+    /// Array of messages describing why the operation failed.
+    public let messages: [Message]?
+
+    public enum CodingKeys: String, CodingKey {
+        case checkout, ucp
+        case continueURL = "continue_url"
+        case messages
+    }
+
+    public init(checkout: AddressChangeCheckout?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+        self.checkout = checkout
+        self.ucp = ucp
+        self.continueURL = continueURL
+        self.messages = messages
+    }
+}
+
+// MARK: AddressChangeResult convenience initializers and mutators
+
+public extension AddressChangeResult {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AddressChangeResult.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        checkout: AddressChangeCheckout?? = nil,
+        ucp: InstrumentsChangeResultUcp? = nil,
+        continueURL: String?? = nil,
+        messages: [Message]?? = nil
+    ) -> AddressChangeResult {
+        return AddressChangeResult(
+            checkout: checkout ?? self.checkout,
+            ucp: ucp ?? self.ucp,
+            continueURL: continueURL ?? self.continueURL,
+            messages: messages ?? self.messages
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Partial checkout update with fulfillment address selection.
+// MARK: - AddressChangeCheckout
+public struct AddressChangeCheckout: Codable, Sendable {
+    /// Updated fulfillment with new selected destination and destinations.
+    public let fulfillment: CheckoutFulfillmentClass?
+
+    public init(fulfillment: CheckoutFulfillmentClass?) {
+        self.fulfillment = fulfillment
+    }
+}
+
+// MARK: AddressChangeCheckout convenience initializers and mutators
+
+public extension AddressChangeCheckout {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AddressChangeCheckout.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        fulfillment: CheckoutFulfillmentClass?? = nil
+    ) -> AddressChangeCheckout {
+        return AddressChangeCheckout(
+            fulfillment: fulfillment ?? self.fulfillment
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Updated fulfillment with new selected destination and destinations.
+///
+/// Container for fulfillment methods and availability.
+// MARK: - CheckoutFulfillmentClass
+public struct CheckoutFulfillmentClass: Codable, Sendable {
+    /// Inventory availability hints.
+    public let availableMethods: [FulfillmentAvailableMethod]?
+    /// Fulfillment methods for cart items.
+    public let methods: [FulfillmentMethod]?
+
+    public enum CodingKeys: String, CodingKey {
+        case availableMethods = "available_methods"
+        case methods
+    }
+
+    public init(availableMethods: [FulfillmentAvailableMethod]?, methods: [FulfillmentMethod]?) {
+        self.availableMethods = availableMethods
+        self.methods = methods
+    }
+}
+
+// MARK: CheckoutFulfillmentClass convenience initializers and mutators
+
+public extension CheckoutFulfillmentClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(CheckoutFulfillmentClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        availableMethods: [FulfillmentAvailableMethod]?? = nil,
+        methods: [FulfillmentMethod]?? = nil
+    ) -> CheckoutFulfillmentClass {
+        return CheckoutFulfillmentClass(
+            availableMethods: availableMethods ?? self.availableMethods,
+            methods: methods ?? self.methods
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
 // MARK: - ReadyRequest
 public struct ReadyRequest: Codable, Sendable {
     public let auth: Auth?
@@ -4347,62 +4522,6 @@ public extension ReadyCheckout {
         return ReadyCheckout(
             fulfillment: fulfillment ?? self.fulfillment,
             payment: payment ?? self.payment
-        )
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
-
-/// Container for fulfillment methods and availability.
-// MARK: - CheckoutFulfillmentClass
-public struct CheckoutFulfillmentClass: Codable, Sendable {
-    /// Inventory availability hints.
-    public let availableMethods: [FulfillmentAvailableMethod]?
-    /// Fulfillment methods for cart items.
-    public let methods: [FulfillmentMethod]?
-
-    public enum CodingKeys: String, CodingKey {
-        case availableMethods = "available_methods"
-        case methods
-    }
-
-    public init(availableMethods: [FulfillmentAvailableMethod]?, methods: [FulfillmentMethod]?) {
-        self.availableMethods = availableMethods
-        self.methods = methods
-    }
-}
-
-// MARK: CheckoutFulfillmentClass convenience initializers and mutators
-
-public extension CheckoutFulfillmentClass {
-    init(data: Data) throws {
-        self = try newJSONDecoder().decode(CheckoutFulfillmentClass.self, from: data)
-    }
-
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
-        }
-        try self.init(data: data)
-    }
-
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func with(
-        availableMethods: [FulfillmentAvailableMethod]?? = nil,
-        methods: [FulfillmentMethod]?? = nil
-    ) -> CheckoutFulfillmentClass {
-        return CheckoutFulfillmentClass(
-            availableMethods: availableMethods ?? self.availableMethods,
-            methods: methods ?? self.methods
         )
     }
 

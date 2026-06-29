@@ -17,9 +17,9 @@ const notifications = EC_METHODS.filter(entry => entry.kind === 'notification');
 const requests = EC_METHODS.filter(entry => entry.kind === 'request');
 
 // Conformances are emitted only for model-generated types. Notification payloads
-// and the params/result types the model generator synthesizes conform here;
-// hand-authored types (fulfillment's AddressChangeResult) conform alongside
-// their hand-written definitions.
+// and the params/result types the model generator synthesizes conform here. Every
+// bound request result is generated (enforced by assertResultsAreGenerated in the
+// catalog manifest), so no hand-written result type conforms separately.
 const generatedRequestPayloads = new Set(
   MODEL_EXTRACTIONS.filter(extraction => extraction.kind === 'params').map(
     extraction => extraction.rootTitle,

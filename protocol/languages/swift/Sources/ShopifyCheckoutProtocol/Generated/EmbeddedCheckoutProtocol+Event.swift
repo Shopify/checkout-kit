@@ -7,6 +7,7 @@ extension AuthRequest: EventPayload {}
 extension Checkout: EventPayload {}
 extension ErrorResponse: EventPayload {}
 extension ReadyRequest: EventPayload {}
+extension AddressChangeResult: ResponsePayload {}
 extension AuthResult: ResponsePayload {}
 extension CredentialResult: ResponsePayload {}
 extension InstrumentsChangeResult: ResponsePayload {}
