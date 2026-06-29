@@ -5,3 +5,16 @@ set -euo pipefail
 e2e_log() {
   printf '\n==> %s\n' "$*"
 }
+
+e2e_enable_corepack() {
+  e2e_log "Enabling Corepack"
+  corepack enable
+}
+
+e2e_configure_storefront() {
+  e2e_log "Checking storefront configuration secrets"
+  : "${STOREFRONT_DOMAIN:?STOREFRONT_DOMAIN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
+  : "${STOREFRONT_ACCESS_TOKEN:?STOREFRONT_ACCESS_TOKEN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
+  e2e_log "Configuring storefront environment"
+  ./scripts/setup_storefront_env --skip-optional-prompts
+}

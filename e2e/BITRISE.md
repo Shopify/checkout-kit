@@ -55,7 +55,18 @@ Each workflow's main `script` step sets its own wall-clock budget with the Bitri
 
 The `e2e-execute-browserstack-run` workflow fans out one parallel copy per BrowserStack run plan row. The `e2e-produce-browserstack-run-plan` workflow derives this count with `ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count` and publishes it as `E2E_BROWSERSTACK_RUN_PLAN_COUNT`, which the `e2e-execute-browserstack-run` `parallel` field reads, so it never needs manual alignment.
 
+## Storefront secrets
+
+These secrets are configured in Bitrise.io; they cannot live in the repository. `scripts/setup_storefront_env` reads them to configure the sample app before builds.
+
+| Secret | Purpose |
+|---|---|
+| `STOREFRONT_DOMAIN` | Storefront domain for sample app builds. |
+| `STOREFRONT_ACCESS_TOKEN` | Storefront access token for sample app builds. |
+
 ## Caching
+
+React Native Android E2E builds use the released native Maven artifact versions declared by the React Native sample and module configuration. Do not pass the React Native `--local` flag or set local native SDK override environment variables for these builds.
 
 The pipeline uses Bitrise cache steps for key-based pnpm/CocoaPods/Gradle cache paths.
 

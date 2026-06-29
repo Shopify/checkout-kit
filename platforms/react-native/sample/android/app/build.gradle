@@ -136,6 +136,12 @@ android {
       minifyEnabled true
       proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
     }
+    e2e {
+      initWith release
+      matchingFallbacks = ['release']
+      signingConfig signingConfigs.debug
+      minifyEnabled false
+    }
   }
 
   testOptions {
@@ -149,6 +155,18 @@ android {
           showStackTraces true
         }
       }
+    }
+  }
+}
+
+gradle.projectsEvaluated {
+  if (project.findProperty("newArchEnabled").toString() == "true") {
+    def codegenTasks = rootProject.subprojects.collect { subproject ->
+      subproject.tasks.findByName("generateCodegenArtifactsFromSchema")
+    }.findAll { task -> task != null }
+
+    tasks.matching { task -> task.name.startsWith("configureCMake") }.configureEach { task ->
+      task.dependsOn(codegenTasks)
     }
   }
 }
