@@ -224,6 +224,11 @@ class CheckoutWebView: WKWebView {
     var openExternalURL: (URL) -> Void = { UIApplication.shared.open($0) }
 
     /// Kit-owned client that handles delegations and kit-mandated notifications. Currently:
+    ///   - `ec.ready` - kit-owned handshake. Supported delegations are announced up
+    ///     front via the `ec_delegate` URL query param; acceptance is implicit, so the
+    ///     ready result carries only the UCP envelope and the kit simply answers the
+    ///     delegated calls it supports. It is abstracted from consumers and cannot be
+    ///     overridden by a merchant-supplied client.
     ///   - `window.open` - falls back to `UIApplication.shared.open(...)` after a
     ///     `canOpenURL` check (consumers may still override via their own client).
     ///   - `ec.error` - when the payload carries `severity: "unrecoverable"`, dismiss
@@ -231,6 +236,9 @@ class CheckoutWebView: WKWebView {
     ///     resource exists to act on, so consumers don't have to wire dismissal in
     ///     every error handler.
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
+        .on(CheckoutProtocol.ready) { _ in
+            ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
+        }
         .on(CheckoutProtocol.complete) { _ in
             CheckoutWebView.invalidate(disconnect: false)
         }
@@ -254,6 +262,10 @@ class CheckoutWebView: WKWebView {
 
     var defaultClientBindings: [String: DefaultClientBinding] {
         [
+            CheckoutProtocol.ready.method: DefaultClientBinding(
+                client: defaultsClient,
+                policy: .kitOwned
+            ),
             CheckoutProtocol.complete.method: DefaultClientBinding(
                 client: defaultsClient,
                 policy: .alwaysRunAfterMerchant
@@ -449,21 +461,11 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        guard let method = CheckoutProtocol.supportedProtocolMethod(body) else {
+        guard CheckoutProtocol.supportedProtocolMethod(body) != nil else {
             if let response = CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: body) {
                 Task { @MainActor in
                     await checkoutBridge.sendResponse(self, messageBody: response)
                 }
-            }
-            return
-        }
-
-        if method == EmbeddedCheckoutProtocol.readyMethod,
-           let response = EmbeddedCheckoutProtocol.acknowledgeReady(body, supportedDelegations: CheckoutProtocol.defaultDelegations.map(\.rawValue))
-        {
-            OSLogger.shared.debug("Handling ec.ready: sending UCP ready acknowledgement, isPreload: \(isPreloadRequest)")
-            Task { @MainActor in
-                await checkoutBridge.sendResponse(self, messageBody: response)
             }
             return
         }

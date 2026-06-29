@@ -15,6 +15,8 @@ public enum CheckoutProtocol {
     static let methodNotFoundCode = -32601
     static let methodNotFoundMessage = "Method not found"
 
+    static let ready = EmbeddedCheckoutProtocol.Event.ready
+
     public static let complete = EmbeddedCheckoutProtocol.Event.complete
     public static let error = EmbeddedCheckoutProtocol.Event.error
     public static let fulfillmentChange = EmbeddedCheckoutProtocol.Event.fulfillmentChange
@@ -24,7 +26,7 @@ public enum CheckoutProtocol {
     public static let totalsChange = EmbeddedCheckoutProtocol.Event.totalsChange
 
     static let supportedProtocolMethods: Set<String> = [
-        EmbeddedCheckoutProtocol.readyMethod,
+        ready.method,
         start.method,
         complete.method,
         error.method,

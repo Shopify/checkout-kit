@@ -6,6 +6,11 @@
 //   let errorResponse = try ErrorResponse(json)
 //   let instrumentsChangeResult = try InstrumentsChangeResult(json)
 //   let credentialResult = try CredentialResult(json)
+//   let addressChangeResult = try AddressChangeResult(json)
+//   let readyRequest = try ReadyRequest(json)
+//   let readyResult = try ReadyResult(json)
+//   let authRequest = try AuthRequest(json)
+//   let authResult = try AuthResult(json)
 
 import Foundation
 
@@ -3191,7 +3196,7 @@ public struct UCPOrderResponseSchema: Codable, Sendable {
     /// Payment handler registry keyed by reverse-domain name.
     public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
     /// Service registry keyed by reverse-domain name.
-    public let services: [String: [UCPOrderResponseSchemaService]]?
+    public let services: [String: [Service]]?
     /// Application-level status of the UCP operation.
     public let status: UCPCheckoutResponseSchemaStatus?
     public let version: String
@@ -3202,7 +3207,7 @@ public struct UCPOrderResponseSchema: Codable, Sendable {
         case services, status, version
     }
 
-    public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [UCPOrderResponseSchemaService]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
+    public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
         self.capabilities = capabilities
         self.paymentHandlers = paymentHandlers
         self.services = services
@@ -3232,7 +3237,7 @@ public extension UCPOrderResponseSchema {
     func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
-        services: [String: [UCPOrderResponseSchemaService]]?? = nil,
+        services: [String: [Service]]?? = nil,
         status: UCPCheckoutResponseSchemaStatus?? = nil,
         version: String? = nil
     ) -> UCPOrderResponseSchema {
@@ -3255,8 +3260,8 @@ public extension UCPOrderResponseSchema {
 }
 
 /// Shared foundation for all UCP entities.
-// MARK: - UCPOrderResponseSchemaService
-public struct UCPOrderResponseSchemaService: Codable, Sendable {
+// MARK: - Service
+public struct Service: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
     /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
@@ -3284,11 +3289,11 @@ public struct UCPOrderResponseSchemaService: Codable, Sendable {
     }
 }
 
-// MARK: UCPOrderResponseSchemaService convenience initializers and mutators
+// MARK: Service convenience initializers and mutators
 
-public extension UCPOrderResponseSchemaService {
+public extension Service {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(UCPOrderResponseSchemaService.self, from: data)
+        self = try newJSONDecoder().decode(Service.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3310,8 +3315,8 @@ public extension UCPOrderResponseSchemaService {
         version: String? = nil,
         endpoint: String?? = nil,
         transport: Transport? = nil
-    ) -> UCPOrderResponseSchemaService {
-        return UCPOrderResponseSchemaService(
+    ) -> Service {
+        return Service(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
@@ -3406,9 +3411,9 @@ public struct ErrorResponseUcp: Codable, Sendable {
     /// Payment handler registry keyed by reverse-domain name.
     public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
     /// Service registry keyed by reverse-domain name.
-    public let services: [String: [UCPOrderResponseSchemaService]]?
+    public let services: [String: [Service]]?
     /// Application-level status of the UCP operation.
-    public let status: StatusEnum
+    public let status: ErrorStatus
     public let version: String
 
     public enum CodingKeys: String, CodingKey {
@@ -3417,7 +3422,7 @@ public struct ErrorResponseUcp: Codable, Sendable {
         case services, status, version
     }
 
-    public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [UCPOrderResponseSchemaService]]?, status: StatusEnum, version: String) {
+    public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: ErrorStatus, version: String) {
         self.capabilities = capabilities
         self.paymentHandlers = paymentHandlers
         self.services = services
@@ -3447,8 +3452,8 @@ public extension ErrorResponseUcp {
     func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
-        services: [String: [UCPOrderResponseSchemaService]]?? = nil,
-        status: StatusEnum? = nil,
+        services: [String: [Service]]?? = nil,
+        status: ErrorStatus? = nil,
         version: String? = nil
     ) -> ErrorResponseUcp {
         return ErrorResponseUcp(
@@ -3470,7 +3475,7 @@ public extension ErrorResponseUcp {
 }
 
 /// Application-level status of the UCP operation.
-public enum StatusEnum: String, Codable, Sendable {
+public enum ErrorStatus: String, Codable, Sendable {
     case error = "error"
 }
 
@@ -3665,7 +3670,7 @@ public struct InstrumentsChangeResultUcp: Codable, Sendable {
     /// Payment handler registry keyed by reverse-domain name.
     public let paymentHandlers: [String: [PaymentHandlerElement]]?
     /// Service registry keyed by reverse-domain name.
-    public let services: [String: [InstrumentsChangeService]]?
+    public let services: [String: [EmbeddedService]]?
     /// Application-level status of the UCP operation.
     public let status: UCPCheckoutResponseSchemaStatus
     public let version: String
@@ -3676,7 +3681,7 @@ public struct InstrumentsChangeResultUcp: Codable, Sendable {
         case services, status, version
     }
 
-    public init(capabilities: [String: [CapabilityElement]]?, paymentHandlers: [String: [PaymentHandlerElement]]?, services: [String: [InstrumentsChangeService]]?, status: UCPCheckoutResponseSchemaStatus, version: String) {
+    public init(capabilities: [String: [CapabilityElement]]?, paymentHandlers: [String: [PaymentHandlerElement]]?, services: [String: [EmbeddedService]]?, status: UCPCheckoutResponseSchemaStatus, version: String) {
         self.capabilities = capabilities
         self.paymentHandlers = paymentHandlers
         self.services = services
@@ -3706,7 +3711,7 @@ public extension InstrumentsChangeResultUcp {
     func with(
         capabilities: [String: [CapabilityElement]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerElement]]?? = nil,
-        services: [String: [InstrumentsChangeService]]?? = nil,
+        services: [String: [EmbeddedService]]?? = nil,
         status: UCPCheckoutResponseSchemaStatus? = nil,
         version: String? = nil
     ) -> InstrumentsChangeResultUcp {
@@ -3939,8 +3944,8 @@ public extension PaymentHandlerAvailableInstrument {
 }
 
 /// Shared foundation for all UCP entities.
-// MARK: - InstrumentsChangeService
-public struct InstrumentsChangeService: Codable, Sendable {
+// MARK: - EmbeddedService
+public struct EmbeddedService: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
     /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
@@ -3968,11 +3973,11 @@ public struct InstrumentsChangeService: Codable, Sendable {
     }
 }
 
-// MARK: InstrumentsChangeService convenience initializers and mutators
+// MARK: EmbeddedService convenience initializers and mutators
 
-public extension InstrumentsChangeService {
+public extension EmbeddedService {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(InstrumentsChangeService.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedService.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3994,8 +3999,8 @@ public extension InstrumentsChangeService {
         version: String? = nil,
         endpoint: String?? = nil,
         transport: Transport? = nil
-    ) -> InstrumentsChangeService {
-        return InstrumentsChangeService(
+    ) -> EmbeddedService {
+        return EmbeddedService(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
@@ -4118,6 +4123,625 @@ public extension CredentialCheckout {
     ) -> CredentialCheckout {
         return CredentialCheckout(
             payment: payment ?? self.payment
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Checkout state after address selection.
+///
+/// Generic error response when business logic prevents resource creation or failed to
+/// retrieve resource. Used when no valid resource can be established.
+// MARK: - AddressChangeResult
+public struct AddressChangeResult: Codable, Sendable {
+    /// Partial checkout update with fulfillment address selection.
+    public let checkout: AddressChangeCheckout?
+    /// UCP protocol metadata. Status MUST be 'error' for error response.
+    public let ucp: InstrumentsChangeResultUcp
+    /// URL for buyer handoff or session recovery.
+    public let continueURL: String?
+    /// Array of messages describing why the operation failed.
+    public let messages: [Message]?
+
+    public enum CodingKeys: String, CodingKey {
+        case checkout, ucp
+        case continueURL = "continue_url"
+        case messages
+    }
+
+    public init(checkout: AddressChangeCheckout?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+        self.checkout = checkout
+        self.ucp = ucp
+        self.continueURL = continueURL
+        self.messages = messages
+    }
+}
+
+// MARK: AddressChangeResult convenience initializers and mutators
+
+public extension AddressChangeResult {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AddressChangeResult.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        checkout: AddressChangeCheckout?? = nil,
+        ucp: InstrumentsChangeResultUcp? = nil,
+        continueURL: String?? = nil,
+        messages: [Message]?? = nil
+    ) -> AddressChangeResult {
+        return AddressChangeResult(
+            checkout: checkout ?? self.checkout,
+            ucp: ucp ?? self.ucp,
+            continueURL: continueURL ?? self.continueURL,
+            messages: messages ?? self.messages
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Partial checkout update with fulfillment address selection.
+// MARK: - AddressChangeCheckout
+public struct AddressChangeCheckout: Codable, Sendable {
+    /// Updated fulfillment with new selected destination and destinations.
+    public let fulfillment: CheckoutFulfillmentClass?
+
+    public init(fulfillment: CheckoutFulfillmentClass?) {
+        self.fulfillment = fulfillment
+    }
+}
+
+// MARK: AddressChangeCheckout convenience initializers and mutators
+
+public extension AddressChangeCheckout {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AddressChangeCheckout.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        fulfillment: CheckoutFulfillmentClass?? = nil
+    ) -> AddressChangeCheckout {
+        return AddressChangeCheckout(
+            fulfillment: fulfillment ?? self.fulfillment
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Updated fulfillment with new selected destination and destinations.
+///
+/// Container for fulfillment methods and availability.
+// MARK: - CheckoutFulfillmentClass
+public struct CheckoutFulfillmentClass: Codable, Sendable {
+    /// Inventory availability hints.
+    public let availableMethods: [FulfillmentAvailableMethod]?
+    /// Fulfillment methods for cart items.
+    public let methods: [FulfillmentMethod]?
+
+    public enum CodingKeys: String, CodingKey {
+        case availableMethods = "available_methods"
+        case methods
+    }
+
+    public init(availableMethods: [FulfillmentAvailableMethod]?, methods: [FulfillmentMethod]?) {
+        self.availableMethods = availableMethods
+        self.methods = methods
+    }
+}
+
+// MARK: CheckoutFulfillmentClass convenience initializers and mutators
+
+public extension CheckoutFulfillmentClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(CheckoutFulfillmentClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        availableMethods: [FulfillmentAvailableMethod]?? = nil,
+        methods: [FulfillmentMethod]?? = nil
+    ) -> CheckoutFulfillmentClass {
+        return CheckoutFulfillmentClass(
+            availableMethods: availableMethods ?? self.availableMethods,
+            methods: methods ?? self.methods
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - ReadyRequest
+public struct ReadyRequest: Codable, Sendable {
+    public let auth: Auth?
+    /// Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
+    public let delegate: [String]
+
+    public init(auth: Auth?, delegate: [String]) {
+        self.auth = auth
+        self.delegate = delegate
+    }
+}
+
+// MARK: ReadyRequest convenience initializers and mutators
+
+public extension ReadyRequest {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ReadyRequest.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        auth: Auth?? = nil,
+        delegate: [String]? = nil
+    ) -> ReadyRequest {
+        return ReadyRequest(
+            auth: auth ?? self.auth,
+            delegate: delegate ?? self.delegate
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - Auth
+public struct Auth: Codable, Sendable {
+    public let type: String?
+
+    public init(type: String?) {
+        self.type = type
+    }
+}
+
+// MARK: Auth convenience initializers and mutators
+
+public extension Auth {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Auth.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        type: String?? = nil
+    ) -> Auth {
+        return Auth(
+            type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Handshake response from host.
+///
+/// Generic error response when business logic prevents resource creation or failed to
+/// retrieve resource. Used when no valid resource can be established.
+// MARK: - ReadyResult
+public struct ReadyResult: Codable, Sendable {
+    /// Initial delegation state from host. Fields are permitted only when the corresponding
+    /// delegation is accepted.
+    public let checkout: ReadyCheckout?
+    /// Requested authorization. Some common examples include API key and OAuth token.
+    public let credential: String?
+    /// UCP protocol metadata. Status MUST be 'error' for error response.
+    public let ucp: InstrumentsChangeResultUcp
+    /// Channel upgrade instructions. If present, switch to provided MessagePort.
+    public let upgrade: Upgrade?
+    /// URL for buyer handoff or session recovery.
+    public let continueURL: String?
+    /// Array of messages describing why the operation failed.
+    public let messages: [Message]?
+
+    public enum CodingKeys: String, CodingKey {
+        case checkout, credential, ucp, upgrade
+        case continueURL = "continue_url"
+        case messages
+    }
+
+    public init(checkout: ReadyCheckout?, credential: String?, ucp: InstrumentsChangeResultUcp, upgrade: Upgrade?, continueURL: String?, messages: [Message]?) {
+        self.checkout = checkout
+        self.credential = credential
+        self.ucp = ucp
+        self.upgrade = upgrade
+        self.continueURL = continueURL
+        self.messages = messages
+    }
+}
+
+// MARK: ReadyResult convenience initializers and mutators
+
+public extension ReadyResult {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ReadyResult.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        checkout: ReadyCheckout?? = nil,
+        credential: String?? = nil,
+        ucp: InstrumentsChangeResultUcp? = nil,
+        upgrade: Upgrade?? = nil,
+        continueURL: String?? = nil,
+        messages: [Message]?? = nil
+    ) -> ReadyResult {
+        return ReadyResult(
+            checkout: checkout ?? self.checkout,
+            credential: credential ?? self.credential,
+            ucp: ucp ?? self.ucp,
+            upgrade: upgrade ?? self.upgrade,
+            continueURL: continueURL ?? self.continueURL,
+            messages: messages ?? self.messages
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Initial delegation state from host. Fields are permitted only when the corresponding
+/// delegation is accepted.
+// MARK: - ReadyCheckout
+public struct ReadyCheckout: Codable, Sendable {
+    public let fulfillment: CheckoutFulfillmentClass?
+    /// Payment instruments with selected instrument ID.
+    public let payment: ReadyPayment?
+
+    public init(fulfillment: CheckoutFulfillmentClass?, payment: ReadyPayment?) {
+        self.fulfillment = fulfillment
+        self.payment = payment
+    }
+}
+
+// MARK: ReadyCheckout convenience initializers and mutators
+
+public extension ReadyCheckout {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ReadyCheckout.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        fulfillment: CheckoutFulfillmentClass?? = nil,
+        payment: ReadyPayment?? = nil
+    ) -> ReadyCheckout {
+        return ReadyCheckout(
+            fulfillment: fulfillment ?? self.fulfillment,
+            payment: payment ?? self.payment
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Payment instruments with selected instrument ID.
+///
+/// Payment configuration containing handlers.
+// MARK: - ReadyPayment
+public struct ReadyPayment: Codable, Sendable {
+    /// The payment instruments available for this payment. Each instrument is associated with a
+    /// specific handler via the handler_id field. Handlers can extend the base
+    /// payment_instrument schema to add handler-specific fields.
+    public let instruments: [SelectedPaymentInstrument]?
+    /// ID of the selected payment instrument.
+    public let selectedInstrumentID: String?
+
+    public enum CodingKeys: String, CodingKey {
+        case instruments
+        case selectedInstrumentID = "selected_instrument_id"
+    }
+
+    public init(instruments: [SelectedPaymentInstrument]?, selectedInstrumentID: String?) {
+        self.instruments = instruments
+        self.selectedInstrumentID = selectedInstrumentID
+    }
+}
+
+// MARK: ReadyPayment convenience initializers and mutators
+
+public extension ReadyPayment {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ReadyPayment.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        instruments: [SelectedPaymentInstrument]?? = nil,
+        selectedInstrumentID: String?? = nil
+    ) -> ReadyPayment {
+        return ReadyPayment(
+            instruments: instruments ?? self.instruments,
+            selectedInstrumentID: selectedInstrumentID ?? self.selectedInstrumentID
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Channel upgrade instructions. If present, switch to provided MessagePort.
+// MARK: - Upgrade
+public struct Upgrade: Codable, Sendable {
+    /// MessagePort for upgraded channel. Runtime type is MessagePort.
+    public let port: [String: JSONAny]?
+
+    public init(port: [String: JSONAny]?) {
+        self.port = port
+    }
+}
+
+// MARK: Upgrade convenience initializers and mutators
+
+public extension Upgrade {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Upgrade.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        port: [String: JSONAny]?? = nil
+    ) -> Upgrade {
+        return Upgrade(
+            port: port ?? self.port
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - AuthRequest
+public struct AuthRequest: Codable, Sendable {
+    public let type: String?
+
+    public init(type: String?) {
+        self.type = type
+    }
+}
+
+// MARK: AuthRequest convenience initializers and mutators
+
+public extension AuthRequest {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AuthRequest.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        type: String?? = nil
+    ) -> AuthRequest {
+        return AuthRequest(
+            type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Auth response from host containing the requested authorization data.
+///
+/// Generic error response when business logic prevents resource creation or failed to
+/// retrieve resource. Used when no valid resource can be established.
+// MARK: - AuthResult
+public struct AuthResult: Codable, Sendable {
+    /// Requested authorization. Some common examples include API key and OAuth token.
+    public let credential: String?
+    /// UCP protocol metadata. Status MUST be 'error' for error response.
+    public let ucp: InstrumentsChangeResultUcp
+    /// URL for buyer handoff or session recovery.
+    public let continueURL: String?
+    /// Array of messages describing why the operation failed.
+    public let messages: [Message]?
+
+    public enum CodingKeys: String, CodingKey {
+        case credential, ucp
+        case continueURL = "continue_url"
+        case messages
+    }
+
+    public init(credential: String?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+        self.credential = credential
+        self.ucp = ucp
+        self.continueURL = continueURL
+        self.messages = messages
+    }
+}
+
+// MARK: AuthResult convenience initializers and mutators
+
+public extension AuthResult {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AuthResult.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        credential: String?? = nil,
+        ucp: InstrumentsChangeResultUcp? = nil,
+        continueURL: String?? = nil,
+        messages: [Message]?? = nil
+    ) -> AuthResult {
+        return AuthResult(
+            credential: credential ?? self.credential,
+            ucp: ucp ?? self.ucp,
+            continueURL: continueURL ?? self.continueURL,
+            messages: messages ?? self.messages
         )
     }
 

@@ -35,6 +35,7 @@ import {
   requireQuicktype,
   run,
 } from "./codegen_tools.mjs";
+import {MODEL_EXTRACTIONS} from "./method_catalog.mjs";
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
@@ -212,12 +213,62 @@ async function prepareCodegenSchemas(tempDir) {
   fulfillment.title = "CheckoutFulfillment";
   await writeJson(path.join(specDir, "types", "fulfillment.json"), fulfillment);
 
+  // The error response branch narrows status to the single const "error"; title
+  // it so the generated single-case enum stays domain-specific.
+  const ucp = await readJson(path.join(schemaDir, "ucp.json"));
+  for (const branch of ucp.$defs.error.allOf ?? []) {
+    if (branch.properties?.status !== undefined) {
+      branch.properties.status.title = "ErrorStatus";
+    }
+  }
+  // The success-branch service binding and the response-branch one resolve to the
+  // same service node, so quicktype disambiguates the success copy with a
+  // color-name fallback. Title the success branch's service so it gets a stable
+  // domain name and the response branches keep theirs.
+  ucp.$defs.success.allOf.push({
+    properties: {
+      services: {
+        additionalProperties: {
+          items: {$ref: "service.json#/$defs/base", title: "EmbeddedService"},
+        },
+      },
+    },
+  });
+  await writeJson(path.join(schemaDir, "ucp.json"), ucp);
+
   return specDir;
+}
+
+// Finds a method by name in the OpenRPC document, resolving `$ref` method
+// entries (some methods live in shared schema files, e.g. fulfillment.json)
+// against the service directory so they match by their resolved `name`.
+async function findOpenRpcMethod(service, methodName) {
+  for (const entry of service.methods ?? []) {
+    if (entry.name === methodName) {
+      return entry;
+    }
+    if (typeof entry.$ref === "string") {
+      const [relativePath, pointer = ""] = entry.$ref.split("#");
+      const doc = await readJson(path.resolve(SERVICES_DIR, relativePath));
+      const resolved = pointer
+        .split("/")
+        .filter(Boolean)
+        .reduce(
+          (node, segment) =>
+            node?.[segment.replaceAll("~1", "/").replaceAll("~0", "~")],
+          doc,
+        );
+      if (resolved?.name === methodName) {
+        return resolved;
+      }
+    }
+  }
+  return undefined;
 }
 
 async function extractResultSchema(specDir, methodName, outputFile, rootTitle, checkoutTitle, paymentSchema) {
   const service = await readJson(path.join(SERVICES_DIR, "embedded.openrpc.json"));
-  const method = service.methods.find((candidate) => candidate.name === methodName);
+  const method = await findOpenRpcMethod(service, methodName);
   if (method === undefined) {
     throw new Error(`Missing OpenRPC method ${methodName}`);
   }
@@ -228,10 +279,49 @@ async function extractResultSchema(specDir, methodName, outputFile, rootTitle, c
 
   for (const variant of schema.oneOf ?? []) {
     if (variant?.properties?.checkout !== undefined) {
-      variant.properties.checkout.title = checkoutTitle;
-      variant.properties.checkout.properties.payment = structuredClone(paymentSchema);
+      if (checkoutTitle !== undefined) {
+        variant.properties.checkout.title = checkoutTitle;
+      }
+      if (paymentSchema !== undefined) {
+        variant.properties.checkout.properties.payment = structuredClone(paymentSchema);
+      }
     }
   }
+
+  schema.components = service.components;
+
+  await writeJson(path.join(specDir, outputFile), schema);
+}
+
+// Synthesizes an object schema from an OpenRPC method's `params` array so request
+// payload types are generated from the spec alongside their result types. Each
+// named param becomes a property; params marked `required` populate the schema's
+// `required` list.
+async function extractParamsSchema(specDir, methodName, outputFile, rootTitle) {
+  const service = await readJson(path.join(SERVICES_DIR, "embedded.openrpc.json"));
+  const method = await findOpenRpcMethod(service, methodName);
+  if (method === undefined) {
+    throw new Error(`Missing OpenRPC method ${methodName}`);
+  }
+
+  const properties = {};
+  const required = [];
+  for (const param of method.params ?? []) {
+    properties[param.name] = structuredClone(param.schema);
+    if (param.required === true) {
+      required.push(param.name);
+    }
+  }
+
+  const schema = {
+    title: rootTitle,
+    type: "object",
+    properties,
+  };
+  if (required.length > 0) {
+    schema.required = required;
+  }
+  rewriteRefs(schema);
 
   schema.components = service.components;
 
@@ -245,12 +335,6 @@ async function runQuicktype(args) {
 async function replaceInFile(file, transform) {
   const source = await fs.readFile(file, "utf8");
   await fs.writeFile(file, transform(source));
-}
-
-function normalizeQuicktypeFallbacks(source) {
-  return source
-    .replace(/\bPurpleStatus\b/g, "StatusEnum")
-    .replace(/\bPurpleService\b/g, "InstrumentsChangeService");
 }
 
 function assertNoQuicktypeFallbacks(source, output) {
@@ -267,7 +351,7 @@ function assertNoQuicktypeFallbacks(source, output) {
 
 async function normalizeGeneratedFile(output, transform = (source) => source) {
   await replaceInFile(output, (source) => {
-    const result = normalizeQuicktypeFallbacks(transform(source));
+    const result = transform(source);
     assertNoQuicktypeFallbacks(result, output);
     return result;
   });
@@ -285,6 +369,16 @@ function commonSchemaSources(specDir) {
     path.join(specDir, "instruments_change_result.json"),
     "--src",
     path.join(specDir, "credential_result.json"),
+    "--src",
+    path.join(specDir, "address_change_result.json"),
+    "--src",
+    path.join(specDir, "ready_request.json"),
+    "--src",
+    path.join(specDir, "ready_result.json"),
+    "--src",
+    path.join(specDir, "auth_request.json"),
+    "--src",
+    path.join(specDir, "auth_result.json"),
   ];
 }
 
@@ -418,37 +512,20 @@ async function main() {
   try {
     const specDir = await prepareCodegenSchemas(tempDir);
 
-    await extractResultSchema(
-      specDir,
-      "ec.payment.instruments_change_request",
-      "instruments_change_result.json",
-      "InstrumentsChangeResult",
-      "InstrumentsChangeCheckout",
-      {
-        title: "InstrumentsChangePayment",
-        description: "Payment instruments with selected instrument ID.",
-        allOf: [
-          {$ref: "checkout.json#/properties/payment"},
-          {
-            type: "object",
-            properties: {
-              selected_instrument_id: {
-                type: "string",
-                description: "ID of the selected payment instrument.",
-              },
-            },
-          },
-        ],
-      },
-    );
-    await extractResultSchema(
-      specDir,
-      "ec.payment.credential_request",
-      "credential_result.json",
-      "CredentialResult",
-      "CredentialCheckout",
-      {$ref: "checkout.json#/properties/payment"},
-    );
+    for (const extraction of MODEL_EXTRACTIONS) {
+      if (extraction.kind === "params") {
+        await extractParamsSchema(specDir, extraction.method, extraction.outputFile, extraction.rootTitle);
+      } else {
+        await extractResultSchema(
+          specDir,
+          extraction.method,
+          extraction.outputFile,
+          extraction.rootTitle,
+          extraction.checkoutTitle,
+          extraction.paymentSchema,
+        );
+      }
+    }
 
     switch (lang) {
       case "kotlin": {

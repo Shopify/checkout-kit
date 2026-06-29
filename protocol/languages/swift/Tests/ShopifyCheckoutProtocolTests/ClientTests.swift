@@ -37,8 +37,8 @@ private enum TestDelegationResult: ResponsePayload {
     }
 }
 
-private let windowOpenDescriptor = DelegationDescriptor<TestURLPayload, TestDelegationResult>(
-    method: EmbeddedCheckoutProtocol.Event.windowOpenRequest.method,
+private let windowOpenDescriptor = RequestDescriptor<TestURLPayload, TestDelegationResult>(
+    method: "ec.window.open_request",
     delegation: "window.open",
     decode: { params in
         try? JSONDecoder().decode(TestURLPayload.self, from: params)
@@ -54,6 +54,11 @@ struct ClientTests {
 
     private func readyFixture() throws -> String {
         let url = Bundle.module.url(forResource: "ready_response", withExtension: "json", subdirectory: "Fixtures")!
+        return try String(contentsOf: url, encoding: .utf8)
+    }
+
+    private func requestFixture() throws -> String {
+        let url = Bundle.module.url(forResource: "request", withExtension: "json", subdirectory: "Fixtures")!
         return try String(contentsOf: url, encoding: .utf8)
     }
 
@@ -165,7 +170,7 @@ struct ClientTests {
         #expect(response == nil)
     }
 
-    @Test @MainActor func delegationRequestWithNullURLReturnsInvalidParamsError() async throws {
+    @Test @MainActor func requestWithUndecodableParamsReturnsInvalidParamsError() async throws {
         let client = EmbeddedCheckoutProtocol.Client()
             .on(windowOpenDescriptor) { _ in .success }
         let request = #"""
@@ -177,8 +182,8 @@ struct ClientTests {
 
         #expect(parsed["id"] as? String == "req-window-1")
         let error = try #require(parsed["error"] as? [String: Any])
-        #expect(error["code"] as? Int == -32602)
-        #expect(error["message"] as? String == "Invalid params")
+        #expect(error["code"] as? Int == EmbeddedCheckoutProtocol.invalidParamsCode)
+        #expect(error["message"] as? String == EmbeddedCheckoutProtocol.invalidParamsMessage)
     }
 
     @Test @MainActor func delegationRequestLastHandlerWins() async throws {
@@ -197,40 +202,19 @@ struct ClientTests {
         #expect(ucp["status"] as? String == "success")
     }
 
-    @Test @MainActor func delegationAdvertisesDelegationInReadyResponse() async throws {
-        let ready = #"""
-        {"jsonrpc":"2.0","id":"ready-1","method":"ec.ready","params":{"delegate":["window.open"]}}
-        """#
-
-        let client = EmbeddedCheckoutProtocol.Client()
-            .on(windowOpenDescriptor) { _ in .success }
-
-        let response = try #require(await client.process(ready))
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
-        let result = try #require(parsed["result"] as? [String: Any])
-        let delegate = try #require(result["delegate"] as? [String])
-        #expect(delegate == ["window.open"])
-    }
-
-    @Test @MainActor func malformedReadyParamsReturnParseError() async throws {
-        let ready = #"""
-        {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
-        """#
-
-        let client = EmbeddedCheckoutProtocol.Client()
-
-        let response = try #require(await client.process(ready))
-        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
-        #expect(parsed["id"] as? String == "ready-bad")
-        let error = try #require(parsed["error"] as? [String: Any])
-        #expect(error["code"] as? Int == EmbeddedCheckoutProtocol.parseErrorCode)
-        #expect(error["message"] as? String == EmbeddedCheckoutProtocol.parseErrorMessage)
-    }
-
-    @Test @MainActor func readyReturnsResponse() async throws {
-        let client = EmbeddedCheckoutProtocol.Client()
-
-        let response = try await client.process(readyFixture())
+    @Test @MainActor func readyRequestDispatchesToRegisteredHandler() async throws {
+        let response = try await EmbeddedCheckoutProtocol.Client()
+            .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
+                ReadyResult(
+                    checkout: nil,
+                    credential: nil,
+                    ucp: .success(),
+                    upgrade: nil,
+                    continueURL: nil,
+                    messages: nil
+                )
+            }
+            .process(readyFixture())
 
         let data = try #require(response?.data(using: .utf8))
         let parsed = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
@@ -241,5 +225,100 @@ struct ClientTests {
         let ucp = try #require(result["ucp"] as? [String: Any])
         #expect(ucp["version"] as? String == EmbeddedCheckoutProtocol.specVersion)
         #expect(ucp["status"] as? String == "success")
+    }
+
+    @Test @MainActor func malformedReadyParamsReturnInvalidParamsError() async throws {
+        let ready = #"""
+        {"jsonrpc":"2.0","id":"ready-bad","method":"ec.ready","params":{"delegate":[null]}}
+        """#
+
+        let response = try #require(
+            await EmbeddedCheckoutProtocol.Client()
+                .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
+                    ReadyResult(
+                        checkout: nil,
+                        credential: nil,
+                        ucp: .success(),
+                        upgrade: nil,
+                        continueURL: nil,
+                        messages: nil
+                    )
+                }
+                .process(ready)
+        )
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        #expect(parsed["id"] as? String == "ready-bad")
+        let error = try #require(parsed["error"] as? [String: Any])
+        #expect(error["code"] as? Int == EmbeddedCheckoutProtocol.invalidParamsCode)
+        #expect(error["message"] as? String == EmbeddedCheckoutProtocol.invalidParamsMessage)
+    }
+
+    @Test @MainActor func authRequestDispatchesToRegisteredHandler() async throws {
+        let request = #"""
+        {"jsonrpc":"2.0","id":"auth-1","method":"ec.auth","params":{"type":"shop"}}
+        """#
+
+        let response = try #require(
+            await EmbeddedCheckoutProtocol.Client()
+                .on(EmbeddedCheckoutProtocol.Event.auth) { _ in
+                    AuthResult(
+                        credential: "tok-xyz",
+                        ucp: .success(),
+                        continueURL: nil,
+                        messages: nil
+                    )
+                }
+                .process(request)
+        )
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+
+        #expect(parsed["id"] as? String == "auth-1")
+        let result = try #require(parsed["result"] as? [String: Any])
+        #expect(result["credential"] as? String == "tok-xyz")
+    }
+
+    @Test @MainActor func paymentCredentialRequestDispatchesWithDecodedCheckout() async throws {
+        var receivedCheckoutID: String?
+        let response = try #require(
+            await EmbeddedCheckoutProtocol.Client()
+                .on(EmbeddedCheckoutProtocol.Event.paymentCredential) { checkout in
+                    receivedCheckoutID = checkout.id
+                    return CredentialResult(
+                        checkout: nil,
+                        ucp: InstrumentsChangeResultUcp(
+                            capabilities: nil,
+                            paymentHandlers: nil,
+                            services: nil,
+                            status: .success,
+                            version: EmbeddedCheckoutProtocol.specVersion
+                        ),
+                        continueURL: nil,
+                        messages: nil
+                    )
+                }
+                .process(requestFixture())
+        )
+        let parsed = try #require(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+
+        #expect(receivedCheckoutID == "checkout-789")
+        #expect(parsed["id"] as? String == "req-456")
+        #expect(parsed["result"] != nil)
+    }
+
+    @Test @MainActor func delegationsReflectsOnlyDelegationCarryingHandlers() {
+        let client = EmbeddedCheckoutProtocol.Client()
+            .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
+                ReadyResult(
+                    checkout: nil,
+                    credential: nil,
+                    ucp: .success(),
+                    upgrade: nil,
+                    continueURL: nil,
+                    messages: nil
+                )
+            }
+            .on(windowOpenDescriptor) { _ in .success }
+
+        #expect(client.delegations == ["window.open"])
     }
 }

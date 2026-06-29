@@ -3,146 +3,109 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {DELEGATIONS, EC_METHODS, MODEL_EXTRACTIONS} from './method_catalog.mjs';
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const protocolRoot = path.resolve(scriptDir, '..');
 
-const openRpcPath = path.resolve(
-  protocolRoot,
-  'services/shopping/embedded.openrpc.json',
-);
 const outputPath = path.resolve(
   protocolRoot,
   'languages/swift/Sources/ShopifyCheckoutProtocol/Generated/EmbeddedCheckoutProtocol+Event.swift',
 );
 
-const fallbackPayload = 'JSONAny';
+const notifications = EC_METHODS.filter(entry => entry.kind === 'notification');
+const requests = EC_METHODS.filter(entry => entry.kind === 'request');
 
-const refPayloadMappings = new Map([
-  ['checkout.json', 'Checkout'],
-  ['cart.json', fallbackPayload],
-  ['types/error_response.json', 'ErrorResponse'],
-  ['error_response.json', 'ErrorResponse'],
-]);
+// Conformances are emitted only for model-generated types. Notification payloads
+// and the params/result types the model generator synthesizes conform here. Every
+// bound request result is generated (enforced by assertResultsAreGenerated in the
+// catalog manifest), so no hand-written result type conforms separately.
+const generatedRequestPayloads = new Set(
+  MODEL_EXTRACTIONS.filter(extraction => extraction.kind === 'params').map(
+    extraction => extraction.rootTitle,
+  ),
+);
+const generatedResults = new Set(
+  MODEL_EXTRACTIONS.filter(extraction => extraction.kind === 'result').map(
+    extraction => extraction.rootTitle,
+  ),
+);
 
-function normalizeRef(ref) {
-  return ref
-    .replace(/^\.\.\/\.\.\/schemas\/shopping\//, '')
-    .replace(/^\.\.\/\.\.\/schemas\/common\//, '')
-    .replace(/#.*$/, '');
-}
-
-function methodNameToIdentifier(methodName) {
-  // Drop the leading `ec` capability segment; the enclosing
-  // EmbeddedCheckoutProtocol.Event namespace already conveys it.
-  const [, ...parts] = methodName.split(/[._]/g).filter(Boolean);
-
-  return parts
-    .map((part, index) =>
-      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
-    )
-    .join('');
-}
-
-function delegationToIdentifier(delegation) {
-  return delegation
-    .split(/[._]/g)
-    .filter(Boolean)
-    .map((part, index) =>
-      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
-    )
-    .join('');
-}
-
-function resolveMethod(method, openRpcDir) {
-  if (typeof method.$ref !== 'string') {
-    return method;
-  }
-
-  const [filePart, pointer] = method.$ref.split('#');
-  const filePath = path.resolve(openRpcDir, filePart);
-  const document = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-
-  const segments = (pointer ?? '').split('/').filter(Boolean);
-  let resolved = document;
-  for (const segment of segments) {
-    resolved = resolved?.[segment.replace(/~1/g, '/').replace(/~0/g, '~')];
-  }
-
-  if (!resolved || typeof resolved.name !== 'string') {
-    throw new Error(`Cannot resolve OpenRPC method $ref: ${method.$ref}`);
-  }
-
-  return resolved;
-}
-
-function payloadType(method) {
-  const params = method.params ?? [];
-  if (params.length === 0) {
-    return fallbackPayload;
-  }
-
-  const ref = params[0]?.schema?.$ref;
-  if (typeof ref !== 'string') {
-    return fallbackPayload;
-  }
-
-  const normalized = normalizeRef(ref);
-  return refPayloadMappings.get(normalized) ?? fallbackPayload;
-}
-
-const openRpcDir = path.dirname(openRpcPath);
-const openRpc = JSON.parse(fs.readFileSync(openRpcPath, 'utf8'));
-const entries = [];
-
-for (const rawMethod of openRpc.methods ?? []) {
-  const method = resolveMethod(rawMethod, openRpcDir);
-  if (typeof method.name !== 'string') {
-    throw new Error('Encountered OpenRPC method without a name');
-  }
-
-  // Scope the Swift catalog to the Embedded Checkout (`ec.*`) capability.
-  // Sibling capabilities (e.g. `ep.cart.*`) are excluded until they have a
-  // typed payload and a consumer.
-  if (!method.name.startsWith('ec.')) {
-    continue;
-  }
-
-  entries.push({
-    identifier: methodNameToIdentifier(method.name),
-    method: method.name,
-    payload: payloadType(method),
-    isRequest: method.result != null,
-  });
-}
-
-const seen = new Set();
-for (const entry of entries) {
-  if (seen.has(entry.identifier)) {
-    throw new Error(`Duplicate catalog identifier: ${entry.identifier}`);
-  }
-  seen.add(entry.identifier);
-}
-
-const delegations = (openRpc['x-delegations'] ?? []).map(delegation => ({
-  identifier: delegationToIdentifier(delegation),
-  value: delegation,
-}));
-
-const seenDelegations = new Set();
-for (const delegation of delegations) {
-  if (seenDelegations.has(delegation.identifier)) {
-    throw new Error(`Duplicate delegation identifier: ${delegation.identifier}`);
-  }
-  seenDelegations.add(delegation.identifier);
-}
-
-const payloadTypes = Array.from(
-  new Set(entries.filter(entry => !entry.isRequest).map(entry => entry.payload)),
+const eventPayloadTypes = Array.from(
+  new Set([
+    ...notifications.map(entry => entry.payload),
+    ...generatedRequestPayloads,
+  ]),
 ).sort();
 
-const conformances = payloadTypes
-  .map(type => `extension ${type}: EventPayload {}`)
+const responsePayloadTypes = Array.from(
+  new Set(
+    requests
+      .map(entry => entry.result)
+      .filter(result => generatedResults.has(result)),
+  ),
+).sort();
+
+// Name of an entry's member inside the `Event` enum: notifications use the
+// method identifier; requests use the descriptor identifier (named after the
+// delegation where one applies).
+function eventMemberName(entry) {
+  return entry.kind === 'request' ? entry.descriptorIdentifier : entry.identifier;
+}
+
+function uniqueIdentifiers(entries, key) {
+  const seen = new Set();
+  for (const entry of entries) {
+    const identifier = entry[key];
+    if (seen.has(identifier)) {
+      throw new Error(`Duplicate catalog identifier: ${identifier}`);
+    }
+    seen.add(identifier);
+  }
+}
+
+uniqueIdentifiers(EC_METHODS, 'identifier');
+uniqueIdentifiers(
+  EC_METHODS.map(entry => ({member: eventMemberName(entry)})),
+  'member',
+);
+
+function decodeClosure(entry) {
+  switch (entry.decode) {
+    case 'whole':
+      return `{ try? JSONDecoder().decode(${entry.payload}.self, from: $0) }`;
+    case 'checkoutUnwrap':
+      return '{ try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }';
+    default:
+      throw new Error(`Unknown decode strategy: ${entry.decode}`);
+  }
+}
+
+const conformances = [
+  ...eventPayloadTypes.map(type => `extension ${type}: EventPayload {}`),
+  ...responsePayloadTypes.map(type => `extension ${type}: ResponsePayload {}`),
+].join('\n');
+
+const notificationCatalog = notifications
+  .map(
+    entry =>
+      `        public static let ${entry.identifier} = NotificationDescriptor<${entry.payload}>(method: "${entry.method}")`,
+  )
   .join('\n');
+
+const requestDescriptors = requests
+  .map(
+    entry => `        public static let ${entry.descriptorIdentifier} = RequestDescriptor<${entry.payload}, ${entry.result}>(
+            method: "${entry.method}",
+            delegation: ${entry.delegation === null ? 'nil' : `"${entry.delegation}"`},
+            decode: ${decodeClosure(entry)}
+        )`,
+  )
+  .join('\n\n');
+
+const allMethods = EC_METHODS.map(
+  entry => `            ${eventMemberName(entry)}.method,`,
+).join('\n');
 
 const generated = `// This file is generated by protocol/scripts/generate_swift_catalog.mjs.
 // Do not edit directly.
@@ -152,17 +115,17 @@ import Foundation
 ${conformances}
 
 extension EmbeddedCheckoutProtocol {
+    /// Every \`ec.*\` method this protocol owns, resolved to a typed descriptor.
+    /// Notifications become \`NotificationDescriptor\`s; requests become
+    /// \`RequestDescriptor\`s. Host-defined requests (e.g. \`window.open\`, whose
+    /// payloads are host policy) are not part of this catalog.
     public enum Event {
-${entries
-  .map(entry =>
-    entry.isRequest
-      ? `        public static let ${entry.identifier} = RequestDescriptor(method: "${entry.method}")`
-      : `        public static let ${entry.identifier} = NotificationDescriptor<${entry.payload}>(method: "${entry.method}")`,
-  )
-  .join('\n')}
+${notificationCatalog}
+
+${requestDescriptors}
 
         public static let all: [String] = [
-${entries.map(entry => `            ${entry.identifier}.method,`).join('\n')}
+${allMethods}
         ]
     }
 }
@@ -182,15 +145,13 @@ extension EmbeddedCheckoutProtocol {
             self.rawValue = value
         }
 
-${delegations
-  .map(
-    delegation =>
-      `        public static let ${delegation.identifier} = Delegation(rawValue: "${delegation.value}")`,
-  )
-  .join('\n')}
+${DELEGATIONS.map(
+  delegation =>
+    `        public static let ${delegation.identifier} = Delegation(rawValue: "${delegation.value}")`,
+).join('\n')}
 
         public static let all: [Delegation] = [
-${delegations.map(delegation => `            .${delegation.identifier},`).join('\n')}
+${DELEGATIONS.map(delegation => `            .${delegation.identifier},`).join('\n')}
         ]
     }
 }

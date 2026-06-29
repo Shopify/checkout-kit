@@ -13,7 +13,7 @@ struct CheckoutProtocolTests {
 
     @Test func supportedProtocolMethodsCoverReadyCuratedNotificationsAndWindowOpen() {
         #expect(CheckoutProtocol.supportedProtocolMethods == [
-            EmbeddedCheckoutProtocol.readyMethod,
+            "ec.ready",
             "ec.start",
             "ec.complete",
             "ec.error",

@@ -523,9 +523,10 @@ class CheckoutWebViewTests: XCTestCase {
     // MARK: - ec.ready handshake
 
     @MainActor
-    func testAcknowledgeReadyRespondsToReadyRequest() async throws {
+    func testReadyHandshakeRespondsWithUCPEnvelope() async throws {
         let id = "req-ready-1"
-        let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"\#(id)","params":{"delegate":[]}}"#
+        let body =
+            #"{"jsonrpc":"2.0","method":"ec.ready","id":"\#(id)","params":{"delegate":["window.open","payment.credential"]}}"#
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: body)
@@ -545,31 +546,14 @@ class CheckoutWebViewTests: XCTestCase {
         let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
         XCTAssertEqual(ucp["status"] as? String, "success")
         XCTAssertEqual(ucp["version"] as? String, EmbeddedCheckoutProtocol.specVersion)
+        XCTAssertNil(result["delegate"], "Ready response no longer echoes a delegate list; delegations are announced via the ec_delegate URL param")
     }
 
     @MainActor
-    func testAcknowledgeReadyLogsPreloadState() {
-        let originalLogger = OSLogger.shared
-        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .all)
-        OSLogger.shared = logger.logger
-        defer { OSLogger.shared = originalLogger }
-
-        view.load(checkout: url, isPreload: true)
-        let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
-        let message = MockScriptMessage(body: body)
-
-        view.userContentController(WKUserContentController(), didReceive: message)
-
-        XCTAssertTrue(
-            logger.capturedMessages.contains { captured in
-                captured.message.contains("Handling ec.ready: sending UCP ready acknowledgement, isPreload: true")
-            }
+    func testReadyIsNotOverridableByMerchantClient() async throws {
+        view.client = MockBridgeClient(
+            responseMessage: #"{"jsonrpc":"2.0","id":"r1","result":{"hijacked":true}}"#
         )
-    }
-
-    @MainActor
-    func testAcknowledgeReadyDoesNotInvokeClient() async {
-        view.client = MockBridgeClient(responseMessage: "client-response")
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
@@ -579,8 +563,13 @@ class CheckoutWebViewTests: XCTestCase {
 
         await fulfillment(of: [responseSent], timeout: 5.0)
 
-        let response = try? XCTUnwrap(MockCheckoutBridge.lastResponseBody)
-        XCTAssertNotEqual(response, "client-response")
+        let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        XCTAssertEqual(parsed["id"] as? String, "r1")
+        let result = try XCTUnwrap(parsed["result"] as? [String: Any])
+        XCTAssertNil(result["hijacked"], "Merchant client must not be able to answer ec.ready")
+        let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "success")
     }
 
     func testNonReadyMessageDoesNotTriggerReadyAck() {
@@ -671,8 +660,8 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
-    func testMalformedReadyParamsReturnParseError() async throws {
-        view.client = MockBridgeClient(responseMessage: "client-response")
+    func testMalformedReadyParamsReturnInvalidParams() async throws {
+        view.client = MockBridgeClient()
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"ready-bad","params":{"delegate":[null]}}"#
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
@@ -683,12 +672,11 @@ class CheckoutWebViewTests: XCTestCase {
         await fulfillment(of: [responseSent], timeout: 5.0)
 
         let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
-        XCTAssertNotEqual(response, "client-response")
         let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
         XCTAssertEqual(parsed["id"] as? String, "ready-bad")
         let error = try XCTUnwrap(parsed["error"] as? [String: Any])
-        XCTAssertEqual(error["code"] as? Int, -32700)
-        XCTAssertEqual(error["message"] as? String, "Parse error")
+        XCTAssertEqual(error["code"] as? Int, -32602)
+        XCTAssertEqual(error["message"] as? String, "Invalid params")
     }
 
     @MainActor

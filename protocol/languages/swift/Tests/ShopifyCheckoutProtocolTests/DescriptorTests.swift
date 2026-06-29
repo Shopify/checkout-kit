@@ -25,7 +25,6 @@ struct DescriptorTests {
         @Test func exposesEveryOpenRPCMethod() {
             #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.start"))
             #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.complete"))
-            #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.window.open_request"))
         }
 
         @Test func includesMethodsBeyondTheCuratedConsumerSubset() {
@@ -34,17 +33,20 @@ struct DescriptorTests {
             #expect(EmbeddedCheckoutProtocol.Event.all.contains("ec.buyer.change"))
         }
 
-        @Test func requestMethodsBindAsRequestsNotNotifications() {
-            func method(of descriptor: RequestDescriptor) -> String { descriptor.method }
+        @Test func requestMethodsBindAsTypedDescriptors() {
+            func method<Payload, Result>(of descriptor: RequestDescriptor<Payload, Result>) -> String {
+                descriptor.method
+            }
 
-            #expect(method(of: EmbeddedCheckoutProtocol.Event.windowOpenRequest) == "ec.window.open_request")
-            #expect(method(of: EmbeddedCheckoutProtocol.Event.paymentCredentialRequest) == "ec.payment.credential_request")
+            #expect(method(of: EmbeddedCheckoutProtocol.Event.ready) == "ec.ready")
+            #expect(method(of: EmbeddedCheckoutProtocol.Event.auth) == "ec.auth")
+            #expect(method(of: EmbeddedCheckoutProtocol.Event.paymentCredential) == "ec.payment.credential_request")
             #expect(
-                method(of: EmbeddedCheckoutProtocol.Event.paymentInstrumentsChangeRequest)
+                method(of: EmbeddedCheckoutProtocol.Event.paymentInstrumentsChange)
                     == "ec.payment.instruments_change_request"
             )
             #expect(
-                method(of: EmbeddedCheckoutProtocol.Event.fulfillmentAddressChangeRequest)
+                method(of: EmbeddedCheckoutProtocol.Event.fulfillmentAddressChange)
                     == "ec.fulfillment.address_change_request"
             )
         }

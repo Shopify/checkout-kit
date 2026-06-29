@@ -3,13 +3,22 @@
 
 import Foundation
 
+extension AuthRequest: EventPayload {}
 extension Checkout: EventPayload {}
 extension ErrorResponse: EventPayload {}
+extension ReadyRequest: EventPayload {}
+extension AddressChangeResult: ResponsePayload {}
+extension AuthResult: ResponsePayload {}
+extension CredentialResult: ResponsePayload {}
+extension InstrumentsChangeResult: ResponsePayload {}
+extension ReadyResult: ResponsePayload {}
 
 extension EmbeddedCheckoutProtocol {
+    /// Every `ec.*` method this protocol owns, resolved to a typed descriptor.
+    /// Notifications become `NotificationDescriptor`s; requests become
+    /// `RequestDescriptor`s. Host-defined requests (e.g. `window.open`, whose
+    /// payloads are host policy) are not part of this catalog.
     public enum Event {
-        public static let ready = RequestDescriptor(method: "ec.ready")
-        public static let auth = RequestDescriptor(method: "ec.auth")
         public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")
         public static let start = NotificationDescriptor<Checkout>(method: "ec.start")
         public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
@@ -18,11 +27,37 @@ extension EmbeddedCheckoutProtocol {
         public static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
         public static let totalsChange = NotificationDescriptor<Checkout>(method: "ec.totals.change")
         public static let paymentChange = NotificationDescriptor<Checkout>(method: "ec.payment.change")
-        public static let paymentInstrumentsChangeRequest = RequestDescriptor(method: "ec.payment.instruments_change_request")
-        public static let paymentCredentialRequest = RequestDescriptor(method: "ec.payment.credential_request")
-        public static let windowOpenRequest = RequestDescriptor(method: "ec.window.open_request")
         public static let fulfillmentChange = NotificationDescriptor<Checkout>(method: "ec.fulfillment.change")
-        public static let fulfillmentAddressChangeRequest = RequestDescriptor(method: "ec.fulfillment.address_change_request")
+
+        public static let ready = RequestDescriptor<ReadyRequest, ReadyResult>(
+            method: "ec.ready",
+            delegation: nil,
+            decode: { try? JSONDecoder().decode(ReadyRequest.self, from: $0) }
+        )
+
+        public static let auth = RequestDescriptor<AuthRequest, AuthResult>(
+            method: "ec.auth",
+            delegation: nil,
+            decode: { try? JSONDecoder().decode(AuthRequest.self, from: $0) }
+        )
+
+        public static let paymentInstrumentsChange = RequestDescriptor<Checkout, InstrumentsChangeResult>(
+            method: "ec.payment.instruments_change_request",
+            delegation: "payment.instruments_change",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+        )
+
+        public static let paymentCredential = RequestDescriptor<Checkout, CredentialResult>(
+            method: "ec.payment.credential_request",
+            delegation: "payment.credential",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+        )
+
+        public static let fulfillmentAddressChange = RequestDescriptor<Checkout, AddressChangeResult>(
+            method: "ec.fulfillment.address_change_request",
+            delegation: "fulfillment.address_change",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+        )
 
         public static let all: [String] = [
             ready.method,
@@ -35,11 +70,10 @@ extension EmbeddedCheckoutProtocol {
             buyerChange.method,
             totalsChange.method,
             paymentChange.method,
-            paymentInstrumentsChangeRequest.method,
-            paymentCredentialRequest.method,
-            windowOpenRequest.method,
+            paymentInstrumentsChange.method,
+            paymentCredential.method,
             fulfillmentChange.method,
-            fulfillmentAddressChangeRequest.method,
+            fulfillmentAddressChange.method,
         ]
     }
 }
