@@ -33,6 +33,7 @@ Check out our blog to
 - [Usage with the Shopify Storefront API](#usage-with-the-shopify-storefront-api)
 - [Configuration](#configuration)
   - [`src`](#src)
+  - [Authentication](#authentication)
   - [`target`](#target)
   - [`debug`](#debug)
   - [Popup dimensions](#popup-dimensions)
@@ -216,7 +217,11 @@ declare module 'react' {
       'shopify-checkout': DetailedHTMLProps<
         HTMLAttributes<ShopifyCheckout>,
         ShopifyCheckout
-      > & {src?: string; target?: string; debug?: boolean};
+      > & {
+        src?: string;
+        target?: string;
+        debug?: boolean;
+      };
     }
   }
 }
@@ -323,6 +328,13 @@ checkout: `ec_version` (Embedded Checkout Protocol version),
 `ec_delegate` (which capabilities the host delegates), and `ck_version`
 (the Checkout Kit version).
 
+### Authentication
+
+Authentication for embedded checkout is not available in Checkout Kit yet. Do
+not pass checkout credentials, auth tokens, or `ec_auth` query parameters
+through the web component. Authenticated checkout flows will be documented once
+they are supported.
+
 ### `target`
 
 Where the checkout is presented. Defaults to `"auto"`.
@@ -394,7 +406,7 @@ exactly the fields relevant to that moment.
 | `ec.complete`          | `{checkout, order}`     | The buyer completed the order successfully.                                |
 | `ec.close`             | _(none)_                | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
 | `ec.error`             | `{error}`               | Session-level fatal error — tear down the embedded context.                |
-| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).       |
+| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).      |
 | `ec.totals.change`     | `{checkout, totals}`    | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
 | `ec.messages.change`   | `{checkout, messages}`  | Checkout-level warnings/errors/info shown inside the checkout changed.     |
 
