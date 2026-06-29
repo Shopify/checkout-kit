@@ -41,8 +41,8 @@
       },
       {
         "kind": "Import",
-        "name": "ShopifyCheckoutProtocol",
-        "printedName": "ShopifyCheckoutProtocol",
+        "name": "EmbeddedCheckoutProtocol",
+        "printedName": "EmbeddedCheckoutProtocol",
         "declKind": "Import",
         "moduleName": "ShopifyCheckoutKit"
       },
@@ -1075,8 +1075,8 @@
               {
                 "kind": "TypeNominal",
                 "name": "Client",
-                "printedName": "ShopifyCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
-                "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV"
+                "printedName": "EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
+                "usr": "s:23EmbeddedCheckoutProtocol08EmbeddedbC0O6ClientV"
               }
             ],
             "declKind": "TypeAlias",
@@ -1117,16 +1117,16 @@
               {
                 "kind": "TypeNominal",
                 "name": "NotificationDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
@@ -1149,16 +1149,16 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
@@ -1182,16 +1182,16 @@
               {
                 "kind": "TypeNominal",
                 "name": "NotificationDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.ErrorResponse>",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.ErrorResponse>",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "ErrorResponse",
-                    "printedName": "ShopifyCheckoutProtocol.ErrorResponse",
-                    "usr": "s:23ShopifyCheckoutProtocol13ErrorResponseV"
+                    "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
+                    "usr": "s:23EmbeddedCheckoutProtocol13ErrorResponseV"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
@@ -1214,16 +1214,16 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.ErrorResponse>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.ErrorResponse>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "ErrorResponse",
-                        "printedName": "ShopifyCheckoutProtocol.ErrorResponse",
-                        "usr": "s:23ShopifyCheckoutProtocol13ErrorResponseV"
+                        "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
+                        "usr": "s:23EmbeddedCheckoutProtocol13ErrorResponseV"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
@@ -1247,16 +1247,16 @@
               {
                 "kind": "TypeNominal",
                 "name": "NotificationDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
@@ -1279,16 +1279,16 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
@@ -1312,16 +1312,16 @@
               {
                 "kind": "TypeNominal",
                 "name": "NotificationDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
@@ -1344,16 +1344,16 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
@@ -1377,16 +1377,16 @@
               {
                 "kind": "TypeNominal",
                 "name": "NotificationDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
@@ -1409,16 +1409,16 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
@@ -1442,16 +1442,16 @@
               {
                 "kind": "TypeNominal",
                 "name": "NotificationDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
@@ -1474,16 +1474,16 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
@@ -1507,16 +1507,16 @@
               {
                 "kind": "TypeNominal",
                 "name": "NotificationDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Checkout",
-                    "printedName": "ShopifyCheckoutProtocol.Checkout",
-                    "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
@@ -1539,16 +1539,16 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.NotificationDescriptor<ShopifyCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "Checkout",
-                        "printedName": "ShopifyCheckoutProtocol.Checkout",
-                        "usr": "s:23ShopifyCheckoutProtocol0B0V"
+                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
@@ -1572,7 +1572,7 @@
               {
                 "kind": "TypeNominal",
                 "name": "RequestDescriptor",
-                "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutKit.WindowOpenRequest, ShopifyCheckoutKit.WindowOpenResult>",
+                "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<ShopifyCheckoutKit.WindowOpenRequest, ShopifyCheckoutKit.WindowOpenResult>",
                 "children": [
                   {
                     "kind": "TypeNominal",
@@ -1587,7 +1587,7 @@
                     "usr": "s:18ShopifyCheckoutKit16WindowOpenResultO"
                   }
                 ],
-                "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
+                "usr": "s:23EmbeddedCheckoutProtocol17RequestDescriptorV"
               }
             ],
             "declKind": "Var",
@@ -1611,7 +1611,7 @@
                   {
                     "kind": "TypeNominal",
                     "name": "RequestDescriptor",
-                    "printedName": "ShopifyCheckoutProtocol.RequestDescriptor<ShopifyCheckoutKit.WindowOpenRequest, ShopifyCheckoutKit.WindowOpenResult>",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<ShopifyCheckoutKit.WindowOpenRequest, ShopifyCheckoutKit.WindowOpenResult>",
                     "children": [
                       {
                         "kind": "TypeNominal",
@@ -1626,7 +1626,7 @@
                         "usr": "s:18ShopifyCheckoutKit16WindowOpenResultO"
                       }
                     ],
-                    "usr": "s:23ShopifyCheckoutProtocol17RequestDescriptorV"
+                    "usr": "s:23EmbeddedCheckoutProtocol17RequestDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
@@ -6905,8 +6905,8 @@
             "kind": "Conformance",
             "name": "EventPayload",
             "printedName": "EventPayload",
-            "usr": "s:23ShopifyCheckoutProtocol12EventPayloadP",
-            "mangledName": "$s23ShopifyCheckoutProtocol12EventPayloadP"
+            "usr": "s:23EmbeddedCheckoutProtocol12EventPayloadP",
+            "mangledName": "$s23EmbeddedCheckoutProtocol12EventPayloadP"
           },
           {
             "kind": "Conformance",
@@ -7087,8 +7087,8 @@
             "kind": "Conformance",
             "name": "ResponsePayload",
             "printedName": "ResponsePayload",
-            "usr": "s:23ShopifyCheckoutProtocol15ResponsePayloadP",
-            "mangledName": "$s23ShopifyCheckoutProtocol15ResponsePayloadP"
+            "usr": "s:23EmbeddedCheckoutProtocol15ResponsePayloadP",
+            "mangledName": "$s23EmbeddedCheckoutProtocol15ResponsePayloadP"
           },
           {
             "kind": "Conformance",
@@ -7132,9 +7132,9 @@
         "name": "Client",
         "printedName": "Client",
         "declKind": "Struct",
-        "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV",
-        "mangledName": "$s23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV",
-        "moduleName": "ShopifyCheckoutProtocol",
+        "usr": "s:23EmbeddedCheckoutProtocol08EmbeddedbC0O6ClientV",
+        "mangledName": "$s23EmbeddedCheckoutProtocol08EmbeddedbC0O6ClientV",
+        "moduleName": "EmbeddedCheckoutProtocol",
         "isFromExtension": true,
         "isExternal": true,
         "conformances": [

@@ -348,7 +348,7 @@ commands:
           cd platforms/swift
           # ShopifyCheckoutKit-Package is the SPM-wide scheme: it cleans all
           # library targets in Package.swift (ShopifyCheckoutKit,
-          # ShopifyAcceleratedCheckouts, ShopifyCheckoutProtocol) in one pass.
+          # ShopifyAcceleratedCheckouts, EmbeddedCheckoutProtocol) in one pass.
           ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
           cd Samples
           # Sample apps have a "Run Script" build phase that runs during clean

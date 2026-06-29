@@ -1,6 +1,6 @@
+import EmbeddedCheckoutProtocol
 import SafariServices
 import ShopifyCheckoutKit
-import ShopifyCheckoutProtocol
 import UIKit
 
 extension CheckoutProtocol.Client {

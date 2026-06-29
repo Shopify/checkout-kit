@@ -1,6 +1,6 @@
 import Foundation
 #if !COCOAPODS
-    import ShopifyCheckoutProtocol
+    import EmbeddedCheckoutProtocol
 #endif
 @testable import ShopifyCheckoutKit
 import Testing

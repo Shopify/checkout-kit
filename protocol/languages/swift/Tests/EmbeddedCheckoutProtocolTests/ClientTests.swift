@@ -1,5 +1,5 @@
 import Foundation
-@testable import ShopifyCheckoutProtocol
+@testable import EmbeddedCheckoutProtocol
 import Testing
 
 private struct TestURLPayload: EventPayload {

@@ -1,5 +1,5 @@
 #if !COCOAPODS
-    import ShopifyCheckoutProtocol
+    import EmbeddedCheckoutProtocol
 #endif
 import Foundation
 

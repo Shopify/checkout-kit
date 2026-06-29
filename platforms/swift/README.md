@@ -71,7 +71,7 @@ Then add the products you need to your app target:
   name: "YourApp",
   dependencies: [
     "ShopifyCheckoutKit",
-    "ShopifyCheckoutProtocol",
+    "EmbeddedCheckoutProtocol",
     "ShopifyAcceleratedCheckouts" // Only needed for accelerated checkout buttons.
   ]
 )
@@ -237,11 +237,11 @@ let configuration = ShopifyCheckoutKit.configuration
 - `checkoutDidCancel()` fires when the buyer closes the checkout sheet.
 - `checkoutDidFail(error:)` fires when checkout cannot continue.
 
-Typed checkout state, including completion, flows through `ShopifyCheckoutProtocol`.
+Typed checkout state, including completion, flows through `EmbeddedCheckoutProtocol`.
 
 ```swift
 import ShopifyCheckoutKit
-import ShopifyCheckoutProtocol
+import EmbeddedCheckoutProtocol
 
 let client = CheckoutProtocol.Client()
   .on(CheckoutProtocol.start) { checkout in
