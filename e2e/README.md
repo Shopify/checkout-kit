@@ -61,9 +61,10 @@ the React Native sample configuration, not local in-repo native SDK overrides.
 ## Matrix
 
 CI runs are described by `config/matrix.yml`. The matrix expands applications, OS
-version tags, and suites into BrowserStack Maestro run rows. Because Bitrise has no
-built-in matrix support, `e2e/lib/e2e_matrix.rb` performs the expansion and the
-pipeline parallelizes over the resulting rows.
+version tags, and suites into a BrowserStack run plan. Because Bitrise has no
+built-in matrix support, `e2e/lib/e2e_matrix_to_browserstack_run_plan.rb`
+transforms the matrix into a BrowserStack run plan and the pipeline
+parallelizes over the resulting rows.
 
 Current applications:
 
@@ -81,19 +82,25 @@ Current suites:
 Validate the matrix:
 
 ```bash
-ruby e2e/scripts/e2e_matrix validate
+ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate
 ```
 
-Expand all run rows:
+Expand the BrowserStack run plan:
 
 ```bash
-ruby e2e/scripts/e2e_matrix expand
+ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand
 ```
 
-Expand a single run row by index:
+Expand a single BrowserStack run plan row by index:
 
 ```bash
-ruby e2e/scripts/e2e_matrix expand --index 0
+ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand --index 0
+```
+
+Count BrowserStack run plan rows:
+
+```bash
+ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 ```
 
 ## Files
@@ -102,7 +109,7 @@ ruby e2e/scripts/e2e_matrix expand --index 0
 - `flows/` contains reusable Maestro subflows for app setup and checkout steps.
 - `tests/react-native/full-guest-checkout.yaml` composes the React Native guest
   checkout smoke test from those subflows.
-- `config/matrix.yml`, `lib/e2e_matrix.rb`, and `scripts/` drive the CI matrix.
+- `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and `scripts/` drive the BrowserStack run plan.
 - `tests/shared/launch-smoke.yaml` is the shared launch smoke suite.
 
 ## Shared app contract

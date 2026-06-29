@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+e2e_log() {
+  printf '\n==> %s\n' "$*"
+}

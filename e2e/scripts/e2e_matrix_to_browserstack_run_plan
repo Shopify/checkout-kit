@@ -3,14 +3,14 @@
 
 require "json"
 require "optparse"
-require_relative "../lib/e2e_matrix"
+require_relative "../lib/e2e_matrix_to_browserstack_run_plan"
 
 options = {
   config: File.expand_path("../config/matrix.yml", __dir__)
 }
 
 parser = OptionParser.new do |opts|
-  opts.banner = "Usage: e2e/scripts/e2e_matrix validate|expand [options]"
+  opts.banner = "Usage: e2e/scripts/e2e_matrix_to_browserstack_run_plan validate|expand|count [options]"
   opts.on("--config PATH") { |path| options[:config] = path }
   opts.on("--index INDEX", Integer) { |index| options[:index] = index }
 end
@@ -18,16 +18,16 @@ end
 command = ARGV.shift
 parser.parse!(ARGV)
 
-unless ["validate", "expand"].include?(command)
+unless ["validate", "expand", "count"].include?(command)
   warn parser
   exit 1
 end
 
-matrix = E2EMatrix.load(options.fetch(:config))
+run_plan = E2EMatrixToBrowserStackRunPlan.load(options.fetch(:config))
 
 case command
 when "validate"
-  errors = matrix.validation_errors
+  errors = run_plan.validation_errors
   if errors.empty?
     puts "E2E matrix is valid"
   else
@@ -35,17 +35,25 @@ when "validate"
     exit 1
   end
 when "expand"
-  errors = matrix.validation_errors
+  errors = run_plan.validation_errors
   unless errors.empty?
     warn errors.join("\n")
     exit 1
   end
 
   output = if options.key?(:index)
-    matrix.run_at(options.fetch(:index))
+    run_plan.run_at(options.fetch(:index))
   else
-    matrix.expand
+    run_plan.expand
   end
 
   puts JSON.pretty_generate(output)
+when "count"
+  errors = run_plan.validation_errors
+  unless errors.empty?
+    warn errors.join("\n")
+    exit 1
+  end
+
+  puts run_plan.count
 end
