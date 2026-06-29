@@ -13,36 +13,36 @@
       },
       {
         "kind": "Import",
-        "name": "Foundation",
-        "printedName": "Foundation",
-        "declKind": "Import",
-        "moduleName": "ShopifyCheckoutKit"
-      },
-      {
-        "kind": "Import",
-        "name": "Foundation",
-        "printedName": "Foundation",
-        "declKind": "Import",
-        "moduleName": "ShopifyCheckoutKit"
-      },
-      {
-        "kind": "Import",
-        "name": "Foundation",
-        "printedName": "Foundation",
-        "declKind": "Import",
-        "moduleName": "ShopifyCheckoutKit"
-      },
-      {
-        "kind": "Import",
-        "name": "Foundation",
-        "printedName": "Foundation",
-        "declKind": "Import",
-        "moduleName": "ShopifyCheckoutKit"
-      },
-      {
-        "kind": "Import",
         "name": "EmbeddedCheckoutProtocol",
         "printedName": "EmbeddedCheckoutProtocol",
+        "declKind": "Import",
+        "moduleName": "ShopifyCheckoutKit"
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "ShopifyCheckoutKit"
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "ShopifyCheckoutKit"
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "ShopifyCheckoutKit"
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
         "declKind": "Import",
         "moduleName": "ShopifyCheckoutKit"
       },
@@ -1076,7 +1076,7 @@
                 "kind": "TypeNominal",
                 "name": "Client",
                 "printedName": "EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
-                "usr": "s:23EmbeddedCheckoutProtocol08EmbeddedbC0O6ClientV"
+                "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV"
               }
             ],
             "declKind": "TypeAlias",
@@ -1123,15 +1123,15 @@
                     "kind": "TypeNominal",
                     "name": "Checkout",
                     "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO8complete0abD022NotificationDescriptorVyAE0B0VGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO8complete0abD022NotificationDescriptorVyAE0B0VGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO8complete08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO8complete08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1155,15 +1155,15 @@
                         "kind": "TypeNominal",
                         "name": "Checkout",
                         "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO8complete0abD022NotificationDescriptorVyAE0B0VGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO8complete0abD022NotificationDescriptorVyAE0B0VGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO8complete08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO8complete08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
@@ -1188,15 +1188,15 @@
                     "kind": "TypeNominal",
                     "name": "ErrorResponse",
                     "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
-                    "usr": "s:23EmbeddedCheckoutProtocol13ErrorResponseV"
+                    "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
                   }
                 ],
-                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5error0abD022NotificationDescriptorVyAE13ErrorResponseVGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5error0abD022NotificationDescriptorVyAE13ErrorResponseVGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5error08EmbeddedbD022NotificationDescriptorVyAE13ErrorResponseVGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5error08EmbeddedbD022NotificationDescriptorVyAE13ErrorResponseVGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1220,15 +1220,15 @@
                         "kind": "TypeNominal",
                         "name": "ErrorResponse",
                         "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
-                        "usr": "s:23EmbeddedCheckoutProtocol13ErrorResponseV"
+                        "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
                       }
                     ],
-                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5error0abD022NotificationDescriptorVyAE13ErrorResponseVGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5error0abD022NotificationDescriptorVyAE13ErrorResponseVGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5error08EmbeddedbD022NotificationDescriptorVyAE13ErrorResponseVGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5error08EmbeddedbD022NotificationDescriptorVyAE13ErrorResponseVGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
@@ -1253,15 +1253,15 @@
                     "kind": "TypeNominal",
                     "name": "Checkout",
                     "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1285,15 +1285,15 @@
                         "kind": "TypeNominal",
                         "name": "Checkout",
                         "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO17fulfillmentChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
@@ -1318,15 +1318,15 @@
                     "kind": "TypeNominal",
                     "name": "Checkout",
                     "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO15lineItemsChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO15lineItemsChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO15lineItemsChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO15lineItemsChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1350,15 +1350,15 @@
                         "kind": "TypeNominal",
                         "name": "Checkout",
                         "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO15lineItemsChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO15lineItemsChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO15lineItemsChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO15lineItemsChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
@@ -1383,15 +1383,15 @@
                     "kind": "TypeNominal",
                     "name": "Checkout",
                     "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO14messagesChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO14messagesChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO14messagesChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO14messagesChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1415,15 +1415,15 @@
                         "kind": "TypeNominal",
                         "name": "Checkout",
                         "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO14messagesChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO14messagesChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO14messagesChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO14messagesChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
@@ -1448,15 +1448,15 @@
                     "kind": "TypeNominal",
                     "name": "Checkout",
                     "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5start0abD022NotificationDescriptorVyAE0B0VGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5start0abD022NotificationDescriptorVyAE0B0VGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5start08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5start08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1480,15 +1480,15 @@
                         "kind": "TypeNominal",
                         "name": "Checkout",
                         "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5start0abD022NotificationDescriptorVyAE0B0VGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5start0abD022NotificationDescriptorVyAE0B0VGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5start08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5start08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
@@ -1513,15 +1513,15 @@
                     "kind": "TypeNominal",
                     "name": "Checkout",
                     "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                    "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                   }
                 ],
-                "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO12totalsChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO12totalsChange0abD022NotificationDescriptorVyAE0B0VGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO12totalsChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO12totalsChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1545,15 +1545,15 @@
                         "kind": "TypeNominal",
                         "name": "Checkout",
                         "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:23EmbeddedCheckoutProtocol0B0V"
+                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
                       }
                     ],
-                    "usr": "s:23EmbeddedCheckoutProtocol22NotificationDescriptorV"
+                    "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO12totalsChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO12totalsChange0abD022NotificationDescriptorVyAE0B0VGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO12totalsChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO12totalsChange08EmbeddedbD022NotificationDescriptorVyAE0B0VGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
@@ -1587,12 +1587,12 @@
                     "usr": "s:18ShopifyCheckoutKit16WindowOpenResultO"
                   }
                 ],
-                "usr": "s:23EmbeddedCheckoutProtocol17RequestDescriptorV"
+                "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD017RequestDescriptorVyAA06WindowfG0VAA0iF6ResultOGvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD017RequestDescriptorVyAA06WindowfG0VAA0iF6ResultOGvpZ",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO10windowOpen08EmbeddedbD017RequestDescriptorVyAA06WindowfH0VAA0jF6ResultOGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO10windowOpen08EmbeddedbD017RequestDescriptorVyAA06WindowfH0VAA0jF6ResultOGvpZ",
             "moduleName": "ShopifyCheckoutKit",
             "static": true,
             "declAttributes": [
@@ -1626,12 +1626,12 @@
                         "usr": "s:18ShopifyCheckoutKit16WindowOpenResultO"
                       }
                     ],
-                    "usr": "s:23EmbeddedCheckoutProtocol17RequestDescriptorV"
+                    "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD017RequestDescriptorVyAA06WindowfG0VAA0iF6ResultOGvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO10windowOpen0abD017RequestDescriptorVyAA06WindowfG0VAA0iF6ResultOGvgZ",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO10windowOpen08EmbeddedbD017RequestDescriptorVyAA06WindowfH0VAA0jF6ResultOGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO10windowOpen08EmbeddedbD017RequestDescriptorVyAA06WindowfH0VAA0jF6ResultOGvgZ",
                 "moduleName": "ShopifyCheckoutKit",
                 "static": true,
                 "implicit": true,
@@ -6905,8 +6905,8 @@
             "kind": "Conformance",
             "name": "EventPayload",
             "printedName": "EventPayload",
-            "usr": "s:23EmbeddedCheckoutProtocol12EventPayloadP",
-            "mangledName": "$s23EmbeddedCheckoutProtocol12EventPayloadP"
+            "usr": "s:24EmbeddedCheckoutProtocol12EventPayloadP",
+            "mangledName": "$s24EmbeddedCheckoutProtocol12EventPayloadP"
           },
           {
             "kind": "Conformance",
@@ -7087,8 +7087,8 @@
             "kind": "Conformance",
             "name": "ResponsePayload",
             "printedName": "ResponsePayload",
-            "usr": "s:23EmbeddedCheckoutProtocol15ResponsePayloadP",
-            "mangledName": "$s23EmbeddedCheckoutProtocol15ResponsePayloadP"
+            "usr": "s:24EmbeddedCheckoutProtocol15ResponsePayloadP",
+            "mangledName": "$s24EmbeddedCheckoutProtocol15ResponsePayloadP"
           },
           {
             "kind": "Conformance",
@@ -7132,8 +7132,8 @@
         "name": "Client",
         "printedName": "Client",
         "declKind": "Struct",
-        "usr": "s:23EmbeddedCheckoutProtocol08EmbeddedbC0O6ClientV",
-        "mangledName": "$s23EmbeddedCheckoutProtocol08EmbeddedbC0O6ClientV",
+        "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV",
+        "mangledName": "$s24EmbeddedCheckoutProtocolAAO6ClientV",
         "moduleName": "EmbeddedCheckoutProtocol",
         "isFromExtension": true,
         "isExternal": true,
