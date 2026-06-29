@@ -3,6 +3,7 @@ import type {
   CheckoutAttributes,
   CheckoutMethods,
   CheckoutProperties,
+  CheckoutPresentation,
   CheckoutProtocolMessageMap,
   CheckoutTarget,
   TypedEventListener,
@@ -54,12 +55,14 @@ const SHADOW_TEMPLATE = createTemplate(html`
 `);
 
 /**
- * An element that renders a Shopify Checkout. Checkout opens in a popup or browser tab/window
- * (see `target`). To use, create a `shopify-checkout` element, set the `src` attribute to the
- * checkout URL (typically retrieved from the `cart.checkoutUrl` field), and then call `open()`.
+ * An element that renders a Shopify Checkout. Checkout opens according to the configured
+ * `presentation` and `target`. To use, create a `shopify-checkout` element, set the `src`
+ * attribute to the checkout URL (typically retrieved from the `cart.checkoutUrl` field),
+ * and then call `open()`.
  *
  * @attribute src - The URL of the checkout to load.
- * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
+ * @attribute presentation - How checkout is presented (auto, popup, or iframe).
+ * @attribute target - The browsing context target for non-popup window presentations.
  *
  * @event ec.start - Dispatched when the checkout has started
  * @event ec.complete - Dispatched when the checkout was successfully completed
@@ -71,10 +74,11 @@ const SHADOW_TEMPLATE = createTemplate(html`
  *
  * @example
  * ```js
- * // Popup target (default)
+ * // Popup presentation
  * const cart = await fetchCart();
  * const checkout = document.createElement("shopify-checkout");
  * checkout.setAttribute("src", cart.checkoutUrl);
+ * checkout.setAttribute("presentation", "popup");
  * document.body.append(checkout);
  * checkout.open();
  * ```
@@ -83,7 +87,7 @@ export class ShopifyCheckout
   extends HTMLElement
   implements CheckoutAttributes, CheckoutMethods, CheckoutProperties
 {
-  static observedAttributes = ["src", "target"] as const;
+  static observedAttributes = ["src", "presentation", "target"] as const;
 
   constructor() {
     super();
@@ -165,6 +169,18 @@ export class ShopifyCheckout
     }
   }
 
+  get presentation(): CheckoutPresentation {
+    const presentation = this.getAttribute("presentation");
+    if (presentation === "auto" || presentation === "popup" || presentation === "iframe") {
+      return presentation;
+    }
+    return "auto";
+  }
+
+  set presentation(value: CheckoutPresentation | undefined) {
+    this.#setAttribute("presentation", value);
+  }
+
   get target(): CheckoutTarget | string {
     return this.getAttribute("target") ?? "auto";
   }
@@ -180,6 +196,22 @@ export class ShopifyCheckout
       this.setAttribute(name, value);
     } else {
       this.removeAttribute(name);
+    }
+  }
+
+  #resolvedPresentation(): CheckoutPresentation {
+    const presentation = this.getAttribute("presentation");
+
+    switch (presentation) {
+      case "auto":
+      case "popup":
+      case "iframe":
+        return presentation;
+      case null:
+        return this.target === "popup" ? "popup" : "auto";
+      default:
+        this.#debugWarn(`presentation="${presentation}" is invalid; falling back to "auto"`);
+        return "auto";
     }
   }
 
@@ -233,6 +265,10 @@ export class ShopifyCheckout
     return this.shadowRoot?.querySelector("#overlay-link") ?? undefined;
   }
 
+  get #iframeElement(): HTMLIFrameElement | undefined {
+    return this.shadowRoot?.querySelector("#checkout-frame") ?? undefined;
+  }
+
   get #targetElement(): HTMLDivElement | undefined {
     return this.shadowRoot?.querySelector(".Shopify-target") ?? undefined;
   }
@@ -243,13 +279,15 @@ export class ShopifyCheckout
    */
 
   /**
-   * Reveals checkout in the target.
+   * Reveals checkout using the configured presentation.
    */
   open(): void {
     const { target } = this;
-    const src = this.#srcAsURL()?.href;
+    const presentation = this.#resolvedPresentation();
+    const url = this.#srcAsURL();
+    const src = url?.href;
 
-    if (!src) {
+    if (!url || !src) {
       // eslint-disable-next-line no-console
       console.warn("`<shopify-checkout>`: src property is empty or invalid, cannot open checkout");
       return;
@@ -260,9 +298,14 @@ export class ShopifyCheckout
       this.close();
     }
 
+    if (presentation === "iframe") {
+      this.#openIframeCheckout(url);
+      return;
+    }
+
     let checkoutWindow: WindowProxy | null = null;
 
-    switch (target) {
+    switch (presentation) {
       case "popup": {
         const features = this.#getPopupFeatures();
         checkoutWindow = window.open(src, "", features);
@@ -270,7 +313,6 @@ export class ShopifyCheckout
       }
 
       case "auto":
-      case "_blank":
       default: {
         if (target === "_self" || target === "_parent" || target === "_top") {
           this.#debugWarn(
@@ -419,6 +461,55 @@ export class ShopifyCheckout
   #removeTargetClass(value: string | null) {
     if (!value || /\s/.test(value)) return;
     this.#targetElement?.classList.remove(`Shopify-target--${value}`);
+  }
+
+  #openIframeCheckout(url: URL) {
+    const iframe = this.#iframeElement ?? this.#createIframeElement();
+
+    const targetElement = this.#targetElement;
+    if (targetElement && iframe.parentElement !== targetElement) {
+      targetElement.appendChild(iframe);
+    }
+
+    iframe.src = url.href;
+    this.#checkoutWindow = iframe.contentWindow ?? null;
+
+    const abortController = new AbortController();
+    abortController.signal.addEventListener("abort", () => {
+      iframe.remove();
+      this.#checkoutWindow = null;
+      this.#currentOpen = null;
+      this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+    });
+
+    this.#currentOpen = { controller: abortController };
+  }
+
+  #createIframeElement() {
+    const iframe = document.createElement("iframe");
+    iframe.id = "checkout-frame";
+    iframe.title = "Checkout";
+    iframe.setAttribute("part", "iframe");
+    iframe.setAttribute("allow", "publickey-credentials-get *; geolocation");
+    iframe.setAttribute(
+      "sandbox",
+      "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox",
+    );
+    return iframe;
+  }
+
+  #updateIframeSrc() {
+    const iframe = this.#iframeElement;
+    if (!iframe) return;
+
+    const url = this.#srcAsURL();
+    if (!url) {
+      this.close();
+      return;
+    }
+
+    this.close();
+    this.#openIframeCheckout(url);
   }
 
   #getPopupFeatures() {
@@ -700,6 +791,12 @@ export class ShopifyCheckout
     switch (name) {
       case "src":
         this.#updateOverlayLink();
+        this.#updateIframeSrc();
+        break;
+      case "presentation":
+        if (oldValue !== newValue && this.#currentOpen) {
+          this.close();
+        }
         break;
       case "target": {
         if (oldValue !== newValue && this.#currentOpen) {

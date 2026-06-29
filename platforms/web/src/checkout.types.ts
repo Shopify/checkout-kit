@@ -29,24 +29,26 @@ import type {
 
 // Documentation-safe types:
 
+export type CheckoutPresentation = "auto" | "popup" | "iframe";
+
 export type CheckoutTarget = "auto" | "popup" | "_blank";
 
 export interface CheckoutAttributes {
   src?: string;
+  presentation?: CheckoutPresentation;
   target?: CheckoutTarget | string;
   debug?: boolean | string;
 }
 
 export interface CheckoutMethods {
   /**
-   * Opens the checkout in a popup window by default, but can be configured
-   * to open in a new tab or named window using the `target` property.
+   * Opens checkout using the configured `presentation`.
    */
   open?: () => void;
 
   /**
-   * Closes the checkout popup.
-   * Can be used after checkout completion or to cancel the checkout process
+   * Closes the active checkout presentation.
+   * Can be used after checkout completion or to cancel the checkout process.
    */
   close?: () => void;
 }
@@ -62,10 +64,23 @@ export interface CheckoutProperties {
   src?: string;
 
   /**
-   * The mode in which to display the checkout when opened. Defaults to `'auto'`.
-   * - `'popup'`: Opens checkout in a popup window
-   * - `'_blank' | `'auto'`: Opens checkout in a new tab (default)
-   * - `string`: Opens checkout in a new named window
+   * The presentation mode used when checkout is opened. Defaults to `'auto'`.
+   * - `'auto'`: Opens checkout in a new tab or named window based on `target`
+   * - `'popup'`: Opens checkout in a popup window sized and centered over the page
+   * - `'iframe'`: Embeds checkout in an iframe
+   *
+   * This property is automatically reflected to the `presentation` attribute,
+   * so you can use the `presentation` attribute or this property interchangeably.
+   */
+  presentation?: CheckoutPresentation;
+
+  /**
+   * The browser context target used when `presentation` is `'auto'`. Defaults to `'auto'`.
+   * - `'auto'`: Opens checkout in a new tab (default)
+   * - `'popup'`: Legacy alias for `presentation='popup'`; prefer the presentation property
+   *   for new integrations
+   * - `'_blank'`: Opens checkout in a new tab/window
+   * - `string`: Passed to `window.open()` as the target
    *
    * For more details on window targets, see the [`Window.open()` `target` parameter](https://developer.mozilla.org/en-US/docs/Web/API/Window/open#target)
    *

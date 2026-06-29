@@ -45,6 +45,21 @@ describe("<shopify-checkout>", () => {
         expect(checkout.src).toBe(newSrc);
       });
     });
+
+    describe("presentation", () => {
+      it("changing the presentation attribute reflects to the presentation property", () => {
+        const checkout = renderCheckout();
+        checkout.setAttribute("presentation", "popup");
+
+        expect(checkout.presentation).toBe("popup");
+      });
+
+      it('does not derive the presentation property from target="popup"', () => {
+        const checkout = renderCheckout({ target: "popup" });
+
+        expect(checkout.presentation).toBe("auto");
+      });
+    });
   });
 
   describe("target", () => {
@@ -110,6 +125,15 @@ describe("<shopify-checkout>", () => {
         const newTarget = "_blank";
         checkout.target = newTarget;
         expect(checkout.getAttribute("target")).toBe(newTarget);
+      });
+    });
+
+    describe("presentation", () => {
+      it("changing the presentation property reflects to the presentation attribute", () => {
+        const checkout = renderCheckout();
+        checkout.presentation = "popup";
+
+        expect(checkout.getAttribute("presentation")).toBe("popup");
       });
     });
 
@@ -248,6 +272,19 @@ describe("<shopify-checkout>", () => {
               target ?? "auto",
             );
           });
+        });
+      });
+
+      describe('when presentation="popup"', () => {
+        it("opens in a popup window regardless of the window target", () => {
+          const checkout = renderCheckout({ presentation: "popup", target: "_blank" });
+          const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+          checkout.open();
+
+          const call = expectWindowOpenArgs(windowOpenSpy);
+          expect(call[1]).toBe("");
+          expect(call[2]).toEqual(expect.stringContaining("scrollbars=yes"));
         });
       });
 

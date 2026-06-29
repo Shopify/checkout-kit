@@ -36,10 +36,12 @@ const eventLog = $<HTMLUListElement>("#event-log");
 const clearLogButton = $<HTMLButtonElement>("#clear-log");
 const buyNowButton = $<HTMLButtonElement>("#buy-now");
 const buyHint = $<HTMLParagraphElement>("#buy-hint");
+const checkoutHost = $<HTMLElement>("#checkout-host");
 
 const stateNodes = {
   checkout: $<HTMLElement>("#state-checkout"),
   error: $<HTMLElement>("#state-error"),
+  presentation: $<HTMLElement>("#state-presentation"),
   target: $<HTMLElement>("#state-target"),
   debug: $<HTMLElement>("#state-debug"),
 };
@@ -47,13 +49,11 @@ const stateNodes = {
 // ───── Mount the component (off-layout) ───────────────────────────────────
 //
 // In real merchant integrations the <shopify-checkout> element lives wherever
-// it makes sense in the page. For popup / auto targets it has no visible UI
-// of its own beyond a transient dialog scrim that appears when open() is
-// called, so we attach it to <body> and leave the storefront panel free for
-// the merchant's product UI.
+// it makes sense in the page. Popup / auto presentations have no visible UI of
+// their own beyond the transient dialog scrim.
 
 const checkout = document.createElement("shopify-checkout") as ShopifyCheckout;
-document.body.append(checkout);
+checkoutHost.append(checkout);
 
 const checkoutEl: HTMLElement = checkout;
 
@@ -70,6 +70,7 @@ function setStringAttribute(el: HTMLElement, name: string, value: FormDataEntryV
 function syncAttributes(): void {
   const data = new FormData(form);
   setStringAttribute(checkout, "src", data.get("src"));
+  setStringAttribute(checkout, "presentation", data.get("presentation"));
   setStringAttribute(checkout, "target", data.get("target"));
   if (data.has("debug")) {
     checkout.setAttribute("debug", "");
@@ -78,6 +79,7 @@ function syncAttributes(): void {
   }
 
   refreshBuyButton(data.get("src"));
+  refreshState();
 }
 
 function refreshBuyButton(src: FormDataEntryValue | null): void {
@@ -153,6 +155,7 @@ function snapshotState(): Record<string, unknown> {
   return {
     checkout: checkout.checkout,
     error: checkout.error,
+    presentation: checkout.presentation,
     target: checkout.target,
     debug: checkout.debug,
   };
@@ -161,6 +164,7 @@ function snapshotState(): Record<string, unknown> {
 function refreshState(): void {
   stateNodes.checkout.textContent = formatValue(checkout.checkout);
   stateNodes.error.textContent = formatValue(checkout.error);
+  stateNodes.presentation.textContent = formatValue(checkout.presentation);
   stateNodes.target.textContent = formatValue(checkout.target);
   stateNodes.debug.textContent = formatValue(checkout.debug);
 }

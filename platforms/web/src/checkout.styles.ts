@@ -12,6 +12,14 @@ export const STYLES: SafeMarkup = css`
     border: none;
   }
 
+  #checkout-frame {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+    background: hsl(0, 0%, 100%);
+  }
+
   :host {
     @media (prefers-reduced-motion: reduce) {
       --shopify-checkout-overlay-transition-duration: 1ms;
@@ -121,5 +129,11 @@ export const STYLES: SafeMarkup = css`
       line-height: 0;
       fill: currentColor;
     }
+  }
+
+  :host([presentation="iframe"]) {
+    display: block;
+    block-size: var(--shopify-checkout-iframe-height, 640px);
+    min-block-size: var(--shopify-checkout-iframe-min-height, 640px);
   }
 `;
