@@ -1,6 +1,6 @@
 import Combine
 import PassKit
-@preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 enum AppStorageKeys: String {

@@ -1,4 +1,4 @@
-@preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutKit
 import UIKit
 
 func getLogLevel(key: String) -> LogLevel {

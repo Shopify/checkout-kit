@@ -1,5 +1,5 @@
 import Combine
-@preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
 

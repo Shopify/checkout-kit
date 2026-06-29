@@ -1,6 +1,6 @@
 import ApolloAPI
 import Combine
-@preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutKit
 import ShopifyCheckoutProtocol
 import SwiftUI
 import UIKit

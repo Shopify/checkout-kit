@@ -1,5 +1,5 @@
 import OSLog
-@preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutKit
 import ShopifyCheckoutProtocol
 import UIKit
 

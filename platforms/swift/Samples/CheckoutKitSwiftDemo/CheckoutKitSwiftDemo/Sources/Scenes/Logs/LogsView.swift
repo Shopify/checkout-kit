@@ -1,4 +1,4 @@
-@preconcurrency import ShopifyCheckoutKit
+import ShopifyCheckoutKit
 import SwiftUI
 
 struct LogsView: View {
