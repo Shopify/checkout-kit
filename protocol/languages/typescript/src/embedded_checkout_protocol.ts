@@ -12,8 +12,7 @@ import {url, type ProtocolURLOptions} from './url';
 export const EmbeddedCheckoutProtocol = {
   specVersion: SPEC_VERSION,
   Delegations,
-  Event: notificationDescriptors,
-  Request: requestDescriptors,
+  Event: {...notificationDescriptors, ...requestDescriptors},
   url,
   Client: ClientClass,
 } as const;

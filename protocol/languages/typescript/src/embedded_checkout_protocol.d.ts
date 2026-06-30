@@ -11,22 +11,20 @@ export declare const EmbeddedCheckoutProtocol: {
         readonly windowOpen: "window.open";
     };
     readonly Event: {
-        error: import("./descriptors").NotificationDescriptor<import(".").ErrorResponse>;
-        start: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
-        complete: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
-        messagesChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
-        lineItemsChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
-        buyerChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
-        totalsChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
-        paymentChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
-        fulfillmentChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
-    };
-    readonly Request: {
-        ready: import("./descriptors").RequestDescriptor<import(".").ReadyRequest, import(".").ReadyResult>;
-        auth: import("./descriptors").RequestDescriptor<import(".").AuthRequest, import(".").AuthResult>;
-        paymentInstrumentsChange: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").InstrumentsChangeResult>;
-        paymentCredential: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").CredentialResult>;
-        fulfillmentAddressChange: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").AddressChangeResult>;
+        readonly ready: import("./descriptors").RequestDescriptor<import(".").ReadyRequest, import(".").ReadyResult>;
+        readonly auth: import("./descriptors").RequestDescriptor<import(".").AuthRequest, import(".").AuthResult>;
+        readonly paymentInstrumentsChange: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").InstrumentsChangeResult>;
+        readonly paymentCredential: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").CredentialResult>;
+        readonly fulfillmentAddressChange: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").AddressChangeResult>;
+        readonly error: import("./descriptors").NotificationDescriptor<import(".").ErrorResponse>;
+        readonly start: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
+        readonly complete: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
+        readonly messagesChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
+        readonly lineItemsChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
+        readonly buyerChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
+        readonly totalsChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
+        readonly paymentChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
+        readonly fulfillmentChange: import("./descriptors").NotificationDescriptor<import(".").Checkout>;
     };
     readonly url: typeof url;
     readonly Client: typeof ClientClass;
