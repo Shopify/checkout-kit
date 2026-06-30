@@ -81,13 +81,13 @@ public final class com/shopify/checkoutkit/CheckoutProtocol {
 	public final fun getMessagesChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getStart ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getTotalsChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getWindowOpen ()Lcom/shopify/ucp/embedded/checkout/DelegationDescriptor;
+	public final fun getWindowOpen ()Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;
 }
 
 public final class com/shopify/checkoutkit/CheckoutProtocol$Client {
 	public fun <init> ()V
-	public final fun on (Lcom/shopify/ucp/embedded/checkout/DelegationDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
 	public final fun on (Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
+	public final fun on (Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
 }
 
 public class com/shopify/checkoutkit/CheckoutUnavailableException : com/shopify/checkoutkit/CheckoutException {

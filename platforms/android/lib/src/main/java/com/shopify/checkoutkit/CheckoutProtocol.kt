@@ -1,14 +1,15 @@
 package com.shopify.checkoutkit
 
-import android.net.Uri
 import android.os.Looper
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import com.shopify.ucp.embedded.checkout.Checkout
-import com.shopify.ucp.embedded.checkout.DelegationDescriptor
 import com.shopify.ucp.embedded.checkout.EcpRequest
 import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
 import com.shopify.ucp.embedded.checkout.ErrorResponse
 import com.shopify.ucp.embedded.checkout.NotificationDescriptor
+import com.shopify.ucp.embedded.checkout.ReadyRequest
+import com.shopify.ucp.embedded.checkout.ReadyResult
+import com.shopify.ucp.embedded.checkout.RequestDescriptor
 import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
 import com.shopify.ucp.embedded.checkout.encodeJsonRpcError
 import com.shopify.ucp.embedded.checkout.encodeJsonRpcResult
@@ -35,19 +36,16 @@ public object CheckoutProtocol {
     public val fulfillmentChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.fulfillmentChange
     public val error: NotificationDescriptor<ErrorResponse> = EmbeddedCheckoutProtocol.error
 
-    public val windowOpen: DelegationDescriptor<WindowOpenRequest, WindowOpenResult> = EmbeddedCheckoutProtocol.windowOpen.map(
-        decode = { request ->
-            request.url.toString().let(Uri::parse).let(::WindowOpenRequest)
-        },
-        encode = ::encodeWindowOpenResult,
-    )
+    internal val ready: RequestDescriptor<ReadyRequest, ReadyResult> = EmbeddedCheckoutProtocol.ready
+
+    public val windowOpen: RequestDescriptor<WindowOpenRequest, WindowOpenResult> = checkoutKitWindowOpenDescriptor
 
     internal val defaultDelegations: List<EmbeddedCheckoutProtocol.Delegation> = listOf(
-        EmbeddedCheckoutProtocol.Delegation(windowOpen.delegation),
+        EmbeddedCheckoutProtocol.Delegation.windowOpen,
     )
 
     internal val supportedProtocolMethods: Set<String> = setOf(
-        EmbeddedCheckoutProtocol.Event.ready,
+        ready.method,
         start.method,
         complete.method,
         error.method,
@@ -81,18 +79,10 @@ public object CheckoutProtocol {
         error,
     )
 
-    private val supportedDelegationDescriptors: Set<DelegationDescriptor<*, *>> = setOf(
+    private val supportedRequestDescriptors: Set<RequestDescriptor<*, *>> = setOf(
         windowOpen,
+        ready,
     )
-
-    private fun encodeWindowOpenResult(
-        result: WindowOpenResult,
-    ): com.shopify.ucp.embedded.checkout.WindowOpenResult = when (result) {
-        is WindowOpenResult.Success ->
-            com.shopify.ucp.embedded.checkout.WindowOpenResult.Success
-        is WindowOpenResult.Rejected ->
-            com.shopify.ucp.embedded.checkout.WindowOpenResult.Rejected(result.reason)
-    }
 
     /**
      * A typed, fluent client for supported Checkout Kit protocol callbacks.
@@ -122,10 +112,10 @@ public object CheckoutProtocol {
         }
 
         public fun <P : Any, R : Any> on(
-            descriptor: DelegationDescriptor<P, R>,
+            descriptor: RequestDescriptor<P, R>,
             handler: (P) -> R,
         ): Client {
-            if (descriptor !in supportedDelegationDescriptors) return this
+            if (descriptor !in supportedRequestDescriptors) return this
             return Client(handlers, delegations + (descriptor.method to Delegation.Typed(descriptor, handler)))
         }
 
@@ -180,7 +170,7 @@ public object CheckoutProtocol {
         abstract fun dispatch(request: EcpRequest): String
 
         class Typed<P : Any, R : Any>(
-            private val descriptor: DelegationDescriptor<P, R>,
+            private val descriptor: RequestDescriptor<P, R>,
             private val handler: (P) -> R,
         ) : Delegation() {
             override fun dispatch(request: EcpRequest): String {
@@ -221,19 +211,3 @@ public object CheckoutProtocol {
 
 internal fun EcpRequest.hasValidJsonRpcRequestId(): Boolean =
     id == null || jsonRpcRequestId(id) != null
-
-/** Payload delivered with the [CheckoutProtocol.windowOpen] delegation. */
-@ConsistentCopyVisibility
-public data class WindowOpenRequest internal constructor(public val url: Uri)
-
-/**
- * Outcome a [CheckoutProtocol.windowOpen] handler returns to the checkout page.
- *
- * [Success] indicates the URL was opened externally.
- * [Rejected] indicates the URL could not be opened, so checkout receives a UCP
- * `window_open_rejected_error` envelope and may surface fallback UI.
- */
-public sealed class WindowOpenResult {
-    public object Success : WindowOpenResult()
-    public data class Rejected(public val reason: String? = null) : WindowOpenResult()
-}

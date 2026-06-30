@@ -2,12 +2,11 @@ package com.shopify.checkoutkit
 
 import android.os.Looper
 import com.shopify.ucp.embedded.checkout.Checkout
-import com.shopify.ucp.embedded.checkout.DelegationDescriptor
 import com.shopify.ucp.embedded.checkout.DiscountMethod
-import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
 import com.shopify.ucp.embedded.checkout.EmbeddedColorScheme
 import com.shopify.ucp.embedded.checkout.EmbeddedTransportConfig
 import com.shopify.ucp.embedded.checkout.ErrorResponse
+import com.shopify.ucp.embedded.checkout.ErrorStatus
 import com.shopify.ucp.embedded.checkout.FulfillmentMethodType
 import com.shopify.ucp.embedded.checkout.LineItemQuantity
 import com.shopify.ucp.embedded.checkout.LineItemStatus
@@ -15,8 +14,8 @@ import com.shopify.ucp.embedded.checkout.Message
 import com.shopify.ucp.embedded.checkout.MessageType
 import com.shopify.ucp.embedded.checkout.NotificationDescriptor
 import com.shopify.ucp.embedded.checkout.OrderLineItem
+import com.shopify.ucp.embedded.checkout.RequestDescriptor
 import com.shopify.ucp.embedded.checkout.Severity
-import com.shopify.ucp.embedded.checkout.StatusEnum
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
@@ -66,6 +65,18 @@ class CheckoutProtocolTest {
         assertThat(CheckoutProtocol.windowOpen.delegation).isEqualTo("window.open")
     }
 
+    @Test
+    fun `windowOpen is a kit-owned request descriptor`() {
+        assertThat(CheckoutProtocol.windowOpen.method).isEqualTo("ec.window.open_request")
+        assertThat(CheckoutProtocol.windowOpen.delegation).isEqualTo("window.open")
+    }
+
+    @Test
+    fun `ready is exposed as a request descriptor`() {
+        assertThat(CheckoutProtocol.ready.method).isEqualTo("ec.ready")
+        assertThat(CheckoutProtocol.ready.delegation).isNull()
+    }
+
     // endregion
 
     // region supported protocol methods
@@ -73,7 +84,7 @@ class CheckoutProtocolTest {
     @Test
     fun `supported protocol methods include ready notifications and delegations`() {
         assertThat(CheckoutProtocol.supportedProtocolMethods).containsExactlyInAnyOrder(
-            EmbeddedCheckoutProtocol.Event.ready,
+            CheckoutProtocol.ready.method,
             CheckoutProtocol.start.method,
             CheckoutProtocol.complete.method,
             CheckoutProtocol.error.method,
@@ -287,7 +298,7 @@ class CheckoutProtocolTest {
         var handled = false
         val client = CheckoutProtocol.Client()
             .on(
-                DelegationDescriptor<WindowOpenRequest, WindowOpenResult>(
+                RequestDescriptor<WindowOpenRequest, WindowOpenResult>(
                     method = CheckoutProtocol.windowOpen.method,
                     delegation = "custom.delegation",
                 )
@@ -307,7 +318,7 @@ class CheckoutProtocolTest {
         var handled = false
         val client = CheckoutProtocol.Client()
             .on(
-                DelegationDescriptor<WindowOpenRequest, WindowOpenResult>(
+                RequestDescriptor<WindowOpenRequest, WindowOpenResult>(
                     method = CheckoutProtocol.windowOpen.method,
                     delegation = CheckoutProtocol.windowOpen.delegation,
                 )
@@ -341,7 +352,7 @@ class CheckoutProtocolTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received?.ucp?.version).isEqualTo("2026-04-08")
-        assertThat(received?.ucp?.status).isEqualTo(StatusEnum.Error)
+        assertThat(received?.ucp?.status).isEqualTo(ErrorStatus.Error)
         assertThat(received?.messages).hasSize(2)
         assertThat(received?.messages?.get(0)?.type).isEqualTo(MessageType.Error)
         assertThat(received?.messages?.get(0)?.code).isEqualTo("unknown_error")

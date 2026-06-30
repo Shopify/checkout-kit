@@ -63,8 +63,3 @@ public data class EcpRequest(
     public val id: JsonElement? = null,
     public val params: JsonElement? = null,
 )
-
-@Serializable
-public data class ReadyParams(
-    public val delegate: List<String> = emptyList(),
-)

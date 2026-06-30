@@ -16,23 +16,22 @@ internal class ComposedCheckoutProtocolClient(
     private val defaults: Map<String, DefaultClientBinding>,
 ) {
     internal fun process(message: String): String? {
-        val method = method(message) ?: return merchant?.process(message)
-        var response = merchant?.process(message)
+        val binding = method(message)?.let { defaults[it] }
+            ?: return merchant?.process(message)
 
-        defaults[method]?.let { binding ->
-            when (binding.policy) {
-                DefaultClientPolicy.AlwaysRunAfterMerchant -> {
-                    val defaultResponse = binding.client.process(message)
-                    response = response ?: defaultResponse
-                }
-                DefaultClientPolicy.RunIfUnhandled ->
-                    if (response == null) {
-                        response = binding.client.process(message)
-                    }
+        return when (binding.policy) {
+            DefaultClientPolicy.KitOwned ->
+                binding.client.process(message)
+
+            DefaultClientPolicy.AlwaysRunAfterMerchant -> {
+                val response = merchant?.process(message)
+                val defaultResponse = binding.client.process(message)
+                response ?: defaultResponse
             }
-        }
 
-        return response
+            DefaultClientPolicy.RunIfUnhandled ->
+                merchant?.process(message) ?: binding.client.process(message)
+        }
     }
 
     private fun method(message: String): String? = try {
@@ -48,6 +47,7 @@ internal data class DefaultClientBinding(
 )
 
 internal enum class DefaultClientPolicy {
+    KitOwned,
     AlwaysRunAfterMerchant,
     RunIfUnhandled,
 }

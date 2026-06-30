@@ -1604,7 +1604,7 @@ public data class UCPOrderResponseSchema (
     /**
      * Service registry keyed by reverse-domain name.
      */
-    public val services: Map<String, List<UCPOrderResponseSchemaService>>? = null,
+    public val services: Map<String, List<Service>>? = null,
 
     /**
      * Application-level status of the UCP operation.
@@ -1618,7 +1618,7 @@ public data class UCPOrderResponseSchema (
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class UCPOrderResponseSchemaService (
+public data class Service (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1703,12 +1703,12 @@ public data class ErrorResponseUcp (
     /**
      * Service registry keyed by reverse-domain name.
      */
-    public val services: Map<String, List<UCPOrderResponseSchemaService>>? = null,
+    public val services: Map<String, List<Service>>? = null,
 
     /**
      * Application-level status of the UCP operation.
      */
-    public val status: StatusEnum,
+    public val status: ErrorStatus,
 
     public val version: String
 )
@@ -1717,7 +1717,7 @@ public data class ErrorResponseUcp (
  * Application-level status of the UCP operation.
  */
 @Serializable
-public enum class StatusEnum(public val value: String) {
+public enum class ErrorStatus(public val value: String) {
     @SerialName("error") Error("error");
 }
 
@@ -1809,7 +1809,7 @@ public data class InstrumentsChangeResultUcp (
     /**
      * Service registry keyed by reverse-domain name.
      */
-    public val services: Map<String, List<InstrumentsChangeService>>? = null,
+    public val services: Map<String, List<EmbeddedService>>? = null,
 
     /**
      * Application-level status of the UCP operation.
@@ -1924,7 +1924,7 @@ public data class PaymentHandlerAvailableInstrument (
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class InstrumentsChangeService (
+public data class EmbeddedService (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1998,4 +1998,201 @@ public data class CredentialResult (
 @Serializable
 public data class CredentialCheckout (
     public val payment: Payment? = null
+)
+
+/**
+ * Checkout state after address selection.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+@Serializable
+public data class AddressChangeResult (
+    /**
+     * Partial checkout update with fulfillment address selection.
+     */
+    public val checkout: AddressChangeCheckout? = null,
+
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    public val ucp: InstrumentsChangeResultUcp,
+
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    @SerialName("continue_url")
+    public val continueURL: String? = null,
+
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    public val messages: List<Message>? = null
+)
+
+/**
+ * Partial checkout update with fulfillment address selection.
+ */
+@Serializable
+public data class AddressChangeCheckout (
+    /**
+     * Updated fulfillment with new selected destination and destinations.
+     */
+    public val fulfillment: CheckoutFulfillmentClass? = null
+)
+
+/**
+ * Updated fulfillment with new selected destination and destinations.
+ *
+ * Container for fulfillment methods and availability.
+ */
+@Serializable
+public data class CheckoutFulfillmentClass (
+    /**
+     * Inventory availability hints.
+     */
+    @SerialName("available_methods")
+    public val availableMethods: List<FulfillmentAvailableMethod>? = null,
+
+    /**
+     * Fulfillment methods for cart items.
+     */
+    public val methods: List<FulfillmentMethod>? = null
+)
+
+@Serializable
+public data class ReadyRequest (
+    public val auth: Auth? = null,
+
+    /**
+     * Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
+     */
+    public val delegate: List<String>
+)
+
+@Serializable
+public data class Auth (
+    public val type: String? = null
+)
+
+/**
+ * Handshake response from host.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+@Serializable
+public data class ReadyResult (
+    /**
+     * Initial delegation state from host. Fields are permitted only when the corresponding
+     * delegation is accepted.
+     */
+    public val checkout: ReadyCheckout? = null,
+
+    /**
+     * Requested authorization. Some common examples include API key and OAuth token.
+     */
+    public val credential: String? = null,
+
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    public val ucp: InstrumentsChangeResultUcp,
+
+    /**
+     * Channel upgrade instructions. If present, switch to provided MessagePort.
+     */
+    public val upgrade: Upgrade? = null,
+
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    @SerialName("continue_url")
+    public val continueURL: String? = null,
+
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    public val messages: List<Message>? = null
+)
+
+/**
+ * Initial delegation state from host. Fields are permitted only when the corresponding
+ * delegation is accepted.
+ */
+@Serializable
+public data class ReadyCheckout (
+    public val fulfillment: CheckoutFulfillmentClass? = null,
+
+    /**
+     * Payment instruments with selected instrument ID.
+     */
+    public val payment: ReadyPayment? = null
+)
+
+/**
+ * Payment instruments with selected instrument ID.
+ *
+ * Payment configuration containing handlers.
+ */
+@Serializable
+public data class ReadyPayment (
+    /**
+     * The payment instruments available for this payment. Each instrument is associated with a
+     * specific handler via the handler_id field. Handlers can extend the base
+     * payment_instrument schema to add handler-specific fields.
+     */
+    public val instruments: List<SelectedPaymentInstrument>? = null,
+
+    /**
+     * ID of the selected payment instrument.
+     */
+    @SerialName("selected_instrument_id")
+    public val selectedInstrumentID: String? = null
+)
+
+/**
+ * Channel upgrade instructions. If present, switch to provided MessagePort.
+ */
+@Serializable
+public data class Upgrade (
+    /**
+     * MessagePort for upgraded channel. Runtime type is MessagePort.
+     */
+    public val port: JsonObject? = null
+)
+
+@Serializable
+public data class AuthRequest (
+    public val type: String? = null
+)
+
+/**
+ * Auth response from host containing the requested authorization data.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+@Serializable
+public data class AuthResult (
+    /**
+     * Requested authorization. Some common examples include API key and OAuth token.
+     */
+    public val credential: String? = null,
+
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    public val ucp: InstrumentsChangeResultUcp,
+
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    @SerialName("continue_url")
+    public val continueURL: String? = null,
+
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    public val messages: List<Message>? = null
 )

@@ -2,22 +2,14 @@ package com.shopify.checkoutkit
 
 import android.webkit.JavascriptInterface
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
-import com.shopify.ucp.embedded.checkout.EcpRequest
-import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
-import com.shopify.ucp.embedded.checkout.ReadyParams
+import com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp
+import com.shopify.ucp.embedded.checkout.ReadyResult
 import com.shopify.ucp.embedded.checkout.Severity
+import com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus
 import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
 import com.shopify.ucp.embedded.checkout.jsonRpcRequestId
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
 
 /**
  * Handles the Embedded Checkout Protocol (ECP) JS bridge.
@@ -30,9 +22,12 @@ internal class EmbeddedCheckoutProtocolBridge(
     private val view: CheckoutWebView,
     @Volatile private var client: CheckoutProtocol.Client? = null,
 ) {
-    private val decoder = Json { ignoreUnknownKeys = true }
     private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
     private val defaultClientBindings: Map<String, DefaultClientBinding> = mapOf(
+        CheckoutProtocol.ready.method to DefaultClientBinding(
+            client = defaultClient,
+            policy = DefaultClientPolicy.KitOwned,
+        ),
         CheckoutProtocol.windowOpen.method to DefaultClientBinding(
             client = defaultClient,
             policy = DefaultClientPolicy.RunIfUnhandled,
@@ -64,7 +59,7 @@ internal class EmbeddedCheckoutProtocolBridge(
             val requestId = jsonRpcRequestId(request.id)
             log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
             when (method) {
-                EmbeddedCheckoutProtocol.Event.ready -> requestId?.let { handleReady(request, it) }
+                CheckoutProtocol.ready.method -> requestId?.let { handleClientMessage(method, message) }
                 CheckoutProtocol.windowOpen.method -> requestId?.let { handleWindowOpenRequest(message) }
                 CheckoutProtocol.start.method -> handleStart(message)
                 CheckoutProtocol.complete.method -> handleComplete(message)
@@ -81,45 +76,6 @@ internal class EmbeddedCheckoutProtocolBridge(
             sendError(null, CODE_PARSE_ERROR, "Parse error")
         }
     }
-
-    private fun handleReady(request: EcpRequest, requestId: JsonElement) {
-        val checkoutAcceptedDelegations = readyParams(request.params)?.delegate ?: run {
-            sendError(requestId, CODE_PARSE_ERROR, "Parse error")
-            return
-        }
-        val negotiatedDelegations = checkoutAcceptedDelegations.filter { it in KIT_SUPPORTED_DELEGATIONS }
-        log.d(
-            LOG_TAG,
-            "Handling ${EmbeddedCheckoutProtocol.Event.ready}, " +
-                "isPreload=${view.isPreloadRequest} " +
-                "checkoutAcceptedDelegations=$checkoutAcceptedDelegations " +
-                "checkoutKitSupportedDelegations=$KIT_SUPPORTED_DELEGATIONS " +
-                "negotiatedDelegations=$negotiatedDelegations"
-        )
-        sendResult(requestId, ucpReadyResult(negotiatedDelegations))
-    }
-
-    private fun readyParams(params: JsonElement?): ReadyParams? =
-        try {
-            decoder.decodeFromJsonElement(params ?: JsonObject(emptyMap()))
-        } catch (e: SerializationException) {
-            log.d(LOG_TAG, "Failed to decode ${EmbeddedCheckoutProtocol.Event.ready} params: $e  raw=$params")
-            null
-        }
-
-    private fun ucpReadyResult(negotiatedDelegations: List<String>): String =
-        decoder.encodeToString(
-            JsonObject.serializer(),
-            buildJsonObject {
-                putJsonObject("ucp") {
-                    put("version", CheckoutProtocol.SPEC_VERSION)
-                    put("status", "success")
-                }
-                if (negotiatedDelegations.isNotEmpty()) {
-                    putJsonArray("delegate") { negotiatedDelegations.forEach { add(it) } }
-                }
-            }
-        )
 
     private fun handleStart(message: String) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.start.method}: hiding progress bar and bubbling up.")
@@ -166,10 +122,6 @@ internal class EmbeddedCheckoutProtocolBridge(
         }
     }
 
-    private fun sendResult(id: JsonElement?, result: String) {
-        sendRaw("""{"jsonrpc":"2.0","id":${id ?: "null"},"result":$result}""")
-    }
-
     private fun sendError(id: JsonElement?, code: Int, message: String) {
         sendRaw("""{"jsonrpc":"2.0","id":${id ?: "null"},"error":{"code":$code,"message":"$message"}}""")
     }
@@ -204,6 +156,18 @@ internal class EmbeddedCheckoutProtocolBridge(
      */
     private fun defaultDelegationClient(): CheckoutProtocol.Client =
         CheckoutProtocol.Client()
+            .on(CheckoutProtocol.ready) { request ->
+                log.d(
+                    LOG_TAG,
+                    "${CheckoutProtocol.ready.method} event received: accepted delegations=${request.delegate}",
+                )
+                ReadyResult(
+                    ucp = InstrumentsChangeResultUcp(
+                        status = UCPCheckoutResponseSchemaStatus.Success,
+                        version = CheckoutProtocol.SPEC_VERSION,
+                    ),
+                )
+            }
             .on(CheckoutProtocol.complete) {
                 CheckoutWebView.invalidate()
             }
@@ -235,11 +199,6 @@ internal class EmbeddedCheckoutProtocolBridge(
 
         /** Global JS object the checkout uses to receive responses. */
         private const val ECP_RESPONSE_GLOBAL = "EmbeddedCheckoutProtocol"
-
-        // Delegations this SDK supports. Echoed back in the ec.ready response as the
-        // intersection of checkout-accepted ∩ kit-supported. Must align with the
-        // `ec_delegate` URL param emitted from [UriExtensions.appendEcpParams].
-        private val KIT_SUPPORTED_DELEGATIONS = setOf(CheckoutProtocol.windowOpen.delegation)
 
         private const val CODE_PARSE_ERROR = -32700
         private const val CODE_METHOD_NOT_FOUND = -32601
