@@ -13,6 +13,7 @@ import type {AccountStackParamList} from '../App';
 import type {Colors} from '../context/Theme';
 import {useTheme} from '../context/Theme';
 import {useAuth} from '../context/Auth';
+import {E2ETestIds} from '../e2e/testIds';
 
 type Props = NativeStackScreenProps<AccountStackParamList, 'AccountHome'>;
 
@@ -23,7 +24,7 @@ function AccountScreen({navigation}: Props) {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View testID={E2ETestIds.account.loading} style={styles.centered}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -51,15 +52,22 @@ function AuthenticatedView({
   const {logout} = useAuth();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.centered}>
+    <SafeAreaView testID={E2ETestIds.account.screen} style={styles.container}>
+      <View testID={E2ETestIds.account.signedInView} style={styles.centered}>
         <Icon name="user" size={60} color="#81b0ff" />
         <Text style={styles.heading}>Signed In</Text>
-        {email && <Text style={styles.email}>{email}</Text>}
+        {email && (
+          <Text testID={E2ETestIds.account.email} style={styles.email}>
+            {email}
+          </Text>
+        )}
         <Text style={styles.description}>
           Your checkout will be pre-filled with your account information.
         </Text>
-        <Pressable style={styles.button} onPress={logout}>
+        <Pressable
+          testID={E2ETestIds.account.signOutButton}
+          style={styles.button}
+          onPress={logout}>
           <Text style={styles.buttonText}>Sign Out</Text>
         </Pressable>
       </View>
@@ -75,8 +83,8 @@ function UnauthenticatedView({
   onSignIn: () => void;
 }) {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.centered}>
+    <SafeAreaView testID={E2ETestIds.account.screen} style={styles.container}>
+      <View testID={E2ETestIds.account.signedOutView} style={styles.centered}>
         <Icon name="user" size={60} color="#bbc1d6" />
         <Text style={styles.heading}>Sign in to your account</Text>
         <Text style={styles.description}>
@@ -87,7 +95,10 @@ function UnauthenticatedView({
           <Text style={styles.benefitItem}>• Pre-filled shipping details</Text>
           <Text style={styles.benefitItem}>• Order history and tracking</Text>
         </View>
-        <Pressable style={styles.button} onPress={onSignIn}>
+        <Pressable
+          testID={E2ETestIds.account.signInButton}
+          style={styles.button}
+          onPress={onSignIn}>
           <Text style={styles.buttonText}>Sign In</Text>
         </Pressable>
       </View>

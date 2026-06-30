@@ -13,6 +13,7 @@ import {
 } from '../auth/customerAccountManager';
 import type {Colors} from '../context/Theme';
 import {useTheme} from '../context/Theme';
+import {E2ETestIds} from '../e2e/testIds';
 
 type Props = NativeStackScreenProps<AccountStackParamList, 'Login'>;
 
@@ -66,7 +67,7 @@ function LoginScreen({navigation}: Props) {
 
   if (isProcessing) {
     return (
-      <View style={styles.loading}>
+      <View testID={E2ETestIds.account.loginProcessing} style={styles.loading}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -75,6 +76,7 @@ function LoginScreen({navigation}: Props) {
   return (
     <View style={styles.container}>
       <WebView
+        testID={E2ETestIds.account.loginWebView}
         source={{uri: authorizationURL}}
         onShouldStartLoadWithRequest={handleNavigationRequest}
         originWhitelist={['https://*', `${callbackScheme}://*`]}

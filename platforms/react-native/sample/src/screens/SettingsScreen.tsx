@@ -20,10 +20,8 @@ import type {Colors} from '../context/Theme';
 import {useTheme} from '../context/Theme';
 import {useNavigation} from '@react-navigation/native';
 import {useAuth} from '../context/Auth';
-import {
-  BuyerIdentityMode,
-  BuyerIdentityModeDisplayNames,
-} from '../auth/types';
+import {BuyerIdentityMode, BuyerIdentityModeDisplayNames} from '../auth/types';
+import {E2ETestIds} from '../e2e/testIds';
 
 enum SectionType {
   Switch = 'switch',
@@ -64,10 +62,18 @@ function isTextItem(item: any): item is TextItem {
 }
 
 interface SectionData {
+  id: SettingsSectionId;
   title: string;
   footer?: string;
   data: readonly (SwitchItem | SingleSelectItem | TextItem)[];
 }
+
+type SettingsSectionId =
+  | 'features'
+  | 'authentication'
+  | 'theme'
+  | 'apple-pay-style'
+  | 'versions';
 
 function SettingsScreen() {
   const shopify = useShopifyCheckout();
@@ -223,26 +229,30 @@ function SettingsScreen() {
   const sections: SectionData[] = useMemo(
     () => [
       {
+        id: 'features',
         title: 'Features',
         data: featureOptions,
       },
       {
+        id: 'authentication',
         title: 'Authentication',
         footer:
           'Prefills buyer identity at checkout. Changing this setting will clear your cart.',
         data: buyerIdentityOptions,
       },
       {
+        id: 'theme',
         title: 'Theme',
         data: themeOptions,
       },
       {
+        id: 'apple-pay-style',
         title: 'Apple Pay Style',
-        footer:
-          'Configures the visual style of the Apple Pay button.',
+        footer: 'Configures the visual style of the Apple Pay button.',
         data: applePayStyleOptions,
       },
       {
+        id: 'versions',
         title: 'Versions',
         data: informationalItems,
       },
@@ -259,6 +269,7 @@ function SettingsScreen() {
   return (
     <SafeAreaView>
       <SectionList
+        testID={E2ETestIds.settings.screen}
         sections={sections}
         keyExtractor={item => item.title}
         renderItem={({item, section}) => {
@@ -267,15 +278,19 @@ function SettingsScreen() {
           }
 
           if (isSingleSelectItem(item)) {
-            const sectionHandlers: Record<string, (item: SingleSelectItem) => void> = {
-              Authentication: handleBuyerIdentityModeChange,
-              'Apple Pay Style': handleApplePayStyleChange,
+            const sectionHandlers: Partial<
+              Record<SettingsSectionId, (item: SingleSelectItem) => void>
+            > = {
+              authentication: handleBuyerIdentityModeChange,
+              'apple-pay-style': handleApplePayStyleChange,
             };
-            const handler = sectionHandlers[section.title] ?? handleColorSchemeChange;
+            const handler =
+              sectionHandlers[section.id] ?? handleColorSchemeChange;
             return (
               <SelectItem
                 item={item}
                 styles={styles}
+                testID={selectItemTestID(section.id, item)}
                 onPress={() => handler(item)}
               />
             );
@@ -287,13 +302,13 @@ function SettingsScreen() {
 
           return null;
         }}
-        renderSectionHeader={({section: {title}}) => (
-          <View style={styles.section}>
+        renderSectionHeader={({section: {id, title}}) => (
+          <View testID={E2ETestIds.settings.section(id)} style={styles.section}>
             <Text style={styles.sectionText}>{title}</Text>
           </View>
         )}
         renderSectionFooter={({section}) => {
-          const isAuthSection = section.title === 'Authentication';
+          const isAuthSection = section.id === 'authentication';
           return (
             <View>
               {isAuthSection && (
@@ -307,9 +322,7 @@ function SettingsScreen() {
               )}
               {section.footer ? (
                 <View style={styles.sectionFooter}>
-                  <Text style={styles.sectionFooterText}>
-                    {section.footer}
-                  </Text>
+                  <Text style={styles.sectionFooterText}>{section.footer}</Text>
                 </View>
               ) : null}
             </View>
@@ -328,6 +341,7 @@ interface SwitchSettingItemProps {
 interface SelectItemProps {
   item: SingleSelectItem;
   styles: ReturnType<typeof createStyles>;
+  testID: string;
   onPress: () => void;
 }
 
@@ -340,14 +354,18 @@ function SwitchSettingItem({item, styles}: SwitchSettingItemProps) {
   return (
     <View style={styles.listItem}>
       <Text style={styles.listItemText}>{item.title}</Text>
-      <Switch value={item.value} onValueChange={item.onValueChange} />
+      <Switch
+        testID={E2ETestIds.settings.checkoutPreloadingSwitch}
+        value={item.value}
+        onValueChange={item.onValueChange}
+      />
     </View>
   );
 }
 
-function SelectItem({item, styles, onPress}: SelectItemProps) {
+function SelectItem({item, styles, testID, onPress}: SelectItemProps) {
   return (
-    <Pressable style={styles.listItem} onPress={onPress}>
+    <Pressable style={styles.listItem} testID={testID} onPress={onPress}>
       <Text style={styles.listItemText}>{item.title}</Text>
 
       {item.selected && <Text style={styles.listItemCheck}>✓</Text>}
@@ -362,6 +380,22 @@ function TextItem({item, styles}: TextItemProps) {
       <Text style={styles.listItemSecondaryText}>{item.value}</Text>
     </View>
   );
+}
+
+function selectItemTestID(
+  sectionId: SettingsSectionId,
+  item: SingleSelectItem,
+) {
+  switch (sectionId) {
+    case 'authentication':
+      return E2ETestIds.settings.buyerIdentityOption(String(item.value));
+    case 'theme':
+      return E2ETestIds.settings.themeOption(String(item.value));
+    case 'apple-pay-style':
+      return E2ETestIds.settings.applePayStyleOption(String(item.value));
+    default:
+      return E2ETestIds.settings.section(`${sectionId}-${item.value}`);
+  }
 }
 
 interface BuyerIdentityDetailsProps {
@@ -386,7 +420,9 @@ function BuyerIdentityDetails({
       return null;
     case BuyerIdentityMode.Hardcoded:
       return (
-        <View style={styles.sectionFooter}>
+        <View
+          testID={E2ETestIds.settings.buyerIdentityDetails}
+          style={styles.sectionFooter}>
           <Text style={styles.sectionFooterText}>
             Populates Cart Buyer Identity with values from .env
           </Text>
@@ -395,7 +431,9 @@ function BuyerIdentityDetails({
     case BuyerIdentityMode.CustomerAccount:
       if (authenticated) {
         return (
-          <View style={styles.sectionFooter}>
+          <View
+            testID={E2ETestIds.settings.buyerIdentityDetails}
+            style={styles.sectionFooter}>
             <Text style={[styles.sectionFooterText, styles.warningText]}>
               Changing Buyer Identity will log you out.
             </Text>
@@ -403,7 +441,9 @@ function BuyerIdentityDetails({
               <Text style={styles.sectionFooterText}>
                 User: {email ?? 'Unknown'}
               </Text>
-              <Pressable onPress={() => navigation.navigate('Account' as never)}>
+              <Pressable
+                testID={E2ETestIds.settings.buyerIdentityChangeUserLink}
+                onPress={() => navigation.navigate('Account' as never)}>
                 <Text style={styles.linkText}>Change user</Text>
               </Pressable>
             </View>
@@ -416,8 +456,11 @@ function BuyerIdentityDetails({
         );
       }
       return (
-        <View style={styles.sectionFooter}>
+        <View
+          testID={E2ETestIds.settings.buyerIdentityDetails}
+          style={styles.sectionFooter}>
           <Pressable
+            testID={E2ETestIds.settings.buyerIdentitySignInLink}
             style={styles.detailRow}
             onPress={() => navigation.navigate('Account' as never)}>
             <Text style={styles.sectionFooterText}>Sign in on the</Text>
