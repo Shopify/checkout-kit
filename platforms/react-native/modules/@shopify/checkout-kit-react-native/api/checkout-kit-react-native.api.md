@@ -8,6 +8,7 @@ import { Checkout } from '@shopify/checkout-kit-protocol';
 import { CheckoutProtocolCatalogPayloads } from '@shopify/checkout-kit-protocol';
 import { ErrorResponse } from '@shopify/checkout-kit-protocol';
 import type { PropsWithChildren } from 'react';
+import { ProtocolHandlers as ProtocolHandlers_2 } from '@shopify/checkout-kit-protocol';
 import { default as React_2 } from 'react';
 
 // @public (undocumented)
@@ -306,9 +307,7 @@ export interface PresentCallbacks {
 }
 
 // @public (undocumented)
-export type ProtocolHandlers = Partial<{
-    [K in keyof CheckoutProtocolPayloads]: (payload: CheckoutProtocolPayloads[K]) => void;
-}>;
+export type ProtocolHandlers = ProtocolHandlers_2<CheckoutProtocolPayloads>;
 
 // @public (undocumented)
 export enum RenderState {

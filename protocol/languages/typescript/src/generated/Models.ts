@@ -1,12 +1,17 @@
 // To parse this data:
 //
-//   import { Convert, Checkout, Order, ErrorResponse, InstrumentsChangeResult, CredentialResult } from "./file";
+//   import { Convert, Checkout, Order, ErrorResponse, InstrumentsChangeResult, CredentialResult, AddressChangeResult, ReadyRequest, ReadyResult, AuthRequest, AuthResult } from "./file";
 //
 //   const checkout = Convert.toCheckout(json);
 //   const order = Convert.toOrder(json);
 //   const errorResponse = Convert.toErrorResponse(json);
 //   const instrumentsChangeResult = Convert.toInstrumentsChangeResult(json);
 //   const credentialResult = Convert.toCredentialResult(json);
+//   const addressChangeResult = Convert.toAddressChangeResult(json);
+//   const readyRequest = Convert.toReadyRequest(json);
+//   const readyResult = Convert.toReadyResult(json);
+//   const authRequest = Convert.toAuthRequest(json);
+//   const authResult = Convert.toAuthResult(json);
 //
 // These functions will throw an error if the JSON doesn't
 // match the expected interface, even if the JSON is valid.
@@ -1306,7 +1311,7 @@ export interface UcpOrderResponseSchema {
     /**
      * Service registry keyed by reverse-domain name.
      */
-    services?: { [key: string]: UcpOrderResponseSchemaService[] };
+    services?: { [key: string]: Service[] };
     /**
      * Application-level status of the UCP operation.
      */
@@ -1318,7 +1323,7 @@ export interface UcpOrderResponseSchema {
 /**
  * Shared foundation for all UCP entities.
  */
-export interface UcpOrderResponseSchemaService {
+export interface Service {
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1390,11 +1395,11 @@ export interface ErrorResponseUcp {
     /**
      * Service registry keyed by reverse-domain name.
      */
-    services?: { [key: string]: UcpOrderResponseSchemaService[] };
+    services?: { [key: string]: Service[] };
     /**
      * Application-level status of the UCP operation.
      */
-    status:  StatusEnum;
+    status:  ErrorStatus;
     version: string;
     [property: string]: any;
 }
@@ -1402,7 +1407,7 @@ export interface ErrorResponseUcp {
 /**
  * Application-level status of the UCP operation.
  */
-export type StatusEnum = "error";
+export type ErrorStatus = "error";
 
 /**
  * Checkout state after instrument selection.
@@ -1482,7 +1487,7 @@ export interface InstrumentsChangeResultUcp {
     /**
      * Service registry keyed by reverse-domain name.
      */
-    services?: { [key: string]: InstrumentsChangeService[] };
+    services?: { [key: string]: EmbeddedService[] };
     /**
      * Application-level status of the UCP operation.
      */
@@ -1583,7 +1588,7 @@ export interface PaymentHandlerAvailableInstrument {
 /**
  * Shared foundation for all UCP entities.
  */
-export interface InstrumentsChangeService {
+export interface EmbeddedService {
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1650,6 +1655,183 @@ export interface CredentialCheckout {
     [property: string]: any;
 }
 
+/**
+ * Checkout state after address selection.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface AddressChangeResult {
+    /**
+     * Partial checkout update with fulfillment address selection.
+     */
+    checkout?: AddressChangeCheckout;
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: InstrumentsChangeResultUcp;
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages?: Message[];
+    [property: string]: any;
+}
+
+/**
+ * Partial checkout update with fulfillment address selection.
+ */
+export interface AddressChangeCheckout {
+    /**
+     * Updated fulfillment with new selected destination and destinations.
+     */
+    fulfillment?: CheckoutFulfillmentObject;
+    [property: string]: any;
+}
+
+/**
+ * Updated fulfillment with new selected destination and destinations.
+ *
+ * Container for fulfillment methods and availability.
+ */
+export interface CheckoutFulfillmentObject {
+    /**
+     * Inventory availability hints.
+     */
+    availableMethods?: FulfillmentAvailableMethod[];
+    /**
+     * Fulfillment methods for cart items.
+     */
+    methods?: FulfillmentMethod[];
+    [property: string]: any;
+}
+
+export interface ReadyRequest {
+    auth?: Auth;
+    /**
+     * Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
+     */
+    delegate: string[];
+    [property: string]: any;
+}
+
+export interface Auth {
+    type?: string;
+    [property: string]: any;
+}
+
+/**
+ * Handshake response from host.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface ReadyResult {
+    /**
+     * Initial delegation state from host. Fields are permitted only when the corresponding
+     * delegation is accepted.
+     */
+    checkout?: ReadyCheckout;
+    /**
+     * Requested authorization. Some common examples include API key and OAuth token.
+     */
+    credential?: string;
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: InstrumentsChangeResultUcp;
+    /**
+     * Channel upgrade instructions. If present, switch to provided MessagePort.
+     */
+    upgrade?: Upgrade;
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages?: Message[];
+    [property: string]: any;
+}
+
+/**
+ * Initial delegation state from host. Fields are permitted only when the corresponding
+ * delegation is accepted.
+ */
+export interface ReadyCheckout {
+    fulfillment?: CheckoutFulfillmentObject;
+    /**
+     * Payment instruments with selected instrument ID.
+     */
+    payment?: ReadyPayment;
+    [property: string]: any;
+}
+
+/**
+ * Payment instruments with selected instrument ID.
+ *
+ * Payment configuration containing handlers.
+ */
+export interface ReadyPayment {
+    /**
+     * The payment instruments available for this payment. Each instrument is associated with a
+     * specific handler via the handler_id field. Handlers can extend the base
+     * payment_instrument schema to add handler-specific fields.
+     */
+    instruments?: SelectedPaymentInstrument[];
+    /**
+     * ID of the selected payment instrument.
+     */
+    selectedInstrumentId?: string;
+    [property: string]: any;
+}
+
+/**
+ * Channel upgrade instructions. If present, switch to provided MessagePort.
+ */
+export interface Upgrade {
+    /**
+     * MessagePort for upgraded channel. Runtime type is MessagePort.
+     */
+    port?: { [key: string]: any };
+    [property: string]: any;
+}
+
+export interface AuthRequest {
+    type?: string;
+    [property: string]: any;
+}
+
+/**
+ * Auth response from host containing the requested authorization data.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface AuthResult {
+    /**
+     * Requested authorization. Some common examples include API key and OAuth token.
+     */
+    credential?: string;
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: InstrumentsChangeResultUcp;
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages?: Message[];
+    [property: string]: any;
+}
+
 // Converts JSON strings to/from your types
 // and asserts the results of JSON.parse at runtime
 export class Convert {
@@ -1691,6 +1873,46 @@ export class Convert {
 
     public static credentialResultToJson(value: CredentialResult): string {
         return JSON.stringify(uncast(value, r("CredentialResult")), null, 2);
+    }
+
+    public static toAddressChangeResult(json: string): AddressChangeResult {
+        return cast(JSON.parse(json), r("AddressChangeResult"));
+    }
+
+    public static addressChangeResultToJson(value: AddressChangeResult): string {
+        return JSON.stringify(uncast(value, r("AddressChangeResult")), null, 2);
+    }
+
+    public static toReadyRequest(json: string): ReadyRequest {
+        return cast(JSON.parse(json), r("ReadyRequest"));
+    }
+
+    public static readyRequestToJson(value: ReadyRequest): string {
+        return JSON.stringify(uncast(value, r("ReadyRequest")), null, 2);
+    }
+
+    public static toReadyResult(json: string): ReadyResult {
+        return cast(JSON.parse(json), r("ReadyResult"));
+    }
+
+    public static readyResultToJson(value: ReadyResult): string {
+        return JSON.stringify(uncast(value, r("ReadyResult")), null, 2);
+    }
+
+    public static toAuthRequest(json: string): AuthRequest {
+        return cast(JSON.parse(json), r("AuthRequest"));
+    }
+
+    public static authRequestToJson(value: AuthRequest): string {
+        return JSON.stringify(uncast(value, r("AuthRequest")), null, 2);
+    }
+
+    public static toAuthResult(json: string): AuthResult {
+        return cast(JSON.parse(json), r("AuthResult"));
+    }
+
+    public static authResultToJson(value: AuthResult): string {
+        return JSON.stringify(uncast(value, r("AuthResult")), null, 2);
     }
 }
 
@@ -2140,11 +2362,11 @@ const typeMap: any = {
     "UcpOrderResponseSchema": o([
         { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityResponseSchema")))) },
         { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerResponseSchema")))) },
-        { json: "services", js: "services", typ: u(undefined, m(a(r("UcpOrderResponseSchemaService")))) },
+        { json: "services", js: "services", typ: u(undefined, m(a(r("Service")))) },
         { json: "status", js: "status", typ: u(undefined, r("UcpCheckoutResponseSchemaStatus")) },
         { json: "version", js: "version", typ: "" },
     ], "any"),
-    "UcpOrderResponseSchemaService": o([
+    "Service": o([
         { json: "config", js: "config", typ: u(undefined, m("any")) },
         { json: "id", js: "id", typ: u(undefined, "") },
         { json: "schema", js: "schema", typ: u(undefined, "") },
@@ -2161,8 +2383,8 @@ const typeMap: any = {
     "ErrorResponseUcp": o([
         { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityResponseSchema")))) },
         { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerResponseSchema")))) },
-        { json: "services", js: "services", typ: u(undefined, m(a(r("UcpOrderResponseSchemaService")))) },
-        { json: "status", js: "status", typ: r("StatusEnum") },
+        { json: "services", js: "services", typ: u(undefined, m(a(r("Service")))) },
+        { json: "status", js: "status", typ: r("ErrorStatus") },
         { json: "version", js: "version", typ: "" },
     ], "any"),
     "InstrumentsChangeResult": o([
@@ -2181,7 +2403,7 @@ const typeMap: any = {
     "InstrumentsChangeResultUcp": o([
         { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityElement")))) },
         { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerElement")))) },
-        { json: "services", js: "services", typ: u(undefined, m(a(r("InstrumentsChangeService")))) },
+        { json: "services", js: "services", typ: u(undefined, m(a(r("EmbeddedService")))) },
         { json: "status", js: "status", typ: r("UcpCheckoutResponseSchemaStatus") },
         { json: "version", js: "version", typ: "" },
     ], "any"),
@@ -2205,7 +2427,7 @@ const typeMap: any = {
         { json: "constraints", js: "constraints", typ: u(undefined, m("any")) },
         { json: "type", js: "type", typ: "" },
     ], "any"),
-    "InstrumentsChangeService": o([
+    "EmbeddedService": o([
         { json: "config", js: "config", typ: u(undefined, m("any")) },
         { json: "id", js: "id", typ: u(undefined, "") },
         { json: "schema", js: "schema", typ: u(undefined, "") },
@@ -2222,6 +2444,54 @@ const typeMap: any = {
     ], "any"),
     "CredentialCheckout": o([
         { json: "payment", js: "payment", typ: u(undefined, r("Payment")) },
+    ], "any"),
+    "AddressChangeResult": o([
+        { json: "checkout", js: "checkout", typ: u(undefined, r("AddressChangeCheckout")) },
+        { json: "ucp", js: "ucp", typ: r("InstrumentsChangeResultUcp") },
+        { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
+        { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
+    ], "any"),
+    "AddressChangeCheckout": o([
+        { json: "fulfillment", js: "fulfillment", typ: u(undefined, r("CheckoutFulfillmentObject")) },
+    ], "any"),
+    "CheckoutFulfillmentObject": o([
+        { json: "available_methods", js: "availableMethods", typ: u(undefined, a(r("FulfillmentAvailableMethod"))) },
+        { json: "methods", js: "methods", typ: u(undefined, a(r("FulfillmentMethod"))) },
+    ], "any"),
+    "ReadyRequest": o([
+        { json: "auth", js: "auth", typ: u(undefined, r("Auth")) },
+        { json: "delegate", js: "delegate", typ: a("") },
+    ], "any"),
+    "Auth": o([
+        { json: "type", js: "type", typ: u(undefined, "") },
+    ], "any"),
+    "ReadyResult": o([
+        { json: "checkout", js: "checkout", typ: u(undefined, r("ReadyCheckout")) },
+        { json: "credential", js: "credential", typ: u(undefined, "") },
+        { json: "ucp", js: "ucp", typ: r("InstrumentsChangeResultUcp") },
+        { json: "upgrade", js: "upgrade", typ: u(undefined, r("Upgrade")) },
+        { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
+        { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
+    ], "any"),
+    "ReadyCheckout": o([
+        { json: "fulfillment", js: "fulfillment", typ: u(undefined, r("CheckoutFulfillmentObject")) },
+        { json: "payment", js: "payment", typ: u(undefined, r("ReadyPayment")) },
+    ], "any"),
+    "ReadyPayment": o([
+        { json: "instruments", js: "instruments", typ: u(undefined, a(r("SelectedPaymentInstrument"))) },
+        { json: "selected_instrument_id", js: "selectedInstrumentId", typ: u(undefined, "") },
+    ], "any"),
+    "Upgrade": o([
+        { json: "port", js: "port", typ: u(undefined, m("any")) },
+    ], "any"),
+    "AuthRequest": o([
+        { json: "type", js: "type", typ: u(undefined, "") },
+    ], "any"),
+    "AuthResult": o([
+        { json: "credential", js: "credential", typ: u(undefined, "") },
+        { json: "ucp", js: "ucp", typ: r("InstrumentsChangeResultUcp") },
+        { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
+        { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
     ], "any"),
     "DiscountMethod": [
         "across",
@@ -2284,7 +2554,7 @@ const typeMap: any = {
         "processing",
         "removed",
     ],
-    "StatusEnum": [
+    "ErrorStatus": [
         "error",
     ],
 };
