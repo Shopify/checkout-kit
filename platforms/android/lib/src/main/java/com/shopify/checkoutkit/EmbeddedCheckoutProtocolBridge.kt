@@ -157,7 +157,10 @@ internal class EmbeddedCheckoutProtocolBridge(
     private fun defaultDelegationClient(): CheckoutProtocol.Client =
         CheckoutProtocol.Client()
             .on(CheckoutProtocol.ready) { request ->
-                log.d(LOG_TAG, "${CheckoutProtocol.ready.method} event received: accepted delegations=${request.delegate}")
+                log.d(
+                    LOG_TAG,
+                    "${CheckoutProtocol.ready.method} event received: accepted delegations=${request.delegate}",
+                )
                 ReadyResult(
                     ucp = InstrumentsChangeResultUcp(
                         status = UCPCheckoutResponseSchemaStatus.Success,
