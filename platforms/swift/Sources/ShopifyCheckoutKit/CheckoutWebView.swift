@@ -330,6 +330,7 @@ class CheckoutWebView: WKWebView {
     var isPreloadRequest = false
 
     private var entryPoint: MetaData.EntryPoint?
+    private var checkoutOrigins = Set<URLOrigin>()
 
     // MARK: Initializers
 
@@ -407,6 +408,8 @@ class CheckoutWebView: WKWebView {
 
     func load(checkout url: URL, isPreload: Bool = false) {
         OSLogger.shared.info("Loading checkout URL: \(LogSafeURL.string(url)), isPreload: \(isPreload)")
+        checkoutOrigins = []
+        addCheckoutOrigin(url)
         var request = URLRequest(url: url)
 
         if isPreload, ShopifyCheckoutKit.configuration.preloading.enabled {
@@ -594,6 +597,73 @@ extension CheckoutWebView: WKNavigationDelegate {
     }
 
     private func isCheckout(url: URL?) -> Bool {
-        return self.url == url
+        guard let url else {
+            return false
+        }
+
+        guard let origin = URLOrigin(url) else {
+            return false
+        }
+
+        guard !checkoutOrigins.isEmpty else {
+            return self.url == url
+        }
+
+        return checkoutOrigins.contains(origin) || isCheckoutOriginTransition(url: url, origin: origin)
+    }
+
+    private func addCheckoutOrigin(_ url: URL) {
+        guard let origin = URLOrigin(url) else { return }
+        checkoutOrigins.insert(origin)
+    }
+
+    private func isCheckoutOriginTransition(url: URL, origin: URLOrigin) -> Bool {
+        let hasShopAppOrigin = origin.host == Self.shopAppHost || checkoutOrigins.contains { $0.host == Self.shopAppHost }
+        return hasShopAppOrigin && url.hasCheckoutPath
+    }
+}
+
+private struct URLOrigin: Hashable {
+    let scheme: String
+    let host: String
+    let port: Int?
+
+    init?(_ url: URL) {
+        guard let scheme = url.scheme?.lowercased(), let host = url.host?.lowercased() else {
+            return nil
+        }
+
+        self.scheme = scheme
+        self.host = host
+        port = url.port ?? URLOrigin.defaultPort(for: scheme)
+    }
+
+    private static func defaultPort(for scheme: String) -> Int? {
+        switch scheme {
+        case "http":
+            return 80
+        case "https":
+            return 443
+        default:
+            return nil
+        }
+    }
+}
+
+extension CheckoutWebView {
+    fileprivate static let shopAppHost = "shop.app"
+}
+
+extension URL {
+    fileprivate var hasCheckoutPath: Bool {
+        let components = pathComponents.filter { $0 != "/" }
+        return (
+            components.count >= 3 &&
+                components[0] == "checkouts"
+        ) || (
+            components.count >= 4 &&
+                components[0] == "checkout" &&
+                components[1].allSatisfy(\.isNumber)
+        )
     }
 }

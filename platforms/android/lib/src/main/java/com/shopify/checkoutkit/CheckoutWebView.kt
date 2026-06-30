@@ -67,6 +67,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         log.d(LOG_TAG, "Loading checkout with url ${url.redactedUrlForLogging()}. IsPreload: $isPreload.")
         loadComplete = false
         isPreloadRequest = isPreload
+        setCheckoutOrigin(url)
         Handler(Looper.getMainLooper()).post {
             val ecpUrl = url.appendEcpParams()
             val headers = if (isPreload) {
@@ -107,7 +108,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
             request: WebResourceRequest?,
             error: WebResourceError?
         ) {
-            if (request?.isForMainFrame == true) {
+            if (shouldHandleMainFrameError(request)) {
                 CheckoutWebView.invalidate()
             }
             super.onReceivedError(view, request, error)
@@ -118,7 +119,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
             request: WebResourceRequest?,
             errorResponse: WebResourceResponse?
         ) {
-            if (request?.isForMainFrame == true) {
+            if (shouldHandleMainFrameError(request)) {
                 CheckoutWebView.invalidate()
             }
             super.onReceivedHttpError(view, request, errorResponse)

@@ -179,6 +179,97 @@ class CheckoutWebViewClientTest {
     }
 
     @Test
+    fun `should call event processor on http error for same origin checkout url`() {
+        val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com/cart/c/123"), true)
+        val mockResponse = mockWebResourceResponse(
+            status = HttpURLConnection.HTTP_NOT_FOUND,
+            description = "Not Found",
+        )
+
+        triggerOnReceivedHttpError(
+            mockRequest,
+            mockResponse,
+            checkoutUrl = "https://checkout-sdk.myshopify.com/checkouts/cn/123",
+        )
+
+        val captor = argumentCaptor<CheckoutException>()
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
+        assertThat(captor.firstValue)
+            .isInstanceOf(HttpException::class.java)
+            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
+            .hasDescription("Not Found")
+            .hasStatusCode(404)
+    }
+
+    @Test
+    fun `should call event processor on http error for checkout-shaped shop app transition`() {
+        val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com/checkouts/cn/123"), true)
+        val mockResponse = mockWebResourceResponse(
+            status = HttpURLConnection.HTTP_NOT_FOUND,
+            description = "Not Found",
+        )
+
+        triggerOnReceivedHttpError(
+            mockRequest,
+            mockResponse,
+            checkoutUrl = "https://shop.app/checkout/123/cn/123",
+        )
+
+        val captor = argumentCaptor<CheckoutException>()
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
+        assertThat(captor.firstValue)
+            .isInstanceOf(HttpException::class.java)
+            .hasStatusCode(404)
+    }
+
+    @Test
+    fun `should not call event processor on http error for third party main frame`() {
+        val mockRequest = mockWebRequest(Uri.parse("https://process.paypo.pl/smartplan/123"), true)
+        val mockResponse = mockWebResourceResponse(
+            status = HttpURLConnection.HTTP_NOT_FOUND,
+            description = "Not Found",
+        )
+
+        triggerOnReceivedHttpError(
+            mockRequest,
+            mockResponse,
+            checkoutUrl = "https://checkout-sdk.myshopify.com/checkouts/cn/123",
+        )
+
+        verify(checkoutWebViewListener, never()).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `should not call event processor on http error for third party main frame after shop app checkout`() {
+        val mockRequest = mockWebRequest(Uri.parse("https://process.paypo.pl/smartplan/123"), true)
+        val mockResponse = mockWebResourceResponse(
+            status = HttpURLConnection.HTTP_NOT_FOUND,
+            description = "Not Found",
+        )
+
+        triggerOnReceivedHttpError(
+            mockRequest,
+            mockResponse,
+            checkoutUrl = "https://shop.app/checkout/123/cn/123",
+        )
+
+        verify(checkoutWebViewListener, never()).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `should not call event processor on http error for subresource`() {
+        val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com/assets/script.js"), false)
+        val mockResponse = mockWebResourceResponse(
+            status = HttpURLConnection.HTTP_NOT_FOUND,
+            description = "Not Found",
+        )
+
+        triggerOnReceivedHttpError(mockRequest, mockResponse)
+
+        verify(checkoutWebViewListener, never()).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
     fun `should call event processor calls onCheckoutViewFailedWithError on http error for main frame - 500`() {
         val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com"), true)
         val mockResponse = mockWebResourceResponse(
@@ -353,8 +444,13 @@ class CheckoutWebViewClientTest {
             .hasErrorCode(CheckoutKitException.RENDER_PROCESS_GONE)
     }
 
-    private fun triggerOnReceivedHttpError(mockRequest: WebResourceRequest, checkoutExpiredResponse: WebResourceResponse) {
+    private fun triggerOnReceivedHttpError(
+        mockRequest: WebResourceRequest,
+        checkoutExpiredResponse: WebResourceResponse,
+        checkoutUrl: String = mockRequest.url.toString(),
+    ) {
         val view = viewWithProcessor(activity)
+        view.setCheckoutOrigin(checkoutUrl)
         val webViewClient = view.CheckoutWebViewClient()
 
         webViewClient.onReceivedHttpError(view, mockRequest, checkoutExpiredResponse)
