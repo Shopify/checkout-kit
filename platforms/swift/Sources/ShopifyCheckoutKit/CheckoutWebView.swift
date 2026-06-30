@@ -237,7 +237,7 @@ class CheckoutWebView: WKWebView {
     ///     every error handler.
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
         .on(CheckoutProtocol.ready) { _ in
-            ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
+            ReadyResult.success()
         }
         .on(CheckoutProtocol.complete) { _ in
             CheckoutWebView.invalidate(disconnect: false)

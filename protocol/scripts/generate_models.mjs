@@ -36,6 +36,7 @@ import {
   run,
 } from "./codegen_tools.mjs";
 import {MODEL_EXTRACTIONS} from "./method_catalog.mjs";
+import {RESULT_UNIONS, successTypeName} from "./result_unions.mjs";
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
@@ -127,7 +128,7 @@ function rewriteRefs(value) {
   }
 }
 
-async function prepareCodegenSchemas(tempDir) {
+async function prepareCodegenSchemas(tempDir, lang) {
   const schemaDir = path.join(tempDir, "schemas");
   await fs.cp(SCHEMA_SOURCE_DIR, schemaDir, {recursive: true});
 
@@ -221,6 +222,15 @@ async function prepareCodegenSchemas(tempDir) {
       branch.properties.status.title = "ErrorStatus";
     }
   }
+  // Swift consumes each result's success branch on its own (the merged `*_result`
+  // schema is only fed to Kotlin/TS), so the shared success `ucp` type is named by
+  // whichever success branch quicktype emits first. Title it for a stable,
+  // source-order-independent name the hand-written `UCPResponse.swift` can extend.
+  // Kotlin/TS keep the merged output, so the title is withheld there to stay
+  // byte-identical.
+  if (lang === "swift") {
+    ucp.$defs.success.title = "SuccessUcp";
+  }
   // The success-branch service binding and the response-branch one resolve to the
   // same service node, so quicktype disambiguates the success copy with a
   // color-name fallback. Title the success branch's service so it gets a stable
@@ -293,6 +303,49 @@ async function extractResultSchema(specDir, methodName, outputFile, rootTitle, c
   await writeJson(path.join(specDir, outputFile), schema);
 }
 
+// Each result `oneOf` is exactly `[<success object>, error_response.json]`; the
+// success branch is the inline object (no `$ref`). Selecting it by absence of
+// `$ref` keeps the extraction robust to branch ordering.
+function findSuccessBranch(resultSchema) {
+  const success = (resultSchema.oneOf ?? []).filter((branch) => branch.$ref === undefined);
+  if (success.length !== 1) {
+    throw new Error(
+      `Expected exactly one non-$ref success branch, found ${success.length}`,
+    );
+  }
+  return success[0];
+}
+
+// Writes a result's success branch as its own root schema (`<X>Success`) so
+// quicktype emits a dedicated success struct instead of merging success and error
+// fields into one optional-everything type. Mirrors `extractResultSchema`'s
+// checkout/payment title + injection. Swift-only input; Kotlin/TS keep the merged
+// `*_result.json`.
+async function extractSuccessSchema(specDir, methodName, outputFile, rootTitle, checkoutTitle, paymentSchema) {
+  const service = await readJson(path.join(SERVICES_DIR, "embedded.openrpc.json"));
+  const method = await findOpenRpcMethod(service, methodName);
+  if (method === undefined) {
+    throw new Error(`Missing OpenRPC method ${methodName}`);
+  }
+
+  const schema = findSuccessBranch(structuredClone(method.result.schema));
+  schema.title = successTypeName(rootTitle);
+  rewriteRefs(schema);
+
+  if (schema.properties?.checkout !== undefined) {
+    if (checkoutTitle !== undefined) {
+      schema.properties.checkout.title = checkoutTitle;
+    }
+    if (paymentSchema !== undefined) {
+      schema.properties.checkout.properties.payment = structuredClone(paymentSchema);
+    }
+  }
+
+  schema.components = service.components;
+
+  await writeJson(path.join(specDir, outputFile), schema);
+}
+
 // Synthesizes an object schema from an OpenRPC method's `params` array so request
 // payload types are generated from the spec alongside their result types. Each
 // named param becomes a property; params marked `required` populate the schema's
@@ -357,7 +410,14 @@ async function normalizeGeneratedFile(output, transform = (source) => source) {
   });
 }
 
-function commonSchemaSources(specDir) {
+// Source order is significant: quicktype names shared types after the first
+// source that references them, so this ordering is what produces the stable type
+// names the catalog and hand-written code depend on. `useSuccessBranches` swaps
+// each result's merged `*_result.json` for its `*_success.json` branch (Swift),
+// while Kotlin/TS keep the merged inputs.
+function commonSchemaSources(specDir, {useSuccessBranches = false} = {}) {
+  const suffix = useSuccessBranches ? "_success.json" : "_result.json";
+  const resultSrc = (base) => path.join(specDir, `${base}${suffix}`);
   return [
     "--src",
     path.join(specDir, "checkout.json"),
@@ -366,19 +426,19 @@ function commonSchemaSources(specDir) {
     "--src",
     path.join(specDir, "..", "common", "types", "error_response.json"),
     "--src",
-    path.join(specDir, "instruments_change_result.json"),
+    resultSrc("instruments_change"),
     "--src",
-    path.join(specDir, "credential_result.json"),
+    resultSrc("credential"),
     "--src",
-    path.join(specDir, "address_change_result.json"),
+    resultSrc("address_change"),
     "--src",
     path.join(specDir, "ready_request.json"),
     "--src",
-    path.join(specDir, "ready_result.json"),
+    resultSrc("ready"),
     "--src",
     path.join(specDir, "auth_request.json"),
     "--src",
-    path.join(specDir, "auth_result.json"),
+    resultSrc("auth"),
   ];
 }
 
@@ -422,6 +482,162 @@ async function generateKotlin(specDir, output) {
   });
 }
 
+// Synthesizes the Swift discriminated unions. quicktype cannot emit a union from
+// two object `oneOf` branches (it merges them), so each result is sourced as its
+// success branch only and the union wrapper is appended here: a `case success` /
+// `case error` enum whose `Codable` peeks at `ucp.status` to route decoding. The
+// union keeps the result's root name (`ReadyResult`) so descriptors and bindings
+// are unchanged.
+function swiftResultUnions() {
+  const peek = `// MARK: - Result unions
+
+// Routes result decoding to the success or error branch by peeking at the UCP
+// envelope's discriminator (\`ucp.status\`). Synthesized by generate_models.mjs;
+// see protocol/scripts/result_unions.mjs.
+private struct ResultStatusPeek: Decodable {
+    struct Ucp: Decodable {
+        let status: String
+    }
+
+    let ucp: Ucp
+}`;
+
+  const unions = RESULT_UNIONS.map((union) => `public enum ${union.name}: Codable, Sendable {
+    case success(${union.successType})
+    case error(${union.errorType})
+
+    public init(from decoder: Decoder) throws {
+        if let peek = try? ResultStatusPeek(from: decoder), peek.ucp.status == "error" {
+            self = .error(try ${union.errorType}(from: decoder))
+        } else {
+            self = .success(try ${union.successType}(from: decoder))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .success(let value):
+            try value.encode(to: encoder)
+        case .error(let value):
+            try value.encode(to: encoder)
+        }
+    }
+}`);
+
+  return `\n${[peek, ...unions].join("\n\n")}\n`;
+}
+
+// Splits a Swift parameter list on top-level commas, ignoring commas nested in
+// `[Dict: Types]`, generics, or tuples.
+function splitSwiftParams(text) {
+  const params = [];
+  let depth = 0;
+  let start = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === "[" || char === "(" || char === "<") {
+      depth += 1;
+    } else if (char === "]" || char === ")" || char === ">") {
+      depth -= 1;
+    } else if (char === "," && depth === 0) {
+      params.push(text.slice(start, index));
+      start = index + 1;
+    }
+  }
+  params.push(text.slice(start));
+  return params.map((param) => param.trim()).filter(Boolean);
+}
+
+// Reads a generated success struct's memberwise init so the synthesized factory
+// mirrors the spec-derived field set and types exactly, rather than re-deriving
+// them. Returns `[{name, type, isOptional}]` in declaration order.
+function parseSuccessInit(source, successType) {
+  const structMarker = `public struct ${successType}: Codable, Sendable {`;
+  const structIndex = source.indexOf(structMarker);
+  if (structIndex === -1) {
+    throw new Error(`Cannot find struct ${successType} to build its success factory`);
+  }
+
+  const initMarker = "public init(";
+  const initIndex = source.indexOf(initMarker, structIndex);
+  if (initIndex === -1) {
+    throw new Error(`Cannot find memberwise init for ${successType}`);
+  }
+
+  const open = initIndex + initMarker.length - 1;
+  let depth = 0;
+  let close = -1;
+  for (let index = open; index < source.length; index += 1) {
+    const char = source[index];
+    if (char === "(") {
+      depth += 1;
+    } else if (char === ")") {
+      depth -= 1;
+      if (depth === 0) {
+        close = index;
+        break;
+      }
+    }
+  }
+  if (close === -1) {
+    throw new Error(`Unterminated memberwise init for ${successType}`);
+  }
+
+  return splitSwiftParams(source.slice(open + 1, close)).map((param) => {
+    const separator = param.indexOf(":");
+    const name = param.slice(0, separator).trim();
+    const type = param.slice(separator + 1).trim();
+    return {name, type, isOptional: type.endsWith("?")};
+  });
+}
+
+// Ergonomic constructor for the common success path. Overloads the `success` case
+// name with a labeled factory whose optional fields default to `nil` and whose
+// mandatory `ucp` envelope defaults to `.success()` (see UCPResponse.swift), so a
+// handshake is `.success()` and a credential answer is `.success(credential:)`.
+// Required payload fields (a delegated `checkout`, an auth `credential`) have no
+// default and must be supplied.
+function swiftSuccessFactory(union, params) {
+  const decls = params.map((param) => {
+    if (param.name === "ucp") {
+      return `        ${param.name}: ${param.type} = .success()`;
+    }
+    if (param.isOptional) {
+      return `        ${param.name}: ${param.type} = nil`;
+    }
+    return `        ${param.name}: ${param.type}`;
+  });
+  const args = params.map((param) => `${param.name}: ${param.name}`).join(", ");
+
+  return `public extension ${union.name} {
+    static func success(
+${decls.join(",\n")}
+    ) -> ${union.name} {
+        .success(${union.successType}(${args}))
+    }
+}`;
+}
+
+function appendSwiftResultUnions(source) {
+  const factories = [];
+  for (const union of RESULT_UNIONS) {
+    if (!new RegExp(`\\bstruct\\s+${union.successType}\\b`).test(source)) {
+      throw new Error(
+        `Expected quicktype to emit success struct ${union.successType}; ` +
+          `result union synthesis cannot proceed`,
+      );
+    }
+    if (new RegExp(`\\b(?:struct|enum|class)\\s+${union.name}\\b`).test(source)) {
+      throw new Error(
+        `quicktype emitted a type named ${union.name}; it must not be sourced ` +
+          `as a merged result when the union is synthesized`,
+      );
+    }
+    factories.push(swiftSuccessFactory(union, parseSuccessInit(source, union.successType)));
+  }
+  return `${source}${swiftResultUnions()}\n${factories.join("\n\n")}\n`;
+}
+
 async function generateSwift(specDir, output) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
@@ -433,7 +649,7 @@ async function generateSwift(specDir, output) {
     "--sendable",
     "--src-lang",
     "schema",
-    ...commonSchemaSources(specDir),
+    ...commonSchemaSources(specDir, {useSuccessBranches: true}),
     "-o",
     output,
   ]);
@@ -455,7 +671,8 @@ async function generateSwift(specDir, output) {
       throw new Error(`Swift JSON helper normalization failed; quicktype helper output changed (sha256: ${generatedHelperHash})`);
     }
 
-    return `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
+    const withoutHelper = `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
+    return appendSwiftResultUnions(withoutHelper);
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);
@@ -510,7 +727,7 @@ async function main() {
 
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "checkout-kit-protocol-codegen-"));
   try {
-    const specDir = await prepareCodegenSchemas(tempDir);
+    const specDir = await prepareCodegenSchemas(tempDir, lang);
 
     for (const extraction of MODEL_EXTRACTIONS) {
       if (extraction.kind === "params") {
@@ -520,6 +737,14 @@ async function main() {
           specDir,
           extraction.method,
           extraction.outputFile,
+          extraction.rootTitle,
+          extraction.checkoutTitle,
+          extraction.paymentSchema,
+        );
+        await extractSuccessSchema(
+          specDir,
+          extraction.method,
+          extraction.outputFile.replace(/_result\.json$/, "_success.json"),
           extraction.rootTitle,
           extraction.checkoutTitle,
           extraction.paymentSchema,

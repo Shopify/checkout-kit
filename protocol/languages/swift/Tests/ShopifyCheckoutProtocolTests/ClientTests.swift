@@ -205,14 +205,7 @@ struct ClientTests {
     @Test @MainActor func readyRequestDispatchesToRegisteredHandler() async throws {
         let response = try await EmbeddedCheckoutProtocol.Client()
             .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                ReadyResult(
-                    checkout: nil,
-                    credential: nil,
-                    ucp: .success(),
-                    upgrade: nil,
-                    continueURL: nil,
-                    messages: nil
-                )
+                ReadyResult.success()
             }
             .process(readyFixture())
 
@@ -235,14 +228,7 @@ struct ClientTests {
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                    ReadyResult(
-                        checkout: nil,
-                        credential: nil,
-                        ucp: .success(),
-                        upgrade: nil,
-                        continueURL: nil,
-                        messages: nil
-                    )
+                    ReadyResult.success()
                 }
                 .process(ready)
         )
@@ -261,12 +247,7 @@ struct ClientTests {
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.auth) { _ in
-                    AuthResult(
-                        credential: "tok-xyz",
-                        ucp: .success(),
-                        continueURL: nil,
-                        messages: nil
-                    )
+                    AuthResult.success(credential: "tok-xyz")
                 }
                 .process(request)
         )
@@ -283,17 +264,8 @@ struct ClientTests {
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.paymentCredential) { checkout in
                     receivedCheckoutID = checkout.id
-                    return CredentialResult(
-                        checkout: nil,
-                        ucp: InstrumentsChangeResultUcp(
-                            capabilities: nil,
-                            paymentHandlers: nil,
-                            services: nil,
-                            status: .success,
-                            version: EmbeddedCheckoutProtocol.specVersion
-                        ),
-                        continueURL: nil,
-                        messages: nil
+                    return CredentialResult.success(
+                        checkout: CredentialCheckout(payment: Payment(instruments: nil))
                     )
                 }
                 .process(requestFixture())
@@ -308,14 +280,7 @@ struct ClientTests {
     @Test @MainActor func delegationsReflectsOnlyDelegationCarryingHandlers() {
         let client = EmbeddedCheckoutProtocol.Client()
             .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                ReadyResult(
-                    checkout: nil,
-                    credential: nil,
-                    ucp: .success(),
-                    upgrade: nil,
-                    continueURL: nil,
-                    messages: nil
-                )
+                ReadyResult.success()
             }
             .on(windowOpenDescriptor) { _ in .success }
 

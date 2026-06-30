@@ -4,13 +4,13 @@
 //   let checkout = try Checkout(json)
 //   let order = try Order(json)
 //   let errorResponse = try ErrorResponse(json)
-//   let instrumentsChangeResult = try InstrumentsChangeResult(json)
-//   let credentialResult = try CredentialResult(json)
-//   let addressChangeResult = try AddressChangeResult(json)
+//   let instrumentsChangeSuccess = try InstrumentsChangeSuccess(json)
+//   let credentialSuccess = try CredentialSuccess(json)
+//   let addressChangeSuccess = try AddressChangeSuccess(json)
 //   let readyRequest = try ReadyRequest(json)
-//   let readyResult = try ReadyResult(json)
+//   let readySuccess = try ReadySuccess(json)
 //   let authRequest = try AuthRequest(json)
-//   let authResult = try AuthResult(json)
+//   let authSuccess = try AuthSuccess(json)
 
 import Foundation
 
@@ -3345,14 +3345,14 @@ public struct ErrorResponse: Codable, Sendable {
     /// Array of messages describing why the operation failed.
     public let messages: [Message]
     /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: ErrorResponseUcp
+    public let ucp: Ucp
 
     public enum CodingKeys: String, CodingKey {
         case continueURL = "continue_url"
         case messages, ucp
     }
 
-    public init(continueURL: String?, messages: [Message], ucp: ErrorResponseUcp) {
+    public init(continueURL: String?, messages: [Message], ucp: Ucp) {
         self.continueURL = continueURL
         self.messages = messages
         self.ucp = ucp
@@ -3380,7 +3380,7 @@ public extension ErrorResponse {
     func with(
         continueURL: String?? = nil,
         messages: [Message]? = nil,
-        ucp: ErrorResponseUcp? = nil
+        ucp: Ucp? = nil
     ) -> ErrorResponse {
         return ErrorResponse(
             continueURL: continueURL ?? self.continueURL,
@@ -3404,8 +3404,8 @@ public extension ErrorResponse {
 /// information.
 ///
 /// Base UCP metadata with shared properties for all schema types.
-// MARK: - ErrorResponseUcp
-public struct ErrorResponseUcp: Codable, Sendable {
+// MARK: - Ucp
+public struct Ucp: Codable, Sendable {
     /// Capability registry keyed by reverse-domain name.
     public let capabilities: [String: [CapabilityResponseSchema]]?
     /// Payment handler registry keyed by reverse-domain name.
@@ -3431,11 +3431,11 @@ public struct ErrorResponseUcp: Codable, Sendable {
     }
 }
 
-// MARK: ErrorResponseUcp convenience initializers and mutators
+// MARK: Ucp convenience initializers and mutators
 
-public extension ErrorResponseUcp {
+public extension Ucp {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ErrorResponseUcp.self, from: data)
+        self = try newJSONDecoder().decode(Ucp.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3455,8 +3455,8 @@ public extension ErrorResponseUcp {
         services: [String: [Service]]?? = nil,
         status: ErrorStatus? = nil,
         version: String? = nil
-    ) -> ErrorResponseUcp {
-        return ErrorResponseUcp(
+    ) -> Ucp {
+        return Ucp(
             capabilities: capabilities ?? self.capabilities,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
@@ -3480,39 +3480,23 @@ public enum ErrorStatus: String, Codable, Sendable {
 }
 
 /// Checkout state after instrument selection.
-///
-/// Generic error response when business logic prevents resource creation or failed to
-/// retrieve resource. Used when no valid resource can be established.
-// MARK: - InstrumentsChangeResult
-public struct InstrumentsChangeResult: Codable, Sendable {
+// MARK: - InstrumentsChangeSuccess
+public struct InstrumentsChangeSuccess: Codable, Sendable {
     /// Partial checkout update with payment instrument selection.
-    public let checkout: InstrumentsChangeCheckout?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+    public let checkout: InstrumentsChangeCheckout
+    public let ucp: SuccessUcp
 
-    public enum CodingKeys: String, CodingKey {
-        case checkout, ucp
-        case continueURL = "continue_url"
-        case messages
-    }
-
-    public init(checkout: InstrumentsChangeCheckout?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+    public init(checkout: InstrumentsChangeCheckout, ucp: SuccessUcp) {
         self.checkout = checkout
         self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
     }
 }
 
-// MARK: InstrumentsChangeResult convenience initializers and mutators
+// MARK: InstrumentsChangeSuccess convenience initializers and mutators
 
-public extension InstrumentsChangeResult {
+public extension InstrumentsChangeSuccess {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(InstrumentsChangeResult.self, from: data)
+        self = try newJSONDecoder().decode(InstrumentsChangeSuccess.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3527,16 +3511,12 @@ public extension InstrumentsChangeResult {
     }
 
     func with(
-        checkout: InstrumentsChangeCheckout?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> InstrumentsChangeResult {
-        return InstrumentsChangeResult(
+        checkout: InstrumentsChangeCheckout? = nil,
+        ucp: SuccessUcp? = nil
+    ) -> InstrumentsChangeSuccess {
+        return InstrumentsChangeSuccess(
             checkout: checkout ?? self.checkout,
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
+            ucp: ucp ?? self.ucp
         )
     }
 
@@ -3659,20 +3639,16 @@ public extension InstrumentsChangePayment {
 /// payload.
 ///
 /// Base UCP metadata with shared properties for all schema types.
-///
-/// UCP protocol metadata. Status MUST be 'error' for error response.
-///
-/// UCP metadata with status 'error'. Use for response branches that carry error information.
-// MARK: - InstrumentsChangeResultUcp
-public struct InstrumentsChangeResultUcp: Codable, Sendable {
+// MARK: - SuccessUcp
+public struct SuccessUcp: Codable, Sendable {
     /// Capability registry keyed by reverse-domain name.
-    public let capabilities: [String: [CapabilityElement]]?
+    public let capabilities: [String: [Capability]]?
     /// Payment handler registry keyed by reverse-domain name.
-    public let paymentHandlers: [String: [PaymentHandlerElement]]?
+    public let paymentHandlers: [String: [PaymentHandler]]?
     /// Service registry keyed by reverse-domain name.
     public let services: [String: [EmbeddedService]]?
     /// Application-level status of the UCP operation.
-    public let status: UCPCheckoutResponseSchemaStatus
+    public let status: SuccessUcpStatus
     public let version: String
 
     public enum CodingKeys: String, CodingKey {
@@ -3681,7 +3657,7 @@ public struct InstrumentsChangeResultUcp: Codable, Sendable {
         case services, status, version
     }
 
-    public init(capabilities: [String: [CapabilityElement]]?, paymentHandlers: [String: [PaymentHandlerElement]]?, services: [String: [EmbeddedService]]?, status: UCPCheckoutResponseSchemaStatus, version: String) {
+    public init(capabilities: [String: [Capability]]?, paymentHandlers: [String: [PaymentHandler]]?, services: [String: [EmbeddedService]]?, status: SuccessUcpStatus, version: String) {
         self.capabilities = capabilities
         self.paymentHandlers = paymentHandlers
         self.services = services
@@ -3690,11 +3666,11 @@ public struct InstrumentsChangeResultUcp: Codable, Sendable {
     }
 }
 
-// MARK: InstrumentsChangeResultUcp convenience initializers and mutators
+// MARK: SuccessUcp convenience initializers and mutators
 
-public extension InstrumentsChangeResultUcp {
+public extension SuccessUcp {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(InstrumentsChangeResultUcp.self, from: data)
+        self = try newJSONDecoder().decode(SuccessUcp.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3709,13 +3685,13 @@ public extension InstrumentsChangeResultUcp {
     }
 
     func with(
-        capabilities: [String: [CapabilityElement]]?? = nil,
-        paymentHandlers: [String: [PaymentHandlerElement]]?? = nil,
+        capabilities: [String: [Capability]]?? = nil,
+        paymentHandlers: [String: [PaymentHandler]]?? = nil,
         services: [String: [EmbeddedService]]?? = nil,
-        status: UCPCheckoutResponseSchemaStatus? = nil,
+        status: SuccessUcpStatus? = nil,
         version: String? = nil
-    ) -> InstrumentsChangeResultUcp {
-        return InstrumentsChangeResultUcp(
+    ) -> SuccessUcp {
+        return SuccessUcp(
             capabilities: capabilities ?? self.capabilities,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
@@ -3734,11 +3710,8 @@ public extension InstrumentsChangeResultUcp {
 }
 
 /// Shared foundation for all UCP entities.
-///
-/// Capability reference in responses. Only name/version required to confirm active
-/// capabilities.
-// MARK: - CapabilityElement
-public struct CapabilityElement: Codable, Sendable {
+// MARK: - Capability
+public struct Capability: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
     /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
@@ -3764,11 +3737,11 @@ public struct CapabilityElement: Codable, Sendable {
     }
 }
 
-// MARK: CapabilityElement convenience initializers and mutators
+// MARK: Capability convenience initializers and mutators
 
-public extension CapabilityElement {
+public extension Capability {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(CapabilityElement.self, from: data)
+        self = try newJSONDecoder().decode(Capability.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3789,8 +3762,8 @@ public extension CapabilityElement {
         spec: String?? = nil,
         version: String? = nil,
         extends: Extends?? = nil
-    ) -> CapabilityElement {
-        return CapabilityElement(
+    ) -> Capability {
+        return Capability(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
@@ -3810,11 +3783,8 @@ public extension CapabilityElement {
 }
 
 /// Shared foundation for all UCP entities.
-///
-/// Handler reference in responses. May include full config state for runtime usage of the
-/// handler.
-// MARK: - PaymentHandlerElement
-public struct PaymentHandlerElement: Codable, Sendable {
+// MARK: - PaymentHandler
+public struct PaymentHandler: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
     public let config: [String: JSONAny]?
     /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
@@ -3845,11 +3815,11 @@ public struct PaymentHandlerElement: Codable, Sendable {
     }
 }
 
-// MARK: PaymentHandlerElement convenience initializers and mutators
+// MARK: PaymentHandler convenience initializers and mutators
 
-public extension PaymentHandlerElement {
+public extension PaymentHandler {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(PaymentHandlerElement.self, from: data)
+        self = try newJSONDecoder().decode(PaymentHandler.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3870,8 +3840,8 @@ public extension PaymentHandlerElement {
         spec: String?? = nil,
         version: String? = nil,
         availableInstruments: [PaymentHandlerAvailableInstrument]?? = nil
-    ) -> PaymentHandlerElement {
-        return PaymentHandlerElement(
+    ) -> PaymentHandler {
+        return PaymentHandler(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
@@ -4020,40 +3990,29 @@ public extension EmbeddedService {
     }
 }
 
+/// Application-level status of the UCP operation.
+public enum SuccessUcpStatus: String, Codable, Sendable {
+    case success = "success"
+}
+
 /// Checkout state with payment credential ready for completion.
-///
-/// Generic error response when business logic prevents resource creation or failed to
-/// retrieve resource. Used when no valid resource can be established.
-// MARK: - CredentialResult
-public struct CredentialResult: Codable, Sendable {
+// MARK: - CredentialSuccess
+public struct CredentialSuccess: Codable, Sendable {
     /// Partial checkout update with payment credential.
-    public let checkout: CredentialCheckout?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+    public let checkout: CredentialCheckout
+    public let ucp: SuccessUcp
 
-    public enum CodingKeys: String, CodingKey {
-        case checkout, ucp
-        case continueURL = "continue_url"
-        case messages
-    }
-
-    public init(checkout: CredentialCheckout?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+    public init(checkout: CredentialCheckout, ucp: SuccessUcp) {
         self.checkout = checkout
         self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
     }
 }
 
-// MARK: CredentialResult convenience initializers and mutators
+// MARK: CredentialSuccess convenience initializers and mutators
 
-public extension CredentialResult {
+public extension CredentialSuccess {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(CredentialResult.self, from: data)
+        self = try newJSONDecoder().decode(CredentialSuccess.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4068,16 +4027,12 @@ public extension CredentialResult {
     }
 
     func with(
-        checkout: CredentialCheckout?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> CredentialResult {
-        return CredentialResult(
+        checkout: CredentialCheckout? = nil,
+        ucp: SuccessUcp? = nil
+    ) -> CredentialSuccess {
+        return CredentialSuccess(
             checkout: checkout ?? self.checkout,
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
+            ucp: ucp ?? self.ucp
         )
     }
 
@@ -4136,39 +4091,23 @@ public extension CredentialCheckout {
 }
 
 /// Checkout state after address selection.
-///
-/// Generic error response when business logic prevents resource creation or failed to
-/// retrieve resource. Used when no valid resource can be established.
-// MARK: - AddressChangeResult
-public struct AddressChangeResult: Codable, Sendable {
+// MARK: - AddressChangeSuccess
+public struct AddressChangeSuccess: Codable, Sendable {
     /// Partial checkout update with fulfillment address selection.
-    public let checkout: AddressChangeCheckout?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+    public let checkout: AddressChangeCheckout
+    public let ucp: SuccessUcp
 
-    public enum CodingKeys: String, CodingKey {
-        case checkout, ucp
-        case continueURL = "continue_url"
-        case messages
-    }
-
-    public init(checkout: AddressChangeCheckout?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+    public init(checkout: AddressChangeCheckout, ucp: SuccessUcp) {
         self.checkout = checkout
         self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
     }
 }
 
-// MARK: AddressChangeResult convenience initializers and mutators
+// MARK: AddressChangeSuccess convenience initializers and mutators
 
-public extension AddressChangeResult {
+public extension AddressChangeSuccess {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(AddressChangeResult.self, from: data)
+        self = try newJSONDecoder().decode(AddressChangeSuccess.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4183,16 +4122,12 @@ public extension AddressChangeResult {
     }
 
     func with(
-        checkout: AddressChangeCheckout?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> AddressChangeResult {
-        return AddressChangeResult(
+        checkout: AddressChangeCheckout? = nil,
+        ucp: SuccessUcp? = nil
+    ) -> AddressChangeSuccess {
+        return AddressChangeSuccess(
             checkout: checkout ?? self.checkout,
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
+            ucp: ucp ?? self.ucp
         )
     }
 
@@ -4403,46 +4338,30 @@ public extension Auth {
 }
 
 /// Handshake response from host.
-///
-/// Generic error response when business logic prevents resource creation or failed to
-/// retrieve resource. Used when no valid resource can be established.
-// MARK: - ReadyResult
-public struct ReadyResult: Codable, Sendable {
+// MARK: - ReadySuccess
+public struct ReadySuccess: Codable, Sendable {
     /// Initial delegation state from host. Fields are permitted only when the corresponding
     /// delegation is accepted.
     public let checkout: ReadyCheckout?
     /// Requested authorization. Some common examples include API key and OAuth token.
     public let credential: String?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
+    public let ucp: SuccessUcp
     /// Channel upgrade instructions. If present, switch to provided MessagePort.
     public let upgrade: Upgrade?
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
 
-    public enum CodingKeys: String, CodingKey {
-        case checkout, credential, ucp, upgrade
-        case continueURL = "continue_url"
-        case messages
-    }
-
-    public init(checkout: ReadyCheckout?, credential: String?, ucp: InstrumentsChangeResultUcp, upgrade: Upgrade?, continueURL: String?, messages: [Message]?) {
+    public init(checkout: ReadyCheckout?, credential: String?, ucp: SuccessUcp, upgrade: Upgrade?) {
         self.checkout = checkout
         self.credential = credential
         self.ucp = ucp
         self.upgrade = upgrade
-        self.continueURL = continueURL
-        self.messages = messages
     }
 }
 
-// MARK: ReadyResult convenience initializers and mutators
+// MARK: ReadySuccess convenience initializers and mutators
 
-public extension ReadyResult {
+public extension ReadySuccess {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ReadyResult.self, from: data)
+        self = try newJSONDecoder().decode(ReadySuccess.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4459,18 +4378,14 @@ public extension ReadyResult {
     func with(
         checkout: ReadyCheckout?? = nil,
         credential: String?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
-        upgrade: Upgrade?? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> ReadyResult {
-        return ReadyResult(
+        ucp: SuccessUcp? = nil,
+        upgrade: Upgrade?? = nil
+    ) -> ReadySuccess {
+        return ReadySuccess(
             checkout: checkout ?? self.checkout,
             credential: credential ?? self.credential,
             ucp: ucp ?? self.ucp,
-            upgrade: upgrade ?? self.upgrade,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
+            upgrade: upgrade ?? self.upgrade
         )
     }
 
@@ -4685,39 +4600,23 @@ public extension AuthRequest {
 }
 
 /// Auth response from host containing the requested authorization data.
-///
-/// Generic error response when business logic prevents resource creation or failed to
-/// retrieve resource. Used when no valid resource can be established.
-// MARK: - AuthResult
-public struct AuthResult: Codable, Sendable {
+// MARK: - AuthSuccess
+public struct AuthSuccess: Codable, Sendable {
     /// Requested authorization. Some common examples include API key and OAuth token.
-    public let credential: String?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+    public let credential: String
+    public let ucp: SuccessUcp
 
-    public enum CodingKeys: String, CodingKey {
-        case credential, ucp
-        case continueURL = "continue_url"
-        case messages
-    }
-
-    public init(credential: String?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+    public init(credential: String, ucp: SuccessUcp) {
         self.credential = credential
         self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
     }
 }
 
-// MARK: AuthResult convenience initializers and mutators
+// MARK: AuthSuccess convenience initializers and mutators
 
-public extension AuthResult {
+public extension AuthSuccess {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(AuthResult.self, from: data)
+        self = try newJSONDecoder().decode(AuthSuccess.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4732,16 +4631,12 @@ public extension AuthResult {
     }
 
     func with(
-        credential: String?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> AuthResult {
-        return AuthResult(
+        credential: String? = nil,
+        ucp: SuccessUcp? = nil
+    ) -> AuthSuccess {
+        return AuthSuccess(
             credential: credential ?? self.credential,
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
+            ucp: ucp ?? self.ucp
         )
     }
 
@@ -4775,3 +4670,173 @@ func newJSONEncoder() -> JSONEncoder {
 // MARK: - Encode/decode helpers
 // quicktype's JSONAny/JSONNull helper suffix is intentionally replaced here.
 // See ../JSONAny.swift for the maintained Swift implementation.
+
+// MARK: - Result unions
+
+// Routes result decoding to the success or error branch by peeking at the UCP
+// envelope's discriminator (`ucp.status`). Synthesized by generate_models.mjs;
+// see protocol/scripts/result_unions.mjs.
+private struct ResultStatusPeek: Decodable {
+    struct Ucp: Decodable {
+        let status: String
+    }
+
+    let ucp: Ucp
+}
+
+public enum InstrumentsChangeResult: Codable, Sendable {
+    case success(InstrumentsChangeSuccess)
+    case error(ErrorResponse)
+
+    public init(from decoder: Decoder) throws {
+        if let peek = try? ResultStatusPeek(from: decoder), peek.ucp.status == "error" {
+            self = .error(try ErrorResponse(from: decoder))
+        } else {
+            self = .success(try InstrumentsChangeSuccess(from: decoder))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .success(let value):
+            try value.encode(to: encoder)
+        case .error(let value):
+            try value.encode(to: encoder)
+        }
+    }
+}
+
+public enum CredentialResult: Codable, Sendable {
+    case success(CredentialSuccess)
+    case error(ErrorResponse)
+
+    public init(from decoder: Decoder) throws {
+        if let peek = try? ResultStatusPeek(from: decoder), peek.ucp.status == "error" {
+            self = .error(try ErrorResponse(from: decoder))
+        } else {
+            self = .success(try CredentialSuccess(from: decoder))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .success(let value):
+            try value.encode(to: encoder)
+        case .error(let value):
+            try value.encode(to: encoder)
+        }
+    }
+}
+
+public enum AddressChangeResult: Codable, Sendable {
+    case success(AddressChangeSuccess)
+    case error(ErrorResponse)
+
+    public init(from decoder: Decoder) throws {
+        if let peek = try? ResultStatusPeek(from: decoder), peek.ucp.status == "error" {
+            self = .error(try ErrorResponse(from: decoder))
+        } else {
+            self = .success(try AddressChangeSuccess(from: decoder))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .success(let value):
+            try value.encode(to: encoder)
+        case .error(let value):
+            try value.encode(to: encoder)
+        }
+    }
+}
+
+public enum ReadyResult: Codable, Sendable {
+    case success(ReadySuccess)
+    case error(ErrorResponse)
+
+    public init(from decoder: Decoder) throws {
+        if let peek = try? ResultStatusPeek(from: decoder), peek.ucp.status == "error" {
+            self = .error(try ErrorResponse(from: decoder))
+        } else {
+            self = .success(try ReadySuccess(from: decoder))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .success(let value):
+            try value.encode(to: encoder)
+        case .error(let value):
+            try value.encode(to: encoder)
+        }
+    }
+}
+
+public enum AuthResult: Codable, Sendable {
+    case success(AuthSuccess)
+    case error(ErrorResponse)
+
+    public init(from decoder: Decoder) throws {
+        if let peek = try? ResultStatusPeek(from: decoder), peek.ucp.status == "error" {
+            self = .error(try ErrorResponse(from: decoder))
+        } else {
+            self = .success(try AuthSuccess(from: decoder))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .success(let value):
+            try value.encode(to: encoder)
+        case .error(let value):
+            try value.encode(to: encoder)
+        }
+    }
+}
+
+public extension InstrumentsChangeResult {
+    static func success(
+        checkout: InstrumentsChangeCheckout,
+        ucp: SuccessUcp = .success()
+    ) -> InstrumentsChangeResult {
+        .success(InstrumentsChangeSuccess(checkout: checkout, ucp: ucp))
+    }
+}
+
+public extension CredentialResult {
+    static func success(
+        checkout: CredentialCheckout,
+        ucp: SuccessUcp = .success()
+    ) -> CredentialResult {
+        .success(CredentialSuccess(checkout: checkout, ucp: ucp))
+    }
+}
+
+public extension AddressChangeResult {
+    static func success(
+        checkout: AddressChangeCheckout,
+        ucp: SuccessUcp = .success()
+    ) -> AddressChangeResult {
+        .success(AddressChangeSuccess(checkout: checkout, ucp: ucp))
+    }
+}
+
+public extension ReadyResult {
+    static func success(
+        checkout: ReadyCheckout? = nil,
+        credential: String? = nil,
+        ucp: SuccessUcp = .success(),
+        upgrade: Upgrade? = nil
+    ) -> ReadyResult {
+        .success(ReadySuccess(checkout: checkout, credential: credential, ucp: ucp, upgrade: upgrade))
+    }
+}
+
+public extension AuthResult {
+    static func success(
+        credential: String,
+        ucp: SuccessUcp = .success()
+    ) -> AuthResult {
+        .success(AuthSuccess(credential: credential, ucp: ucp))
+    }
+}

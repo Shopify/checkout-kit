@@ -5,19 +5,10 @@ import Testing
 @Suite("Codec Encode Tests")
 struct CodecEncodeTests {
     @Test func encodesResponse() throws {
-        let result = CredentialResult(
+        let result = CredentialResult.success(
             checkout: CredentialCheckout(
                 payment: Payment(instruments: nil)
-            ),
-            ucp: InstrumentsChangeResultUcp(
-                capabilities: nil,
-                paymentHandlers: nil,
-                services: nil,
-                status: .success,
-                version: EmbeddedCheckoutProtocol.specVersion
-            ),
-            continueURL: nil,
-            messages: nil
+            )
         )
         let json = EmbeddedCheckoutProtocol.encodeResponse(id: "req-456", result: result)
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
@@ -30,14 +21,7 @@ struct CodecEncodeTests {
     @Test func encodesReadyResultCarryingOnlyUCPEnvelope() throws {
         let json = EmbeddedCheckoutProtocol.encodeResponse(
             id: "ready-1",
-            result: ReadyResult(
-                checkout: nil,
-                credential: nil,
-                ucp: .success(),
-                upgrade: nil,
-                continueURL: nil,
-                messages: nil
-            )
+            result: ReadyResult.success()
         )
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
@@ -56,14 +40,7 @@ struct CodecEncodeTests {
     @Test func encodesReadyResultIncludingCredential() throws {
         let json = EmbeddedCheckoutProtocol.encodeResponse(
             id: .null,
-            result: ReadyResult(
-                checkout: nil,
-                credential: "tok-123",
-                ucp: .success(),
-                upgrade: nil,
-                continueURL: nil,
-                messages: nil
-            )
+            result: ReadyResult.success(credential: "tok-123")
         )
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 
@@ -75,12 +52,7 @@ struct CodecEncodeTests {
     @Test func encodesAuthResult() throws {
         let json = EmbeddedCheckoutProtocol.encodeResponse(
             id: "auth-1",
-            result: AuthResult(
-                credential: "tok-abc",
-                ucp: .success(),
-                continueURL: nil,
-                messages: nil
-            )
+            result: AuthResult.success(credential: "tok-abc")
         )
         let parsed = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 

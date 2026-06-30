@@ -1,8 +1,8 @@
 import Foundation
 
-extension InstrumentsChangeResultUcp {
+extension SuccessUcp {
     public static func success(version: String = EmbeddedCheckoutProtocol.specVersion) -> Self {
-        InstrumentsChangeResultUcp(
+        SuccessUcp(
             capabilities: nil,
             paymentHandlers: nil,
             services: nil,
