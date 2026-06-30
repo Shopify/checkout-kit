@@ -28,6 +28,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>rn</string>
+				<string>com.shopify.checkoutkit.reactnativedemo</string>
 			</array>
 		</dict>
 	</array>

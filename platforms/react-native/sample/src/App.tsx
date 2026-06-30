@@ -1,6 +1,13 @@
 import type {PropsWithChildren, ReactNode} from 'react';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Appearance, Linking, Pressable, StatusBar} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  Appearance,
+  Linking,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {
   NavigationContainer,
   useNavigation,
@@ -43,6 +50,7 @@ import ErrorBoundary from './ErrorBoundary';
 import env from 'react-native-config';
 import {createDebugLogger} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
+import {useE2ECartBootstrap} from './hooks/useE2ECartBootstrap';
 
 const log = createDebugLogger('ENV');
 
@@ -83,6 +91,12 @@ const Tab = createBottomTabNavigator<RootStackParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AccountStack = createNativeStackNavigator<AccountStackParamList>();
 
+const styles = StyleSheet.create({
+  routes: {
+    flex: 1,
+  },
+});
+
 export const cache = new InMemoryCache();
 
 const client = new ApolloClient({
@@ -118,26 +132,47 @@ const createNavigationIcon =
     return <Icon name={name} color={color} size={size} />;
   };
 
+type InitialURLState = {
+  url: string | null;
+  resolved: boolean;
+};
+
 // See https://reactnative.dev/docs/linking#get-the-deep-link for more information
-const useInitialURL = (): {url: string | null} => {
-  const [url, setUrl] = useState<string | null>(null);
+const useInitialURL = (): InitialURLState => {
+  const [state, setState] = useState<InitialURLState>({
+    url: null,
+    resolved: false,
+  });
 
   useEffect(() => {
-    const getUrlAsync = async () => {
-      // Get the deep link used to open the app
-      const initialUrl = await Linking.getInitialURL();
+    let isMounted = true;
 
-      if (initialUrl !== url) {
-        setUrl(initialUrl);
+    const getUrlAsync = async () => {
+      let initialUrl: string | null = null;
+
+      try {
+        // Get the deep link used to open the app
+        initialUrl = await Linking.getInitialURL();
+      } catch (error) {
+        console.warn('Failed to get initial URL', error);
+      } finally {
+        if (isMounted) {
+          setState({
+            url: initialUrl,
+            resolved: true,
+          });
+        }
       }
     };
 
     getUrlAsync();
-  }, [url]);
 
-  return {
-    url,
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return state;
 };
 
 // This code is meant as example only.
@@ -415,12 +450,24 @@ function AppWithNavigation(props: {children: React.ReactNode}) {
 function Routes() {
   const {totalQuantity} = useCart();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const {url: initialUrl} = useInitialURL();
+  const {url: initialUrl, resolved: initialUrlResolved} = useInitialURL();
+  const handledInitialUrlRef = useRef<string | null>(null);
+  const [linkingReady, setLinkingReady] = useState(false);
   const shopify = useShopifyCheckout();
   const eventHandlers = useShopifyEventHandlers('UniversalLink');
+  const navigateToCart = useCallback(() => {
+    navigation.navigate('Cart');
+  }, [navigation]);
+  const handleE2ECartBootstrap = useE2ECartBootstrap({
+    onCartReady: navigateToCart,
+  });
 
   useEffect(() => {
     async function handleUniversalLink(url: string) {
+      if (await handleE2ECartBootstrap(url)) {
+        return;
+      }
+
       const storefrontUrl = new StorefrontURL(url);
 
       switch (true) {
@@ -433,7 +480,7 @@ function Routes() {
           return;
         // Cart URLs
         case storefrontUrl.isCart():
-          navigation.navigate('Cart');
+          navigateToCart();
           return;
       }
 
@@ -445,58 +492,86 @@ function Routes() {
       }
     }
 
-    if (initialUrl) {
-      handleUniversalLink(initialUrl);
-    }
+    let isMounted = true;
 
     // Subscribe to universal links
     const subscription = Linking.addEventListener('url', ({url}) => {
       handleUniversalLink(url);
     });
 
+    const prepareInitialLinking = async () => {
+      if (!initialUrlResolved) {
+        return;
+      }
+
+      if (initialUrl && handledInitialUrlRef.current !== initialUrl) {
+        handledInitialUrlRef.current = initialUrl;
+        await handleUniversalLink(initialUrl);
+      }
+
+      if (isMounted) {
+        setLinkingReady(true);
+      }
+    };
+
+    prepareInitialLinking();
+
     return () => {
+      isMounted = false;
       subscription.remove();
     };
-  }, [initialUrl, shopify, navigation, eventHandlers]);
+  }, [
+    initialUrl,
+    initialUrlResolved,
+    shopify,
+    navigation,
+    eventHandlers,
+    handleE2ECartBootstrap,
+    navigateToCart,
+  ]);
 
   return (
-    <Tab.Navigator>
-      <Tab.Screen
-        name="Catalog"
-        component={CatalogStack}
-        options={{
-          headerShown: false,
-          tabBarButtonTestID: 'catalog-tab',
-          tabBarIcon: createNavigationIcon('shop'),
-        }}
-      />
-      <Tab.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{
-          tabBarButtonTestID: 'cart-tab',
-          tabBarIcon: createNavigationIcon('shopping-bag'),
-          tabBarBadge: totalQuantity > 0 ? totalQuantity : undefined,
-        }}
-      />
-      <Tab.Screen
-        name="Account"
-        component={AccountStackScreen}
-        options={{
-          headerShown: false,
-          tabBarButtonTestID: 'account-tab',
-          tabBarIcon: createNavigationIcon('user'),
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          tabBarButtonTestID: 'settings-tab',
-          tabBarIcon: createNavigationIcon('cog'),
-        }}
-      />
-    </Tab.Navigator>
+    <View
+      style={styles.routes}
+      testID={linkingReady ? 'checkout-kit-sample-ready' : undefined}>
+      <Tab.Navigator>
+        <Tab.Screen
+          name="Catalog"
+          component={CatalogStack}
+          options={{
+            headerShown: false,
+            tabBarButtonTestID: 'catalog-tab',
+            tabBarIcon: createNavigationIcon('shop'),
+          }}
+        />
+        <Tab.Screen
+          name="Cart"
+          component={CartScreen}
+          options={{
+            tabBarButtonTestID: 'cart-tab',
+            tabBarIcon: createNavigationIcon('shopping-bag'),
+            tabBarBadge: totalQuantity > 0 ? totalQuantity : undefined,
+          }}
+        />
+        <Tab.Screen
+          name="Account"
+          component={AccountStackScreen}
+          options={{
+            headerShown: false,
+            tabBarButtonTestID: 'account-tab',
+            tabBarIcon: createNavigationIcon('user'),
+          }}
+        />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            tabBarButtonTestID: 'settings-tab',
+            tabBarIcon: createNavigationIcon('cog'),
+          }}
+        />
+      </Tab.Navigator>
+    </View>
   );
 }
 

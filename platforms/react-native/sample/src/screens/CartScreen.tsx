@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/Entypo';
 
 import {
+  CheckoutProtocol,
   useShopifyCheckout,
   AcceleratedCheckoutButtons,
   ApplePayLabel,
@@ -35,8 +36,15 @@ function CartScreen(): React.JSX.Element {
   const {present, preload} = useShopifyCheckout();
   const isFocused = useIsFocused();
   const [refreshing, setRefreshing] = React.useState(false);
-  const {cartId, checkoutURL, totalQuantity, removeFromCart, addingToCart} =
-    useCart();
+  const {
+    cartId,
+    checkoutURL,
+    totalQuantity,
+    removeFromCart,
+    addingToCart,
+    clearCart,
+  } = useCart();
+  const checkoutCompletedRef = React.useRef(false);
   const {queries} = useShopify();
   const {appConfig} = useConfig();
   // Separate handler instances so debug logs are labelled with the actual
@@ -46,6 +54,11 @@ function CartScreen(): React.JSX.Element {
   const sheetEventHandlers = useShopifyEventHandlers('Cart - CheckoutSheet');
   const sheetProtocolEventHandlers = useShopifyProtocolEventHandlers(
     'Cart - CheckoutSheet Protocol',
+    {
+      [CheckoutProtocol.complete]: () => {
+        checkoutCompletedRef.current = true;
+      },
+    },
   );
   const acceleratedCheckoutEventHandlers = useShopifyEventHandlers(
     'Cart - AcceleratedCheckoutButtons',
@@ -104,8 +117,18 @@ function CartScreen(): React.JSX.Element {
       present(
         checkoutURL,
         {
-          onClose: () => sheetEventHandlers.onCancel?.(),
-          onFail: error => sheetEventHandlers.onFail?.(error),
+          onClose: () => {
+            sheetEventHandlers.onCancel?.();
+
+            if (checkoutCompletedRef.current) {
+              checkoutCompletedRef.current = false;
+              clearCart();
+            }
+          },
+          onFail: error => {
+            checkoutCompletedRef.current = false;
+            sheetEventHandlers.onFail?.(error);
+          },
         },
         sheetProtocolEventHandlers,
       );
@@ -138,7 +161,9 @@ function CartScreen(): React.JSX.Element {
     return (
       <View style={styles.loading}>
         <Icon name="shopping-bag" size={60} color="#bbc1d6" />
-        <Text style={styles.loadingText}>Your cart is empty.</Text>
+        <Text testID="cart-empty-message" style={styles.loadingText}>
+          Your cart is empty.
+        </Text>
       </View>
     );
   }
