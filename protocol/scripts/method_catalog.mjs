@@ -188,6 +188,18 @@ export const MODEL_EXTRACTIONS = [
     outputFile: 'auth_result.json',
     rootTitle: 'AuthResult',
   },
+  {
+    kind: 'params',
+    method: 'ec.window.open_request',
+    outputFile: 'window_open_request.json',
+    rootTitle: 'WindowOpenRequest',
+  },
+  {
+    kind: 'result',
+    method: 'ec.window.open_request',
+    outputFile: 'window_open_result.json',
+    rootTitle: 'WindowOpenResult',
+  },
 ];
 
 // Delegated requests whose request/response payloads are defined by the host
@@ -196,7 +208,7 @@ export const MODEL_EXTRACTIONS = [
 // binding and its own method-name constant. Listed here so that a spec request
 // which is neither host-defined nor bound below fails loudly instead of
 // silently vanishing from the catalog.
-const HOST_DEFINED_REQUESTS = new Set(['ec.window.open_request']);
+const HOST_DEFINED_REQUESTS = new Set([]);
 
 // Per-request binding the spec cannot express: the Swift payload/result type
 // names and the decode strategy.
@@ -210,6 +222,7 @@ const REQUEST_BINDINGS = new Map([
   ['ec.payment.instruments_change_request', {payload: 'Checkout', result: 'InstrumentsChangeResult', decode: 'checkoutUnwrap'}],
   ['ec.payment.credential_request', {payload: 'Checkout', result: 'CredentialResult', decode: 'checkoutUnwrap'}],
   ['ec.fulfillment.address_change_request', {payload: 'Checkout', result: 'AddressChangeResult', decode: 'checkoutUnwrap'}],
+  ['ec.window.open_request', {payload: 'WindowOpenRequest', result: 'WindowOpenResult', decode: 'whole'}],
 ]);
 
 // Every request *result* must be generated from the spec (declared in

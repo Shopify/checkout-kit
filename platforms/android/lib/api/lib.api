@@ -505,31 +505,3 @@ public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static synthetic fun present$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutKitDialog;
 }
 
-public final class com/shopify/checkoutkit/WindowOpenRequest {
-	public final fun component1 ()Landroid/net/Uri;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getUrl ()Landroid/net/Uri;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract class com/shopify/checkoutkit/WindowOpenResult {
-}
-
-public final class com/shopify/checkoutkit/WindowOpenResult$Rejected : com/shopify/checkoutkit/WindowOpenResult {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lcom/shopify/checkoutkit/WindowOpenResult$Rejected;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/WindowOpenResult$Rejected;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/WindowOpenResult$Rejected;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getReason ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/shopify/checkoutkit/WindowOpenResult$Success : com/shopify/checkoutkit/WindowOpenResult {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/WindowOpenResult$Success;
-}
-

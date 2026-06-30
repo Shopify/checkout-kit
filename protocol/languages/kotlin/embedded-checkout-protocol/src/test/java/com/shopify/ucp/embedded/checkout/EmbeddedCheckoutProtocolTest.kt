@@ -35,6 +35,7 @@ class EmbeddedCheckoutProtocolTest {
             "ec.payment.credential_request",
             "ec.fulfillment.change",
             "ec.fulfillment.address_change_request",
+            "ec.window.open_request",
         )
     }
 

@@ -6,6 +6,9 @@ import android.content.pm.ResolveInfo
 import android.net.Uri
 import android.os.Looper
 import androidx.activity.ComponentActivity
+import com.shopify.ucp.embedded.checkout.WindowOpenRequest
+import com.shopify.ucp.embedded.checkout.windowOpenRejected
+import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assert.fail
 import org.junit.Before
@@ -255,7 +258,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         registerFakeBrowserFor("https://example.com")
         val merchantClient = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) { _ ->
-                WindowOpenResult.Rejected(reason = "merchant says no")
+                windowOpenRejected(reason = "merchant says no")
             }
         ecp.setClient(merchantClient)
 
@@ -276,7 +279,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val merchantClient = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) { request ->
                 captured = request
-                WindowOpenResult.Success
+                windowOpenSuccess()
             }
         ecp.setClient(merchantClient)
 
@@ -284,7 +287,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(captured).isNotNull()
-        assertThat(captured!!.url.toString()).isEqualTo("https://example.com/promo?id=42")
+        assertThat(captured!!.url).isEqualTo("https://example.com/promo?id=42")
     }
 
     @Test
@@ -319,14 +322,14 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `window open emits invalid params when url is malformed`() {
+    fun `window open emits UCP rejection when url does not resolve to an activity`() {
         val js = captureEvaluatedJs {
             ecp.postMessage(windowOpenRequest(id = "\"13\"", url = "https://example.com/a b"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
+        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(js).contains("\"severity\":\"unrecoverable\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
 
@@ -342,7 +345,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     @Test
     fun `window open response echoes null request id`() {
         val merchantClient = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { WindowOpenResult.Success }
+            .on(CheckoutProtocol.windowOpen) { windowOpenSuccess() }
         ecp.setClient(merchantClient)
 
         val js = captureEvaluatedJs {
@@ -575,7 +578,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val rawMessage = windowOpenRequest(id = "\"9\"", url = "https://example.com")
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) {
-                WindowOpenResult.Rejected(reason = "merchant says no")
+                windowOpenRejected(reason = "merchant says no")
             }
         ecp.setClient(client)
 

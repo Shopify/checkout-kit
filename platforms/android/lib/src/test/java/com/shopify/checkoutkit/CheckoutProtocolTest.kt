@@ -16,6 +16,9 @@ import com.shopify.ucp.embedded.checkout.NotificationDescriptor
 import com.shopify.ucp.embedded.checkout.OrderLineItem
 import com.shopify.ucp.embedded.checkout.RequestDescriptor
 import com.shopify.ucp.embedded.checkout.Severity
+import com.shopify.ucp.embedded.checkout.WindowOpenRequest
+import com.shopify.ucp.embedded.checkout.WindowOpenResult
+import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
@@ -242,7 +245,7 @@ class CheckoutProtocolTest {
     @Test
     fun `process preserves null id for registered delegations`() {
         val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { WindowOpenResult.Success }
+            .on(CheckoutProtocol.windowOpen) { windowOpenSuccess() }
 
         val response = client.process(windowOpenMessage(id = "null"))
 
@@ -253,7 +256,7 @@ class CheckoutProtocolTest {
     @Test
     fun `process preserves integer id for registered delegations`() {
         val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { WindowOpenResult.Success }
+            .on(CheckoutProtocol.windowOpen) { windowOpenSuccess() }
 
         val response = client.process(windowOpenMessage(id = "7"))
 
@@ -267,7 +270,7 @@ class CheckoutProtocolTest {
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) {
                 handled = true
-                WindowOpenResult.Success
+                windowOpenSuccess()
             }
 
         val response = client.process(windowOpenMessage(id = "1.5"))
@@ -282,7 +285,7 @@ class CheckoutProtocolTest {
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) {
                 handled = true
-                WindowOpenResult.Success
+                windowOpenSuccess()
             }
 
         val response = client.process(
@@ -304,7 +307,7 @@ class CheckoutProtocolTest {
                 )
             ) {
                 handled = true
-                WindowOpenResult.Success
+                windowOpenSuccess()
             }
 
         val response = client.process(windowOpenMessage(id = "7"))
@@ -324,7 +327,7 @@ class CheckoutProtocolTest {
                 )
             ) {
                 handled = true
-                WindowOpenResult.Success
+                windowOpenSuccess()
             }
 
         val response = client.process(windowOpenMessage(id = "7"))

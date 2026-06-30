@@ -151,6 +151,15 @@ public object EmbeddedCheckoutProtocol {
         encode = { it },
     )
 
+    public val windowOpen: RequestDescriptor<WindowOpenRequest, WindowOpenResult> = requestDescriptor(
+        method = Event.windowOpenRequest,
+        delegation = "window.open",
+        requestSerializer = WindowOpenRequest.serializer(),
+        responseSerializer = WindowOpenResult.serializer(),
+        decode = { it },
+        encode = { it },
+    )
+
     public val fulfillmentAddressChange: RequestDescriptor<Checkout, AddressChangeResult> = requestDescriptor(
         method = Event.fulfillmentAddressChangeRequest,
         delegation = "fulfillment.address_change",
@@ -206,6 +215,7 @@ public object EmbeddedCheckoutProtocol {
         public const val paymentChange: String = "ec.payment.change"
         public const val paymentInstrumentsChangeRequest: String = "ec.payment.instruments_change_request"
         public const val paymentCredentialRequest: String = "ec.payment.credential_request"
+        public const val windowOpenRequest: String = "ec.window.open_request"
         public const val fulfillmentChange: String = "ec.fulfillment.change"
         public const val fulfillmentAddressChangeRequest: String = "ec.fulfillment.address_change_request"
 
@@ -222,6 +232,7 @@ public object EmbeddedCheckoutProtocol {
             paymentChange,
             paymentInstrumentsChangeRequest,
             paymentCredentialRequest,
+            windowOpenRequest,
             fulfillmentChange,
             fulfillmentAddressChangeRequest,
         )

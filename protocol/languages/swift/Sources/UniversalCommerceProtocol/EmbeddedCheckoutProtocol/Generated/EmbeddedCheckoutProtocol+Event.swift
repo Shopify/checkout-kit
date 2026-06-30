@@ -7,11 +7,13 @@ extension AuthRequest: EventPayload {}
 extension Checkout: EventPayload {}
 extension ErrorResponse: EventPayload {}
 extension ReadyRequest: EventPayload {}
+extension WindowOpenRequest: EventPayload {}
 extension AddressChangeResult: ResponsePayload {}
 extension AuthResult: ResponsePayload {}
 extension CredentialResult: ResponsePayload {}
 extension InstrumentsChangeResult: ResponsePayload {}
 extension ReadyResult: ResponsePayload {}
+extension WindowOpenResult: ResponsePayload {}
 
 extension EmbeddedCheckoutProtocol {
     /// Every `ec.*` method this protocol owns, resolved to a typed descriptor.
@@ -53,6 +55,12 @@ extension EmbeddedCheckoutProtocol {
             decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
         )
 
+        public static let windowOpen = RequestDescriptor<WindowOpenRequest, WindowOpenResult>(
+            method: "ec.window.open_request",
+            delegation: "window.open",
+            decode: { try? JSONDecoder().decode(WindowOpenRequest.self, from: $0) }
+        )
+
         public static let fulfillmentAddressChange = RequestDescriptor<Checkout, AddressChangeResult>(
             method: "ec.fulfillment.address_change_request",
             delegation: "fulfillment.address_change",
@@ -72,6 +80,7 @@ extension EmbeddedCheckoutProtocol {
             paymentChange.method,
             paymentInstrumentsChange.method,
             paymentCredential.method,
+            windowOpen.method,
             fulfillmentChange.method,
             fulfillmentAddressChange.method,
         ]
