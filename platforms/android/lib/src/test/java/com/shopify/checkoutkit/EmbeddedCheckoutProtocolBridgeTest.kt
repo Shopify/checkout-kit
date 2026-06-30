@@ -319,6 +319,18 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
+    fun `window open emits invalid params when url is malformed`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage(windowOpenRequest(id = "\"13\"", url = "https://example.com/a b"))
+        }
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(js).contains("\"error\"")
+        assertThat(js).contains("-32602")
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+    }
+
+    @Test
     fun `window open emits invalid params when params is not an object`() {
         val js = captureEvaluatedJs {
             ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"12","params":[]}""")

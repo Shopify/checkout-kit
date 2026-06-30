@@ -11,6 +11,7 @@ import com.shopify.ucp.embedded.checkout.Severity
 import com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus
 import com.shopify.ucp.embedded.checkout.requestDescriptor
 import kotlinx.serialization.Serializable
+import java.net.URI
 
 /** Payload delivered with the [CheckoutProtocol.windowOpen] request. */
 @ConsistentCopyVisibility
@@ -37,7 +38,8 @@ internal val checkoutKitWindowOpenDescriptor: RequestDescriptor<WindowOpenReques
         decode = { params ->
             params.url
                 .takeIf { it.isNotBlank() }
-                ?.let { runCatching { it.toUri() }.getOrNull() }
+                ?.takeIf { runCatching { URI(it) }.isSuccess }
+                ?.toUri()
                 ?.let(::WindowOpenRequest)
         },
         encode = ::encodeWindowOpenResult,
