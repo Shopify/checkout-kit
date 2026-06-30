@@ -2,15 +2,25 @@ export const PARSE_ERROR_CODE = -32700;
 export const PARSE_ERROR_MESSAGE = 'Parse error';
 export const INVALID_PARAMS_CODE = -32602;
 export const INVALID_PARAMS_MESSAGE = 'Invalid params';
+export const METHOD_NOT_FOUND_CODE = -32601;
+export const METHOD_NOT_FOUND_MESSAGE = 'Method not found';
+export const INTERNAL_ERROR_CODE = -32603;
+export const INTERNAL_ERROR_MESSAGE = 'Internal error';
 
 export type JSONRPCID = string | number | null;
 
-export interface JSONRPCMessage {
-  readonly jsonrpc: string;
-  readonly method: string;
-  readonly id: JSONRPCID | undefined;
-  readonly params: unknown;
-}
+export type DecodedMessage =
+  | {
+      readonly kind: 'request';
+      readonly method: string;
+      readonly id: JSONRPCID;
+      readonly params: unknown;
+    }
+  | {
+      readonly kind: 'notification';
+      readonly method: string;
+      readonly params: unknown;
+    };
 
 function normalizeId(id: unknown): JSONRPCID | undefined {
   if (id === undefined) {
@@ -28,7 +38,9 @@ function normalizeId(id: unknown): JSONRPCID | undefined {
   return undefined;
 }
 
-export function decodeProtocolMessage(message: string): JSONRPCMessage | undefined {
+export function decodeProtocolMessage(
+  message: string,
+): DecodedMessage | undefined {
   let parsed: unknown;
   try {
     parsed = JSON.parse(message);
@@ -41,7 +53,6 @@ export function decodeProtocolMessage(message: string): JSONRPCMessage | undefin
   }
 
   const envelope = parsed as {
-    jsonrpc?: unknown;
     method?: unknown;
     id?: unknown;
     params?: unknown;
@@ -51,16 +62,21 @@ export function decodeProtocolMessage(message: string): JSONRPCMessage | undefin
     return undefined;
   }
 
+  const id = normalizeId(envelope.id);
+  if (id === undefined) {
+    return {
+      kind: 'notification',
+      method: envelope.method,
+      params: envelope.params,
+    };
+  }
+
   return {
-    jsonrpc: typeof envelope.jsonrpc === 'string' ? envelope.jsonrpc : '2.0',
+    kind: 'request',
     method: envelope.method,
-    id: normalizeId(envelope.id),
+    id,
     params: envelope.params,
   };
-}
-
-export function isRequest(message: JSONRPCMessage): boolean {
-  return message.id !== undefined;
 }
 
 export function encodeJSONRPCResult(id: JSONRPCID, result: unknown): string {

@@ -1,4 +1,4 @@
-import { type RequestDescriptor } from '../descriptors';
+import { type NotificationDescriptor, type RequestDescriptor } from '../descriptors';
 import { type AddressChangeResult, type AuthRequest, type AuthResult, type Checkout, type CredentialResult, type ErrorResponse, type InstrumentsChangeResult, type ReadyRequest, type ReadyResult } from './Models';
 export declare const SPEC_VERSION = "2026-04-08";
 export declare const Delegations: {
@@ -42,6 +42,17 @@ export declare const checkoutProtocolCatalogPayloadDecoders: {
     "ec.totals.change": (payload: unknown) => Checkout;
     "ec.payment.change": (payload: unknown) => Checkout;
     "ec.fulfillment.change": (payload: unknown) => Checkout;
+};
+export declare const notificationDescriptors: {
+    error: NotificationDescriptor<ErrorResponse>;
+    start: NotificationDescriptor<Checkout>;
+    complete: NotificationDescriptor<Checkout>;
+    messagesChange: NotificationDescriptor<Checkout>;
+    lineItemsChange: NotificationDescriptor<Checkout>;
+    buyerChange: NotificationDescriptor<Checkout>;
+    totalsChange: NotificationDescriptor<Checkout>;
+    paymentChange: NotificationDescriptor<Checkout>;
+    fulfillmentChange: NotificationDescriptor<Checkout>;
 };
 export declare const checkoutProtocolRequestCatalog: {
     readonly ready: "ec.ready";
