@@ -6,5 +6,8 @@ data class Settings(
     val colorScheme: ColorScheme,
     val buyerIdentityDemoEnabled: Boolean,
     val checkoutPreloadingEnabled: Boolean,
+    val dragToDismissEnabled: Boolean,
+    val tapAwayToDismissEnabled: Boolean,
     val windowOpenHandler: WindowOpenHandler,
+    val checkoutSheetStyle: CheckoutSheetStylePreset,
 )

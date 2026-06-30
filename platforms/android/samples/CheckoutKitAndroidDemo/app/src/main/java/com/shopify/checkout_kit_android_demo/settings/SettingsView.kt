@@ -104,11 +104,34 @@ fun SettingsView(
                             .background(color = MaterialTheme.colorScheme.background)
                             .fillMaxWidth()
                     )
+
+                    SettingsSwitch(
+                        label = stringResource(id = R.string.checkout_drag_to_dismiss),
+                        checked = uiState.settings.dragToDismissEnabled,
+                        onCheckedChange = settingsViewModel::setDragToDismissEnabled,
+                        modifier = Modifier
+                            .background(color = MaterialTheme.colorScheme.background)
+                            .fillMaxWidth()
+                    )
+
+                    SettingsSwitch(
+                        label = stringResource(id = R.string.checkout_tap_away_to_dismiss),
+                        checked = uiState.settings.tapAwayToDismissEnabled,
+                        onCheckedChange = settingsViewModel::setTapAwayToDismissEnabled,
+                        modifier = Modifier
+                            .background(color = MaterialTheme.colorScheme.background)
+                            .fillMaxWidth()
+                    )
                 }
 
                 ColorSchemeSection(
                     selected = uiState.settings.colorScheme,
                     setSelected = settingsViewModel::setColorScheme
+                )
+
+                CheckoutSheetStyleSection(
+                    selected = uiState.settings.checkoutSheetStyle,
+                    setSelected = settingsViewModel::setCheckoutSheetStyle
                 )
 
                 WindowOpenHandlerSection(

@@ -70,12 +70,13 @@ internal class CheckoutBottomSheet(
         dismissFinalized = false
 
         setContentView(R.layout.checkout_sheet_content)
-        window?.configureCheckoutBottomSheetWindow()
-        configureSheet()
-
         val colorScheme = ShopifyCheckoutKit.configuration.colorScheme
+        val sheet = ShopifyCheckoutKit.configuration.sheet
+        window?.configureCheckoutBottomSheetWindow()
+        configureSheet(sheet)
+
         log.d(LOG_TAG, "Configured colorScheme $colorScheme")
-        val sheetColors = applySheetColors(colorScheme)
+        val sheetColors = applySheetColors(colorScheme, sheet)
 
         onBackPressedDispatcher.addCallback(backNavigationCallback)
 
@@ -112,7 +113,10 @@ internal class CheckoutBottomSheet(
     /**
      * Applies configured colors to native sheet chrome and returns colors needed by WebView-owned surfaces.
      */
-    private fun applySheetColors(colorScheme: ColorScheme): SheetColors {
+    private fun applySheetColors(
+        colorScheme: ColorScheme,
+        sheet: CheckoutSheetOptions,
+    ): SheetColors {
         val isDarkTheme = activity.isDarkTheme()
         val headerBackgroundColor = colorScheme.headerBackgroundColor(isDarkTheme).getValue(activity)
         val headerFontColor = colorScheme.headerFontColor(isDarkTheme).getValue(activity)
@@ -121,22 +125,44 @@ internal class CheckoutBottomSheet(
         findViewById<Toolbar>(R.id.checkoutKitHeader)?.apply {
             log.d(LOG_TAG, "Applying configured header colors and inflating menu.")
             title = ""
-            background = roundedTopCornerDrawable(activity, headerBackgroundColor)
+            background = roundedTopCornerDrawable(activity, headerBackgroundColor, sheet.cornerRadiusDp)
+            elevation = sheet.toolbarElevationDp.dpToPx(activity)
             setTitleTextColor(headerFontColor)
             inflateMenu(R.menu.checkout_menu)
-            menu.findItem(R.id.shopify_checkout_kit_close_button).setupCloseButton(activity, colorScheme) {
+            menu.findItem(R.id.shopify_checkout_kit_close_button).setupCloseButton(activity, colorScheme, sheet) {
                 cancel()
             }
         }
 
-        findViewById<TextView>(R.id.checkoutKitHeaderTitle)
-            ?.setTextColor(headerFontColor)
+        findViewById<View>(R.id.checkoutKitDragHandle)?.applyCheckoutSheetDragHandleStyle(
+            color = colorScheme.dragHandleColor(isDarkTheme).getValue(activity),
+            sheet = sheet,
+        )
+
+        findViewById<TextView>(R.id.checkoutKitHeaderTitle)?.apply {
+            setTextColor(headerFontColor)
+            (layoutParams as? Toolbar.LayoutParams)?.let { params ->
+                params.topMargin = if (sheet.showsDragHandle) {
+                    resources.getDimensionPixelSize(R.dimen.checkout_sheet_drag_handle_title_top_margin)
+                } else {
+                    0
+                }
+                params.gravity = when (sheet.titleAlignment) {
+                    CheckoutSheetTitleAlignment.START -> Gravity.START or Gravity.CENTER_VERTICAL
+                    CheckoutSheetTitleAlignment.CENTER -> Gravity.CENTER
+                }
+                layoutParams = params
+            }
+        }
 
         findViewById<RelativeLayout>(R.id.checkoutKitContainer)
             ?.setBackgroundColor(webViewBackgroundColor)
 
         findViewById<View>(R.id.checkoutKitLoadingBackground)
             ?.setBackgroundColor(webViewBackgroundColor)
+
+        findViewById<View>(R.id.checkoutKitOutsideTouchTarget)
+            ?.setBackgroundColor(sheet.scrimColor.getValue(activity))
 
         return SheetColors(
             webViewBackgroundColor = webViewBackgroundColor,
@@ -147,14 +173,24 @@ internal class CheckoutBottomSheet(
     /**
      * Wires native sheet dismissal affordances after the layout has been inflated.
      */
-    private fun configureSheet() {
-        findViewById<View>(R.id.checkoutKitOutsideTouchTarget)?.setOnClickListener {
-            log.d(LOG_TAG, "Outside touch cancel invoked.")
-            cancel()
+    private fun configureSheet(sheet: CheckoutSheetOptions) {
+        findViewById<View>(R.id.checkoutKitOutsideTouchTarget)?.apply {
+            setOnClickListener(
+                if (sheet.dismissal.tapAwayToDismissEnabled) {
+                    View.OnClickListener {
+                        log.d(LOG_TAG, "Outside touch cancel invoked.")
+                        cancel()
+                    }
+                } else {
+                    null
+                }
+            )
+            isClickable = sheet.dismissal.tapAwayToDismissEnabled
         }
 
         findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.apply {
-            applySystemBarTopMargin()
+            dragToDismissEnabled = sheet.dismissal.dragToDismissEnabled
+            applySystemBarTopMargin(sheet.snapPoints.single())
             onDismissRequested = {
                 if (!dismissing) {
                     log.d(LOG_TAG, "Dismissed by gesture, cancelling checkout.")
@@ -339,14 +375,16 @@ private fun ComponentActivity.isDarkTheme() =
 private fun MenuItem.setupCloseButton(
     activity: ComponentActivity,
     colorScheme: ColorScheme,
+    sheet: CheckoutSheetOptions,
     onClick: () -> Unit,
 ) {
-    val customCloseIcon = colorScheme.closeIcon(activity.isDarkTheme())
+    val isDarkTheme = activity.isDarkTheme()
+    val customCloseIcon = sheet.closeIcon ?: colorScheme.closeIcon(isDarkTheme)
     if (customCloseIcon != null) {
         log.d(LOG_TAG, "Setting custom menu item drawable.")
         icon = AppCompatResources.getDrawable(activity, customCloseIcon.id)
     } else {
-        val customTint = colorScheme.closeIconTint(activity.isDarkTheme())
+        val customTint = sheet.closeIconTint ?: colorScheme.closeIconTint(isDarkTheme)
         val closeIcon = icon
         if (customTint != null && closeIcon != null) {
             log.d(LOG_TAG, "Setting menu item tint.")
@@ -376,16 +414,16 @@ private fun View.applyBottomInsetPadding() {
 }
 
 /**
- * Keeps the intended top gap visible below the status bar while the dialog window draws edge-to-edge.
+ * Keeps the requested window top margin while preventing the sheet from overlapping the status bar.
  */
-private fun View.applySystemBarTopMargin() {
+private fun View.applySystemBarTopMargin(snapPoint: CheckoutSheetSnapPoint) {
     val initialLayoutParams = layoutParams as? ViewGroup.MarginLayoutParams ?: return
-    val initialTopMargin = initialLayoutParams.topMargin
     val initialBottomMargin = initialLayoutParams.bottomMargin
+    updateVerticalMargins(topMargin = snapPoint.resolveTopMarginPx(this), bottomMargin = initialBottomMargin)
     ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
         val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
         view.updateVerticalMargins(
-            topMargin = initialTopMargin + systemBars.top,
+            topMargin = snapPoint.resolveTopMarginPx(view, systemBars.top),
             bottomMargin = initialBottomMargin,
         )
         insets
@@ -439,15 +477,15 @@ private fun Window.configureCheckoutBottomSheetWindow() {
     WindowCompat.setDecorFitsSystemWindows(this, false)
     @Suppress("DEPRECATION")
     setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-    addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+    clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
     attributes = attributes.apply {
-        dimAmount = WINDOW_DIM_AMOUNT
+        dimAmount = 0f
         windowAnimations = 0
     }
 }
 
 /**
- * Gives the dialog window the full screen so the inner sheet layout controls visible height and top gap.
+ * Gives the dialog window the full screen so the inner sheet layout controls visible height and top margin.
  */
 private fun Window.setCheckoutBottomSheetWindowLayout() {
     setLayout(MATCH_PARENT, MATCH_PARENT)
@@ -466,4 +504,3 @@ private fun Window.setTransparentSystemBars() {
 }
 
 private const val LOG_TAG = "CheckoutBottomSheet"
-private const val WINDOW_DIM_AMOUNT = 0.32f

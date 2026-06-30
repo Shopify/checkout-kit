@@ -24,6 +24,7 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
 ) : RelativeLayout(context, attrs, defStyleAttr) {
 
     var onDismissRequested: (() -> Unit)? = null
+    var dragToDismissEnabled = true
 
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private val minimumFlingVelocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity
@@ -57,6 +58,8 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
      * Starts tracking a gesture that began inside the scrollable child.
      */
     fun startScrollableChildGesture(event: MotionEvent) {
+        if (!canHandleDragToDismiss) return
+
         animate().cancel()
         val currentOffsetY = (renderedDragOffsetY + translationY).coerceAtLeast(0f)
         translationY = 0f
@@ -76,7 +79,7 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
      * Moves the sheet by drag distance the scrollable child hands off.
      */
     fun dragScrollableChildBy(dragDistance: Float, event: MotionEvent): Boolean {
-        val canDrag = isEnabled && !dismissAnimationRunning && dragDistance != 0f
+        val canDrag = canHandleDragToDismiss && dragDistance != 0f
         var sheetDragDistance = 0f
         if (canDrag && dragging) {
             sheetDragDistance = dragDistance
@@ -198,7 +201,7 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
      * Intercepts downward drags that start outside the scrollable child so they can move the sheet.
      */
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
-        if (!isEnabled || dismissAnimationRunning) return false
+        if (!canHandleDragToDismiss) return false
 
         var shouldIntercept = false
         when (event.actionMasked) {
@@ -231,7 +234,7 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
      * Handles direct sheet drags and settles to either the expanded or dismissed position.
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!isEnabled || dismissAnimationRunning) return false
+        if (!canHandleDragToDismiss) return false
 
         velocityTracker?.addMovement(event)
 
@@ -383,6 +386,9 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
             outsideScrollableChild
         }
     }
+
+    private val canHandleDragToDismiss: Boolean
+        get() = isEnabled && dragToDismissEnabled && !dismissAnimationRunning
 
     private companion object {
         private const val OPEN_ANIMATION_DURATION_MS = 260L

@@ -168,6 +168,12 @@ Configure global presentation defaults before presenting checkout:
 ```kotlin
 ShopifyCheckoutKit.configure {
     it.colorScheme = ColorScheme.Automatic()
+    it.sheet = CheckoutSheetOptions(
+        dismissal = CheckoutSheetDismissal(
+            dragToDismissEnabled = true,
+            tapAwayToDismissEnabled = true,
+        ),
+    )
     it.logLevel = LogLevel.ERROR
 }
 ```
@@ -175,6 +181,7 @@ ShopifyCheckoutKit.configure {
 | Option | Default | Purpose |
 | --- | --- | --- |
 | `colorScheme` | `ColorScheme.Automatic()` | Use device appearance, force `Light` or `Dark`, or use `Web` to match web checkout branding. |
+| `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
 
@@ -199,28 +206,53 @@ ShopifyCheckoutKit.configure {
             headerFont = Color.ResourceId(R.color.checkout_header_text_light)
             webViewBackground = Color.ResourceId(R.color.checkout_background_light)
             progressIndicator = Color.ResourceId(R.color.checkout_progress_light)
-            closeIconTint = Color.ResourceId(R.color.checkout_close_light)
+            dragHandleColor = Color.ResourceId(R.color.checkout_drag_handle_light)
         },
         dark = {
             headerBackground = Color.ResourceId(R.color.checkout_header_dark)
             headerFont = Color.ResourceId(R.color.checkout_header_text_dark)
             webViewBackground = Color.ResourceId(R.color.checkout_background_dark)
             progressIndicator = Color.ResourceId(R.color.checkout_progress_dark)
-            closeIconTint = Color.ResourceId(R.color.checkout_close_dark)
+            dragHandleColor = Color.ResourceId(R.color.checkout_drag_handle_dark)
         },
     )
 }
 ```
 
-If both `closeIcon` and `closeIconTint` are set, the custom drawable takes precedence:
+### Sheet options
+
+Customize native sheet presentation independently from checkout colors:
 
 ```kotlin
 ShopifyCheckoutKit.configure {
-    it.colorScheme = ColorScheme.Light().customize {
-        closeIcon = DrawableResource(R.drawable.ic_checkout_close)
-    }
+    it.sheet = CheckoutSheetOptions(
+        snapPoints = listOf(CheckoutSheetSnapPoint.Expanded(topMarginDp = 72f)),
+        cornerRadiusDp = 32f,
+        titleAlignment = CheckoutSheetTitleAlignment.CENTER,
+        toolbarElevationDp = 0f,
+        closeIconTint = Color.ResourceId(R.color.checkout_close),
+        dismissal = CheckoutSheetDismissal(
+            dragToDismissEnabled = true,
+            tapAwayToDismissEnabled = true,
+        ),
+        dragHandle = CheckoutSheetDragHandle(
+            visible = true,
+        ),
+    )
 }
 ```
+
+`CheckoutSheetOptions()` defaults to `CheckoutSheetSnapPoint.MaterialExpanded`, which resolves to a 72dp top margin
+from the window top, or 56dp when the window width is greater than 640dp. The SDK handles system bar insets
+internally so the sheet does not overlap the status bar. Custom snap points currently support exactly one expanded
+position.
+
+Use `closeIcon = DrawableResource(R.drawable.ic_checkout_close)` to provide a custom close drawable. If both
+`closeIcon` and `closeIconTint` are set, the custom drawable takes precedence.
+
+Set `dragHandle.visible = true` to show a fixed, visual-only drag handle at the top of the sheet. The handle is hidden
+when `dismissal.dragToDismissEnabled = false` so disabled drag gestures are not presented as available. Configure
+`dragHandleColor` in `ColorScheme` to override the default header-font-derived handle color.
 
 ### Title localization
 
