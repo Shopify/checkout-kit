@@ -450,6 +450,7 @@ commands:
         desc: Auto-format and apply safe lint autocorrections (Swift bridge only)
         aliases: [fix]
         run: cd platforms/react-native && ./scripts/lint_swift fix
+
       api:
         desc: Validate or update the public React Native API baseline (api/checkout-kit-react-native.api.md)
         run: |
@@ -465,6 +466,28 @@ commands:
           dump:
             desc: Regenerate the RN API report after intentional public API changes
             run: cd platforms/react-native && pnpm module api:dump
+
+      snapshot:
+        desc: Manage snapshots for packaged contents
+        run: |
+          echo "Usage: dev rn snapshot {compare|update}"
+          echo ""
+          echo "  compare  Compare contents to existing snapshot"
+          echo "  update   Update the snapshot"
+          exit 1
+        subcommands:
+          compare:
+            desc: Compare contents to existing snapshot
+            run: |
+              cd platforms/react-native
+              pnpm module build
+              pnpm compare-snapshot
+          update:
+            desc: Update the snapshot
+            run: |
+              cd platforms/react-native
+              pnpm module build
+              pnpm snapshot
 
       check:
         desc: Run React Native lint checks
