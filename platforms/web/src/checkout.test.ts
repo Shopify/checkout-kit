@@ -821,24 +821,21 @@ describe("<shopify-checkout>", () => {
         expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
       });
 
-      it.each(["customMethod", "ec.buyer.change"])(
-        "ignores unsupported notification %s",
-        (method) => {
-          const { checkout, mockCheckoutWindow } = openPopupCheckout();
+      it("ignores unsupported notifications", () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
 
-          simulateRawMessageEvent(
-            checkout,
-            {
-              jsonrpc: "2.0",
-              method,
-              params: {},
-            },
-            { source: mockCheckoutWindow },
-          );
+        simulateRawMessageEvent(
+          checkout,
+          {
+            jsonrpc: "2.0",
+            method: "customMethod",
+            params: {},
+          },
+          { source: mockCheckoutWindow },
+        );
 
-          expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
-        },
-      );
+        expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
+      });
     });
 
     describe("ec.start", () => {
@@ -970,6 +967,61 @@ describe("<shopify-checkout>", () => {
       });
     });
 
+    describe("ec.buyer.change", () => {
+      it("updates the checkout property and dispatches an ec.buyer.change event", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onBuyerChangeSpy = vi.fn();
+        const listenForEvent = waitForEvent(checkout, "ec.buyer.change", onBuyerChangeSpy);
+
+        const payload = makeCheckoutPayload({ buyer: { email: "buyer@example.com" } });
+        simulateProtocolMessageEvent(checkout, "ec.buyer.change", payload, {
+          source: mockCheckoutWindow,
+        });
+        await listenForEvent;
+
+        expect(checkout.checkout).toBe(payload.checkout);
+        expect(onBuyerChangeSpy).toHaveBeenCalledOnce();
+      });
+    });
+
+    describe("ec.payment.change", () => {
+      it("updates the checkout property and dispatches an ec.payment.change event", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onPaymentChangeSpy = vi.fn();
+        const listenForEvent = waitForEvent(checkout, "ec.payment.change", onPaymentChangeSpy);
+
+        const payload = makeCheckoutPayload({ payment: { instruments: [] } });
+        simulateProtocolMessageEvent(checkout, "ec.payment.change", payload, {
+          source: mockCheckoutWindow,
+        });
+        await listenForEvent;
+
+        expect(checkout.checkout).toBe(payload.checkout);
+        expect(onPaymentChangeSpy).toHaveBeenCalledOnce();
+      });
+    });
+
+    describe("ec.fulfillment.change", () => {
+      it("updates the checkout property and dispatches an ec.fulfillment.change event", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onFulfillmentChangeSpy = vi.fn();
+        const listenForEvent = waitForEvent(
+          checkout,
+          "ec.fulfillment.change",
+          onFulfillmentChangeSpy,
+        );
+
+        const payload = makeCheckoutPayload({ fulfillment: { methods: [] } });
+        simulateProtocolMessageEvent(checkout, "ec.fulfillment.change", payload, {
+          source: mockCheckoutWindow,
+        });
+        await listenForEvent;
+
+        expect(checkout.checkout).toBe(payload.checkout);
+        expect(onFulfillmentChangeSpy).toHaveBeenCalledOnce();
+      });
+    });
+
     describe("ec.totals.change", () => {
       it("updates the checkout property and dispatches an ec.totals.change event", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
@@ -1067,6 +1119,57 @@ describe("<shopify-checkout>", () => {
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
         expect(event.detail.lineItems).toBe(payload.checkout.line_items);
+        expect(event.detail.checkout).toBe(payload.checkout);
+      });
+
+      it("ec.buyer.change carries {buyer, checkout}", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const spy = vi.fn();
+        const wait = waitForEvent(checkout, "ec.buyer.change", spy);
+
+        const buyer = { email: "buyer@example.com" };
+        const payload = makeCheckoutPayload({ buyer });
+        simulateProtocolMessageEvent(checkout, "ec.buyer.change", payload, {
+          source: mockCheckoutWindow,
+        });
+        await wait;
+
+        const event = spy.mock.calls[0]![0] as CustomEvent;
+        expect(event.detail.buyer).toBe(buyer);
+        expect(event.detail.checkout).toBe(payload.checkout);
+      });
+
+      it("ec.payment.change carries {payment, checkout}", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const spy = vi.fn();
+        const wait = waitForEvent(checkout, "ec.payment.change", spy);
+
+        const payment = { instruments: [] };
+        const payload = makeCheckoutPayload({ payment });
+        simulateProtocolMessageEvent(checkout, "ec.payment.change", payload, {
+          source: mockCheckoutWindow,
+        });
+        await wait;
+
+        const event = spy.mock.calls[0]![0] as CustomEvent;
+        expect(event.detail.payment).toBe(payment);
+        expect(event.detail.checkout).toBe(payload.checkout);
+      });
+
+      it("ec.fulfillment.change carries {fulfillment, checkout}", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const spy = vi.fn();
+        const wait = waitForEvent(checkout, "ec.fulfillment.change", spy);
+
+        const fulfillment = { methods: [] };
+        const payload = makeCheckoutPayload({ fulfillment });
+        simulateProtocolMessageEvent(checkout, "ec.fulfillment.change", payload, {
+          source: mockCheckoutWindow,
+        });
+        await wait;
+
+        const event = spy.mock.calls[0]![0] as CustomEvent;
+        expect(event.detail.fulfillment).toBe(fulfillment);
         expect(event.detail.checkout).toBe(payload.checkout);
       });
 

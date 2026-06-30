@@ -388,15 +388,18 @@ DOM — including a single delegated listener at `document` if you have many
 elements on the page. Each event carries a typed `event.detail` payload with
 exactly the fields relevant to that moment.
 
-| Event                  | `event.detail`          | When it fires                                                              |
-| ---------------------- | ----------------------- | -------------------------------------------------------------------------- |
-| `ec.start`             | `{checkout}`            | Checkout has loaded and is interactive.                                    |
-| `ec.complete`          | `{checkout, order}`     | The buyer completed the order successfully.                                |
-| `ec.close`             | _(none)_                | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
-| `ec.error`             | `{error}`               | Session-level fatal error — tear down the embedded context.                |
-| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).       |
-| `ec.totals.change`     | `{checkout, totals}`    | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
-| `ec.messages.change`   | `{checkout, messages}`  | Checkout-level warnings/errors/info shown inside the checkout changed.     |
+| Event                   | `event.detail`             | When it fires                                                              |
+| ----------------------- | -------------------------- | -------------------------------------------------------------------------- |
+| `ec.start`              | `{checkout}`               | Checkout has loaded and is interactive.                                    |
+| `ec.complete`           | `{checkout, order}`        | The buyer completed the order successfully.                                |
+| `ec.close`              | _(none)_                   | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
+| `ec.error`              | `{error}`                  | Session-level fatal error — tear down the embedded context.                |
+| `ec.line_items.change`  | `{checkout, lineItems}`    | The cart's line items changed (item added/removed/quantity updated).       |
+| `ec.buyer.change`       | `{checkout, buyer}`        | Buyer details changed.                                                     |
+| `ec.payment.change`     | `{checkout, payment}`      | Payment details changed.                                                   |
+| `ec.fulfillment.change` | `{checkout, fulfillment}` | Fulfillment details changed.                                               |
+| `ec.totals.change`      | `{checkout, totals}`       | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
+| `ec.messages.change`    | `{checkout, messages}`     | Checkout-level warnings/errors/info shown inside the checkout changed.     |
 
 The `checkout` field on every change event is the full UCP `Checkout`
 snapshot, included for handlers that want broader context. Most handlers only

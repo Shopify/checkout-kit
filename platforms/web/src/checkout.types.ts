@@ -2,11 +2,14 @@
 // checkout protocol. Embed payload shapes live in `./ucp-embed-types.ts`.
 
 import type {
+  Buyer,
   Checkout,
+  Fulfillment,
   CheckoutLineItem,
   CheckoutMessage,
   EcReadyParams,
   OrderConfirmation,
+  Payment,
   Total,
   UcpErrorResponse,
 } from "./ucp-embed-types";
@@ -118,6 +121,21 @@ export interface CheckoutEvents {
   "ec.line_items.change": CheckoutLineItemsChangeEvent;
 
   /**
+   * Dispatched when buyer details change.
+   */
+  "ec.buyer.change": CheckoutBuyerChangeEvent;
+
+  /**
+   * Dispatched when payment details change.
+   */
+  "ec.payment.change": CheckoutPaymentChangeEvent;
+
+  /**
+   * Dispatched when fulfillment details change.
+   */
+  "ec.fulfillment.change": CheckoutFulfillmentChangeEvent;
+
+  /**
    * Dispatched when the totals change.
    */
   "ec.totals.change": CheckoutTotalsChangeEvent;
@@ -164,6 +182,36 @@ export interface CheckoutLineItemsChangeEvent {
   detail: {
     /** Updated cart line items. */
     lineItems: readonly CheckoutLineItem[];
+    /** Full checkout snapshot for handlers that want broader context. */
+    checkout: Checkout;
+  };
+}
+
+export interface CheckoutBuyerChangeEvent {
+  type: "ec.buyer.change";
+  detail: {
+    /** Updated buyer details. */
+    buyer: Buyer | undefined;
+    /** Full checkout snapshot for handlers that want broader context. */
+    checkout: Checkout;
+  };
+}
+
+export interface CheckoutPaymentChangeEvent {
+  type: "ec.payment.change";
+  detail: {
+    /** Updated payment details. */
+    payment: Payment | undefined;
+    /** Full checkout snapshot for handlers that want broader context. */
+    checkout: Checkout;
+  };
+}
+
+export interface CheckoutFulfillmentChangeEvent {
+  type: "ec.fulfillment.change";
+  detail: {
+    /** Updated fulfillment details. */
+    fulfillment: Fulfillment | undefined;
     /** Full checkout snapshot for handlers that want broader context. */
     checkout: Checkout;
   };
@@ -236,6 +284,9 @@ export interface CheckoutProtocolMessageMap {
   "ec.complete": CheckoutPayload;
   "ec.error": EcErrorParams;
   "ec.line_items.change": CheckoutPayload;
+  "ec.buyer.change": CheckoutPayload;
+  "ec.payment.change": CheckoutPayload;
+  "ec.fulfillment.change": CheckoutPayload;
   "ec.totals.change": CheckoutPayload;
   "ec.messages.change": CheckoutPayload;
   "ec.window.open_request": { url: string };
@@ -244,10 +295,12 @@ export interface CheckoutProtocolMessageMap {
 export type {
   Buyer,
   Checkout,
+  Fulfillment,
   CheckoutLineItem,
   CheckoutMessage,
   EcReadyParams,
   OrderConfirmation,
+  Payment,
   Total,
   UcpErrorResponse,
 } from "./ucp-embed-types";

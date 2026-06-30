@@ -7,9 +7,12 @@ import type {
   CheckoutTarget,
   TypedEventListener,
   CheckoutProtocolMessageData,
+  Buyer,
   Checkout,
+  Fulfillment,
   CheckoutLineItem,
   CheckoutMessage,
+  Payment,
   Total,
   OrderConfirmation,
   UcpErrorResponse,
@@ -65,6 +68,9 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @event ec.complete - Dispatched when the checkout was successfully completed
  * @event ec.error - Dispatched on a session-level fatal error
  * @event ec.line_items.change - Dispatched when cart line items change
+ * @event ec.buyer.change - Dispatched when buyer details change
+ * @event ec.payment.change - Dispatched when payment details change
+ * @event ec.fulfillment.change - Dispatched when fulfillment details change
  * @event ec.totals.change - Dispatched when totals change
  * @event ec.messages.change - Dispatched when checkout messages change
  * @event ec.close - Dispatched when the checkout overlay is closed (synthetic, not part of ECP)
@@ -578,6 +584,37 @@ export class ShopifyCheckout
         );
         break;
       }
+      case "ec.buyer.change": {
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.buyer.change"]).checkout;
+        this.dispatchEvent(
+          new ShopifyCheckoutBuyerChangeEvent({
+            checkout,
+            buyer: checkout.buyer,
+          }),
+        );
+        break;
+      }
+      case "ec.payment.change": {
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.payment.change"]).checkout;
+        this.dispatchEvent(
+          new ShopifyCheckoutPaymentChangeEvent({
+            checkout,
+            payment: checkout.payment,
+          }),
+        );
+        break;
+      }
+      case "ec.fulfillment.change": {
+        const checkout = (message.body as CheckoutProtocolMessageMap["ec.fulfillment.change"])
+          .checkout;
+        this.dispatchEvent(
+          new ShopifyCheckoutFulfillmentChangeEvent({
+            checkout,
+            fulfillment: checkout.fulfillment,
+          }),
+        );
+        break;
+      }
       case "ec.totals.change": {
         const checkout = (message.body as CheckoutProtocolMessageMap["ec.totals.change"]).checkout;
         this.dispatchEvent(
@@ -750,6 +787,24 @@ export class ShopifyCheckout
   ): void;
 
   override addEventListener(
+    type: "ec.buyer.change",
+    listener: TypedEventListener<ShopifyCheckoutBuyerChangeEvent> | null,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+
+  override addEventListener(
+    type: "ec.payment.change",
+    listener: TypedEventListener<ShopifyCheckoutPaymentChangeEvent> | null,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+
+  override addEventListener(
+    type: "ec.fulfillment.change",
+    listener: TypedEventListener<ShopifyCheckoutFulfillmentChangeEvent> | null,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+
+  override addEventListener(
     type: "ec.totals.change",
     listener: TypedEventListener<ShopifyCheckoutTotalsChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
@@ -796,6 +851,27 @@ export interface ShopifyCheckoutErrorEventDetail {
 export interface ShopifyCheckoutLineItemsChangeEventDetail {
   /** Updated cart line items. */
   lineItems: readonly CheckoutLineItem[];
+  /** Full checkout snapshot for handlers that want broader context. */
+  checkout: Checkout;
+}
+
+export interface ShopifyCheckoutBuyerChangeEventDetail {
+  /** Updated buyer details. */
+  buyer: Buyer | undefined;
+  /** Full checkout snapshot for handlers that want broader context. */
+  checkout: Checkout;
+}
+
+export interface ShopifyCheckoutPaymentChangeEventDetail {
+  /** Updated payment details. */
+  payment: Payment | undefined;
+  /** Full checkout snapshot for handlers that want broader context. */
+  checkout: Checkout;
+}
+
+export interface ShopifyCheckoutFulfillmentChangeEventDetail {
+  /** Updated fulfillment details. */
+  fulfillment: Fulfillment | undefined;
   /** Full checkout snapshot for handlers that want broader context. */
   checkout: Checkout;
 }
@@ -859,6 +935,30 @@ export class ShopifyCheckoutLineItemsChangeEvent extends CustomEvent<ShopifyChec
   }
 }
 
+export class ShopifyCheckoutBuyerChangeEvent extends CustomEvent<ShopifyCheckoutBuyerChangeEventDetail> {
+  declare type: "ec.buyer.change";
+
+  constructor(detail: ShopifyCheckoutBuyerChangeEventDetail) {
+    super("ec.buyer.change", { detail, bubbles: true });
+  }
+}
+
+export class ShopifyCheckoutPaymentChangeEvent extends CustomEvent<ShopifyCheckoutPaymentChangeEventDetail> {
+  declare type: "ec.payment.change";
+
+  constructor(detail: ShopifyCheckoutPaymentChangeEventDetail) {
+    super("ec.payment.change", { detail, bubbles: true });
+  }
+}
+
+export class ShopifyCheckoutFulfillmentChangeEvent extends CustomEvent<ShopifyCheckoutFulfillmentChangeEventDetail> {
+  declare type: "ec.fulfillment.change";
+
+  constructor(detail: ShopifyCheckoutFulfillmentChangeEventDetail) {
+    super("ec.fulfillment.change", { detail, bubbles: true });
+  }
+}
+
 export class ShopifyCheckoutTotalsChangeEvent extends CustomEvent<ShopifyCheckoutTotalsChangeEventDetail> {
   declare type: "ec.totals.change";
 
@@ -885,6 +985,9 @@ const CHECKOUT_PROTOCOL_MESSAGES: (keyof CheckoutProtocolMessageMap)[] = [
   "ec.complete",
   "ec.error",
   "ec.line_items.change",
+  "ec.buyer.change",
+  "ec.payment.change",
+  "ec.fulfillment.change",
   "ec.totals.change",
   "ec.messages.change",
   "ec.window.open_request",
