@@ -7,6 +7,7 @@ import XCTest
 class CheckoutViewDelegateTests: XCTestCase {
     private var customTitle: String?
     private let checkoutURL = URL(string: "https://checkout-sdk.myshopify.com")!
+    private let expectedCloseButtonIdentifier = "shopify_checkout_kit_close_button"
     private var viewController: MockCheckoutWebViewController!
     private var navigationController: UINavigationController!
 
@@ -86,6 +87,7 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertNotNil(closeButton)
         XCTAssertEqual(closeButton?.style, .plain)
         XCTAssertNil(closeButton?.image)
+        XCTAssertEqual(closeButton?.accessibilityIdentifier, expectedCloseButtonIdentifier)
     }
 
     func testCloseButtonUsesCustomImageAndTintWhenColorIsSet() {
@@ -98,6 +100,7 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertEqual(closeButton?.style, .plain)
         XCTAssertNotNil(closeButton?.image)
         XCTAssertEqual(closeButton?.tintColor, customColor)
+        XCTAssertEqual(closeButton?.accessibilityIdentifier, expectedCloseButtonIdentifier)
     }
 
     func testCloseButtonImageIsXMarkCircleFill() {

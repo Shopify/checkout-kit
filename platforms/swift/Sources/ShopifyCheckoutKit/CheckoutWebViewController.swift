@@ -3,6 +3,10 @@ import WebKit
 
 @MainActor
 class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControllerDelegate {
+    /// Stable identifier consumed by React Native Maestro E2E tests.
+    /// Keep this value in sync with the checkout close selector used by E2E flows.
+    private static let closeButtonAccessibilityIdentifier = "shopify_checkout_kit_close_button"
+
     var onCancel: (() -> Void)?
     var onFail: ((CheckoutError) -> Void)?
     weak var delegate: (any CheckoutDelegate)?
@@ -41,14 +45,17 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
             }
 
             item.tintColor = closeButtonTintColor
+            item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
             return item
         }
 
-        return UIBarButtonItem(
+        let item = UIBarButtonItem(
             barButtonSystemItem: .close,
             target: self,
             action: #selector(close)
         )
+        item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
+        return item
     }()
 
     var progressObserver: NSKeyValueObservation?
