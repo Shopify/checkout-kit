@@ -1,0 +1,33 @@
+appId: ${APP_ID}
+name: React Native full guest checkout
+
+env:
+  # Checkout contact fixture
+  EMAIL: "maestro.e2e@shopify.com"
+  FIRST_NAME: "Maestro"
+  LAST_NAME: "Shopify"
+
+  # Checkout shipping fixture
+  COUNTRY_LABEL: "United States"
+  ADDRESS_LINE1: "700 S Flower St"
+  CITY: "Los Angeles"
+  STATE_FIELD_LABEL: "State"
+  STATE_LABEL: "California"
+  POSTAL_CODE: "90017"
+  POSTAL_FIELD_LABEL: "ZIP code"
+
+  # Checkout payment fixture
+  CARD_NUMBER: "1"
+  CARD_SECURITY_CODE: "123"
+
+  # Accepted successful checkout states for this smoke test.
+  POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- runFlow: ../../flows/checkout/present.yaml
+- runFlow: ../../flows/checkout/fill-contact.yaml
+- runFlow: ../../flows/checkout/fill-shipping-address.yaml
+- runFlow: ../../flows/checkout/fill-payment-card.yaml
+- runFlow: ../../flows/checkout/submit.yaml
+- runFlow: ../../flows/checkout/assert-complete.yaml
+- runFlow: ../../flows/checkout/assert-returned-to-empty-cart.yaml

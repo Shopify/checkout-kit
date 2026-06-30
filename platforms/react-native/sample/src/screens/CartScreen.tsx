@@ -44,7 +44,6 @@ function CartScreen(): React.JSX.Element {
     addingToCart,
     clearCart,
   } = useCart();
-  const checkoutCompletedRef = React.useRef(false);
   const {queries} = useShopify();
   const {appConfig} = useConfig();
   // Separate handler instances so debug logs are labelled with the actual
@@ -56,7 +55,7 @@ function CartScreen(): React.JSX.Element {
     'Cart - CheckoutSheet Protocol',
     {
       [CheckoutProtocol.complete]: () => {
-        checkoutCompletedRef.current = true;
+        clearCart();
       },
     },
   );
@@ -119,14 +118,8 @@ function CartScreen(): React.JSX.Element {
         {
           onClose: () => {
             sheetEventHandlers.onCancel?.();
-
-            if (checkoutCompletedRef.current) {
-              checkoutCompletedRef.current = false;
-              clearCart();
-            }
           },
           onFail: error => {
-            checkoutCompletedRef.current = false;
             sheetEventHandlers.onFail?.(error);
           },
         },

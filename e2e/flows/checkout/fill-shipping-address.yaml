@@ -1,0 +1,93 @@
+appId: ${APP_ID}
+---
+- scrollUntilVisible:
+    element:
+      text: "Country/Region"
+    direction: DOWN
+
+# If the country is already selected and visible, skip this. Otherwise open the
+# picker, only scroll if needed, then select the configured country.
+- runFlow:
+    when:
+      notVisible: "^${COUNTRY_LABEL}$"
+    commands:
+      - tapOn:
+          text: "Country/Region"
+      - waitForAnimationToEnd
+      - runFlow:
+          when:
+            notVisible: "^${COUNTRY_LABEL}$"
+          commands:
+            - scrollUntilVisible:
+                element:
+                  text: "^${COUNTRY_LABEL}$"
+                direction: DOWN
+                visibilityPercentage: 10
+                optional: true
+      - runFlow:
+          when:
+            notVisible: "^${COUNTRY_LABEL}$"
+          commands:
+            - scrollUntilVisible:
+                element:
+                  text: "^${COUNTRY_LABEL}$"
+                direction: UP
+                visibilityPercentage: 10
+      - tapOn:
+          text: "^${COUNTRY_LABEL}$"
+      - waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "Address"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    text: "Address"
+- waitForAnimationToEnd
+- inputText: "${ADDRESS_LINE1}"
+- runFlow: dismiss-active-field.yaml
+- scrollUntilVisible:
+    element:
+      text: "^City$"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    text: "^City$"
+- waitForAnimationToEnd
+- inputText: "${CITY}"
+- runFlow: dismiss-active-field.yaml
+- scrollUntilVisible:
+    element:
+      text: "^${STATE_FIELD_LABEL}$"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    text: "^${STATE_FIELD_LABEL}$"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      notVisible: "^${STATE_LABEL}$"
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^${STATE_LABEL}$"
+          direction: DOWN
+          visibilityPercentage: 10
+          optional: true
+- runFlow:
+    when:
+      notVisible: "^${STATE_LABEL}$"
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^${STATE_LABEL}$"
+          direction: UP
+          visibilityPercentage: 10
+- tapOn:
+    text: "^${STATE_LABEL}$"
+- waitForAnimationToEnd
+- tapOn:
+    text: "^${POSTAL_FIELD_LABEL}$"
+- waitForAnimationToEnd
+- inputText: "${POSTAL_CODE}"
+- runFlow: dismiss-active-field.yaml
