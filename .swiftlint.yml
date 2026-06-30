@@ -15,7 +15,7 @@ included:
 excluded:
   - platforms/swift/Samples
   - platforms/swift/Sources/ShopifyCheckoutKit/Models.swift
-  - protocol/languages/swift/Sources/ShopifyCheckoutProtocol/Generated
+  - protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Generated
 
 opt_in_rules:
   - array_init

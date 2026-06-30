@@ -1,4 +1,4 @@
-@testable import ShopifyCheckoutProtocol
+@testable import EmbeddedCheckoutProtocol
 import Foundation
 import Testing
 

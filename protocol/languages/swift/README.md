@@ -1,6 +1,6 @@
-# ShopifyCheckoutProtocol - Swift
+# EmbeddedCheckoutProtocol - Swift
 
-`ShopifyCheckoutProtocol` is the Swift client for UCP-backed checkout messages emitted by Shopify checkout. Checkout Kit uses it to decode lifecycle notifications such as checkout start, completion, totals changes, line item changes, checkout messages, and checkout errors.
+`EmbeddedCheckoutProtocol` is the Swift client for UCP-backed checkout messages emitted by Shopify checkout. Checkout Kit uses it to decode lifecycle notifications such as checkout start, completion, totals changes, line item changes, checkout messages, and checkout errors.
 
 See the [UCP shopping embedded protocol schema](../../services/shopping/embedded.openrpc.json) for method and payload definitions.
 
@@ -21,12 +21,12 @@ dependencies: [
 ]
 ```
 
-Then add `ShopifyCheckoutProtocol` to your target:
+Then add `EmbeddedCheckoutProtocol` to your target:
 
 ```swift
 .target(
   name: "YourTarget",
-  dependencies: ["ShopifyCheckoutProtocol"]
+  dependencies: ["EmbeddedCheckoutProtocol"]
 )
 ```
 
@@ -35,7 +35,7 @@ For local protocol development, this directory also contains a standalone `Packa
 ## Usage
 
 ```swift
-import ShopifyCheckoutProtocol
+import EmbeddedCheckoutProtocol
 
 let client = CheckoutProtocol.Client()
   .on(CheckoutProtocol.start) { checkout in
@@ -57,7 +57,7 @@ Checkout Kit's Swift SDK accepts `CheckoutProtocol.Client` anywhere it accepts `
 
 ```swift
 import ShopifyCheckoutKit
-import ShopifyCheckoutProtocol
+import EmbeddedCheckoutProtocol
 
 ShopifyCheckoutKit.present(
   checkout: checkoutURL,

@@ -1,6 +1,6 @@
+import EmbeddedCheckoutProtocol
 import OSLog
 import ShopifyCheckoutKit
-import ShopifyCheckoutProtocol
 import UIKit
 
 class CheckoutCoordinator: UIViewController {

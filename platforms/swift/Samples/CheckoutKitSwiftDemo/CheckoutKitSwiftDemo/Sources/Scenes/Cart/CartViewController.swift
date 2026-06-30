@@ -1,7 +1,7 @@
 import ApolloAPI
 import Combine
+import EmbeddedCheckoutProtocol
 import ShopifyCheckoutKit
-import ShopifyCheckoutProtocol
 import SwiftUI
 import UIKit
 

@@ -10,7 +10,7 @@ const protocolRoot = path.resolve(scriptDir, '..');
 
 const outputPath = path.resolve(
   protocolRoot,
-  'languages/swift/Sources/ShopifyCheckoutProtocol/Generated/EmbeddedCheckoutProtocol+Event.swift',
+  'languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Generated/EmbeddedCheckoutProtocol+Event.swift',
 );
 
 const notifications = EC_METHODS.filter(entry => entry.kind === 'notification');

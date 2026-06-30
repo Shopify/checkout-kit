@@ -100,7 +100,7 @@ cd platforms/swift && ./Scripts/lint fix
 
 ### Public API surface
 
-The library's public API is tracked via committed baselines under `platforms/swift/api/`, one JSON file per module (`ShopifyCheckoutProtocol.json`, `ShopifyCheckoutKit.json`, `ShopifyAcceleratedCheckouts.json`). They are produced by `xcrun swift-api-digester -dump-sdk` against the built `.swiftmodule` files. The unified `Breaking Changes` CI workflow runs `dev swift api check` on every PR that touches Swift sources and fails if the digester output for any module diverges from its committed baseline.
+The library's public API is tracked via committed baselines under `platforms/swift/api/`, one JSON file per module (`EmbeddedCheckoutProtocol.json`, `ShopifyCheckoutKit.json`, `ShopifyAcceleratedCheckouts.json`). They are produced by `xcrun swift-api-digester -dump-sdk` against the built `.swiftmodule` files. The unified `Breaking Changes` CI workflow runs `dev swift api check` on every PR that touches Swift sources and fails if the digester output for any module diverges from its committed baseline.
 
 If your change intentionally modifies the public API:
 

@@ -3,26 +3,26 @@
 import PackageDescription
 
 let package = Package(
-    name: "ShopifyCheckoutProtocol",
+    name: "EmbeddedCheckoutProtocol",
     platforms: [
         .iOS(.v15),
         .macOS(.v10_15),
     ],
     products: [
         .library(
-            name: "ShopifyCheckoutProtocol",
-            targets: ["ShopifyCheckoutProtocol"]
+            name: "EmbeddedCheckoutProtocol",
+            targets: ["EmbeddedCheckoutProtocol"]
         ),
     ],
     targets: [
         .target(
-            name: "ShopifyCheckoutProtocol",
-            path: "Sources/ShopifyCheckoutProtocol"
+            name: "EmbeddedCheckoutProtocol",
+            path: "Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol"
         ),
         .testTarget(
-            name: "ShopifyCheckoutProtocolTests",
-            dependencies: ["ShopifyCheckoutProtocol"],
-            path: "Tests/ShopifyCheckoutProtocolTests",
+            name: "EmbeddedCheckoutProtocolTests",
+            dependencies: ["EmbeddedCheckoutProtocol"],
+            path: "Tests/EmbeddedCheckoutProtocolTests",
             resources: [
                 .copy("Fixtures"),
             ]

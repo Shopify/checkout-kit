@@ -442,7 +442,7 @@ async function generateSwift(specDir, output) {
     // quicktype's --sendable option marks generated models as Sendable, but quicktype 23.2.6
     // still emits dynamic JSON helper types that are not fully Swift 6 concurrency-safe.
     // Drop only the exact helper suffix quicktype 23.2.6 emits. Maintained helper
-    // implementations live in ShopifyCheckoutProtocol/JSONAny.swift so Swift tooling can
+    // implementations live in UniversalCommerceProtocol/EmbeddedCheckoutProtocol/JSONAny.swift so Swift tooling can
     // lint, format, and type-check them normally.
     const helperStart = source.indexOf(SWIFT_JSON_HELPER_MARKER);
     if (helperStart === -1) {
@@ -551,7 +551,7 @@ async function main() {
         break;
       }
       case "swift": {
-        const target = output || path.join(PROTOCOL_DIR, "languages", "swift", "Sources", "ShopifyCheckoutProtocol", "Generated", "Models.swift");
+        const target = output || path.join(PROTOCOL_DIR, "languages", "swift", "Sources", "UniversalCommerceProtocol", "EmbeddedCheckoutProtocol", "Generated", "Models.swift");
         await generateSwift(specDir, target);
         console.log(`Generated ${target}`);
         break;

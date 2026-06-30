@@ -19,8 +19,8 @@ let package = Package(
             targets: ["ShopifyAcceleratedCheckouts"]
         ),
         .library(
-            name: "ShopifyCheckoutProtocol",
-            targets: ["ShopifyCheckoutProtocol"]
+            name: "EmbeddedCheckoutProtocol",
+            targets: ["EmbeddedCheckoutProtocol"]
         )
     ],
     dependencies: [
@@ -32,12 +32,12 @@ let package = Package(
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
-            name: "ShopifyCheckoutProtocol",
-            path: "protocol/languages/swift/Sources/ShopifyCheckoutProtocol"
+            name: "EmbeddedCheckoutProtocol",
+            path: "protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol"
         ),
         .target(
             name: "ShopifyCheckoutKit",
-            dependencies: ["ShopifyCheckoutProtocol"],
+            dependencies: ["EmbeddedCheckoutProtocol"],
             path: "platforms/swift/Sources/ShopifyCheckoutKit",
             resources: [.process("Assets.xcassets")]
         ),
@@ -48,9 +48,9 @@ let package = Package(
             resources: [.process("Localizable.xcstrings"), .process("Media.xcassets")]
         ),
         .testTarget(
-            name: "ShopifyCheckoutProtocolTests",
-            dependencies: ["ShopifyCheckoutProtocol"],
-            path: "protocol/languages/swift/Tests/ShopifyCheckoutProtocolTests",
+            name: "EmbeddedCheckoutProtocolTests",
+            dependencies: ["EmbeddedCheckoutProtocol"],
+            path: "protocol/languages/swift/Tests/EmbeddedCheckoutProtocolTests",
             resources: [.copy("Fixtures")]
         ),
         .testTarget(

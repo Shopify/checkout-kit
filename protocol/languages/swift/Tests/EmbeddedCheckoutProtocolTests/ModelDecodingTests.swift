@@ -1,5 +1,5 @@
 import Foundation
-@testable import ShopifyCheckoutProtocol
+@testable import EmbeddedCheckoutProtocol
 import Testing
 
 @Suite("Model Decoding Tests")
