@@ -1,6 +1,7 @@
 import { createTemplate, html } from "./utils";
 import type {
   CheckoutAttributes,
+  CheckoutColorScheme,
   CheckoutMethods,
   CheckoutProperties,
   CheckoutProtocolMessageMap,
@@ -59,6 +60,7 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * checkout URL (typically retrieved from the `cart.checkoutUrl` field), and then call `open()`.
  *
  * @attribute src - The URL of the checkout to load.
+ * @attribute color-scheme - The checkout color scheme preference (auto, light, or dark).
  * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
  *
  * @event ec.start - Dispatched when the checkout has started
@@ -83,7 +85,7 @@ export class ShopifyCheckout
   extends HTMLElement
   implements CheckoutAttributes, CheckoutMethods, CheckoutProperties
 {
-  static observedAttributes = ["src", "target"] as const;
+  static observedAttributes = ["src", "color-scheme", "target"] as const;
 
   constructor() {
     super();
@@ -134,12 +136,30 @@ export class ShopifyCheckout
     // does not support passing auth via query string.
     url.searchParams.delete("ec_auth");
 
+    url.searchParams.delete("ec_color_scheme");
+    const colorScheme = this.#resolvedColorScheme();
+    if (colorScheme) {
+      url.searchParams.set("ec_color_scheme", colorScheme);
+    }
+
     url.searchParams.set("ec_version", EMBED_PROTOCOL_VERSION);
     if (EMBED_DELEGATIONS.length > 0) {
       url.searchParams.set("ec_delegate", EMBED_DELEGATIONS.join(","));
     }
     url.searchParams.set("ck_version", CK_VERSION);
     return url;
+  }
+
+  get colorScheme(): CheckoutColorScheme {
+    const colorScheme = this.getAttribute("color-scheme");
+    if (colorScheme === "auto" || colorScheme === "light" || colorScheme === "dark") {
+      return colorScheme;
+    }
+    return "auto";
+  }
+
+  set colorScheme(value: CheckoutColorScheme | undefined) {
+    this.#setAttribute("color-scheme", value);
   }
 
   /**
@@ -180,6 +200,22 @@ export class ShopifyCheckout
       this.setAttribute(name, value);
     } else {
       this.removeAttribute(name);
+    }
+  }
+
+  #resolvedColorScheme(): "light" | "dark" | undefined {
+    const colorScheme = this.getAttribute("color-scheme");
+
+    switch (colorScheme) {
+      case "light":
+      case "dark":
+        return colorScheme;
+      case "auto":
+      case null:
+        return undefined;
+      default:
+        this.#debugWarn(`color-scheme="${colorScheme}" is invalid; falling back to "auto"`);
+        return undefined;
     }
   }
 
@@ -699,6 +735,9 @@ export class ShopifyCheckout
 
     switch (name) {
       case "src":
+        this.#updateOverlayLink();
+        break;
+      case "color-scheme":
         this.#updateOverlayLink();
         break;
       case "target": {

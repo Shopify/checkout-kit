@@ -40,6 +40,7 @@ const buyHint = $<HTMLParagraphElement>("#buy-hint");
 const stateNodes = {
   checkout: $<HTMLElement>("#state-checkout"),
   error: $<HTMLElement>("#state-error"),
+  colorScheme: $<HTMLElement>("#state-color-scheme"),
   target: $<HTMLElement>("#state-target"),
   debug: $<HTMLElement>("#state-debug"),
 };
@@ -70,6 +71,7 @@ function setStringAttribute(el: HTMLElement, name: string, value: FormDataEntryV
 function syncAttributes(): void {
   const data = new FormData(form);
   setStringAttribute(checkout, "src", data.get("src"));
+  setStringAttribute(checkout, "color-scheme", data.get("colorScheme"));
   setStringAttribute(checkout, "target", data.get("target"));
   if (data.has("debug")) {
     checkout.setAttribute("debug", "");
@@ -153,6 +155,7 @@ function snapshotState(): Record<string, unknown> {
   return {
     checkout: checkout.checkout,
     error: checkout.error,
+    colorScheme: checkout.colorScheme,
     target: checkout.target,
     debug: checkout.debug,
   };
@@ -161,6 +164,7 @@ function snapshotState(): Record<string, unknown> {
 function refreshState(): void {
   stateNodes.checkout.textContent = formatValue(checkout.checkout);
   stateNodes.error.textContent = formatValue(checkout.error);
+  stateNodes.colorScheme.textContent = formatValue(checkout.colorScheme);
   stateNodes.target.textContent = formatValue(checkout.target);
   stateNodes.debug.textContent = formatValue(checkout.debug);
 }

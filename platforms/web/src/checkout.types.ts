@@ -29,10 +29,13 @@ import type {
 
 // Documentation-safe types:
 
+export type CheckoutColorScheme = "auto" | "light" | "dark";
+
 export type CheckoutTarget = "auto" | "popup" | "_blank";
 
 export interface CheckoutAttributes {
   src?: string;
+  "color-scheme"?: CheckoutColorScheme;
   target?: CheckoutTarget | string;
   debug?: boolean | string;
 }
@@ -60,6 +63,16 @@ export interface CheckoutProperties {
    * or this property interchangeably.
    */
   src?: string;
+
+  /**
+   * The checkout color scheme preference. Defaults to `'auto'`.
+   * - `'auto'`: Does not send `ec_color_scheme`, so checkout can follow system preference
+   * - `'light'`: Opens checkout with `ec_color_scheme=light`
+   * - `'dark'`: Opens checkout with `ec_color_scheme=dark`
+   *
+   * This property is automatically reflected to the `color-scheme` attribute.
+   */
+  colorScheme?: CheckoutColorScheme;
 
   /**
    * The mode in which to display the checkout when opened. Defaults to `'auto'`.

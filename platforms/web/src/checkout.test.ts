@@ -45,6 +45,15 @@ describe("<shopify-checkout>", () => {
         expect(checkout.src).toBe(newSrc);
       });
     });
+
+    describe("color-scheme", () => {
+      it("changing the color-scheme attribute reflects to the colorScheme property", () => {
+        const checkout = renderCheckout();
+        checkout.setAttribute("color-scheme", "dark");
+
+        expect(checkout.colorScheme).toBe("dark");
+      });
+    });
   });
 
   describe("target", () => {
@@ -101,6 +110,15 @@ describe("<shopify-checkout>", () => {
         checkout.src = newSrc;
 
         expect(checkout.getAttribute("src")).toBe(newSrc);
+      });
+    });
+
+    describe("colorScheme", () => {
+      it("changing the colorScheme property reflects to the color-scheme attribute", () => {
+        const checkout = renderCheckout();
+        checkout.colorScheme = "light";
+
+        expect(checkout.getAttribute("color-scheme")).toBe("light");
       });
     });
 
@@ -189,6 +207,44 @@ describe("<shopify-checkout>", () => {
       expect(url.searchParams.get("keep")).toBe("1");
       expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
     });
+
+    it.each(["light", "dark"] as const)(
+      "passes colorScheme=%s to checkout as ec_color_scheme",
+      (colorScheme) => {
+        const checkout = renderCheckout({
+          "color-scheme": colorScheme,
+          src: "https://example.com/checkout?ec_color_scheme=stale&keep=1",
+        });
+
+        const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+        checkout.open();
+
+        const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+        expect(url.searchParams.getAll("ec_color_scheme")).toEqual([colorScheme]);
+        expect(url.searchParams.get("keep")).toBe("1");
+      },
+    );
+
+    it.each([undefined, "auto", "invalid"])(
+      "omits ec_color_scheme when colorScheme resolves to auto from %s",
+      (colorScheme) => {
+        const checkout = renderCheckout({
+          "color-scheme": colorScheme,
+          debug: colorScheme === "invalid" ? "" : undefined,
+          src: "https://example.com/checkout?ec_color_scheme=stale&keep=1",
+        });
+
+        const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        checkout.open();
+
+        const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+        expect(url.searchParams.get("ec_color_scheme")).toBeNull();
+        expect(url.searchParams.get("keep")).toBe("1");
+      },
+    );
 
     it("handles invalid src URL gracefully", () => {
       const checkout = renderCheckout();

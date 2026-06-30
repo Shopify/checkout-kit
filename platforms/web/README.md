@@ -33,6 +33,7 @@ Check out our blog to
 - [Usage with the Shopify Storefront API](#usage-with-the-shopify-storefront-api)
 - [Configuration](#configuration)
   - [`src`](#src)
+  - [`color-scheme`](#color-scheme)
   - [`target`](#target)
   - [`debug`](#debug)
   - [Popup dimensions](#popup-dimensions)
@@ -216,7 +217,13 @@ declare module 'react' {
       'shopify-checkout': DetailedHTMLProps<
         HTMLAttributes<ShopifyCheckout>,
         ShopifyCheckout
-      > & {src?: string; target?: string; debug?: boolean};
+      > & {
+        src?: string;
+        'color-scheme'?: string;
+        colorScheme?: string;
+        target?: string;
+        debug?: boolean;
+      };
     }
   }
 }
@@ -320,8 +327,33 @@ checkout.src = 'https://your-store.myshopify.com/checkouts/cn/abc123';
 
 The component appends a handful of query parameters to `src` when it opens
 checkout: `ec_version` (Embedded Checkout Protocol version),
-`ec_delegate` (which capabilities the host delegates), and `ck_version`
-(the Checkout Kit version).
+`ec_delegate` (which capabilities the host delegates), `ec_color_scheme` when
+configured, and `ck_version` (the Checkout Kit version).
+
+### `color-scheme`
+
+The checkout color scheme preference. Defaults to `"auto"`.
+
+| Value     | Behavior                                                                  |
+| --------- | ------------------------------------------------------------------------- |
+| `"auto"`  | Omits `ec_color_scheme`, so checkout can follow system preference.         |
+| `"light"` | Opens checkout with `ec_color_scheme=light`.                              |
+| `"dark"`  | Opens checkout with `ec_color_scheme=dark`.                               |
+
+Use the `color-scheme` attribute in HTML or the `colorScheme` property in
+JavaScript:
+
+```html
+<shopify-checkout
+  src="https://your-store.myshopify.com/checkouts/cn/abc123"
+  color-scheme="dark"
+/>
+```
+
+```ts
+checkout.colorScheme = 'dark';
+checkout.open();
+```
 
 ### `target`
 
