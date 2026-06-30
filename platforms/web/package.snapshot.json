@@ -14,12 +14,9 @@
   "README.md",
   "src/checkout-web-component.ts",
   "src/checkout.styles.ts",
-  "src/checkout.test.ts",
   "src/checkout.ts",
   "src/checkout.types.ts",
-  "src/index.test.ts",
   "src/index.ts",
   "src/ucp-embed-types.ts",
-  "src/utils.test.ts",
   "src/utils.ts"
 ]

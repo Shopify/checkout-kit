@@ -9,6 +9,9 @@ build/
 coverage/
 custom-elements.json
 
+# Temporary snapshot from compare_snapshot
+snapshot.json
+
 # Logs
 *.log
 npm-debug.log*
