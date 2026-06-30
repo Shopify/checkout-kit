@@ -178,7 +178,10 @@ internal class EmbeddedCheckoutProtocolBridge(
                 when (val result = ExternalUriLauncher.launch(view.context, request.url.toUri())) {
                     is ExternalUriLauncher.Result.Launched -> windowOpenSuccess()
                     is ExternalUriLauncher.Result.Rejected -> {
-                        log.d(LOG_TAG, "window.open rejected for ${request.url.redactedUrlForLogging()}: ${result.reason}")
+                        log.d(
+                            LOG_TAG,
+                            "window.open rejected for ${request.url.redactedUrlForLogging()}: ${result.reason}"
+                        )
                         windowOpenRejected(reason = result.reason)
                     }
                 }
