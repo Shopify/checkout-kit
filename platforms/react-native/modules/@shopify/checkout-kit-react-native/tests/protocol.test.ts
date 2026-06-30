@@ -34,10 +34,30 @@ describe('CheckoutProtocol', () => {
   });
 
   describe('wire payload decoding', () => {
-    it('returns undefined for methods without a registered payload decoder', () => {
+    it('returns undefined for methods absent from the protocol catalog', () => {
       expect(decodeProtocolPayload('ec.unknown', {})).toBeUndefined();
-      expect(decodeProtocolPayload('ec.buyer.change', {})).toBeUndefined();
-      expect(decodeProtocolPayload('ec.payment.change', {})).toBeUndefined();
+    });
+
+    it('decodes catalog notifications outside the public CheckoutProtocol subset', () => {
+      const checkoutEnvelope = {
+        id: 'checkout-123',
+        currency: 'USD',
+        status: 'incomplete',
+        line_items: [],
+        totals: [],
+        links: [],
+        ucp: {
+          version: '2026-04-08',
+          payment_handlers: {},
+        },
+      };
+
+      expect(decodeProtocolPayload('ec.buyer.change', checkoutEnvelope)?.id).toBe(
+        'checkout-123',
+      );
+      expect(
+        decodeProtocolPayload('ec.payment.change', checkoutEnvelope)?.id,
+      ).toBe('checkout-123');
     });
 
     it.each(checkoutPayloadMethods)(

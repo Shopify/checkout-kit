@@ -3,124 +3,44 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {EC_METHODS} from './method_catalog.mjs';
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const protocolRoot = path.resolve(scriptDir, '..');
 
-const openRpcPath = path.resolve(
-  protocolRoot,
-  'services/shopping/embedded.openrpc.json',
-);
 const outputPath = path.resolve(
   protocolRoot,
   'languages/typescript/src/generated/ProtocolNotifications.ts',
 );
 
-const schemasRoot = path.resolve(protocolRoot, 'schemas');
-
-const refMappings = new Map([
-  [
-    path.join(schemasRoot, 'shopping/checkout.json'),
-    {
-      typeName: 'Checkout',
-      converter: 'Convert.toCheckout',
-    },
-  ],
-  [
-    path.join(schemasRoot, 'common/types/error_response.json'),
-    {
-      typeName: 'ErrorResponse',
-      converter: 'Convert.toErrorResponse',
-    },
-  ],
+// TypeScript-specific notification decode wiring: each payload model maps to its
+// generated `Convert` entrypoint. Mirrors the Swift/Kotlin catalogs' per-payload
+// bindings. A notification whose payload has no binding fails loudly rather than
+// silently dropping out of the catalog.
+const NOTIFICATION_BINDINGS = new Map([
+  ['Checkout', 'Convert.toCheckout'],
+  ['ErrorResponse', 'Convert.toErrorResponse'],
 ]);
 
-function resolvePointer(doc, pointer) {
-  if (!pointer) return doc;
-
-  return pointer
-    .split('/')
-    .filter(Boolean)
-    .reduce((node, rawSegment) => {
-      if (node == null) return undefined;
-      const segment = rawSegment.replace(/~1/g, '/').replace(/~0/g, '~');
-      return node[segment];
-    }, doc);
+function notificationConverter(entry) {
+  const converter = NOTIFICATION_BINDINGS.get(entry.payload);
+  if (converter === undefined) {
+    throw new Error(
+      `No TypeScript notification binding for payload ${entry.payload} (${entry.method})`,
+    );
+  }
+  return converter;
 }
 
-function methodNameToIdentifier(methodName) {
-  const suffix = methodName.replace(/^ec\./, '');
-  const parts = suffix.split(/[._]/g).filter(Boolean);
-
-  return parts
-    .map((part, index) =>
-      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
-    )
-    .join('');
-}
-
-function isNotification(method) {
-  return (
-    typeof method.name === 'string' &&
-    method.name.startsWith('ec.') &&
-    !Object.prototype.hasOwnProperty.call(method, 'result')
+function collectNotifications() {
+  return EC_METHODS.filter(entry => entry.kind === 'notification').map(
+    entry => ({
+      identifier: entry.identifier,
+      method: entry.method,
+      typeName: entry.payload,
+      converter: notificationConverter(entry),
+    }),
   );
-}
-
-function resolveMethod(rawMethod, openRpcDir) {
-  const ref = rawMethod?.$ref;
-  if (typeof ref !== 'string') {
-    return {method: rawMethod, baseDir: openRpcDir};
-  }
-
-  const [relativePath, pointer = ''] = ref.split('#');
-  const targetPath = path.resolve(openRpcDir, relativePath);
-  const targetDoc = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-
-  return {
-    method: resolvePointer(targetDoc, pointer),
-    baseDir: path.dirname(targetPath),
-  };
-}
-
-function collectNotifications(openRpc, openRpcDir) {
-  const notifications = [];
-
-  for (const rawMethod of openRpc.methods ?? []) {
-    const {method, baseDir} = resolveMethod(rawMethod, openRpcDir);
-    if (!isNotification(method)) continue;
-
-    const params = method.params ?? [];
-    if (params.length !== 1) {
-      throw new Error(
-        `Cannot generate notification ${method.name}: expected exactly one param, got ${params.length}`,
-      );
-    }
-
-    const [param] = params;
-    const ref = param?.schema?.$ref;
-    if (typeof ref !== 'string') {
-      throw new Error(
-        `Cannot generate notification ${method.name}: expected param schema.$ref`,
-      );
-    }
-
-    const schemaPath = path.resolve(baseDir, ref.split('#')[0]);
-    const mapping = refMappings.get(schemaPath);
-    if (!mapping) {
-      throw new Error(
-        `Cannot generate notification ${method.name}: unsupported schema ref ${ref}`,
-      );
-    }
-
-    notifications.push({
-      identifier: methodNameToIdentifier(method.name),
-      method: method.name,
-      typeName: mapping.typeName,
-      converter: mapping.converter,
-    });
-  }
-
-  return notifications;
 }
 
 function renderModule(notifications) {
@@ -175,8 +95,7 @@ function decodeWith<T>(converter: (json: string) => T): (payload: unknown) => T 
 }
 
 function main() {
-  const openRpc = JSON.parse(fs.readFileSync(openRpcPath, 'utf8'));
-  const notifications = collectNotifications(openRpc, path.dirname(openRpcPath));
+  const notifications = collectNotifications();
   const generated = renderModule(notifications);
   fs.mkdirSync(path.dirname(outputPath), {recursive: true});
   fs.writeFileSync(outputPath, generated);

@@ -1,9 +1,10 @@
 import {
   checkoutProtocolCatalog,
-  checkoutProtocolCatalogPayloadDecoders,
   type CheckoutProtocolCatalogPayloads,
+  type ProtocolHandlers as PackageProtocolHandlers,
 } from '@shopify/checkout-kit-protocol';
 
+export {decodeProtocolPayload} from '@shopify/checkout-kit-protocol';
 export type {Checkout, ErrorResponse} from '@shopify/checkout-kit-protocol';
 
 type PublicCheckoutProtocolKey =
@@ -36,52 +37,5 @@ export type CheckoutProtocolPayloads = Pick<
   CheckoutProtocolMethod
 >;
 
-type CheckoutProtocolPayloadDecoder<K extends keyof CheckoutProtocolPayloads> =
-  (payload: unknown) => CheckoutProtocolPayloads[K];
-
-const checkoutProtocolPayloadDecoders = {
-  [CheckoutProtocol.complete]:
-    checkoutProtocolCatalogPayloadDecoders[CheckoutProtocol.complete],
-  [CheckoutProtocol.error]:
-    checkoutProtocolCatalogPayloadDecoders[CheckoutProtocol.error],
-  [CheckoutProtocol.fulfillmentChange]:
-    checkoutProtocolCatalogPayloadDecoders[CheckoutProtocol.fulfillmentChange],
-  [CheckoutProtocol.lineItemsChange]:
-    checkoutProtocolCatalogPayloadDecoders[CheckoutProtocol.lineItemsChange],
-  [CheckoutProtocol.messagesChange]:
-    checkoutProtocolCatalogPayloadDecoders[CheckoutProtocol.messagesChange],
-  [CheckoutProtocol.start]:
-    checkoutProtocolCatalogPayloadDecoders[CheckoutProtocol.start],
-  [CheckoutProtocol.totalsChange]:
-    checkoutProtocolCatalogPayloadDecoders[CheckoutProtocol.totalsChange],
-} satisfies {
-  [K in keyof CheckoutProtocolPayloads]: CheckoutProtocolPayloadDecoder<K>;
-};
-
-export function decodeProtocolPayload<K extends keyof CheckoutProtocolPayloads>(
-  method: K,
-  payload: unknown,
-): CheckoutProtocolPayloads[K];
-export function decodeProtocolPayload(
-  method: string,
-  payload: unknown,
-): CheckoutProtocolPayloads[keyof CheckoutProtocolPayloads] | undefined;
-export function decodeProtocolPayload(
-  method: string,
-  payload: unknown,
-): CheckoutProtocolPayloads[keyof CheckoutProtocolPayloads] | undefined {
-  const decoder = checkoutProtocolPayloadDecoders[
-    method as keyof typeof checkoutProtocolPayloadDecoders
-  ] as
-    | ((
-        payload: unknown,
-      ) => CheckoutProtocolPayloads[keyof CheckoutProtocolPayloads])
-    | undefined;
-  return decoder?.(payload);
-}
-
-export type ProtocolHandlers = Partial<{
-  [K in keyof CheckoutProtocolPayloads]: (
-    payload: CheckoutProtocolPayloads[K],
-  ) => void;
-}>;
+export type ProtocolHandlers =
+  PackageProtocolHandlers<CheckoutProtocolPayloads>;
