@@ -668,6 +668,28 @@ commands:
         desc: Run Web package verification
         run: cd platforms/web && pnpm verify
 
+      snapshot:
+        desc: Manage snapshots for packaged contents
+        run: |
+          echo "Usage: dev web snapshot {compare|update}"
+          echo ""
+          echo "  compare  Compare contents to existing snapshot"
+          echo "  update   Update the snapshot"
+          exit 1
+        subcommands:
+          compare:
+            desc: Compare contents to existing snapshot
+            run: |
+              cd platforms/web
+              pnpm build
+              pnpm compare-snapshot
+          update:
+            desc: Update the snapshot
+            run: |
+              cd platforms/web
+              pnpm build
+              pnpm snapshot
+
       open:
         desc: Open the Web package or sample app in an editor
         long_desc: |

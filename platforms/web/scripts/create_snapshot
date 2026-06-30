@@ -1,0 +1,5 @@
+#!/bin/bash
+
+OUTPUT_FILE=${1:-package.snapshot.json}
+
+pnpm pack --dry-run --json --config.ignore-scripts=true | jq ".files | map(.path)" > "$OUTPUT_FILE"

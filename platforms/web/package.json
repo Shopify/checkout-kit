@@ -70,6 +70,8 @@
     "sample:preview": "vite preview --config sample/vite.config.ts",
     "sample:typecheck": "tsc --noEmit -p sample/tsconfig.json",
     "verify": "publint",
+    "snapshot": "./scripts/create_snapshot",
+    "compare-snapshot": "./scripts/compare_snapshot",
     "prepack": "pnpm run build"
   },
   "devDependencies": {
