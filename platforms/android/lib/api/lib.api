@@ -79,7 +79,6 @@ public final class com/shopify/checkoutkit/CheckoutProtocol {
 	public final fun getFulfillmentChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getLineItemsChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getMessagesChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getReady ()Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;
 	public final fun getStart ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getTotalsChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getWindowOpen ()Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;

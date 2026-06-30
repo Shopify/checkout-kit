@@ -36,7 +36,7 @@ public object CheckoutProtocol {
     public val fulfillmentChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.fulfillmentChange
     public val error: NotificationDescriptor<ErrorResponse> = EmbeddedCheckoutProtocol.error
 
-    public val ready: RequestDescriptor<ReadyRequest, ReadyResult> = EmbeddedCheckoutProtocol.ready
+    internal val ready: RequestDescriptor<ReadyRequest, ReadyResult> = EmbeddedCheckoutProtocol.ready
 
     public val windowOpen: RequestDescriptor<WindowOpenRequest, WindowOpenResult> = checkoutKitWindowOpenDescriptor
 
