@@ -42,7 +42,8 @@
     "README.md",
     "package.json",
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.ts"
   ],
   "keywords": [
     "shopify",
