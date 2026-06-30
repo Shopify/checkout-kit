@@ -162,6 +162,7 @@ commands:
 
   # Android
   android:
+    aliases: ["kotlin"]
     desc: "Android Checkout Kit commands"
     subcommands:
       build:
