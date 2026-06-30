@@ -12,6 +12,9 @@ class DescriptorsTest {
     private data class FixtureParams(val name: String)
 
     @Serializable
+    private data class OptionalFixtureParams(val name: String? = null)
+
+    @Serializable
     private data class FixtureResult(val ok: Boolean)
 
     @Test
@@ -33,6 +36,20 @@ class DescriptorsTest {
         assertThat(descriptor.encode(true)).isEqualTo(
             JsonObject(mapOf("ok" to JsonPrimitive(true))),
         )
+    }
+
+    @Test
+    fun `requestDescriptor decodes missing params to an all-optional payload`() {
+        val descriptor: RequestDescriptor<OptionalFixtureParams, Boolean> = requestDescriptor(
+            method = "ec.auth",
+            delegation = null,
+            requestSerializer = OptionalFixtureParams.serializer(),
+            responseSerializer = FixtureResult.serializer(),
+            decode = { it },
+            encode = { FixtureResult(ok = it) },
+        )
+
+        assertThat(descriptor.decode(null)).isEqualTo(OptionalFixtureParams(name = null))
     }
 
     @Test

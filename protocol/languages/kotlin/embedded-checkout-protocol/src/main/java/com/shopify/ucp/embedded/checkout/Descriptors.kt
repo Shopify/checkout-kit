@@ -3,6 +3,7 @@ package com.shopify.ucp.embedded.checkout
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 
@@ -105,4 +106,4 @@ private fun <Params : Any> decodeDescriptorParams(
     serializer: KSerializer<Params>,
     params: JsonElement?,
 ): Params =
-    embeddedProtocolJson.decodeFromJsonElement(serializer, params ?: JsonNull)
+    embeddedProtocolJson.decodeFromJsonElement(serializer, params ?: JsonObject(emptyMap()))
