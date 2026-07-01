@@ -1,7 +1,7 @@
 #!/bin/bash
 
 FILENAME="modules/@shopify/checkout-kit-react-native/package.snapshot.json"
-TMP_SNAPSHOT_FILENAME="snapshot.json"
+TMP_SNAPSHOT_FILENAME="$(mktemp)"
 
 # Set up some colors to use later
 red=$(tput setaf 1)
