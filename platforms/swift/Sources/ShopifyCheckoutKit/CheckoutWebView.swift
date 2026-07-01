@@ -243,11 +243,11 @@ class CheckoutWebView: WKWebView {
             CheckoutWebView.invalidate(disconnect: false)
         }
         .on(CheckoutProtocol.windowOpen) { request in
-            guard self.canOpenExternalURL(request.url) else {
+            guard let target = request.parsedURL, self.canOpenExternalURL(target) else {
                 return .rejected(reason: "canOpenURL returned false")
             }
-            self.openExternalURL(request.url)
-            return .success
+            self.openExternalURL(target)
+            return .success()
         }
         .on(CheckoutProtocol.error) { [weak self] payload in
             guard payload.messages.contains(where: { $0.severity == .unrecoverable }) else { return }

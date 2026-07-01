@@ -4,6 +4,8 @@ import android.os.Looper
 import com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp
 import com.shopify.ucp.embedded.checkout.ReadyResult
 import com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus
+import com.shopify.ucp.embedded.checkout.windowOpenRejected
+import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,11 +18,11 @@ class ComposedCheckoutProtocolClientTest {
     fun `run if unhandled returns merchant response and skips default`() {
         var defaultHandled = false
         val merchant = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.windowOpen) { WindowOpenResult.Rejected(reason = "merchant") }
+            .on(CheckoutProtocol.windowOpen) { windowOpenRejected(reason = "merchant") }
         val default = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) {
                 defaultHandled = true
-                WindowOpenResult.Rejected(reason = "default")
+                windowOpenRejected(reason = "default")
             }
         val client = ComposedCheckoutProtocolClient(
             merchant = merchant,
@@ -45,7 +47,7 @@ class ComposedCheckoutProtocolClientTest {
         val default = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) {
                 defaultHandled = true
-                WindowOpenResult.Rejected(reason = "default")
+                windowOpenRejected(reason = "default")
             }
         val client = ComposedCheckoutProtocolClient(
             merchant = merchant,
@@ -118,7 +120,7 @@ class ComposedCheckoutProtocolClientTest {
         val default = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) {
                 defaultHandled = true
-                WindowOpenResult.Success
+                windowOpenSuccess()
             }
         val client = ComposedCheckoutProtocolClient(
             merchant = null,

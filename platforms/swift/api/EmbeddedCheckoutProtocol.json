@@ -2232,6 +2232,83 @@
               },
               {
                 "kind": "Var",
+                "name": "windowOpen",
+                "printedName": "windowOpen",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "RequestDescriptor",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.WindowOpenRequest, EmbeddedCheckoutProtocol.WindowOpenResult>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "WindowOpenRequest",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                        "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "WindowOpenResult",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                        "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+                      }
+                    ],
+                    "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0iF6ResultVGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0iF6ResultVGvpZ",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "static": true,
+                "declAttributes": [
+                  "HasInitialValue",
+                  "HasStorage"
+                ],
+                "isLet": true,
+                "hasStorage": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "RequestDescriptor",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.WindowOpenRequest, EmbeddedCheckoutProtocol.WindowOpenResult>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "WindowOpenRequest",
+                            "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "WindowOpenResult",
+                            "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0iF6ResultVGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0iF6ResultVGvgZ",
+                    "moduleName": "EmbeddedCheckoutProtocol",
+                    "static": true,
+                    "implicit": true,
+                    "declAttributes": [
+                      "Transparent"
+                    ],
+                    "accessorKind": "get"
+                  }
+                ]
+              },
+              {
+                "kind": "Var",
                 "name": "fulfillmentAddressChange",
                 "printedName": "fulfillmentAddressChange",
                 "children": [
@@ -76697,6 +76774,1541 @@
         "declKind": "Struct",
         "usr": "s:24EmbeddedCheckoutProtocol10AuthResultV",
         "mangledName": "$s24EmbeddedCheckoutProtocol10AuthResultV",
+        "moduleName": "EmbeddedCheckoutProtocol",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se",
+            "mangledName": "$sSe"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE",
+            "mangledName": "$sSE"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ResponsePayload",
+            "printedName": "ResponsePayload",
+            "usr": "s:24EmbeddedCheckoutProtocol15ResponsePayloadP",
+            "mangledName": "$s24EmbeddedCheckoutProtocol15ResponsePayloadP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "WindowOpenRequest",
+        "printedName": "WindowOpenRequest",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "url",
+            "printedName": "url",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV3urlSSvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV3urlSSvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV3urlSSvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV3urlSSvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(url:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenRequest",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV3urlACSS_tcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV3urlACSS_tcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "implicit": true,
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(from:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenRequest",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Decoder",
+                "printedName": "any Swift.Decoder",
+                "usr": "s:s7DecoderP"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV4fromACs7Decoder_p_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV4fromACs7Decoder_p_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "implicit": true,
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(data:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenRequest",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV4dataAC10Foundation4DataV_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV4dataAC10Foundation4DataV_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(_:using:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenRequest",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoding",
+                "printedName": "Swift.String.Encoding",
+                "hasDefaultArg": true,
+                "usr": "s:SS10FoundationE8EncodingV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(fromURL:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenRequest",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV7fromURLAC10Foundation0H0V_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV7fromURLAC10Foundation0H0V_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "with",
+            "printedName": "with(url:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenRequest",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV4with3urlACSSSg_tF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV4with3urlACSSSg_tF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "jsonData",
+            "printedName": "jsonData()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV8jsonData10Foundation0H0VyKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV8jsonData10Foundation0H0VyKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "jsonString",
+            "printedName": "jsonString(encoding:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoding",
+                "printedName": "Swift.String.Encoding",
+                "hasDefaultArg": true,
+                "usr": "s:SS10FoundationE8EncodingV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Var",
+            "name": "parsedURL",
+            "printedName": "parsedURL",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Foundation.URL?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "URL",
+                    "printedName": "Foundation.URL",
+                    "usr": "s:10Foundation3URLV"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV9parsedURL10Foundation0H0VSgvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV9parsedURL10Foundation0H0VSgvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Foundation.URL?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "URL",
+                        "printedName": "Foundation.URL",
+                        "usr": "s:10Foundation3URLV"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV9parsedURL10Foundation0H0VSgvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV9parsedURL10Foundation0H0VSgvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "isFromExtension": true,
+                "accessorKind": "get"
+              }
+            ]
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV",
+        "mangledName": "$s24EmbeddedCheckoutProtocol17WindowOpenRequestV",
+        "moduleName": "EmbeddedCheckoutProtocol",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se",
+            "mangledName": "$sSe"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE",
+            "mangledName": "$sSE"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "EventPayload",
+            "printedName": "EventPayload",
+            "usr": "s:24EmbeddedCheckoutProtocol12EventPayloadP",
+            "mangledName": "$s24EmbeddedCheckoutProtocol12EventPayloadP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "WindowOpenResult",
+        "printedName": "WindowOpenResult",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "ucp",
+            "printedName": "ucp",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "InstrumentsChangeResultUcp",
+                "printedName": "EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp",
+                "usr": "s:24EmbeddedCheckoutProtocol26InstrumentsChangeResultUcpV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV3ucpAA017InstrumentsChangeF3UcpVvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV3ucpAA017InstrumentsChangeF3UcpVvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "InstrumentsChangeResultUcp",
+                    "printedName": "EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp",
+                    "usr": "s:24EmbeddedCheckoutProtocol26InstrumentsChangeResultUcpV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV3ucpAA017InstrumentsChangeF3UcpVvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV3ucpAA017InstrumentsChangeF3UcpVvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "continueURL",
+            "printedName": "continueURL",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV11continueURLSSSgvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV11continueURLSSSgvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV11continueURLSSSgvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV11continueURLSSSgvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "messages",
+            "printedName": "messages",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "[EmbeddedCheckoutProtocol.Message]?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[EmbeddedCheckoutProtocol.Message]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Message",
+                        "printedName": "EmbeddedCheckoutProtocol.Message",
+                        "usr": "s:24EmbeddedCheckoutProtocol7MessageV"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV8messagesSayAA7MessageVGSgvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV8messagesSayAA7MessageVGSgvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "[EmbeddedCheckoutProtocol.Message]?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Array",
+                        "printedName": "[EmbeddedCheckoutProtocol.Message]",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Message",
+                            "printedName": "EmbeddedCheckoutProtocol.Message",
+                            "usr": "s:24EmbeddedCheckoutProtocol7MessageV"
+                          }
+                        ],
+                        "usr": "s:Sa"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV8messagesSayAA7MessageVGSgvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV8messagesSayAA7MessageVGSgvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "TypeDecl",
+            "name": "CodingKeys",
+            "printedName": "CodingKeys",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "ucp",
+                "printedName": "ucp",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys.Type) -> EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "CodingKeys",
+                            "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO3ucpyA2EmF",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO3ucpyA2EmF",
+                "moduleName": "EmbeddedCheckoutProtocol"
+              },
+              {
+                "kind": "Var",
+                "name": "continueURL",
+                "printedName": "continueURL",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys.Type) -> EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "CodingKeys",
+                            "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO11continueURLyA2EmF",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO11continueURLyA2EmF",
+                "moduleName": "EmbeddedCheckoutProtocol"
+              },
+              {
+                "kind": "Var",
+                "name": "messages",
+                "printedName": "messages",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys.Type) -> EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "CodingKeys",
+                            "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8messagesyA2EmF",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8messagesyA2EmF",
+                "moduleName": "EmbeddedCheckoutProtocol"
+              },
+              {
+                "kind": "Constructor",
+                "name": "init",
+                "printedName": "init(rawValue:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Constructor",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8rawValueAESgSS_tcfc",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8rawValueAESgSS_tcfc",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Inlinable"
+                ],
+                "init_kind": "Designated"
+              },
+              {
+                "kind": "Constructor",
+                "name": "init",
+                "printedName": "init(stringValue:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Constructor",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO11stringValueAESgSS_tcfc",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO11stringValueAESgSS_tcfc",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "init_kind": "Designated"
+              },
+              {
+                "kind": "Constructor",
+                "name": "init",
+                "printedName": "init(intValue:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Constructor",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8intValueAESgSi_tcfc",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8intValueAESgSi_tcfc",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "init_kind": "Designated"
+              },
+              {
+                "kind": "TypeAlias",
+                "name": "RawValue",
+                "printedName": "RawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "TypeAlias",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8RawValuea",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8RawValuea",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true
+              },
+              {
+                "kind": "Var",
+                "name": "intValue",
+                "printedName": "intValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.Int?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8intValueSiSgvp",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8intValueSiSgvp",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Swift.Int?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Int",
+                            "printedName": "Swift.Int",
+                            "usr": "s:Si"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8intValueSiSgvg",
+                    "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8intValueSiSgvg",
+                    "moduleName": "EmbeddedCheckoutProtocol",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              },
+              {
+                "kind": "Var",
+                "name": "rawValue",
+                "printedName": "rawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8rawValueSSvp",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8rawValueSSvp",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8rawValueSSvg",
+                    "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO8rawValueSSvg",
+                    "moduleName": "EmbeddedCheckoutProtocol",
+                    "implicit": true,
+                    "declAttributes": [
+                      "Inlinable"
+                    ],
+                    "accessorKind": "get"
+                  }
+                ]
+              },
+              {
+                "kind": "Var",
+                "name": "stringValue",
+                "printedName": "stringValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO11stringValueSSvp",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO11stringValueSSvp",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO11stringValueSSvg",
+                    "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO11stringValueSSvg",
+                    "moduleName": "EmbeddedCheckoutProtocol",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10CodingKeysO",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "enumRawTypeName": "String",
+            "isEnumExhaustive": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Hashable",
+                "printedName": "Hashable",
+                "usr": "s:SH",
+                "mangledName": "$sSH"
+              },
+              {
+                "kind": "Conformance",
+                "name": "RawRepresentable",
+                "printedName": "RawRepresentable",
+                "children": [
+                  {
+                    "kind": "TypeWitness",
+                    "name": "RawValue",
+                    "printedName": "RawValue",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ]
+                  }
+                ],
+                "usr": "s:SY",
+                "mangledName": "$sSY"
+              },
+              {
+                "kind": "Conformance",
+                "name": "CodingKey",
+                "printedName": "CodingKey",
+                "usr": "s:s9CodingKeyP",
+                "mangledName": "$ss9CodingKeyP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "CustomDebugStringConvertible",
+                "printedName": "CustomDebugStringConvertible",
+                "usr": "s:s28CustomDebugStringConvertibleP",
+                "mangledName": "$ss28CustomDebugStringConvertibleP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "CustomStringConvertible",
+                "printedName": "CustomStringConvertible",
+                "usr": "s:s23CustomStringConvertibleP",
+                "mangledName": "$ss23CustomStringConvertibleP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(ucp:continueURL:messages:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenResult",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "InstrumentsChangeResultUcp",
+                "printedName": "EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp",
+                "usr": "s:24EmbeddedCheckoutProtocol26InstrumentsChangeResultUcpV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "[EmbeddedCheckoutProtocol.Message]?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[EmbeddedCheckoutProtocol.Message]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Message",
+                        "printedName": "EmbeddedCheckoutProtocol.Message",
+                        "usr": "s:24EmbeddedCheckoutProtocol7MessageV"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV3ucp11continueURL8messagesAcA017InstrumentsChangeF3UcpV_SSSgSayAA7MessageVGSgtcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV3ucp11continueURL8messagesAcA017InstrumentsChangeF3UcpV_SSSgSayAA7MessageVGSgtcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "implicit": true,
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(from:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenResult",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Decoder",
+                "printedName": "any Swift.Decoder",
+                "usr": "s:s7DecoderP"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV4fromACs7Decoder_p_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV4fromACs7Decoder_p_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "implicit": true,
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(data:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenResult",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV4dataAC10Foundation4DataV_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV4dataAC10Foundation4DataV_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(_:using:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenResult",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoding",
+                "printedName": "Swift.String.Encoding",
+                "hasDefaultArg": true,
+                "usr": "s:SS10FoundationE8EncodingV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(fromURL:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenResult",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV7fromURLAC10Foundation0H0V_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV7fromURLAC10Foundation0H0V_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "with",
+            "printedName": "with(ucp:continueURL:messages:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenResult",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "InstrumentsChangeResultUcp",
+                    "printedName": "EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp",
+                    "usr": "s:24EmbeddedCheckoutProtocol26InstrumentsChangeResultUcpV"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String??",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "[EmbeddedCheckoutProtocol.Message]??",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "[EmbeddedCheckoutProtocol.Message]?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Array",
+                        "printedName": "[EmbeddedCheckoutProtocol.Message]",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Message",
+                            "printedName": "EmbeddedCheckoutProtocol.Message",
+                            "usr": "s:24EmbeddedCheckoutProtocol7MessageV"
+                          }
+                        ],
+                        "usr": "s:Sa"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV4with3ucp11continueURL8messagesAcA017InstrumentsChangeF3UcpVSg_SSSgSgSayAA7MessageVGSgSgtF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV4with3ucp11continueURL8messagesAcA017InstrumentsChangeF3UcpVSg_SSSgSgSayAA7MessageVGSgSgtF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "jsonData",
+            "printedName": "jsonData()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV8jsonData10Foundation0H0VyKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV8jsonData10Foundation0H0VyKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "jsonString",
+            "printedName": "jsonString(encoding:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoding",
+                "printedName": "Swift.String.Encoding",
+                "hasDefaultArg": true,
+                "usr": "s:SS10FoundationE8EncodingV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isFromExtension": true,
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "success",
+            "printedName": "success(version:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenResult",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV7success7versionACSS_tFZ",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV7success7versionACSS_tFZ",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "static": true,
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "rejected",
+            "printedName": "rejected(reason:version:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "WindowOpenResult",
+                "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV8rejected6reason7versionACSSSg_SStFZ",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV8rejected6reason7versionACSSSg_SStFZ",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "static": true,
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV",
+        "mangledName": "$s24EmbeddedCheckoutProtocol16WindowOpenResultV",
         "moduleName": "EmbeddedCheckoutProtocol",
         "conformances": [
           {

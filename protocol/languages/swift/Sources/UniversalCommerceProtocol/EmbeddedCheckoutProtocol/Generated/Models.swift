@@ -11,6 +11,8 @@
 //   let readyResult = try ReadyResult(json)
 //   let authRequest = try AuthRequest(json)
 //   let authResult = try AuthResult(json)
+//   let windowOpenRequest = try WindowOpenRequest(json)
+//   let windowOpenResult = try WindowOpenResult(json)
 
 import Foundation
 
@@ -4739,6 +4741,116 @@ public extension AuthResult {
     ) -> AuthResult {
         return AuthResult(
             credential: credential ?? self.credential,
+            ucp: ucp ?? self.ucp,
+            continueURL: continueURL ?? self.continueURL,
+            messages: messages ?? self.messages
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - WindowOpenRequest
+public struct WindowOpenRequest: Codable, Sendable {
+    /// The URL of the resource to present.
+    public let url: String
+
+    public init(url: String) {
+        self.url = url
+    }
+}
+
+// MARK: WindowOpenRequest convenience initializers and mutators
+
+public extension WindowOpenRequest {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(WindowOpenRequest.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        url: String? = nil
+    ) -> WindowOpenRequest {
+        return WindowOpenRequest(
+            url: url ?? self.url
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Acknowledgement that the host handled the request.
+///
+/// Generic error response when business logic prevents resource creation or failed to
+/// retrieve resource. Used when no valid resource can be established.
+// MARK: - WindowOpenResult
+public struct WindowOpenResult: Codable, Sendable {
+    /// UCP protocol metadata. Status MUST be 'error' for error response.
+    public let ucp: InstrumentsChangeResultUcp
+    /// URL for buyer handoff or session recovery.
+    public let continueURL: String?
+    /// Array of messages describing why the operation failed.
+    public let messages: [Message]?
+
+    public enum CodingKeys: String, CodingKey {
+        case ucp
+        case continueURL = "continue_url"
+        case messages
+    }
+
+    public init(ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+        self.ucp = ucp
+        self.continueURL = continueURL
+        self.messages = messages
+    }
+}
+
+// MARK: WindowOpenResult convenience initializers and mutators
+
+public extension WindowOpenResult {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(WindowOpenResult.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        ucp: InstrumentsChangeResultUcp? = nil,
+        continueURL: String?? = nil,
+        messages: [Message]?? = nil
+    ) -> WindowOpenResult {
+        return WindowOpenResult(
             ucp: ucp ?? self.ucp,
             continueURL: continueURL ?? self.continueURL,
             messages: messages ?? self.messages

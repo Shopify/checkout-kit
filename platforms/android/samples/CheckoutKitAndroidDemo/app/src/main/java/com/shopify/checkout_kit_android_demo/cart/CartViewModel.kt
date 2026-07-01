@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -22,8 +23,9 @@ import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.CheckoutException
 import com.shopify.checkoutkit.ShopifyCheckoutKit
-import com.shopify.checkoutkit.WindowOpenResult
 import com.shopify.ucp.embedded.checkout.Checkout
+import com.shopify.ucp.embedded.checkout.windowOpenRejected
+import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -188,17 +190,18 @@ class CartViewModel(
         return when (windowOpenHandler) {
             WindowOpenHandler.Default -> base
             WindowOpenHandler.CustomTabs -> base.on(CheckoutProtocol.windowOpen) { request ->
-                val scheme = request.url.scheme?.lowercase()
+                val uri = request.url.toUri()
+                val scheme = uri.scheme?.lowercase()
                 Timber.i("ECP ec.window.open_request ($scheme)")
                 if (scheme != "http" && scheme != "https") {
-                    WindowOpenResult.Rejected(reason = "unsupported URL scheme: $scheme")
+                    windowOpenRejected(reason = "unsupported URL scheme: $scheme")
                 } else {
                     try {
-                        CustomTabsIntent.Builder().build().launchUrl(activity, request.url)
-                        WindowOpenResult.Success
+                        CustomTabsIntent.Builder().build().launchUrl(activity, uri)
+                        windowOpenSuccess()
                     } catch (e: ActivityNotFoundException) {
                         Timber.w(e, "No activity resolved URL")
-                        WindowOpenResult.Rejected(reason = "no activity resolved URL")
+                        windowOpenRejected(reason = "no activity resolved URL")
                     }
                 }
             }

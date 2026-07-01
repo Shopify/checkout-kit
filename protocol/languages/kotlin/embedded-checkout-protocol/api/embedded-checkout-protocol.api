@@ -816,6 +816,7 @@ public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol {
 	public final fun getReady ()Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;
 	public final fun getStart ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
 	public final fun getTotalsChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
+	public final fun getWindowOpen ()Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;
 	public final fun url (Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Options;)Ljava/lang/String;
 	public static synthetic fun url$default (Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Options;ILjava/lang/Object;)Ljava/lang/String;
 }
@@ -853,6 +854,7 @@ public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol$Ev
 	public static final field ready Ljava/lang/String;
 	public static final field start Ljava/lang/String;
 	public static final field totalsChange Ljava/lang/String;
+	public static final field windowOpenRequest Ljava/lang/String;
 	public final fun getAll ()Ljava/util/Set;
 }
 
@@ -2649,5 +2651,71 @@ public final synthetic class com/shopify/ucp/embedded/checkout/Upgrade$$serializ
 
 public final class com/shopify/ucp/embedded/checkout/Upgrade$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/ucp/embedded/checkout/WindowOpenRequest {
+	public static final field Companion Lcom/shopify/ucp/embedded/checkout/WindowOpenRequest$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/shopify/ucp/embedded/checkout/WindowOpenRequest;
+	public static synthetic fun copy$default (Lcom/shopify/ucp/embedded/checkout/WindowOpenRequest;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/ucp/embedded/checkout/WindowOpenRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/ucp/embedded/checkout/WindowOpenRequest$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/ucp/embedded/checkout/WindowOpenRequest$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/ucp/embedded/checkout/WindowOpenRequest;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/ucp/embedded/checkout/WindowOpenRequest;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/ucp/embedded/checkout/WindowOpenRequest$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/ucp/embedded/checkout/WindowOpenResult {
+	public static final field Companion Lcom/shopify/ucp/embedded/checkout/WindowOpenResult$Companion;
+	public fun <init> (Lcom/shopify/ucp/embedded/checkout/InstrumentsChangeResultUcp;Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Lcom/shopify/ucp/embedded/checkout/InstrumentsChangeResultUcp;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/ucp/embedded/checkout/InstrumentsChangeResultUcp;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Lcom/shopify/ucp/embedded/checkout/InstrumentsChangeResultUcp;Ljava/lang/String;Ljava/util/List;)Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;
+	public static synthetic fun copy$default (Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;Lcom/shopify/ucp/embedded/checkout/InstrumentsChangeResultUcp;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContinueURL ()Ljava/lang/String;
+	public final fun getMessages ()Ljava/util/List;
+	public final fun getUcp ()Lcom/shopify/ucp/embedded/checkout/InstrumentsChangeResultUcp;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/ucp/embedded/checkout/WindowOpenResult$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/ucp/embedded/checkout/WindowOpenResult$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/ucp/embedded/checkout/WindowOpenResult$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/ucp/embedded/checkout/WindowOpenResultKt {
+	public static final fun windowOpenRejected (Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;
+	public static synthetic fun windowOpenRejected$default (Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;
+	public static final fun windowOpenSuccess (Ljava/lang/String;)Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;
+	public static synthetic fun windowOpenSuccess$default (Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/ucp/embedded/checkout/WindowOpenResult;
 }
 

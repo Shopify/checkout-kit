@@ -10,6 +10,8 @@ import com.shopify.ucp.embedded.checkout.NotificationDescriptor
 import com.shopify.ucp.embedded.checkout.ReadyRequest
 import com.shopify.ucp.embedded.checkout.ReadyResult
 import com.shopify.ucp.embedded.checkout.RequestDescriptor
+import com.shopify.ucp.embedded.checkout.WindowOpenRequest
+import com.shopify.ucp.embedded.checkout.WindowOpenResult
 import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
 import com.shopify.ucp.embedded.checkout.encodeJsonRpcError
 import com.shopify.ucp.embedded.checkout.encodeJsonRpcResult
@@ -38,7 +40,7 @@ public object CheckoutProtocol {
 
     internal val ready: RequestDescriptor<ReadyRequest, ReadyResult> = EmbeddedCheckoutProtocol.ready
 
-    public val windowOpen: RequestDescriptor<WindowOpenRequest, WindowOpenResult> = checkoutKitWindowOpenDescriptor
+    public val windowOpen: RequestDescriptor<WindowOpenRequest, WindowOpenResult> = EmbeddedCheckoutProtocol.windowOpen
 
     internal val defaultDelegations: List<EmbeddedCheckoutProtocol.Delegation> = listOf(
         EmbeddedCheckoutProtocol.Delegation.windowOpen,

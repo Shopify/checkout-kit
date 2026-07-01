@@ -168,10 +168,6 @@ struct JSONRPCErrorParams: Codable {
     let error: ErrorResponse
 }
 
-struct JSONRPCWindowOpenParams: Codable {
-    let url: String
-}
-
 private extension KeyedDecodingContainer {
     func decodeJSONRPCIDIfPresent(forKey key: Key) throws -> JSONRPCID? {
         guard contains(key) else { return nil }

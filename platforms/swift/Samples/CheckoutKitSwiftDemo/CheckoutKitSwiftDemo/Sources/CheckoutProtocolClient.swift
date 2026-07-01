@@ -37,7 +37,11 @@ extension CheckoutProtocol.Client {
             return base
         case .safariViewController:
             return base.on(CheckoutProtocol.windowOpen) { request in
-                let scheme = request.url.scheme?.lowercased()
+                guard let target = request.parsedURL else {
+                    return .rejected(reason: "invalid URL")
+                }
+
+                let scheme = target.scheme?.lowercased()
 
                 print("[UCP] ec.window_open (\(scheme ?? ""))")
 
@@ -49,14 +53,14 @@ extension CheckoutProtocol.Client {
                     return .rejected(reason: "no presenter available")
                 }
 
-                let safari = SFSafariViewController(url: request.url)
+                let safari = SFSafariViewController(url: target)
 
                 // By default, the view controller opens full screen from right to left.
                 safari.modalPresentationStyle = .pageSheet
                 safari.modalTransitionStyle = .coverVertical
 
                 presenter.present(safari, animated: true)
-                return .success
+                return .success()
             }
         }
     }

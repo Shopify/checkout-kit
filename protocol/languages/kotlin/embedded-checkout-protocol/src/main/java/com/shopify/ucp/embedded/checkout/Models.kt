@@ -2196,3 +2196,36 @@ public data class AuthResult (
      */
     public val messages: List<Message>? = null
 )
+
+@Serializable
+public data class WindowOpenRequest (
+    /**
+     * The URL of the resource to present.
+     */
+    public val url: String
+)
+
+/**
+ * Acknowledgement that the host handled the request.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+@Serializable
+public data class WindowOpenResult (
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    public val ucp: InstrumentsChangeResultUcp,
+
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    @SerialName("continue_url")
+    public val continueURL: String? = null,
+
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    public val messages: List<Message>? = null
+)

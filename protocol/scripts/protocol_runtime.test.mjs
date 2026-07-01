@@ -66,6 +66,7 @@ describe('spec metadata', () => {
       paymentInstrumentsChange: 'ec.payment.instruments_change_request',
       paymentCredential: 'ec.payment.credential_request',
       fulfillmentAddressChange: 'ec.fulfillment.address_change_request',
+      windowOpen: 'ec.window.open_request',
     });
   });
 
@@ -75,7 +76,7 @@ describe('spec metadata', () => {
     expect(
       embeddedCheckoutMethods.has('ec.payment.instruments_change_request'),
     ).toBe(true);
-    expect(embeddedCheckoutMethods.size).toBe(14);
+    expect(embeddedCheckoutMethods.size).toBe(15);
   });
 });
 

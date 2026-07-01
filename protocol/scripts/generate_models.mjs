@@ -379,6 +379,10 @@ function commonSchemaSources(specDir) {
     path.join(specDir, "auth_request.json"),
     "--src",
     path.join(specDir, "auth_result.json"),
+    "--src",
+    path.join(specDir, "window_open_request.json"),
+    "--src",
+    path.join(specDir, "window_open_result.json"),
   ];
 }
 

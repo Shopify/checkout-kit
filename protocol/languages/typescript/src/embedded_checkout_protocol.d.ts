@@ -15,6 +15,7 @@ export declare const EmbeddedCheckoutProtocol: {
         readonly auth: import("./descriptors").RequestDescriptor<import(".").AuthRequest, import(".").AuthResult>;
         readonly paymentInstrumentsChange: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").InstrumentsChangeResult>;
         readonly paymentCredential: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").CredentialResult>;
+        readonly windowOpen: import("./descriptors").RequestDescriptor<import(".").WindowOpenRequest, import(".").WindowOpenResult>;
         readonly fulfillmentAddressChange: import("./descriptors").RequestDescriptor<import(".").Checkout, import(".").AddressChangeResult>;
         readonly error: import("./descriptors").NotificationDescriptor<import(".").ErrorResponse>;
         readonly start: import("./descriptors").NotificationDescriptor<import(".").Checkout>;

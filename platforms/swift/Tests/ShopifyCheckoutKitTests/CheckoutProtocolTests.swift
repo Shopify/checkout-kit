@@ -102,11 +102,12 @@ struct WindowOpenDelegationTests {
             WindowOpenRequest.self,
             from: Data(#"{"url":"https://example.com/terms"}"#.utf8)
         )
-        #expect(payload.url == URL(string: "https://example.com/terms"))
+        #expect(payload.url == "https://example.com/terms")
+        #expect(payload.parsedURL == URL(string: "https://example.com/terms"))
     }
 
-    @Test func requestPayloadRejectsEmptyURL() {
-        #expect((try? JSONDecoder().decode(WindowOpenRequest.self, from: Data(#"{"url":""}"#.utf8))) == nil)
+    @Test func parsedURLIsNilForEmptyURL() {
+        #expect(WindowOpenRequest(url: "").parsedURL == nil)
     }
 
     @Test func requestPayloadRejectsMissingURL() {
@@ -130,7 +131,7 @@ struct WindowOpenDelegationTests {
     }
 
     @Test func resultEncodesSuccessBody() throws {
-        let body = try encode(.success)
+        let body = try encode(.success())
         let ucp = try #require(body["ucp"] as? [String: Any])
         #expect(ucp["status"] as? String == "success")
         #expect(ucp["version"] as? String == EmbeddedCheckoutProtocol.specVersion)

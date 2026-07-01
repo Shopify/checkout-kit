@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit
 
 import android.webkit.JavascriptInterface
+import androidx.core.net.toUri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp
 import com.shopify.ucp.embedded.checkout.ReadyResult
@@ -8,8 +9,11 @@ import com.shopify.ucp.embedded.checkout.Severity
 import com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus
 import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
 import com.shopify.ucp.embedded.checkout.jsonRpcRequestId
+import com.shopify.ucp.embedded.checkout.windowOpenRejected
+import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonElement
+import java.net.URI
 
 /**
  * Handles the Embedded Checkout Protocol (ECP) JS bridge.
@@ -147,7 +151,7 @@ internal class EmbeddedCheckoutProtocolBridge(
      * Kit-owned client that handles delegations and kit-mandated notifications,
      * mirroring Swift's `defaultsClient`. Currently:
      *   - [CheckoutProtocol.windowOpen] - launches the URI via `Intent.ACTION_VIEW`, or
-     *     returns [WindowOpenResult.Rejected] with `window_open_rejected_error` semantics.
+     *     returns [windowOpenRejected] with `window_open_rejected_error` semantics.
      *   - [CheckoutProtocol.error] - when any message carries `severity: "unrecoverable"`,
      *     dismiss the kit via the listener. Per UCP spec, `unrecoverable` means no valid
      *     resource exists to act on, so consumers don't have to wire dismissal in every
@@ -172,11 +176,19 @@ internal class EmbeddedCheckoutProtocolBridge(
                 CheckoutWebView.invalidate()
             }
             .on(CheckoutProtocol.windowOpen) { request ->
-                when (val result = ExternalUriLauncher.launch(view.context, request.url)) {
-                    is ExternalUriLauncher.Result.Launched -> WindowOpenResult.Success
+                val url = request.url
+                if (url.isBlank() || runCatching { URI(url) }.isFailure) {
+                    log.d(LOG_TAG, "window.open rejected: malformed URL ${url.redactedUrlForLogging()}")
+                    return@on windowOpenRejected(reason = "malformed URL")
+                }
+                when (val result = ExternalUriLauncher.launch(view.context, url.toUri())) {
+                    is ExternalUriLauncher.Result.Launched -> windowOpenSuccess()
                     is ExternalUriLauncher.Result.Rejected -> {
-                        log.d(LOG_TAG, "window.open rejected for ${request.url.redactedForLogging()}: ${result.reason}")
-                        WindowOpenResult.Rejected(reason = result.reason)
+                        log.d(
+                            LOG_TAG,
+                            "window.open rejected for ${url.redactedUrlForLogging()}: ${result.reason}"
+                        )
+                        windowOpenRejected(reason = result.reason)
                     }
                 }
             }
