@@ -28,7 +28,7 @@ jobs:
           cache: 'gradle'
 
       - name: Run Tests
-        run: ./gradlew clean test --console=plain
+        run: ./gradlew test --console=plain
 
   build:
     runs-on: ubuntu-latest
