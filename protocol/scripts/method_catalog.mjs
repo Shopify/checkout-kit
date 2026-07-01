@@ -202,14 +202,6 @@ export const MODEL_EXTRACTIONS = [
   },
 ];
 
-// Delegated requests whose request/response payloads are defined by the host
-// integration rather than this protocol. The spec models them, but the catalog
-// generates no descriptor or method constant for them — the host owns the
-// binding and its own method-name constant. Listed here so that a spec request
-// which is neither host-defined nor bound below fails loudly instead of
-// silently vanishing from the catalog.
-const HOST_DEFINED_REQUESTS = new Set([]);
-
 // Per-request binding the spec cannot express: the Swift payload/result type
 // names and the decode strategy.
 //
@@ -262,9 +254,6 @@ function buildCatalog() {
     const identifier = methodNameToIdentifier(method.name);
 
     if (method.result != null) {
-      if (HOST_DEFINED_REQUESTS.has(method.name)) {
-        continue;
-      }
       const binding = REQUEST_BINDINGS.get(method.name);
       if (binding === undefined) {
         throw new Error(`No request binding for ${method.name}`);
