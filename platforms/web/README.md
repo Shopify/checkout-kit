@@ -34,6 +34,7 @@ Check out our blog to
 - [Configuration](#configuration)
   - [`src`](#src)
   - [`target`](#target)
+  - [`transport`](#transport)
   - [`debug`](#debug)
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
@@ -165,7 +166,7 @@ subscribing to the `ec.*` events.
 ```tsx
 import {useEffect, useRef} from 'react';
 import '@shopify/checkout-kit';
-import type {ShopifyCheckout} from '@shopify/checkout-kit';
+import type {CheckoutTransport, ShopifyCheckout} from '@shopify/checkout-kit';
 
 export function BuyNowButton({checkoutUrl}: {checkoutUrl: string}) {
   const checkoutRef = useRef<ShopifyCheckout>(null);
@@ -216,7 +217,7 @@ declare module 'react' {
       'shopify-checkout': DetailedHTMLProps<
         HTMLAttributes<ShopifyCheckout>,
         ShopifyCheckout
-      > & {src?: string; target?: string; debug?: boolean};
+      > & {src?: string; target?: string; transport?: CheckoutTransport; debug?: boolean};
     }
   }
 }
@@ -342,6 +343,24 @@ Where the checkout is presented. Defaults to `"auto"`.
 > `"_self"`, `"_parent"`, and `"_top"` are not allowed — they would navigate
 > the host page away. The component falls back to `"auto"` if you set one,
 > and logs a warning when `debug` is enabled.
+
+### `transport`
+
+The ECP message transport used after the initial `ec.ready` handshake. Defaults
+to `"window"`.
+
+| Value               | Behavior                                                                           |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `"window"`          | Keeps all ECP JSON-RPC messages on the original `window.postMessage` channel.      |
+| `"message-channel"` | Responds to `ec.ready` with a transferred `MessagePort`, then listens on that port. |
+
+```html
+<shopify-checkout
+  src="https://your-store.myshopify.com/checkouts/cn/abc123"
+  target="popup"
+  transport="message-channel"
+/>
+```
 
 ### `debug`
 

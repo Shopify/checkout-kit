@@ -5,6 +5,7 @@ import type {
   CheckoutProperties,
   CheckoutProtocolMessageMap,
   CheckoutTarget,
+  CheckoutTransport,
   TypedEventListener,
   CheckoutProtocolMessageData,
   Checkout,
@@ -60,6 +61,7 @@ const SHADOW_TEMPLATE = createTemplate(html`
  *
  * @attribute src - The URL of the checkout to load.
  * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
+ * @attribute transport - ECP message transport after ec.ready (window or message-channel).
  *
  * @event ec.start - Dispatched when the checkout has started
  * @event ec.complete - Dispatched when the checkout was successfully completed
@@ -83,7 +85,7 @@ export class ShopifyCheckout
   extends HTMLElement
   implements CheckoutAttributes, CheckoutMethods, CheckoutProperties
 {
-  static observedAttributes = ["src", "target"] as const;
+  static observedAttributes = ["src", "target", "transport"] as const;
 
   constructor() {
     super();
@@ -95,6 +97,8 @@ export class ShopifyCheckout
   #error?: UcpErrorResponse;
 
   #checkoutWindow: WindowProxy | null = null;
+  #checkoutMessagePort: { port: MessagePort; listener: (event: MessageEvent) => void } | null =
+    null;
 
   // Manages the listeners for the popup window, new tabs, and scrim dialog
   #currentOpen: { controller: AbortController } | null = null;
@@ -171,6 +175,18 @@ export class ShopifyCheckout
 
   set target(value: CheckoutTarget | string | undefined) {
     this.#setAttribute("target", value);
+  }
+
+  get transport(): CheckoutTransport {
+    const transport = this.getAttribute("transport");
+    if (transport === "window" || transport === "message-channel") {
+      return transport;
+    }
+    return "window";
+  }
+
+  set transport(value: CheckoutTransport | undefined) {
+    this.#setAttribute("transport", value);
   }
 
   #setAttribute(name: string, value: string | boolean | undefined) {
@@ -351,6 +367,7 @@ export class ShopifyCheckout
     }
 
     abortController.signal.addEventListener("abort", () => {
+      this.#resetMessagePort();
       checkoutWindow?.close();
       this.#checkoutWindow = null;
       this.#currentOpen = null;
@@ -388,6 +405,32 @@ export class ShopifyCheckout
 
   override focus(): void {
     this.#checkoutWindow?.focus();
+  }
+
+  #resetMessagePort(): void {
+    if (!this.#checkoutMessagePort) return;
+    const { port, listener } = this.#checkoutMessagePort;
+    port.removeEventListener("message", listener);
+    port.close();
+    this.#checkoutMessagePort = null;
+  }
+
+  #createMessageChannel(): MessageChannel | undefined {
+    if (typeof MessageChannel === "undefined") {
+      this.#debugWarn('transport="message-channel" requested, but MessageChannel is unavailable');
+      return undefined;
+    }
+
+    this.#resetMessagePort();
+
+    const channel = new MessageChannel();
+    channel.port1.addEventListener("message", this.#handlePortMessage);
+    channel.port1.start();
+    this.#checkoutMessagePort = {
+      port: channel.port1,
+      listener: this.#handlePortMessage,
+    };
+    return channel;
   }
 
   /**
@@ -521,12 +564,31 @@ export class ShopifyCheckout
       return;
     }
 
+    if (this.#checkoutMessagePort) return;
+
     const message = CheckoutProtocolMessage.parse(event);
     if (!message) {
       respondToUnsupportedProtocolRequest(event);
       return;
     }
 
+    this.#handleProtocolMessage(message);
+  };
+
+  #handlePortMessage = (event: MessageEvent) => {
+    const activePort = this.#checkoutMessagePort?.port;
+    if (!activePort) return;
+
+    const message = CheckoutProtocolMessage.parsePortEvent(event, activePort);
+    if (!message) {
+      respondToUnsupportedPortProtocolRequest(event.data, activePort);
+      return;
+    }
+
+    this.#handleProtocolMessage(message);
+  };
+
+  #handleProtocolMessage(message: CheckoutProtocolMessage) {
     // @see https://ucp.dev/2026-04-08/specification/embedded-checkout/
 
     // Every notification that carries a checkout payload updates the cached value.
@@ -536,11 +598,16 @@ export class ShopifyCheckout
 
     switch (message.name) {
       case "ec.ready": {
-        if (this.#isRespondableRequest(message) && message.source) {
-          (message.source as WindowProxy).postMessage(
-            { jsonrpc: "2.0" as const, id: message.id, result: {} },
-            message.origin,
-          );
+        if (this.#isRespondableRequest(message)) {
+          if (this.transport === "message-channel" && message.replyTarget.kind === "window") {
+            const channel = this.#createMessageChannel();
+            if (channel) {
+              postProtocolResult(message, { upgrade: { port: channel.port2 } }, [channel.port2]);
+              break;
+            }
+          }
+
+          postProtocolResult(message, { ucp: ucpSuccess() });
         }
         break;
       }
@@ -610,55 +677,22 @@ export class ShopifyCheckout
             "<shopify-checkout>: ec.window.open_request received without a valid url",
             message,
           );
-          message.source?.postMessage(
-            {
-              jsonrpc: "2.0" as const,
-              id: message.id,
-              error: {
-                code: -32602,
-                message: "Invalid params: expected {url: string}",
-              },
-            },
-            { targetOrigin: message.origin },
-          );
+          postProtocolError(message, -32602, "Invalid params: expected {url: string}");
           break;
         }
         let targetUrl: URL;
         try {
           targetUrl = new URL(body.url);
         } catch {
-          message.source?.postMessage(
-            {
-              jsonrpc: "2.0" as const,
-              id: message.id,
-              error: {
-                code: -32602,
-                message: "Invalid params: url is not a valid URL",
-              },
-            },
-            { targetOrigin: message.origin },
-          );
+          postProtocolError(message, -32602, "Invalid params: url is not a valid URL");
           break;
         }
         if (targetUrl.protocol !== "https:") {
-          message.source?.postMessage(
-            {
-              jsonrpc: "2.0" as const,
-              id: message.id,
-              error: {
-                code: -32602,
-                message: "Invalid params: url must use https scheme",
-              },
-            },
-            { targetOrigin: message.origin },
-          );
+          postProtocolError(message, -32602, "Invalid params: url must use https scheme");
           break;
         }
         window.open(targetUrl.href, "_blank", "noopener");
-        message.source?.postMessage(
-          { jsonrpc: "2.0" as const, id: message.id, result: {} },
-          { targetOrigin: message.origin },
-        );
+        postProtocolResult(message, {});
         break;
       }
       default: {
@@ -670,7 +704,7 @@ export class ShopifyCheckout
         break;
       }
     }
-  };
+  }
 
   /* ------------------------------------------------------------
    * Lifecycle
@@ -711,6 +745,11 @@ export class ShopifyCheckout
 
         break;
       }
+      case "transport":
+        if (oldValue !== newValue && this.#currentOpen) {
+          this.close();
+        }
+        break;
     }
   }
 
@@ -895,6 +934,17 @@ const METHOD_NOT_FOUND_ERROR = {
   message: "Method not found",
 } as const;
 
+type ProtocolReplyTarget =
+  | {
+      readonly kind: "window";
+      readonly source: MessageEventSource | null;
+      readonly origin: string;
+    }
+  | {
+      readonly kind: "port";
+      readonly port: MessagePort;
+    };
+
 class CheckoutProtocolMessage<
   MessageType extends keyof CheckoutProtocolMessageMap = keyof CheckoutProtocolMessageMap,
 > {
@@ -902,7 +952,17 @@ class CheckoutProtocolMessage<
     const { data, source, origin } = event;
     if (!isCheckoutProtocolMessage(data)) return;
     if (data.method === "ec.error" && !isEcErrorParams(data.params)) return;
-    return new CheckoutProtocolMessage(data, { source, origin });
+    return new CheckoutProtocolMessage(data, { kind: "window", source, origin });
+  }
+
+  static parsePortEvent(
+    event: MessageEvent,
+    port: MessagePort,
+  ): CheckoutProtocolMessage | undefined {
+    const { data } = event;
+    if (!isCheckoutProtocolMessage(data)) return;
+    if (data.method === "ec.error" && !isEcErrorParams(data.params)) return;
+    return new CheckoutProtocolMessage(data, { kind: "port", port });
   }
 
   readonly protocol: { readonly version: string };
@@ -914,22 +974,79 @@ class CheckoutProtocolMessage<
   readonly source: MessageEventSource | null;
   /** The origin to use when posting responses */
   readonly origin: string;
+  readonly replyTarget: ProtocolReplyTarget;
 
   constructor(
     { method, params, id }: CheckoutProtocolMessageData<MessageType> & { id?: string },
-    { source, origin }: { source: MessageEventSource | null; origin: string },
+    replyTarget: ProtocolReplyTarget,
   ) {
     this.protocol = { version: "2026-04-08" };
     this.name = method;
     this.body = params as CheckoutProtocolMessageMap[MessageType];
     this.id = id;
-    this.source = source;
-    this.origin = origin;
+    this.source = replyTarget.kind === "window" ? replyTarget.source : null;
+    this.origin = replyTarget.kind === "window" ? replyTarget.origin : "";
+    this.replyTarget = replyTarget;
   }
 }
 
 function isEcErrorParams(params: unknown): params is CheckoutProtocolMessageMap["ec.error"] {
   return params != null && typeof params === "object" && "error" in params;
+}
+
+function postProtocolResult(
+  message: CheckoutProtocolMessage & { id: string },
+  result: unknown,
+  transfer: Transferable[] = [],
+): void {
+  postProtocolResponse(
+    message,
+    {
+      jsonrpc: "2.0" as const,
+      id: message.id,
+      result,
+    },
+    transfer,
+  );
+}
+
+function postProtocolError(
+  message: CheckoutProtocolMessage & { id: string },
+  code: number,
+  errorMessage: string,
+): void {
+  postProtocolResponse(message, {
+    jsonrpc: "2.0" as const,
+    id: message.id,
+    error: {
+      code,
+      message: errorMessage,
+    },
+  });
+}
+
+function postProtocolResponse(
+  message: CheckoutProtocolMessage,
+  response: unknown,
+  transfer: Transferable[] = [],
+): void {
+  if (message.replyTarget.kind === "port") {
+    message.replyTarget.port.postMessage(response, transfer);
+    return;
+  }
+
+  const options: WindowPostMessageOptions = { targetOrigin: message.replyTarget.origin };
+  if (transfer.length > 0) {
+    options.transfer = transfer;
+  }
+  message.replyTarget.source?.postMessage(response, options);
+}
+
+function ucpSuccess() {
+  return {
+    version: EMBED_PROTOCOL_VERSION,
+    status: "success" as const,
+  };
 }
 
 function respondToUnsupportedProtocolRequest(event: MessageEvent) {
@@ -943,6 +1060,20 @@ function respondToUnsupportedProtocolRequest(event: MessageEvent) {
       error: METHOD_NOT_FOUND_ERROR,
     },
     { targetOrigin: event.origin },
+  );
+}
+
+function respondToUnsupportedPortProtocolRequest(data: unknown, port: MessagePort) {
+  const request = parseUnsupportedProtocolRequest(data);
+  if (!request) return;
+
+  port.postMessage(
+    {
+      jsonrpc: "2.0" as const,
+      id: request.id,
+      error: METHOD_NOT_FOUND_ERROR,
+    },
+    [],
   );
 }
 

@@ -45,6 +45,21 @@ describe("<shopify-checkout>", () => {
         expect(checkout.src).toBe(newSrc);
       });
     });
+
+    describe("transport", () => {
+      it("changing the transport attribute reflects to the transport property", () => {
+        const checkout = renderCheckout();
+        checkout.setAttribute("transport", "message-channel");
+
+        expect(checkout.transport).toBe("message-channel");
+      });
+
+      it("falls back to window for invalid transport values", () => {
+        const checkout = renderCheckout({ transport: "direct" });
+
+        expect(checkout.transport).toBe("window");
+      });
+    });
   });
 
   describe("target", () => {
@@ -110,6 +125,15 @@ describe("<shopify-checkout>", () => {
         const newTarget = "_blank";
         checkout.target = newTarget;
         expect(checkout.getAttribute("target")).toBe(newTarget);
+      });
+    });
+
+    describe("transport", () => {
+      it("changing the transport property reflects to the transport attribute", () => {
+        const checkout = renderCheckout();
+        checkout.transport = "message-channel";
+
+        expect(checkout.getAttribute("transport")).toBe("message-channel");
       });
     });
 
@@ -727,7 +751,7 @@ describe("<shopify-checkout>", () => {
 
   describe("it subscribes to checkout-protocol events", () => {
     describe("ec.ready handshake", () => {
-      it("auto-responds with an empty result and does not dispatch a DOM event", async () => {
+      it("auto-responds with a UCP success result and does not dispatch a DOM event", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onReadySpy = vi.fn();
         // ec.ready is no longer a public event; cast through `never` to verify
@@ -743,10 +767,118 @@ describe("<shopify-checkout>", () => {
         await Promise.resolve();
 
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
-          { jsonrpc: "2.0", id: "ready-1", result: {} },
-          new URL(checkout.src).origin,
+          {
+            jsonrpc: "2.0",
+            id: "ready-1",
+            result: {
+              ucp: {
+                version: EMBED_PROTOCOL_VERSION,
+                status: "success",
+              },
+            },
+          },
+          { targetOrigin: new URL(checkout.src).origin },
         );
         expect(onReadySpy).not.toHaveBeenCalled();
+      });
+
+      it("upgrades to MessagePort, completes ready on the port, and routes future protocol messages through the port", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          transport: "message-channel",
+        });
+        const onStartSpy = vi.fn();
+        const payload = makeCheckoutPayload();
+        const listenForEvent = waitForEvent(checkout, "ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          { id: "ready-message-channel", source: mockCheckoutWindow },
+        );
+        await Promise.resolve();
+
+        const firstCall = (mockCheckoutWindow.postMessage as unknown as ReturnType<typeof vi.fn>)
+          .mock.calls[0];
+        const response = firstCall?.[0] as
+          | { result?: { ucp?: unknown; upgrade?: { port?: MessagePort } } }
+          | undefined;
+        const options = firstCall?.[1] as WindowPostMessageOptions | undefined;
+        const transferredPort = response?.result?.upgrade?.port;
+
+        if (!transferredPort) {
+          throw new Error("expected ec.ready to include an upgraded MessagePort");
+        }
+
+        expect(response?.result?.ucp).toBeUndefined();
+        expect(options).toEqual({
+          targetOrigin: new URL(checkout.src).origin,
+          transfer: [transferredPort],
+        });
+
+        const readyResponse = new Promise<MessageEvent>((resolve) => {
+          transferredPort.addEventListener("message", (event) => resolve(event), { once: true });
+        });
+        transferredPort.start();
+        transferredPort.postMessage(
+          {
+            jsonrpc: "2.0",
+            id: "ready-message-channel-phase-2",
+            method: "ec.ready",
+            params: { delegate: [] },
+          },
+          [],
+        );
+
+        await expect(readyResponse).resolves.toMatchObject({
+          data: {
+            jsonrpc: "2.0",
+            id: "ready-message-channel-phase-2",
+            result: {
+              ucp: {
+                version: EMBED_PROTOCOL_VERSION,
+                status: "success",
+              },
+            },
+          },
+        });
+
+        transferredPort.postMessage(
+          {
+            jsonrpc: "2.0",
+            method: "ec.start",
+            params: payload,
+          },
+          [],
+        );
+        await listenForEvent;
+
+        expect(checkout.checkout).toEqual(payload.checkout);
+        expect(onStartSpy).toHaveBeenCalledOnce();
+      });
+
+      it("ignores window protocol messages after upgrading to MessagePort", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          transport: "message-channel",
+        });
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          { id: "ready-message-channel", source: mockCheckoutWindow },
+        );
+        await Promise.resolve();
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+        });
+        await Promise.resolve();
+
+        expect(onStartSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
       });
 
       it("does not post a response when id is missing", () => {
@@ -1613,7 +1745,7 @@ function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMess
   name: Message,
   params: CheckoutProtocolMessageMap[Message],
   options?: {
-    id?: string;
+    id?: string | number | null;
     source?: MessageEventSource | null;
     origin?: string;
   },
@@ -1634,7 +1766,7 @@ function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMess
       jsonrpc: "2.0",
       method: name,
       params,
-      ...(options?.id && { id: options.id }),
+      ...(options && "id" in options ? { id: options.id } : {}),
     },
     origin,
     source,
@@ -1737,11 +1869,11 @@ function createMockWindow() {
  * `simulateProtocolMessageEvent` and the spy target for response
  * `postMessage` calls), and the `window.open` spy already set up.
  */
-function openPopupCheckout(): {
+function openPopupCheckout(attributes: Record<string, string | undefined> = {}): {
   checkout: ShopifyCheckout;
   mockCheckoutWindow: Window;
 } {
-  const checkout = renderCheckout({ target: "popup" });
+  const checkout = renderCheckout({ target: "popup", ...attributes });
   const mockCheckoutWindow = createMockWindow();
   vi.spyOn(window, "open").mockReturnValue(mockCheckoutWindow);
   // showModal/close throw in jsdom unless the dialog is in the DOM and

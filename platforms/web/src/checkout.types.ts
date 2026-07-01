@@ -31,9 +31,12 @@ import type {
 
 export type CheckoutTarget = "auto" | "popup" | "_blank";
 
+export type CheckoutTransport = "window" | "message-channel";
+
 export interface CheckoutAttributes {
   src?: string;
   target?: CheckoutTarget | string;
+  transport?: CheckoutTransport;
   debug?: boolean | string;
 }
 
@@ -73,6 +76,18 @@ export interface CheckoutProperties {
    * or this property interchangeably.
    */
   target?: CheckoutTarget | string;
+
+  /**
+   * The ECP message transport used after the initial `ec.ready` handshake.
+   * Defaults to `'window'`.
+   * - `'window'`: Keeps all protocol messages on `window.postMessage`
+   * - `'message-channel'`: Responds to `ec.ready` with a transferred
+   *   `MessagePort`, then handles later protocol messages on that port
+   *
+   * This property is automatically reflected to the `transport` attribute,
+   * so you can use the `transport` attribute or this property interchangeably.
+   */
+  transport?: CheckoutTransport;
 
   /**
    * Whether the component should log diagnostic warnings to the console.

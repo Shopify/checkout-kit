@@ -14,11 +14,13 @@ pnpm sample
 
 Vite serves at `http://localhost:5173`. The page has three panels:
 
-- **Options** — form for `src`, `target` (`auto` | `popup`), and `debug`,
-  plus buttons for `open()`, `close()`, and `focus()`.
+- **Options** — form for `src`, `target` (`auto` | `popup`), `transport`
+  (`window` | `message-channel`), and `debug`, plus buttons for `open()`,
+  `close()`, and `focus()`.
 - **Demo Storefront** — a mocked product card with **Buy now** calling
   `checkout.open()`. The button stays disabled until a checkout URL is set.
-  The collapsible readout shows `checkout`, `error`, `target`, and `debug`.
+  The collapsible readout shows `checkout`, `error`, `target`, `transport`,
+  and `debug`.
 - **Events** — log of dispatched events with a JSON snapshot of state at fire
   time.
 
