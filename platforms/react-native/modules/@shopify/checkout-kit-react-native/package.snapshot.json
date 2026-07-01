@@ -108,6 +108,8 @@
   "node_modules/@shopify/checkout-kit-protocol/src/protocol.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/url.d.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/url.ts",
+  "node_modules/@shopify/checkout-kit-protocol/src/window_open.d.ts",
+  "node_modules/@shopify/checkout-kit-protocol/src/window_open.ts",
   "package.json",
   "RNShopifyCheckoutKit.podspec",
   "src/components/AcceleratedCheckoutButtons.tsx",
