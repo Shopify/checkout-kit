@@ -6,7 +6,7 @@ import UIKit
 
 @MainActor
 public class CheckoutViewController: UINavigationController {
-    public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) {
+    public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: CheckoutProtocol.Client? = nil) {
         let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: nil)
         super.init(rootViewController: rootViewController)
         presentationController?.delegate = rootViewController
@@ -62,7 +62,13 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         webViewController.onFail = onFailAction
     }
 
-    @discardableResult public func connect(_ handler: any CheckoutCommunicationProtocol) -> Self {
+    @discardableResult public func connect(_ handler: CheckoutProtocol.Client) -> Self {
+        var copy = self
+        copy.client = handler
+        return copy
+    }
+
+    @discardableResult package func connect(_ handler: any CheckoutCommunicationProtocol) -> Self {
         var copy = self
         copy.client = handler
         return copy

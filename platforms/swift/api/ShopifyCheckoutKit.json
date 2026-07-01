@@ -153,6 +153,7 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutCommunicationProtocol>",
             "protocolReq": true,
+            "isInternal": true,
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           }
@@ -162,6 +163,7 @@
         "mangledName": "$s18ShopifyCheckoutKit0B21CommunicationProtocolP",
         "moduleName": "ShopifyCheckoutKit",
         "genericSig": "<Self : Swift.Sendable>",
+        "isInternal": true,
         "conformances": [
           {
             "kind": "Conformance",
@@ -1833,13 +1835,20 @@
               {
                 "kind": "TypeNominal",
                 "name": "Optional",
-                "printedName": "(any ShopifyCheckoutKit.CheckoutCommunicationProtocol)?",
+                "printedName": "ShopifyCheckoutKit.CheckoutProtocol.Client?",
                 "children": [
                   {
-                    "kind": "TypeNominal",
-                    "name": "CheckoutCommunicationProtocol",
-                    "printedName": "any ShopifyCheckoutKit.CheckoutCommunicationProtocol",
-                    "usr": "s:18ShopifyCheckoutKit0B21CommunicationProtocolP"
+                    "kind": "TypeNameAlias",
+                    "name": "Client",
+                    "printedName": "ShopifyCheckoutKit.CheckoutProtocol.Client",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Client",
+                        "printedName": "ShopifyCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
+                        "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV"
+                      }
+                    ]
                   }
                 ],
                 "hasDefaultArg": true,
@@ -1847,8 +1856,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6clientAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgtcfc",
-            "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6clientAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgtcfc",
+            "usr": "s:18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6clientAC10Foundation3URLV_AA0B8Delegate_pSg0aB8Protocol08EmbeddedbL0O6ClientVSgtcfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6clientAC10Foundation3URLV_AA0B8Delegate_pSg0aB8Protocol08EmbeddedbL0O6ClientVSgtcfc",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "Custom"
@@ -2428,6 +2437,42 @@
                 "usr": "s:18ShopifyCheckoutKit0aB0V"
               },
               {
+                "kind": "TypeNameAlias",
+                "name": "Client",
+                "printedName": "ShopifyCheckoutKit.CheckoutProtocol.Client",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Client",
+                    "printedName": "ShopifyCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
+                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V7connectyAC0aB8Protocol08EmbeddedbE0O6ClientVF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V7connectyAC0aB8Protocol08EmbeddedbE0O6ClientVF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "connect",
+            "printedName": "connect(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
                 "kind": "TypeNominal",
                 "name": "CheckoutCommunicationProtocol",
                 "printedName": "any ShopifyCheckoutKit.CheckoutCommunicationProtocol",
@@ -2438,6 +2483,7 @@
             "usr": "s:18ShopifyCheckoutKit0aB0V7connectyAcA0B21CommunicationProtocol_pF",
             "mangledName": "$s18ShopifyCheckoutKit0aB0V7connectyAcA0B21CommunicationProtocol_pF",
             "moduleName": "ShopifyCheckoutKit",
+            "isInternal": true,
             "declAttributes": [
               "Preconcurrency",
               "DiscardableResult",
@@ -6492,13 +6538,20 @@
           {
             "kind": "TypeNominal",
             "name": "Optional",
-            "printedName": "(any ShopifyCheckoutKit.CheckoutCommunicationProtocol)?",
+            "printedName": "ShopifyCheckoutKit.CheckoutProtocol.Client?",
             "children": [
               {
-                "kind": "TypeNominal",
-                "name": "CheckoutCommunicationProtocol",
-                "printedName": "any ShopifyCheckoutKit.CheckoutCommunicationProtocol",
-                "usr": "s:18ShopifyCheckoutKit0B21CommunicationProtocolP"
+                "kind": "TypeNameAlias",
+                "name": "Client",
+                "printedName": "ShopifyCheckoutKit.CheckoutProtocol.Client",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Client",
+                    "printedName": "ShopifyCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
+                    "usr": "s:23ShopifyCheckoutProtocol08EmbeddedbC0O6ClientV"
+                  }
+                ]
               }
             ],
             "hasDefaultArg": true,
@@ -6506,9 +6559,65 @@
           }
         ],
         "declKind": "Func",
-        "usr": "s:18ShopifyCheckoutKit7present8checkout4from8delegate6clientAA0B14ViewControllerC10Foundation3URLV_So06UIViewJ0CAA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgtF",
-        "mangledName": "$s18ShopifyCheckoutKit7present8checkout4from8delegate6clientAA0B14ViewControllerC10Foundation3URLV_So06UIViewJ0CAA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgtF",
+        "usr": "s:18ShopifyCheckoutKit7present8checkout4from8delegate6clientAA0B14ViewControllerC10Foundation3URLV_So06UIViewJ0CAA0B8Delegate_pSg0aB8Protocol08EmbeddedbO0O6ClientVSgtF",
+        "mangledName": "$s18ShopifyCheckoutKit7present8checkout4from8delegate6clientAA0B14ViewControllerC10Foundation3URLV_So06UIViewJ0CAA0B8Delegate_pSg0aB8Protocol08EmbeddedbO0O6ClientVSgtF",
         "moduleName": "ShopifyCheckoutKit",
+        "declAttributes": [
+          "DiscardableResult",
+          "Custom"
+        ],
+        "funcSelfKind": "NonMutating"
+      },
+      {
+        "kind": "Function",
+        "name": "present",
+        "printedName": "present(checkout:from:delegate:client:)",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "CheckoutViewController",
+            "printedName": "ShopifyCheckoutKit.CheckoutViewController",
+            "usr": "c:@M@ShopifyCheckoutKit@objc(cs)CheckoutViewController"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "URL",
+            "printedName": "Foundation.URL",
+            "usr": "s:10Foundation3URLV"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "UIViewController",
+            "printedName": "UIKit.UIViewController",
+            "usr": "c:objc(cs)UIViewController"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "(any ShopifyCheckoutKit.CheckoutDelegate)?",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutDelegate",
+                "printedName": "any ShopifyCheckoutKit.CheckoutDelegate",
+                "usr": "s:18ShopifyCheckoutKit0B8DelegateP"
+              }
+            ],
+            "hasDefaultArg": true,
+            "usr": "s:Sq"
+          },
+          {
+            "kind": "TypeNominal",
+            "name": "CheckoutCommunicationProtocol",
+            "printedName": "any ShopifyCheckoutKit.CheckoutCommunicationProtocol",
+            "usr": "s:18ShopifyCheckoutKit0B21CommunicationProtocolP"
+          }
+        ],
+        "declKind": "Func",
+        "usr": "s:18ShopifyCheckoutKit7present8checkout4from8delegate6clientAA0B14ViewControllerC10Foundation3URLV_So06UIViewJ0CAA0B8Delegate_pSgAA0B21CommunicationProtocol_ptF",
+        "mangledName": "$s18ShopifyCheckoutKit7present8checkout4from8delegate6clientAA0B14ViewControllerC10Foundation3URLV_So06UIViewJ0CAA0B8Delegate_pSgAA0B21CommunicationProtocol_ptF",
+        "moduleName": "ShopifyCheckoutKit",
+        "isInternal": true,
         "declAttributes": [
           "DiscardableResult",
           "Custom"

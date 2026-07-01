@@ -1,5 +1,8 @@
 import PassKit
 import ShopifyCheckoutKit
+#if !COCOAPODS
+    import ShopifyCheckoutProtocol
+#endif
 import SwiftUI
 
 /// Render state for AcceleratedCheckoutButtons
@@ -230,7 +233,7 @@ extension AcceleratedCheckoutButtons {
         return newView
     }
 
-    public func connect(_ client: (any CheckoutCommunicationProtocol)?) -> AcceleratedCheckoutButtons {
+    public func connect(_ client: CheckoutProtocol.Client?) -> AcceleratedCheckoutButtons {
         var newView = self
         newView.clientContainer = CheckoutProtocolClientContainer(client)
         return newView
