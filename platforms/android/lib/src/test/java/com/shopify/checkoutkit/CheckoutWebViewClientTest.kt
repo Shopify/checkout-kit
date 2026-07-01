@@ -369,7 +369,7 @@ class CheckoutWebViewClientTest {
                 name = "FakeHandlerActivity"
             }
         }
-        shadowOf(activity.packageManager).addResolveInfoForIntent(intent, resolveInfo)
+        shadowOf(activity.packageManager).setResolveInfosForIntent(intent, listOf(resolveInfo))
     }
 
     private fun mockWebRequest(uri: Uri, forMainFrame: Boolean = false): WebResourceRequest {

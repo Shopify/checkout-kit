@@ -22,6 +22,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.annotation.ColorInt
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.Toolbar
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
@@ -103,8 +104,9 @@ internal class CheckoutBottomSheet(
 
         addWebViewToContainer(sheetColors.webViewBackgroundColor, checkoutWebView)
         show()
-        // Dialog.show() can apply default window sizing after the initial configuration.
+        // Dialog.show() can apply default window sizing and decor flags after the initial configuration.
         window?.setCheckoutBottomSheetWindowLayout()
+        window?.setTransparentSystemBars(navigationBackgroundColor = sheetColors.webViewBackgroundColor)
         findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.animateIn()
         focusCloseButtonForAccessibility(activity)
         log.d(LOG_TAG, "Shown.")
@@ -121,11 +123,12 @@ internal class CheckoutBottomSheet(
         val headerBackgroundColor = colorScheme.headerBackgroundColor(isDarkTheme).getValue(activity)
         val headerFontColor = colorScheme.headerFontColor(isDarkTheme).getValue(activity)
         val webViewBackgroundColor = colorScheme.webViewBackgroundColor(isDarkTheme).getValue(activity)
+        val cornerRadiusPx = sheet.cornerRadiusDp.dpToPx(activity)
 
         findViewById<Toolbar>(R.id.checkoutKitHeader)?.apply {
             log.d(LOG_TAG, "Applying configured header colors and inflating menu.")
             title = ""
-            background = roundedTopCornerDrawable(activity, headerBackgroundColor, sheet.cornerRadiusDp)
+            background = roundedTopCornerDrawable(headerBackgroundColor, cornerRadiusPx)
             elevation = sheet.toolbarElevationDp.dpToPx(activity)
             setTitleTextColor(headerFontColor)
             inflateMenu(R.menu.checkout_menu)
@@ -154,6 +157,8 @@ internal class CheckoutBottomSheet(
                 layoutParams = params
             }
         }
+
+        findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.topCornerRadiusPx = cornerRadiusPx
 
         findViewById<RelativeLayout>(R.id.checkoutKitContainer)
             ?.setBackgroundColor(webViewBackgroundColor)
@@ -492,15 +497,28 @@ private fun Window.setCheckoutBottomSheetWindowLayout() {
 }
 
 /**
- * Makes system bars transparent while retaining contrast enforcement for 3-button navigation controls.
+ * Makes system bars transparent while retaining contrast for 3-button navigation controls.
  */
 @Suppress("DEPRECATION")
-private fun Window.setTransparentSystemBars() {
+private fun Window.setTransparentSystemBars(@ColorInt navigationBackgroundColor: Int? = null) {
+    val shouldUseDarkNavigationButtons = navigationBackgroundColor?.let { backgroundColor ->
+        ColorUtils.calculateLuminance(backgroundColor) > LIGHT_COLOR_LUMINANCE_THRESHOLD
+    } ?: false
+
     statusBarColor = Color.TRANSPARENT
-    navigationBarColor = Color.TRANSPARENT
+    navigationBarColor = if (shouldUseDarkNavigationButtons && Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        LEGACY_LIGHT_BACKGROUND_NAVIGATION_BAR_COLOR
+    } else {
+        Color.TRANSPARENT
+    }
+    if (navigationBackgroundColor != null) {
+        WindowCompat.getInsetsController(this, decorView).isAppearanceLightNavigationBars = shouldUseDarkNavigationButtons
+    }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         isNavigationBarContrastEnforced = true
     }
 }
 
 private const val LOG_TAG = "CheckoutBottomSheet"
+private const val LIGHT_COLOR_LUMINANCE_THRESHOLD = 0.5
+private const val LEGACY_LIGHT_BACKGROUND_NAVIGATION_BAR_COLOR = 0x52000000

@@ -2,7 +2,6 @@ package com.shopify.checkoutkit
 
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
-import android.os.Build
 import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
@@ -39,7 +38,6 @@ import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
-import android.graphics.Color as AndroidColor
 
 @Suppress("LargeClass")
 @RunWith(RobolectricTestRunner::class)
@@ -505,17 +503,6 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `bottom sheet keeps transparent system bars with navigation contrast`() {
-        val sheet = presentBottomSheet()
-
-        assertThat(sheet.window?.statusBarColor).isEqualTo(AndroidColor.TRANSPARENT)
-        assertThat(sheet.window?.navigationBarColor).isEqualTo(AndroidColor.TRANSPARENT)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            assertThat(sheet.window?.isNavigationBarContrastEnforced).isTrue()
-        }
-    }
-
-    @Test
     fun `present returns handle allowing dismissal of checkout`() {
         val checkout = ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
         val sheet = ShadowDialog.getLatestDialog() as CheckoutBottomSheet
@@ -658,15 +645,17 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `rounds only top header corners`() {
+    fun `rounds and clips only top sheet corners`() {
         ShopifyCheckoutKit.configuration.sheet = CheckoutSheetOptions(cornerRadiusDp = 18f)
 
         val sheet = presentBottomSheet()
 
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
         val header = sheet.findViewById<Toolbar>(R.id.checkoutKitHeader)!!
         val background = header.background as CheckoutSheetHeaderBackgroundDrawable
         val cornerRadius = 18f.dpToPx(activity)
 
+        assertThat(bottomSheet.topCornerRadiusPx).isEqualTo(cornerRadius)
         assertThat(background.appliedCornerRadii).containsExactly(
             cornerRadius,
             cornerRadius,

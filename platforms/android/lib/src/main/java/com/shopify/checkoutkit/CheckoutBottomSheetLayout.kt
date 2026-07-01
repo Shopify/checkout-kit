@@ -1,7 +1,10 @@
 package com.shopify.checkoutkit
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Path
 import android.graphics.Rect
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.VelocityTracker
@@ -10,6 +13,7 @@ import android.view.ViewConfiguration
 import android.view.ViewTreeObserver
 import android.view.animation.PathInterpolator
 import android.widget.RelativeLayout
+import androidx.core.graphics.withClip
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -29,6 +33,8 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private val minimumFlingVelocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity
     private val childHitRect = Rect()
+    private val sheetClipPath = Path()
+    private val sheetClipBounds = RectF()
     private val openInterpolator = OpenInterpolator.create()
     private val closeInterpolator = CloseInterpolator.create()
     private val settleInterpolator = SettleInterpolator.create()
@@ -46,6 +52,18 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     private var gestureStartedOutsideScrollableChild = false
     private var dismissAnimationRunning = false
     private var dismissAnimationEndAction: (() -> Unit)? = null
+
+    /**
+     * Radius used to clip only the visible top corners of the sheet.
+     */
+    var topCornerRadiusPx = 0f
+        set(value) {
+            val coercedValue = value.coerceAtLeast(0f)
+            if (field == coercedValue) return
+
+            field = coercedValue
+            invalidate()
+        }
 
     /**
      * Registers the content view whose downward scroll should be consumed before the sheet can drag.
@@ -284,6 +302,36 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     }
 
     /**
+     * Clips child drawing to the configured top corner radius to avoid square child surfaces leaking at the sheet edge.
+     */
+    override fun draw(canvas: Canvas) {
+        if (topCornerRadiusPx <= 0f || width <= 0 || height <= 0) {
+            super.draw(canvas)
+            return
+        }
+
+        sheetClipBounds.set(0f, 0f, width.toFloat(), height.toFloat())
+        sheetClipPath.reset()
+        sheetClipPath.addRoundRect(
+            sheetClipBounds,
+            floatArrayOf(
+                topCornerRadiusPx,
+                topCornerRadiusPx,
+                topCornerRadiusPx,
+                topCornerRadiusPx,
+                0f,
+                0f,
+                0f,
+                0f,
+            ),
+            Path.Direction.CW,
+        )
+        canvas.withClip(sheetClipPath) {
+            super.draw(this)
+        }
+    }
+
+    /**
      * Releases gesture and pre-draw resources when the dialog window is torn down.
      */
     override fun onDetachedFromWindow() {
@@ -349,11 +397,7 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     private fun settleExpanded() {
         renderedDragOffsetY = materializeTopOffsetAsTranslation(renderedDragOffsetY)
         dragOffsetY = 0f
-        animate()
-            .translationY(0f)
-            .setDuration(SETTLE_ANIMATION_DURATION_MS)
-            .setInterpolator(settleInterpolator)
-            .start()
+        animateExpanded(settleInterpolator, SETTLE_ANIMATION_DURATION_MS)
     }
 
     /**
@@ -445,6 +489,20 @@ private fun View.materializeTopOffsetAsTranslation(currentOffsetY: Int): Int {
 
 private fun View.isReadyForHitTesting(): Boolean =
     width > 0 && height > 0 && parent != null
+
+/**
+ * Animates the sheet view back to its fully expanded position.
+ */
+private fun View.animateExpanded(
+    interpolator: PathInterpolator,
+    durationMs: Long,
+) {
+    animate()
+        .translationY(0f)
+        .setDuration(durationMs)
+        .setInterpolator(interpolator)
+        .start()
+}
 
 /**
  * Removes a pending opening pre-draw listener if the view tree observer is still valid.

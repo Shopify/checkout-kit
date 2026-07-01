@@ -9,12 +9,10 @@ import androidx.annotation.ColorInt
  * Creates the sheet header background with rounded top corners and square bottom corners.
  */
 internal fun roundedTopCornerDrawable(
-    context: Context,
     @ColorInt color: Int,
-    cornerRadiusDp: Float,
+    cornerRadiusPx: Float,
 ): GradientDrawable {
-    val cornerRadius = cornerRadiusDp.dpToPx(context)
-    return CheckoutSheetHeaderBackgroundDrawable(color, cornerRadius)
+    return CheckoutSheetHeaderBackgroundDrawable(color, cornerRadiusPx)
 }
 
 internal fun Float.dpToPx(context: Context): Float =
