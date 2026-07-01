@@ -47,6 +47,7 @@ import type {
 import {CheckoutProtocol} from './protocol';
 import type {
   Checkout,
+  CheckoutProtocolMethod,
   CheckoutProtocolPayloads,
   ErrorResponse,
   ProtocolHandlers,
@@ -422,6 +423,7 @@ export type {
   AndroidColors,
   Checkout,
   CheckoutException,
+  CheckoutProtocolMethod,
   CheckoutProtocolPayloads,
   Configuration,
   ErrorResponse,

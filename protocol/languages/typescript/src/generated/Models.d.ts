@@ -1263,7 +1263,7 @@ export interface UcpOrderResponseSchema {
      * Service registry keyed by reverse-domain name.
      */
     services?: {
-        [key: string]: UcpOrderResponseSchemaService[];
+        [key: string]: Service[];
     };
     /**
      * Application-level status of the UCP operation.
@@ -1275,7 +1275,7 @@ export interface UcpOrderResponseSchema {
 /**
  * Shared foundation for all UCP entities.
  */
-export interface UcpOrderResponseSchemaService {
+export interface Service {
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1352,19 +1352,19 @@ export interface ErrorResponseUcp {
      * Service registry keyed by reverse-domain name.
      */
     services?: {
-        [key: string]: UcpOrderResponseSchemaService[];
+        [key: string]: Service[];
     };
     /**
      * Application-level status of the UCP operation.
      */
-    status: StatusEnum;
+    status: ErrorStatus;
     version: string;
     [property: string]: any;
 }
 /**
  * Application-level status of the UCP operation.
  */
-export type StatusEnum = "error";
+export type ErrorStatus = "error";
 /**
  * Checkout state after instrument selection.
  *
@@ -1445,7 +1445,7 @@ export interface InstrumentsChangeResultUcp {
      * Service registry keyed by reverse-domain name.
      */
     services?: {
-        [key: string]: InstrumentsChangeService[];
+        [key: string]: EmbeddedService[];
     };
     /**
      * Application-level status of the UCP operation.
@@ -1549,7 +1549,7 @@ export interface PaymentHandlerAvailableInstrument {
 /**
  * Shared foundation for all UCP entities.
  */
-export interface InstrumentsChangeService {
+export interface EmbeddedService {
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1615,6 +1615,174 @@ export interface CredentialCheckout {
     payment?: Payment;
     [property: string]: any;
 }
+/**
+ * Checkout state after address selection.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface AddressChangeResult {
+    /**
+     * Partial checkout update with fulfillment address selection.
+     */
+    checkout?: AddressChangeCheckout;
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: InstrumentsChangeResultUcp;
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages?: Message[];
+    [property: string]: any;
+}
+/**
+ * Partial checkout update with fulfillment address selection.
+ */
+export interface AddressChangeCheckout {
+    /**
+     * Updated fulfillment with new selected destination and destinations.
+     */
+    fulfillment?: CheckoutFulfillmentObject;
+    [property: string]: any;
+}
+/**
+ * Updated fulfillment with new selected destination and destinations.
+ *
+ * Container for fulfillment methods and availability.
+ */
+export interface CheckoutFulfillmentObject {
+    /**
+     * Inventory availability hints.
+     */
+    availableMethods?: FulfillmentAvailableMethod[];
+    /**
+     * Fulfillment methods for cart items.
+     */
+    methods?: FulfillmentMethod[];
+    [property: string]: any;
+}
+export interface ReadyRequest {
+    auth?: Auth;
+    /**
+     * Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
+     */
+    delegate: string[];
+    [property: string]: any;
+}
+export interface Auth {
+    type?: string;
+    [property: string]: any;
+}
+/**
+ * Handshake response from host.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface ReadyResult {
+    /**
+     * Initial delegation state from host. Fields are permitted only when the corresponding
+     * delegation is accepted.
+     */
+    checkout?: ReadyCheckout;
+    /**
+     * Requested authorization. Some common examples include API key and OAuth token.
+     */
+    credential?: string;
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: InstrumentsChangeResultUcp;
+    /**
+     * Channel upgrade instructions. If present, switch to provided MessagePort.
+     */
+    upgrade?: Upgrade;
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages?: Message[];
+    [property: string]: any;
+}
+/**
+ * Initial delegation state from host. Fields are permitted only when the corresponding
+ * delegation is accepted.
+ */
+export interface ReadyCheckout {
+    fulfillment?: CheckoutFulfillmentObject;
+    /**
+     * Payment instruments with selected instrument ID.
+     */
+    payment?: ReadyPayment;
+    [property: string]: any;
+}
+/**
+ * Payment instruments with selected instrument ID.
+ *
+ * Payment configuration containing handlers.
+ */
+export interface ReadyPayment {
+    /**
+     * The payment instruments available for this payment. Each instrument is associated with a
+     * specific handler via the handler_id field. Handlers can extend the base
+     * payment_instrument schema to add handler-specific fields.
+     */
+    instruments?: SelectedPaymentInstrument[];
+    /**
+     * ID of the selected payment instrument.
+     */
+    selectedInstrumentId?: string;
+    [property: string]: any;
+}
+/**
+ * Channel upgrade instructions. If present, switch to provided MessagePort.
+ */
+export interface Upgrade {
+    /**
+     * MessagePort for upgraded channel. Runtime type is MessagePort.
+     */
+    port?: {
+        [key: string]: any;
+    };
+    [property: string]: any;
+}
+export interface AuthRequest {
+    type?: string;
+    [property: string]: any;
+}
+/**
+ * Auth response from host containing the requested authorization data.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface AuthResult {
+    /**
+     * Requested authorization. Some common examples include API key and OAuth token.
+     */
+    credential?: string;
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: InstrumentsChangeResultUcp;
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages?: Message[];
+    [property: string]: any;
+}
 export declare class Convert {
     static toCheckout(json: string): Checkout;
     static checkoutToJson(value: Checkout): string;
@@ -1626,4 +1794,14 @@ export declare class Convert {
     static instrumentsChangeResultToJson(value: InstrumentsChangeResult): string;
     static toCredentialResult(json: string): CredentialResult;
     static credentialResultToJson(value: CredentialResult): string;
+    static toAddressChangeResult(json: string): AddressChangeResult;
+    static addressChangeResultToJson(value: AddressChangeResult): string;
+    static toReadyRequest(json: string): ReadyRequest;
+    static readyRequestToJson(value: ReadyRequest): string;
+    static toReadyResult(json: string): ReadyResult;
+    static readyResultToJson(value: ReadyResult): string;
+    static toAuthRequest(json: string): AuthRequest;
+    static authRequestToJson(value: AuthRequest): string;
+    static toAuthResult(json: string): AuthResult;
+    static authResultToJson(value: AuthResult): string;
 }

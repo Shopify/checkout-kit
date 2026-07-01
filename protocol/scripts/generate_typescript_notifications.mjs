@@ -3,137 +3,147 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {
+  DELEGATIONS,
+  EC_METHODS,
+  delegationToIdentifier,
+} from './method_catalog.mjs';
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const protocolRoot = path.resolve(scriptDir, '..');
 
-const openRpcPath = path.resolve(
-  protocolRoot,
-  'services/shopping/embedded.openrpc.json',
-);
 const outputPath = path.resolve(
   protocolRoot,
   'languages/typescript/src/generated/ProtocolNotifications.ts',
 );
 
-const schemasRoot = path.resolve(protocolRoot, 'schemas');
+const SPEC_VERSION = '2026-04-08';
 
-const refMappings = new Map([
-  [
-    path.join(schemasRoot, 'shopping/checkout.json'),
-    {
-      typeName: 'Checkout',
-      converter: 'Convert.toCheckout',
-    },
-  ],
-  [
-    path.join(schemasRoot, 'common/types/error_response.json'),
-    {
-      typeName: 'ErrorResponse',
-      converter: 'Convert.toErrorResponse',
-    },
-  ],
+// TypeScript-specific notification decode wiring: each payload model maps to its
+// generated `Convert` entrypoint and the JSON-RPC params wrapper key it arrives
+// under on the wire. Mirrors the Swift/Kotlin catalogs' per-payload bindings. A
+// notification whose payload has no binding fails loudly rather than silently
+// dropping out of the catalog.
+const NOTIFICATION_BINDINGS = new Map([
+  ['Checkout', {converter: 'Convert.toCheckout', wrapperKey: 'checkout'}],
+  ['ErrorResponse', {converter: 'Convert.toErrorResponse', wrapperKey: 'error'}],
 ]);
 
-function resolvePointer(doc, pointer) {
-  if (!pointer) return doc;
-
-  return pointer
-    .split('/')
-    .filter(Boolean)
-    .reduce((node, rawSegment) => {
-      if (node == null) return undefined;
-      const segment = rawSegment.replace(/~1/g, '/').replace(/~0/g, '~');
-      return node[segment];
-    }, doc);
+function notificationBinding(entry) {
+  const binding = NOTIFICATION_BINDINGS.get(entry.payload);
+  if (binding === undefined) {
+    throw new Error(
+      `No TypeScript notification binding for payload ${entry.payload} (${entry.method})`,
+    );
+  }
+  return binding;
 }
 
-function methodNameToIdentifier(methodName) {
-  const suffix = methodName.replace(/^ec\./, '');
-  const parts = suffix.split(/[._]/g).filter(Boolean);
-
-  return parts
-    .map((part, index) =>
-      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
-    )
-    .join('');
-}
-
-function isNotification(method) {
+// A descriptor consumes raw JSON-RPC `params` from `Client.process`, so it
+// unwraps the `{wrapperKey: ...}` envelope before conversion — matching the
+// Swift/Kotlin notification descriptors and the `checkoutUnwrap` request path.
+function notificationDecodeExpr(binding) {
   return (
-    typeof method.name === 'string' &&
-    method.name.startsWith('ec.') &&
-    !Object.prototype.hasOwnProperty.call(method, 'result')
+    `params =>\n` +
+    `      ${binding.converter}(\n` +
+    `        JSON.stringify((params as {${binding.wrapperKey}: unknown}).${binding.wrapperKey}),\n` +
+    `      )`
   );
 }
 
-function resolveMethod(rawMethod, openRpcDir) {
-  const ref = rawMethod?.$ref;
-  if (typeof ref !== 'string') {
-    return {method: rawMethod, baseDir: openRpcDir};
+// TypeScript request decode wiring. `whole` decodes the params object straight
+// into the payload type (ready/auth); `checkoutUnwrap` decodes the `{checkout}`
+// wrapper and extracts it. Mirrors the Swift/Kotlin catalogs' decode closures.
+function requestDecodeExpr(entry) {
+  switch (entry.decode) {
+    case 'whole':
+      return `params => Convert.to${entry.payload}(JSON.stringify(params ?? {}))`;
+    case 'checkoutUnwrap':
+      return (
+        `params =>\n` +
+        `      Convert.toCheckout(\n` +
+        `        JSON.stringify((params as {checkout: unknown}).checkout),\n` +
+        `      )`
+      );
+    default:
+      throw new Error(`Unknown decode strategy: ${entry.decode} (${entry.method})`);
   }
-
-  const [relativePath, pointer = ''] = ref.split('#');
-  const targetPath = path.resolve(openRpcDir, relativePath);
-  const targetDoc = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-
-  return {
-    method: resolvePointer(targetDoc, pointer),
-    baseDir: path.dirname(targetPath),
-  };
 }
 
-function collectNotifications(openRpc, openRpcDir) {
-  const notifications = [];
-
-  for (const rawMethod of openRpc.methods ?? []) {
-    const {method, baseDir} = resolveMethod(rawMethod, openRpcDir);
-    if (!isNotification(method)) continue;
-
-    const params = method.params ?? [];
-    if (params.length !== 1) {
-      throw new Error(
-        `Cannot generate notification ${method.name}: expected exactly one param, got ${params.length}`,
-      );
-    }
-
-    const [param] = params;
-    const ref = param?.schema?.$ref;
-    if (typeof ref !== 'string') {
-      throw new Error(
-        `Cannot generate notification ${method.name}: expected param schema.$ref`,
-      );
-    }
-
-    const schemaPath = path.resolve(baseDir, ref.split('#')[0]);
-    const mapping = refMappings.get(schemaPath);
-    if (!mapping) {
-      throw new Error(
-        `Cannot generate notification ${method.name}: unsupported schema ref ${ref}`,
-      );
-    }
-
-    notifications.push({
-      identifier: methodNameToIdentifier(method.name),
-      method: method.name,
-      typeName: mapping.typeName,
-      converter: mapping.converter,
-    });
-  }
-
-  return notifications;
+function requestEncodeExpr(entry) {
+  const converter = entry.result.charAt(0).toLowerCase() + entry.result.slice(1);
+  return `result => JSON.parse(Convert.${converter}ToJson(result)) as unknown`;
 }
 
-function renderModule(notifications) {
-  const typeNames = Array.from(
-    new Set(notifications.map(notification => notification.typeName)),
-  ).sort();
+function requestDelegationExpr(entry) {
+  if (entry.delegation === null) {
+    return 'null';
+  }
+  return `Delegations.${delegationToIdentifier(entry.delegation)}`;
+}
+
+function collectNotifications() {
+  return EC_METHODS.filter(entry => entry.kind === 'notification').map(
+    entry => {
+      const binding = notificationBinding(entry);
+      return {
+        identifier: entry.identifier,
+        method: entry.method,
+        typeName: entry.payload,
+        converter: binding.converter,
+        decodeExpr: notificationDecodeExpr(binding),
+      };
+    },
+  );
+}
+
+function collectRequests() {
+  return EC_METHODS.filter(entry => entry.kind === 'request').map(entry => ({
+    identifier: entry.descriptorIdentifier,
+    method: entry.method,
+    payload: entry.payload,
+    result: entry.result,
+    decodeExpr: requestDecodeExpr(entry),
+    encodeExpr: requestEncodeExpr(entry),
+    delegationExpr: requestDelegationExpr(entry),
+  }));
+}
+
+function modelImports(notifications, requests) {
+  const names = new Set();
+  for (const notification of notifications) {
+    names.add(notification.typeName);
+  }
+  for (const request of requests) {
+    names.add(request.payload);
+    names.add(request.result);
+  }
+  return Array.from(names).sort();
+}
+
+function renderModule(notifications, requests) {
+  const typeNames = modelImports(notifications, requests);
+  const allMethods = EC_METHODS.map(entry => entry.method);
 
   return `// This file is generated by protocol/scripts/generate_typescript_notifications.mjs.
 // Do not edit directly.
 
+import {notificationDescriptor, requestDescriptor, type NotificationDescriptor, type RequestDescriptor} from '../descriptors';
 import {Convert, type ${typeNames.join(', type ')}} from './Models';
 
-export const generatedCheckoutProtocol = {
+export const SPEC_VERSION = '${SPEC_VERSION}';
+
+export const Delegations = {
+${DELEGATIONS.map(
+  delegation => `  ${delegation.identifier}: '${delegation.value}',`,
+).join('\n')}
+} as const;
+
+export type Delegation =
+  | (typeof Delegations)[keyof typeof Delegations]
+  | (string & {});
+
+export const checkoutProtocolCatalog = {
 ${notifications
   .map(
     notification => `  ${notification.identifier}: '${notification.method}',`,
@@ -141,10 +151,10 @@ ${notifications
   .join('\n')}
 } as const;
 
-export type GeneratedCheckoutProtocolMethod =
-  (typeof generatedCheckoutProtocol)[keyof typeof generatedCheckoutProtocol];
+export type CheckoutProtocolCatalogMethod =
+  (typeof checkoutProtocolCatalog)[keyof typeof checkoutProtocolCatalog];
 
-export interface GeneratedCheckoutProtocolPayloads {
+export interface CheckoutProtocolCatalogPayloads {
 ${notifications
   .map(
     notification => `  '${notification.method}': ${notification.typeName};`,
@@ -152,21 +162,75 @@ ${notifications
   .join('\n')}
 }
 
-export type GeneratedCheckoutProtocolPayloadDecoder<
-  K extends keyof GeneratedCheckoutProtocolPayloads,
-> = (payload: unknown) => GeneratedCheckoutProtocolPayloads[K];
+export type CheckoutProtocolCatalogPayloadDecoder<
+  K extends keyof CheckoutProtocolCatalogPayloads,
+> = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
 
-export const generatedCheckoutProtocolPayloadDecoders = {
+export const checkoutProtocolCatalogPayloadDecoders = {
 ${notifications
   .map(
     notification =>
-      `  [generatedCheckoutProtocol.${notification.identifier}]: decodeWith(${notification.converter}),`,
+      `  [checkoutProtocolCatalog.${notification.identifier}]: decodeWith(${notification.converter}),`,
   )
   .join('\n')}
 } satisfies {
-  [K in keyof GeneratedCheckoutProtocolPayloads]:
-    GeneratedCheckoutProtocolPayloadDecoder<K>;
+  [K in keyof CheckoutProtocolCatalogPayloads]:
+    CheckoutProtocolCatalogPayloadDecoder<K>;
 };
+
+export const notificationDescriptors = {
+${notifications
+  .map(
+    notification =>
+      `  ${notification.identifier}: notificationDescriptor<${notification.typeName}>(
+    checkoutProtocolCatalog.${notification.identifier},
+    ${notification.decodeExpr},
+  ),`,
+  )
+  .join('\n')}
+} satisfies {
+  [K in keyof typeof checkoutProtocolCatalog]: NotificationDescriptor<
+    CheckoutProtocolCatalogPayloads[(typeof checkoutProtocolCatalog)[K]]
+  >;
+};
+
+export const checkoutProtocolRequestCatalog = {
+${requests.map(request => `  ${request.identifier}: '${request.method}',`).join('\n')}
+} as const;
+
+export type CheckoutProtocolRequestMethod =
+  (typeof checkoutProtocolRequestCatalog)[keyof typeof checkoutProtocolRequestCatalog];
+
+export interface CheckoutProtocolRequestPayloads {
+${requests.map(request => `  '${request.method}': ${request.payload};`).join('\n')}
+}
+
+export interface CheckoutProtocolRequestResults {
+${requests.map(request => `  '${request.method}': ${request.result};`).join('\n')}
+}
+
+export const requestDescriptors = {
+${requests
+  .map(
+    request =>
+      `  ${request.identifier}: requestDescriptor<${request.payload}, ${request.result}>(
+    checkoutProtocolRequestCatalog.${request.identifier},
+    ${request.delegationExpr},
+    ${request.decodeExpr},
+    ${request.encodeExpr},
+  ),`,
+  )
+  .join('\n')}
+} satisfies {
+  [K in keyof typeof checkoutProtocolRequestCatalog]: RequestDescriptor<
+    CheckoutProtocolRequestPayloads[(typeof checkoutProtocolRequestCatalog)[K]],
+    CheckoutProtocolRequestResults[(typeof checkoutProtocolRequestCatalog)[K]]
+  >;
+};
+
+export const embeddedCheckoutMethods: ReadonlySet<string> = new Set([
+${allMethods.map(method => `  '${method}',`).join('\n')}
+]);
 
 function decodeWith<T>(converter: (json: string) => T): (payload: unknown) => T {
   return payload => converter(JSON.stringify(payload));
@@ -175,9 +239,9 @@ function decodeWith<T>(converter: (json: string) => T): (payload: unknown) => T 
 }
 
 function main() {
-  const openRpc = JSON.parse(fs.readFileSync(openRpcPath, 'utf8'));
-  const notifications = collectNotifications(openRpc, path.dirname(openRpcPath));
-  const generated = renderModule(notifications);
+  const notifications = collectNotifications();
+  const requests = collectRequests();
+  const generated = renderModule(notifications, requests);
   fs.mkdirSync(path.dirname(outputPath), {recursive: true});
   fs.writeFileSync(outputPath, generated);
   console.log(`Generated ${outputPath}`);

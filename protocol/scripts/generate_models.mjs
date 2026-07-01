@@ -492,6 +492,8 @@ async function generateTypescript(specDir, output) {
     "--emitDeclarationOnly",
     "--noEmit",
     "false",
+    "--lib",
+    "esnext",
     "--rootDir",
     path.join(PROTOCOL_DIR, "languages", "typescript", "src"),
     "--declarationDir",

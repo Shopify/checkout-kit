@@ -1,8 +1,8 @@
 import {test, expect} from 'vitest';
 
 import {
-  generatedCheckoutProtocol,
-  generatedCheckoutProtocolPayloadDecoders,
+  checkoutProtocolCatalog,
+  checkoutProtocolCatalogPayloadDecoders,
 } from '../languages/typescript/src/generated/ProtocolNotifications';
 
 const EXPECTED_PROTOCOL = {
@@ -27,21 +27,21 @@ const EXPECTED_REQUEST_METHODS = [
 ];
 
 test('exposes exactly the ec.* notification protocol map', () => {
-  expect({...generatedCheckoutProtocol}).toEqual(EXPECTED_PROTOCOL);
+  expect({...checkoutProtocolCatalog}).toEqual(EXPECTED_PROTOCOL);
 });
 
 test('wires a payload decoder for every notification method', () => {
-  expect(Object.keys(generatedCheckoutProtocolPayloadDecoders).sort()).toEqual(
+  expect(Object.keys(checkoutProtocolCatalogPayloadDecoders).sort()).toEqual(
     Object.values(EXPECTED_PROTOCOL).sort(),
   );
 
-  for (const decode of Object.values(generatedCheckoutProtocolPayloadDecoders)) {
+  for (const decode of Object.values(checkoutProtocolCatalogPayloadDecoders)) {
     expect(typeof decode).toBe('function');
   }
 });
 
 test('excludes ec.* request methods that define a result', () => {
-  const methods = Object.values(generatedCheckoutProtocol);
+  const methods = Object.values(checkoutProtocolCatalog);
 
   for (const requestMethod of EXPECTED_REQUEST_METHODS) {
     expect(
