@@ -289,9 +289,9 @@ function buildCatalog() {
 
 const catalog = buildCatalog();
 
-// Ordered catalog of every `ec.*` method this protocol owns, in spec order
-// (host-defined requests excluded). Notifications carry a `payload`; requests
-// additionally carry `result`, `decode`, `delegation`, and `descriptorIdentifier`.
+// Ordered catalog of every `ec.*` method this protocol owns, in spec order.
+// Notifications carry a `payload`; requests additionally carry `result`,
+// `decode`, `delegation`, and `descriptorIdentifier`.
 export const EC_METHODS = catalog.methods;
 
 // Delegations declared by the service in `x-delegations`, pre-mapped to Swift

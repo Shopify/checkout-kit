@@ -1,5 +1,5 @@
 import { type NotificationDescriptor, type RequestDescriptor } from '../descriptors';
-import { type AddressChangeResult, type AuthRequest, type AuthResult, type Checkout, type CredentialResult, type ErrorResponse, type InstrumentsChangeResult, type ReadyRequest, type ReadyResult } from './Models';
+import { type AddressChangeResult, type AuthRequest, type AuthResult, type Checkout, type CredentialResult, type ErrorResponse, type InstrumentsChangeResult, type ReadyRequest, type ReadyResult, type WindowOpenRequest, type WindowOpenResult } from './Models';
 export declare const SPEC_VERSION = "2026-04-08";
 export declare const Delegations: {
     readonly paymentInstrumentsChange: "payment.instruments_change";
@@ -59,6 +59,7 @@ export declare const checkoutProtocolRequestCatalog: {
     readonly auth: "ec.auth";
     readonly paymentInstrumentsChange: "ec.payment.instruments_change_request";
     readonly paymentCredential: "ec.payment.credential_request";
+    readonly windowOpen: "ec.window.open_request";
     readonly fulfillmentAddressChange: "ec.fulfillment.address_change_request";
 };
 export type CheckoutProtocolRequestMethod = (typeof checkoutProtocolRequestCatalog)[keyof typeof checkoutProtocolRequestCatalog];
@@ -67,6 +68,7 @@ export interface CheckoutProtocolRequestPayloads {
     'ec.auth': AuthRequest;
     'ec.payment.instruments_change_request': Checkout;
     'ec.payment.credential_request': Checkout;
+    'ec.window.open_request': WindowOpenRequest;
     'ec.fulfillment.address_change_request': Checkout;
 }
 export interface CheckoutProtocolRequestResults {
@@ -74,6 +76,7 @@ export interface CheckoutProtocolRequestResults {
     'ec.auth': AuthResult;
     'ec.payment.instruments_change_request': InstrumentsChangeResult;
     'ec.payment.credential_request': CredentialResult;
+    'ec.window.open_request': WindowOpenResult;
     'ec.fulfillment.address_change_request': AddressChangeResult;
 }
 export declare const requestDescriptors: {
@@ -81,6 +84,7 @@ export declare const requestDescriptors: {
     auth: RequestDescriptor<AuthRequest, AuthResult>;
     paymentInstrumentsChange: RequestDescriptor<Checkout, InstrumentsChangeResult>;
     paymentCredential: RequestDescriptor<Checkout, CredentialResult>;
+    windowOpen: RequestDescriptor<WindowOpenRequest, WindowOpenResult>;
     fulfillmentAddressChange: RequestDescriptor<Checkout, AddressChangeResult>;
 };
 export declare const embeddedCheckoutMethods: ReadonlySet<string>;

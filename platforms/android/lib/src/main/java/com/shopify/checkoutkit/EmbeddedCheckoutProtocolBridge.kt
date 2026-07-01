@@ -13,6 +13,7 @@ import com.shopify.ucp.embedded.checkout.windowOpenRejected
 import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonElement
+import java.net.URI
 
 /**
  * Handles the Embedded Checkout Protocol (ECP) JS bridge.
@@ -175,12 +176,17 @@ internal class EmbeddedCheckoutProtocolBridge(
                 CheckoutWebView.invalidate()
             }
             .on(CheckoutProtocol.windowOpen) { request ->
-                when (val result = ExternalUriLauncher.launch(view.context, request.url.toUri())) {
+                val url = request.url
+                if (url.isBlank() || runCatching { URI(url) }.isFailure) {
+                    log.d(LOG_TAG, "window.open rejected: malformed URL ${url.redactedUrlForLogging()}")
+                    return@on windowOpenRejected(reason = "malformed URL")
+                }
+                when (val result = ExternalUriLauncher.launch(view.context, url.toUri())) {
                     is ExternalUriLauncher.Result.Launched -> windowOpenSuccess()
                     is ExternalUriLauncher.Result.Rejected -> {
                         log.d(
                             LOG_TAG,
-                            "window.open rejected for ${request.url.redactedUrlForLogging()}: ${result.reason}"
+                            "window.open rejected for ${url.redactedUrlForLogging()}: ${result.reason}"
                         )
                         windowOpenRejected(reason = result.reason)
                     }

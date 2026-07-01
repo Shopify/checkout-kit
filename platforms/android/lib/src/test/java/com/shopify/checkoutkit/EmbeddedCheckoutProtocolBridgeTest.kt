@@ -334,6 +334,31 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
+    fun `window open rejects a malformed url before launching even when an activity resolves it`() {
+        registerFakeBrowserFor("https://example.com/a b")
+
+        val js = captureEvaluatedJs {
+            ecp.postMessage(windowOpenRequest(id = "\"14\"", url = "https://example.com/a b"))
+        }
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(js).contains("\"severity\":\"unrecoverable\"")
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+    }
+
+    @Test
+    fun `window open rejects a blank url before launching`() {
+        val js = captureEvaluatedJs {
+            ecp.postMessage(windowOpenRequest(id = "\"15\"", url = "   "))
+        }
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+    }
+
+    @Test
     fun `window open emits invalid params when params is not an object`() {
         val js = captureEvaluatedJs {
             ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"12","params":[]}""")

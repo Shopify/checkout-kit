@@ -1,6 +1,6 @@
 // To parse this data:
 //
-//   import { Convert, Checkout, Order, ErrorResponse, InstrumentsChangeResult, CredentialResult, AddressChangeResult, ReadyRequest, ReadyResult, AuthRequest, AuthResult } from "./file";
+//   import { Convert, Checkout, Order, ErrorResponse, InstrumentsChangeResult, CredentialResult, AddressChangeResult, ReadyRequest, ReadyResult, AuthRequest, AuthResult, WindowOpenRequest, WindowOpenResult } from "./file";
 //
 //   const checkout = Convert.toCheckout(json);
 //   const order = Convert.toOrder(json);
@@ -12,6 +12,8 @@
 //   const readyResult = Convert.toReadyResult(json);
 //   const authRequest = Convert.toAuthRequest(json);
 //   const authResult = Convert.toAuthResult(json);
+//   const windowOpenRequest = Convert.toWindowOpenRequest(json);
+//   const windowOpenResult = Convert.toWindowOpenResult(json);
 //
 // These functions will throw an error if the JSON doesn't
 // match the expected interface, even if the JSON is valid.
@@ -1832,6 +1834,36 @@ export interface AuthResult {
     [property: string]: any;
 }
 
+export interface WindowOpenRequest {
+    /**
+     * The URL of the resource to present.
+     */
+    url: string;
+    [property: string]: any;
+}
+
+/**
+ * Acknowledgement that the host handled the request.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface WindowOpenResult {
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: InstrumentsChangeResultUcp;
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages?: Message[];
+    [property: string]: any;
+}
+
 // Converts JSON strings to/from your types
 // and asserts the results of JSON.parse at runtime
 export class Convert {
@@ -1913,6 +1945,22 @@ export class Convert {
 
     public static authResultToJson(value: AuthResult): string {
         return JSON.stringify(uncast(value, r("AuthResult")), null, 2);
+    }
+
+    public static toWindowOpenRequest(json: string): WindowOpenRequest {
+        return cast(JSON.parse(json), r("WindowOpenRequest"));
+    }
+
+    public static windowOpenRequestToJson(value: WindowOpenRequest): string {
+        return JSON.stringify(uncast(value, r("WindowOpenRequest")), null, 2);
+    }
+
+    public static toWindowOpenResult(json: string): WindowOpenResult {
+        return cast(JSON.parse(json), r("WindowOpenResult"));
+    }
+
+    public static windowOpenResultToJson(value: WindowOpenResult): string {
+        return JSON.stringify(uncast(value, r("WindowOpenResult")), null, 2);
     }
 }
 
@@ -2489,6 +2537,14 @@ const typeMap: any = {
     ], "any"),
     "AuthResult": o([
         { json: "credential", js: "credential", typ: u(undefined, "") },
+        { json: "ucp", js: "ucp", typ: r("InstrumentsChangeResultUcp") },
+        { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
+        { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
+    ], "any"),
+    "WindowOpenRequest": o([
+        { json: "url", js: "url", typ: "" },
+    ], "any"),
+    "WindowOpenResult": o([
         { json: "ucp", js: "ucp", typ: r("InstrumentsChangeResultUcp") },
         { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
         { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },

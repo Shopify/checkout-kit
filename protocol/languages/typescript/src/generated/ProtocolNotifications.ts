@@ -2,7 +2,7 @@
 // Do not edit directly.
 
 import {notificationDescriptor, requestDescriptor, type NotificationDescriptor, type RequestDescriptor} from '../descriptors';
-import {Convert, type AddressChangeResult, type AuthRequest, type AuthResult, type Checkout, type CredentialResult, type ErrorResponse, type InstrumentsChangeResult, type ReadyRequest, type ReadyResult} from './Models';
+import {Convert, type AddressChangeResult, type AuthRequest, type AuthResult, type Checkout, type CredentialResult, type ErrorResponse, type InstrumentsChangeResult, type ReadyRequest, type ReadyResult, type WindowOpenRequest, type WindowOpenResult} from './Models';
 
 export const SPEC_VERSION = '2026-04-08';
 
@@ -138,6 +138,7 @@ export const checkoutProtocolRequestCatalog = {
   auth: 'ec.auth',
   paymentInstrumentsChange: 'ec.payment.instruments_change_request',
   paymentCredential: 'ec.payment.credential_request',
+  windowOpen: 'ec.window.open_request',
   fulfillmentAddressChange: 'ec.fulfillment.address_change_request',
 } as const;
 
@@ -149,6 +150,7 @@ export interface CheckoutProtocolRequestPayloads {
   'ec.auth': AuthRequest;
   'ec.payment.instruments_change_request': Checkout;
   'ec.payment.credential_request': Checkout;
+  'ec.window.open_request': WindowOpenRequest;
   'ec.fulfillment.address_change_request': Checkout;
 }
 
@@ -157,6 +159,7 @@ export interface CheckoutProtocolRequestResults {
   'ec.auth': AuthResult;
   'ec.payment.instruments_change_request': InstrumentsChangeResult;
   'ec.payment.credential_request': CredentialResult;
+  'ec.window.open_request': WindowOpenResult;
   'ec.fulfillment.address_change_request': AddressChangeResult;
 }
 
@@ -191,6 +194,12 @@ export const requestDescriptors = {
       ),
     result => JSON.parse(Convert.credentialResultToJson(result)) as unknown,
   ),
+  windowOpen: requestDescriptor<WindowOpenRequest, WindowOpenResult>(
+    checkoutProtocolRequestCatalog.windowOpen,
+    Delegations.windowOpen,
+    params => Convert.toWindowOpenRequest(JSON.stringify(params ?? {})),
+    result => JSON.parse(Convert.windowOpenResultToJson(result)) as unknown,
+  ),
   fulfillmentAddressChange: requestDescriptor<Checkout, AddressChangeResult>(
     checkoutProtocolRequestCatalog.fulfillmentAddressChange,
     Delegations.fulfillmentAddressChange,
@@ -220,6 +229,7 @@ export const embeddedCheckoutMethods: ReadonlySet<string> = new Set([
   'ec.payment.change',
   'ec.payment.instruments_change_request',
   'ec.payment.credential_request',
+  'ec.window.open_request',
   'ec.fulfillment.change',
   'ec.fulfillment.address_change_request',
 ]);

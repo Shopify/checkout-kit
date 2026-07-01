@@ -1783,6 +1783,34 @@ export interface AuthResult {
     messages?: Message[];
     [property: string]: any;
 }
+export interface WindowOpenRequest {
+    /**
+     * The URL of the resource to present.
+     */
+    url: string;
+    [property: string]: any;
+}
+/**
+ * Acknowledgement that the host handled the request.
+ *
+ * Generic error response when business logic prevents resource creation or failed to
+ * retrieve resource. Used when no valid resource can be established.
+ */
+export interface WindowOpenResult {
+    /**
+     * UCP protocol metadata. Status MUST be 'error' for error response.
+     */
+    ucp: InstrumentsChangeResultUcp;
+    /**
+     * URL for buyer handoff or session recovery.
+     */
+    continueUrl?: string;
+    /**
+     * Array of messages describing why the operation failed.
+     */
+    messages?: Message[];
+    [property: string]: any;
+}
 export declare class Convert {
     static toCheckout(json: string): Checkout;
     static checkoutToJson(value: Checkout): string;
@@ -1804,4 +1832,8 @@ export declare class Convert {
     static authRequestToJson(value: AuthRequest): string;
     static toAuthResult(json: string): AuthResult;
     static authResultToJson(value: AuthResult): string;
+    static toWindowOpenRequest(json: string): WindowOpenRequest;
+    static windowOpenRequestToJson(value: WindowOpenRequest): string;
+    static toWindowOpenResult(json: string): WindowOpenResult;
+    static windowOpenResultToJson(value: WindowOpenResult): string;
 }

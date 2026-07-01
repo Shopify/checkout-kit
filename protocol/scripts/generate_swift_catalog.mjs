@@ -117,8 +117,7 @@ ${conformances}
 extension EmbeddedCheckoutProtocol {
     /// Every \`ec.*\` method this protocol owns, resolved to a typed descriptor.
     /// Notifications become \`NotificationDescriptor\`s; requests become
-    /// \`RequestDescriptor\`s. Host-defined requests (e.g. \`window.open\`, whose
-    /// payloads are host policy) are not part of this catalog.
+    /// \`RequestDescriptor\`s.
     public enum Event {
 ${notificationCatalog}
 
