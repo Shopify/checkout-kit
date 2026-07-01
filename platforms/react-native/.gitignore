@@ -75,10 +75,6 @@ test/rct-integration-app/PrivacyInfo.xcprivacy
 # testing
 /coverage
 
-# Temporary snapshot written by scripts/compare_snapshot (deleted on success,
-# left behind on a snapshot mismatch)
-/snapshot.json
-
 # Env
 .env
 .env.local
