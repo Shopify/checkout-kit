@@ -49,6 +49,10 @@ import type {ProductVariant, ShopifyProduct} from '../@types';
 import ErrorBoundary from './ErrorBoundary';
 import env from 'react-native-config';
 import {createDebugLogger} from './utils';
+import {
+  createStorefrontApiUrl,
+  normalizeStorefrontDomain,
+} from './storefrontUrl';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
 import {useE2ECartBootstrap} from './hooks/useE2ECartBootstrap';
 import {E2ETestIds} from './e2e/testIds';
@@ -59,7 +63,12 @@ function configured(value: string | undefined) {
   return value ? 'configured' : 'missing';
 }
 
-const storefrontApiVersion = env.API_VERSION ?? env.STOREFRONT_VERSION;
+const storefrontApiVersion = env.API_VERSION ?? env.STOREFRONT_VERSION ?? '';
+const storefrontDomain = normalizeStorefrontDomain(env.STOREFRONT_DOMAIN);
+const storefrontApiUrl = createStorefrontApiUrl(
+  env.STOREFRONT_DOMAIN,
+  storefrontApiVersion,
+);
 
 console.groupCollapsed('ENV');
 log('STOREFRONT_DOMAIN:', configured(env.STOREFRONT_DOMAIN));
@@ -101,7 +110,7 @@ const styles = StyleSheet.create({
 export const cache = new InMemoryCache();
 
 const client = new ApolloClient({
-  uri: `https://${env.STOREFRONT_DOMAIN}/api/${storefrontApiVersion}/graphql.json`,
+  uri: storefrontApiUrl,
   cache,
   headers: {
     'Content-Type': 'application/json',
@@ -408,7 +417,7 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
               },
       },
       acceleratedCheckouts: {
-        storefrontDomain: env.STOREFRONT_DOMAIN!,
+        storefrontDomain,
         storefrontAccessToken: env.STOREFRONT_ACCESS_TOKEN!,
         /**
          * We're reading the hardcoded customer email and phone number from the
