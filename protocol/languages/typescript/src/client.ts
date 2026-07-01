@@ -64,7 +64,13 @@ export class Client {
     if (decoded.kind === 'notification') {
       const entry = this.notifications.get(decoded.method);
       if (entry !== undefined) {
-        entry.handle(entry.decode(decoded.params));
+        let payload: unknown;
+        try {
+          payload = entry.decode(decoded.params);
+        } catch {
+          return undefined;
+        }
+        entry.handle(payload);
       }
       return undefined;
     }

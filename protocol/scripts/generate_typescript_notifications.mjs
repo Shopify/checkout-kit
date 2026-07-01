@@ -20,22 +20,35 @@ const outputPath = path.resolve(
 const SPEC_VERSION = '2026-04-08';
 
 // TypeScript-specific notification decode wiring: each payload model maps to its
-// generated `Convert` entrypoint. Mirrors the Swift/Kotlin catalogs' per-payload
-// bindings. A notification whose payload has no binding fails loudly rather than
-// silently dropping out of the catalog.
+// generated `Convert` entrypoint and the JSON-RPC params wrapper key it arrives
+// under on the wire. Mirrors the Swift/Kotlin catalogs' per-payload bindings. A
+// notification whose payload has no binding fails loudly rather than silently
+// dropping out of the catalog.
 const NOTIFICATION_BINDINGS = new Map([
-  ['Checkout', 'Convert.toCheckout'],
-  ['ErrorResponse', 'Convert.toErrorResponse'],
+  ['Checkout', {converter: 'Convert.toCheckout', wrapperKey: 'checkout'}],
+  ['ErrorResponse', {converter: 'Convert.toErrorResponse', wrapperKey: 'error'}],
 ]);
 
-function notificationConverter(entry) {
-  const converter = NOTIFICATION_BINDINGS.get(entry.payload);
-  if (converter === undefined) {
+function notificationBinding(entry) {
+  const binding = NOTIFICATION_BINDINGS.get(entry.payload);
+  if (binding === undefined) {
     throw new Error(
       `No TypeScript notification binding for payload ${entry.payload} (${entry.method})`,
     );
   }
-  return converter;
+  return binding;
+}
+
+// A descriptor consumes raw JSON-RPC `params` from `Client.process`, so it
+// unwraps the `{wrapperKey: ...}` envelope before conversion — matching the
+// Swift/Kotlin notification descriptors and the `checkoutUnwrap` request path.
+function notificationDecodeExpr(binding) {
+  return (
+    `params =>\n` +
+    `      ${binding.converter}(\n` +
+    `        JSON.stringify((params as {${binding.wrapperKey}: unknown}).${binding.wrapperKey}),\n` +
+    `      )`
+  );
 }
 
 // TypeScript request decode wiring. `whole` decodes the params object straight
@@ -44,7 +57,7 @@ function notificationConverter(entry) {
 function requestDecodeExpr(entry) {
   switch (entry.decode) {
     case 'whole':
-      return `params => Convert.to${entry.payload}(JSON.stringify(params))`;
+      return `params => Convert.to${entry.payload}(JSON.stringify(params ?? {}))`;
     case 'checkoutUnwrap':
       return (
         `params =>\n` +
@@ -71,12 +84,16 @@ function requestDelegationExpr(entry) {
 
 function collectNotifications() {
   return EC_METHODS.filter(entry => entry.kind === 'notification').map(
-    entry => ({
-      identifier: entry.identifier,
-      method: entry.method,
-      typeName: entry.payload,
-      converter: notificationConverter(entry),
-    }),
+    entry => {
+      const binding = notificationBinding(entry);
+      return {
+        identifier: entry.identifier,
+        method: entry.method,
+        typeName: entry.payload,
+        converter: binding.converter,
+        decodeExpr: notificationDecodeExpr(binding),
+      };
+    },
   );
 }
 
@@ -167,7 +184,7 @@ ${notifications
     notification =>
       `  ${notification.identifier}: notificationDescriptor<${notification.typeName}>(
     checkoutProtocolCatalog.${notification.identifier},
-    decodeWith(${notification.converter}),
+    ${notification.decodeExpr},
   ),`,
   )
   .join('\n')}

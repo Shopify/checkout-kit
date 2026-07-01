@@ -122,13 +122,17 @@ describe('codec', () => {
     expect(message?.id).toBeNull();
   });
 
-  test('drops a non-integer numeric id to a notification', () => {
-    const message = decodeProtocolMessage(
-      JSON.stringify({jsonrpc: '2.0', method: 'ec.ready', id: 1.5}),
-    );
-
-    expect(message?.kind).toBe('notification');
-    expect(message?.id).toBeUndefined();
+  test('drops a message whose id is present but invalid', () => {
+    expect(
+      decodeProtocolMessage(
+        JSON.stringify({jsonrpc: '2.0', method: 'ec.ready', id: 1.5}),
+      ),
+    ).toBeUndefined();
+    expect(
+      decodeProtocolMessage(
+        JSON.stringify({jsonrpc: '2.0', method: 'ec.ready', id: {}}),
+      ),
+    ).toBeUndefined();
   });
 
   test('returns undefined for malformed messages', () => {
@@ -225,6 +229,10 @@ describe('request descriptors', () => {
     });
   });
 
+  test('decode defaults absent whole-params to an empty payload', () => {
+    expect(requestDescriptors.auth.decode(undefined)).toEqual({});
+  });
+
   test('decode unwraps the checkout envelope for delegated requests', () => {
     const decoded = requestDescriptors.paymentInstrumentsChange.decode({
       checkout: CHECKOUT_ENVELOPE,
@@ -247,6 +255,28 @@ describe('request descriptors', () => {
   });
 });
 
+describe('notification descriptors', () => {
+  test('decode unwraps the checkout envelope', () => {
+    const decoded = notificationDescriptors.start.decode({
+      checkout: CHECKOUT_ENVELOPE,
+    });
+
+    expect(decoded.id).toBe('checkout-123');
+    expect(decoded.lineItems).toEqual([]);
+  });
+
+  test('decode unwraps the error envelope', () => {
+    const decoded = notificationDescriptors.error.decode({
+      error: {
+        messages: [],
+        ucp: {version: '2026-04-08', status: 'error', payment_handlers: {}},
+      },
+    });
+
+    expect(decoded.ucp.status).toBe('error');
+  });
+});
+
 describe('Client', () => {
   const READY_PARAMS = {delegate: ['payment.credential'], auth: {type: 'oauth'}};
 
@@ -257,7 +287,11 @@ describe('Client', () => {
     );
 
     const response = await client.process(
-      JSON.stringify({jsonrpc: '2.0', method: 'ec.start', params: CHECKOUT_ENVELOPE}),
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'ec.start',
+        params: {checkout: CHECKOUT_ENVELOPE},
+      }),
     );
 
     expect(response).toBeUndefined();
@@ -271,7 +305,11 @@ describe('Client', () => {
 
     await expect(
       client.process(
-        JSON.stringify({jsonrpc: '2.0', method: 'ec.start', params: CHECKOUT_ENVELOPE}),
+        JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'ec.start',
+          params: {checkout: CHECKOUT_ENVELOPE},
+        }),
       ),
     ).resolves.toBeUndefined();
   });
@@ -307,6 +345,42 @@ describe('Client', () => {
     expect(JSON.parse(response)).toEqual({
       jsonrpc: '2.0',
       id: 'r-1',
+      result: RESULT_FIXTURE,
+    });
+  });
+
+  test('ignores a notification whose params fail to decode', async () => {
+    const received = [];
+    const client = new Client().on(notificationDescriptors.start, checkout =>
+      received.push(checkout),
+    );
+
+    await expect(
+      client.process(
+        JSON.stringify({jsonrpc: '2.0', method: 'ec.start', params: {}}),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      client.process(
+        JSON.stringify({jsonrpc: '2.0', method: 'ec.start', params: null}),
+      ),
+    ).resolves.toBeUndefined();
+
+    expect(received).toHaveLength(0);
+  });
+
+  test('routes a request whose optional params are absent', async () => {
+    const client = new Client().on(requestDescriptors.auth, () =>
+      Convert.toAuthResult(JSON.stringify(RESULT_FIXTURE)),
+    );
+
+    const response = await client.process(
+      JSON.stringify({jsonrpc: '2.0', method: 'ec.auth', id: 11}),
+    );
+
+    expect(JSON.parse(response)).toEqual({
+      jsonrpc: '2.0',
+      id: 11,
       result: RESULT_FIXTURE,
     });
   });

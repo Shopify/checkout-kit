@@ -66,39 +66,66 @@ export const checkoutProtocolCatalogPayloadDecoders = {
 export const notificationDescriptors = {
   error: notificationDescriptor<ErrorResponse>(
     checkoutProtocolCatalog.error,
-    decodeWith(Convert.toErrorResponse),
+    params =>
+      Convert.toErrorResponse(
+        JSON.stringify((params as {error: unknown}).error),
+      ),
   ),
   start: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.start,
-    decodeWith(Convert.toCheckout),
+    params =>
+      Convert.toCheckout(
+        JSON.stringify((params as {checkout: unknown}).checkout),
+      ),
   ),
   complete: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.complete,
-    decodeWith(Convert.toCheckout),
+    params =>
+      Convert.toCheckout(
+        JSON.stringify((params as {checkout: unknown}).checkout),
+      ),
   ),
   messagesChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.messagesChange,
-    decodeWith(Convert.toCheckout),
+    params =>
+      Convert.toCheckout(
+        JSON.stringify((params as {checkout: unknown}).checkout),
+      ),
   ),
   lineItemsChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.lineItemsChange,
-    decodeWith(Convert.toCheckout),
+    params =>
+      Convert.toCheckout(
+        JSON.stringify((params as {checkout: unknown}).checkout),
+      ),
   ),
   buyerChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.buyerChange,
-    decodeWith(Convert.toCheckout),
+    params =>
+      Convert.toCheckout(
+        JSON.stringify((params as {checkout: unknown}).checkout),
+      ),
   ),
   totalsChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.totalsChange,
-    decodeWith(Convert.toCheckout),
+    params =>
+      Convert.toCheckout(
+        JSON.stringify((params as {checkout: unknown}).checkout),
+      ),
   ),
   paymentChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.paymentChange,
-    decodeWith(Convert.toCheckout),
+    params =>
+      Convert.toCheckout(
+        JSON.stringify((params as {checkout: unknown}).checkout),
+      ),
   ),
   fulfillmentChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.fulfillmentChange,
-    decodeWith(Convert.toCheckout),
+    params =>
+      Convert.toCheckout(
+        JSON.stringify((params as {checkout: unknown}).checkout),
+      ),
   ),
 } satisfies {
   [K in keyof typeof checkoutProtocolCatalog]: NotificationDescriptor<
@@ -137,13 +164,13 @@ export const requestDescriptors = {
   ready: requestDescriptor<ReadyRequest, ReadyResult>(
     checkoutProtocolRequestCatalog.ready,
     null,
-    params => Convert.toReadyRequest(JSON.stringify(params)),
+    params => Convert.toReadyRequest(JSON.stringify(params ?? {})),
     result => JSON.parse(Convert.readyResultToJson(result)) as unknown,
   ),
   auth: requestDescriptor<AuthRequest, AuthResult>(
     checkoutProtocolRequestCatalog.auth,
     null,
-    params => Convert.toAuthRequest(JSON.stringify(params)),
+    params => Convert.toAuthRequest(JSON.stringify(params ?? {})),
     result => JSON.parse(Convert.authResultToJson(result)) as unknown,
   ),
   paymentInstrumentsChange: requestDescriptor<Checkout, InstrumentsChangeResult>(

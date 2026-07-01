@@ -23,9 +23,6 @@ export type DecodedMessage =
     };
 
 function normalizeId(id: unknown): JSONRPCID | undefined {
-  if (id === undefined) {
-    return undefined;
-  }
   if (id === null) {
     return null;
   }
@@ -62,13 +59,17 @@ export function decodeProtocolMessage(
     return undefined;
   }
 
-  const id = normalizeId(envelope.id);
-  if (id === undefined) {
+  if (!('id' in envelope)) {
     return {
       kind: 'notification',
       method: envelope.method,
       params: envelope.params,
     };
+  }
+
+  const id = normalizeId(envelope.id);
+  if (id === undefined) {
+    return undefined;
   }
 
   return {
