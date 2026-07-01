@@ -5,6 +5,8 @@ import type {
   Checkout,
   CheckoutLineItem,
   CheckoutMessage,
+  EcAuthParams,
+  EcAuthRequest,
   EcReadyParams,
   OrderConfirmation,
   Total,
@@ -29,24 +31,29 @@ import type {
 
 // Documentation-safe types:
 
+export type CheckoutPresentation = "auto" | "popup" | "iframe";
+
 export type CheckoutTarget = "auto" | "popup" | "_blank";
+
+export type JsonRpcRequestId = string | number | null;
 
 export interface CheckoutAttributes {
   src?: string;
+  presentation?: CheckoutPresentation;
+  auth?: string;
   target?: CheckoutTarget | string;
   debug?: boolean | string;
 }
 
 export interface CheckoutMethods {
   /**
-   * Opens the checkout in a popup window by default, but can be configured
-   * to open in a new tab or named window using the `target` property.
+   * Opens checkout using the configured `presentation`.
    */
   open?: () => void;
 
   /**
-   * Closes the checkout popup.
-   * Can be used after checkout completion or to cancel the checkout process
+   * Closes the active checkout presentation.
+   * Can be used after checkout completion or to cancel the checkout process.
    */
   close?: () => void;
 }
@@ -62,10 +69,31 @@ export interface CheckoutProperties {
   src?: string;
 
   /**
-   * The mode in which to display the checkout when opened. Defaults to `'auto'`.
-   * - `'popup'`: Opens checkout in a popup window
-   * - `'_blank' | `'auto'`: Opens checkout in a new tab (default)
-   * - `string`: Opens checkout in a new named window
+   * The presentation mode used when checkout is opened. Defaults to `'auto'`.
+   * - `'auto'`: Opens checkout in a new tab or named window based on `target`
+   * - `'popup'`: Opens checkout in a popup window sized and centered over the page
+   *
+   * This property is automatically reflected to the `presentation` attribute,
+   * so you can use the `presentation` attribute or this property interchangeably.
+   */
+  presentation?: CheckoutPresentation;
+
+  /**
+   * Checkout-bound authentication token.
+   *
+   * This property is automatically reflected to the `auth` attribute. When set,
+   * Checkout Kit sends it to checkout as the `ec_auth` query parameter on the
+   * generated checkout URL.
+   */
+  auth?: string;
+
+  /**
+   * The browser context target used when `presentation` is `'auto'`. Defaults to `'auto'`.
+   * - `'auto'`: Opens checkout in a new tab (default)
+   * - `'popup'`: Legacy alias for `presentation='popup'`; prefer the presentation property
+   *   for new integrations
+   * - `'_blank'`: Opens checkout in a new tab/window
+   * - `string`: Passed to `window.open()` as the target
    *
    * For more details on window targets, see the [`Window.open()` `target` parameter](https://developer.mozilla.org/en-US/docs/Web/API/Window/open#target)
    *
@@ -90,6 +118,18 @@ export interface CheckoutProperties {
 // exist so the generated API docs show what's on `event.detail` directly,
 // without dragging in the full `CustomEvent`/`Event` documentation.
 export interface CheckoutEvents {
+  /**
+   * Dispatched when checkout sends the ECP `ec.ready` handshake. Listeners can
+   * call `respondWith()` synchronously when checkout requests a credential.
+   */
+  "ec.ready": CheckoutReadyEvent;
+
+  /**
+   * Dispatched when checkout sends an ECP `ec.auth` credential refresh request.
+   * Listeners should call `respondWith()` synchronously with a credential.
+   */
+  "ec.auth": CheckoutAuthEvent;
+
   /**
    * Dispatched when checkout has started.
    */
@@ -189,6 +229,48 @@ export interface CheckoutMessagesChangeEvent {
   };
 }
 
+export type CheckoutCredentialResponse = string | { readonly credential: string };
+
+export type CheckoutReadyResponse =
+  | string
+  | {
+      readonly credential?: string;
+    };
+
+export interface RespondableCheckoutEvent<ResponsePayload, Detail> {
+  type: string;
+  detail: Detail;
+  respondWith(response: Promise<ResponsePayload> | ResponsePayload): void;
+}
+
+export interface CheckoutReadyEvent extends RespondableCheckoutEvent<
+  CheckoutReadyResponse,
+  CheckoutReadyEventDetail
+> {
+  type: "ec.ready";
+}
+
+export interface CheckoutReadyEventDetail {
+  /** Delegation types requested by checkout in `ec.ready.params.delegate`. */
+  delegate: readonly string[];
+  /** Authorization requested by checkout in `ec.ready.params.auth`, when present. */
+  auth?: EcAuthRequest;
+}
+
+export interface CheckoutAuthEvent extends RespondableCheckoutEvent<
+  CheckoutCredentialResponse,
+  CheckoutAuthEventDetail
+> {
+  type: "ec.auth";
+}
+
+export interface CheckoutAuthEventDetail {
+  /** Authorization type requested by checkout, e.g. `oauth`, `api_key`, or `jwt`. */
+  type?: string;
+  /** Raw `ec.auth` params for integrations that need additional fields. */
+  auth: EcAuthParams;
+}
+
 export type TypedEventListener<Event> =
   | ((event: Event) => void)
   | {
@@ -209,6 +291,7 @@ export interface CheckoutProtocolMessageData<
   T extends keyof CheckoutProtocolMessageMap = keyof CheckoutProtocolMessageMap,
 > {
   jsonrpc: "2.0";
+  id?: JsonRpcRequestId;
   method: T;
   params?: CheckoutProtocolMessageMap[T];
 }
@@ -232,6 +315,7 @@ export interface EcErrorParams {
  */
 export interface CheckoutProtocolMessageMap {
   "ec.ready": EcReadyParams;
+  "ec.auth": EcAuthParams;
   "ec.start": CheckoutPayload;
   "ec.complete": CheckoutPayload;
   "ec.error": EcErrorParams;
@@ -246,6 +330,8 @@ export type {
   Checkout,
   CheckoutLineItem,
   CheckoutMessage,
+  EcAuthParams,
+  EcAuthRequest,
   EcReadyParams,
   OrderConfirmation,
   Total,

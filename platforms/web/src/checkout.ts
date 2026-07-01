@@ -1,10 +1,14 @@
 import { createTemplate, html } from "./utils";
 import type {
   CheckoutAttributes,
+  CheckoutCredentialResponse,
   CheckoutMethods,
   CheckoutProperties,
+  CheckoutPresentation,
   CheckoutProtocolMessageMap,
+  CheckoutReadyResponse,
   CheckoutTarget,
+  JsonRpcRequestId,
   TypedEventListener,
   CheckoutProtocolMessageData,
   Checkout,
@@ -54,13 +58,18 @@ const SHADOW_TEMPLATE = createTemplate(html`
 `);
 
 /**
- * An element that renders a Shopify Checkout. Checkout opens in a popup or browser tab/window
- * (see `target`). To use, create a `shopify-checkout` element, set the `src` attribute to the
- * checkout URL (typically retrieved from the `cart.checkoutUrl` field), and then call `open()`.
+ * An element that renders a Shopify Checkout. Checkout opens according to the configured
+ * `presentation` and `target`. To use, create a `shopify-checkout` element, set the `src`
+ * attribute to the checkout URL (typically retrieved from the `cart.checkoutUrl` field),
+ * and then call `open()`.
  *
  * @attribute src - The URL of the checkout to load.
- * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
+ * @attribute presentation - How checkout is presented (auto or popup).
+ * @attribute auth - Checkout-bound authentication token.
+ * @attribute target - The browsing context target for non-popup window presentations.
  *
+ * @event ec.ready - Dispatched when checkout initiates the ECP handshake
+ * @event ec.auth - Dispatched when checkout requests an ECP credential
  * @event ec.start - Dispatched when the checkout has started
  * @event ec.complete - Dispatched when the checkout was successfully completed
  * @event ec.error - Dispatched on a session-level fatal error
@@ -71,10 +80,11 @@ const SHADOW_TEMPLATE = createTemplate(html`
  *
  * @example
  * ```js
- * // Popup target (default)
+ * // Popup presentation
  * const cart = await fetchCart();
  * const checkout = document.createElement("shopify-checkout");
  * checkout.setAttribute("src", cart.checkoutUrl);
+ * checkout.setAttribute("presentation", "popup");
  * document.body.append(checkout);
  * checkout.open();
  * ```
@@ -83,7 +93,7 @@ export class ShopifyCheckout
   extends HTMLElement
   implements CheckoutAttributes, CheckoutMethods, CheckoutProperties
 {
-  static observedAttributes = ["src", "target"] as const;
+  static observedAttributes = ["src", "auth", "presentation", "target"] as const;
 
   constructor() {
     super();
@@ -130,9 +140,12 @@ export class ShopifyCheckout
     }
     if (url.protocol !== "https:") return undefined;
 
-    // Drop ec_auth if present on src (e.g. prepared checkout URLs); this build
-    // does not support passing auth via query string.
+    // Drop ec_auth if present on src (e.g. prepared checkout URLs); the
+    // explicit auth attribute is the only supported source for this value.
     url.searchParams.delete("ec_auth");
+    if (this.auth) {
+      url.searchParams.set("ec_auth", this.auth);
+    }
 
     url.searchParams.set("ec_version", EMBED_PROTOCOL_VERSION);
     if (EMBED_DELEGATIONS.length > 0) {
@@ -140,6 +153,14 @@ export class ShopifyCheckout
     }
     url.searchParams.set("ck_version", CK_VERSION);
     return url;
+  }
+
+  get auth(): string {
+    return this.getAttribute("auth") ?? "";
+  }
+
+  set auth(value: string | undefined) {
+    this.#setAttribute("auth", value);
   }
 
   /**
@@ -165,6 +186,18 @@ export class ShopifyCheckout
     }
   }
 
+  get presentation(): CheckoutPresentation {
+    const presentation = this.getAttribute("presentation");
+    if (presentation === "auto" || presentation === "popup" || presentation === "iframe") {
+      return presentation;
+    }
+    return "auto";
+  }
+
+  set presentation(value: CheckoutPresentation | undefined) {
+    this.#setAttribute("presentation", value);
+  }
+
   get target(): CheckoutTarget | string {
     return this.getAttribute("target") ?? "auto";
   }
@@ -181,6 +214,107 @@ export class ShopifyCheckout
     } else {
       this.removeAttribute(name);
     }
+  }
+
+  #resolvedPresentation(): CheckoutPresentation {
+    const presentation = this.getAttribute("presentation");
+
+    switch (presentation) {
+      case "auto":
+      case "popup":
+      case "iframe":
+        return presentation;
+      case null:
+        return this.target === "popup" ? "popup" : "auto";
+      default:
+        this.#debugWarn(`presentation="${presentation}" is invalid; falling back to "auto"`);
+        return "auto";
+    }
+  }
+
+  async #handleReadyRequest(message: CheckoutProtocolMessage): Promise<void> {
+    if (!this.#isRespondableRequest(message)) return;
+
+    const session = this.#currentOpen;
+    const body = message.body as CheckoutProtocolMessageMap["ec.ready"] | undefined;
+    const readyEvent = new ShopifyCheckoutReadyEvent({
+      delegate: Array.isArray(body?.delegate)
+        ? body.delegate.filter((delegation): delegation is string => typeof delegation === "string")
+        : [],
+      auth: body?.auth,
+    });
+    this.dispatchEvent(readyEvent);
+
+    let response: CheckoutReadyResponse | undefined;
+    const responsePromise = getRespondWithResponse<CheckoutReadyResponse>(readyEvent);
+    try {
+      response = responsePromise ? await responsePromise : undefined;
+    } catch {
+      if (this.#isCurrentCheckoutSession(session)) {
+        postProtocolError(message, -32000, "ec.ready response rejected");
+      }
+      return;
+    }
+
+    if (!this.#isCurrentCheckoutSession(session)) return;
+
+    postProtocolResult(message, {
+      ucp: ucpSuccess(),
+      ...normalizeReadyResponse(response),
+    });
+  }
+
+  async #handleAuthRequest(message: CheckoutProtocolMessage): Promise<void> {
+    if (!this.#isRespondableRequest(message)) return;
+
+    const session = this.#currentOpen;
+    const body = message.body;
+    if (!isObjectRecord(body)) {
+      postProtocolError(message, -32602, "Invalid params: expected object");
+      return;
+    }
+    if ("type" in body && body.type != null && typeof body.type !== "string") {
+      postProtocolError(message, -32602, "Invalid params: type must be a string");
+      return;
+    }
+
+    const auth = body as CheckoutProtocolMessageMap["ec.auth"];
+    const authEvent = new ShopifyCheckoutAuthEvent({
+      type: typeof auth.type === "string" ? auth.type : undefined,
+      auth,
+    });
+    this.dispatchEvent(authEvent);
+
+    const responsePromise = getRespondWithResponse<CheckoutCredentialResponse>(authEvent);
+    if (!responsePromise) {
+      if (this.#isCurrentCheckoutSession(session)) {
+        postProtocolError(message, -32000, "No credential response was provided for ec.auth");
+      }
+      return;
+    }
+
+    let response: CheckoutCredentialResponse;
+    try {
+      response = await responsePromise;
+    } catch {
+      if (this.#isCurrentCheckoutSession(session)) {
+        postProtocolError(message, -32000, "ec.auth response rejected");
+      }
+      return;
+    }
+
+    if (!this.#isCurrentCheckoutSession(session)) return;
+
+    const credential = normalizeCredentialResponse(response);
+    if (!credential) {
+      postProtocolError(message, -32000, "No credential response was provided for ec.auth");
+      return;
+    }
+
+    postProtocolResult(message, {
+      ucp: ucpSuccess(),
+      credential,
+    });
   }
 
   /* ------------------------------------------------------------
@@ -233,6 +367,10 @@ export class ShopifyCheckout
     return this.shadowRoot?.querySelector("#overlay-link") ?? undefined;
   }
 
+  get #iframeElement(): HTMLIFrameElement | undefined {
+    return this.shadowRoot?.querySelector("#checkout-frame") ?? undefined;
+  }
+
   get #targetElement(): HTMLDivElement | undefined {
     return this.shadowRoot?.querySelector(".Shopify-target") ?? undefined;
   }
@@ -243,13 +381,15 @@ export class ShopifyCheckout
    */
 
   /**
-   * Reveals checkout in the target.
+   * Reveals checkout using the configured presentation.
    */
   open(): void {
     const { target } = this;
-    const src = this.#srcAsURL()?.href;
+    const presentation = this.#resolvedPresentation();
+    const url = this.#srcAsURL();
+    const src = url?.href;
 
-    if (!src) {
+    if (!url || !src) {
       // eslint-disable-next-line no-console
       console.warn("`<shopify-checkout>`: src property is empty or invalid, cannot open checkout");
       return;
@@ -260,9 +400,14 @@ export class ShopifyCheckout
       this.close();
     }
 
+    if (presentation === "iframe") {
+      this.#openIframeCheckout(url);
+      return;
+    }
+
     let checkoutWindow: WindowProxy | null = null;
 
-    switch (target) {
+    switch (presentation) {
       case "popup": {
         const features = this.#getPopupFeatures();
         checkoutWindow = window.open(src, "", features);
@@ -270,7 +415,6 @@ export class ShopifyCheckout
       }
 
       case "auto":
-      case "_blank":
       default: {
         if (target === "_self" || target === "_parent" || target === "_top") {
           this.#debugWarn(
@@ -421,6 +565,55 @@ export class ShopifyCheckout
     this.#targetElement?.classList.remove(`Shopify-target--${value}`);
   }
 
+  #openIframeCheckout(url: URL) {
+    const iframe = this.#iframeElement ?? this.#createIframeElement();
+
+    const targetElement = this.#targetElement;
+    if (targetElement && iframe.parentElement !== targetElement) {
+      targetElement.appendChild(iframe);
+    }
+
+    iframe.src = url.href;
+    this.#checkoutWindow = iframe.contentWindow ?? null;
+
+    const abortController = new AbortController();
+    abortController.signal.addEventListener("abort", () => {
+      iframe.remove();
+      this.#checkoutWindow = null;
+      this.#currentOpen = null;
+      this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+    });
+
+    this.#currentOpen = { controller: abortController };
+  }
+
+  #createIframeElement() {
+    const iframe = document.createElement("iframe");
+    iframe.id = "checkout-frame";
+    iframe.title = "Checkout";
+    iframe.setAttribute("part", "iframe");
+    iframe.setAttribute("allow", "publickey-credentials-get *; geolocation");
+    iframe.setAttribute(
+      "sandbox",
+      "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox",
+    );
+    return iframe;
+  }
+
+  #updateIframeSrc() {
+    const iframe = this.#iframeElement;
+    if (!iframe) return;
+
+    const url = this.#srcAsURL();
+    if (!url) {
+      this.close();
+      return;
+    }
+
+    this.close();
+    this.#openIframeCheckout(url);
+  }
+
   #getPopupFeatures() {
     const computedStyle = window.getComputedStyle(this);
     const widthFromCustomProperty = computedStyle.getPropertyValue(
@@ -474,8 +667,12 @@ export class ShopifyCheckout
    */
   #isRespondableRequest(
     message: CheckoutProtocolMessage,
-  ): message is CheckoutProtocolMessage & { id: string } {
-    return message.id != null;
+  ): message is CheckoutProtocolMessage & { id: JsonRpcRequestId } {
+    return message.id !== undefined;
+  }
+
+  #isCurrentCheckoutSession(session: { controller: AbortController } | null): boolean {
+    return session != null && this.#currentOpen === session && !session.controller.signal.aborted;
   }
 
   #validateMessageOrigin(event: MessageEvent) {
@@ -536,12 +733,11 @@ export class ShopifyCheckout
 
     switch (message.name) {
       case "ec.ready": {
-        if (this.#isRespondableRequest(message) && message.source) {
-          (message.source as WindowProxy).postMessage(
-            { jsonrpc: "2.0" as const, id: message.id, result: {} },
-            message.origin,
-          );
-        }
+        void this.#handleReadyRequest(message);
+        break;
+      }
+      case "ec.auth": {
+        void this.#handleAuthRequest(message);
         break;
       }
       case "ec.start": {
@@ -700,6 +896,15 @@ export class ShopifyCheckout
     switch (name) {
       case "src":
         this.#updateOverlayLink();
+        this.#updateIframeSrc();
+        break;
+      case "presentation":
+        if (oldValue !== newValue && this.#currentOpen) {
+          this.close();
+        }
+        break;
+      case "auth":
+        this.#updateOverlayLink();
         break;
       case "target": {
         if (oldValue !== newValue && this.#currentOpen) {
@@ -719,6 +924,18 @@ export class ShopifyCheckout
    * ------------------------------------------------------------
    */
   // we overload these so that the consumer of the component can autocomplete the correct events
+  override addEventListener(
+    type: "ec.ready",
+    listener: TypedEventListener<ShopifyCheckoutReadyEvent> | null,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+
+  override addEventListener(
+    type: "ec.auth",
+    listener: TypedEventListener<ShopifyCheckoutAuthEvent> | null,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+
   override addEventListener(
     type: "ec.start",
     listener: TypedEventListener<ShopifyCheckoutStartEvent> | null,
@@ -776,6 +993,20 @@ export class ShopifyCheckout
  * ------------------------------------------------------------
  */
 
+export interface ShopifyCheckoutReadyEventDetail {
+  /** Delegation types requested by checkout in `ec.ready.params.delegate`. */
+  delegate: readonly string[];
+  /** Authorization requested by checkout in `ec.ready.params.auth`, when present. */
+  auth?: CheckoutProtocolMessageMap["ec.ready"]["auth"];
+}
+
+export interface ShopifyCheckoutAuthEventDetail {
+  /** Authorization type requested by checkout, e.g. `oauth`, `api_key`, or `jwt`. */
+  type?: string;
+  /** Raw `ec.auth` params for integrations that need additional fields. */
+  auth: CheckoutProtocolMessageMap["ec.auth"];
+}
+
 export interface ShopifyCheckoutStartEventDetail {
   /** Initial checkout snapshot from the ECP `ec.start` notification. */
   checkout: Checkout;
@@ -818,6 +1049,49 @@ export interface ShopifyCheckoutMessagesChangeEventDetail {
  * Event classes — `CustomEvent<T>` subclasses carrying typed details.
  * ------------------------------------------------------------
  */
+
+const respondWithResponses = new WeakMap<Event, Promise<unknown>>();
+
+export class ShopifyCheckoutRespondableEvent<Detail, ResponsePayload> extends CustomEvent<Detail> {
+  respondWith(response: Promise<ResponsePayload> | ResponsePayload): void {
+    if (respondWithResponses.has(this)) {
+      throw new DOMException(
+        `<shopify-checkout>: respondWith() has already been called for this ${this.type} event`,
+        "InvalidStateError",
+      );
+    }
+
+    respondWithResponses.set(this, Promise.resolve(response));
+  }
+}
+
+function getRespondWithResponse<ResponsePayload>(
+  event: Event,
+): Promise<ResponsePayload> | undefined {
+  return respondWithResponses.get(event) as Promise<ResponsePayload> | undefined;
+}
+
+export class ShopifyCheckoutReadyEvent extends ShopifyCheckoutRespondableEvent<
+  ShopifyCheckoutReadyEventDetail,
+  CheckoutReadyResponse
+> {
+  declare type: "ec.ready";
+
+  constructor(detail: ShopifyCheckoutReadyEventDetail) {
+    super("ec.ready", { detail, bubbles: true });
+  }
+}
+
+export class ShopifyCheckoutAuthEvent extends ShopifyCheckoutRespondableEvent<
+  ShopifyCheckoutAuthEventDetail,
+  CheckoutCredentialResponse
+> {
+  declare type: "ec.auth";
+
+  constructor(detail: ShopifyCheckoutAuthEventDetail) {
+    super("ec.auth", { detail, bubbles: true });
+  }
+}
 
 export class ShopifyCheckoutStartEvent extends CustomEvent<ShopifyCheckoutStartEventDetail> {
   declare type: "ec.start";
@@ -881,6 +1155,7 @@ export class ShopifyCheckoutMessagesChangeEvent extends CustomEvent<ShopifyCheck
  */
 const CHECKOUT_PROTOCOL_MESSAGES: (keyof CheckoutProtocolMessageMap)[] = [
   "ec.ready",
+  "ec.auth",
   "ec.start",
   "ec.complete",
   "ec.error",
@@ -909,14 +1184,14 @@ class CheckoutProtocolMessage<
   readonly name: MessageType;
   readonly body: CheckoutProtocolMessageMap[MessageType];
   /** The JSON-RPC message ID (undefined for notifications) */
-  readonly id?: string;
+  readonly id?: JsonRpcRequestId;
   /** The source window to post responses to */
   readonly source: MessageEventSource | null;
   /** The origin to use when posting responses */
   readonly origin: string;
 
   constructor(
-    { method, params, id }: CheckoutProtocolMessageData<MessageType> & { id?: string },
+    { method, params, id }: CheckoutProtocolMessageData<MessageType>,
     { source, origin }: { source: MessageEventSource | null; origin: string },
   ) {
     this.protocol = { version: "2026-04-08" };
@@ -930,6 +1205,65 @@ class CheckoutProtocolMessage<
 
 function isEcErrorParams(params: unknown): params is CheckoutProtocolMessageMap["ec.error"] {
   return params != null && typeof params === "object" && "error" in params;
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function postProtocolResult(
+  message: CheckoutProtocolMessage & { id: JsonRpcRequestId },
+  result: unknown,
+): void {
+  message.source?.postMessage(
+    {
+      jsonrpc: "2.0" as const,
+      id: message.id,
+      result,
+    },
+    { targetOrigin: message.origin },
+  );
+}
+
+function postProtocolError(
+  message: CheckoutProtocolMessage & { id: JsonRpcRequestId },
+  code: number,
+  errorMessage: string,
+): void {
+  message.source?.postMessage(
+    {
+      jsonrpc: "2.0" as const,
+      id: message.id,
+      error: {
+        code,
+        message: errorMessage,
+      },
+    },
+    { targetOrigin: message.origin },
+  );
+}
+
+function ucpSuccess() {
+  return {
+    version: EMBED_PROTOCOL_VERSION,
+    status: "success" as const,
+  };
+}
+
+function normalizeReadyResponse(response: CheckoutReadyResponse | undefined): {
+  readonly credential?: string;
+} {
+  if (typeof response === "string") {
+    return { credential: response };
+  }
+  if (response == null) {
+    return {};
+  }
+  return response.credential ? { credential: response.credential } : {};
+}
+
+function normalizeCredentialResponse(response: CheckoutCredentialResponse): string | undefined {
+  return typeof response === "string" ? response : response.credential;
 }
 
 function respondToUnsupportedProtocolRequest(event: MessageEvent) {
@@ -946,7 +1280,7 @@ function respondToUnsupportedProtocolRequest(event: MessageEvent) {
   );
 }
 
-function parseUnsupportedProtocolRequest(data: unknown): { id: string | number } | undefined {
+function parseUnsupportedProtocolRequest(data: unknown): { id: JsonRpcRequestId } | undefined {
   if (
     data == null ||
     typeof data !== "object" ||
@@ -964,7 +1298,8 @@ function parseUnsupportedProtocolRequest(data: unknown): { id: string | number }
   return { id: data.id };
 }
 
-function isJsonRpcRequestId(id: unknown): id is string | number {
+function isJsonRpcRequestId(id: unknown): id is JsonRpcRequestId {
+  if (id === null) return true;
   if (typeof id === "string") return true;
   if (typeof id === "number" && Number.isFinite(id)) return true;
   return false;
@@ -977,6 +1312,7 @@ function isCheckoutProtocolMessage(data: unknown): data is CheckoutProtocolMessa
     "jsonrpc" in data &&
     data.jsonrpc === "2.0" &&
     "method" in data &&
-    CHECKOUT_PROTOCOL_MESSAGES.includes(data.method as keyof CheckoutProtocolMessageMap)
+    CHECKOUT_PROTOCOL_MESSAGES.includes(data.method as keyof CheckoutProtocolMessageMap) &&
+    (!("id" in data) || isJsonRpcRequestId(data.id))
   );
 }

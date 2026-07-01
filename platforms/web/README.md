@@ -15,9 +15,9 @@ present the world's highest converting, customizable, one-page checkout. The
 presented experience is a fully-featured checkout that preserves all of the
 store customizations: Checkout UI extensions, Functions, branding, and more. It
 also provides web idiomatic defaults such as opening checkout in a popup or
-new tab, a transient overlay scrim while the popup is open, and convenient
-developer APIs to embed, customize, and follow the lifecycle of the checkout
-experience via the
+new tab, a transient overlay scrim while the popup is open, and
+convenient developer APIs to embed, customize, and follow the lifecycle of the
+checkout experience via the
 [Embedded Checkout Protocol](https://ucp.dev/2026-04-08/specification/embedded-checkout/).
 
 Check out our blog to
@@ -33,6 +33,8 @@ Check out our blog to
 - [Usage with the Shopify Storefront API](#usage-with-the-shopify-storefront-api)
 - [Configuration](#configuration)
   - [`src`](#src)
+  - [`presentation`](#presentation)
+  - [Authentication](#authentication)
   - [`target`](#target)
   - [`debug`](#debug)
   - [Popup dimensions](#popup-dimensions)
@@ -97,7 +99,7 @@ checkout:
 <shopify-checkout
   id="checkout"
   src="https://your-store.myshopify.com/checkouts/cn/abc123"
-  target="popup"
+  presentation="popup"
 ></shopify-checkout>
 
 <button id="buy-now">Buy now</button>
@@ -112,9 +114,9 @@ checkout:
 </script>
 ```
 
-The element has no visible layout of its own beyond a transient `<dialog>`
-scrim that appears over the host page while the popup is open. It can sit
-anywhere in your DOM.
+For popup and auto presentations, the element has no visible layout of its own
+beyond a transient `<dialog>` scrim that appears over the host page while the
+popup is open.
 
 See [usage with the Storefront API](#usage-with-the-shopify-storefront-api)
 below for details on how to obtain a checkout URL.
@@ -129,7 +131,7 @@ import type {ShopifyCheckout} from '@shopify/checkout-kit';
 
 const checkout = document.createElement('shopify-checkout') as ShopifyCheckout;
 checkout.src = 'https://your-store.myshopify.com/checkouts/cn/abc123';
-checkout.target = 'popup';
+checkout.presentation = 'popup';
 document.body.append(checkout);
 
 checkout.addEventListener('ec.complete', (event) => {
@@ -192,7 +194,7 @@ export function BuyNowButton({checkoutUrl}: {checkoutUrl: string}) {
 
   return (
     <>
-      <shopify-checkout ref={checkoutRef} src={checkoutUrl} target="popup" />
+      <shopify-checkout ref={checkoutRef} src={checkoutUrl} presentation="popup" />
       <button onClick={() => checkoutRef.current?.open()}>Buy now</button>
     </>
   );
@@ -216,7 +218,12 @@ declare module 'react' {
       'shopify-checkout': DetailedHTMLProps<
         HTMLAttributes<ShopifyCheckout>,
         ShopifyCheckout
-      > & {src?: string; target?: string; debug?: boolean};
+      > & {
+        src?: string;
+        presentation?: string;
+        target?: string;
+        debug?: boolean;
+      };
     }
   }
 }
@@ -323,19 +330,64 @@ checkout: `ec_version` (Embedded Checkout Protocol version),
 `ec_delegate` (which capabilities the host delegates), and `ck_version`
 (the Checkout Kit version).
 
+### `presentation`
+
+How checkout is presented when `open()` is called. Defaults to `"auto"`.
+
+| Value      | Behavior                                                              |
+| ---------- | --------------------------------------------------------------------- |
+| `"auto"`   | Opens checkout in a new browser tab or named window based on `target`. |
+| `"popup"`  | Opens checkout in a popup window sized and centered over the page.     |
+
+For popup integrations, prefer `presentation="popup"`:
+
+```html
+<shopify-checkout
+  src="https://your-store.myshopify.com/checkouts/cn/abc123"
+  presentation="popup"
+/>
+```
+
+```ts
+checkout.presentation = 'popup';
+checkout.open();
+```
+
+For new-tab integrations, use `presentation="auto"` with `target="_blank"`.
+For compatibility, omitting `presentation` and setting `target="popup"` still
+opens a popup, but prefer `presentation="popup"` for new code:
+
+```html
+<shopify-checkout
+  src="https://your-store.myshopify.com/checkouts/cn/abc123"
+  presentation="auto"
+  target="_blank"
+/>
+```
+
+### Authentication
+
+Authentication for embedded checkout is not available in Checkout Kit yet.
+[Authenticated checkout](https://ucp.dev/latest/specification/embedded-checkout/#authentication)
+via UCP flows will be documented once they are supported.
+
 ### `target`
 
-Where the checkout is presented. Defaults to `"auto"`.
+The browser context target used when `presentation="auto"`. Defaults to
+`"auto"`.
 
 | Value      | Behavior                                                            |
 | ---------- | ------------------------------------------------------------------- |
 | `"auto"`   | Opens checkout in a new browser tab (default).                      |
-| `"popup"`  | Opens checkout in a popup window sized and centered over the page.  |
-| `"_blank"` | Synonym for `"auto"` — new tab.                                     |
-| _(string)_ | Any other value is treated as a named window target, the same as the [`target` parameter of `window.open()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/open#target). |
+| `"popup"`  | Legacy alias for `presentation="popup"` only when `presentation` is omitted. |
+| `"_blank"` | Opens checkout in a new browser tab/window.                         |
+| _(string)_ | Passed as the [`target` parameter of `window.open()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/open#target). |
+
+When `presentation="auto"` is set explicitly, `target` is passed to
+`window.open()` as the browser context target.
 
 ```html
-<shopify-checkout target="popup" />
+<shopify-checkout presentation="auto" target="_blank" />
 ```
 
 > [!NOTE]
@@ -354,9 +406,9 @@ and event handlers; turn it off in production.
 
 ### Popup dimensions
 
-When `target="popup"`, the popup is centered over the host window. Defaults
-are `600 × 600`, capped at 90% of the host window. Override via CSS custom
-properties:
+When `presentation="popup"`, the popup is centered over the host window.
+Defaults are `600 × 600`, capped at 90% of the host window. Override via CSS
+custom properties:
 
 ```css
 shopify-checkout {
@@ -394,7 +446,7 @@ exactly the fields relevant to that moment.
 | `ec.complete`          | `{checkout, order}`     | The buyer completed the order successfully.                                |
 | `ec.close`             | _(none)_                | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
 | `ec.error`             | `{error}`               | Session-level fatal error — tear down the embedded context.                |
-| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).       |
+| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).      |
 | `ec.totals.change`     | `{checkout, totals}`    | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
 | `ec.messages.change`   | `{checkout, messages}`  | Checkout-level warnings/errors/info shown inside the checkout changed.     |
 

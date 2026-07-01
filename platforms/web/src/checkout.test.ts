@@ -45,6 +45,30 @@ describe("<shopify-checkout>", () => {
         expect(checkout.src).toBe(newSrc);
       });
     });
+
+    describe("presentation", () => {
+      it("changing the presentation attribute reflects to the presentation property", () => {
+        const checkout = renderCheckout();
+        checkout.setAttribute("presentation", "popup");
+
+        expect(checkout.presentation).toBe("popup");
+      });
+
+      it('does not derive the presentation property from target="popup"', () => {
+        const checkout = renderCheckout({ target: "popup" });
+
+        expect(checkout.presentation).toBe("auto");
+      });
+    });
+
+    describe("auth", () => {
+      it("changing the auth attribute reflects to the auth property", () => {
+        const checkout = renderCheckout();
+        checkout.setAttribute("auth", "test-auth-token");
+
+        expect(checkout.auth).toBe("test-auth-token");
+      });
+    });
   });
 
   describe("target", () => {
@@ -104,12 +128,30 @@ describe("<shopify-checkout>", () => {
       });
     });
 
+    describe("auth", () => {
+      it("changing the auth property reflects to the auth attribute", () => {
+        const checkout = renderCheckout();
+        checkout.auth = "test-auth-token";
+
+        expect(checkout.getAttribute("auth")).toBe("test-auth-token");
+      });
+    });
+
     describe("target", () => {
       it("changing the target property reflects to the target attribute", () => {
         const checkout = renderCheckout();
         const newTarget = "_blank";
         checkout.target = newTarget;
         expect(checkout.getAttribute("target")).toBe(newTarget);
+      });
+    });
+
+    describe("presentation", () => {
+      it("changing the presentation property reflects to the presentation attribute", () => {
+        const checkout = renderCheckout();
+        checkout.presentation = "popup";
+
+        expect(checkout.getAttribute("presentation")).toBe("popup");
       });
     });
 
@@ -190,6 +232,21 @@ describe("<shopify-checkout>", () => {
       expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
     });
 
+    it("passes auth to checkout as ec_auth", () => {
+      const checkout = renderCheckout({
+        auth: "test-auth-token",
+        src: "https://example.com/checkout?ec_auth=should-not-propagate&keep=1",
+      });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_auth")).toBe("test-auth-token");
+      expect(url.searchParams.get("keep")).toBe("1");
+    });
+
     it("handles invalid src URL gracefully", () => {
       const checkout = renderCheckout();
       checkout.src = "invalid-url";
@@ -248,6 +305,19 @@ describe("<shopify-checkout>", () => {
               target ?? "auto",
             );
           });
+        });
+      });
+
+      describe('when presentation="popup"', () => {
+        it("opens in a popup window regardless of the window target", () => {
+          const checkout = renderCheckout({ presentation: "popup", target: "_blank" });
+          const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+          checkout.open();
+
+          const call = expectWindowOpenArgs(windowOpenSpy);
+          expect(call[1]).toBe("");
+          expect(call[2]).toEqual(expect.stringContaining("scrollbars=yes"));
         });
       });
 
@@ -727,26 +797,72 @@ describe("<shopify-checkout>", () => {
 
   describe("it subscribes to checkout-protocol events", () => {
     describe("ec.ready handshake", () => {
-      it("auto-responds with an empty result and does not dispatch a DOM event", async () => {
+      it("dispatches a respondable DOM event and posts a successful response", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onReadySpy = vi.fn();
-        // ec.ready is no longer a public event; cast through `never` to verify
-        // that the component does not dispatch one.
-        checkout.addEventListener("ec.ready" as never, onReadySpy as EventListener);
+        checkout.addEventListener("ec.ready", onReadySpy);
 
         simulateProtocolMessageEvent(
           checkout,
           "ec.ready",
-          { delegate: [] },
+          { delegate: ["window.open"], auth: { type: "jwt" } },
           { id: "ready-1", source: mockCheckoutWindow },
         );
         await Promise.resolve();
 
+        expect(onReadySpy).toHaveBeenCalledOnce();
+        const event = onReadySpy.mock.calls[0]![0] as CustomEvent<{
+          delegate: readonly string[];
+          auth?: { type?: string };
+        }>;
+        expect(event.detail).toEqual({
+          delegate: ["window.open"],
+          auth: { type: "jwt" },
+        });
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
-          { jsonrpc: "2.0", id: "ready-1", result: {} },
-          new URL(checkout.src).origin,
+          {
+            jsonrpc: "2.0",
+            id: "ready-1",
+            result: {
+              ucp: {
+                version: EMBED_PROTOCOL_VERSION,
+                status: "success",
+              },
+            },
+          },
+          { targetOrigin: new URL(checkout.src).origin },
         );
-        expect(onReadySpy).not.toHaveBeenCalled();
+      });
+
+      it("uses respondWith() to include a ready credential", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+
+        checkout.addEventListener("ec.ready", (event) => {
+          event.respondWith({ credential: "ready-token" });
+        });
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [], auth: { type: "oauth" } },
+          { id: "ready-credential", source: mockCheckoutWindow },
+        );
+        await Promise.resolve();
+
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "ready-credential",
+            result: {
+              ucp: {
+                version: EMBED_PROTOCOL_VERSION,
+                status: "success",
+              },
+              credential: "ready-token",
+            },
+          },
+          { targetOrigin: new URL(checkout.src).origin },
+        );
       });
 
       it("does not post a response when id is missing", () => {
@@ -760,6 +876,65 @@ describe("<shopify-checkout>", () => {
         );
 
         expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("ec.auth", () => {
+      it("uses respondWith() to return a credential", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+
+        checkout.addEventListener("ec.auth", (event) => {
+          expect(event.detail.type).toBe("jwt");
+          event.respondWith({ credential: "refreshed-token" });
+        });
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.auth",
+          { type: "jwt" },
+          { id: "auth-1", source: mockCheckoutWindow },
+        );
+        await Promise.resolve();
+
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "auth-1",
+            result: {
+              ucp: {
+                version: EMBED_PROTOCOL_VERSION,
+                status: "success",
+              },
+              credential: "refreshed-token",
+            },
+          },
+          { targetOrigin: new URL(checkout.src).origin },
+        );
+      });
+
+      it("posts an error when ec.auth has no credential responder", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        checkout.addEventListener("ec.auth", () => {});
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.auth",
+          { type: "jwt" },
+          { id: "auth-missing", source: mockCheckoutWindow },
+        );
+        await Promise.resolve();
+
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "auth-missing",
+            error: {
+              code: -32000,
+              message: "No credential response was provided for ec.auth",
+            },
+          },
+          { targetOrigin: new URL(checkout.src).origin },
+        );
       });
     });
 
@@ -795,7 +970,7 @@ describe("<shopify-checkout>", () => {
       it("ignores unsupported requests with invalid request ids", () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
 
-        for (const id of [{}, null, true]) {
+        for (const id of [{}, true]) {
           simulateRawMessageEvent(
             checkout,
             {

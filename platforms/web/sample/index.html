@@ -35,10 +35,18 @@
           </label>
 
           <label>
+            <span>presentation</span>
+            <select name="presentation">
+              <option value="popup" selected>popup</option>
+              <option value="auto">auto (new tab)</option>
+            </select>
+          </label>
+
+          <label>
             <span>target</span>
             <select name="target">
-              <option value="popup" selected>popup (window)</option>
-              <option value="auto">auto (new tab)</option>
+              <option value="_blank" selected>_blank</option>
+              <option value="checkout-window">checkout-window</option>
             </select>
           </label>
 
@@ -111,6 +119,8 @@
           </div>
         </article>
 
+        <div id="checkout-host" class="checkout-host"></div>
+
         <details id="component-state">
           <summary>Component state</summary>
           <dl>
@@ -118,6 +128,8 @@
             <dd id="state-checkout">—</dd>
             <dt>error</dt>
             <dd id="state-error">—</dd>
+            <dt>presentation</dt>
+            <dd id="state-presentation">—</dd>
             <dt>target</dt>
             <dd id="state-target">—</dd>
             <dt>debug</dt>

@@ -250,6 +250,15 @@ button:disabled {
   box-shadow: var(--shadow-md);
 }
 
+.checkout-host {
+  width: 100%;
+}
+
+.checkout-host shopify-checkout {
+  display: block;
+  width: 100%;
+}
+
 .product-image {
   aspect-ratio: 4 / 3;
   display: grid;
