@@ -2,15 +2,7 @@
 // checkout protocol. Payload shapes come from the shared
 // `@shopify/checkout-kit-protocol` package (decoded to camelCase).
 
-import type {
-  Checkout,
-  LineItem,
-  Message,
-  ReadyRequest,
-  OrderConfirmation,
-  CheckoutTotal,
-  ErrorResponse,
-} from "@shopify/checkout-kit-protocol";
+import type { Checkout, ReadyRequest, ErrorResponse } from "@shopify/checkout-kit-protocol";
 
 // This component should follow the custom element conventions set out here:
 // https://github.com/Shopify/ui-api-design/tree/main/codex. In particular,
@@ -86,143 +78,16 @@ export interface CheckoutProperties {
   debug?: boolean | string;
 }
 
-// Docs-friendly event interfaces. Each carries the same `detail` shape as the
-// corresponding `CustomEvent<T>` subclass exported from `./checkout.ts`. They
-// exist so the generated API docs show what's on `event.detail` directly,
-// without dragging in the full `CustomEvent`/`Event` documentation.
-export interface CheckoutEvents {
-  /**
-   * Dispatched when checkout has started.
-   */
-  "ec.start": CheckoutStartEvent;
-
-  /**
-   * Dispatched when the checkout was successfully completed.
-   */
-  "ec.complete": CheckoutCompleteEvent;
-
-  /**
-   * Dispatched when the checkout overlay is closed, either due to user action or
-   * from calling the `close()` method. Synthetic — not part of the ECP wire protocol.
-   */
-  "ec.close": CheckoutCloseEvent;
-
-  /**
-   * Dispatched on a session-level fatal error. The host should tear down the
-   * embedded context.
-   */
-  "ec.error": CheckoutErrorEvent;
-
-  /**
-   * Dispatched when the cart line items change.
-   */
-  "ec.line_items.change": CheckoutLineItemsChangeEvent;
-
-  /**
-   * Dispatched when the totals change.
-   */
-  "ec.totals.change": CheckoutTotalsChangeEvent;
-
-  /**
-   * Dispatched when checkout messages (warnings, errors, info) change.
-   */
-  "ec.messages.change": CheckoutMessagesChangeEvent;
-}
-
-export interface CheckoutStartEvent {
-  type: "ec.start";
-  detail: {
-    /** Initial checkout snapshot. */
-    checkout: Checkout;
-  };
-}
-
-export interface CheckoutCompleteEvent {
-  type: "ec.complete";
-  detail: {
-    /** Final checkout snapshot. */
-    checkout: Checkout;
-    /** Order confirmation. */
-    order: OrderConfirmation;
-  };
-}
-
-export interface CheckoutCloseEvent {
-  type: "ec.close";
-  detail: undefined;
-}
-
-export interface CheckoutErrorEvent {
-  type: "ec.error";
-  detail: {
-    /** Error payload from the ECP `ec.error` notification. */
-    error: ErrorResponse;
-  };
-}
-
-export interface CheckoutLineItemsChangeEvent {
-  type: "ec.line_items.change";
-  detail: {
-    /** Updated cart line items. */
-    lineItems: readonly LineItem[];
-    /** Full checkout snapshot for handlers that want broader context. */
-    checkout: Checkout;
-  };
-}
-
-export interface CheckoutTotalsChangeEvent {
-  type: "ec.totals.change";
-  detail: {
-    /** Updated totals. */
-    totals: readonly CheckoutTotal[];
-    /** Full checkout snapshot for handlers that want broader context. */
-    checkout: Checkout;
-  };
-}
-
-export interface CheckoutMessagesChangeEvent {
-  type: "ec.messages.change";
-  detail: {
-    /** Updated checkout-level messages (warnings, errors, info). */
-    messages: readonly Message[];
-    /** Full checkout snapshot for handlers that want broader context. */
-    checkout: Checkout;
-  };
-}
-
 export type TypedEventListener<Event> =
   | ((event: Event) => void)
   | {
       handleEvent(event: Event): void;
     };
 
-export type CheckoutElement = CheckoutMethods & CheckoutProperties & CheckoutEvents;
-
 /* ------------------------------------------------------------
  * Checkout Protocol
  * ------------------------------------------------------------
  */
-
-/**
- * A checkout protocol message as it is communicated via postMessage (JSON-RPC 2.0 format)
- */
-export interface CheckoutProtocolMessageData<
-  T extends keyof CheckoutProtocolMessageMap = keyof CheckoutProtocolMessageMap,
-> {
-  jsonrpc: "2.0";
-  method: T;
-  params?: CheckoutProtocolMessageMap[T];
-}
-
-/** Common payload shape for messages that carry the full Checkout object. */
-interface CheckoutPayload {
-  checkout: Checkout;
-}
-
-/** `ec.error` wraps the generated error response in the JSON-RPC `params.error` field. */
-export interface EcErrorParams {
-  error: ErrorResponse;
-}
 
 /**
  * Mapping of the 2026-04-08 ECP messages this component handles to their
@@ -233,12 +98,12 @@ export interface EcErrorParams {
  */
 export interface CheckoutProtocolMessageMap {
   "ec.ready": ReadyRequest;
-  "ec.start": CheckoutPayload;
-  "ec.complete": CheckoutPayload;
-  "ec.error": EcErrorParams;
-  "ec.line_items.change": CheckoutPayload;
-  "ec.totals.change": CheckoutPayload;
-  "ec.messages.change": CheckoutPayload;
+  "ec.start": { checkout: Checkout };
+  "ec.complete": { checkout: Checkout };
+  "ec.error": { error: ErrorResponse };
+  "ec.line_items.change": { checkout: Checkout };
+  "ec.totals.change": { checkout: Checkout };
+  "ec.messages.change": { checkout: Checkout };
   "ec.window.open_request": { url: string };
 }
 
