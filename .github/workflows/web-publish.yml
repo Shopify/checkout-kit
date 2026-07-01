@@ -134,7 +134,7 @@ jobs:
       # literal string by bash rather than command substitution.
       - name: Publish to npm
         if: ${{ !inputs.dry-run }}
-        run: pnpm publish --no-git-checks --tag "$DIST_TAG" --access public --provenance
+        run: pnpm dlx npm@11.5.1 publish --no-git-checks --tag "$DIST_TAG" --access public --provenance
         env:
           DIST_TAG: ${{ steps.tag.outputs.tag }}
           NPM_CONFIG_PROVENANCE: "true"
