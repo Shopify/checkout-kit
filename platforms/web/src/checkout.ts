@@ -1,26 +1,34 @@
+import {
+  EmbeddedCheckoutProtocol,
+  decodeProtocolMessage,
+  windowOpenSuccess,
+  windowOpenRejected,
+  type WindowOpenRequest,
+  type WindowOpenResult,
+} from "@shopify/checkout-kit-protocol";
+
 import { createTemplate, html } from "./utils";
 import type {
   CheckoutAttributes,
   CheckoutMethods,
   CheckoutProperties,
-  CheckoutProtocolMessageMap,
   CheckoutTarget,
   TypedEventListener,
-  CheckoutProtocolMessageData,
   Checkout,
-  CheckoutLineItem,
-  CheckoutMessage,
-  Total,
+  LineItem,
+  Message,
+  CheckoutTotal,
   OrderConfirmation,
-  UcpErrorResponse,
+  ErrorResponse,
 } from "./checkout.types";
 import { STYLES } from "./checkout.styles";
 
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
-export const EMBED_PROTOCOL_VERSION = "2026-04-08";
 export const CK_VERSION = "4.0.0";
-const EMBED_DELEGATIONS: readonly string[] = ["window.open"];
+
+const WINDOW_OPEN_INVALID_URL_WARNING =
+  "<shopify-checkout>: ec.window.open_request received without a valid url";
 
 const SHADOW_TEMPLATE = createTemplate(html`
   <div id="shopify-element-wrapper">
@@ -92,7 +100,7 @@ export class ShopifyCheckout
   }
 
   #checkout?: Checkout;
-  #error?: UcpErrorResponse;
+  #error?: ErrorResponse;
 
   #checkoutWindow: WindowProxy | null = null;
 
@@ -100,6 +108,8 @@ export class ShopifyCheckout
   #currentOpen: { controller: AbortController } | null = null;
   // Manages the global message event listener for checkout protocol communication
   #checkoutProtocolController: { controller: AbortController } | null = null;
+  // Shared protocol client that decodes messages and dispatches to handlers
+  #client!: EmbeddedCheckoutProtocol.Client;
 
   /* ------------------------------------------------------------
    * Read/write properties (reflected with attributes)
@@ -130,16 +140,12 @@ export class ShopifyCheckout
     }
     if (url.protocol !== "https:") return undefined;
 
-    // Drop ec_auth if present on src (e.g. prepared checkout URLs); this build
-    // does not support passing auth via query string.
-    url.searchParams.delete("ec_auth");
-
-    url.searchParams.set("ec_version", EMBED_PROTOCOL_VERSION);
-    if (EMBED_DELEGATIONS.length > 0) {
-      url.searchParams.set("ec_delegate", EMBED_DELEGATIONS.join(","));
-    }
-    url.searchParams.set("ck_version", CK_VERSION);
-    return url;
+    const negotiatedUrl = EmbeddedCheckoutProtocol.url(url.toString(), {
+      delegations: [EmbeddedCheckoutProtocol.Delegations.windowOpen],
+    });
+    const finalUrl = new URL(negotiatedUrl);
+    finalUrl.searchParams.set("ck_version", CK_VERSION);
+    return finalUrl;
   }
 
   /**
@@ -213,7 +219,7 @@ export class ShopifyCheckout
    *   console.error(messages[0]?.code, messages[0]?.content);
    * });
    */
-  get error(): UcpErrorResponse | undefined {
+  get error(): ErrorResponse | undefined {
     return this.#error;
   }
 
@@ -469,15 +475,6 @@ export class ShopifyCheckout
    * ------------------------------------------------------------
    */
 
-  /**
-   * JSON-RPC request messages carry an `id`; notifications do not.
-   */
-  #isRespondableRequest(
-    message: CheckoutProtocolMessage,
-  ): message is CheckoutProtocolMessage & { id: string } {
-    return message.id != null;
-  }
-
   #validateMessageOrigin(event: MessageEvent) {
     if (!this.#srcAsURL()) {
       throw new Error("Dropped message because src is invalid or unset");
@@ -502,6 +499,7 @@ export class ShopifyCheckout
     // during DOM moves, leading to potentially accumulated event listeners.
     this.#checkoutProtocolController?.controller.abort();
 
+    this.#client = this.#buildProtocolClient();
     this.#checkoutProtocolController = { controller: new AbortController() };
     window.addEventListener("message", this.#handleMessage, {
       signal: this.#checkoutProtocolController.controller.signal,
@@ -521,43 +519,37 @@ export class ShopifyCheckout
       return;
     }
 
-    const message = CheckoutProtocolMessage.parse(event);
-    if (!message) {
-      respondToUnsupportedProtocolRequest(event);
-      return;
-    }
+    void this.#dispatchProtocolMessage(JSON.stringify(event.data), event);
+  };
 
-    // @see https://ucp.dev/2026-04-08/specification/embedded-checkout/
+  /**
+   * Builds the shared protocol client with a handler per embedded checkout
+   * notification/request. Handlers receive already-decoded payloads and map
+   * them onto the component's cached state and DOM events.
+   *
+   * @see https://ucp.dev/2026-04-08/specification/embedded-checkout/
+   */
+  #buildProtocolClient(): EmbeddedCheckoutProtocol.Client {
+    const { Event } = EmbeddedCheckoutProtocol;
 
-    // Every notification that carries a checkout payload updates the cached value.
-    if (message.body != null && typeof message.body === "object" && "checkout" in message.body) {
-      this.#checkout = (message.body as { checkout: Checkout }).checkout;
-    }
-
-    switch (message.name) {
-      case "ec.ready": {
-        if (this.#isRespondableRequest(message) && message.source) {
-          (message.source as WindowProxy).postMessage(
-            { jsonrpc: "2.0" as const, id: message.id, result: {} },
-            message.origin,
-          );
-        }
-        break;
-      }
-      case "ec.start": {
-        const checkout = (message.body as CheckoutProtocolMessageMap["ec.start"]).checkout;
+    return new EmbeddedCheckoutProtocol.Client()
+      .on(Event.ready, () => ({
+        ucp: {
+          status: "success",
+          version: EmbeddedCheckoutProtocol.specVersion,
+        },
+      }))
+      .on(Event.start, (checkout) => {
+        this.#checkout = checkout;
         this.dispatchEvent(new ShopifyCheckoutStartEvent({ checkout }));
-        break;
-      }
-      case "ec.complete": {
-        const checkout = (message.body as CheckoutProtocolMessageMap["ec.complete"]).checkout;
-        // `order` is populated on `ec.complete` per ECP spec; fall back defensively.
+      })
+      .on(Event.complete, (checkout) => {
+        this.#checkout = checkout;
+        // `order` is populated on `ec.complete` per ECP spec.
         const order = checkout.order as OrderConfirmation;
         this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout, order }));
-        break;
-      }
-      case "ec.error": {
-        const { error } = message.body as CheckoutProtocolMessageMap["ec.error"];
+      })
+      .on(Event.error, (error) => {
         this.#error = error;
         this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
         // Per UCP spec, `unrecoverable` means no valid resource exists to act on —
@@ -565,112 +557,89 @@ export class ShopifyCheckout
         if (error.messages.some((m) => m.severity === "unrecoverable")) {
           this.close();
         }
-        break;
-      }
-      case "ec.line_items.change": {
-        const checkout = (message.body as CheckoutProtocolMessageMap["ec.line_items.change"])
-          .checkout;
+      })
+      .on(Event.lineItemsChange, (checkout) => {
+        this.#checkout = checkout;
         this.dispatchEvent(
           new ShopifyCheckoutLineItemsChangeEvent({
             checkout,
-            lineItems: checkout.line_items,
+            lineItems: checkout.lineItems,
           }),
         );
-        break;
-      }
-      case "ec.totals.change": {
-        const checkout = (message.body as CheckoutProtocolMessageMap["ec.totals.change"]).checkout;
+      })
+      .on(Event.totalsChange, (checkout) => {
+        this.#checkout = checkout;
         this.dispatchEvent(
           new ShopifyCheckoutTotalsChangeEvent({
             checkout,
             totals: checkout.totals,
           }),
         );
-        break;
-      }
-      case "ec.messages.change": {
-        const checkout = (message.body as CheckoutProtocolMessageMap["ec.messages.change"])
-          .checkout;
+      })
+      .on(Event.messagesChange, (checkout) => {
+        this.#checkout = checkout;
         this.dispatchEvent(
           new ShopifyCheckoutMessagesChangeEvent({
             checkout,
             messages: checkout.messages ?? [],
           }),
         );
-        break;
-      }
-      case "ec.window.open_request": {
-        if (!this.#isRespondableRequest(message)) break;
-        const body = message.body as
-          | CheckoutProtocolMessageMap["ec.window.open_request"]
-          | undefined;
-        if (!body || typeof body.url !== "string") {
-          // eslint-disable-next-line no-console
-          console.warn(
-            "<shopify-checkout>: ec.window.open_request received without a valid url",
-            message,
-          );
-          message.source?.postMessage(
-            {
-              jsonrpc: "2.0" as const,
-              id: message.id,
-              error: {
-                code: -32602,
-                message: "Invalid params: expected {url: string}",
-              },
-            },
-            { targetOrigin: message.origin },
-          );
-          break;
-        }
-        let targetUrl: URL;
-        try {
-          targetUrl = new URL(body.url);
-        } catch {
-          message.source?.postMessage(
-            {
-              jsonrpc: "2.0" as const,
-              id: message.id,
-              error: {
-                code: -32602,
-                message: "Invalid params: url is not a valid URL",
-              },
-            },
-            { targetOrigin: message.origin },
-          );
-          break;
-        }
-        if (targetUrl.protocol !== "https:") {
-          message.source?.postMessage(
-            {
-              jsonrpc: "2.0" as const,
-              id: message.id,
-              error: {
-                code: -32602,
-                message: "Invalid params: url must use https scheme",
-              },
-            },
-            { targetOrigin: message.origin },
-          );
-          break;
-        }
-        window.open(targetUrl.href, "_blank", "noopener");
-        message.source?.postMessage(
-          { jsonrpc: "2.0" as const, id: message.id, result: {} },
-          { targetOrigin: message.origin },
-        );
-        break;
-      }
-      default: {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `<shopify-checkout>: Unknown checkout protocol message received: ${message.name}`,
-          message,
-        );
-        break;
-      }
+      })
+      .on(Event.windowOpen, (request) => this.#handleWindowOpen(request));
+  }
+
+  /**
+   * Feeds a serialized JSON-RPC message through the protocol client and posts
+   * any response back to the checkout window. Responses only exist for
+   * requests (`ec.ready`, `ec.window.open_request`, unknown methods);
+   * notifications resolve to `undefined` and post nothing.
+   */
+  async #dispatchProtocolMessage(serialized: string, event: MessageEvent): Promise<void> {
+    const response = await this.#client.process(serialized);
+    if (response === undefined) return;
+
+    const parsed = JSON.parse(response) as Record<string, unknown>;
+
+    // The client returns -32602 for a window.open request whose url is missing
+    // or not a string (the handler never runs). Preserve the host-side warning.
+    if (
+      parsed.error !== undefined &&
+      decodeProtocolMessage(serialized)?.method === EmbeddedCheckoutProtocol.Event.windowOpen.method
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn(WINDOW_OPEN_INVALID_URL_WARNING, event.data);
     }
-  };
+
+    const { source } = event;
+    if (source) {
+      (source as WindowProxy).postMessage(parsed, event.origin);
+    }
+  }
+
+  /**
+   * Handles an `ec.window.open_request` delegation: opens a validated `https:`
+   * URL in a new tab and returns a UCP result. Invalid or non-`https:` URLs
+   * are rejected (and warned about) rather than opened.
+   */
+  #handleWindowOpen(request: WindowOpenRequest): WindowOpenResult {
+    let targetUrl: URL;
+    try {
+      targetUrl = new URL(request.url);
+    } catch {
+      // eslint-disable-next-line no-console
+      console.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
+      return windowOpenRejected("url is not a valid URL");
+    }
+
+    if (targetUrl.protocol !== "https:") {
+      // eslint-disable-next-line no-console
+      console.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
+      return windowOpenRejected("url must use https scheme");
+    }
+
+    window.open(targetUrl.href, "_blank", "noopener");
+    return windowOpenSuccess();
+  }
 
   /* ------------------------------------------------------------
    * Lifecycle
@@ -790,26 +759,26 @@ export interface ShopifyCheckoutCompleteEventDetail {
 
 export interface ShopifyCheckoutErrorEventDetail {
   /** Error payload from the ECP `ec.error` notification. */
-  error: UcpErrorResponse;
+  error: ErrorResponse;
 }
 
 export interface ShopifyCheckoutLineItemsChangeEventDetail {
   /** Updated cart line items. */
-  lineItems: readonly CheckoutLineItem[];
+  lineItems: readonly LineItem[];
   /** Full checkout snapshot for handlers that want broader context. */
   checkout: Checkout;
 }
 
 export interface ShopifyCheckoutTotalsChangeEventDetail {
   /** Updated totals. */
-  totals: readonly Total[];
+  totals: readonly CheckoutTotal[];
   /** Full checkout snapshot for handlers that want broader context. */
   checkout: Checkout;
 }
 
 export interface ShopifyCheckoutMessagesChangeEventDetail {
   /** Updated checkout-level messages (warnings, errors, info). */
-  messages: readonly CheckoutMessage[];
+  messages: readonly Message[];
   /** Full checkout snapshot for handlers that want broader context. */
   checkout: Checkout;
 }
@@ -873,110 +842,4 @@ export class ShopifyCheckoutMessagesChangeEvent extends CustomEvent<ShopifyCheck
   constructor(detail: ShopifyCheckoutMessagesChangeEventDetail) {
     super("ec.messages.change", { detail, bubbles: true });
   }
-}
-
-/* ------------------------------------------------------------
- * Checkout protocol
- * ------------------------------------------------------------
- */
-const CHECKOUT_PROTOCOL_MESSAGES: (keyof CheckoutProtocolMessageMap)[] = [
-  "ec.ready",
-  "ec.start",
-  "ec.complete",
-  "ec.error",
-  "ec.line_items.change",
-  "ec.totals.change",
-  "ec.messages.change",
-  "ec.window.open_request",
-];
-
-const METHOD_NOT_FOUND_ERROR = {
-  code: -32601,
-  message: "Method not found",
-} as const;
-
-class CheckoutProtocolMessage<
-  MessageType extends keyof CheckoutProtocolMessageMap = keyof CheckoutProtocolMessageMap,
-> {
-  static parse(event: MessageEvent): CheckoutProtocolMessage | undefined {
-    const { data, source, origin } = event;
-    if (!isCheckoutProtocolMessage(data)) return;
-    if (data.method === "ec.error" && !isEcErrorParams(data.params)) return;
-    return new CheckoutProtocolMessage(data, { source, origin });
-  }
-
-  readonly protocol: { readonly version: string };
-  readonly name: MessageType;
-  readonly body: CheckoutProtocolMessageMap[MessageType];
-  /** The JSON-RPC message ID (undefined for notifications) */
-  readonly id?: string;
-  /** The source window to post responses to */
-  readonly source: MessageEventSource | null;
-  /** The origin to use when posting responses */
-  readonly origin: string;
-
-  constructor(
-    { method, params, id }: CheckoutProtocolMessageData<MessageType> & { id?: string },
-    { source, origin }: { source: MessageEventSource | null; origin: string },
-  ) {
-    this.protocol = { version: "2026-04-08" };
-    this.name = method;
-    this.body = params as CheckoutProtocolMessageMap[MessageType];
-    this.id = id;
-    this.source = source;
-    this.origin = origin;
-  }
-}
-
-function isEcErrorParams(params: unknown): params is CheckoutProtocolMessageMap["ec.error"] {
-  return params != null && typeof params === "object" && "error" in params;
-}
-
-function respondToUnsupportedProtocolRequest(event: MessageEvent) {
-  const request = parseUnsupportedProtocolRequest(event.data);
-  if (!request) return;
-
-  event.source?.postMessage(
-    {
-      jsonrpc: "2.0" as const,
-      id: request.id,
-      error: METHOD_NOT_FOUND_ERROR,
-    },
-    { targetOrigin: event.origin },
-  );
-}
-
-function parseUnsupportedProtocolRequest(data: unknown): { id: string | number } | undefined {
-  if (
-    data == null ||
-    typeof data !== "object" ||
-    !("jsonrpc" in data) ||
-    data.jsonrpc !== "2.0" ||
-    !("method" in data) ||
-    typeof data.method !== "string" ||
-    CHECKOUT_PROTOCOL_MESSAGES.includes(data.method as keyof CheckoutProtocolMessageMap) ||
-    !("id" in data) ||
-    !isJsonRpcRequestId(data.id)
-  ) {
-    return;
-  }
-
-  return { id: data.id };
-}
-
-function isJsonRpcRequestId(id: unknown): id is string | number {
-  if (typeof id === "string") return true;
-  if (typeof id === "number" && Number.isFinite(id)) return true;
-  return false;
-}
-
-function isCheckoutProtocolMessage(data: unknown): data is CheckoutProtocolMessageData {
-  return (
-    data != null &&
-    typeof data === "object" &&
-    "jsonrpc" in data &&
-    data.jsonrpc === "2.0" &&
-    "method" in data &&
-    CHECKOUT_PROTOCOL_MESSAGES.includes(data.method as keyof CheckoutProtocolMessageMap)
-  );
 }

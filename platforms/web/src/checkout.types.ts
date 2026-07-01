@@ -1,15 +1,16 @@
 // Types for this component are derived from the 2026-04-08 UCP embedded
-// checkout protocol. Embed payload shapes live in `./ucp-embed-types.ts`.
+// checkout protocol. Payload shapes come from the shared
+// `@shopify/checkout-kit-protocol` package (decoded to camelCase).
 
 import type {
   Checkout,
-  CheckoutLineItem,
-  CheckoutMessage,
-  EcReadyParams,
+  LineItem,
+  Message,
+  ReadyRequest,
   OrderConfirmation,
-  Total,
-  UcpErrorResponse,
-} from "./ucp-embed-types";
+  CheckoutTotal,
+  ErrorResponse,
+} from "@shopify/checkout-kit-protocol";
 
 // This component should follow the custom element conventions set out here:
 // https://github.com/Shopify/ui-api-design/tree/main/codex. In particular,
@@ -155,7 +156,7 @@ export interface CheckoutErrorEvent {
   type: "ec.error";
   detail: {
     /** Error payload from the ECP `ec.error` notification. */
-    error: UcpErrorResponse;
+    error: ErrorResponse;
   };
 }
 
@@ -163,7 +164,7 @@ export interface CheckoutLineItemsChangeEvent {
   type: "ec.line_items.change";
   detail: {
     /** Updated cart line items. */
-    lineItems: readonly CheckoutLineItem[];
+    lineItems: readonly LineItem[];
     /** Full checkout snapshot for handlers that want broader context. */
     checkout: Checkout;
   };
@@ -173,7 +174,7 @@ export interface CheckoutTotalsChangeEvent {
   type: "ec.totals.change";
   detail: {
     /** Updated totals. */
-    totals: readonly Total[];
+    totals: readonly CheckoutTotal[];
     /** Full checkout snapshot for handlers that want broader context. */
     checkout: Checkout;
   };
@@ -183,7 +184,7 @@ export interface CheckoutMessagesChangeEvent {
   type: "ec.messages.change";
   detail: {
     /** Updated checkout-level messages (warnings, errors, info). */
-    messages: readonly CheckoutMessage[];
+    messages: readonly Message[];
     /** Full checkout snapshot for handlers that want broader context. */
     checkout: Checkout;
   };
@@ -220,7 +221,7 @@ interface CheckoutPayload {
 
 /** `ec.error` wraps the generated error response in the JSON-RPC `params.error` field. */
 export interface EcErrorParams {
-  error: UcpErrorResponse;
+  error: ErrorResponse;
 }
 
 /**
@@ -231,7 +232,7 @@ export interface EcErrorParams {
  * does not implement payment delegations.
  */
 export interface CheckoutProtocolMessageMap {
-  "ec.ready": EcReadyParams;
+  "ec.ready": ReadyRequest;
   "ec.start": CheckoutPayload;
   "ec.complete": CheckoutPayload;
   "ec.error": EcErrorParams;
@@ -244,10 +245,10 @@ export interface CheckoutProtocolMessageMap {
 export type {
   Buyer,
   Checkout,
-  CheckoutLineItem,
-  CheckoutMessage,
-  EcReadyParams,
+  LineItem,
+  Message,
+  ReadyRequest,
   OrderConfirmation,
-  Total,
-  UcpErrorResponse,
-} from "./ucp-embed-types";
+  CheckoutTotal,
+  ErrorResponse,
+} from "@shopify/checkout-kit-protocol";

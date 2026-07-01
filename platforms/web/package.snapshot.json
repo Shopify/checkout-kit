@@ -7,7 +7,6 @@
   "dist/index.d.ts",
   "dist/index.js",
   "dist/index.js.map",
-  "dist/ucp-embed-types.d.ts",
   "dist/utils.d.ts",
   "LICENSE",
   "package.json",
@@ -17,6 +16,5 @@
   "src/checkout.ts",
   "src/checkout.types.ts",
   "src/index.ts",
-  "src/ucp-embed-types.ts",
   "src/utils.ts"
 ]

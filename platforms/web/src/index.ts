@@ -33,9 +33,9 @@ export type { CheckoutTarget } from "./checkout.types";
 export type {
   Buyer,
   Checkout,
-  CheckoutLineItem,
-  CheckoutMessage,
+  LineItem,
+  Message,
   OrderConfirmation,
-  Total,
-  UcpErrorResponse,
+  CheckoutTotal,
+  ErrorResponse,
 } from "./checkout.types";
