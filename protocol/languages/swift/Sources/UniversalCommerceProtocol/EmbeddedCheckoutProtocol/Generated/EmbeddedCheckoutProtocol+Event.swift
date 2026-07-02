@@ -20,50 +20,85 @@ extension EmbeddedCheckoutProtocol {
     /// Notifications become `NotificationDescriptor`s; requests become
     /// `RequestDescriptor`s.
     public enum Event {
-        public static let error = NotificationDescriptor<ErrorResponse>(method: "ec.error")
-        public static let start = NotificationDescriptor<Checkout>(method: "ec.start")
-        public static let complete = NotificationDescriptor<Checkout>(method: "ec.complete")
-        public static let messagesChange = NotificationDescriptor<Checkout>(method: "ec.messages.change")
-        public static let lineItemsChange = NotificationDescriptor<Checkout>(method: "ec.line_items.change")
-        public static let buyerChange = NotificationDescriptor<Checkout>(method: "ec.buyer.change")
-        public static let totalsChange = NotificationDescriptor<Checkout>(method: "ec.totals.change")
-        public static let paymentChange = NotificationDescriptor<Checkout>(method: "ec.payment.change")
-        public static let fulfillmentChange = NotificationDescriptor<Checkout>(method: "ec.fulfillment.change")
+        public static let error = NotificationDescriptor(
+            method: "ec.error",
+            decode: { try? JSONDecoder().decode(JSONRPCErrorParams.self, from: $0) }
+        )
 
-        public static let ready = RequestDescriptor<ReadyRequest, ReadyResult>(
+        public static let start = NotificationDescriptor(
+            method: "ec.start",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
+        )
+
+        public static let complete = NotificationDescriptor(
+            method: "ec.complete",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
+        )
+
+        public static let messagesChange = NotificationDescriptor(
+            method: "ec.messages.change",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
+        )
+
+        public static let lineItemsChange = NotificationDescriptor(
+            method: "ec.line_items.change",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
+        )
+
+        public static let buyerChange = NotificationDescriptor(
+            method: "ec.buyer.change",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
+        )
+
+        public static let totalsChange = NotificationDescriptor(
+            method: "ec.totals.change",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
+        )
+
+        public static let paymentChange = NotificationDescriptor(
+            method: "ec.payment.change",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
+        )
+
+        public static let fulfillmentChange = NotificationDescriptor(
+            method: "ec.fulfillment.change",
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
+        )
+
+        public static let ready: RequestDescriptor<ReadyRequest, RequestMessage<ReadyRequest>, ReadyResult> = .init(
             method: "ec.ready",
             delegation: nil,
             decode: { try? JSONDecoder().decode(ReadyRequest.self, from: $0) }
         )
 
-        public static let auth = RequestDescriptor<AuthRequest, AuthResult>(
+        public static let auth: RequestDescriptor<AuthRequest, RequestMessage<AuthRequest>, AuthResult> = .init(
             method: "ec.auth",
             delegation: nil,
             decode: { try? JSONDecoder().decode(AuthRequest.self, from: $0) }
         )
 
-        public static let paymentInstrumentsChange = RequestDescriptor<Checkout, InstrumentsChangeResult>(
+        public static let paymentInstrumentsChange: RequestDescriptor<JSONRPCCheckoutParams, RequestMessage<JSONRPCCheckoutParams>, InstrumentsChangeResult> = .init(
             method: "ec.payment.instruments_change_request",
             delegation: "payment.instruments_change",
-            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
         )
 
-        public static let paymentCredential = RequestDescriptor<Checkout, CredentialResult>(
+        public static let paymentCredential: RequestDescriptor<JSONRPCCheckoutParams, RequestMessage<JSONRPCCheckoutParams>, CredentialResult> = .init(
             method: "ec.payment.credential_request",
             delegation: "payment.credential",
-            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
         )
 
-        public static let windowOpen = RequestDescriptor<WindowOpenRequest, WindowOpenResult>(
+        public static let windowOpen: RequestDescriptor<WindowOpenRequest, RequestMessage<WindowOpenRequest>, WindowOpenResult> = .init(
             method: "ec.window.open_request",
             delegation: "window.open",
             decode: { try? JSONDecoder().decode(WindowOpenRequest.self, from: $0) }
         )
 
-        public static let fulfillmentAddressChange = RequestDescriptor<Checkout, AddressChangeResult>(
+        public static let fulfillmentAddressChange: RequestDescriptor<JSONRPCCheckoutParams, RequestMessage<JSONRPCCheckoutParams>, AddressChangeResult> = .init(
             method: "ec.fulfillment.address_change_request",
             delegation: "fulfillment.address_change",
-            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }
+            decode: { try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0) }
         )
 
         public static let all: [String] = [

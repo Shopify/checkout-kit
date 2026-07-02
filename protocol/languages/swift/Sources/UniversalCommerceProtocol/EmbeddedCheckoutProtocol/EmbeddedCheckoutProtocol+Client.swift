@@ -2,7 +2,7 @@ import Foundation
 
 extension EmbeddedCheckoutProtocol {
     public struct Client: Sendable, MutableCopyable {
-        private var notificationHandlers: [String: @MainActor @Sendable (any EventPayload) -> Void]
+        private var notificationHandlers: [String: @MainActor @Sendable (Data) -> Void]
         private var requestEntries: [String: RequestEntry]
 
         /// The delegation strings this client can fulfill, derived from the
@@ -18,22 +18,23 @@ extension EmbeddedCheckoutProtocol {
         }
 
         @discardableResult
-        public func on<P: EventPayload>(
-            _ descriptor: NotificationDescriptor<P>,
-            perform: @escaping @MainActor (P) -> Void
+        public func on<P: EventPayload, Handler>(
+            _ descriptor: NotificationDescriptor<P, Handler>,
+            perform: @escaping @MainActor (Handler) -> Void
         ) -> Client {
             return copy {
-                $0.notificationHandlers[descriptor.method] = { payload in
-                    guard let typed = payload as? P else { return }
-                    perform(typed)
+                $0.notificationHandlers[descriptor.method] = { params in
+                    guard let payload = descriptor.decode(params) else { return }
+                    let message = NotificationMessage(method: descriptor.method, params: payload)
+                    perform(descriptor.project(message))
                 }
             }
         }
 
         @discardableResult
-        public func on<P: EventPayload, R: ResponsePayload>(
-            _ descriptor: RequestDescriptor<P, R>,
-            perform: @escaping @MainActor @Sendable (P) async -> R
+        public func on<P: EventPayload, Handler, R: ResponsePayload>(
+            _ descriptor: RequestDescriptor<P, Handler, R>,
+            perform: @escaping @MainActor @Sendable (Handler) async -> R
         ) -> Client {
             return copy {
                 $0.requestEntries[descriptor.method] = RequestEntry(
@@ -46,7 +47,8 @@ extension EmbeddedCheckoutProtocol {
                                 message: EmbeddedCheckoutProtocol.invalidParamsMessage
                             )
                         }
-                        let result = await perform(payload)
+                        let message = RequestMessage(method: descriptor.method, id: id, params: payload)
+                        let result = await perform(descriptor.project(message))
                         return EmbeddedCheckoutProtocol.encodeResponse(id: id, result: result)
                     }
                 )
@@ -57,8 +59,8 @@ extension EmbeddedCheckoutProtocol {
             let decoded = EmbeddedCheckoutProtocol.decode(jsonRpc: message)
 
             switch decoded {
-            case let .notification(method, payload):
-                await notificationHandlers[method]?(payload)
+            case let .notification(method, params):
+                await notificationHandlers[method]?(params)
                 return nil
 
             case let .request(id, method, params):

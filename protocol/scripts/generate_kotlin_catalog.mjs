@@ -18,23 +18,24 @@ const specVersion = "2026-04-08";
 const notifications = EC_METHODS.filter((entry) => entry.kind === "notification");
 const requests = EC_METHODS.filter((entry) => entry.kind === "request");
 
-// Kotlin-specific notification decode wiring. Kotlin needs an explicit
-// KSerializer for the wrapper params object plus the field to extract; Swift
-// gets this for free from Decodable. Mirrors the Swift catalog's decodeClosure.
+// Kotlin-specific notification decode wiring. The protocol descriptor decodes
+// the full JSON-RPC params envelope (the `{checkout}`/`{error}` wrapper) and
+// hands it back intact; host kits narrow to the bare payload via `.map`. Kotlin
+// needs an explicit KSerializer for the wrapper params object.
 const NOTIFICATION_BINDINGS = new Map([
-  ["Checkout", {paramsSerializer: "CheckoutParams.serializer()", extract: "it.checkout"}],
-  ["ErrorResponse", {paramsSerializer: "ErrorParams.serializer()", extract: "it.error"}],
+  ["Checkout", {paramsSerializer: "CheckoutParams.serializer()", wrapper: "CheckoutParams"}],
+  ["ErrorResponse", {paramsSerializer: "ErrorParams.serializer()", wrapper: "ErrorParams"}],
 ]);
 
 // Kotlin request decode wiring. `whole` decodes params straight into the payload
-// type (identity); `checkoutUnwrap` decodes the `{checkout}` wrapper and extracts
-// it. Mirrors the Swift catalog's decodeClosure.
+// type (identity); `checkoutUnwrap` decodes the `{checkout}` wrapper and hands it
+// back intact for host kits to narrow via `.map`.
 function requestDecode(entry) {
   switch (entry.decode) {
     case "whole":
-      return {requestSerializer: `${entry.payload}.serializer()`, decode: "it"};
+      return {requestSerializer: `${entry.payload}.serializer()`, payload: entry.payload};
     case "checkoutUnwrap":
-      return {requestSerializer: "CheckoutParams.serializer()", decode: "it.checkout"};
+      return {requestSerializer: "CheckoutParams.serializer()", payload: "CheckoutParams"};
     default:
       throw new Error(`Unknown decode strategy: ${entry.decode}`);
   }
@@ -62,10 +63,10 @@ for (const entry of EC_METHODS) {
 const notificationDescriptors = notifications
   .map((entry) => {
     const binding = notificationBinding(entry);
-    return `    public val ${entry.identifier}: NotificationDescriptor<${entry.payload}> = notificationDescriptor(
+    return `    public val ${entry.identifier}: NotificationDescriptor<${binding.wrapper}> = notificationDescriptor(
         method = Event.${entry.identifier},
         paramsSerializer = ${binding.paramsSerializer},
-        decode = { ${binding.extract} },
+        decode = { it },
     )`;
   })
   .join("\n\n");
@@ -74,12 +75,12 @@ const requestDescriptors = requests
   .map((entry) => {
     const decode = requestDecode(entry);
     const delegation = entry.delegation === null ? "null" : `"${entry.delegation}"`;
-    return `    public val ${entry.descriptorIdentifier}: RequestDescriptor<${entry.payload}, ${entry.result}> = requestDescriptor(
+    return `    public val ${entry.descriptorIdentifier}: RequestDescriptor<${decode.payload}, ${entry.result}> = requestDescriptor(
         method = Event.${entry.identifier},
         delegation = ${delegation},
         requestSerializer = ${decode.requestSerializer},
         responseSerializer = ${entry.result}.serializer(),
-        decode = { ${decode.decode} },
+        decode = { it },
         encode = { it },
     )`;
   })
@@ -239,13 +240,13 @@ ${eventAll}
 }
 
 @Serializable
-private data class CheckoutParams(
-    val checkout: Checkout,
+public data class CheckoutParams(
+    public val checkout: Checkout,
 )
 
 @Serializable
-private data class ErrorParams(
-    val error: ErrorResponse,
+public data class ErrorParams(
+    public val error: ErrorResponse,
 )
 `;
 

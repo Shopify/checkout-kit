@@ -538,6 +538,33 @@ public final class com/shopify/ucp/embedded/checkout/CheckoutFulfillmentClass$Co
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class com/shopify/ucp/embedded/checkout/CheckoutParams {
+	public static final field Companion Lcom/shopify/ucp/embedded/checkout/CheckoutParams$Companion;
+	public fun <init> (Lcom/shopify/ucp/embedded/checkout/Checkout;)V
+	public final fun component1 ()Lcom/shopify/ucp/embedded/checkout/Checkout;
+	public final fun copy (Lcom/shopify/ucp/embedded/checkout/Checkout;)Lcom/shopify/ucp/embedded/checkout/CheckoutParams;
+	public static synthetic fun copy$default (Lcom/shopify/ucp/embedded/checkout/CheckoutParams;Lcom/shopify/ucp/embedded/checkout/Checkout;ILjava/lang/Object;)Lcom/shopify/ucp/embedded/checkout/CheckoutParams;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCheckout ()Lcom/shopify/ucp/embedded/checkout/Checkout;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/ucp/embedded/checkout/CheckoutParams$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/ucp/embedded/checkout/CheckoutParams$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/ucp/embedded/checkout/CheckoutParams;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/ucp/embedded/checkout/CheckoutParams;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/ucp/embedded/checkout/CheckoutParams$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class com/shopify/ucp/embedded/checkout/CheckoutSerializer : kotlinx/serialization/KSerializer {
 	public static final field INSTANCE Lcom/shopify/ucp/embedded/checkout/CheckoutSerializer;
 	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/ucp/embedded/checkout/Checkout;
@@ -956,6 +983,33 @@ public final synthetic class com/shopify/ucp/embedded/checkout/EmbeddedTransport
 }
 
 public final class com/shopify/ucp/embedded/checkout/EmbeddedTransportConfig$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/ucp/embedded/checkout/ErrorParams {
+	public static final field Companion Lcom/shopify/ucp/embedded/checkout/ErrorParams$Companion;
+	public fun <init> (Lcom/shopify/ucp/embedded/checkout/ErrorResponse;)V
+	public final fun component1 ()Lcom/shopify/ucp/embedded/checkout/ErrorResponse;
+	public final fun copy (Lcom/shopify/ucp/embedded/checkout/ErrorResponse;)Lcom/shopify/ucp/embedded/checkout/ErrorParams;
+	public static synthetic fun copy$default (Lcom/shopify/ucp/embedded/checkout/ErrorParams;Lcom/shopify/ucp/embedded/checkout/ErrorResponse;ILjava/lang/Object;)Lcom/shopify/ucp/embedded/checkout/ErrorParams;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/shopify/ucp/embedded/checkout/ErrorResponse;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/ucp/embedded/checkout/ErrorParams$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/ucp/embedded/checkout/ErrorParams$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/ucp/embedded/checkout/ErrorParams;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/ucp/embedded/checkout/ErrorParams;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/ucp/embedded/checkout/ErrorParams$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 

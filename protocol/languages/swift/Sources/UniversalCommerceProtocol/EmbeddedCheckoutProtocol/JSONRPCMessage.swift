@@ -84,16 +84,16 @@ struct JSONRPCError: Encodable {
     let message: String
 }
 
-enum JSONRPCID: Codable, Equatable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
+public enum JSONRPCID: Codable, Equatable, Sendable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
     case string(String)
     case int(Int64)
     case null
 
-    init(stringLiteral value: String) {
+    public init(stringLiteral value: String) {
         self = .string(value)
     }
 
-    init(integerLiteral value: Int64) {
+    public init(integerLiteral value: Int64) {
         self = .int(value)
     }
 
@@ -105,7 +105,7 @@ enum JSONRPCID: Codable, Equatable, ExpressibleByStringLiteral, ExpressibleByInt
         return value
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
 
         if container.decodeNil() {
@@ -125,7 +125,7 @@ enum JSONRPCID: Codable, Equatable, ExpressibleByStringLiteral, ExpressibleByInt
         }
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
 
         switch self {
@@ -160,12 +160,38 @@ struct JSONRPCReadyParams: Codable {
     }
 }
 
-struct JSONRPCCheckoutParams: Codable {
-    let checkout: Checkout
+public struct JSONRPCCheckoutParams: EventPayload {
+    public let checkout: Checkout
+
+    public init(checkout: Checkout) {
+        self.checkout = checkout
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        checkout = try container.decode(Checkout.self, forKey: .checkout)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case checkout
+    }
 }
 
-struct JSONRPCErrorParams: Codable {
-    let error: ErrorResponse
+public struct JSONRPCErrorParams: EventPayload {
+    public let error: ErrorResponse
+
+    public init(error: ErrorResponse) {
+        self.error = error
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        error = try container.decode(ErrorResponse.self, forKey: .error)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error
+    }
 }
 
 private extension KeyedDecodingContainer {

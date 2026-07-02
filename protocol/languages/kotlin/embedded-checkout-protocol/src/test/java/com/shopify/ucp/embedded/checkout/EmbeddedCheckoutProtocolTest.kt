@@ -208,24 +208,24 @@ class EmbeddedCheckoutProtocolTest {
     fun `embedded checkout descriptors decode checkout notifications`() {
         val payload = EmbeddedCheckoutProtocol.start.decode(Json.parseToJsonElement(checkoutParamsFixture))
 
-        assertThat(payload?.id).isEqualTo("checkout-123")
-        assertThat(payload?.currency).isEqualTo("USD")
+        assertThat(payload?.checkout?.id).isEqualTo("checkout-123")
+        assertThat(payload?.checkout?.currency).isEqualTo("USD")
     }
 
     @Test
     fun `embedded checkout fulfillment change descriptor decodes checkout notifications`() {
         val payload = EmbeddedCheckoutProtocol.fulfillmentChange.decode(Json.parseToJsonElement(checkoutParamsFixture))
 
-        assertThat(payload?.id).isEqualTo("checkout-123")
-        assertThat(payload?.currency).isEqualTo("USD")
+        assertThat(payload?.checkout?.id).isEqualTo("checkout-123")
+        assertThat(payload?.checkout?.currency).isEqualTo("USD")
     }
 
     @Test
     fun `embedded checkout descriptors decode error notifications`() {
         val payload = EmbeddedCheckoutProtocol.error.decode(Json.parseToJsonElement(errorParamsFixture))
 
-        assertThat(payload?.messages?.single()?.content).isEqualTo("Something went wrong")
-        assertThat(payload?.ucp?.status).isEqualTo(ErrorStatus.Error)
+        assertThat(payload?.error?.messages?.single()?.content).isEqualTo("Something went wrong")
+        assertThat(payload?.error?.ucp?.status).isEqualTo(ErrorStatus.Error)
     }
 
     @Test

@@ -8,11 +8,13 @@ struct CodecDecodeTests {
         let json = try fixtureString("notification")
         let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
-        guard case let .notification(method, payload) = message else {
+        guard case let .notification(method, params) = message else {
             Issue.record("Expected .notification, got \(message)")
             return
         }
-        let checkout = try #require(payload as? Checkout)
+        let checkout = try #require(
+            try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: params).checkout
+        )
 
         #expect(method == "ec.start")
         #expect(checkout.id == "checkout-123")
@@ -27,11 +29,13 @@ struct CodecDecodeTests {
         """#
         let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
-        guard case let .notification(method, payload) = message else {
+        guard case let .notification(method, params) = message else {
             Issue.record("Expected .notification, got \(message)")
             return
         }
-        let error = try #require(payload as? ErrorResponse)
+        let error = try #require(
+            try? JSONDecoder().decode(JSONRPCErrorParams.self, from: params).error
+        )
 
         #expect(method == "ec.error")
         #expect(error.ucp.version == "2026-04-08")
@@ -106,14 +110,14 @@ struct CodecDecodeTests {
         #expect(method == "ec.window.open_request")
     }
 
-    @Test func decodesUnknownMethod() {
+    @Test func decodesUnrecognizedMethodAsNotification() {
         let json = """
         {"jsonrpc":"2.0","method":"ec.unknown","params":{"something":"else"}}
         """
         let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
-        guard case let .unknown(method, _) = message else {
-            Issue.record("Expected .unknown, got \(message)")
+        guard case let .notification(method, _) = message else {
+            Issue.record("Expected .notification, got \(message)")
             return
         }
 

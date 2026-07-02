@@ -15,16 +15,16 @@ public enum CheckoutProtocol {
     static let methodNotFoundCode = -32601
     static let methodNotFoundMessage = "Method not found"
 
-    static let ready = EmbeddedCheckoutProtocol.Event.ready
+    static let ready = EmbeddedCheckoutProtocol.Event.ready.map { $0.params }
 
-    public static let complete = EmbeddedCheckoutProtocol.Event.complete
-    public static let error = EmbeddedCheckoutProtocol.Event.error
-    public static let fulfillmentChange = EmbeddedCheckoutProtocol.Event.fulfillmentChange
-    public static let lineItemsChange = EmbeddedCheckoutProtocol.Event.lineItemsChange
-    public static let messagesChange = EmbeddedCheckoutProtocol.Event.messagesChange
-    public static let start = EmbeddedCheckoutProtocol.Event.start
-    public static let totalsChange = EmbeddedCheckoutProtocol.Event.totalsChange
-    public static let windowOpen = EmbeddedCheckoutProtocol.Event.windowOpen
+    public static let complete = EmbeddedCheckoutProtocol.Event.complete.map { $0.params.checkout }
+    public static let error = EmbeddedCheckoutProtocol.Event.error.map { $0.params.error }
+    public static let fulfillmentChange = EmbeddedCheckoutProtocol.Event.fulfillmentChange.map { $0.params.checkout }
+    public static let lineItemsChange = EmbeddedCheckoutProtocol.Event.lineItemsChange.map { $0.params.checkout }
+    public static let messagesChange = EmbeddedCheckoutProtocol.Event.messagesChange.map { $0.params.checkout }
+    public static let start = EmbeddedCheckoutProtocol.Event.start.map { $0.params.checkout }
+    public static let totalsChange = EmbeddedCheckoutProtocol.Event.totalsChange.map { $0.params.checkout }
+    public static let windowOpen = EmbeddedCheckoutProtocol.Event.windowOpen.map { $0.params }
 
     static let supportedProtocolMethods: Set<String> = [
         ready.method,
