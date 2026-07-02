@@ -68,8 +68,6 @@ These secrets are configured in Bitrise.io; they cannot live in the repository. 
 
 React Native iOS IPA generation uses Bitrise's certificate and profile installer before running `xcodebuild archive` and `xcodebuild -exportArchive`.
 
-The React Native iOS artifact workflow overrides the default Linux stack and runs on `osx-xcode-26.2.x` with `g2.mac.4large`, because it requires Xcode and iOS signing. Its cache keys are prefixed with `rn-ios-macos-` so macOS caches cannot restore Linux-built dependencies.
-
 Upload the signing certificate and provisioning profile for the React Native sample app to the Bitrise app; the iOS artifact workflow installs them before archiving. The iOS build reads the following signing values with the defaults shown, and each can be overridden with a matching Bitrise environment variable:
 
 | Variable | Default | Purpose |

@@ -64,7 +64,7 @@ step_bundles:
       - restore-cache@3:
           inputs:
             - key: &rn_ruby_gems_cache_key |-
-                rn-ruby-gems-{{ .OS }}-{{ .Arch }}-ruby-3.4.8-{{ checksum "platforms/react-native/sample/Gemfile.lock" }}
+                rn-ruby-gems-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/Gemfile.lock" }}
       - script@1:
           title: Install iOS Ruby dependencies
           inputs:
@@ -101,7 +101,7 @@ workflows:
       - script@1:
           title: Produce BrowserStack run plan placeholder
           timeout: 1800
-          no_output_timeout: 1800
+          no_output_timeout: 900
           inputs:
             - content: |-
                 set -euo pipefail
@@ -143,7 +143,7 @@ workflows:
       - script@1:
           title: Build React Native iOS IPA artifact
           timeout: 5400
-          no_output_timeout: 5400
+          no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
@@ -170,7 +170,7 @@ workflows:
       - script@1:
           title: Build React Native Android APK artifact
           timeout: 3600
-          no_output_timeout: 3600
+          no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
@@ -197,7 +197,7 @@ workflows:
       - script@1:
           title: Resolve BrowserStack run plan row placeholder
           timeout: 2700
-          no_output_timeout: 2700
+          no_output_timeout: 1350
           inputs:
             - content: |-
                 set -euo pipefail
