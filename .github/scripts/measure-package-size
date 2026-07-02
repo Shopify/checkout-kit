@@ -44,6 +44,49 @@ record_artifact() {
   printf "%s\t%s\t%s\n" "$platform" "$artifact" "$bytes" >> "$output_file"
 }
 
+# Emit one detail row per file inside a packed artifact. Detail rows carry a
+# fourth column (the file path) so the renderer can tell them apart from the
+# artifact summary rows above and group them into a collapsible breakdown.
+# Sizes are the uncompressed on-disk sizes of each entry.
+record_tarball_breakdown() {
+  local platform=$1
+  local artifact=$2
+  local tarball=$3
+  local dir
+  local file
+  local rel
+
+  dir=$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-explode.XXXXXX")
+  tar -xzf "$tarball" -C "$dir"
+
+  while IFS= read -r file; do
+    rel=${file#"$dir/"}
+    rel=${rel#package/}
+    printf "%s\t%s\t%s\t%s\n" "$platform" "$artifact" "$(size_bytes "$file")" "$rel" >> "$output_file"
+  done < <(find "$dir" -type f | sort)
+
+  rm -rf "$dir"
+}
+
+record_zip_breakdown() {
+  local platform=$1
+  local artifact=$2
+  local archive=$3
+  local dir
+  local file
+  local rel
+
+  dir=$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-explode.XXXXXX")
+  unzip -qq "$archive" -d "$dir"
+
+  while IFS= read -r file; do
+    rel=${file#"$dir/"}
+    printf "%s\t%s\t%s\t%s\n" "$platform" "$artifact" "$(size_bytes "$file")" "$rel" >> "$output_file"
+  done < <(find "$dir" -type f | sort)
+
+  rm -rf "$dir"
+}
+
 measure_web_package() {
   local pack_dir
   local tarball
@@ -57,6 +100,7 @@ measure_web_package() {
 
   tarball=$(find "$pack_dir" -name "*.tgz" -type f -print -quit)
   record_artifact "Web" "npm tarball" "$tarball"
+  record_tarball_breakdown "Web" "npm tarball" "$tarball"
 }
 
 measure_react_native_package() {
@@ -74,6 +118,7 @@ measure_react_native_package() {
 
   tarball=$(find "$pack_dir" -name "*.tgz" -type f -print -quit)
   record_artifact "React Native" "npm tarball" "$tarball"
+  record_tarball_breakdown "React Native" "npm tarball" "$tarball"
 }
 
 measure_android_package() {
@@ -85,6 +130,7 @@ measure_android_package() {
   )
 
   record_artifact "Android" "release AAR" "$aar"
+  record_zip_breakdown "Android" "release AAR" "$aar"
 }
 
 collect_measurements() {
@@ -110,7 +156,7 @@ render_comment() {
   local comment_file=${3:?usage: measure-package-size render <base-file> <head-file> <output-file>}
 
   awk -F '\t' -v base_path="$base_file" '
-    function human(bytes, units, value, unit) {
+    function human(bytes,   units, value, unit) {
       if (bytes == "") {
         return "unavailable";
       }
@@ -130,7 +176,11 @@ render_comment() {
       return sprintf("%.1f %s", value, units[unit]);
     }
 
-    function delta(head, base, diff) {
+    function cell(bytes) {
+      return (bytes == "") ? "—" : human(bytes);
+    }
+
+    function delta(head, base,   diff) {
       if (head == "" || base == "") {
         return "unavailable";
       }
@@ -146,7 +196,23 @@ render_comment() {
       return "0 B";
     }
 
-    function remember(platform, artifact, key) {
+    # File-level delta: a file missing on one side is an add/remove, not
+    # "unavailable", so treat the absent side as zero.
+    function file_delta(head, base,   h, b, diff) {
+      h = (head == "") ? 0 : head + 0;
+      b = (base == "") ? 0 : base + 0;
+      diff = h - b;
+      if (diff > 0) {
+        return "+" human(diff);
+      }
+      if (diff < 0) {
+        return "-" human(-diff);
+      }
+
+      return "0 B";
+    }
+
+    function remember(platform, artifact,   key) {
       key = platform SUBSEP artifact;
       if (!(key in seen)) {
         seen[key] = 1;
@@ -157,11 +223,33 @@ render_comment() {
       return key;
     }
 
+    function remember_detail(platform, path,   key) {
+      key = platform SUBSEP path;
+      if (!(key in detail_seen)) {
+        detail_seen[key] = 1;
+        detail_paths[platform, ++detail_n[platform]] = path;
+        if (!(platform in dplat_seen)) {
+          dplat_seen[platform] = 1;
+          dplat_order[++dplat_count] = platform;
+        }
+      }
+      return key;
+    }
+
     FILENAME == base_path {
-      if (NF >= 3) {
+      if (NF >= 4 && $4 != "") {
+        remember_detail($1, $4);
+        detail_base[$1, $4] = $3;
+      } else if (NF >= 3) {
         key = remember($1, $2);
         base_bytes[key] = $3;
       }
+      next;
+    }
+
+    NF >= 4 && $4 != "" {
+      remember_detail($1, $4);
+      detail_head[$1, $4] = $3;
       next;
     }
 
@@ -172,6 +260,8 @@ render_comment() {
     }
 
     END {
+      cap = 20;
+
       print "<!-- checkout-kit-package-size -->";
       print "## Package Size";
       print "";
@@ -192,8 +282,58 @@ render_comment() {
         }
       }
 
+      for (p = 1; p <= dplat_count; p++) {
+        platform = dplat_order[p];
+        n = detail_n[platform];
+        if (n == 0) {
+          continue;
+        }
+
+        for (i = 1; i <= n; i++) {
+          idx[i] = detail_paths[platform, i];
+          b = detail_base[platform, idx[i]] + 0;
+          h = detail_head[platform, idx[i]] + 0;
+          sortval[i] = (h > b) ? h : b;
+        }
+
+        for (i = 1; i <= n; i++) {
+          maxpos = i;
+          for (j = i + 1; j <= n; j++) {
+            if (sortval[j] > sortval[maxpos]) {
+              maxpos = j;
+            }
+          }
+          if (maxpos != i) {
+            tmpv = sortval[i]; sortval[i] = sortval[maxpos]; sortval[maxpos] = tmpv;
+            tmps = idx[i]; idx[i] = idx[maxpos]; idx[maxpos] = tmps;
+          }
+        }
+
+        print "";
+        print "<details><summary>" platform " file breakdown</summary>";
+        print "";
+        print "| File | Base | Head | Delta |";
+        print "| --- | ---: | ---: | ---: |";
+
+        shown = (n > cap) ? cap : n;
+        for (i = 1; i <= shown; i++) {
+          path = idx[i];
+          printf "| `%s` | %s | %s | %s |\n",
+            path,
+            cell(detail_base[platform, path]),
+            cell(detail_head[platform, path]),
+            file_delta(detail_head[platform, path], detail_base[platform, path]);
+        }
+        if (n > cap) {
+          printf "| _…and %d smaller files_ | | | |\n", n - cap;
+        }
+
+        print "";
+        print "</details>";
+      }
+
       print "";
-      print "_Measured from the PR base SHA and PR head SHA. This comment reports package artifact sizes only; it is not a final app binary-size report._";
+      print "_Measured from the PR base SHA and PR head SHA. The file breakdown shows uncompressed sizes within each package artifact, so individual files do not sum to the compressed artifact total. This comment reports package artifact sizes only; it is not a final app binary-size report._";
     }
   ' "$base_file" "$head_file" > "$comment_file"
 }

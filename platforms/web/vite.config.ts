@@ -22,7 +22,7 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
-    minify: false,
+    minify: true,
     emptyOutDir: true,
     outDir: fromRoot('dist'),
     lib: {
