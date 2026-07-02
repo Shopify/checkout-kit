@@ -1,11 +1,3 @@
-// Prototype: derive a minimal case-remapping skeleton from the quicktype
-// typeMap in generated/Models.ts. Emits generated/CaseMap.ts.
-//
-// The skeleton only records STRUCTURAL fields (object refs, arrays of refs,
-// free-form maps) plus key exceptions whose js name is not the mechanical
-// snake->camel of the json name. Scalar fields are omitted; the walker
-// renames them mechanically. This drops the ~25 KB validating typeMap.
-
 import {readFileSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {dirname, resolve} from 'node:path';
