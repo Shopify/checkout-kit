@@ -63,7 +63,14 @@ function classify(typ) {
     if (el && typeof el === 'object' && el.k === 'ref') return ['arr', el.name];
     return null; // array of scalars
   }
-  if (t.k === 'map') return ['map'];
+  if (t.k === 'map') {
+    const el = t.t;
+    if (el && typeof el === 'object') {
+      if (el.k === 'arr' && el.t && typeof el.t === 'object' && el.t.k === 'ref') return ['map', el.t.name];
+      if (el.k === 'ref') return ['map', el.name];
+    }
+    return ['map'];
+  }
   if (t.k === 'ref') return ['ref', t.name];
   return null;
 }
@@ -106,6 +113,7 @@ const body =
   `  | readonly ['ref', string]\n` +
   `  | readonly ['arr', string]\n` +
   `  | readonly ['map']\n` +
+  `  | readonly ['map', string]\n` +
   `  | readonly ['key', string];\n\n` +
   `export const SHAPES: Record<string, Record<string, Shape>> = ${JSON.stringify(shapes, null, 2)};\n\n` +
   `export type RequiredKind = 'string' | 'number' | 'boolean' | 'any';\n\n` +

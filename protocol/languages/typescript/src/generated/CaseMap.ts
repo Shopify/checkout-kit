@@ -5,6 +5,7 @@ export type Shape =
   | readonly ['ref', string]
   | readonly ['arr', string]
   | readonly ['map']
+  | readonly ['map', string]
   | readonly ['key', string];
 
 export const SHAPES: Record<string, Record<string, Shape>> = {
@@ -190,13 +191,16 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
   },
   "UcpCheckoutResponseSchema": {
     "capabilities": [
-      "map"
+      "map",
+      "CapabilityResponseSchema"
     ],
     "payment_handlers": [
-      "map"
+      "map",
+      "PaymentHandlerResponseSchema"
     ],
     "services": [
-      "map"
+      "map",
+      "ServiceResponseSchema"
     ],
     "status": [
       "ref",
@@ -331,13 +335,16 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
   },
   "UcpOrderResponseSchema": {
     "capabilities": [
-      "map"
+      "map",
+      "CapabilityResponseSchema"
     ],
     "payment_handlers": [
-      "map"
+      "map",
+      "PaymentHandlerResponseSchema"
     ],
     "services": [
-      "map"
+      "map",
+      "Service"
     ],
     "status": [
       "ref",
@@ -365,13 +372,16 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
   },
   "ErrorResponseUcp": {
     "capabilities": [
-      "map"
+      "map",
+      "CapabilityResponseSchema"
     ],
     "payment_handlers": [
-      "map"
+      "map",
+      "PaymentHandlerResponseSchema"
     ],
     "services": [
-      "map"
+      "map",
+      "Service"
     ],
     "status": [
       "ref",
@@ -406,13 +416,16 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
   },
   "InstrumentsChangeResultUcp": {
     "capabilities": [
-      "map"
+      "map",
+      "CapabilityElement"
     ],
     "payment_handlers": [
-      "map"
+      "map",
+      "PaymentHandlerElement"
     ],
     "services": [
-      "map"
+      "map",
+      "EmbeddedService"
     ],
     "status": [
       "ref",

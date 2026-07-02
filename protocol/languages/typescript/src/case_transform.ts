@@ -41,10 +41,21 @@ function walk(
       continue;
     }
     switch (entry[0]) {
-      case 'map':
-        // Free-form dictionary: rename the field, leave its keys verbatim.
-        out[rename(key)] = val;
+      case 'map': {
+        // Dictionary: rename the field and preserve its dynamic keys verbatim.
+        // A typed value element is walked; a free-form value is left as-is.
+        const elem = entry[1];
+        if (elem !== undefined && val !== null && typeof val === 'object' && !Array.isArray(val)) {
+          const mapped: Record<string, unknown> = {};
+          for (const [mapKey, mapVal] of Object.entries(val as Record<string, unknown>)) {
+            mapped[mapKey] = walk(mapVal, elem, table, rename);
+          }
+          out[rename(key)] = mapped;
+        } else {
+          out[rename(key)] = val;
+        }
         break;
+      }
       case 'key':
         out[entry[1]] = walk(val, undefined, table, rename);
         break;
