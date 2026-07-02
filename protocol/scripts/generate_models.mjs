@@ -484,6 +484,8 @@ async function generateTypescript(specDir, output) {
 
   await normalizeGeneratedFile(output, (source) => source.replace(/^type /gm, "export type "));
 
+  await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_case_map.mjs")]);
+
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 
   const declarationOutput = path.join(PROTOCOL_DIR, "languages", "typescript", "src", "index.d.ts");
