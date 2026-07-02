@@ -19,10 +19,10 @@ import {CHECKOUT_ENVELOPE, RESULT_FIXTURE} from './fixtures';
 describe('Client', () => {
   const READY_PARAMS = {delegate: ['payment.credential'], auth: {type: 'oauth'}};
 
-  test('dispatches a notification to its registered handler', async () => {
+  test('dispatches a notification message to its registered handler', async () => {
     const received = [];
-    const client = new Client().on(notificationDescriptors.start, checkout =>
-      received.push(checkout),
+    const client = new Client().on(notificationDescriptors.start, message =>
+      received.push(message),
     );
 
     const response = await client.process(
@@ -35,12 +35,14 @@ describe('Client', () => {
 
     expect(response).toBeUndefined();
     expect(received).toHaveLength(1);
-    expect(received[0].id).toBe('checkout-123');
-    expect(received[0].lineItems).toHaveLength(2);
-    expect(received[0].lineItems[0].item.imageUrl).toBe(
+    expect(received[0].jsonrpc).toBe('2.0');
+    expect(received[0].method).toBe('ec.start');
+    expect(received[0].params.checkout.id).toBe('checkout-123');
+    expect(received[0].params.checkout.lineItems).toHaveLength(2);
+    expect(received[0].params.checkout.lineItems[0].item.imageUrl).toBe(
       'https://cdn.example.com/products/beanie.png',
     );
-    expect(received[0].lineItems[1].parentId).toBe('line-1');
+    expect(received[0].params.checkout.lineItems[1].parentId).toBe('line-1');
   });
 
   test('ignores a notification with no registered handler', async () => {
@@ -58,9 +60,9 @@ describe('Client', () => {
   });
 
   test('routes a request through decode, handler, and encode', async () => {
-    let handledPayload;
-    const client = new Client().on(requestDescriptors.ready, payload => {
-      handledPayload = payload;
+    let handledMessage;
+    const client = new Client().on(requestDescriptors.ready, message => {
+      handledMessage = message;
       return Convert.toReadyResult(JSON.stringify(RESULT_FIXTURE));
     });
 
@@ -68,7 +70,12 @@ describe('Client', () => {
       JSON.stringify({jsonrpc: '2.0', method: 'ec.ready', id: 7, params: READY_PARAMS}),
     );
 
-    expect(handledPayload).toEqual(READY_PARAMS);
+    expect(handledMessage).toEqual({
+      jsonrpc: '2.0',
+      method: 'ec.ready',
+      id: 7,
+      params: READY_PARAMS,
+    });
     expect(JSON.parse(response)).toEqual({
       jsonrpc: '2.0',
       id: 7,

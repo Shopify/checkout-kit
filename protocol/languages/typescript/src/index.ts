@@ -24,9 +24,13 @@ export {
   type CheckoutProtocolCatalogMethod,
   type CheckoutProtocolCatalogPayloads,
   type CheckoutProtocolCatalogPayloadDecoder,
+  type CheckoutProtocolCatalogParams,
+  type CheckoutProtocolNotificationMessage,
   type CheckoutProtocolRequestMethod,
   type CheckoutProtocolRequestPayloads,
   type CheckoutProtocolRequestResults,
+  type CheckoutProtocolRequestParams,
+  type CheckoutProtocolRequestMessage,
   type Delegation,
 } from './generated/ProtocolNotifications';
 export {Client} from './client';

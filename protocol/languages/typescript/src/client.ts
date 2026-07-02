@@ -13,43 +13,43 @@ import type {NotificationDescriptor, RequestDescriptor} from './descriptors';
 
 interface NotificationEntry {
   decode(params: unknown): unknown;
-  handle(payload: unknown): void;
+  handle(message: unknown): void;
 }
 
 interface RequestEntry {
   decode(params: unknown): unknown;
   encode(result: unknown): unknown;
-  handle(payload: unknown): unknown | Promise<unknown>;
+  handle(message: unknown): unknown | Promise<unknown>;
 }
 
 export class Client {
   private readonly notifications = new Map<string, NotificationEntry>();
   private readonly requests = new Map<string, RequestEntry>();
 
-  on<Payload>(
-    descriptor: NotificationDescriptor<Payload>,
-    handler: (payload: Payload) => void,
+  on<Message extends {readonly params: unknown}, Result>(
+    descriptor: RequestDescriptor<Message, Result>,
+    handler: (message: Message) => Result | Promise<Result>,
   ): this;
-  on<Payload, Result>(
-    descriptor: RequestDescriptor<Payload, Result>,
-    handler: (payload: Payload) => Result | Promise<Result>,
+  on<Message extends {readonly params: unknown}>(
+    descriptor: NotificationDescriptor<Message>,
+    handler: (message: Message) => void,
   ): this;
   on(
     descriptor:
-      | NotificationDescriptor<unknown>
-      | RequestDescriptor<unknown, unknown>,
-    handler: (payload: never) => unknown,
+      | NotificationDescriptor<{readonly params: unknown}>
+      | RequestDescriptor<{readonly params: unknown}, unknown>,
+    handler: (message: never) => unknown,
   ): this {
     if ('encode' in descriptor) {
       this.requests.set(descriptor.method, {
         decode: descriptor.decode,
         encode: descriptor.encode,
-        handle: handler as (payload: unknown) => unknown,
+        handle: handler as (message: unknown) => unknown,
       });
     } else {
       this.notifications.set(descriptor.method, {
         decode: descriptor.decode,
-        handle: handler as (payload: unknown) => void,
+        handle: handler as (message: unknown) => void,
       });
     }
     return this;
@@ -64,13 +64,13 @@ export class Client {
     if (decoded.kind === 'notification') {
       const entry = this.notifications.get(decoded.method);
       if (entry !== undefined) {
-        let payload: unknown;
+        let params: unknown;
         try {
-          payload = entry.decode(decoded.params);
+          params = entry.decode(decoded.params);
         } catch {
           return undefined;
         }
-        entry.handle(payload);
+        entry.handle({jsonrpc: '2.0', method: decoded.method, params});
       }
       return undefined;
     }
@@ -84,9 +84,9 @@ export class Client {
       );
     }
 
-    let payload: unknown;
+    let params: unknown;
     try {
-      payload = entry.decode(decoded.params);
+      params = entry.decode(decoded.params);
     } catch {
       return encodeJSONRPCError(
         decoded.id,
@@ -96,7 +96,12 @@ export class Client {
     }
 
     try {
-      const result = await entry.handle(payload);
+      const result = await entry.handle({
+        jsonrpc: '2.0',
+        method: decoded.method,
+        id: decoded.id,
+        params,
+      });
       return encodeJSONRPCResult(decoded.id, entry.encode(result));
     } catch {
       return encodeJSONRPCError(

@@ -42,17 +42,19 @@ describe('request descriptors', () => {
     expect(requestDescriptors.auth.decode(undefined)).toEqual({});
   });
 
-  test('decode unwraps the checkout envelope for delegated requests', () => {
+  test('decode camelizes the checkout envelope for delegated requests', () => {
     const decoded = requestDescriptors.paymentInstrumentsChange.decode({
       checkout: CHECKOUT_ENVELOPE,
     });
 
-    expect(decoded.id).toBe('checkout-123');
-    expect(decoded.lineItems[0].totals[0].displayText).toBe('Subtotal');
-    expect(decoded.buyer.firstName).toBe('Ada');
-    expect(decoded.context.addressCountry).toBe('CA');
+    expect(decoded.checkout.id).toBe('checkout-123');
+    expect(decoded.checkout.lineItems[0].totals[0].displayText).toBe(
+      'Subtotal',
+    );
+    expect(decoded.checkout.buyer.firstName).toBe('Ada');
+    expect(decoded.checkout.context.addressCountry).toBe('CA');
     expect(
-      decoded.ucp.paymentHandlers['com.shopify.payments'][0]
+      decoded.checkout.ucp.paymentHandlers['com.shopify.payments'][0]
         .availableInstruments,
     ).toHaveLength(1);
   });
@@ -71,26 +73,26 @@ describe('request descriptors', () => {
 });
 
 describe('notification descriptors', () => {
-  test('decode unwraps the checkout envelope', () => {
+  test('decode camelizes the checkout envelope', () => {
     const decoded = notificationDescriptors.start.decode({
       checkout: CHECKOUT_ENVELOPE,
     });
 
-    expect(decoded.id).toBe('checkout-123');
-    expect(decoded.lineItems[0].item.imageUrl).toBe(
+    expect(decoded.checkout.id).toBe('checkout-123');
+    expect(decoded.checkout.lineItems[0].item.imageUrl).toBe(
       'https://cdn.example.com/products/beanie.png',
     );
-    expect(decoded.fulfillment.methods[0].lineItemIds).toEqual([
+    expect(decoded.checkout.fulfillment.methods[0].lineItemIds).toEqual([
       'line-1',
       'line-2',
     ]);
-    expect(decoded.payment.instruments[0].handlerId).toBe(
+    expect(decoded.checkout.payment.instruments[0].handlerId).toBe(
       'com.shopify.payments',
     );
-    expect(decoded['com.example.custom'].loyalty_tier).toBe('gold');
+    expect(decoded.checkout['com.example.custom'].loyalty_tier).toBe('gold');
   });
 
-  test('decode unwraps the error envelope', () => {
+  test('decode camelizes the error envelope', () => {
     const decoded = notificationDescriptors.error.decode({
       error: {
         messages: [],
@@ -98,6 +100,6 @@ describe('notification descriptors', () => {
       },
     });
 
-    expect(decoded.ucp.status).toBe('error');
+    expect(decoded.error.ucp.status).toBe('error');
   });
 });

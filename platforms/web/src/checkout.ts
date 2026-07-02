@@ -581,15 +581,15 @@ export class ShopifyCheckout
           version: EmbeddedCheckoutProtocol.specVersion,
         },
       }))
-      .on(Event.start, (checkout) => {
+      .on(Event.start, ({ params: { checkout } }) => {
         this.#checkout = checkout;
         this.dispatchEvent(new ShopifyCheckoutStartEvent({ checkout }));
       })
-      .on(Event.complete, (checkout) => {
+      .on(Event.complete, ({ params: { checkout } }) => {
         this.#checkout = checkout;
         this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout, order: checkout.order }));
       })
-      .on(Event.error, (error) => {
+      .on(Event.error, ({ params: { error } }) => {
         this.#error = error;
         this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
         // Per UCP spec, `unrecoverable` means no valid resource exists to act on —
@@ -601,7 +601,7 @@ export class ShopifyCheckout
           this.close();
         }
       })
-      .on(Event.lineItemsChange, (checkout) => {
+      .on(Event.lineItemsChange, ({ params: { checkout } }) => {
         this.#checkout = checkout;
         this.dispatchEvent(
           new ShopifyCheckoutLineItemsChangeEvent({
@@ -610,7 +610,7 @@ export class ShopifyCheckout
           }),
         );
       })
-      .on(Event.totalsChange, (checkout) => {
+      .on(Event.totalsChange, ({ params: { checkout } }) => {
         this.#checkout = checkout;
         this.dispatchEvent(
           new ShopifyCheckoutTotalsChangeEvent({
@@ -619,7 +619,7 @@ export class ShopifyCheckout
           }),
         );
       })
-      .on(Event.messagesChange, (checkout) => {
+      .on(Event.messagesChange, ({ params: { checkout } }) => {
         this.#checkout = checkout;
         this.dispatchEvent(
           new ShopifyCheckoutMessagesChangeEvent({
@@ -628,7 +628,7 @@ export class ShopifyCheckout
           }),
         );
       })
-      .on(Event.windowOpen, (request) => this.#handleWindowOpen(request));
+      .on(Event.windowOpen, ({ params }) => this.#handleWindowOpen(params));
   }
 
   /**

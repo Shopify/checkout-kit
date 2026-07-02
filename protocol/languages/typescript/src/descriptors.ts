@@ -1,27 +1,45 @@
-export interface NotificationDescriptor<Payload> {
-  readonly method: string;
-  decode(params: unknown): Payload;
+import type {JSONRPCID} from './codec';
+
+export interface NotificationMessage<Method extends string, Params> {
+  readonly jsonrpc: '2.0';
+  readonly method: Method;
+  readonly params: Params;
 }
 
-export interface RequestDescriptor<Payload, Result> {
+export interface RequestMessage<Method extends string, Params> {
+  readonly jsonrpc: '2.0';
+  readonly method: Method;
+  readonly id: JSONRPCID;
+  readonly params: Params;
+}
+
+export interface NotificationDescriptor<Message extends {readonly params: unknown}> {
+  readonly method: string;
+  decode(params: unknown): Message['params'];
+}
+
+export interface RequestDescriptor<
+  Message extends {readonly params: unknown},
+  Result,
+> {
   readonly method: string;
   readonly delegation: string | null;
-  decode(params: unknown): Payload;
+  decode(params: unknown): Message['params'];
   encode(result: Result): unknown;
 }
 
-export function notificationDescriptor<Payload>(
-  method: string,
-  decode: (params: unknown) => Payload,
-): NotificationDescriptor<Payload> {
+export function notificationDescriptor<Method extends string, Params>(
+  method: Method,
+  decode: (params: unknown) => Params,
+): NotificationDescriptor<NotificationMessage<Method, Params>> {
   return {method, decode};
 }
 
-export function requestDescriptor<Payload, Result>(
-  method: string,
+export function requestDescriptor<Method extends string, Params, Result>(
+  method: Method,
   delegation: string | null,
-  decode: (params: unknown) => Payload,
+  decode: (params: unknown) => Params,
   encode: (result: Result) => unknown,
-): RequestDescriptor<Payload, Result> {
+): RequestDescriptor<RequestMessage<Method, Params>, Result> {
   return {method, delegation, decode, encode};
 }
