@@ -20,7 +20,7 @@ jobs:
     outputs:
       android: ${{ steps.package.outputs.android == 'true' || steps.package.outputs.protocol == 'true' || steps.infra.outputs.android == 'true' }}
       reactNative: ${{ steps.package.outputs.reactNative == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.infra.outputs.reactNative == 'true' }}
-      web: ${{ steps.package.outputs.web == 'true' || steps.infra.outputs.web == 'true' }}
+      web: ${{ steps.package.outputs.web == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.infra.outputs.web == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
@@ -48,6 +48,7 @@ jobs:
               - '.github/scripts/measure-package-size'
               - '.github/filters/**'
               - '.github/workflows/package-size.yml'
+              - 'protocol/languages/typescript/**'
 
   measure:
     name: Measure Package Size
