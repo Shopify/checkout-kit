@@ -2,7 +2,19 @@ name: Swift — Lint
 
 on:
   workflow_call:
+    inputs:
+      ready:
+        description: When false, skip the macOS-only jobs (SwiftFormat, CocoaPods).
+        required: false
+        type: boolean
+        default: true
   workflow_dispatch:
+    inputs:
+      ready:
+        description: When false, skip the macOS-only jobs (SwiftFormat, CocoaPods).
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -20,6 +32,8 @@ jobs:
 
   swiftformat:
     name: SwiftFormat & SwiftLint
+    # macOS runner — deferred to non-draft PRs.
+    if: ${{ inputs.ready }}
     runs-on: ${{ vars.MACOS_RUNNER }}
     env:
       MINT_PATH: ${{ github.workspace }}/.mint/lib
@@ -53,6 +67,8 @@ jobs:
 
   lint-podspec:
     name: CocoaPods
+    # macOS runner — deferred to non-draft PRs.
+    if: ${{ inputs.ready }}
     runs-on: ${{ vars.MACOS_RUNNER }}
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/platforms/swift/Gemfile

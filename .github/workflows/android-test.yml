@@ -2,7 +2,19 @@ name: Android — Lint, Build & Run Tests
 
 on:
   workflow_call:
+    inputs:
+      ready:
+        description: When false, skip non-draft-only jobs (the sample app build).
+        required: false
+        type: boolean
+        default: true
   workflow_dispatch:
+    inputs:
+      ready:
+        description: When false, skip non-draft-only jobs (the sample app build).
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -31,6 +43,8 @@ jobs:
         run: ./gradlew test --console=plain
 
   build:
+    # Sample app build is deferred to non-draft PRs.
+    if: ${{ inputs.ready }}
     runs-on: ubuntu-latest
 
     steps:

@@ -5,8 +5,11 @@ on:
     branches:
       - main
   pull_request:
-    # ready_for_review starts CI when a draft PR becomes ready; converted_to_draft
-    # creates a skipped run that cancels any in-progress CI for the same PR ref.
+    # Draft PRs run a reduced suite: the fast ubuntu lint/test jobs. The
+    # expensive macOS/simulator and sample-build jobs are gated to non-draft
+    # PRs via the changes.ready output. ready_for_review promotes a draft to the
+    # full suite; converted_to_draft re-runs the reduced suite and cancels any
+    # in-progress full run for the same PR ref.
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
 
@@ -25,9 +28,11 @@ concurrency:
 jobs:
   changes:
     name: Detect Changed Areas
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     outputs:
+      # true for pushes and non-draft PRs; false for draft PRs. Gates the
+      # expensive macOS/simulator and sample-build jobs off draft PRs.
+      ready: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
       android: ${{ steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.android == 'true' }}
       swift: ${{ steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.swift == 'true' }}
       reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
@@ -101,17 +106,19 @@ jobs:
     needs: changes
     if: needs.changes.outputs.android == 'true'
     uses: ./.github/workflows/android-test.yml
+    with:
+      ready: ${{ needs.changes.outputs.ready == 'true' }}
 
   swift-test-package:
     name: Swift
     needs: changes
-    if: needs.changes.outputs.swift == 'true'
+    if: needs.changes.outputs.swift == 'true' && needs.changes.outputs.ready == 'true'
     uses: ./.github/workflows/swift-test-package.yml
 
   swift-build-samples:
     name: Swift
     needs: changes
-    if: needs.changes.outputs.swift == 'true'
+    if: needs.changes.outputs.swift == 'true' && needs.changes.outputs.ready == 'true'
     uses: ./.github/workflows/swift-build-samples.yml
 
   swift-lint:
@@ -119,6 +126,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.swift == 'true'
     uses: ./.github/workflows/swift-lint.yml
+    with:
+      ready: ${{ needs.changes.outputs.ready == 'true' }}
 
   swift-sample-package-paths:
     name: Swift Sample Package Paths
@@ -141,25 +150,25 @@ jobs:
   rn-test-android:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNativeAndroid == 'true'
+    if: needs.changes.outputs.reactNativeAndroid == 'true' && needs.changes.outputs.ready == 'true'
     uses: ./.github/workflows/rn-test-android.yml
 
   rn-test-ios:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNativeIos == 'true'
+    if: needs.changes.outputs.reactNativeIos == 'true' && needs.changes.outputs.ready == 'true'
     uses: ./.github/workflows/rn-test-ios.yml
 
   rn-build-android:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNativeAndroid == 'true'
+    if: needs.changes.outputs.reactNativeAndroid == 'true' && needs.changes.outputs.ready == 'true'
     uses: ./.github/workflows/rn-build-android.yml
 
   rn-build-ios:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNativeIos == 'true'
+    if: needs.changes.outputs.reactNativeIos == 'true' && needs.changes.outputs.ready == 'true'
     uses: ./.github/workflows/rn-build-ios.yml
 
   rn-check-packed-files:
@@ -192,7 +201,9 @@ jobs:
       needs.changes.outputs.reactNative == 'true'
     uses: ./.github/workflows/breaking-changes.yml
     with:
-      swift: ${{ needs.changes.outputs.swift }}
+      # Swift API baseline runs on macOS — defer to non-draft PRs. The Android
+      # and React Native baselines are cheap ubuntu jobs and run on drafts.
+      swift: ${{ needs.changes.outputs.swift == 'true' && needs.changes.outputs.ready == 'true' }}
       android: ${{ needs.changes.outputs.android }}
       react-native: ${{ needs.changes.outputs.reactNative }}
 
@@ -201,7 +212,9 @@ jobs:
   # because no files in that platform's tree changed.
   ci-required:
     name: CI Required
-    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    # Runs on drafts too, aggregating whichever jobs ran. Ready-only jobs report
+    # "skipped" on drafts, which this gate treats as a pass.
+    if: always()
     needs:
       - changes
       - android-test
