@@ -11,9 +11,11 @@ requiring it never churns as applications, OS versions, or suites are added.
 
 The runner never hard-fails on test or infrastructure problems: every run writes a
 `result.json` and exits `0`, so the report workflow always has data to publish. The
-report posts one **"Checkout Kit E2E"** Check Run and a sticky PR failure comment; it
-does not post per-suite commit statuses. Failures are therefore loud (one red check
-and a failure comment) but non-blocking.
+report posts one **"Checkout Kit E2E"** Check Run and one sticky PR comment carrying the
+Tophat install links and the run summary; it does not post per-suite commit statuses. The
+comment is posted on every build, green or red, so the build is always installable from the
+PR, and failures add a loud Failures section (alongside one red check) while staying
+non-blocking.
 
 Failures land in `result.json` in one of two shapes:
 
@@ -27,7 +29,7 @@ Failures land in `result.json` in one of two shapes:
   message, and full backtrace logged to the failing step's stderr.
 
 Setup failures that happen before a run plan row is read have no run metadata
-(suite, target), so they appear in the Check Run summary and the failure comment
+(suite, target), so they appear in the Check Run summary and the PR comment
 with an `error` status but reduced detail. This is separate from the Bitrise
 step's own required-env guards: a missing config variable
 (e.g. `BROWSERSTACK_ACCESS_KEY`) is validated by the step and fails fast before
@@ -37,7 +39,7 @@ The report also enforces a **completeness check**: it compares the number of
 `result.json` files against `E2E_BROWSERSTACK_RUN_PLAN_COUNT` (the run plan row
 count, shared across the pipeline). If a run never reports — for example a whole
 execute workflow that failed to upload — the "Checkout Kit E2E" check is forced red
-and the failure comment notes the shortfall, so a missing run can never silently
+and the PR comment notes the shortfall, so a missing run can never silently
 pass. When the expected count is unavailable the completeness check is skipped
 rather than reporting a false failure.
 
@@ -82,7 +84,7 @@ The app artifact environment variable for the run plan row must point at the `.a
 
 ## Failure triage
 
-Use the GitHub Check Run or sticky PR failure comment first. Failure summaries should include Markdown links to:
+Use the GitHub Check Run or sticky PR comment first. Failure summaries should include Markdown links to:
 
 - BrowserStack build
 - failed testcase
@@ -95,4 +97,7 @@ Use the GitHub Check Run or sticky PR failure comment first. Failure summaries s
 
 BrowserStack artifact links require BrowserStack App Automate access. Sign in to [BrowserStack App Automate](https://app-automate.browserstack.com/dashboard/v2/builds) before opening evidence links.
 
-Avoid posting additional PR comments for green runs.
+The report keeps a single sticky PR comment, identified by a hidden marker, and updates it
+in place on every build, so green runs never add a second comment. Because that comment
+always carries the Tophat install links, it is posted even on a fully green run — a passing
+build stays installable from the PR.

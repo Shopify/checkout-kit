@@ -19,5 +19,9 @@ cd sample/android
 android_apk="$PWD/app/build/outputs/apk/e2e/app-e2e.apk"
 test -f "$android_apk"
 
+e2e_dir="$(e2e_deploy_dir)"
+cp "$android_apk" "$e2e_dir/app-e2e.apk"
+android_apk="$e2e_dir/app-e2e.apk"
+
 e2e_log "Publishing Android APK path"
 envman add --key E2E_REACT_NATIVE_ANDROID_APP_PATH --value "$android_apk"

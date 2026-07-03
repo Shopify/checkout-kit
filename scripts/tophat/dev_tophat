@@ -1,0 +1,201 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "tempfile"
+require_relative "common"
+
+def abort_with(message)
+  CheckoutKitTophat.abort_with(message)
+end
+
+def capture(*command)
+  CheckoutKitTophat.capture(*command)
+end
+
+def fzf_select(lines, prompt:, preview: nil)
+  args = ["fzf", "--prompt", "#{prompt} > ", "--height", "40%", "--reverse", "--delimiter", "\t", "--with-nth", "2.."]
+  args += ["--preview", preview, "--preview-window", "down,40%"] if preview
+  selection, status = Open3.capture2(*args, stdin_data: lines.join("\n"))
+  abort_with("Nothing selected.") unless status.success? && !selection.strip.empty?
+  selection.strip
+end
+
+def resolve_pr_number(argument)
+  if argument
+    return Integer(argument[%r{/pull/(\d+)}, 1]) if argument.include?("/pull/")
+    abort_with("Invalid pull request '#{argument}'. Pass a PR number or pull request URL.") unless argument.match?(/\A\d+\z/)
+    return Integer(argument)
+  end
+
+  prs = JSON.parse(capture("gh", "pr", "list", "--json", "number,title,author,headRefName", "--limit", "50"))
+  abort_with("No open pull requests found.") if prs.empty?
+
+  lines = prs.map do |pr|
+    number = pr.fetch("number")
+    display = "##{number}  #{pr.fetch("title")}  @#{pr.dig("author", "login")}  #{pr.fetch("headRefName")}"
+    "#{number}\t#{display}"
+  end
+  selection = fzf_select(lines, prompt: "Pull request", preview: "gh pr view {1}")
+  Integer(selection.split("\t", 2).first)
+end
+
+def branch_for(pr_number)
+  capture("gh", "pr", "view", pr_number.to_s, "--json", "headRefName", "-q", ".headRefName").strip
+end
+
+def select_option(options, requested_id)
+  if requested_id
+    option = options.find { |candidate| candidate.fetch("id") == requested_id }
+    abort_with("Unknown target '#{requested_id}'. Available: #{options.map { |o| o.fetch("id") }.join(", ")}") unless option
+    return option
+  end
+  return options.first if options.length == 1
+
+  lines = options.map { |option| "#{option.fetch("id")}\t#{option.fetch("label")}" }
+  selection = fzf_select(lines, prompt: "What to test")
+  selected_id = selection.split("\t", 2).first
+  options.find { |option| option.fetch("id") == selected_id }
+end
+
+def select_device(platform)
+  devices = JSON.parse(capture(CheckoutKitTophat::TOPHATCTL, "list", "devices", "--json"))
+  matching = devices.select { |device| device.fetch("platform") == platform }
+  abort_with("No #{CheckoutKitTophat::PLATFORM_LABELS.fetch(platform, platform)} devices are available to Tophat.") if matching.empty?
+
+  ready = matching.select { |device| device.fetch("state") == "ready" }
+  return ready.first if ready.length == 1
+
+  candidates = ready.empty? ? matching : ready
+  lines = candidates.each_with_index.map do |device, index|
+    "#{index}\t#{device.fetch("name")}  #{device.fetch("runtimeVersion")}  (#{device.fetch("type")}, #{device.fetch("state")})"
+  end
+  selection = fzf_select(lines, prompt: "Device")
+  candidates.fetch(Integer(selection.split("\t", 2).first))
+end
+
+def recipe_for(target, device)
+  recipe = target.fetch("recipes").find do |candidate|
+    candidate.fetch("platform") == device.fetch("platform") &&
+      (candidate.fetch("destination") == device.fetch("type") || candidate.fetch("destination") == "any")
+  end
+  abort_with("No #{device.fetch("type")} recipe for #{target.fetch("label")} on #{device.fetch("platform")}.") unless recipe
+  recipe
+end
+
+def bitrise_auth_error?(output)
+  normalized = output.downcase
+  normalized.include?("bitrise personal access token") ||
+    normalized.include?("personal access token is required") ||
+    normalized.include?("access token used to authenticate with bitrise is invalid") ||
+    normalized.include?("authenticate with bitrise") ||
+    (normalized.include?("unauthorized") && normalized.include?("bitrise")) ||
+    normalized.match?(/\b(401|403)\b/)
+end
+
+def prompt_for_bitrise_token_setup
+  puts <<~MESSAGE
+
+    Tophat could not authenticate with Bitrise.
+
+    Tophat needs a Bitrise Personal Access Token to download Checkout Kit build artifacts.
+    Create a token, then add it in Tophat -> Settings -> Extensions -> Bitrise.
+
+    Press Enter to open the Bitrise token page, or Ctrl-C to cancel.
+  MESSAGE
+  STDIN.gets || abort_with("Cancelled.")
+  system("open", CheckoutKitTophat::BITRISE_PAT_URL)
+  puts "Add the token in Tophat -> Settings -> Extensions -> Bitrise, then press Enter to retry."
+  STDIN.gets || abort_with("Cancelled.")
+end
+
+def run_tophat_install(config_path)
+  output = +""
+  status = nil
+
+  Open3.popen2e(CheckoutKitTophat::TOPHATCTL, "install", config_path) do |stdin, stdout_and_stderr, wait_thread|
+    stdin.close
+    stdout_and_stderr.each do |line|
+      output << line
+      print line
+    end
+    status = wait_thread.value
+  end
+
+  [output, status]
+end
+
+def install_with_tophat(config_path)
+  output, status = run_tophat_install(config_path)
+  return true if status.success?
+
+  if bitrise_auth_error?(output)
+    prompt_for_bitrise_token_setup
+    _retry_output, retry_status = run_tophat_install(config_path)
+    return true if retry_status.success?
+  end
+
+  false
+end
+
+def help_requested?
+  ARGV.include?("--help") || ARGV.include?("-h")
+end
+
+def print_help(manifest)
+  targets = CheckoutKitTophat.available_target_ids(manifest)
+  puts <<~HELP
+    Usage: dev tophat [<pr-number-or-url>] [<target>]
+
+    Install a pull request build to a device via Tophat.
+
+    Arguments:
+      <pr-number-or-url>  Optional pull request number or GitHub pull request URL.
+                          If omitted, choose from open pull requests with fzf.
+      <target>            Optional target ID. If omitted, choose with fzf.
+
+    Options:
+      -h, --help          Show this help.
+
+    Available targets:
+      #{targets.join("\n  ")}
+
+    Examples:
+      dev tophat
+      dev tophat 382
+      dev tophat 382 react-native-ios
+      dev tophat https://github.com/Shopify/checkout-kit/pull/382
+
+    Environment:
+      TOPHAT_DRY_RUN=1    Print the generated Tophat install config without installing.
+  HELP
+end
+
+manifest = CheckoutKitTophat.load_manifest
+if help_requested?
+  print_help(manifest)
+  exit 0
+end
+
+CheckoutKitTophat.require_tophat!
+
+pr_number = resolve_pr_number(ARGV[0])
+branch = branch_for(pr_number)
+option = select_option(CheckoutKitTophat.install_options(manifest), ARGV[1])
+device = select_device(option.fetch("platform"))
+recipe = recipe_for(option.fetch("target"), device)
+config = CheckoutKitTophat.install_config(recipe, device, manifest.fetch("app_slug"), branch)
+
+puts "==> Installing #{option.fetch("label")} from PR ##{pr_number} (#{branch})"
+puts "    Device: #{device.fetch("name")} #{device.fetch("runtimeVersion")} (#{device.fetch("type")})"
+puts "    Artifact: #{recipe.fetch("artifact_name")}"
+
+if ENV["TOPHAT_DRY_RUN"] == "1"
+  puts JSON.pretty_generate(config)
+  exit 0
+end
+
+Tempfile.create(["tophat-install", ".json"]) do |file|
+  file.write(JSON.generate(config))
+  file.flush
+  install_with_tophat(file.path) || abort_with("Tophat install failed.")
+end
