@@ -32,6 +32,10 @@ up:
       name: Run Checkout Kit workspace setup
       met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts
       meet: ./scripts/setup_dev_workspace --skip-optional-prompts
+  - tophat_mobile
+  - run_always:
+      name: Configure Tophat Quick Launch items
+      run: sh scripts/configure_tophat_quick_launch.sh
 
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"

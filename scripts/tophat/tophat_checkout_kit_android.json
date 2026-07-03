@@ -1,0 +1,17 @@
+{
+  "id": "checkout-kit-android",
+  "name": "Checkout Kit",
+  "recipes": [
+    {
+      "artifactProviderID": "bitrise-branch",
+      "platformHint": "android",
+      "launchArguments": [],
+      "artifactProviderParameters": {
+        "app_slug": "f51f9054-053e-40f1-81e9-ae727567ae76",
+        "branch": "main",
+        "workflow": "e2e-build-react-native-android",
+        "artifact_name": "app-e2e.apk"
+      }
+    }
+  ]
+}

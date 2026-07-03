@@ -1,25 +1,52 @@
 # frozen_string_literal: true
 
 require "json"
+require "uri"
 require_relative "json_http_client"
 
-# Publishes normalized E2E run results back to GitHub as commit statuses,
-# check runs, and a sticky pull request comment for failures.
+# Publishes normalized E2E run results back to GitHub as a check run and a
+# sticky pull request comment carrying the Tophat install link and run summary.
 class E2EGitHubReporter
   COMMENT_MARKER = "<!-- checkout-kit-e2e-report -->"
+  TOPHAT_APP_SLUG = "f51f9054-053e-40f1-81e9-ae727567ae76"
+  TOPHAT_INSTALL_BASE = "http://localhost:29070/install/bitrise-branch"
+  TOPHAT_RECIPES = [
+    {platform: "ios", destination: "device", workflow: "e2e-build-react-native-ios", artifact_name: "CheckoutKitReactNativeDemo-Provisioned.ipa"},
+    {platform: "ios", destination: "simulator", workflow: "e2e-build-react-native-ios", artifact_name: "CheckoutKitReactNativeDemo-Simulator.zip"},
+    {platform: "android", destination: "any", workflow: "e2e-build-react-native-android", artifact_name: "app-e2e.apk"}
+  ].freeze
 
-  def initialize(results, repository:, sha:, pr_number:, token: nil, expected: nil)
+  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, expected: nil)
     @results = results
     @repository = repository
     @sha = sha
     @pr_number = pr_number
+    @branch = branch
     @token = token
     @expected = expected
   end
 
   def publish!
     client.post_json("/repos/#{@repository}/check-runs", check_run_payload)
-    sync_failure_comment
+    sync_comment
+  end
+
+  def tophat_install_url
+    pairs = TOPHAT_RECIPES.flat_map do |recipe|
+      [
+        ["platform", recipe.fetch(:platform)],
+        ["destination", recipe.fetch(:destination)],
+        ["app_slug", TOPHAT_APP_SLUG],
+        ["branch", @branch],
+        ["workflow", recipe.fetch(:workflow)],
+        ["artifact_name", recipe.fetch(:artifact_name)]
+      ]
+    end
+    "#{TOPHAT_INSTALL_BASE}?#{URI.encode_www_form(pairs)}"
+  end
+
+  def comment_body
+    [COMMENT_MARKER, tophat_install_markdown, markdown_summary].join("\n\n")
   end
 
   def markdown_summary
@@ -51,13 +78,15 @@ class E2EGitHubReporter
     lines.join("\n")
   end
 
-  def failure_comment_body
-    return nil if failed_results.empty? && complete?
-
-    [COMMENT_MARKER, markdown_summary].join("\n")
-  end
-
   private
+
+  def tophat_install_markdown
+    lines = []
+    lines << "## Install this build"
+    lines << ""
+    lines << "[Install with Tophat](#{tophat_install_url}) — open on the Mac running Tophat (iOS simulator, iOS device, or Android)."
+    lines.join("\n")
+  end
 
   def check_run_payload
     conclusion = failed_results.empty? && complete? ? "success" : "failure"
@@ -83,21 +112,17 @@ class E2EGitHubReporter
     [@expected - @results.length, 0].max
   end
 
-  def sync_failure_comment
-    body = failure_comment_body
-    existing = existing_failure_comment
-    if body
-      if existing
-        client.patch_json("/repos/#{@repository}/issues/comments/#{existing.fetch("id")}", {body: body})
-      else
-        client.post_json("/repos/#{@repository}/issues/#{@pr_number}/comments", {body: body})
-      end
-    elsif existing
-      client.patch_json("/repos/#{@repository}/issues/comments/#{existing.fetch("id")}", {body: "#{COMMENT_MARKER}\n✅ Checkout Kit E2E failures resolved."})
+  def sync_comment
+    body = comment_body
+    existing = existing_comment
+    if existing
+      client.patch_json("/repos/#{@repository}/issues/comments/#{existing.fetch("id")}", {body: body})
+    else
+      client.post_json("/repos/#{@repository}/issues/#{@pr_number}/comments", {body: body})
     end
   end
 
-  def existing_failure_comment
+  def existing_comment
     issue_comments.find do |comment|
       comment.fetch("body", "").include?(COMMENT_MARKER)
     end

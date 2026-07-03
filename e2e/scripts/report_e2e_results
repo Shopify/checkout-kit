@@ -11,6 +11,7 @@ options = {
   sha: ENV["BITRISE_GIT_COMMIT"],
   pr_number: ENV["BITRISE_PULL_REQUEST"],
   token: ENV["GITHUB_TOKEN"],
+  branch: ENV["BITRISE_GIT_BRANCH"],
   expected: ENV["E2E_BROWSERSTACK_RUN_PLAN_COUNT"]
 }
 
@@ -19,6 +20,7 @@ OptionParser.new do |opts|
   opts.on("--repository REPOSITORY") { |repository| options[:repository] = repository }
   opts.on("--sha SHA") { |sha| options[:sha] = sha }
   opts.on("--pr NUMBER") { |number| options[:pr_number] = number }
+  opts.on("--branch BRANCH") { |branch| options[:branch] = branch }
   opts.on("--expected COUNT", Integer) { |count| options[:expected] = count }
 end.parse!
 
@@ -53,6 +55,7 @@ reporter = E2EGitHubReporter.new(
   sha: options.fetch(:sha),
   pr_number: options.fetch(:pr_number),
   token: options.fetch(:token),
+  branch: options.fetch(:branch),
   expected: expected
 )
 reporter.publish!
