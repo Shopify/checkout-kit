@@ -1,17 +1,17 @@
 /**
  * Branded type marking a string as safe to interpolate into an `html`
- * or `css` tagged template. The brand can only be added via `safe()`,
- * `html\`\``, or `css\`\``, so any direct interpolation of a raw
- * `string` is a compile-time error.
+ * tagged template. The brand can only be added via `safe()` or
+ * `html\`\``, so any direct interpolation of a raw `string` is a
+ * compile-time error.
  */
 declare const SafeBrand: unique symbol;
 export type SafeMarkup = string & { readonly [SafeBrand]: true };
 
 /**
- * Use this to drop a plain string into an `html` or `css` template.
- * Reach for it sparingly: anything that came from an attribute,
- * property, or message payload belongs outside the template, applied
- * through DOM APIs after render.
+ * Use this to drop a plain string into an `html` template. Reach for
+ * it sparingly: anything that came from an attribute, property, or
+ * message payload belongs outside the template, applied through DOM
+ * APIs after render.
  */
 export const safe = (value: string): SafeMarkup => value as SafeMarkup;
 
@@ -29,9 +29,6 @@ export const html = (strings: TemplateStringsArray, ...values: SafeMarkup[]): Sa
   }
   return raw as SafeMarkup;
 };
-
-/** Same semantics as `html`; separate name for CSS editor highlighting. */
-export const css: typeof html = html;
 
 /**
  * Parses a `SafeMarkup` string into an inert `<template>`.

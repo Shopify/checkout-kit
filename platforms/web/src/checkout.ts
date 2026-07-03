@@ -1,4 +1,5 @@
-import { createTemplate, html } from "./utils";
+import stylesText from "./checkout.css?inline";
+import { createTemplate, html, safe } from "./utils";
 import type {
   CheckoutAttributes,
   CheckoutMethods,
@@ -14,7 +15,6 @@ import type {
   OrderConfirmation,
   UcpErrorResponse,
 } from "./checkout.types";
-import { STYLES } from "./checkout.styles";
 
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
@@ -25,7 +25,7 @@ const EMBED_DELEGATIONS: readonly string[] = ["window.open"];
 const SHADOW_TEMPLATE = createTemplate(html`
   <div id="shopify-element-wrapper">
     <style>
-      ${STYLES}
+      ${safe(stylesText)}
     </style>
 
     <div class="Shopify-target">
