@@ -17,9 +17,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.0
         version: 4.1.8(vitest@4.1.8)
-      esbuild:
-        specifier: ^0.28.1
-        version: 0.28.1
       happy-dom:
         specifier: ^20.8.9
         version: 20.8.9
@@ -2493,6 +2490,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.28.1
       '@esbuild/win32-ia32': 0.28.1
       '@esbuild/win32-x64': 0.28.1
+    optional: true
 
   estree-walker@2.0.2: {}
 
