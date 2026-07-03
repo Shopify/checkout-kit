@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createTemplate, css, html, safe, type SafeMarkup } from "./utils";
+import { createTemplate, html, safe, type SafeMarkup } from "./utils";
 
 describe("safe", () => {
   it("returns the input unchanged at runtime", () => {
@@ -8,7 +8,7 @@ describe("safe", () => {
   });
 });
 
-describe("html / css tagged templates", () => {
+describe("html tagged template", () => {
   it("concatenates static strings only", () => {
     expect(html`<p>hello</p>`).toBe("<p>hello</p>");
   });
@@ -27,10 +27,6 @@ describe("html / css tagged templates", () => {
   it("falls back to empty strings when the template array has missing slots", () => {
     const emptyStrings = Object.assign([], { raw: [] }) as unknown as TemplateStringsArray;
     expect(html(emptyStrings)).toBe("");
-  });
-
-  it("css is the same function as html", () => {
-    expect(css).toBe(html);
   });
 
   describe("unsafe interpolation", () => {
