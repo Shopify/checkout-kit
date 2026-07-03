@@ -49,6 +49,7 @@ if result_paths.empty?
 end
 
 results = result_paths.sort.map { |path| JSON.parse(File.read(path)) }
+tophat_manifest = JSON.parse(File.read(File.expand_path("../../scripts/tophat/targets.json", __dir__)))
 reporter = E2EGitHubReporter.new(
   results,
   repository: options.fetch(:repository),
@@ -56,6 +57,8 @@ reporter = E2EGitHubReporter.new(
   pr_number: options.fetch(:pr_number),
   token: options.fetch(:token),
   branch: options.fetch(:branch),
+  app_slug: tophat_manifest.fetch("app_slug"),
+  targets: tophat_manifest.fetch("targets"),
   expected: expected
 )
 reporter.publish!

@@ -8,21 +8,17 @@ require_relative "json_http_client"
 # sticky pull request comment carrying the Tophat install link and run summary.
 class E2EGitHubReporter
   COMMENT_MARKER = "<!-- checkout-kit-e2e-report -->"
-  TOPHAT_APP_SLUG = "f51f9054-053e-40f1-81e9-ae727567ae76"
   TOPHAT_INSTALL_BASE = "http://localhost:29070/install/bitrise-branch"
-  TOPHAT_RECIPES = [
-    {platform: "ios", destination: "device", workflow: "e2e-build-react-native-ios", artifact_name: "CheckoutKitReactNativeDemo-Provisioned.ipa"},
-    {platform: "ios", destination: "simulator", workflow: "e2e-build-react-native-ios", artifact_name: "CheckoutKitReactNativeDemo-Simulator.zip"},
-    {platform: "android", destination: "any", workflow: "e2e-build-react-native-android", artifact_name: "app-e2e.apk"}
-  ].freeze
 
-  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, expected: nil)
+  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil)
     @results = results
     @repository = repository
     @sha = sha
     @pr_number = pr_number
     @branch = branch
     @token = token
+    @app_slug = app_slug
+    @targets = targets
     @expected = expected
   end
 
@@ -31,15 +27,15 @@ class E2EGitHubReporter
     sync_comment
   end
 
-  def tophat_install_url
-    pairs = TOPHAT_RECIPES.flat_map do |recipe|
+  def tophat_install_url(target)
+    pairs = target.fetch("recipes").flat_map do |recipe|
       [
-        ["platform", recipe.fetch(:platform)],
-        ["destination", recipe.fetch(:destination)],
-        ["app_slug", TOPHAT_APP_SLUG],
+        ["platform", recipe.fetch("platform")],
+        ["destination", recipe.fetch("destination")],
+        ["app_slug", @app_slug],
         ["branch", @branch],
-        ["workflow", recipe.fetch(:workflow)],
-        ["artifact_name", recipe.fetch(:artifact_name)]
+        ["workflow", recipe.fetch("workflow")],
+        ["artifact_name", recipe.fetch("artifact_name")]
       ]
     end
     "#{TOPHAT_INSTALL_BASE}?#{URI.encode_www_form(pairs)}"
@@ -84,7 +80,13 @@ class E2EGitHubReporter
     lines = []
     lines << "## Install this build"
     lines << ""
-    lines << "[Install with Tophat](#{tophat_install_url}) — open on the Mac running Tophat (iOS simulator, iOS device, or Android)."
+    lines << "Open Tophat, select your target device, then click Install. Links open on the Mac running Tophat."
+    lines << ""
+    lines << "| SDK | Install |"
+    lines << "|---|---|"
+    @targets.each do |target|
+      lines << "| #{target.fetch("label")} | [Install with Tophat](#{tophat_install_url(target)}) |"
+    end
     lines.join("\n")
   end
 
