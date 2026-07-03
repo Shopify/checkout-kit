@@ -24,6 +24,10 @@ up:
         - platforms/react-native
         - platforms/web
   - custom:
+      name: Copy root env into worktree
+      met?: ./scripts/copy_worktree_env --check
+      meet: ./scripts/copy_worktree_env
+  - custom:
       name: Run Checkout Kit workspace setup
       met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts
       meet: ./scripts/setup_dev_workspace --skip-optional-prompts
@@ -63,6 +67,10 @@ commands:
         kotlin|swift|typescript|ts) ./protocol/scripts/generate_models.sh --lang "$1" ;;
         *) echo "Usage: dev codegen <kotlin|swift|typescript>"; exit 1 ;;
       esac
+
+  copy-env:
+    desc: Copy the root .env into the current worktree so `dev up` can regenerate sample config
+    run: ./scripts/copy_worktree_env
 
   format:
     desc: Auto-format and apply safe lint autocorrections across supported workspaces
