@@ -13,38 +13,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     "attribution": [
       "map"
     ],
-    "buyer": [
-      "ref",
-      "Buyer"
-    ],
-    "context": [
-      "ref",
-      "Context"
-    ],
-    "discounts": [
-      "ref",
-      "CheckoutDiscounts"
-    ],
-    "fulfillment": [
-      "ref",
-      "CheckoutFulfillment"
-    ],
-    "line_items": [
-      "arr",
-      "LineItem"
-    ],
-    "links": [
-      "arr",
-      "Link"
-    ],
-    "messages": [
-      "arr",
-      "Message"
-    ],
-    "order": [
-      "ref",
-      "OrderConfirmation"
-    ],
     "payment": [
       "ref",
       "Payment"
@@ -53,105 +21,9 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
       "ref",
       "Signals"
     ],
-    "status": [
-      "ref",
-      "CheckoutStatus"
-    ],
-    "totals": [
-      "arr",
-      "CheckoutTotal"
-    ],
     "ucp": [
       "ref",
       "UcpCheckoutResponseSchema"
-    ]
-  },
-  "CheckoutDiscounts": {
-    "applied": [
-      "arr",
-      "AppliedDiscount"
-    ]
-  },
-  "AppliedDiscount": {
-    "allocations": [
-      "arr",
-      "DiscountAllocation"
-    ],
-    "method": [
-      "ref",
-      "DiscountMethod"
-    ]
-  },
-  "CheckoutFulfillment": {
-    "available_methods": [
-      "arr",
-      "FulfillmentAvailableMethod"
-    ],
-    "methods": [
-      "arr",
-      "FulfillmentMethod"
-    ]
-  },
-  "FulfillmentAvailableMethod": {
-    "type": [
-      "ref",
-      "FulfillmentMethodType"
-    ]
-  },
-  "FulfillmentMethod": {
-    "destinations": [
-      "arr",
-      "FulfillmentDestination"
-    ],
-    "groups": [
-      "arr",
-      "FulfillmentGroup"
-    ],
-    "type": [
-      "ref",
-      "FulfillmentMethodType"
-    ]
-  },
-  "FulfillmentDestination": {
-    "address": [
-      "ref",
-      "PostalAddress"
-    ]
-  },
-  "FulfillmentGroup": {
-    "options": [
-      "arr",
-      "FulfillmentOption"
-    ]
-  },
-  "FulfillmentOption": {
-    "totals": [
-      "arr",
-      "LineItemTotal"
-    ]
-  },
-  "LineItem": {
-    "item": [
-      "ref",
-      "Item"
-    ],
-    "totals": [
-      "arr",
-      "LineItemTotal"
-    ]
-  },
-  "Message": {
-    "content_type": [
-      "ref",
-      "ContentType"
-    ],
-    "severity": [
-      "ref",
-      "Severity"
-    ],
-    "type": [
-      "ref",
-      "MessageType"
     ]
   },
   "Payment": {
@@ -161,14 +33,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     ]
   },
   "SelectedPaymentInstrument": {
-    "billing_address": [
-      "ref",
-      "PostalAddress"
-    ],
-    "credential": [
-      "ref",
-      "PaymentCredential"
-    ],
     "display": [
       "map"
     ]
@@ -183,12 +47,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
       "devUcpUserAgent"
     ]
   },
-  "CheckoutTotal": {
-    "lines": [
-      "arr",
-      "Line"
-    ]
-  },
   "UcpCheckoutResponseSchema": {
     "capabilities": [
       "map",
@@ -201,10 +59,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     "services": [
       "map",
       "ServiceResponseSchema"
-    ],
-    "status": [
-      "ref",
-      "UcpCheckoutResponseSchemaStatus"
     ]
   },
   "CapabilityResponseSchema": {
@@ -226,145 +80,12 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
       "map"
     ]
   },
-  "ServiceResponseSchema": {
-    "config": [
-      "ref",
-      "EmbeddedTransportConfig"
-    ],
-    "transport": [
-      "ref",
-      "Transport"
-    ]
-  },
-  "EmbeddedTransportConfig": {
-    "color_scheme": [
-      "arr",
-      "EmbeddedColorScheme"
-    ]
-  },
-  "Order": {
-    "adjustments": [
-      "arr",
-      "Adjustment"
-    ],
-    "attribution": [
-      "map"
-    ],
-    "fulfillment": [
-      "ref",
-      "Fulfillment"
-    ],
-    "line_items": [
-      "arr",
-      "OrderLineItem"
-    ],
-    "messages": [
-      "arr",
-      "Message"
-    ],
-    "totals": [
-      "arr",
-      "CheckoutTotal"
-    ],
-    "ucp": [
-      "ref",
-      "UcpOrderResponseSchema"
-    ]
-  },
-  "Adjustment": {
-    "line_items": [
-      "arr",
-      "AdjustmentLineItem"
-    ],
-    "status": [
-      "ref",
-      "AdjustmentStatus"
-    ],
-    "totals": [
-      "arr",
-      "LineItemTotal"
-    ]
-  },
-  "Fulfillment": {
-    "events": [
-      "arr",
-      "FulfillmentEvent"
-    ],
-    "expectations": [
-      "arr",
-      "Expectation"
-    ]
-  },
-  "FulfillmentEvent": {
-    "line_items": [
-      "arr",
-      "EventLineItem"
-    ]
-  },
-  "Expectation": {
-    "destination": [
-      "ref",
-      "PostalAddress"
-    ],
-    "line_items": [
-      "arr",
-      "ExpectationLineItem"
-    ],
-    "method_type": [
-      "ref",
-      "MethodType"
-    ]
-  },
-  "OrderLineItem": {
-    "item": [
-      "ref",
-      "Item"
-    ],
-    "quantity": [
-      "ref",
-      "LineItemQuantity"
-    ],
-    "status": [
-      "ref",
-      "LineItemStatus"
-    ],
-    "totals": [
-      "arr",
-      "LineItemTotal"
-    ]
-  },
-  "UcpOrderResponseSchema": {
-    "capabilities": [
-      "map",
-      "CapabilityResponseSchema"
-    ],
-    "payment_handlers": [
-      "map",
-      "PaymentHandlerResponseSchema"
-    ],
-    "services": [
-      "map",
-      "Service"
-    ],
-    "status": [
-      "ref",
-      "UcpCheckoutResponseSchemaStatus"
-    ]
-  },
   "Service": {
     "config": [
       "map"
-    ],
-    "transport": [
-      "ref",
-      "Transport"
     ]
   },
   "ErrorResponse": {
-    "messages": [
-      "arr",
-      "Message"
-    ],
     "ucp": [
       "ref",
       "ErrorResponseUcp"
@@ -382,10 +103,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     "services": [
       "map",
       "Service"
-    ],
-    "status": [
-      "ref",
-      "ErrorStatus"
     ]
   },
   "InstrumentsChangeResult": {
@@ -396,10 +113,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     "ucp": [
       "ref",
       "InstrumentsChangeResultUcp"
-    ],
-    "messages": [
-      "arr",
-      "Message"
     ]
   },
   "InstrumentsChangeCheckout": {
@@ -426,10 +139,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     "services": [
       "map",
       "EmbeddedService"
-    ],
-    "status": [
-      "ref",
-      "UcpCheckoutResponseSchemaStatus"
     ]
   },
   "CapabilityElement": {
@@ -454,10 +163,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
   "EmbeddedService": {
     "config": [
       "map"
-    ],
-    "transport": [
-      "ref",
-      "Transport"
     ]
   },
   "CredentialResult": {
@@ -468,10 +173,6 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     "ucp": [
       "ref",
       "InstrumentsChangeResultUcp"
-    ],
-    "messages": [
-      "arr",
-      "Message"
     ]
   },
   "CredentialCheckout": {
@@ -481,39 +182,9 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     ]
   },
   "AddressChangeResult": {
-    "checkout": [
-      "ref",
-      "AddressChangeCheckout"
-    ],
     "ucp": [
       "ref",
       "InstrumentsChangeResultUcp"
-    ],
-    "messages": [
-      "arr",
-      "Message"
-    ]
-  },
-  "AddressChangeCheckout": {
-    "fulfillment": [
-      "ref",
-      "CheckoutFulfillmentObject"
-    ]
-  },
-  "CheckoutFulfillmentObject": {
-    "available_methods": [
-      "arr",
-      "FulfillmentAvailableMethod"
-    ],
-    "methods": [
-      "arr",
-      "FulfillmentMethod"
-    ]
-  },
-  "ReadyRequest": {
-    "auth": [
-      "ref",
-      "Auth"
     ]
   },
   "ReadyResult": {
@@ -528,17 +199,9 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     "upgrade": [
       "ref",
       "Upgrade"
-    ],
-    "messages": [
-      "arr",
-      "Message"
     ]
   },
   "ReadyCheckout": {
-    "fulfillment": [
-      "ref",
-      "CheckoutFulfillmentObject"
-    ],
     "payment": [
       "ref",
       "ReadyPayment"
@@ -559,20 +222,12 @@ export const SHAPES: Record<string, Record<string, Shape>> = {
     "ucp": [
       "ref",
       "InstrumentsChangeResultUcp"
-    ],
-    "messages": [
-      "arr",
-      "Message"
     ]
   },
   "WindowOpenResult": {
     "ucp": [
       "ref",
       "InstrumentsChangeResultUcp"
-    ],
-    "messages": [
-      "arr",
-      "Message"
     ]
   }
 };
@@ -610,475 +265,11 @@ export const REQUIRED: Record<string, ReadonlyArray<readonly [string, RequiredKi
       "any"
     ]
   ],
-  "AppliedDiscount": [
-    [
-      "amount",
-      "number"
-    ],
-    [
-      "title",
-      "string"
-    ]
-  ],
-  "DiscountAllocation": [
-    [
-      "amount",
-      "number"
-    ],
-    [
-      "path",
-      "string"
-    ]
-  ],
-  "FulfillmentAvailableMethod": [
-    [
-      "line_item_ids",
-      "any"
-    ],
-    [
-      "type",
-      "any"
-    ]
-  ],
-  "FulfillmentMethod": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "line_item_ids",
-      "any"
-    ],
-    [
-      "type",
-      "any"
-    ]
-  ],
-  "FulfillmentDestination": [
-    [
-      "id",
-      "string"
-    ]
-  ],
-  "FulfillmentGroup": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "line_item_ids",
-      "any"
-    ]
-  ],
-  "FulfillmentOption": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "title",
-      "string"
-    ],
-    [
-      "totals",
-      "any"
-    ]
-  ],
-  "LineItemTotal": [
-    [
-      "amount",
-      "number"
-    ],
-    [
-      "type",
-      "string"
-    ]
-  ],
-  "LineItem": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "item",
-      "any"
-    ],
-    [
-      "quantity",
-      "number"
-    ],
-    [
-      "totals",
-      "any"
-    ]
-  ],
-  "Item": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "price",
-      "number"
-    ],
-    [
-      "title",
-      "string"
-    ]
-  ],
-  "Link": [
-    [
-      "type",
-      "string"
-    ],
-    [
-      "url",
-      "string"
-    ]
-  ],
-  "Message": [
-    [
-      "content",
-      "string"
-    ],
-    [
-      "type",
-      "any"
-    ]
-  ],
-  "OrderConfirmation": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "permalink_url",
-      "string"
-    ]
-  ],
-  "SelectedPaymentInstrument": [
-    [
-      "handler_id",
-      "string"
-    ],
-    [
-      "id",
-      "string"
-    ],
-    [
-      "type",
-      "string"
-    ]
-  ],
-  "PaymentCredential": [
-    [
-      "type",
-      "string"
-    ]
-  ],
-  "CheckoutTotal": [
-    [
-      "amount",
-      "number"
-    ],
-    [
-      "type",
-      "string"
-    ]
-  ],
-  "Line": [
-    [
-      "amount",
-      "number"
-    ],
-    [
-      "display_text",
-      "string"
-    ]
-  ],
-  "UcpCheckoutResponseSchema": [
-    [
-      "payment_handlers",
-      "any"
-    ],
-    [
-      "version",
-      "string"
-    ]
-  ],
-  "CapabilityResponseSchema": [
-    [
-      "version",
-      "string"
-    ]
-  ],
-  "PaymentHandlerResponseSchema": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "version",
-      "string"
-    ]
-  ],
-  "PaymentHandlerResponseSchemaAvailableInstrument": [
-    [
-      "type",
-      "string"
-    ]
-  ],
-  "ServiceResponseSchema": [
-    [
-      "version",
-      "string"
-    ],
-    [
-      "transport",
-      "any"
-    ]
-  ],
-  "Order": [
-    [
-      "checkout_id",
-      "string"
-    ],
-    [
-      "currency",
-      "string"
-    ],
-    [
-      "fulfillment",
-      "any"
-    ],
-    [
-      "id",
-      "string"
-    ],
-    [
-      "line_items",
-      "any"
-    ],
-    [
-      "permalink_url",
-      "string"
-    ],
-    [
-      "totals",
-      "any"
-    ],
-    [
-      "ucp",
-      "any"
-    ]
-  ],
-  "Adjustment": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "occurred_at",
-      "string"
-    ],
-    [
-      "status",
-      "any"
-    ],
-    [
-      "type",
-      "string"
-    ]
-  ],
-  "AdjustmentLineItem": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "quantity",
-      "number"
-    ]
-  ],
-  "FulfillmentEvent": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "line_items",
-      "any"
-    ],
-    [
-      "occurred_at",
-      "string"
-    ],
-    [
-      "type",
-      "string"
-    ]
-  ],
-  "EventLineItem": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "quantity",
-      "number"
-    ]
-  ],
-  "Expectation": [
-    [
-      "destination",
-      "any"
-    ],
-    [
-      "id",
-      "string"
-    ],
-    [
-      "line_items",
-      "any"
-    ],
-    [
-      "method_type",
-      "any"
-    ]
-  ],
-  "ExpectationLineItem": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "quantity",
-      "number"
-    ]
-  ],
-  "OrderLineItem": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "item",
-      "any"
-    ],
-    [
-      "quantity",
-      "any"
-    ],
-    [
-      "status",
-      "any"
-    ],
-    [
-      "totals",
-      "any"
-    ]
-  ],
-  "LineItemQuantity": [
-    [
-      "fulfilled",
-      "number"
-    ],
-    [
-      "total",
-      "number"
-    ]
-  ],
-  "UcpOrderResponseSchema": [
-    [
-      "version",
-      "string"
-    ]
-  ],
-  "Service": [
-    [
-      "version",
-      "string"
-    ],
-    [
-      "transport",
-      "any"
-    ]
-  ],
   "ErrorResponse": [
     [
       "messages",
       "any"
     ],
-    [
-      "ucp",
-      "any"
-    ]
-  ],
-  "ErrorResponseUcp": [
-    [
-      "status",
-      "any"
-    ],
-    [
-      "version",
-      "string"
-    ]
-  ],
-  "InstrumentsChangeResult": [
-    [
-      "ucp",
-      "any"
-    ]
-  ],
-  "InstrumentsChangeResultUcp": [
-    [
-      "status",
-      "any"
-    ],
-    [
-      "version",
-      "string"
-    ]
-  ],
-  "CapabilityElement": [
-    [
-      "version",
-      "string"
-    ]
-  ],
-  "PaymentHandlerElement": [
-    [
-      "id",
-      "string"
-    ],
-    [
-      "version",
-      "string"
-    ]
-  ],
-  "PaymentHandlerAvailableInstrument": [
-    [
-      "type",
-      "string"
-    ]
-  ],
-  "EmbeddedService": [
-    [
-      "version",
-      "string"
-    ],
-    [
-      "transport",
-      "any"
-    ]
-  ],
-  "CredentialResult": [
-    [
-      "ucp",
-      "any"
-    ]
-  ],
-  "AddressChangeResult": [
     [
       "ucp",
       "any"
@@ -1090,28 +281,10 @@ export const REQUIRED: Record<string, ReadonlyArray<readonly [string, RequiredKi
       "any"
     ]
   ],
-  "ReadyResult": [
-    [
-      "ucp",
-      "any"
-    ]
-  ],
-  "AuthResult": [
-    [
-      "ucp",
-      "any"
-    ]
-  ],
   "WindowOpenRequest": [
     [
       "url",
       "string"
-    ]
-  ],
-  "WindowOpenResult": [
-    [
-      "ucp",
-      "any"
     ]
   ]
 };

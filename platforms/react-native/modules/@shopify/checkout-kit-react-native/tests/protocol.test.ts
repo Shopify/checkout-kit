@@ -302,6 +302,29 @@ describe('CheckoutProtocol', () => {
         decoded?.ucp.services?.['com.example.embedded']?.[0]?.config?.delegate,
       ).toEqual(['window.open']);
     });
+
+    it('maps Signals dev.ucp keys to camelCase while preserving unknown signal keys', () => {
+      const decoded = decodeProtocolPayload(CheckoutProtocol.start, {
+        id: 'checkout-123',
+        currency: 'USD',
+        status: 'incomplete',
+        line_items: [],
+        totals: [],
+        links: [],
+        signals: {
+          'dev.ucp.buyer_ip': '203.0.113.7',
+          'dev.ucp.user_agent': 'ExampleAgent/1.0',
+        },
+        ucp: {
+          version: '2026-04-08',
+          payment_handlers: {},
+        },
+      });
+
+      expect(decoded?.signals?.devUcpBuyerIp).toBe('203.0.113.7');
+      expect(decoded?.signals?.devUcpUserAgent).toBe('ExampleAgent/1.0');
+      expect(decoded?.signals).not.toHaveProperty('dev.ucp.buyer_ip');
+    });
   });
 
   describe('ProtocolHandlers typing', () => {
