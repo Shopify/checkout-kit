@@ -1,8 +1,8 @@
 [
   "dist/checkout-web-component.d.ts",
   "dist/checkout.d.ts",
-  "dist/checkout.styles.d.ts",
   "dist/checkout.types.d.ts",
+  "dist/css-inline.d.ts",
   "dist/custom-elements.json",
   "dist/index.d.ts",
   "dist/index.js",
@@ -13,9 +13,10 @@
   "package.json",
   "README.md",
   "src/checkout-web-component.ts",
-  "src/checkout.styles.ts",
+  "src/checkout.css",
   "src/checkout.ts",
   "src/checkout.types.ts",
+  "src/css-inline.d.ts",
   "src/index.ts",
   "src/ucp-embed-types.ts",
   "src/utils.ts"

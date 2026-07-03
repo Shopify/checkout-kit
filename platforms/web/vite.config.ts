@@ -4,14 +4,11 @@ import {resolve} from 'node:path';
 import {defineConfig} from 'vitest/config';
 import dts from 'vite-plugin-dts';
 
-import {minifyCssTagsPlugin} from './vite/minify-css-tags';
-
 const root = fileURLToPath(new URL('.', import.meta.url));
 const fromRoot = (...parts: string[]) => resolve(root, ...parts);
 
 export default defineConfig({
   plugins: [
-    minifyCssTagsPlugin(),
     dts({
       entryRoot: fromRoot('src'),
       include: ['src/**/*.ts'],
