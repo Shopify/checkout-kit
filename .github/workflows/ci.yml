@@ -30,7 +30,9 @@ jobs:
     outputs:
       android: ${{ steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.android == 'true' }}
       swift: ${{ steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.swift == 'true' }}
-      reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNative == 'true' }}
+      reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
+      reactNativeIos: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' }}
+      reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       web: ${{ steps.platform.outputs.web == 'true' || steps.infra.outputs.web == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -64,14 +66,10 @@ jobs:
               - '.github/workflows/breaking-changes.yml'
               - '.github/filters/**'
               - '.github/workflows/ci.yml'
-            reactNative:
-              - 'Package.swift'
-              - 'Package.resolved'
+            # Common React Native infra: JS-level jobs (jest, lint, packed
+            # files) and shared config that should trigger all RN jobs.
+            reactNativeCommon:
               - '.github/workflows/rn-test.yml'
-              - '.github/workflows/rn-test-android.yml'
-              - '.github/workflows/rn-test-ios.yml'
-              - '.github/workflows/rn-build-android.yml'
-              - '.github/workflows/rn-build-ios.yml'
               - '.github/workflows/rn-check-packed-files.yml'
               - '.github/workflows/rn-lint.yml'
               - '.github/workflows/rn-publish.yml'
@@ -82,6 +80,16 @@ jobs:
               - '.github/filters/**'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
+            # iOS-only RN infra: gates the macOS build/test jobs.
+            reactNativeIos:
+              - 'Package.swift'
+              - 'Package.resolved'
+              - '.github/workflows/rn-test-ios.yml'
+              - '.github/workflows/rn-build-ios.yml'
+            # Android-only RN infra: gates the gradle build/test jobs.
+            reactNativeAndroid:
+              - '.github/workflows/rn-test-android.yml'
+              - '.github/workflows/rn-build-android.yml'
             web:
               - '.github/workflows/web.yml'
               - '.github/actions/setup/**'
@@ -133,25 +141,25 @@ jobs:
   rn-test-android:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNative == 'true'
+    if: needs.changes.outputs.reactNativeAndroid == 'true'
     uses: ./.github/workflows/rn-test-android.yml
 
   rn-test-ios:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNative == 'true'
+    if: needs.changes.outputs.reactNativeIos == 'true'
     uses: ./.github/workflows/rn-test-ios.yml
 
   rn-build-android:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNative == 'true'
+    if: needs.changes.outputs.reactNativeAndroid == 'true'
     uses: ./.github/workflows/rn-build-android.yml
 
   rn-build-ios:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNative == 'true'
+    if: needs.changes.outputs.reactNativeIos == 'true'
     uses: ./.github/workflows/rn-build-ios.yml
 
   rn-check-packed-files:
