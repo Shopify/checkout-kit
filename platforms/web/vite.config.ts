@@ -37,9 +37,6 @@ export default defineConfig({
   },
   test: {
     environment: 'happy-dom',
-    // Don't fail CI when no tests exist yet (e.g. while bootstrapping the
-    // component). Vitest will still fail loudly on actual test failures.
-    passWithNoTests: true,
     environmentOptions: {
       happyDOM: {
         // Prevent checkout URLs from being fetched in unit tests.
