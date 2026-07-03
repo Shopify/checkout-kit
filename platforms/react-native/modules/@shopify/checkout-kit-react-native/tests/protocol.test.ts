@@ -4,7 +4,11 @@ import {
   type ErrorResponse,
   type ProtocolHandlers,
 } from '../src';
-import {Convert, type LineItemQuantity} from '@shopify/checkout-kit-protocol';
+import {
+  camelizeKeys,
+  type LineItemQuantity,
+  type Order,
+} from '@shopify/checkout-kit-protocol';
 import {decodeProtocolPayload} from '../src/protocol';
 
 const checkoutPayloadMethods = [
@@ -227,9 +231,9 @@ describe('CheckoutProtocol', () => {
       expect(decoded?.fulfillment?.methods?.[0]?.type).toBe('pickup');
     });
 
-    it('decodes order line item quantity through the generated runtime converter', () => {
-      const decoded = Convert.toOrder(
-        JSON.stringify({
+    it('camelizes order line item quantity through the shared case transform', () => {
+      const decoded = camelizeKeys<Order>(
+        {
           checkout_id: 'checkout-123',
           currency: 'USD',
           fulfillment: {},
@@ -256,7 +260,8 @@ describe('CheckoutProtocol', () => {
           ucp: {
             version: '2026-04-08',
           },
-        }),
+        },
+        'Order',
       );
       const quantity: LineItemQuantity = decoded.lineItems[0]!.quantity;
 

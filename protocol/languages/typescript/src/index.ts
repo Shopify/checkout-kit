@@ -29,6 +29,7 @@ export {
   type CheckoutProtocolRequestResults,
   type Delegation,
 } from './generated/ProtocolNotifications';
+export {camelizeKeys} from './case_transform';
 export {Client} from './client';
 export {windowOpenSuccess, windowOpenRejected} from './window_open';
 export {EmbeddedCheckoutProtocol} from './embedded_checkout_protocol';

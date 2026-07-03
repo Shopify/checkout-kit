@@ -357,6 +357,31 @@ async function normalizeGeneratedFile(output, transform = (source) => source) {
   });
 }
 
+// Drop quicktype's runtime (the `Convert` class, its JSON reviver helpers, and the
+// `typeMap` literal) so the shipped Models.ts is types-only. Web tree-shakes this
+// runtime out already, but RN's Metro ships it dead (~23 KB), and nothing in any
+// SDK references it. `generate_case_map.mjs` is its only consumer, parsing
+// `typeMap` to derive CaseMap, so this must run after that step. Fail-fast if the
+// markers move, matching the Swift helper normalization above.
+function stripQuicktypeConvert(source) {
+  const runtimeMarker = "\n// Converts JSON strings to/from your types";
+  const runtimeIndex = source.indexOf(runtimeMarker);
+  if (runtimeIndex === -1) {
+    throw new Error("Convert runtime block not found; quicktype output may have changed");
+  }
+  let typesOnly = `${source.slice(0, runtimeIndex).replace(/\s+$/, "")}\n`;
+
+  if (typesOnly.startsWith("// To parse this data:")) {
+    const firstDecl = typesOnly.search(/^export /m);
+    if (firstDecl === -1) {
+      throw new Error("No exported declarations found after stripping the Convert usage banner");
+    }
+    typesOnly = typesOnly.slice(firstDecl);
+  }
+
+  return typesOnly;
+}
+
 function commonSchemaSources(specDir) {
   return [
     "--src",
@@ -485,6 +510,8 @@ async function generateTypescript(specDir, output) {
   await normalizeGeneratedFile(output, (source) => source.replace(/^type /gm, "export type "));
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_case_map.mjs")]);
+
+  await normalizeGeneratedFile(output, stripQuicktypeConvert);
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 

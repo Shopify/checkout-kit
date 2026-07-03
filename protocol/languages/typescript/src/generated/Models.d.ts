@@ -1,6 +1,3 @@
-/**
- * Base checkout schema. Extensions compose onto this using allOf.
- */
 export interface Checkout {
     attribution?: {
         [key: string]: string;
@@ -1810,30 +1807,4 @@ export interface WindowOpenResult {
      */
     messages?: Message[];
     [property: string]: any;
-}
-export declare class Convert {
-    static toCheckout(json: string): Checkout;
-    static checkoutToJson(value: Checkout): string;
-    static toOrder(json: string): Order;
-    static orderToJson(value: Order): string;
-    static toErrorResponse(json: string): ErrorResponse;
-    static errorResponseToJson(value: ErrorResponse): string;
-    static toInstrumentsChangeResult(json: string): InstrumentsChangeResult;
-    static instrumentsChangeResultToJson(value: InstrumentsChangeResult): string;
-    static toCredentialResult(json: string): CredentialResult;
-    static credentialResultToJson(value: CredentialResult): string;
-    static toAddressChangeResult(json: string): AddressChangeResult;
-    static addressChangeResultToJson(value: AddressChangeResult): string;
-    static toReadyRequest(json: string): ReadyRequest;
-    static readyRequestToJson(value: ReadyRequest): string;
-    static toReadyResult(json: string): ReadyResult;
-    static readyResultToJson(value: ReadyResult): string;
-    static toAuthRequest(json: string): AuthRequest;
-    static authRequestToJson(value: AuthRequest): string;
-    static toAuthResult(json: string): AuthResult;
-    static authResultToJson(value: AuthResult): string;
-    static toWindowOpenRequest(json: string): WindowOpenRequest;
-    static windowOpenRequestToJson(value: WindowOpenRequest): string;
-    static toWindowOpenResult(json: string): WindowOpenResult;
-    static windowOpenResultToJson(value: WindowOpenResult): string;
 }

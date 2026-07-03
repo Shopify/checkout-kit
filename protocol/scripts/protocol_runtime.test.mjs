@@ -23,7 +23,7 @@ import {
   requestDescriptors,
   embeddedCheckoutMethods,
 } from '../languages/typescript/src/generated/ProtocolNotifications';
-import {Convert} from '../languages/typescript/src/generated/Models';
+import {camelizeKeys} from '../languages/typescript/src/case_transform';
 
 const CHECKOUT_ENVELOPE = {
   id: 'checkout-123',
@@ -244,12 +244,10 @@ describe('request descriptors', () => {
   });
 
   test('encode round-trips a result back to the wire shape', () => {
-    const readyResult = Convert.toReadyResult(JSON.stringify(RESULT_FIXTURE));
+    const readyResult = camelizeKeys(RESULT_FIXTURE, 'ReadyResult');
     expect(requestDescriptors.ready.encode(readyResult)).toEqual(RESULT_FIXTURE);
 
-    const instrumentsResult = Convert.toInstrumentsChangeResult(
-      JSON.stringify(RESULT_FIXTURE),
-    );
+    const instrumentsResult = camelizeKeys(RESULT_FIXTURE, 'InstrumentsChangeResult');
     expect(
       requestDescriptors.paymentInstrumentsChange.encode(instrumentsResult),
     ).toEqual(RESULT_FIXTURE);
@@ -319,7 +317,7 @@ describe('Client', () => {
     let handledPayload;
     const client = new Client().on(requestDescriptors.ready, payload => {
       handledPayload = payload;
-      return Convert.toReadyResult(JSON.stringify(RESULT_FIXTURE));
+      return camelizeKeys(RESULT_FIXTURE, 'ReadyResult');
     });
 
     const response = await client.process(
@@ -336,7 +334,7 @@ describe('Client', () => {
 
   test('awaits an async request handler', async () => {
     const client = new Client().on(requestDescriptors.ready, async () =>
-      Promise.resolve(Convert.toReadyResult(JSON.stringify(RESULT_FIXTURE))),
+      Promise.resolve(camelizeKeys(RESULT_FIXTURE, 'ReadyResult')),
     );
 
     const response = await client.process(
@@ -372,7 +370,7 @@ describe('Client', () => {
 
   test('routes a request whose optional params are absent', async () => {
     const client = new Client().on(requestDescriptors.auth, () =>
-      Convert.toAuthResult(JSON.stringify(RESULT_FIXTURE)),
+      camelizeKeys(RESULT_FIXTURE, 'AuthResult'),
     );
 
     const response = await client.process(
