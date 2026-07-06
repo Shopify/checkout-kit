@@ -24,8 +24,14 @@ class ShopifyCheckoutTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
+        ShopifyCheckoutKit.configuration = Configuration()
         checkoutURL = URL(string: "https://www.shopify.com")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
+    }
+
+    override func tearDown() async throws {
+        ShopifyCheckoutKit.configuration = Configuration()
+        try await super.tearDown()
     }
 
     func testOnCancel() {
@@ -67,8 +73,14 @@ class CheckoutConfigurableTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
+        ShopifyCheckoutKit.configuration = Configuration()
         checkoutURL = URL(string: "https://www.shopify.com")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
+    }
+
+    override func tearDown() async throws {
+        ShopifyCheckoutKit.configuration = Configuration()
+        try await super.tearDown()
     }
 
     func testBackgroundColor() {
@@ -81,6 +93,14 @@ class CheckoutConfigurableTests: XCTestCase {
         let colorScheme = ShopifyCheckoutKit.Configuration.ColorScheme.light
         shopifyCheckout.colorScheme(colorScheme)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, colorScheme)
+    }
+
+    func testColorSchemeDecoratesCheckoutURLAfterModifierRuns() throws {
+        let sheet = shopifyCheckout.colorScheme(.web)
+        let items = try XCTUnwrap(URLComponents(url: sheet.decoratedCheckoutURL, resolvingAgainstBaseURL: false)?.queryItems)
+
+        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "web_default")
+        XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "shop")
     }
 
     func testTintColor() {
