@@ -2,7 +2,6 @@ package com.shopify.checkoutkit
 
 import android.net.Uri
 import androidx.core.net.toUri
-import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
 
 internal fun Uri?.isWebLink(): Boolean = setOf(Scheme.HTTP, Scheme.HTTPS).contains(this?.scheme)
 internal fun Uri?.isMailtoLink(): Boolean = this?.scheme == Scheme.MAILTO
@@ -25,17 +24,6 @@ internal fun Uri?.redactedForLogging(): String? = when {
 }
 
 internal fun String.redactedUrlForLogging(): String = toUri().redactedForLogging().orEmpty()
-
-/**
- * Applies Checkout Kit's curated Embedded Checkout Protocol query parameters.
- */
-internal fun String.appendEcpParams(): String =
-    EmbeddedCheckoutProtocol.url(
-        this,
-        options = EmbeddedCheckoutProtocol.Options(
-            delegations = CheckoutProtocol.defaultDelegations,
-        ),
-    )
 
 private val CONFIRMATION_PATH_REGEX = Regex(pattern = "^(thank[-_]+you)$", option = RegexOption.IGNORE_CASE)
 
