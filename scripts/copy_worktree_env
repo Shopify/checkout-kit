@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Copies the repo-root .env (and other root-level machine-local config, if
+# present) from the main checkout into the current git worktree, so that a
+# subsequent `dev up` can regenerate all nested sample app configuration from it.
+#
+# Runs automatically as a `dev up` step. With --check it reports (without
+# copying) whether the current worktree is missing any root env files: exit 0
+# when nothing is needed (main checkout, or already seeded) and non-zero when a
+# copy is required, so it can serve as a `dev up` met? probe.
+#
+# This command prints file paths and status only; it never prints configured
+# values.
+
+mode="copy"
+if [[ "${1:-}" == "--check" ]]; then
+  mode="check"
+elif [[ $# -gt 0 ]]; then
+  echo "Usage: scripts/copy_worktree_env [--check]" >&2
+  exit 1
+fi
+
+CURRENT_ROOT="$(git rev-parse --show-toplevel)"
+COMMON_GIT_DIR="$(git rev-parse --path-format=absolute --git-common-dir)"
+MAIN_ROOT="$(dirname "${COMMON_GIT_DIR}")"
+
+if [[ "${CURRENT_ROOT}" == "${MAIN_ROOT}" ]]; then
+  # In the main checkout there is never anything to copy.
+  [[ "${mode}" == "check" ]] && exit 0
+  echo "Already in the main checkout (${CURRENT_ROOT}); nothing to copy."
+  exit 0
+fi
+
+# Root-level, gitignored source-of-truth files. Nested sample config
+# (Android/Swift/RN) is intentionally omitted: `dev up` regenerates it from the
+# root .env via scripts/setup_storefront_env.
+ROOT_FILES=(
+  ".env"
+  ".dev.env"
+  "local.properties"
+)
+
+copied_any="false"
+
+for rel in "${ROOT_FILES[@]}"; do
+  src="${MAIN_ROOT}/${rel}"
+  dest="${CURRENT_ROOT}/${rel}"
+
+  if [[ ! -e "${src}" ]]; then
+    continue
+  fi
+
+  if [[ -e "${dest}" ]]; then
+    [[ "${mode}" == "check" ]] && continue
+    echo "skip (exists): ${rel}"
+    continue
+  fi
+
+  # A source file exists in the main checkout but is missing here.
+  if [[ "${mode}" == "check" ]]; then
+    echo "missing: ${rel}"
+    exit 1
+  fi
+
+  cp "${src}" "${dest}"
+  echo "copied: ${rel}"
+  copied_any="true"
+done
+
+# Check mode reached here with nothing missing: the worktree is already seeded.
+[[ "${mode}" == "check" ]] && exit 0
+
+if [[ "${copied_any}" != "true" ]]; then
+  echo "No new root env files to copy."
+fi
+
+echo "Next: run \`dev up\` in this worktree to regenerate sample app config."
