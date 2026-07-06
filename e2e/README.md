@@ -5,7 +5,7 @@ Kit sample apps. Two complementary setups live here:
 
 - A **local** guest-checkout smoke flow, run with `dev rn e2e`, that exercises a
   full checkout from a seeded cart through Shopify checkout and back to the app.
-- A **CI matrix** that expands applications, OS tracks, and suites into
+- A **CI matrix** that expands applications, OS version tags, and suites into
   BrowserStack Maestro run rows, starting with a shared launch smoke.
 
 ## Run locally
@@ -61,7 +61,7 @@ the React Native sample configuration, not local in-repo native SDK overrides.
 ## Matrix
 
 CI runs are described by `config/matrix.yml`. The matrix expands applications, OS
-tracks, and suites into BrowserStack Maestro run rows. Because Bitrise has no
+version tags, and suites into BrowserStack Maestro run rows. Because Bitrise has no
 built-in matrix support, `e2e/lib/e2e_matrix.rb` performs the expansion and the
 pipeline parallelizes over the resulting rows.
 
@@ -70,7 +70,7 @@ Current applications:
 - React Native iOS sample app
 - React Native Android sample app
 
-Current OS tracks:
+Current OS version tags:
 
 - `latest`
 

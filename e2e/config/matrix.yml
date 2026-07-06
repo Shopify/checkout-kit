@@ -12,7 +12,7 @@ applications:
     app_id: com.shopify.checkoutkit.reactnativedemo
     artifact_env: E2E_REACT_NATIVE_ANDROID_APP_PATH
     ready_marker: catalog-tab
-os_tracks:
+os_version_tags:
   - latest
 suites:
   - id: launch-smoke

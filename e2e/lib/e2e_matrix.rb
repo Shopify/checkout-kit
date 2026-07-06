@@ -2,6 +2,19 @@
 
 require "yaml"
 
+# Expands the compact E2E test matrix in config/matrix.yml into one fully-resolved
+# run per (application x os_version_tag x suite) combination.
+#
+# Unlike GitHub Actions, Bitrise has no built-in matrix/strategy support, so we
+# do the fan-out ourselves: `expand` produces the JSON list of runs that the
+# pipeline consumes, and Bitrise parallelizes over it via `run_at`/`count`.
+#
+# Today the numbers make the config and the expansion look equivalent -
+# 2 applications + 1 os_version_tag + 1 suite, and 2 * 1 * 1 = 2 runs - so it can look
+# like a plain YAML-to-JSON copy. The point is the multiplication, not the copy:
+# adding a single os_version_tag (e.g. a minimum-supported OS) transparently duplicates
+# every application x suite across that OS, turning an additive config change into
+# a multiplicative set of runs without hand-writing each one.
 class E2EMatrix
   attr_reader :config_path
 
@@ -16,9 +29,9 @@ class E2EMatrix
 
   def expand
     applications.flat_map do |application|
-      os_tracks.flat_map do |os_track|
+      os_version_tags.flat_map do |os_version_tag|
         suites.map do |suite|
-          build_run(application, os_track, suite)
+          build_run(application, os_version_tag, suite)
         end
       end
     end
@@ -33,53 +46,53 @@ class E2EMatrix
     errors = []
     errors << "version must be 1" unless @config.fetch("version", nil) == 1
     validate_collection(errors, "applications", applications)
-    validate_collection(errors, "os_tracks", os_tracks)
+    validate_collection(errors, "os_version_tags", os_version_tags)
     validate_collection(errors, "suites", suites)
     validate_applications(errors)
-    validate_os_tracks(errors)
+    validate_os_version_tags(errors)
     validate_suites(errors)
     errors
   end
 
   private
 
-  def build_run(application, os_track, suite)
+  def build_run(application, os_version_tag, suite)
     platform = application.fetch("platform")
-    os_track_id = os_track_id(os_track)
+    os_version_tag_id = os_version_tag_id(os_version_tag)
     suite_id = suite.fetch("id")
     application_id = application.fetch("id")
 
     {
-      "id" => "#{application_id}-#{os_track_id}-#{suite_id}",
+      "id" => "#{application_id}-#{os_version_tag_id}-#{suite_id}",
       "application_id" => application_id,
       "target" => application.fetch("target"),
       "platform" => platform,
-      "os_track" => os_track_id,
-      "device_selector" => device_selector(platform, os_track),
+      "os_version_tag" => os_version_tag_id,
+      "device_selector" => device_selector(platform, os_version_tag),
       "app_id" => application.fetch("app_id"),
       "artifact_env" => application.fetch("artifact_env"),
       "execute" => suite.fetch("execute"),
       "ready_marker" => application.fetch("ready_marker"),
-      "status_context" => "checkout-kit/e2e/#{application_id}/#{os_track_id}/#{suite_id}"
+      "status_context" => "checkout-kit/e2e/#{application_id}/#{os_version_tag_id}/#{suite_id}"
     }
   end
 
-  def device_selector(platform, os_track)
-    return os_track.fetch("device_selector") if os_track.is_a?(Hash) && os_track.key?("device_selector")
+  def device_selector(platform, os_version_tag)
+    return os_version_tag.fetch("device_selector") if os_version_tag.is_a?(Hash) && os_version_tag.key?("device_selector")
 
-    "#{platform}:phone:#{os_track_id(os_track)}"
+    "#{platform}:phone:#{os_version_tag_id(os_version_tag)}"
   end
 
-  def os_track_id(os_track)
-    os_track.is_a?(Hash) ? os_track.fetch("id") : os_track
+  def os_version_tag_id(os_version_tag)
+    os_version_tag.is_a?(Hash) ? os_version_tag.fetch("id") : os_version_tag
   end
 
   def applications
     @config.fetch("applications", []) || []
   end
 
-  def os_tracks
-    @config.fetch("os_tracks", []) || []
+  def os_version_tags
+    @config.fetch("os_version_tags", []) || []
   end
 
   def suites
@@ -104,19 +117,19 @@ class E2EMatrix
     end
   end
 
-  def validate_os_tracks(errors)
-    return unless os_tracks.is_a?(Array)
+  def validate_os_version_tags(errors)
+    return unless os_version_tags.is_a?(Array)
 
-    ids = os_tracks.map { |os_track| safe_os_track_id(os_track) }
-    errors << "os_track ids must be unique" unless ids.compact.uniq.length == ids.compact.length
-    os_tracks.each do |os_track|
-      id = safe_os_track_id(os_track)
-      errors << "os_track missing id" if id.to_s.empty?
+    ids = os_version_tags.map { |os_version_tag| safe_os_version_tag_id(os_version_tag) }
+    errors << "os_version_tag ids must be unique" unless ids.compact.uniq.length == ids.compact.length
+    os_version_tags.each do |os_version_tag|
+      id = safe_os_version_tag_id(os_version_tag)
+      errors << "os_version_tag missing id" if id.to_s.empty?
     end
   end
 
-  def safe_os_track_id(os_track)
-    os_track_id(os_track)
+  def safe_os_version_tag_id(os_version_tag)
+    os_version_tag_id(os_version_tag)
   rescue KeyError
     nil
   end
