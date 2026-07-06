@@ -153,6 +153,38 @@ struct ModelDecodingTests {
         #expect(colorScheme == [.light, .dark])
         #expect(config.delegate == ["window.open"])
     }
+
+    @Test func preservesUnknownExtensionKeysOnSignals() throws {
+        let json = """
+        {"dev.ucp.buyer_ip":"203.0.113.7","com.example.device_id":"abc-123"}
+        """
+        let signals = try JSONDecoder().decode(Signals.self, from: Data(json.utf8))
+        let reEncoded = try JSONEncoder().encode(signals)
+        let object = try #require(try JSONSerialization.jsonObject(with: reEncoded) as? [String: Any])
+
+        #expect(object["dev.ucp.buyer_ip"] as? String == "203.0.113.7")
+        #expect(object["com.example.device_id"] as? String == "abc-123")
+    }
+
+    @Test func preservesUnknownExtensionKeysOnCheckout() throws {
+        let json = """
+        {
+          "id": "checkout-123",
+          "currency": "USD",
+          "line_items": [],
+          "links": [],
+          "status": "incomplete",
+          "totals": [],
+          "ucp": {"payment_handlers": {}, "version": "2026-04-08"},
+          "com.example.foo": "bar"
+        }
+        """
+        let checkout = try JSONDecoder().decode(Checkout.self, from: Data(json.utf8))
+        let reEncoded = try JSONEncoder().encode(checkout)
+        let object = try #require(try JSONSerialization.jsonObject(with: reEncoded) as? [String: Any])
+
+        #expect(object["com.example.foo"] as? String == "bar")
+    }
 }
 
 private func fixtureString(_ name: String) throws -> String {
