@@ -1,5 +1,6 @@
 import { type NotificationDescriptor, type RequestDescriptor } from '../descriptors';
-import { type AddressChangeResult, type AuthRequest, type AuthResult, type Checkout, type CredentialResult, type ErrorResponse, type InstrumentsChangeResult, type ReadyRequest, type ReadyResult, type WindowOpenRequest, type WindowOpenResult } from './Models';
+import { decodeCheckout, decodeErrorResponse } from './ProtocolCodecs';
+import type { AddressChangeResult, AuthRequest, AuthResult, Checkout, CredentialResult, ErrorResponse, InstrumentsChangeResult, ReadyRequest, ReadyResult, WindowOpenRequest, WindowOpenResult } from './Models';
 export declare const SPEC_VERSION = "2026-04-08";
 export declare const Delegations: {
     readonly paymentInstrumentsChange: "payment.instruments_change";
@@ -33,15 +34,15 @@ export interface CheckoutProtocolCatalogPayloads {
 }
 export type CheckoutProtocolCatalogPayloadDecoder<K extends keyof CheckoutProtocolCatalogPayloads> = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
 export declare const checkoutProtocolCatalogPayloadDecoders: {
-    "ec.error": (payload: unknown) => ErrorResponse;
-    "ec.start": (payload: unknown) => Checkout;
-    "ec.complete": (payload: unknown) => Checkout;
-    "ec.messages.change": (payload: unknown) => Checkout;
-    "ec.line_items.change": (payload: unknown) => Checkout;
-    "ec.buyer.change": (payload: unknown) => Checkout;
-    "ec.totals.change": (payload: unknown) => Checkout;
-    "ec.payment.change": (payload: unknown) => Checkout;
-    "ec.fulfillment.change": (payload: unknown) => Checkout;
+    "ec.error": typeof decodeErrorResponse;
+    "ec.start": typeof decodeCheckout;
+    "ec.complete": typeof decodeCheckout;
+    "ec.messages.change": typeof decodeCheckout;
+    "ec.line_items.change": typeof decodeCheckout;
+    "ec.buyer.change": typeof decodeCheckout;
+    "ec.totals.change": typeof decodeCheckout;
+    "ec.payment.change": typeof decodeCheckout;
+    "ec.fulfillment.change": typeof decodeCheckout;
 };
 export declare const notificationDescriptors: {
     error: NotificationDescriptor<ErrorResponse>;
