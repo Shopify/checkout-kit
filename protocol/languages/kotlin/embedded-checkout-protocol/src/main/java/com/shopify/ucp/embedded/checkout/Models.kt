@@ -199,7 +199,7 @@ public data class Context (
 /**
  * Discount codes input and applied discounts output.
  */
-@Serializable(with = CheckoutDiscountsSerializer::class)
+@Serializable
 public data class CheckoutDiscounts (
     /**
      * Discounts successfully applied (code-based and automatic).
@@ -210,15 +210,13 @@ public data class CheckoutDiscounts (
      * Discount codes to apply. Case-insensitive. Replaces previously submitted codes. Send
      * empty array to clear.
      */
-    public val codes: List<String>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val codes: List<String>? = null
 )
 
 /**
  * A discount that was successfully applied.
  */
-@Serializable(with = AppliedDiscountSerializer::class)
+@Serializable
 public data class AppliedDiscount (
     /**
      * Breakdown of where this discount was allocated. Sum of allocation amounts equals total
@@ -266,15 +264,13 @@ public data class AppliedDiscount (
     /**
      * Human-readable discount name (e.g., 'Summer Sale 20% Off').
      */
-    public val title: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val title: String
 )
 
 /**
  * Breakdown of how a discount amount was allocated to a specific target.
  */
-@Serializable(with = DiscountAllocationSerializer::class)
+@Serializable
 public data class DiscountAllocation (
     /**
      * Amount allocated to this target in ISO 4217 minor units.
@@ -284,9 +280,7 @@ public data class DiscountAllocation (
     /**
      * JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals.shipping').
      */
-    public val path: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val path: String
 )
 
 /**
@@ -304,7 +298,7 @@ public enum class DiscountMethod(public val value: String) {
  *
  * Container for fulfillment methods and availability.
  */
-@Serializable(with = CheckoutFulfillmentSerializer::class)
+@Serializable
 public data class CheckoutFulfillment (
     /**
      * Inventory availability hints.
@@ -315,9 +309,7 @@ public data class CheckoutFulfillment (
     /**
      * Fulfillment methods for cart items.
      */
-    public val methods: List<FulfillmentMethod>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val methods: List<FulfillmentMethod>? = null
 )
 
 /**
@@ -415,7 +407,7 @@ public data class FulfillmentMethod (
  *
  * A pickup location (retail store, locker, etc.).
  */
-@Serializable(with = FulfillmentDestinationSerializer::class)
+@Serializable
 public data class FulfillmentDestination (
     /**
      * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
@@ -491,9 +483,7 @@ public data class FulfillmentDestination (
     /**
      * Location name (e.g., store name).
      */
-    public val name: String? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val name: String? = null
 )
 
 /**
@@ -503,7 +493,7 @@ public data class FulfillmentDestination (
  *
  * Delivery destination address.
  */
-@Serializable(with = PostalAddressSerializer::class)
+@Serializable
 public data class PostalAddress (
     /**
      * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
@@ -562,9 +552,7 @@ public data class PostalAddress (
      * The street address.
      */
     @SerialName("street_address")
-    public val streetAddress: String? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val streetAddress: String? = null
 )
 
 /**
@@ -645,7 +633,7 @@ public data class FulfillmentOption (
 /**
  * A cost breakdown entry with a category, amount, and optional display text.
  */
-@Serializable(with = LineItemTotalSerializer::class)
+@Serializable
 public data class LineItemTotal (
     public val amount: Long,
 
@@ -660,15 +648,13 @@ public data class LineItemTotal (
      * Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
      * fee, total. Businesses MAY use additional values.
      */
-    public val type: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val type: String
 )
 
 /**
  * Line item object. Expected to use the currency of the parent object.
  */
-@Serializable(with = LineItemSerializer::class)
+@Serializable
 public data class LineItem (
     public val id: String,
     public val item: Item,
@@ -687,15 +673,13 @@ public data class LineItem (
     /**
      * Line item totals breakdown.
      */
-    public val totals: List<LineItemTotal>,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val totals: List<LineItemTotal>
 )
 
 /**
  * Product data (id, title, price, image_url).
  */
-@Serializable(with = ItemSerializer::class)
+@Serializable
 public data class Item (
     /**
      * The product identifier, often the SKU, required to resolve the product details associated
@@ -717,12 +701,10 @@ public data class Item (
     /**
      * Product title.
      */
-    public val title: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val title: String
 )
 
-@Serializable(with = LinkSerializer::class)
+@Serializable
 public data class Link (
     /**
      * Optional display text for the link. When provided, use this instead of generating from
@@ -740,15 +722,13 @@ public data class Link (
     /**
      * The actual URL pointing to the content to be displayed.
      */
-    public val url: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val url: String
 )
 
 /**
  * Container for error, warning, or info messages.
  */
-@Serializable(with = MessageSerializer::class)
+@Serializable
 public data class Message (
     public val code: String? = null,
 
@@ -806,9 +786,7 @@ public data class Message (
     /**
      * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
      */
-    public val url: String? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val url: String? = null
 )
 
 /**
@@ -849,7 +827,7 @@ public enum class MessageType(public val value: String) {
  *
  * Order details available at the time of checkout completion.
  */
-@Serializable(with = OrderConfirmationSerializer::class)
+@Serializable
 public data class OrderConfirmation (
     /**
      * Unique order identifier.
@@ -865,24 +843,20 @@ public data class OrderConfirmation (
      * Permalink to access the order on merchant site.
      */
     @SerialName("permalink_url")
-    public val permalinkURL: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val permalinkURL: String
 )
 
 /**
  * Payment configuration containing handlers.
  */
-@Serializable(with = PaymentSerializer::class)
+@Serializable
 public data class Payment (
     /**
      * The payment instruments available for this payment. Each instrument is associated with a
      * specific handler via the handler_id field. Handlers can extend the base
      * payment_instrument schema to add handler-specific fields.
      */
-    public val instruments: List<SelectedPaymentInstrument>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val instruments: List<SelectedPaymentInstrument>? = null
 )
 
 /**
@@ -948,6 +922,14 @@ public data class PaymentCredential (
 )
 
 /**
+ * Environment data provided by the platform to support authorization and abuse prevention.
+ * Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
+ * observation or independently verifiable third-party attestations. All signal keys MUST
+ * use reverse-domain naming to ensure provenance and prevent collisions when multiple
+ * extensions contribute to the shared namespace.
+ */
+
+/**
  * Checkout state indicating the current phase and required action. See Checkout Status
  * lifecycle documentation for state transition details.
  */
@@ -970,7 +952,7 @@ public enum class CheckoutStatus(public val value: String) {
  *
  * A cost breakdown entry with a category, amount, and optional display text.
  */
-@Serializable(with = CheckoutTotalSerializer::class)
+@Serializable
 public data class CheckoutTotal (
     public val amount: Long,
 
@@ -991,15 +973,13 @@ public data class CheckoutTotal (
      * Optional itemized breakdown. The parent entry is always rendered; lines are
      * supplementary. Sum of line amounts MUST equal the parent entry amount.
      */
-    public val lines: List<Line>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val lines: List<Line>? = null
 )
 
 /**
  * Sub-line entry. Additional metadata MAY be included.
  */
-@Serializable(with = LineSerializer::class)
+@Serializable
 public data class Line (
     public val amount: Long,
 
@@ -1007,9 +987,7 @@ public data class Line (
      * Human-readable label for this sub-line.
      */
     @SerialName("display_text")
-    public val displayText: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val displayText: String
 )
 
 /**
@@ -1017,7 +995,7 @@ public data class Line (
  *
  * Base UCP metadata with shared properties for all schema types.
  */
-@Serializable(with = UCPCheckoutResponseSchemaSerializer::class)
+@Serializable
 public data class UCPCheckoutResponseSchema (
     /**
      * Capability registry keyed by reverse-domain name.
@@ -1040,9 +1018,7 @@ public data class UCPCheckoutResponseSchema (
      */
     public val status: UCPCheckoutResponseSchemaStatus? = null,
 
-    public val version: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val version: String
 )
 
 /**
@@ -1051,7 +1027,7 @@ public data class UCPCheckoutResponseSchema (
  *
  * Shared foundation for all UCP entities.
  */
-@Serializable(with = CapabilityResponseSchemaSerializer::class)
+@Serializable
 public data class CapabilityResponseSchema (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
@@ -1083,9 +1059,7 @@ public data class CapabilityResponseSchema (
      * Parent capability(s) this extends. Present for extensions, absent for root capabilities.
      * Use array for multi-parent extensions.
      */
-    public val extends: Extends? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val extends: Extends? = null
 )
 
 /**
@@ -1104,7 +1078,7 @@ public sealed class Extends {
  *
  * Shared foundation for all UCP entities.
  */
-@Serializable(with = PaymentHandlerResponseSchemaSerializer::class)
+@Serializable
 public data class PaymentHandlerResponseSchema (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
@@ -1137,15 +1111,13 @@ public data class PaymentHandlerResponseSchema (
      * instrument should be considered available.
      */
     @SerialName("available_instruments")
-    public val availableInstruments: List<PaymentHandlerResponseSchemaAvailableInstrument>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val availableInstruments: List<PaymentHandlerResponseSchemaAvailableInstrument>? = null
 )
 
 /**
  * An instrument type available from a payment handler with optional constraints.
  */
-@Serializable(with = PaymentHandlerResponseSchemaAvailableInstrumentSerializer::class)
+@Serializable
 public data class PaymentHandlerResponseSchemaAvailableInstrument (
     /**
      * Constraints on this instrument type. Structure depends on instrument type and active
@@ -1157,9 +1129,7 @@ public data class PaymentHandlerResponseSchemaAvailableInstrument (
      * The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
      * schema's type constant.
      */
-    public val type: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val type: String
 )
 
 /**
@@ -1168,7 +1138,7 @@ public data class PaymentHandlerResponseSchemaAvailableInstrument (
  *
  * Shared foundation for all UCP entities.
  */
-@Serializable(with = ServiceResponseSchemaSerializer::class)
+@Serializable
 public data class ServiceResponseSchema (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
@@ -1204,9 +1174,7 @@ public data class ServiceResponseSchema (
     /**
      * Transport protocol for this service binding.
      */
-    public val transport: Transport,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val transport: Transport
 )
 
 /**
@@ -1215,7 +1183,7 @@ public data class ServiceResponseSchema (
  * Per-session configuration for embedded transport binding. Allows businesses to vary EP
  * availability and delegations based on cart contents, agent authorization, or policy.
  */
-@Serializable(with = EmbeddedTransportConfigSerializer::class)
+@Serializable
 public data class EmbeddedTransportConfig (
     /**
      * Color schemes the business supports. Hosts use ec_color_scheme query parameter to request
@@ -1228,9 +1196,7 @@ public data class EmbeddedTransportConfig (
      * Delegations the business allows. At service-level, declares available delegations. In UCP
      * responses, confirms accepted delegations for this session.
      */
-    public val delegate: List<String>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val delegate: List<String>? = null
 )
 
 @Serializable
@@ -1262,7 +1228,7 @@ public enum class UCPCheckoutResponseSchemaStatus(public val value: String) {
 /**
  * Order schema with line items, buyer-facing fulfillment expectations, and event logs.
  */
-@Serializable(with = OrderSerializer::class)
+@Serializable
 public data class Order (
     /**
      * Post-order events (refunds, returns, credits, disputes, cancellations, etc.) that exist
@@ -1325,9 +1291,7 @@ public data class Order (
      */
     public val totals: List<CheckoutTotal>,
 
-    public val ucp: UCPOrderResponseSchema,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val ucp: UCPOrderResponseSchema
 )
 
 /**
@@ -1335,7 +1299,7 @@ public data class Order (
  * movements but can be any post-order change. Polymorphic type that can optionally
  * reference line items.
  */
-@Serializable(with = AdjustmentSerializer::class)
+@Serializable
 public data class Adjustment (
     /**
      * Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
@@ -1375,12 +1339,10 @@ public data class Adjustment (
      * price_adjustment, dispute, cancellation. Can be any value that makes sense for the
      * merchant's business.
      */
-    public val type: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val type: String
 )
 
-@Serializable(with = AdjustmentLineItemSerializer::class)
+@Serializable
 public data class AdjustmentLineItem (
     /**
      * Line item ID reference.
@@ -1391,9 +1353,7 @@ public data class AdjustmentLineItem (
      * Signed quantity affected by this adjustment. Negative values represent reductions (e.g.
      * returns); positive values represent additions (e.g. exchanges).
      */
-    public val quantity: Long,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val quantity: Long
 )
 
 /**
@@ -1409,7 +1369,7 @@ public enum class AdjustmentStatus(public val value: String) {
 /**
  * Fulfillment data: buyer expectations and what actually happened.
  */
-@Serializable(with = FulfillmentSerializer::class)
+@Serializable
 public data class Fulfillment (
     /**
      * Append-only event log of actual shipments. Each event references line items by ID.
@@ -1420,16 +1380,14 @@ public data class Fulfillment (
      * Buyer-facing groups representing when/how items will be delivered. Can be split, merged,
      * or adjusted post-order.
      */
-    public val expectations: List<Expectation>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val expectations: List<Expectation>? = null
 )
 
 /**
  * Append-only fulfillment event representing an actual shipment. References line items by
  * ID.
  */
-@Serializable(with = FulfillmentEventSerializer::class)
+@Serializable
 public data class FulfillmentEvent (
     /**
      * Carrier name (e.g., 'FedEx', 'USPS').
@@ -1477,12 +1435,10 @@ public data class FulfillmentEvent (
      * failed_attempt (delivery attempt failed), canceled (fulfillment canceled), undeliverable
      * (cannot be delivered), returned_to_sender (returned to merchant).
      */
-    public val type: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val type: String
 )
 
-@Serializable(with = EventLineItemSerializer::class)
+@Serializable
 public data class EventLineItem (
     /**
      * Line item ID reference.
@@ -1492,9 +1448,7 @@ public data class EventLineItem (
     /**
      * Quantity fulfilled in this event.
      */
-    public val quantity: Long,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val quantity: Long
 )
 
 /**
@@ -1502,7 +1456,7 @@ public data class EventLineItem (
  * 'package'). Can be split, merged, or adjusted post-order to set buyer expectations for
  * when/how items arrive.
  */
-@Serializable(with = ExpectationSerializer::class)
+@Serializable
 public data class Expectation (
     /**
      * Human-readable delivery description (e.g., 'Arrives in 5-8 business days').
@@ -1536,12 +1490,10 @@ public data class Expectation (
      * Delivery method type (shipping, pickup, digital).
      */
     @SerialName("method_type")
-    public val methodType: MethodType,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val methodType: MethodType
 )
 
-@Serializable(with = ExpectationLineItemSerializer::class)
+@Serializable
 public data class ExpectationLineItem (
     /**
      * Line item ID reference.
@@ -1551,9 +1503,7 @@ public data class ExpectationLineItem (
     /**
      * Quantity of this item in this expectation.
      */
-    public val quantity: Long,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val quantity: Long
 )
 
 /**
@@ -1566,7 +1516,7 @@ public enum class MethodType(public val value: String) {
     @SerialName("shipping") Shipping("shipping");
 }
 
-@Serializable(with = OrderLineItemSerializer::class)
+@Serializable
 public data class OrderLineItem (
     /**
      * Line item identifier.
@@ -1599,15 +1549,13 @@ public data class OrderLineItem (
     /**
      * Line item totals breakdown.
      */
-    public val totals: List<LineItemTotal>,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val totals: List<LineItemTotal>
 )
 
 /**
  * Quantity tracking for the line item.
  */
-@Serializable(with = LineItemQuantitySerializer::class)
+@Serializable
 public data class LineItemQuantity (
     /**
      * Quantity fulfilled so far.
@@ -1623,9 +1571,7 @@ public data class LineItemQuantity (
      * Current total active quantity. May differ from original due to post-order modifications
      * (e.g., returns or cancellations).
      */
-    public val total: Long,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val total: Long
 )
 
 /**
@@ -1646,7 +1592,7 @@ public enum class LineItemStatus(public val value: String) {
  *
  * Base UCP metadata with shared properties for all schema types.
  */
-@Serializable(with = UCPOrderResponseSchemaSerializer::class)
+@Serializable
 public data class UCPOrderResponseSchema (
     /**
      * Capability registry keyed by reverse-domain name.
@@ -1669,15 +1615,13 @@ public data class UCPOrderResponseSchema (
      */
     public val status: UCPCheckoutResponseSchemaStatus? = null,
 
-    public val version: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val version: String
 )
 
 /**
  * Shared foundation for all UCP entities.
  */
-@Serializable(with = ServiceSerializer::class)
+@Serializable
 public data class Service (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
@@ -1713,9 +1657,7 @@ public data class Service (
     /**
      * Transport protocol for this service binding.
      */
-    public val transport: Transport,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val transport: Transport
 )
 
 /**
@@ -1749,7 +1691,7 @@ public data class ErrorResponse (
  *
  * Base UCP metadata with shared properties for all schema types.
  */
-@Serializable(with = ErrorResponseUcpSerializer::class)
+@Serializable
 public data class ErrorResponseUcp (
     /**
      * Capability registry keyed by reverse-domain name.
@@ -1772,9 +1714,7 @@ public data class ErrorResponseUcp (
      */
     public val status: ErrorStatus,
 
-    public val version: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val version: String
 )
 
 /**
@@ -1791,7 +1731,7 @@ public enum class ErrorStatus(public val value: String) {
  * Generic error response when business logic prevents resource creation or failed to
  * retrieve resource. Used when no valid resource can be established.
  */
-@Serializable(with = InstrumentsChangeResultSerializer::class)
+@Serializable
 public data class InstrumentsChangeResult (
     /**
      * Partial checkout update with payment instrument selection.
@@ -1812,22 +1752,18 @@ public data class InstrumentsChangeResult (
     /**
      * Array of messages describing why the operation failed.
      */
-    public val messages: List<Message>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val messages: List<Message>? = null
 )
 
 /**
  * Partial checkout update with payment instrument selection.
  */
-@Serializable(with = InstrumentsChangeCheckoutSerializer::class)
+@Serializable
 public data class InstrumentsChangeCheckout (
     /**
      * Payment instruments with selected instrument ID.
      */
-    public val payment: InstrumentsChangePayment? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val payment: InstrumentsChangePayment? = null
 )
 
 /**
@@ -1835,7 +1771,7 @@ public data class InstrumentsChangeCheckout (
  *
  * Payment configuration containing handlers.
  */
-@Serializable(with = InstrumentsChangePaymentSerializer::class)
+@Serializable
 public data class InstrumentsChangePayment (
     /**
      * The payment instruments available for this payment. Each instrument is associated with a
@@ -1848,9 +1784,7 @@ public data class InstrumentsChangePayment (
      * ID of the selected payment instrument.
      */
     @SerialName("selected_instrument_id")
-    public val selectedInstrumentID: String? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val selectedInstrumentID: String? = null
 )
 
 /**
@@ -1863,7 +1797,7 @@ public data class InstrumentsChangePayment (
  *
  * UCP metadata with status 'error'. Use for response branches that carry error information.
  */
-@Serializable(with = InstrumentsChangeResultUcpSerializer::class)
+@Serializable
 public data class InstrumentsChangeResultUcp (
     /**
      * Capability registry keyed by reverse-domain name.
@@ -1886,9 +1820,7 @@ public data class InstrumentsChangeResultUcp (
      */
     public val status: UCPCheckoutResponseSchemaStatus,
 
-    public val version: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val version: String
 )
 
 /**
@@ -1897,7 +1829,7 @@ public data class InstrumentsChangeResultUcp (
  * Capability reference in responses. Only name/version required to confirm active
  * capabilities.
  */
-@Serializable(with = CapabilityElementSerializer::class)
+@Serializable
 public data class CapabilityElement (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
@@ -1929,9 +1861,7 @@ public data class CapabilityElement (
      * Parent capability(s) this extends. Present for extensions, absent for root capabilities.
      * Use array for multi-parent extensions.
      */
-    public val extends: Extends? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val extends: Extends? = null
 )
 
 /**
@@ -1940,7 +1870,7 @@ public data class CapabilityElement (
  * Handler reference in responses. May include full config state for runtime usage of the
  * handler.
  */
-@Serializable(with = PaymentHandlerElementSerializer::class)
+@Serializable
 public data class PaymentHandlerElement (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
@@ -1973,15 +1903,13 @@ public data class PaymentHandlerElement (
      * instrument should be considered available.
      */
     @SerialName("available_instruments")
-    public val availableInstruments: List<PaymentHandlerAvailableInstrument>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val availableInstruments: List<PaymentHandlerAvailableInstrument>? = null
 )
 
 /**
  * An instrument type available from a payment handler with optional constraints.
  */
-@Serializable(with = PaymentHandlerAvailableInstrumentSerializer::class)
+@Serializable
 public data class PaymentHandlerAvailableInstrument (
     /**
      * Constraints on this instrument type. Structure depends on instrument type and active
@@ -1993,15 +1921,13 @@ public data class PaymentHandlerAvailableInstrument (
      * The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
      * schema's type constant.
      */
-    public val type: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val type: String
 )
 
 /**
  * Shared foundation for all UCP entities.
  */
-@Serializable(with = EmbeddedServiceSerializer::class)
+@Serializable
 public data class EmbeddedService (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
@@ -2037,9 +1963,7 @@ public data class EmbeddedService (
     /**
      * Transport protocol for this service binding.
      */
-    public val transport: Transport,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val transport: Transport
 )
 
 /**
@@ -2048,7 +1972,7 @@ public data class EmbeddedService (
  * Generic error response when business logic prevents resource creation or failed to
  * retrieve resource. Used when no valid resource can be established.
  */
-@Serializable(with = CredentialResultSerializer::class)
+@Serializable
 public data class CredentialResult (
     /**
      * Partial checkout update with payment credential.
@@ -2069,19 +1993,15 @@ public data class CredentialResult (
     /**
      * Array of messages describing why the operation failed.
      */
-    public val messages: List<Message>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val messages: List<Message>? = null
 )
 
 /**
  * Partial checkout update with payment credential.
  */
-@Serializable(with = CredentialCheckoutSerializer::class)
+@Serializable
 public data class CredentialCheckout (
-    public val payment: Payment? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val payment: Payment? = null
 )
 
 /**
@@ -2090,7 +2010,7 @@ public data class CredentialCheckout (
  * Generic error response when business logic prevents resource creation or failed to
  * retrieve resource. Used when no valid resource can be established.
  */
-@Serializable(with = AddressChangeResultSerializer::class)
+@Serializable
 public data class AddressChangeResult (
     /**
      * Partial checkout update with fulfillment address selection.
@@ -2111,22 +2031,18 @@ public data class AddressChangeResult (
     /**
      * Array of messages describing why the operation failed.
      */
-    public val messages: List<Message>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val messages: List<Message>? = null
 )
 
 /**
  * Partial checkout update with fulfillment address selection.
  */
-@Serializable(with = AddressChangeCheckoutSerializer::class)
+@Serializable
 public data class AddressChangeCheckout (
     /**
      * Updated fulfillment with new selected destination and destinations.
      */
-    public val fulfillment: CheckoutFulfillmentClass? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val fulfillment: CheckoutFulfillmentClass? = null
 )
 
 /**
@@ -2134,7 +2050,7 @@ public data class AddressChangeCheckout (
  *
  * Container for fulfillment methods and availability.
  */
-@Serializable(with = CheckoutFulfillmentClassSerializer::class)
+@Serializable
 public data class CheckoutFulfillmentClass (
     /**
      * Inventory availability hints.
@@ -2145,28 +2061,22 @@ public data class CheckoutFulfillmentClass (
     /**
      * Fulfillment methods for cart items.
      */
-    public val methods: List<FulfillmentMethod>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val methods: List<FulfillmentMethod>? = null
 )
 
-@Serializable(with = ReadyRequestSerializer::class)
+@Serializable
 public data class ReadyRequest (
     public val auth: Auth? = null,
 
     /**
      * Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
      */
-    public val delegate: List<String>,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val delegate: List<String>
 )
 
-@Serializable(with = AuthSerializer::class)
+@Serializable
 public data class Auth (
-    public val type: String? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val type: String? = null
 )
 
 /**
@@ -2175,7 +2085,7 @@ public data class Auth (
  * Generic error response when business logic prevents resource creation or failed to
  * retrieve resource. Used when no valid resource can be established.
  */
-@Serializable(with = ReadyResultSerializer::class)
+@Serializable
 public data class ReadyResult (
     /**
      * Initial delegation state from host. Fields are permitted only when the corresponding
@@ -2207,25 +2117,21 @@ public data class ReadyResult (
     /**
      * Array of messages describing why the operation failed.
      */
-    public val messages: List<Message>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val messages: List<Message>? = null
 )
 
 /**
  * Initial delegation state from host. Fields are permitted only when the corresponding
  * delegation is accepted.
  */
-@Serializable(with = ReadyCheckoutSerializer::class)
+@Serializable
 public data class ReadyCheckout (
     public val fulfillment: CheckoutFulfillmentClass? = null,
 
     /**
      * Payment instruments with selected instrument ID.
      */
-    public val payment: ReadyPayment? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val payment: ReadyPayment? = null
 )
 
 /**
@@ -2233,7 +2139,7 @@ public data class ReadyCheckout (
  *
  * Payment configuration containing handlers.
  */
-@Serializable(with = ReadyPaymentSerializer::class)
+@Serializable
 public data class ReadyPayment (
     /**
      * The payment instruments available for this payment. Each instrument is associated with a
@@ -2246,29 +2152,23 @@ public data class ReadyPayment (
      * ID of the selected payment instrument.
      */
     @SerialName("selected_instrument_id")
-    public val selectedInstrumentID: String? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val selectedInstrumentID: String? = null
 )
 
 /**
  * Channel upgrade instructions. If present, switch to provided MessagePort.
  */
-@Serializable(with = UpgradeSerializer::class)
+@Serializable
 public data class Upgrade (
     /**
      * MessagePort for upgraded channel. Runtime type is MessagePort.
      */
-    public val port: JsonObject? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val port: JsonObject? = null
 )
 
-@Serializable(with = AuthRequestSerializer::class)
+@Serializable
 public data class AuthRequest (
-    public val type: String? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val type: String? = null
 )
 
 /**
@@ -2277,7 +2177,7 @@ public data class AuthRequest (
  * Generic error response when business logic prevents resource creation or failed to
  * retrieve resource. Used when no valid resource can be established.
  */
-@Serializable(with = AuthResultSerializer::class)
+@Serializable
 public data class AuthResult (
     /**
      * Requested authorization. Some common examples include API key and OAuth token.
@@ -2298,19 +2198,15 @@ public data class AuthResult (
     /**
      * Array of messages describing why the operation failed.
      */
-    public val messages: List<Message>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val messages: List<Message>? = null
 )
 
-@Serializable(with = WindowOpenRequestSerializer::class)
+@Serializable
 public data class WindowOpenRequest (
     /**
      * The URL of the resource to present.
      */
-    public val url: String,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val url: String
 )
 
 /**
@@ -2319,7 +2215,7 @@ public data class WindowOpenRequest (
  * Generic error response when business logic prevents resource creation or failed to
  * retrieve resource. Used when no valid resource can be established.
  */
-@Serializable(with = WindowOpenResultSerializer::class)
+@Serializable
 public data class WindowOpenResult (
     /**
      * UCP protocol metadata. Status MUST be 'error' for error response.
@@ -2335,9 +2231,7 @@ public data class WindowOpenResult (
     /**
      * Array of messages describing why the operation failed.
      */
-    public val messages: List<Message>? = null,
-
-    public val additionalProperties: Map<String, JsonElement> = emptyMap()
+    public val messages: List<Message>? = null
 )
 
 public object CheckoutSerializer : KSerializer<Checkout> {
@@ -2375,6 +2269,7 @@ public object CheckoutSerializer : KSerializer<Checkout> {
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("Checkout can only be serialized to JSON")
         val json = output.json
+        val known = setOf("attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at", "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "signals", "status", "totals", "ucp")
         val map = linkedMapOf<String, JsonElement>()
         value.attribution?.let { map["attribution"] = json.encodeToJsonElement(serializer<Map<String, String>>(), it) }
         value.buyer?.let { map["buyer"] = json.encodeToJsonElement(serializer<Buyer>(), it) }
@@ -2394,7 +2289,9 @@ public object CheckoutSerializer : KSerializer<Checkout> {
         map["status"] = json.encodeToJsonElement(serializer<CheckoutStatus>(), value.status)
         map["totals"] = json.encodeToJsonElement(serializer<List<CheckoutTotal>>(), value.totals)
         map["ucp"] = json.encodeToJsonElement(serializer<UCPCheckoutResponseSchema>(), value.ucp)
-        map.putAll(value.additionalProperties)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }
@@ -2419,12 +2316,15 @@ public object BuyerSerializer : KSerializer<Buyer> {
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("Buyer can only be serialized to JSON")
         val json = output.json
+        val known = setOf("email", "first_name", "last_name", "phone_number")
         val map = linkedMapOf<String, JsonElement>()
         value.email?.let { map["email"] = json.encodeToJsonElement(serializer<String>(), it) }
         value.firstName?.let { map["first_name"] = json.encodeToJsonElement(serializer<String>(), it) }
         value.lastName?.let { map["last_name"] = json.encodeToJsonElement(serializer<String>(), it) }
         value.phoneNumber?.let { map["phone_number"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }
@@ -2452,6 +2352,7 @@ public object ContextSerializer : KSerializer<Context> {
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("Context can only be serialized to JSON")
         val json = output.json
+        val known = setOf("address_country", "address_region", "currency", "eligibility", "intent", "language", "postal_code")
         val map = linkedMapOf<String, JsonElement>()
         value.addressCountry?.let { map["address_country"] = json.encodeToJsonElement(serializer<String>(), it) }
         value.addressRegion?.let { map["address_region"] = json.encodeToJsonElement(serializer<String>(), it) }
@@ -2460,125 +2361,9 @@ public object ContextSerializer : KSerializer<Context> {
         value.intent?.let { map["intent"] = json.encodeToJsonElement(serializer<String>(), it) }
         value.language?.let { map["language"] = json.encodeToJsonElement(serializer<String>(), it) }
         value.postalCode?.let { map["postal_code"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object CheckoutDiscountsSerializer : KSerializer<CheckoutDiscounts> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.CheckoutDiscounts")
-    override fun deserialize(decoder: Decoder): CheckoutDiscounts {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("CheckoutDiscounts can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("applied", "codes")
-        return CheckoutDiscounts(
-            applied = obj["applied"]?.let { json.decodeFromJsonElement(serializer<List<AppliedDiscount>>(), it) },
-            codes = obj["codes"]?.let { json.decodeFromJsonElement(serializer<List<String>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: CheckoutDiscounts) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("CheckoutDiscounts can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.applied?.let { map["applied"] = json.encodeToJsonElement(serializer<List<AppliedDiscount>>(), it) }
-        value.codes?.let { map["codes"] = json.encodeToJsonElement(serializer<List<String>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object AppliedDiscountSerializer : KSerializer<AppliedDiscount> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.AppliedDiscount")
-    override fun deserialize(decoder: Decoder): AppliedDiscount {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("AppliedDiscount can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("allocations", "amount", "automatic", "code", "eligibility", "method", "priority", "provisional", "title")
-        return AppliedDiscount(
-            allocations = obj["allocations"]?.let { json.decodeFromJsonElement(serializer<List<DiscountAllocation>>(), it) },
-            amount = json.decodeFromJsonElement(serializer<Long>(), obj["amount"] ?: throw SerializationException("Missing amount for AppliedDiscount")),
-            automatic = obj["automatic"]?.let { json.decodeFromJsonElement(serializer<Boolean>(), it) },
-            code = obj["code"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            eligibility = obj["eligibility"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            method = obj["method"]?.let { json.decodeFromJsonElement(serializer<DiscountMethod>(), it) },
-            priority = obj["priority"]?.let { json.decodeFromJsonElement(serializer<Long>(), it) },
-            provisional = obj["provisional"]?.let { json.decodeFromJsonElement(serializer<Boolean>(), it) },
-            title = json.decodeFromJsonElement(serializer<String>(), obj["title"] ?: throw SerializationException("Missing title for AppliedDiscount")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: AppliedDiscount) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("AppliedDiscount can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.allocations?.let { map["allocations"] = json.encodeToJsonElement(serializer<List<DiscountAllocation>>(), it) }
-        map["amount"] = json.encodeToJsonElement(serializer<Long>(), value.amount)
-        value.automatic?.let { map["automatic"] = json.encodeToJsonElement(serializer<Boolean>(), it) }
-        value.code?.let { map["code"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.eligibility?.let { map["eligibility"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.method?.let { map["method"] = json.encodeToJsonElement(serializer<DiscountMethod>(), it) }
-        value.priority?.let { map["priority"] = json.encodeToJsonElement(serializer<Long>(), it) }
-        value.provisional?.let { map["provisional"] = json.encodeToJsonElement(serializer<Boolean>(), it) }
-        map["title"] = json.encodeToJsonElement(serializer<String>(), value.title)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object DiscountAllocationSerializer : KSerializer<DiscountAllocation> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.DiscountAllocation")
-    override fun deserialize(decoder: Decoder): DiscountAllocation {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("DiscountAllocation can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("amount", "path")
-        return DiscountAllocation(
-            amount = json.decodeFromJsonElement(serializer<Long>(), obj["amount"] ?: throw SerializationException("Missing amount for DiscountAllocation")),
-            path = json.decodeFromJsonElement(serializer<String>(), obj["path"] ?: throw SerializationException("Missing path for DiscountAllocation")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: DiscountAllocation) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("DiscountAllocation can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["amount"] = json.encodeToJsonElement(serializer<Long>(), value.amount)
-        map["path"] = json.encodeToJsonElement(serializer<String>(), value.path)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object CheckoutFulfillmentSerializer : KSerializer<CheckoutFulfillment> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.CheckoutFulfillment")
-    override fun deserialize(decoder: Decoder): CheckoutFulfillment {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("CheckoutFulfillment can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("available_methods", "methods")
-        return CheckoutFulfillment(
-            availableMethods = obj["available_methods"]?.let { json.decodeFromJsonElement(serializer<List<FulfillmentAvailableMethod>>(), it) },
-            methods = obj["methods"]?.let { json.decodeFromJsonElement(serializer<List<FulfillmentMethod>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: CheckoutFulfillment) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("CheckoutFulfillment can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.availableMethods?.let { map["available_methods"] = json.encodeToJsonElement(serializer<List<FulfillmentAvailableMethod>>(), it) }
-        value.methods?.let { map["methods"] = json.encodeToJsonElement(serializer<List<FulfillmentMethod>>(), it) }
-        map.putAll(value.additionalProperties)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }
@@ -2603,12 +2388,15 @@ public object FulfillmentAvailableMethodSerializer : KSerializer<FulfillmentAvai
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("FulfillmentAvailableMethod can only be serialized to JSON")
         val json = output.json
+        val known = setOf("description", "fulfillable_on", "line_item_ids", "type")
         val map = linkedMapOf<String, JsonElement>()
         value.description?.let { map["description"] = json.encodeToJsonElement(serializer<String>(), it) }
         value.fulfillableOn?.let { map["fulfillable_on"] = json.encodeToJsonElement(serializer<String>(), it) }
         map["line_item_ids"] = json.encodeToJsonElement(serializer<List<String>>(), value.lineItemIDS)
         map["type"] = json.encodeToJsonElement(serializer<FulfillmentMethodType>(), value.type)
-        map.putAll(value.additionalProperties)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }
@@ -2635,6 +2423,7 @@ public object FulfillmentMethodSerializer : KSerializer<FulfillmentMethod> {
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("FulfillmentMethod can only be serialized to JSON")
         val json = output.json
+        val known = setOf("destinations", "groups", "id", "line_item_ids", "selected_destination_id", "type")
         val map = linkedMapOf<String, JsonElement>()
         value.destinations?.let { map["destinations"] = json.encodeToJsonElement(serializer<List<FulfillmentDestination>>(), it) }
         value.groups?.let { map["groups"] = json.encodeToJsonElement(serializer<List<FulfillmentGroup>>(), it) }
@@ -2642,93 +2431,9 @@ public object FulfillmentMethodSerializer : KSerializer<FulfillmentMethod> {
         map["line_item_ids"] = json.encodeToJsonElement(serializer<List<String>>(), value.lineItemIDS)
         value.selectedDestinationID?.let { map["selected_destination_id"] = json.encodeToJsonElement(serializer<String>(), it) }
         map["type"] = json.encodeToJsonElement(serializer<FulfillmentMethodType>(), value.type)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object FulfillmentDestinationSerializer : KSerializer<FulfillmentDestination> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.FulfillmentDestination")
-    override fun deserialize(decoder: Decoder): FulfillmentDestination {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("FulfillmentDestination can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("address_country", "address_locality", "address_region", "extended_address", "first_name", "last_name", "phone_number", "postal_code", "street_address", "id", "address", "name")
-        return FulfillmentDestination(
-            addressCountry = obj["address_country"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            addressLocality = obj["address_locality"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            addressRegion = obj["address_region"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            extendedAddress = obj["extended_address"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            firstName = obj["first_name"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            lastName = obj["last_name"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            phoneNumber = obj["phone_number"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            postalCode = obj["postal_code"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            streetAddress = obj["street_address"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for FulfillmentDestination")),
-            address = obj["address"]?.let { json.decodeFromJsonElement(serializer<PostalAddress>(), it) },
-            name = obj["name"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: FulfillmentDestination) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("FulfillmentDestination can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.addressCountry?.let { map["address_country"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.addressLocality?.let { map["address_locality"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.addressRegion?.let { map["address_region"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.extendedAddress?.let { map["extended_address"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.firstName?.let { map["first_name"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.lastName?.let { map["last_name"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.phoneNumber?.let { map["phone_number"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.postalCode?.let { map["postal_code"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.streetAddress?.let { map["street_address"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        value.address?.let { map["address"] = json.encodeToJsonElement(serializer<PostalAddress>(), it) }
-        value.name?.let { map["name"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object PostalAddressSerializer : KSerializer<PostalAddress> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.PostalAddress")
-    override fun deserialize(decoder: Decoder): PostalAddress {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("PostalAddress can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("address_country", "address_locality", "address_region", "extended_address", "first_name", "last_name", "phone_number", "postal_code", "street_address")
-        return PostalAddress(
-            addressCountry = obj["address_country"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            addressLocality = obj["address_locality"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            addressRegion = obj["address_region"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            extendedAddress = obj["extended_address"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            firstName = obj["first_name"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            lastName = obj["last_name"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            phoneNumber = obj["phone_number"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            postalCode = obj["postal_code"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            streetAddress = obj["street_address"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: PostalAddress) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("PostalAddress can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.addressCountry?.let { map["address_country"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.addressLocality?.let { map["address_locality"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.addressRegion?.let { map["address_region"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.extendedAddress?.let { map["extended_address"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.firstName?.let { map["first_name"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.lastName?.let { map["last_name"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.phoneNumber?.let { map["phone_number"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.postalCode?.let { map["postal_code"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.streetAddress?.let { map["street_address"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }
@@ -2753,12 +2458,15 @@ public object FulfillmentGroupSerializer : KSerializer<FulfillmentGroup> {
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("FulfillmentGroup can only be serialized to JSON")
         val json = output.json
+        val known = setOf("id", "line_item_ids", "options", "selected_option_id")
         val map = linkedMapOf<String, JsonElement>()
         map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
         map["line_item_ids"] = json.encodeToJsonElement(serializer<List<String>>(), value.lineItemIDS)
         value.options?.let { map["options"] = json.encodeToJsonElement(serializer<List<FulfillmentOption>>(), it) }
         value.selectedOptionID?.let { map["selected_option_id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }
@@ -2786,6 +2494,7 @@ public object FulfillmentOptionSerializer : KSerializer<FulfillmentOption> {
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("FulfillmentOption can only be serialized to JSON")
         val json = output.json
+        val known = setOf("carrier", "description", "earliest_fulfillment_time", "id", "latest_fulfillment_time", "title", "totals")
         val map = linkedMapOf<String, JsonElement>()
         value.carrier?.let { map["carrier"] = json.encodeToJsonElement(serializer<String>(), it) }
         value.description?.let { map["description"] = json.encodeToJsonElement(serializer<String>(), it) }
@@ -2794,217 +2503,9 @@ public object FulfillmentOptionSerializer : KSerializer<FulfillmentOption> {
         value.latestFulfillmentTime?.let { map["latest_fulfillment_time"] = json.encodeToJsonElement(serializer<String>(), it) }
         map["title"] = json.encodeToJsonElement(serializer<String>(), value.title)
         map["totals"] = json.encodeToJsonElement(serializer<List<LineItemTotal>>(), value.totals)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object LineItemTotalSerializer : KSerializer<LineItemTotal> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.LineItemTotal")
-    override fun deserialize(decoder: Decoder): LineItemTotal {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("LineItemTotal can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("amount", "display_text", "type")
-        return LineItemTotal(
-            amount = json.decodeFromJsonElement(serializer<Long>(), obj["amount"] ?: throw SerializationException("Missing amount for LineItemTotal")),
-            displayText = obj["display_text"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            type = json.decodeFromJsonElement(serializer<String>(), obj["type"] ?: throw SerializationException("Missing type for LineItemTotal")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: LineItemTotal) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("LineItemTotal can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["amount"] = json.encodeToJsonElement(serializer<Long>(), value.amount)
-        value.displayText?.let { map["display_text"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object LineItemSerializer : KSerializer<LineItem> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.LineItem")
-    override fun deserialize(decoder: Decoder): LineItem {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("LineItem can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("id", "item", "parent_id", "quantity", "totals")
-        return LineItem(
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for LineItem")),
-            item = json.decodeFromJsonElement(serializer<Item>(), obj["item"] ?: throw SerializationException("Missing item for LineItem")),
-            parentID = obj["parent_id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            quantity = json.decodeFromJsonElement(serializer<Long>(), obj["quantity"] ?: throw SerializationException("Missing quantity for LineItem")),
-            totals = json.decodeFromJsonElement(serializer<List<LineItemTotal>>(), obj["totals"] ?: throw SerializationException("Missing totals for LineItem")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: LineItem) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("LineItem can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        map["item"] = json.encodeToJsonElement(serializer<Item>(), value.item)
-        value.parentID?.let { map["parent_id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["quantity"] = json.encodeToJsonElement(serializer<Long>(), value.quantity)
-        map["totals"] = json.encodeToJsonElement(serializer<List<LineItemTotal>>(), value.totals)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ItemSerializer : KSerializer<Item> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Item")
-    override fun deserialize(decoder: Decoder): Item {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Item can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("id", "image_url", "price", "title")
-        return Item(
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for Item")),
-            imageURL = obj["image_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            price = json.decodeFromJsonElement(serializer<Long>(), obj["price"] ?: throw SerializationException("Missing price for Item")),
-            title = json.decodeFromJsonElement(serializer<String>(), obj["title"] ?: throw SerializationException("Missing title for Item")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Item) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Item can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        value.imageURL?.let { map["image_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["price"] = json.encodeToJsonElement(serializer<Long>(), value.price)
-        map["title"] = json.encodeToJsonElement(serializer<String>(), value.title)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object LinkSerializer : KSerializer<Link> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Link")
-    override fun deserialize(decoder: Decoder): Link {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Link can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("title", "type", "url")
-        return Link(
-            title = obj["title"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            type = json.decodeFromJsonElement(serializer<String>(), obj["type"] ?: throw SerializationException("Missing type for Link")),
-            url = json.decodeFromJsonElement(serializer<String>(), obj["url"] ?: throw SerializationException("Missing url for Link")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Link) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Link can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.title?.let { map["title"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
-        map["url"] = json.encodeToJsonElement(serializer<String>(), value.url)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object MessageSerializer : KSerializer<Message> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Message")
-    override fun deserialize(decoder: Decoder): Message {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Message can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("code", "content", "content_type", "path", "severity", "type", "image_url", "presentation", "url")
-        return Message(
-            code = obj["code"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            content = json.decodeFromJsonElement(serializer<String>(), obj["content"] ?: throw SerializationException("Missing content for Message")),
-            contentType = obj["content_type"]?.let { json.decodeFromJsonElement(serializer<ContentType>(), it) },
-            path = obj["path"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            severity = obj["severity"]?.let { json.decodeFromJsonElement(serializer<Severity>(), it) },
-            type = json.decodeFromJsonElement(serializer<MessageType>(), obj["type"] ?: throw SerializationException("Missing type for Message")),
-            imageURL = obj["image_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            presentation = obj["presentation"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            url = obj["url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Message) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Message can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.code?.let { map["code"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["content"] = json.encodeToJsonElement(serializer<String>(), value.content)
-        value.contentType?.let { map["content_type"] = json.encodeToJsonElement(serializer<ContentType>(), it) }
-        value.path?.let { map["path"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.severity?.let { map["severity"] = json.encodeToJsonElement(serializer<Severity>(), it) }
-        map["type"] = json.encodeToJsonElement(serializer<MessageType>(), value.type)
-        value.imageURL?.let { map["image_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.presentation?.let { map["presentation"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.url?.let { map["url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object OrderConfirmationSerializer : KSerializer<OrderConfirmation> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.OrderConfirmation")
-    override fun deserialize(decoder: Decoder): OrderConfirmation {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("OrderConfirmation can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("id", "label", "permalink_url")
-        return OrderConfirmation(
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for OrderConfirmation")),
-            label = obj["label"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            permalinkURL = json.decodeFromJsonElement(serializer<String>(), obj["permalink_url"] ?: throw SerializationException("Missing permalink_url for OrderConfirmation")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: OrderConfirmation) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("OrderConfirmation can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        value.label?.let { map["label"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["permalink_url"] = json.encodeToJsonElement(serializer<String>(), value.permalinkURL)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object PaymentSerializer : KSerializer<Payment> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Payment")
-    override fun deserialize(decoder: Decoder): Payment {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Payment can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("instruments")
-        return Payment(
-            instruments = obj["instruments"]?.let { json.decodeFromJsonElement(serializer<List<SelectedPaymentInstrument>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Payment) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Payment can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.instruments?.let { map["instruments"] = json.encodeToJsonElement(serializer<List<SelectedPaymentInstrument>>(), it) }
-        map.putAll(value.additionalProperties)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }
@@ -3032,6 +2533,7 @@ public object SelectedPaymentInstrumentSerializer : KSerializer<SelectedPaymentI
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("SelectedPaymentInstrument can only be serialized to JSON")
         val json = output.json
+        val known = setOf("billing_address", "credential", "display", "handler_id", "id", "type", "selected")
         val map = linkedMapOf<String, JsonElement>()
         value.billingAddress?.let { map["billing_address"] = json.encodeToJsonElement(serializer<PostalAddress>(), it) }
         value.credential?.let { map["credential"] = json.encodeToJsonElement(serializer<PaymentCredential>(), it) }
@@ -3040,7 +2542,9 @@ public object SelectedPaymentInstrumentSerializer : KSerializer<SelectedPaymentI
         map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
         map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
         value.selected?.let { map["selected"] = json.encodeToJsonElement(serializer<Boolean>(), it) }
-        map.putAll(value.additionalProperties)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }
@@ -3062,1315 +2566,12 @@ public object PaymentCredentialSerializer : KSerializer<PaymentCredential> {
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("PaymentCredential can only be serialized to JSON")
         val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object CheckoutTotalSerializer : KSerializer<CheckoutTotal> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.CheckoutTotal")
-    override fun deserialize(decoder: Decoder): CheckoutTotal {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("CheckoutTotal can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("amount", "display_text", "type", "lines")
-        return CheckoutTotal(
-            amount = json.decodeFromJsonElement(serializer<Long>(), obj["amount"] ?: throw SerializationException("Missing amount for CheckoutTotal")),
-            displayText = obj["display_text"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            type = json.decodeFromJsonElement(serializer<String>(), obj["type"] ?: throw SerializationException("Missing type for CheckoutTotal")),
-            lines = obj["lines"]?.let { json.decodeFromJsonElement(serializer<List<Line>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: CheckoutTotal) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("CheckoutTotal can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["amount"] = json.encodeToJsonElement(serializer<Long>(), value.amount)
-        value.displayText?.let { map["display_text"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
-        value.lines?.let { map["lines"] = json.encodeToJsonElement(serializer<List<Line>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object LineSerializer : KSerializer<Line> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Line")
-    override fun deserialize(decoder: Decoder): Line {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Line can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("amount", "display_text")
-        return Line(
-            amount = json.decodeFromJsonElement(serializer<Long>(), obj["amount"] ?: throw SerializationException("Missing amount for Line")),
-            displayText = json.decodeFromJsonElement(serializer<String>(), obj["display_text"] ?: throw SerializationException("Missing display_text for Line")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Line) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Line can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["amount"] = json.encodeToJsonElement(serializer<Long>(), value.amount)
-        map["display_text"] = json.encodeToJsonElement(serializer<String>(), value.displayText)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object UCPCheckoutResponseSchemaSerializer : KSerializer<UCPCheckoutResponseSchema> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchema")
-    override fun deserialize(decoder: Decoder): UCPCheckoutResponseSchema {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("UCPCheckoutResponseSchema can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("capabilities", "payment_handlers", "services", "status", "version")
-        return UCPCheckoutResponseSchema(
-            capabilities = obj["capabilities"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<CapabilityResponseSchema>>>(), it) },
-            paymentHandlers = json.decodeFromJsonElement(serializer<Map<String, List<PaymentHandlerResponseSchema>>>(), obj["payment_handlers"] ?: throw SerializationException("Missing payment_handlers for UCPCheckoutResponseSchema")),
-            services = obj["services"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<ServiceResponseSchema>>>(), it) },
-            status = obj["status"]?.let { json.decodeFromJsonElement(serializer<UCPCheckoutResponseSchemaStatus>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for UCPCheckoutResponseSchema")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: UCPCheckoutResponseSchema) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("UCPCheckoutResponseSchema can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.capabilities?.let { map["capabilities"] = json.encodeToJsonElement(serializer<Map<String, List<CapabilityResponseSchema>>>(), it) }
-        map["payment_handlers"] = json.encodeToJsonElement(serializer<Map<String, List<PaymentHandlerResponseSchema>>>(), value.paymentHandlers)
-        value.services?.let { map["services"] = json.encodeToJsonElement(serializer<Map<String, List<ServiceResponseSchema>>>(), it) }
-        value.status?.let { map["status"] = json.encodeToJsonElement(serializer<UCPCheckoutResponseSchemaStatus>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object CapabilityResponseSchemaSerializer : KSerializer<CapabilityResponseSchema> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.CapabilityResponseSchema")
-    override fun deserialize(decoder: Decoder): CapabilityResponseSchema {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("CapabilityResponseSchema can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("config", "id", "schema", "spec", "version", "extends")
-        return CapabilityResponseSchema(
-            config = obj["config"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            id = obj["id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            schema = obj["schema"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            spec = obj["spec"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for CapabilityResponseSchema")),
-            extends = obj["extends"]?.let { json.decodeFromJsonElement(serializer<Extends>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: CapabilityResponseSchema) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("CapabilityResponseSchema can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.config?.let { map["config"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        value.id?.let { map["id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.schema?.let { map["schema"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.spec?.let { map["spec"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        value.extends?.let { map["extends"] = json.encodeToJsonElement(serializer<Extends>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object PaymentHandlerResponseSchemaSerializer : KSerializer<PaymentHandlerResponseSchema> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.PaymentHandlerResponseSchema")
-    override fun deserialize(decoder: Decoder): PaymentHandlerResponseSchema {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("PaymentHandlerResponseSchema can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("config", "id", "schema", "spec", "version", "available_instruments")
-        return PaymentHandlerResponseSchema(
-            config = obj["config"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for PaymentHandlerResponseSchema")),
-            schema = obj["schema"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            spec = obj["spec"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for PaymentHandlerResponseSchema")),
-            availableInstruments = obj["available_instruments"]?.let { json.decodeFromJsonElement(serializer<List<PaymentHandlerResponseSchemaAvailableInstrument>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: PaymentHandlerResponseSchema) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("PaymentHandlerResponseSchema can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.config?.let { map["config"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        value.schema?.let { map["schema"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.spec?.let { map["spec"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        value.availableInstruments?.let { map["available_instruments"] = json.encodeToJsonElement(serializer<List<PaymentHandlerResponseSchemaAvailableInstrument>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object PaymentHandlerResponseSchemaAvailableInstrumentSerializer : KSerializer<PaymentHandlerResponseSchemaAvailableInstrument> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.PaymentHandlerResponseSchemaAvailableInstrument")
-    override fun deserialize(decoder: Decoder): PaymentHandlerResponseSchemaAvailableInstrument {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("PaymentHandlerResponseSchemaAvailableInstrument can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("constraints", "type")
-        return PaymentHandlerResponseSchemaAvailableInstrument(
-            constraints = obj["constraints"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            type = json.decodeFromJsonElement(serializer<String>(), obj["type"] ?: throw SerializationException("Missing type for PaymentHandlerResponseSchemaAvailableInstrument")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: PaymentHandlerResponseSchemaAvailableInstrument) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("PaymentHandlerResponseSchemaAvailableInstrument can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.constraints?.let { map["constraints"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ServiceResponseSchemaSerializer : KSerializer<ServiceResponseSchema> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.ServiceResponseSchema")
-    override fun deserialize(decoder: Decoder): ServiceResponseSchema {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("ServiceResponseSchema can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("config", "id", "schema", "spec", "version", "endpoint", "transport")
-        return ServiceResponseSchema(
-            config = obj["config"]?.let { json.decodeFromJsonElement(serializer<EmbeddedTransportConfig>(), it) },
-            id = obj["id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            schema = obj["schema"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            spec = obj["spec"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for ServiceResponseSchema")),
-            endpoint = obj["endpoint"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            transport = json.decodeFromJsonElement(serializer<Transport>(), obj["transport"] ?: throw SerializationException("Missing transport for ServiceResponseSchema")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: ServiceResponseSchema) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("ServiceResponseSchema can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.config?.let { map["config"] = json.encodeToJsonElement(serializer<EmbeddedTransportConfig>(), it) }
-        value.id?.let { map["id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.schema?.let { map["schema"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.spec?.let { map["spec"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        value.endpoint?.let { map["endpoint"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["transport"] = json.encodeToJsonElement(serializer<Transport>(), value.transport)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object EmbeddedTransportConfigSerializer : KSerializer<EmbeddedTransportConfig> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.EmbeddedTransportConfig")
-    override fun deserialize(decoder: Decoder): EmbeddedTransportConfig {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("EmbeddedTransportConfig can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("color_scheme", "delegate")
-        return EmbeddedTransportConfig(
-            colorScheme = obj["color_scheme"]?.let { json.decodeFromJsonElement(serializer<List<EmbeddedColorScheme>>(), it) },
-            delegate = obj["delegate"]?.let { json.decodeFromJsonElement(serializer<List<String>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: EmbeddedTransportConfig) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("EmbeddedTransportConfig can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.colorScheme?.let { map["color_scheme"] = json.encodeToJsonElement(serializer<List<EmbeddedColorScheme>>(), it) }
-        value.delegate?.let { map["delegate"] = json.encodeToJsonElement(serializer<List<String>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object OrderSerializer : KSerializer<Order> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Order")
-    override fun deserialize(decoder: Decoder): Order {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Order can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("adjustments", "attribution", "checkout_id", "currency", "fulfillment", "id", "label", "line_items", "messages", "permalink_url", "totals", "ucp")
-        return Order(
-            adjustments = obj["adjustments"]?.let { json.decodeFromJsonElement(serializer<List<Adjustment>>(), it) },
-            attribution = obj["attribution"]?.let { json.decodeFromJsonElement(serializer<Map<String, String>>(), it) },
-            checkoutID = json.decodeFromJsonElement(serializer<String>(), obj["checkout_id"] ?: throw SerializationException("Missing checkout_id for Order")),
-            currency = json.decodeFromJsonElement(serializer<String>(), obj["currency"] ?: throw SerializationException("Missing currency for Order")),
-            fulfillment = json.decodeFromJsonElement(serializer<Fulfillment>(), obj["fulfillment"] ?: throw SerializationException("Missing fulfillment for Order")),
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for Order")),
-            label = obj["label"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            lineItems = json.decodeFromJsonElement(serializer<List<OrderLineItem>>(), obj["line_items"] ?: throw SerializationException("Missing line_items for Order")),
-            messages = obj["messages"]?.let { json.decodeFromJsonElement(serializer<List<Message>>(), it) },
-            permalinkURL = json.decodeFromJsonElement(serializer<String>(), obj["permalink_url"] ?: throw SerializationException("Missing permalink_url for Order")),
-            totals = json.decodeFromJsonElement(serializer<List<CheckoutTotal>>(), obj["totals"] ?: throw SerializationException("Missing totals for Order")),
-            ucp = json.decodeFromJsonElement(serializer<UCPOrderResponseSchema>(), obj["ucp"] ?: throw SerializationException("Missing ucp for Order")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Order) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Order can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.adjustments?.let { map["adjustments"] = json.encodeToJsonElement(serializer<List<Adjustment>>(), it) }
-        value.attribution?.let { map["attribution"] = json.encodeToJsonElement(serializer<Map<String, String>>(), it) }
-        map["checkout_id"] = json.encodeToJsonElement(serializer<String>(), value.checkoutID)
-        map["currency"] = json.encodeToJsonElement(serializer<String>(), value.currency)
-        map["fulfillment"] = json.encodeToJsonElement(serializer<Fulfillment>(), value.fulfillment)
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        value.label?.let { map["label"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["line_items"] = json.encodeToJsonElement(serializer<List<OrderLineItem>>(), value.lineItems)
-        value.messages?.let { map["messages"] = json.encodeToJsonElement(serializer<List<Message>>(), it) }
-        map["permalink_url"] = json.encodeToJsonElement(serializer<String>(), value.permalinkURL)
-        map["totals"] = json.encodeToJsonElement(serializer<List<CheckoutTotal>>(), value.totals)
-        map["ucp"] = json.encodeToJsonElement(serializer<UCPOrderResponseSchema>(), value.ucp)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object AdjustmentSerializer : KSerializer<Adjustment> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Adjustment")
-    override fun deserialize(decoder: Decoder): Adjustment {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Adjustment can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("description", "id", "line_items", "occurred_at", "status", "totals", "type")
-        return Adjustment(
-            description = obj["description"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for Adjustment")),
-            lineItems = obj["line_items"]?.let { json.decodeFromJsonElement(serializer<List<AdjustmentLineItem>>(), it) },
-            occurredAt = json.decodeFromJsonElement(serializer<String>(), obj["occurred_at"] ?: throw SerializationException("Missing occurred_at for Adjustment")),
-            status = json.decodeFromJsonElement(serializer<AdjustmentStatus>(), obj["status"] ?: throw SerializationException("Missing status for Adjustment")),
-            totals = obj["totals"]?.let { json.decodeFromJsonElement(serializer<List<LineItemTotal>>(), it) },
-            type = json.decodeFromJsonElement(serializer<String>(), obj["type"] ?: throw SerializationException("Missing type for Adjustment")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Adjustment) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Adjustment can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.description?.let { map["description"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        value.lineItems?.let { map["line_items"] = json.encodeToJsonElement(serializer<List<AdjustmentLineItem>>(), it) }
-        map["occurred_at"] = json.encodeToJsonElement(serializer<String>(), value.occurredAt)
-        map["status"] = json.encodeToJsonElement(serializer<AdjustmentStatus>(), value.status)
-        value.totals?.let { map["totals"] = json.encodeToJsonElement(serializer<List<LineItemTotal>>(), it) }
-        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object AdjustmentLineItemSerializer : KSerializer<AdjustmentLineItem> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.AdjustmentLineItem")
-    override fun deserialize(decoder: Decoder): AdjustmentLineItem {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("AdjustmentLineItem can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("id", "quantity")
-        return AdjustmentLineItem(
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for AdjustmentLineItem")),
-            quantity = json.decodeFromJsonElement(serializer<Long>(), obj["quantity"] ?: throw SerializationException("Missing quantity for AdjustmentLineItem")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: AdjustmentLineItem) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("AdjustmentLineItem can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        map["quantity"] = json.encodeToJsonElement(serializer<Long>(), value.quantity)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object FulfillmentSerializer : KSerializer<Fulfillment> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Fulfillment")
-    override fun deserialize(decoder: Decoder): Fulfillment {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Fulfillment can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("events", "expectations")
-        return Fulfillment(
-            events = obj["events"]?.let { json.decodeFromJsonElement(serializer<List<FulfillmentEvent>>(), it) },
-            expectations = obj["expectations"]?.let { json.decodeFromJsonElement(serializer<List<Expectation>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Fulfillment) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Fulfillment can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.events?.let { map["events"] = json.encodeToJsonElement(serializer<List<FulfillmentEvent>>(), it) }
-        value.expectations?.let { map["expectations"] = json.encodeToJsonElement(serializer<List<Expectation>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object FulfillmentEventSerializer : KSerializer<FulfillmentEvent> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.FulfillmentEvent")
-    override fun deserialize(decoder: Decoder): FulfillmentEvent {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("FulfillmentEvent can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("carrier", "description", "id", "line_items", "occurred_at", "tracking_number", "tracking_url", "type")
-        return FulfillmentEvent(
-            carrier = obj["carrier"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            description = obj["description"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for FulfillmentEvent")),
-            lineItems = json.decodeFromJsonElement(serializer<List<EventLineItem>>(), obj["line_items"] ?: throw SerializationException("Missing line_items for FulfillmentEvent")),
-            occurredAt = json.decodeFromJsonElement(serializer<String>(), obj["occurred_at"] ?: throw SerializationException("Missing occurred_at for FulfillmentEvent")),
-            trackingNumber = obj["tracking_number"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            trackingURL = obj["tracking_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            type = json.decodeFromJsonElement(serializer<String>(), obj["type"] ?: throw SerializationException("Missing type for FulfillmentEvent")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: FulfillmentEvent) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("FulfillmentEvent can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.carrier?.let { map["carrier"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.description?.let { map["description"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        map["line_items"] = json.encodeToJsonElement(serializer<List<EventLineItem>>(), value.lineItems)
-        map["occurred_at"] = json.encodeToJsonElement(serializer<String>(), value.occurredAt)
-        value.trackingNumber?.let { map["tracking_number"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.trackingURL?.let { map["tracking_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object EventLineItemSerializer : KSerializer<EventLineItem> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.EventLineItem")
-    override fun deserialize(decoder: Decoder): EventLineItem {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("EventLineItem can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("id", "quantity")
-        return EventLineItem(
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for EventLineItem")),
-            quantity = json.decodeFromJsonElement(serializer<Long>(), obj["quantity"] ?: throw SerializationException("Missing quantity for EventLineItem")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: EventLineItem) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("EventLineItem can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        map["quantity"] = json.encodeToJsonElement(serializer<Long>(), value.quantity)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ExpectationSerializer : KSerializer<Expectation> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Expectation")
-    override fun deserialize(decoder: Decoder): Expectation {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Expectation can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("description", "destination", "fulfillable_on", "id", "line_items", "method_type")
-        return Expectation(
-            description = obj["description"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            destination = json.decodeFromJsonElement(serializer<PostalAddress>(), obj["destination"] ?: throw SerializationException("Missing destination for Expectation")),
-            fulfillableOn = obj["fulfillable_on"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for Expectation")),
-            lineItems = json.decodeFromJsonElement(serializer<List<ExpectationLineItem>>(), obj["line_items"] ?: throw SerializationException("Missing line_items for Expectation")),
-            methodType = json.decodeFromJsonElement(serializer<MethodType>(), obj["method_type"] ?: throw SerializationException("Missing method_type for Expectation")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Expectation) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Expectation can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.description?.let { map["description"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["destination"] = json.encodeToJsonElement(serializer<PostalAddress>(), value.destination)
-        value.fulfillableOn?.let { map["fulfillable_on"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        map["line_items"] = json.encodeToJsonElement(serializer<List<ExpectationLineItem>>(), value.lineItems)
-        map["method_type"] = json.encodeToJsonElement(serializer<MethodType>(), value.methodType)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ExpectationLineItemSerializer : KSerializer<ExpectationLineItem> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.ExpectationLineItem")
-    override fun deserialize(decoder: Decoder): ExpectationLineItem {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("ExpectationLineItem can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("id", "quantity")
-        return ExpectationLineItem(
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for ExpectationLineItem")),
-            quantity = json.decodeFromJsonElement(serializer<Long>(), obj["quantity"] ?: throw SerializationException("Missing quantity for ExpectationLineItem")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: ExpectationLineItem) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("ExpectationLineItem can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        map["quantity"] = json.encodeToJsonElement(serializer<Long>(), value.quantity)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object OrderLineItemSerializer : KSerializer<OrderLineItem> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.OrderLineItem")
-    override fun deserialize(decoder: Decoder): OrderLineItem {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("OrderLineItem can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("id", "item", "parent_id", "quantity", "status", "totals")
-        return OrderLineItem(
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for OrderLineItem")),
-            item = json.decodeFromJsonElement(serializer<Item>(), obj["item"] ?: throw SerializationException("Missing item for OrderLineItem")),
-            parentID = obj["parent_id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            quantity = json.decodeFromJsonElement(serializer<LineItemQuantity>(), obj["quantity"] ?: throw SerializationException("Missing quantity for OrderLineItem")),
-            status = json.decodeFromJsonElement(serializer<LineItemStatus>(), obj["status"] ?: throw SerializationException("Missing status for OrderLineItem")),
-            totals = json.decodeFromJsonElement(serializer<List<LineItemTotal>>(), obj["totals"] ?: throw SerializationException("Missing totals for OrderLineItem")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: OrderLineItem) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("OrderLineItem can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        map["item"] = json.encodeToJsonElement(serializer<Item>(), value.item)
-        value.parentID?.let { map["parent_id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["quantity"] = json.encodeToJsonElement(serializer<LineItemQuantity>(), value.quantity)
-        map["status"] = json.encodeToJsonElement(serializer<LineItemStatus>(), value.status)
-        map["totals"] = json.encodeToJsonElement(serializer<List<LineItemTotal>>(), value.totals)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object LineItemQuantitySerializer : KSerializer<LineItemQuantity> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.LineItemQuantity")
-    override fun deserialize(decoder: Decoder): LineItemQuantity {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("LineItemQuantity can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("fulfilled", "original", "total")
-        return LineItemQuantity(
-            fulfilled = json.decodeFromJsonElement(serializer<Long>(), obj["fulfilled"] ?: throw SerializationException("Missing fulfilled for LineItemQuantity")),
-            original = obj["original"]?.let { json.decodeFromJsonElement(serializer<Long>(), it) },
-            total = json.decodeFromJsonElement(serializer<Long>(), obj["total"] ?: throw SerializationException("Missing total for LineItemQuantity")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: LineItemQuantity) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("LineItemQuantity can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["fulfilled"] = json.encodeToJsonElement(serializer<Long>(), value.fulfilled)
-        value.original?.let { map["original"] = json.encodeToJsonElement(serializer<Long>(), it) }
-        map["total"] = json.encodeToJsonElement(serializer<Long>(), value.total)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object UCPOrderResponseSchemaSerializer : KSerializer<UCPOrderResponseSchema> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.UCPOrderResponseSchema")
-    override fun deserialize(decoder: Decoder): UCPOrderResponseSchema {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("UCPOrderResponseSchema can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("capabilities", "payment_handlers", "services", "status", "version")
-        return UCPOrderResponseSchema(
-            capabilities = obj["capabilities"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<CapabilityResponseSchema>>>(), it) },
-            paymentHandlers = obj["payment_handlers"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<PaymentHandlerResponseSchema>>>(), it) },
-            services = obj["services"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<Service>>>(), it) },
-            status = obj["status"]?.let { json.decodeFromJsonElement(serializer<UCPCheckoutResponseSchemaStatus>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for UCPOrderResponseSchema")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: UCPOrderResponseSchema) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("UCPOrderResponseSchema can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.capabilities?.let { map["capabilities"] = json.encodeToJsonElement(serializer<Map<String, List<CapabilityResponseSchema>>>(), it) }
-        value.paymentHandlers?.let { map["payment_handlers"] = json.encodeToJsonElement(serializer<Map<String, List<PaymentHandlerResponseSchema>>>(), it) }
-        value.services?.let { map["services"] = json.encodeToJsonElement(serializer<Map<String, List<Service>>>(), it) }
-        value.status?.let { map["status"] = json.encodeToJsonElement(serializer<UCPCheckoutResponseSchemaStatus>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ServiceSerializer : KSerializer<Service> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Service")
-    override fun deserialize(decoder: Decoder): Service {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Service can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("config", "id", "schema", "spec", "version", "endpoint", "transport")
-        return Service(
-            config = obj["config"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            id = obj["id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            schema = obj["schema"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            spec = obj["spec"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for Service")),
-            endpoint = obj["endpoint"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            transport = json.decodeFromJsonElement(serializer<Transport>(), obj["transport"] ?: throw SerializationException("Missing transport for Service")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Service) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Service can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.config?.let { map["config"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        value.id?.let { map["id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.schema?.let { map["schema"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.spec?.let { map["spec"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        value.endpoint?.let { map["endpoint"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["transport"] = json.encodeToJsonElement(serializer<Transport>(), value.transport)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ErrorResponseUcpSerializer : KSerializer<ErrorResponseUcp> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.ErrorResponseUcp")
-    override fun deserialize(decoder: Decoder): ErrorResponseUcp {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("ErrorResponseUcp can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("capabilities", "payment_handlers", "services", "status", "version")
-        return ErrorResponseUcp(
-            capabilities = obj["capabilities"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<CapabilityResponseSchema>>>(), it) },
-            paymentHandlers = obj["payment_handlers"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<PaymentHandlerResponseSchema>>>(), it) },
-            services = obj["services"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<Service>>>(), it) },
-            status = json.decodeFromJsonElement(serializer<ErrorStatus>(), obj["status"] ?: throw SerializationException("Missing status for ErrorResponseUcp")),
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for ErrorResponseUcp")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: ErrorResponseUcp) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("ErrorResponseUcp can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.capabilities?.let { map["capabilities"] = json.encodeToJsonElement(serializer<Map<String, List<CapabilityResponseSchema>>>(), it) }
-        value.paymentHandlers?.let { map["payment_handlers"] = json.encodeToJsonElement(serializer<Map<String, List<PaymentHandlerResponseSchema>>>(), it) }
-        value.services?.let { map["services"] = json.encodeToJsonElement(serializer<Map<String, List<Service>>>(), it) }
-        map["status"] = json.encodeToJsonElement(serializer<ErrorStatus>(), value.status)
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object InstrumentsChangeResultSerializer : KSerializer<InstrumentsChangeResult> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.InstrumentsChangeResult")
-    override fun deserialize(decoder: Decoder): InstrumentsChangeResult {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("InstrumentsChangeResult can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("checkout", "ucp", "continue_url", "messages")
-        return InstrumentsChangeResult(
-            checkout = obj["checkout"]?.let { json.decodeFromJsonElement(serializer<InstrumentsChangeCheckout>(), it) },
-            ucp = json.decodeFromJsonElement(serializer<InstrumentsChangeResultUcp>(), obj["ucp"] ?: throw SerializationException("Missing ucp for InstrumentsChangeResult")),
-            continueURL = obj["continue_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            messages = obj["messages"]?.let { json.decodeFromJsonElement(serializer<List<Message>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: InstrumentsChangeResult) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("InstrumentsChangeResult can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.checkout?.let { map["checkout"] = json.encodeToJsonElement(serializer<InstrumentsChangeCheckout>(), it) }
-        map["ucp"] = json.encodeToJsonElement(serializer<InstrumentsChangeResultUcp>(), value.ucp)
-        value.continueURL?.let { map["continue_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.messages?.let { map["messages"] = json.encodeToJsonElement(serializer<List<Message>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object InstrumentsChangeCheckoutSerializer : KSerializer<InstrumentsChangeCheckout> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.InstrumentsChangeCheckout")
-    override fun deserialize(decoder: Decoder): InstrumentsChangeCheckout {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("InstrumentsChangeCheckout can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("payment")
-        return InstrumentsChangeCheckout(
-            payment = obj["payment"]?.let { json.decodeFromJsonElement(serializer<InstrumentsChangePayment>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: InstrumentsChangeCheckout) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("InstrumentsChangeCheckout can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.payment?.let { map["payment"] = json.encodeToJsonElement(serializer<InstrumentsChangePayment>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object InstrumentsChangePaymentSerializer : KSerializer<InstrumentsChangePayment> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.InstrumentsChangePayment")
-    override fun deserialize(decoder: Decoder): InstrumentsChangePayment {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("InstrumentsChangePayment can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("instruments", "selected_instrument_id")
-        return InstrumentsChangePayment(
-            instruments = obj["instruments"]?.let { json.decodeFromJsonElement(serializer<List<SelectedPaymentInstrument>>(), it) },
-            selectedInstrumentID = obj["selected_instrument_id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: InstrumentsChangePayment) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("InstrumentsChangePayment can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.instruments?.let { map["instruments"] = json.encodeToJsonElement(serializer<List<SelectedPaymentInstrument>>(), it) }
-        value.selectedInstrumentID?.let { map["selected_instrument_id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object InstrumentsChangeResultUcpSerializer : KSerializer<InstrumentsChangeResultUcp> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp")
-    override fun deserialize(decoder: Decoder): InstrumentsChangeResultUcp {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("InstrumentsChangeResultUcp can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("capabilities", "payment_handlers", "services", "status", "version")
-        return InstrumentsChangeResultUcp(
-            capabilities = obj["capabilities"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<CapabilityElement>>>(), it) },
-            paymentHandlers = obj["payment_handlers"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<PaymentHandlerElement>>>(), it) },
-            services = obj["services"]?.let { json.decodeFromJsonElement(serializer<Map<String, List<EmbeddedService>>>(), it) },
-            status = json.decodeFromJsonElement(serializer<UCPCheckoutResponseSchemaStatus>(), obj["status"] ?: throw SerializationException("Missing status for InstrumentsChangeResultUcp")),
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for InstrumentsChangeResultUcp")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: InstrumentsChangeResultUcp) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("InstrumentsChangeResultUcp can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.capabilities?.let { map["capabilities"] = json.encodeToJsonElement(serializer<Map<String, List<CapabilityElement>>>(), it) }
-        value.paymentHandlers?.let { map["payment_handlers"] = json.encodeToJsonElement(serializer<Map<String, List<PaymentHandlerElement>>>(), it) }
-        value.services?.let { map["services"] = json.encodeToJsonElement(serializer<Map<String, List<EmbeddedService>>>(), it) }
-        map["status"] = json.encodeToJsonElement(serializer<UCPCheckoutResponseSchemaStatus>(), value.status)
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object CapabilityElementSerializer : KSerializer<CapabilityElement> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.CapabilityElement")
-    override fun deserialize(decoder: Decoder): CapabilityElement {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("CapabilityElement can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("config", "id", "schema", "spec", "version", "extends")
-        return CapabilityElement(
-            config = obj["config"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            id = obj["id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            schema = obj["schema"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            spec = obj["spec"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for CapabilityElement")),
-            extends = obj["extends"]?.let { json.decodeFromJsonElement(serializer<Extends>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: CapabilityElement) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("CapabilityElement can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.config?.let { map["config"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        value.id?.let { map["id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.schema?.let { map["schema"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.spec?.let { map["spec"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        value.extends?.let { map["extends"] = json.encodeToJsonElement(serializer<Extends>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object PaymentHandlerElementSerializer : KSerializer<PaymentHandlerElement> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.PaymentHandlerElement")
-    override fun deserialize(decoder: Decoder): PaymentHandlerElement {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("PaymentHandlerElement can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("config", "id", "schema", "spec", "version", "available_instruments")
-        return PaymentHandlerElement(
-            config = obj["config"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            id = json.decodeFromJsonElement(serializer<String>(), obj["id"] ?: throw SerializationException("Missing id for PaymentHandlerElement")),
-            schema = obj["schema"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            spec = obj["spec"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for PaymentHandlerElement")),
-            availableInstruments = obj["available_instruments"]?.let { json.decodeFromJsonElement(serializer<List<PaymentHandlerAvailableInstrument>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: PaymentHandlerElement) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("PaymentHandlerElement can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.config?.let { map["config"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        map["id"] = json.encodeToJsonElement(serializer<String>(), value.id)
-        value.schema?.let { map["schema"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.spec?.let { map["spec"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        value.availableInstruments?.let { map["available_instruments"] = json.encodeToJsonElement(serializer<List<PaymentHandlerAvailableInstrument>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object PaymentHandlerAvailableInstrumentSerializer : KSerializer<PaymentHandlerAvailableInstrument> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.PaymentHandlerAvailableInstrument")
-    override fun deserialize(decoder: Decoder): PaymentHandlerAvailableInstrument {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("PaymentHandlerAvailableInstrument can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("constraints", "type")
-        return PaymentHandlerAvailableInstrument(
-            constraints = obj["constraints"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            type = json.decodeFromJsonElement(serializer<String>(), obj["type"] ?: throw SerializationException("Missing type for PaymentHandlerAvailableInstrument")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: PaymentHandlerAvailableInstrument) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("PaymentHandlerAvailableInstrument can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.constraints?.let { map["constraints"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object EmbeddedServiceSerializer : KSerializer<EmbeddedService> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.EmbeddedService")
-    override fun deserialize(decoder: Decoder): EmbeddedService {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("EmbeddedService can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("config", "id", "schema", "spec", "version", "endpoint", "transport")
-        return EmbeddedService(
-            config = obj["config"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            id = obj["id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            schema = obj["schema"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            spec = obj["spec"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            version = json.decodeFromJsonElement(serializer<String>(), obj["version"] ?: throw SerializationException("Missing version for EmbeddedService")),
-            endpoint = obj["endpoint"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            transport = json.decodeFromJsonElement(serializer<Transport>(), obj["transport"] ?: throw SerializationException("Missing transport for EmbeddedService")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: EmbeddedService) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("EmbeddedService can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.config?.let { map["config"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        value.id?.let { map["id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.schema?.let { map["schema"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.spec?.let { map["spec"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["version"] = json.encodeToJsonElement(serializer<String>(), value.version)
-        value.endpoint?.let { map["endpoint"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["transport"] = json.encodeToJsonElement(serializer<Transport>(), value.transport)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object CredentialResultSerializer : KSerializer<CredentialResult> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.CredentialResult")
-    override fun deserialize(decoder: Decoder): CredentialResult {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("CredentialResult can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("checkout", "ucp", "continue_url", "messages")
-        return CredentialResult(
-            checkout = obj["checkout"]?.let { json.decodeFromJsonElement(serializer<CredentialCheckout>(), it) },
-            ucp = json.decodeFromJsonElement(serializer<InstrumentsChangeResultUcp>(), obj["ucp"] ?: throw SerializationException("Missing ucp for CredentialResult")),
-            continueURL = obj["continue_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            messages = obj["messages"]?.let { json.decodeFromJsonElement(serializer<List<Message>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: CredentialResult) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("CredentialResult can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.checkout?.let { map["checkout"] = json.encodeToJsonElement(serializer<CredentialCheckout>(), it) }
-        map["ucp"] = json.encodeToJsonElement(serializer<InstrumentsChangeResultUcp>(), value.ucp)
-        value.continueURL?.let { map["continue_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.messages?.let { map["messages"] = json.encodeToJsonElement(serializer<List<Message>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object CredentialCheckoutSerializer : KSerializer<CredentialCheckout> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.CredentialCheckout")
-    override fun deserialize(decoder: Decoder): CredentialCheckout {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("CredentialCheckout can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("payment")
-        return CredentialCheckout(
-            payment = obj["payment"]?.let { json.decodeFromJsonElement(serializer<Payment>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: CredentialCheckout) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("CredentialCheckout can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.payment?.let { map["payment"] = json.encodeToJsonElement(serializer<Payment>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object AddressChangeResultSerializer : KSerializer<AddressChangeResult> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.AddressChangeResult")
-    override fun deserialize(decoder: Decoder): AddressChangeResult {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("AddressChangeResult can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("checkout", "ucp", "continue_url", "messages")
-        return AddressChangeResult(
-            checkout = obj["checkout"]?.let { json.decodeFromJsonElement(serializer<AddressChangeCheckout>(), it) },
-            ucp = json.decodeFromJsonElement(serializer<InstrumentsChangeResultUcp>(), obj["ucp"] ?: throw SerializationException("Missing ucp for AddressChangeResult")),
-            continueURL = obj["continue_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            messages = obj["messages"]?.let { json.decodeFromJsonElement(serializer<List<Message>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: AddressChangeResult) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("AddressChangeResult can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.checkout?.let { map["checkout"] = json.encodeToJsonElement(serializer<AddressChangeCheckout>(), it) }
-        map["ucp"] = json.encodeToJsonElement(serializer<InstrumentsChangeResultUcp>(), value.ucp)
-        value.continueURL?.let { map["continue_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.messages?.let { map["messages"] = json.encodeToJsonElement(serializer<List<Message>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object AddressChangeCheckoutSerializer : KSerializer<AddressChangeCheckout> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.AddressChangeCheckout")
-    override fun deserialize(decoder: Decoder): AddressChangeCheckout {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("AddressChangeCheckout can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("fulfillment")
-        return AddressChangeCheckout(
-            fulfillment = obj["fulfillment"]?.let { json.decodeFromJsonElement(serializer<CheckoutFulfillmentClass>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: AddressChangeCheckout) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("AddressChangeCheckout can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.fulfillment?.let { map["fulfillment"] = json.encodeToJsonElement(serializer<CheckoutFulfillmentClass>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object CheckoutFulfillmentClassSerializer : KSerializer<CheckoutFulfillmentClass> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.CheckoutFulfillmentClass")
-    override fun deserialize(decoder: Decoder): CheckoutFulfillmentClass {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("CheckoutFulfillmentClass can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("available_methods", "methods")
-        return CheckoutFulfillmentClass(
-            availableMethods = obj["available_methods"]?.let { json.decodeFromJsonElement(serializer<List<FulfillmentAvailableMethod>>(), it) },
-            methods = obj["methods"]?.let { json.decodeFromJsonElement(serializer<List<FulfillmentMethod>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: CheckoutFulfillmentClass) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("CheckoutFulfillmentClass can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.availableMethods?.let { map["available_methods"] = json.encodeToJsonElement(serializer<List<FulfillmentAvailableMethod>>(), it) }
-        value.methods?.let { map["methods"] = json.encodeToJsonElement(serializer<List<FulfillmentMethod>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ReadyRequestSerializer : KSerializer<ReadyRequest> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.ReadyRequest")
-    override fun deserialize(decoder: Decoder): ReadyRequest {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("ReadyRequest can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("auth", "delegate")
-        return ReadyRequest(
-            auth = obj["auth"]?.let { json.decodeFromJsonElement(serializer<Auth>(), it) },
-            delegate = json.decodeFromJsonElement(serializer<List<String>>(), obj["delegate"] ?: throw SerializationException("Missing delegate for ReadyRequest")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: ReadyRequest) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("ReadyRequest can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.auth?.let { map["auth"] = json.encodeToJsonElement(serializer<Auth>(), it) }
-        map["delegate"] = json.encodeToJsonElement(serializer<List<String>>(), value.delegate)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object AuthSerializer : KSerializer<Auth> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Auth")
-    override fun deserialize(decoder: Decoder): Auth {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Auth can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
         val known = setOf("type")
-        return Auth(
-            type = obj["type"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Auth) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Auth can only be serialized to JSON")
-        val json = output.json
         val map = linkedMapOf<String, JsonElement>()
-        value.type?.let { map["type"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ReadyResultSerializer : KSerializer<ReadyResult> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.ReadyResult")
-    override fun deserialize(decoder: Decoder): ReadyResult {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("ReadyResult can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("checkout", "credential", "ucp", "upgrade", "continue_url", "messages")
-        return ReadyResult(
-            checkout = obj["checkout"]?.let { json.decodeFromJsonElement(serializer<ReadyCheckout>(), it) },
-            credential = obj["credential"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            ucp = json.decodeFromJsonElement(serializer<InstrumentsChangeResultUcp>(), obj["ucp"] ?: throw SerializationException("Missing ucp for ReadyResult")),
-            upgrade = obj["upgrade"]?.let { json.decodeFromJsonElement(serializer<Upgrade>(), it) },
-            continueURL = obj["continue_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            messages = obj["messages"]?.let { json.decodeFromJsonElement(serializer<List<Message>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: ReadyResult) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("ReadyResult can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.checkout?.let { map["checkout"] = json.encodeToJsonElement(serializer<ReadyCheckout>(), it) }
-        value.credential?.let { map["credential"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["ucp"] = json.encodeToJsonElement(serializer<InstrumentsChangeResultUcp>(), value.ucp)
-        value.upgrade?.let { map["upgrade"] = json.encodeToJsonElement(serializer<Upgrade>(), it) }
-        value.continueURL?.let { map["continue_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.messages?.let { map["messages"] = json.encodeToJsonElement(serializer<List<Message>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ReadyCheckoutSerializer : KSerializer<ReadyCheckout> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.ReadyCheckout")
-    override fun deserialize(decoder: Decoder): ReadyCheckout {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("ReadyCheckout can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("fulfillment", "payment")
-        return ReadyCheckout(
-            fulfillment = obj["fulfillment"]?.let { json.decodeFromJsonElement(serializer<CheckoutFulfillmentClass>(), it) },
-            payment = obj["payment"]?.let { json.decodeFromJsonElement(serializer<ReadyPayment>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: ReadyCheckout) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("ReadyCheckout can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.fulfillment?.let { map["fulfillment"] = json.encodeToJsonElement(serializer<CheckoutFulfillmentClass>(), it) }
-        value.payment?.let { map["payment"] = json.encodeToJsonElement(serializer<ReadyPayment>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object ReadyPaymentSerializer : KSerializer<ReadyPayment> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.ReadyPayment")
-    override fun deserialize(decoder: Decoder): ReadyPayment {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("ReadyPayment can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("instruments", "selected_instrument_id")
-        return ReadyPayment(
-            instruments = obj["instruments"]?.let { json.decodeFromJsonElement(serializer<List<SelectedPaymentInstrument>>(), it) },
-            selectedInstrumentID = obj["selected_instrument_id"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: ReadyPayment) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("ReadyPayment can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.instruments?.let { map["instruments"] = json.encodeToJsonElement(serializer<List<SelectedPaymentInstrument>>(), it) }
-        value.selectedInstrumentID?.let { map["selected_instrument_id"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object UpgradeSerializer : KSerializer<Upgrade> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.Upgrade")
-    override fun deserialize(decoder: Decoder): Upgrade {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("Upgrade can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("port")
-        return Upgrade(
-            port = obj["port"]?.let { json.decodeFromJsonElement(serializer<JsonObject>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: Upgrade) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("Upgrade can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.port?.let { map["port"] = json.encodeToJsonElement(serializer<JsonObject>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object AuthRequestSerializer : KSerializer<AuthRequest> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.AuthRequest")
-    override fun deserialize(decoder: Decoder): AuthRequest {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("AuthRequest can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("type")
-        return AuthRequest(
-            type = obj["type"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: AuthRequest) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("AuthRequest can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.type?.let { map["type"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object AuthResultSerializer : KSerializer<AuthResult> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.AuthResult")
-    override fun deserialize(decoder: Decoder): AuthResult {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("AuthResult can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("credential", "ucp", "continue_url", "messages")
-        return AuthResult(
-            credential = obj["credential"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            ucp = json.decodeFromJsonElement(serializer<InstrumentsChangeResultUcp>(), obj["ucp"] ?: throw SerializationException("Missing ucp for AuthResult")),
-            continueURL = obj["continue_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            messages = obj["messages"]?.let { json.decodeFromJsonElement(serializer<List<Message>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: AuthResult) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("AuthResult can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        value.credential?.let { map["credential"] = json.encodeToJsonElement(serializer<String>(), it) }
-        map["ucp"] = json.encodeToJsonElement(serializer<InstrumentsChangeResultUcp>(), value.ucp)
-        value.continueURL?.let { map["continue_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.messages?.let { map["messages"] = json.encodeToJsonElement(serializer<List<Message>>(), it) }
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object WindowOpenRequestSerializer : KSerializer<WindowOpenRequest> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.WindowOpenRequest")
-    override fun deserialize(decoder: Decoder): WindowOpenRequest {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("WindowOpenRequest can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("url")
-        return WindowOpenRequest(
-            url = json.decodeFromJsonElement(serializer<String>(), obj["url"] ?: throw SerializationException("Missing url for WindowOpenRequest")),
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: WindowOpenRequest) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("WindowOpenRequest can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["url"] = json.encodeToJsonElement(serializer<String>(), value.url)
-        map.putAll(value.additionalProperties)
-        output.encodeJsonElement(JsonObject(map))
-    }
-}
-public object WindowOpenResultSerializer : KSerializer<WindowOpenResult> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.WindowOpenResult")
-    override fun deserialize(decoder: Decoder): WindowOpenResult {
-        val input = decoder as? JsonDecoder
-            ?: throw SerializationException("WindowOpenResult can only be deserialized from JSON")
-        val obj = input.decodeJsonElement().jsonObject
-        val json = input.json
-        val known = setOf("ucp", "continue_url", "messages")
-        return WindowOpenResult(
-            ucp = json.decodeFromJsonElement(serializer<InstrumentsChangeResultUcp>(), obj["ucp"] ?: throw SerializationException("Missing ucp for WindowOpenResult")),
-            continueURL = obj["continue_url"]?.let { json.decodeFromJsonElement(serializer<String>(), it) },
-            messages = obj["messages"]?.let { json.decodeFromJsonElement(serializer<List<Message>>(), it) },
-            additionalProperties = obj.filterKeys { it !in known }
-        )
-    }
-    override fun serialize(encoder: Encoder, value: WindowOpenResult) {
-        val output = encoder as? JsonEncoder
-            ?: throw SerializationException("WindowOpenResult can only be serialized to JSON")
-        val json = output.json
-        val map = linkedMapOf<String, JsonElement>()
-        map["ucp"] = json.encodeToJsonElement(serializer<InstrumentsChangeResultUcp>(), value.ucp)
-        value.continueURL?.let { map["continue_url"] = json.encodeToJsonElement(serializer<String>(), it) }
-        value.messages?.let { map["messages"] = json.encodeToJsonElement(serializer<List<Message>>(), it) }
-        map.putAll(value.additionalProperties)
+        map["type"] = json.encodeToJsonElement(serializer<String>(), value.type)
+        value.additionalProperties
+            .filterKeys { it !in known }
+            .forEach { (key, element) -> map[key] = element }
         output.encodeJsonElement(JsonObject(map))
     }
 }

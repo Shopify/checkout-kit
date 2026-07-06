@@ -711,6 +711,13 @@ export interface PaymentCredential {
     [property: string]: any;
 }
 /**
+ * Environment data provided by the platform to support authorization and abuse prevention.
+ * Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
+ * observation or independently verifiable third-party attestations. All signal keys MUST
+ * use reverse-domain naming to ensure provenance and prevent collisions when multiple
+ * extensions contribute to the shared namespace.
+ */
+/**
  * Checkout state indicating the current phase and required action. See Checkout Status
  * lifecycle documentation for state transition details.
  */

@@ -168,7 +168,7 @@ struct ModelDecodingTests {
           "com.example.foo": "bar"
         }
         """
-        let checkout = try JSONDecoder().decode(Checkout.self, from: Data(json.utf8))
+        var checkout = try JSONDecoder().decode(Checkout.self, from: Data(json.utf8))
         let reEncoded = try JSONEncoder().encode(checkout)
         let object = try #require(try JSONSerialization.jsonObject(with: reEncoded) as? [String: Any])
 
@@ -177,6 +177,11 @@ struct ModelDecodingTests {
         let signals = try #require(object["signals"] as? [String: Any])
         #expect(signals["dev.ucp.buyer_ip"] as? String == "203.0.113.7")
         #expect(signals["com.example.device_id"] as? String == "abc-123")
+
+        checkout.additionalProperties["id"] = try JSONDecoder().decode(JSONAny.self, from: Data("\"extension-id\"".utf8))
+        let collisionEncoded = try JSONEncoder().encode(checkout)
+        let collisionObject = try #require(try JSONSerialization.jsonObject(with: collisionEncoded) as? [String: Any])
+        #expect(collisionObject["id"] as? String == "checkout-123")
     }
 }
 

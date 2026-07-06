@@ -1,6 +1,7 @@
 package com.shopify.ucp.embedded.checkout
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.assertj.core.api.Assertions.assertThat
@@ -34,5 +35,11 @@ class ExtensionPreservationTest {
         val signals = reEncoded["signals"]?.jsonObject
         assertThat(signals?.get("dev.ucp.buyer_ip")?.jsonPrimitive?.content).isEqualTo("203.0.113.7")
         assertThat(signals?.get("com.example.device_id")?.jsonPrimitive?.content).isEqualTo("abc-123")
+
+        val colliding = checkout.copy(
+            additionalProperties = checkout.additionalProperties + ("id" to JsonPrimitive("extension-id")),
+        )
+        val collisionEncoded = json.parseToJsonElement(json.encodeToString(Checkout.serializer(), colliding)).jsonObject
+        assertThat(collisionEncoded["id"]?.jsonPrimitive?.content).isEqualTo("checkout-123")
     }
 }

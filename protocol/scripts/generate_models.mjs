@@ -236,11 +236,6 @@ async function prepareCodegenSchemas(tempDir) {
   });
   await writeJson(path.join(schemaDir, "ucp.json"), ucp);
 
-  const signals = await readJson(path.join(specDir, "types", "signals.json"));
-  delete signals.properties["dev.ucp.buyer_ip"];
-  delete signals.properties["dev.ucp.user_agent"];
-  await writeJson(path.join(specDir, "types", "signals.json"), signals);
-
   return specDir;
 }
 
@@ -391,7 +386,119 @@ function commonSchemaSources(specDir) {
   ];
 }
 
-const KOTLIN_CLOSED_CLASSES = new Set(["ErrorResponse"]);
+async function listJsonFiles(dir) {
+  const entries = await fs.readdir(dir, {withFileTypes: true});
+  const files = await Promise.all(entries.map(async (entry) => {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return listJsonFiles(entryPath);
+    }
+    return entry.isFile() && entry.name.endsWith(".json") ? [entryPath] : [];
+  }));
+  return files.flat();
+}
+
+function schemaTitleToTypeName(title) {
+  return title
+    .split(/[^A-Za-z0-9]+/g)
+    .filter(Boolean)
+    .map((part) => (/^[A-Z0-9]+$/.test(part) ? part : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
+    .join("");
+}
+
+function jsonPointerGet(doc, pointer) {
+  if (pointer === "") {
+    return doc;
+  }
+
+  return pointer
+    .split("/")
+    .filter(Boolean)
+    .reduce((node, rawSegment) => {
+      if (node == null) {
+        return undefined;
+      }
+      const segment = rawSegment.replaceAll("~1", "/").replaceAll("~0", "~");
+      return node[segment];
+    }, doc);
+}
+
+async function collectModelCodegenInfo(specDir) {
+  const schemaDir = path.dirname(specDir);
+  const jsonFiles = await listJsonFiles(schemaDir);
+  const docs = new Map();
+  for (const file of jsonFiles) {
+    docs.set(file, await readJson(file));
+  }
+
+  const resolveRef = (ref, baseFile) => {
+    const [relativePath = "", pointer = ""] = ref.split("#");
+    const targetFile = relativePath === "" ? baseFile : path.resolve(path.dirname(baseFile), relativePath);
+    const targetDoc = docs.get(targetFile);
+    return targetDoc === undefined ? undefined : {file: targetFile, node: jsonPointerGet(targetDoc, pointer)};
+  };
+
+  const isOpenObject = (node, file, seen = new Set()) => {
+    if (node == null || typeof node !== "object") {
+      return false;
+    }
+
+    const ref = typeof node.$ref === "string" ? resolveRef(node.$ref, file) : undefined;
+    if (ref !== undefined) {
+      const key = `${ref.file}#${node.$ref.split("#")[1] ?? ""}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        if (isOpenObject(ref.node, ref.file, seen)) {
+          return true;
+        }
+      }
+    }
+
+    if (Array.isArray(node.allOf) && node.allOf.some((item) => isOpenObject(item, file, seen))) {
+      return true;
+    }
+
+    return node.type === "object" && node.additionalProperties !== undefined && node.additionalProperties !== false;
+  };
+
+  const isMapModel = (node) =>
+    node?.type === "object" &&
+    node.propertyNames !== undefined &&
+    node.additionalProperties !== undefined &&
+    node.additionalProperties !== false;
+
+  const openModelNames = new Set();
+  const mapModelNames = new Set();
+  const visit = (node, file) => {
+    if (node == null || typeof node !== "object") {
+      return;
+    }
+
+    if (typeof node.title === "string" && isOpenObject(node, file)) {
+      const modelName = schemaTitleToTypeName(node.title);
+      openModelNames.add(modelName);
+      if (isMapModel(node)) {
+        mapModelNames.add(modelName);
+      }
+    }
+
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          visit(item, file);
+        }
+      } else {
+        visit(value, file);
+      }
+    }
+  };
+
+  for (const [file, doc] of docs) {
+    visit(doc, file);
+  }
+
+  return {openModelNames, mapModelNames};
+}
 
 function parseKotlinFields(inner) {
   const fields = [];
@@ -458,9 +565,12 @@ function kotlinSerializerObject(name, fields) {
     "        val output = encoder as? JsonEncoder",
     `            ?: throw SerializationException("${name} can only be serialized to JSON")`,
     "        val json = output.json",
+    `        val known = setOf(${knownList})`,
     "        val map = linkedMapOf<String, JsonElement>()",
     serLines,
-    "        map.putAll(value.additionalProperties)",
+    "        value.additionalProperties",
+    "            .filterKeys { it !in known }",
+    "            .forEach { (key, element) -> map[key] = element }",
     "        output.encodeJsonElement(JsonObject(map))",
     "    }",
     "}",
@@ -469,16 +579,19 @@ function kotlinSerializerObject(name, fields) {
     .join("\n");
 }
 
-function injectKotlinAdditionalProperties(source) {
+function injectKotlinAdditionalProperties(source, openModelNames) {
   const serializers = [];
+  const generatedModelNames = new Set([...source.matchAll(/^public data class (\w+) \(/gm)].map((entry) => entry[1]));
+  const missingOpenModels = new Set([...openModelNames].filter((name) => generatedModelNames.has(name)));
 
   const result = source.replace(
     /^@Serializable\npublic data class (\w+) \(\n([\s\S]*?)\n\)$/gm,
     (match, name, inner) => {
-      if (KOTLIN_CLOSED_CLASSES.has(name)) {
+      if (!openModelNames.has(name)) {
         return match;
       }
 
+      missingOpenModels.delete(name);
       const fields = parseKotlinFields(inner);
       serializers.push(kotlinSerializerObject(name, fields));
 
@@ -487,18 +600,32 @@ function injectKotlinAdditionalProperties(source) {
     },
   );
 
-  const expected = [...source.matchAll(/^public data class (\w+) \(/gm)]
-    .map((entry) => entry[1])
-    .filter((name) => !KOTLIN_CLOSED_CLASSES.has(name)).length;
-
-  if (serializers.length !== expected) {
-    throw new Error(`Kotlin additionalProperties injection reached ${serializers.length} classes, expected ${expected}`);
+  if (missingOpenModels.size > 0) {
+    throw new Error(`Kotlin additionalProperties injection missed open models:\n${[...missingOpenModels].sort().join("\n")}`);
   }
 
   return `${result}\n${serializers.join("\n")}\n`;
 }
 
-async function generateKotlin(specDir, output) {
+function removeKotlinMapModel(source, modelName) {
+  return source.replace(
+    new RegExp(`\\n@Serializable\\npublic data class ${modelName} \\(\\n[\\s\\S]*?\\n\\)\\n`, "m"),
+    "\n",
+  );
+}
+
+function useKotlinMapsForModels(source, mapModelNames) {
+  let result = source;
+  for (const modelName of mapModelNames) {
+    result = removeKotlinMapModel(result, modelName);
+    result = result
+      .replace(new RegExp(`\\b${modelName}\\?`, "g"), "JsonObject?")
+      .replace(new RegExp(`\\b${modelName}\\b`, "g"), "JsonObject");
+  }
+  return result;
+}
+
+async function generateKotlin(specDir, output, {openModelNames, mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
     "--lang",
@@ -525,34 +652,37 @@ async function generateKotlin(specDir, output) {
       .replace(/^    val /gm, "    public val ")
       .replace(/\(val value: /g, "(public val value: ");
 
-    const withSerializer = result.replace(
+    const withMapModels = useKotlinMapsForModels(result, mapModelNames);
+
+    const withSerializer = withMapModels.replace(
       /@Serializable(\s+public sealed class Extends\b)/,
       "@Serializable(with = ExtendsSerializer::class)$1",
     );
 
-    if (withSerializer === result) {
+    if (withSerializer === withMapModels) {
       throw new Error("ExtendsSerializer injection failed; quicktype Extends output may have changed");
     }
 
-    return injectKotlinAdditionalProperties(withSerializer);
+    return injectKotlinAdditionalProperties(withSerializer, openModelNames);
   });
 }
 
-const SWIFT_CLOSED_STRUCTS = new Set(["ErrorResponse"]);
-
-function injectSwiftAdditionalProperties(source) {
+function injectSwiftAdditionalProperties(source, openModelNames) {
   let injected = 0;
+  const generatedModelNames = new Set([...source.matchAll(/^public struct (\w+): Codable, Sendable \{$/gm)].map((entry) => entry[1]));
+  const missingOpenModels = new Set([...openModelNames].filter((name) => generatedModelNames.has(name)));
 
   const result = source.replace(
     /^public struct (\w+): Codable, Sendable \{\n([\s\S]*?)\n\}$/gm,
     (match, name, inner) => {
-      if (SWIFT_CLOSED_STRUCTS.has(name)) {
+      if (!openModelNames.has(name)) {
         return match;
       }
       if (/\n    public init\(from decoder:/.test(inner)) {
         throw new Error(`Swift additionalProperties injection: struct ${name} already declares a custom decoder`);
       }
 
+      missingOpenModels.delete(name);
       const props = [...inner.matchAll(/^    public let (\w+): (.+)$/gm)].map((entry) => {
         const type = entry[2].trim();
         const optional = type.endsWith("?");
@@ -562,6 +692,10 @@ function injectSwiftAdditionalProperties(source) {
       const hasCodingKeys = /^    public enum CodingKeys: String, CodingKey \{/m.test(inner);
 
       const lines = ["", "", "    public var additionalProperties: [String: JSONAny] = [:]", ""];
+      const knownWireKeys = props.map((prop) => {
+        const match = inner.match(new RegExp(`^        case ${prop.name} = "([^"]+)"$`, "m"));
+        return `"${match?.[1] ?? prop.name}"`;
+      }).join(", ");
 
       if (!hasCodingKeys) {
         lines.push("    public enum CodingKeys: String, CodingKey {");
@@ -570,6 +704,8 @@ function injectSwiftAdditionalProperties(source) {
         }
         lines.push("    }", "");
       }
+
+      lines.push(`    private static let knownAdditionalPropertyKeys: Set<String> = [${knownWireKeys}]`, "");
 
       lines.push("    public init(from decoder: Decoder) throws {");
       lines.push("        let container = try decoder.container(keyedBy: CodingKeys.self)");
@@ -581,9 +717,8 @@ function injectSwiftAdditionalProperties(source) {
         );
       }
       lines.push("        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)");
-      lines.push("        let knownKeys = Set(container.allKeys.map { $0.stringValue })");
       lines.push("        var extras: [String: JSONAny] = [:]");
-      lines.push("        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {");
+      lines.push("        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {");
       lines.push("            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)");
       lines.push("        }");
       lines.push("        self.additionalProperties = extras");
@@ -599,7 +734,7 @@ function injectSwiftAdditionalProperties(source) {
         );
       }
       lines.push("        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)");
-      lines.push("        for key in additionalProperties.keys.sorted() {");
+      lines.push("        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {");
       lines.push("            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)");
       lines.push("        }");
       lines.push("    }");
@@ -609,18 +744,39 @@ function injectSwiftAdditionalProperties(source) {
     },
   );
 
-  const expected = [...source.matchAll(/^public struct (\w+): Codable, Sendable \{$/gm)]
-    .map((entry) => entry[1])
-    .filter((name) => !SWIFT_CLOSED_STRUCTS.has(name)).length;
-
-  if (injected !== expected) {
-    throw new Error(`Swift additionalProperties injection reached ${injected} structs, expected ${expected}`);
+  if (missingOpenModels.size > 0) {
+    throw new Error(`Swift additionalProperties injection missed open models:\n${[...missingOpenModels].sort().join("\n")}`);
   }
 
   return result;
 }
 
-async function generateSwift(specDir, output) {
+function removeSwiftMapModel(source, modelName) {
+  return source
+    .replace(
+      new RegExp(`\\n// MARK: - ${modelName}\\n[\\s\\S]*?^public struct ${modelName}: Codable, Sendable \\{\\n[\\s\\S]*?^\\}\\n`, "m"),
+      "\n",
+    )
+    .replace(
+      new RegExp(`\\n// MARK: ${modelName} convenience initializers and mutators\\n[\\s\\S]*?^\\}\\n`, "m"),
+      "\n",
+    );
+}
+
+function useSwiftMapsForModels(source, mapModelNames) {
+  let result = source;
+  for (const modelName of mapModelNames) {
+    result = removeSwiftMapModel(result, modelName);
+    result = result
+      .replace(new RegExp(`\\b${modelName}\\?\\?`, "g"), "[String: JSONAny]??")
+      .replace(new RegExp(`\\b${modelName}\\?`, "g"), "[String: JSONAny]?")
+      .replace(new RegExp(`\\b${modelName}\\.self`, "g"), "[String: JSONAny].self")
+      .replace(new RegExp(`\\b${modelName}\\b`, "g"), "[String: JSONAny]");
+  }
+  return result;
+}
+
+async function generateSwift(specDir, output, {openModelNames, mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
     "--lang",
@@ -654,13 +810,37 @@ async function generateSwift(specDir, output) {
     }
 
     const stripped = `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
-    return injectSwiftAdditionalProperties(stripped);
+    const withMapModels = useSwiftMapsForModels(stripped, mapModelNames);
+    return injectSwiftAdditionalProperties(withMapModels, openModelNames);
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);
 }
 
-async function generateTypescript(specDir, output) {
+function removeTypescriptMapModel(source, modelName) {
+  return source
+    .replace(
+      new RegExp(`\\nexport interface ${modelName} \\{\\n[\\s\\S]*?^\\}\\n`, "m"),
+      "\n",
+    )
+    .replace(
+      new RegExp(`\\n    "${modelName}": o\\(\\[\\n[\\s\\S]*?\\n    \\], "any"\\),`, "m"),
+      "",
+    );
+}
+
+function useTypescriptMapsForModels(source, mapModelNames) {
+  let result = source;
+  for (const modelName of mapModelNames) {
+    result = removeTypescriptMapModel(result, modelName);
+    result = result
+      .replace(new RegExp(`\\b${modelName}\\b`, "g"), "{ [key: string]: any }")
+      .replace(new RegExp(`r\\("\\{ \\[key: string\\]: any \\}"\\)`, "g"), 'm("any")');
+  }
+  return result;
+}
+
+async function generateTypescript(specDir, output, {mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
     "--lang",
@@ -677,7 +857,9 @@ async function generateTypescript(specDir, output) {
     output,
   ]);
 
-  await normalizeGeneratedFile(output, (source) => source.replace(/^type /gm, "export type "));
+  await normalizeGeneratedFile(output, (source) =>
+    useTypescriptMapsForModels(source.replace(/^type /gm, "export type "), mapModelNames),
+  );
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 
@@ -728,6 +910,8 @@ async function main() {
       }
     }
 
+    const modelCodegenInfo = await collectModelCodegenInfo(specDir);
+
     switch (lang) {
       case "kotlin": {
         const target = output || path.join(
@@ -746,20 +930,20 @@ async function main() {
           "checkout",
           "Models.kt",
         );
-        await generateKotlin(specDir, target);
+        await generateKotlin(specDir, target, modelCodegenInfo);
         await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_kotlin_catalog.mjs")]);
         console.log(`Generated ${target}`);
         break;
       }
       case "swift": {
         const target = output || path.join(PROTOCOL_DIR, "languages", "swift", "Sources", "UniversalCommerceProtocol", "EmbeddedCheckoutProtocol", "Generated", "Models.swift");
-        await generateSwift(specDir, target);
+        await generateSwift(specDir, target, modelCodegenInfo);
         console.log(`Generated ${target}`);
         break;
       }
       case "typescript": {
         const target = output || path.join(PROTOCOL_DIR, "languages", "typescript", "src", "generated", "Models.ts");
-        const declarationOutput = await generateTypescript(specDir, target);
+        const declarationOutput = await generateTypescript(specDir, target, modelCodegenInfo);
         console.log(`Generated ${target}, TypeScript protocol notifications, and ${declarationOutput}`);
         break;
       }

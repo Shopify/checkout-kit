@@ -1,4 +1,5 @@
 {
+  "originHash" : "bc88bf1604a33523225011c74965f351c1c5c643d0ed775bcf9f7e8a5deaf801",
   "pins" : [
     {
       "identity" : "viewinspector",
@@ -10,5 +11,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
