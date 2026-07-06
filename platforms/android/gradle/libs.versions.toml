@@ -4,7 +4,7 @@ embeddedCheckoutProtocolAndroid = "2026.04.08.1-alpha.1"
 
 androidApplicationGradlePlugin = "9.2.1"
 androidLibraryGradlePlugin = "9.1.1"
-apollo = "5.0.0"
+apollo = "5.0.1"
 apolloCache = "1.0.5"
 assertj = "3.27.7"
 awaitility = "4.3.0"
