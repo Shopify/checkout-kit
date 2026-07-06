@@ -1,0 +1,12 @@
+import type { AddressChangeResult, AuthRequest, AuthResult, Checkout, CredentialResult, ErrorResponse, InstrumentsChangeResult, ReadyRequest, ReadyResult, WindowOpenRequest, WindowOpenResult } from './Models';
+export declare function decodeCheckout(value: unknown): Checkout;
+export declare function decodeErrorResponse(value: unknown): ErrorResponse;
+export declare function decodeReadyRequest(value: unknown): ReadyRequest;
+export declare function decodeAuthRequest(value: unknown): AuthRequest;
+export declare function decodeWindowOpenRequest(value: unknown): WindowOpenRequest;
+export declare function encodeReadyResult(value: ReadyResult): unknown;
+export declare function encodeAuthResult(value: AuthResult): unknown;
+export declare function encodeInstrumentsChangeResult(value: InstrumentsChangeResult): unknown;
+export declare function encodeCredentialResult(value: CredentialResult): unknown;
+export declare function encodeAddressChangeResult(value: AddressChangeResult): unknown;
+export declare function encodeWindowOpenResult(value: WindowOpenResult): unknown;

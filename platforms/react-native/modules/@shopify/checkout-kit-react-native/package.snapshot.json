@@ -100,6 +100,8 @@
   "node_modules/@shopify/checkout-kit-protocol/src/embedded_checkout_protocol.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/generated/Models.d.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/generated/Models.ts",
+  "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolCodecs.d.ts",
+  "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolCodecs.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolNotifications.d.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolNotifications.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/index.d.ts",

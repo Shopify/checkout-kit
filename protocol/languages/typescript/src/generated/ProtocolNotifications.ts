@@ -2,7 +2,8 @@
 // Do not edit directly.
 
 import {notificationDescriptor, requestDescriptor, type NotificationDescriptor, type RequestDescriptor} from '../descriptors';
-import {Convert, type AddressChangeResult, type AuthRequest, type AuthResult, type Checkout, type CredentialResult, type ErrorResponse, type InstrumentsChangeResult, type ReadyRequest, type ReadyResult, type WindowOpenRequest, type WindowOpenResult} from './Models';
+import {decodeAuthRequest, decodeCheckout, decodeErrorResponse, decodeReadyRequest, decodeWindowOpenRequest, encodeAddressChangeResult, encodeAuthResult, encodeCredentialResult, encodeInstrumentsChangeResult, encodeReadyResult, encodeWindowOpenResult} from './ProtocolCodecs';
+import type {AddressChangeResult, AuthRequest, AuthResult, Checkout, CredentialResult, ErrorResponse, InstrumentsChangeResult, ReadyRequest, ReadyResult, WindowOpenRequest, WindowOpenResult} from './Models';
 
 export const SPEC_VERSION = '2026-04-08';
 
@@ -49,15 +50,15 @@ export type CheckoutProtocolCatalogPayloadDecoder<
 > = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
 
 export const checkoutProtocolCatalogPayloadDecoders = {
-  [checkoutProtocolCatalog.error]: decodeWith(Convert.toErrorResponse),
-  [checkoutProtocolCatalog.start]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.complete]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.messagesChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.lineItemsChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.buyerChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.totalsChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.paymentChange]: decodeWith(Convert.toCheckout),
-  [checkoutProtocolCatalog.fulfillmentChange]: decodeWith(Convert.toCheckout),
+  [checkoutProtocolCatalog.error]: decodeErrorResponse,
+  [checkoutProtocolCatalog.start]: decodeCheckout,
+  [checkoutProtocolCatalog.complete]: decodeCheckout,
+  [checkoutProtocolCatalog.messagesChange]: decodeCheckout,
+  [checkoutProtocolCatalog.lineItemsChange]: decodeCheckout,
+  [checkoutProtocolCatalog.buyerChange]: decodeCheckout,
+  [checkoutProtocolCatalog.totalsChange]: decodeCheckout,
+  [checkoutProtocolCatalog.paymentChange]: decodeCheckout,
+  [checkoutProtocolCatalog.fulfillmentChange]: decodeCheckout,
 } satisfies {
   [K in keyof CheckoutProtocolCatalogPayloads]:
     CheckoutProtocolCatalogPayloadDecoder<K>;
@@ -66,66 +67,39 @@ export const checkoutProtocolCatalogPayloadDecoders = {
 export const notificationDescriptors = {
   error: notificationDescriptor<ErrorResponse>(
     checkoutProtocolCatalog.error,
-    params =>
-      Convert.toErrorResponse(
-        JSON.stringify((params as {error: unknown}).error),
-      ),
+    params => decodeErrorResponse((params as {error: unknown}).error),
   ),
   start: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.start,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
   ),
   complete: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.complete,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
   ),
   messagesChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.messagesChange,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
   ),
   lineItemsChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.lineItemsChange,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
   ),
   buyerChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.buyerChange,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
   ),
   totalsChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.totalsChange,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
   ),
   paymentChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.paymentChange,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
   ),
   fulfillmentChange: notificationDescriptor<Checkout>(
     checkoutProtocolCatalog.fulfillmentChange,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
   ),
 } satisfies {
   [K in keyof typeof checkoutProtocolCatalog]: NotificationDescriptor<
@@ -167,47 +141,38 @@ export const requestDescriptors = {
   ready: requestDescriptor<ReadyRequest, ReadyResult>(
     checkoutProtocolRequestCatalog.ready,
     null,
-    params => Convert.toReadyRequest(JSON.stringify(params ?? {})),
-    result => JSON.parse(Convert.readyResultToJson(result)) as unknown,
+    params => decodeReadyRequest(params ?? {}),
+    result => encodeReadyResult(result),
   ),
   auth: requestDescriptor<AuthRequest, AuthResult>(
     checkoutProtocolRequestCatalog.auth,
     null,
-    params => Convert.toAuthRequest(JSON.stringify(params ?? {})),
-    result => JSON.parse(Convert.authResultToJson(result)) as unknown,
+    params => decodeAuthRequest(params ?? {}),
+    result => encodeAuthResult(result),
   ),
   paymentInstrumentsChange: requestDescriptor<Checkout, InstrumentsChangeResult>(
     checkoutProtocolRequestCatalog.paymentInstrumentsChange,
     Delegations.paymentInstrumentsChange,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
-    result => JSON.parse(Convert.instrumentsChangeResultToJson(result)) as unknown,
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
+    result => encodeInstrumentsChangeResult(result),
   ),
   paymentCredential: requestDescriptor<Checkout, CredentialResult>(
     checkoutProtocolRequestCatalog.paymentCredential,
     Delegations.paymentCredential,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
-    result => JSON.parse(Convert.credentialResultToJson(result)) as unknown,
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
+    result => encodeCredentialResult(result),
   ),
   windowOpen: requestDescriptor<WindowOpenRequest, WindowOpenResult>(
     checkoutProtocolRequestCatalog.windowOpen,
     Delegations.windowOpen,
-    params => Convert.toWindowOpenRequest(JSON.stringify(params ?? {})),
-    result => JSON.parse(Convert.windowOpenResultToJson(result)) as unknown,
+    params => decodeWindowOpenRequest(params ?? {}),
+    result => encodeWindowOpenResult(result),
   ),
   fulfillmentAddressChange: requestDescriptor<Checkout, AddressChangeResult>(
     checkoutProtocolRequestCatalog.fulfillmentAddressChange,
     Delegations.fulfillmentAddressChange,
-    params =>
-      Convert.toCheckout(
-        JSON.stringify((params as {checkout: unknown}).checkout),
-      ),
-    result => JSON.parse(Convert.addressChangeResultToJson(result)) as unknown,
+    params => decodeCheckout((params as {checkout: unknown}).checkout),
+    result => encodeAddressChangeResult(result),
   ),
 } satisfies {
   [K in keyof typeof checkoutProtocolRequestCatalog]: RequestDescriptor<
@@ -233,7 +198,3 @@ export const embeddedCheckoutMethods: ReadonlySet<string> = new Set([
   'ec.fulfillment.change',
   'ec.fulfillment.address_change_request',
 ]);
-
-function decodeWith<T>(converter: (json: string) => T): (payload: unknown) => T {
-  return payload => converter(JSON.stringify(payload));
-}
