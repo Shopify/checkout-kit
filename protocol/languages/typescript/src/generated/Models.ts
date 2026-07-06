@@ -69,7 +69,7 @@ export interface Checkout {
      */
     order?:   OrderConfirmation;
     payment?: Payment;
-    signals?: Signals;
+    signals?: { [key: string]: any };
     /**
      * Checkout state indicating the current phase and required action. See Checkout Status
      * lifecycle documentation for state transition details.
@@ -748,25 +748,6 @@ export interface PaymentCredential {
      * value.
      */
     type: string;
-    [property: string]: any;
-}
-
-/**
- * Environment data provided by the platform to support authorization and abuse prevention.
- * Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
- * observation or independently verifiable third-party attestations. All signal keys MUST
- * use reverse-domain naming to ensure provenance and prevent collisions when multiple
- * extensions contribute to the shared namespace.
- */
-export interface Signals {
-    /**
-     * Client's IP address (IPv4 or IPv6).
-     */
-    devUcpBuyerIp?: string;
-    /**
-     * Client's HTTP User-Agent header or equivalent.
-     */
-    devUcpUserAgent?: string;
     [property: string]: any;
 }
 
@@ -2132,7 +2113,7 @@ const typeMap: any = {
         { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
         { json: "order", js: "order", typ: u(undefined, r("OrderConfirmation")) },
         { json: "payment", js: "payment", typ: u(undefined, r("Payment")) },
-        { json: "signals", js: "signals", typ: u(undefined, r("Signals")) },
+        { json: "signals", js: "signals", typ: u(undefined, m("any")) },
         { json: "status", js: "status", typ: r("CheckoutStatus") },
         { json: "totals", js: "totals", typ: a(r("CheckoutTotal")) },
         { json: "ucp", js: "ucp", typ: r("UcpCheckoutResponseSchema") },
@@ -2282,10 +2263,6 @@ const typeMap: any = {
     ], "any"),
     "PaymentCredential": o([
         { json: "type", js: "type", typ: "" },
-    ], "any"),
-    "Signals": o([
-        { json: "dev.ucp.buyer_ip", js: "devUcpBuyerIp", typ: u(undefined, "") },
-        { json: "dev.ucp.user_agent", js: "devUcpUserAgent", typ: u(undefined, "") },
     ], "any"),
     "CheckoutTotal": o([
         { json: "amount", js: "amount", typ: 0 },

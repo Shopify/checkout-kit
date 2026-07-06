@@ -11,17 +11,6 @@ class ExtensionPreservationTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Test
-    fun `preserves unknown extension keys on Signals`() {
-        val wire = """{"dev.ucp.buyer_ip":"203.0.113.7","com.example.device_id":"abc-123"}"""
-
-        val signals = json.decodeFromString(Signals.serializer(), wire)
-        val reEncoded = json.parseToJsonElement(json.encodeToString(Signals.serializer(), signals)).jsonObject
-
-        assertThat(reEncoded["dev.ucp.buyer_ip"]?.jsonPrimitive?.content).isEqualTo("203.0.113.7")
-        assertThat(reEncoded["com.example.device_id"]?.jsonPrimitive?.content).isEqualTo("abc-123")
-    }
-
-    @Test
     fun `preserves unknown extension keys on Checkout`() {
         val wire = """
             {
@@ -32,6 +21,7 @@ class ExtensionPreservationTest {
               "status": "incomplete",
               "totals": [],
               "ucp": {"payment_handlers": {}, "version": "2026-04-08"},
+              "signals": {"dev.ucp.buyer_ip": "203.0.113.7", "com.example.device_id": "abc-123"},
               "com.example.foo": "bar"
             }
         """.trimIndent()
@@ -40,5 +30,9 @@ class ExtensionPreservationTest {
         val reEncoded = json.parseToJsonElement(json.encodeToString(Checkout.serializer(), checkout)).jsonObject
 
         assertThat(reEncoded["com.example.foo"]?.jsonPrimitive?.content).isEqualTo("bar")
+
+        val signals = reEncoded["signals"]?.jsonObject
+        assertThat(signals?.get("dev.ucp.buyer_ip")?.jsonPrimitive?.content).isEqualTo("203.0.113.7")
+        assertThat(signals?.get("com.example.device_id")?.jsonPrimitive?.content).isEqualTo("abc-123")
     }
 }

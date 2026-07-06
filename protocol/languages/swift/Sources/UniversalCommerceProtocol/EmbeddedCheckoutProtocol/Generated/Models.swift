@@ -46,7 +46,7 @@ public struct Checkout: Codable, Sendable {
     /// Details about an order created for this checkout session.
     public let order: OrderConfirmation?
     public let payment: Payment?
-    public let signals: Signals?
+    public let signals: [String: JSONAny]?
     /// Checkout state indicating the current phase and required action. See Checkout Status
     /// lifecycle documentation for state transition details.
     public let status: CheckoutStatus
@@ -64,7 +64,7 @@ public struct Checkout: Codable, Sendable {
         case links, messages, order, payment, signals, status, totals, ucp
     }
 
-    public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: Signals?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
+    public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
         self.attribution = attribution
         self.buyer = buyer
         self.context = context
@@ -83,6 +83,63 @@ public struct Checkout: Codable, Sendable {
         self.status = status
         self.totals = totals
         self.ucp = ucp
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.attribution = try container.decodeIfPresent([String: String].self, forKey: .attribution)
+        self.buyer = try container.decodeIfPresent(Buyer.self, forKey: .buyer)
+        self.context = try container.decodeIfPresent(Context.self, forKey: .context)
+        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        self.currency = try container.decode(String.self, forKey: .currency)
+        self.discounts = try container.decodeIfPresent(CheckoutDiscounts.self, forKey: .discounts)
+        self.expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+        self.fulfillment = try container.decodeIfPresent(CheckoutFulfillment.self, forKey: .fulfillment)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItems = try container.decode([LineItem].self, forKey: .lineItems)
+        self.links = try container.decode([Link].self, forKey: .links)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        self.order = try container.decodeIfPresent(OrderConfirmation.self, forKey: .order)
+        self.payment = try container.decodeIfPresent(Payment.self, forKey: .payment)
+        self.signals = try container.decodeIfPresent([String: JSONAny].self, forKey: .signals)
+        self.status = try container.decode(CheckoutStatus.self, forKey: .status)
+        self.totals = try container.decode([CheckoutTotal].self, forKey: .totals)
+        self.ucp = try container.decode(UCPCheckoutResponseSchema.self, forKey: .ucp)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(attribution, forKey: .attribution)
+        try container.encodeIfPresent(buyer, forKey: .buyer)
+        try container.encodeIfPresent(context, forKey: .context)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encode(currency, forKey: .currency)
+        try container.encodeIfPresent(discounts, forKey: .discounts)
+        try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
+        try container.encodeIfPresent(fulfillment, forKey: .fulfillment)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItems, forKey: .lineItems)
+        try container.encode(links, forKey: .links)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        try container.encodeIfPresent(order, forKey: .order)
+        try container.encodeIfPresent(payment, forKey: .payment)
+        try container.encodeIfPresent(signals, forKey: .signals)
+        try container.encode(status, forKey: .status)
+        try container.encode(totals, forKey: .totals)
+        try container.encode(ucp, forKey: .ucp)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -119,7 +176,7 @@ public extension Checkout {
         messages: [Message]?? = nil,
         order: OrderConfirmation?? = nil,
         payment: Payment?? = nil,
-        signals: Signals?? = nil,
+        signals: [String: JSONAny]?? = nil,
         status: CheckoutStatus? = nil,
         totals: [CheckoutTotal]? = nil,
         ucp: UCPCheckoutResponseSchema? = nil
@@ -179,6 +236,35 @@ public struct Buyer: Codable, Sendable {
         self.firstName = firstName
         self.lastName = lastName
         self.phoneNumber = phoneNumber
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.email = try container.decodeIfPresent(String.self, forKey: .email)
+        self.firstName = try container.decodeIfPresent(String.self, forKey: .firstName)
+        self.lastName = try container.decodeIfPresent(String.self, forKey: .lastName)
+        self.phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(email, forKey: .email)
+        try container.encodeIfPresent(firstName, forKey: .firstName)
+        try container.encodeIfPresent(lastName, forKey: .lastName)
+        try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -285,6 +371,41 @@ public struct Context: Codable, Sendable {
         self.language = language
         self.postalCode = postalCode
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.addressCountry = try container.decodeIfPresent(String.self, forKey: .addressCountry)
+        self.addressRegion = try container.decodeIfPresent(String.self, forKey: .addressRegion)
+        self.currency = try container.decodeIfPresent(String.self, forKey: .currency)
+        self.eligibility = try container.decodeIfPresent([String].self, forKey: .eligibility)
+        self.intent = try container.decodeIfPresent(String.self, forKey: .intent)
+        self.language = try container.decodeIfPresent(String.self, forKey: .language)
+        self.postalCode = try container.decodeIfPresent(String.self, forKey: .postalCode)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(addressCountry, forKey: .addressCountry)
+        try container.encodeIfPresent(addressRegion, forKey: .addressRegion)
+        try container.encodeIfPresent(currency, forKey: .currency)
+        try container.encodeIfPresent(eligibility, forKey: .eligibility)
+        try container.encodeIfPresent(intent, forKey: .intent)
+        try container.encodeIfPresent(language, forKey: .language)
+        try container.encodeIfPresent(postalCode, forKey: .postalCode)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: Context convenience initializers and mutators
@@ -346,6 +467,35 @@ public struct CheckoutDiscounts: Codable, Sendable {
     public init(applied: [AppliedDiscount]?, codes: [String]?) {
         self.applied = applied
         self.codes = codes
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case applied, codes
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.applied = try container.decodeIfPresent([AppliedDiscount].self, forKey: .applied)
+        self.codes = try container.decodeIfPresent([String].self, forKey: .codes)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(applied, forKey: .applied)
+        try container.encodeIfPresent(codes, forKey: .codes)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -422,6 +572,49 @@ public struct AppliedDiscount: Codable, Sendable {
         self.provisional = provisional
         self.title = title
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case allocations, amount, automatic, code, eligibility, method, priority, provisional, title
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.allocations = try container.decodeIfPresent([DiscountAllocation].self, forKey: .allocations)
+        self.amount = try container.decode(Int.self, forKey: .amount)
+        self.automatic = try container.decodeIfPresent(Bool.self, forKey: .automatic)
+        self.code = try container.decodeIfPresent(String.self, forKey: .code)
+        self.eligibility = try container.decodeIfPresent(String.self, forKey: .eligibility)
+        self.method = try container.decodeIfPresent(DiscountMethod.self, forKey: .method)
+        self.priority = try container.decodeIfPresent(Int.self, forKey: .priority)
+        self.provisional = try container.decodeIfPresent(Bool.self, forKey: .provisional)
+        self.title = try container.decode(String.self, forKey: .title)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(allocations, forKey: .allocations)
+        try container.encode(amount, forKey: .amount)
+        try container.encodeIfPresent(automatic, forKey: .automatic)
+        try container.encodeIfPresent(code, forKey: .code)
+        try container.encodeIfPresent(eligibility, forKey: .eligibility)
+        try container.encodeIfPresent(method, forKey: .method)
+        try container.encodeIfPresent(priority, forKey: .priority)
+        try container.encodeIfPresent(provisional, forKey: .provisional)
+        try container.encode(title, forKey: .title)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: AppliedDiscount convenience initializers and mutators
@@ -486,6 +679,35 @@ public struct DiscountAllocation: Codable, Sendable {
     public init(amount: Int, path: String) {
         self.amount = amount
         self.path = path
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case amount, path
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.amount = try container.decode(Int.self, forKey: .amount)
+        self.path = try container.decode(String.self, forKey: .path)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(amount, forKey: .amount)
+        try container.encode(path, forKey: .path)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -552,6 +774,31 @@ public struct CheckoutFulfillment: Codable, Sendable {
         self.availableMethods = availableMethods
         self.methods = methods
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.availableMethods = try container.decodeIfPresent([FulfillmentAvailableMethod].self, forKey: .availableMethods)
+        self.methods = try container.decodeIfPresent([FulfillmentMethod].self, forKey: .methods)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(availableMethods, forKey: .availableMethods)
+        try container.encodeIfPresent(methods, forKey: .methods)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: CheckoutFulfillment convenience initializers and mutators
@@ -615,6 +862,35 @@ public struct FulfillmentAvailableMethod: Codable, Sendable {
         self.fulfillableOn = fulfillableOn
         self.lineItemIDS = lineItemIDS
         self.type = type
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.fulfillableOn = try container.decodeIfPresent(String.self, forKey: .fulfillableOn)
+        self.lineItemIDS = try container.decode([String].self, forKey: .lineItemIDS)
+        self.type = try container.decode(FulfillmentMethodType.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(fulfillableOn, forKey: .fulfillableOn)
+        try container.encode(lineItemIDS, forKey: .lineItemIDS)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -698,6 +974,39 @@ public struct FulfillmentMethod: Codable, Sendable {
         self.lineItemIDS = lineItemIDS
         self.selectedDestinationID = selectedDestinationID
         self.type = type
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.destinations = try container.decodeIfPresent([FulfillmentDestination].self, forKey: .destinations)
+        self.groups = try container.decodeIfPresent([FulfillmentGroup].self, forKey: .groups)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItemIDS = try container.decode([String].self, forKey: .lineItemIDS)
+        self.selectedDestinationID = try container.decodeIfPresent(String.self, forKey: .selectedDestinationID)
+        self.type = try container.decode(FulfillmentMethodType.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(destinations, forKey: .destinations)
+        try container.encodeIfPresent(groups, forKey: .groups)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItemIDS, forKey: .lineItemIDS)
+        try container.encodeIfPresent(selectedDestinationID, forKey: .selectedDestinationID)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -818,6 +1127,51 @@ public struct FulfillmentDestination: Codable, Sendable {
         self.address = address
         self.name = name
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.addressCountry = try container.decodeIfPresent(String.self, forKey: .addressCountry)
+        self.addressLocality = try container.decodeIfPresent(String.self, forKey: .addressLocality)
+        self.addressRegion = try container.decodeIfPresent(String.self, forKey: .addressRegion)
+        self.extendedAddress = try container.decodeIfPresent(String.self, forKey: .extendedAddress)
+        self.firstName = try container.decodeIfPresent(String.self, forKey: .firstName)
+        self.lastName = try container.decodeIfPresent(String.self, forKey: .lastName)
+        self.phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        self.postalCode = try container.decodeIfPresent(String.self, forKey: .postalCode)
+        self.streetAddress = try container.decodeIfPresent(String.self, forKey: .streetAddress)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.address = try container.decodeIfPresent(PostalAddress.self, forKey: .address)
+        self.name = try container.decodeIfPresent(String.self, forKey: .name)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(addressCountry, forKey: .addressCountry)
+        try container.encodeIfPresent(addressLocality, forKey: .addressLocality)
+        try container.encodeIfPresent(addressRegion, forKey: .addressRegion)
+        try container.encodeIfPresent(extendedAddress, forKey: .extendedAddress)
+        try container.encodeIfPresent(firstName, forKey: .firstName)
+        try container.encodeIfPresent(lastName, forKey: .lastName)
+        try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
+        try container.encodeIfPresent(postalCode, forKey: .postalCode)
+        try container.encodeIfPresent(streetAddress, forKey: .streetAddress)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(address, forKey: .address)
+        try container.encodeIfPresent(name, forKey: .name)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: FulfillmentDestination convenience initializers and mutators
@@ -931,6 +1285,45 @@ public struct PostalAddress: Codable, Sendable {
         self.postalCode = postalCode
         self.streetAddress = streetAddress
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.addressCountry = try container.decodeIfPresent(String.self, forKey: .addressCountry)
+        self.addressLocality = try container.decodeIfPresent(String.self, forKey: .addressLocality)
+        self.addressRegion = try container.decodeIfPresent(String.self, forKey: .addressRegion)
+        self.extendedAddress = try container.decodeIfPresent(String.self, forKey: .extendedAddress)
+        self.firstName = try container.decodeIfPresent(String.self, forKey: .firstName)
+        self.lastName = try container.decodeIfPresent(String.self, forKey: .lastName)
+        self.phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        self.postalCode = try container.decodeIfPresent(String.self, forKey: .postalCode)
+        self.streetAddress = try container.decodeIfPresent(String.self, forKey: .streetAddress)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(addressCountry, forKey: .addressCountry)
+        try container.encodeIfPresent(addressLocality, forKey: .addressLocality)
+        try container.encodeIfPresent(addressRegion, forKey: .addressRegion)
+        try container.encodeIfPresent(extendedAddress, forKey: .extendedAddress)
+        try container.encodeIfPresent(firstName, forKey: .firstName)
+        try container.encodeIfPresent(lastName, forKey: .lastName)
+        try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
+        try container.encodeIfPresent(postalCode, forKey: .postalCode)
+        try container.encodeIfPresent(streetAddress, forKey: .streetAddress)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: PostalAddress convenience initializers and mutators
@@ -1008,6 +1401,35 @@ public struct FulfillmentGroup: Codable, Sendable {
         self.lineItemIDS = lineItemIDS
         self.options = options
         self.selectedOptionID = selectedOptionID
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItemIDS = try container.decode([String].self, forKey: .lineItemIDS)
+        self.options = try container.decodeIfPresent([FulfillmentOption].self, forKey: .options)
+        self.selectedOptionID = try container.decodeIfPresent(String.self, forKey: .selectedOptionID)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItemIDS, forKey: .lineItemIDS)
+        try container.encodeIfPresent(options, forKey: .options)
+        try container.encodeIfPresent(selectedOptionID, forKey: .selectedOptionID)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -1087,6 +1509,41 @@ public struct FulfillmentOption: Codable, Sendable {
         self.title = title
         self.totals = totals
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.carrier = try container.decodeIfPresent(String.self, forKey: .carrier)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.earliestFulfillmentTime = try container.decodeIfPresent(Date.self, forKey: .earliestFulfillmentTime)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.latestFulfillmentTime = try container.decodeIfPresent(Date.self, forKey: .latestFulfillmentTime)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.totals = try container.decode([LineItemTotal].self, forKey: .totals)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(carrier, forKey: .carrier)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(earliestFulfillmentTime, forKey: .earliestFulfillmentTime)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(latestFulfillmentTime, forKey: .latestFulfillmentTime)
+        try container.encode(title, forKey: .title)
+        try container.encode(totals, forKey: .totals)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: FulfillmentOption convenience initializers and mutators
@@ -1158,6 +1615,33 @@ public struct LineItemTotal: Codable, Sendable {
         self.displayText = displayText
         self.type = type
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.amount = try container.decode(Int.self, forKey: .amount)
+        self.displayText = try container.decodeIfPresent(String.self, forKey: .displayText)
+        self.type = try container.decode(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(amount, forKey: .amount)
+        try container.encodeIfPresent(displayText, forKey: .displayText)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: LineItemTotal convenience initializers and mutators
@@ -1223,6 +1707,37 @@ public struct LineItem: Codable, Sendable {
         self.parentID = parentID
         self.quantity = quantity
         self.totals = totals
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.item = try container.decode(Item.self, forKey: .item)
+        self.parentID = try container.decodeIfPresent(String.self, forKey: .parentID)
+        self.quantity = try container.decode(Int.self, forKey: .quantity)
+        self.totals = try container.decode([LineItemTotal].self, forKey: .totals)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(item, forKey: .item)
+        try container.encodeIfPresent(parentID, forKey: .parentID)
+        try container.encode(quantity, forKey: .quantity)
+        try container.encode(totals, forKey: .totals)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -1294,6 +1809,35 @@ public struct Item: Codable, Sendable {
         self.price = price
         self.title = title
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.imageURL = try container.decodeIfPresent(String.self, forKey: .imageURL)
+        self.price = try container.decode(Int.self, forKey: .price)
+        self.title = try container.decode(String.self, forKey: .title)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(imageURL, forKey: .imageURL)
+        try container.encode(price, forKey: .price)
+        try container.encode(title, forKey: .title)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: Item convenience initializers and mutators
@@ -1353,6 +1897,37 @@ public struct Link: Codable, Sendable {
         self.title = title
         self.type = type
         self.url = url
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case title, type, url
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.title = try container.decodeIfPresent(String.self, forKey: .title)
+        self.type = try container.decode(String.self, forKey: .type)
+        self.url = try container.decode(String.self, forKey: .url)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encode(type, forKey: .type)
+        try container.encode(url, forKey: .url)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -1448,6 +2023,45 @@ public struct Message: Codable, Sendable {
         self.imageURL = imageURL
         self.presentation = presentation
         self.url = url
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.code = try container.decodeIfPresent(String.self, forKey: .code)
+        self.content = try container.decode(String.self, forKey: .content)
+        self.contentType = try container.decodeIfPresent(ContentType.self, forKey: .contentType)
+        self.path = try container.decodeIfPresent(String.self, forKey: .path)
+        self.severity = try container.decodeIfPresent(Severity.self, forKey: .severity)
+        self.type = try container.decode(MessageType.self, forKey: .type)
+        self.imageURL = try container.decodeIfPresent(String.self, forKey: .imageURL)
+        self.presentation = try container.decodeIfPresent(String.self, forKey: .presentation)
+        self.url = try container.decodeIfPresent(String.self, forKey: .url)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(code, forKey: .code)
+        try container.encode(content, forKey: .content)
+        try container.encodeIfPresent(contentType, forKey: .contentType)
+        try container.encodeIfPresent(path, forKey: .path)
+        try container.encodeIfPresent(severity, forKey: .severity)
+        try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(imageURL, forKey: .imageURL)
+        try container.encodeIfPresent(presentation, forKey: .presentation)
+        try container.encodeIfPresent(url, forKey: .url)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -1550,6 +2164,33 @@ public struct OrderConfirmation: Codable, Sendable {
         self.label = label
         self.permalinkURL = permalinkURL
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.label = try container.decodeIfPresent(String.self, forKey: .label)
+        self.permalinkURL = try container.decode(String.self, forKey: .permalinkURL)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(label, forKey: .label)
+        try container.encode(permalinkURL, forKey: .permalinkURL)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: OrderConfirmation convenience initializers and mutators
@@ -1601,6 +2242,33 @@ public struct Payment: Codable, Sendable {
 
     public init(instruments: [SelectedPaymentInstrument]?) {
         self.instruments = instruments
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case instruments
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.instruments = try container.decodeIfPresent([SelectedPaymentInstrument].self, forKey: .instruments)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(instruments, forKey: .instruments)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -1678,6 +2346,41 @@ public struct SelectedPaymentInstrument: Codable, Sendable {
         self.type = type
         self.selected = selected
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.billingAddress = try container.decodeIfPresent(PostalAddress.self, forKey: .billingAddress)
+        self.credential = try container.decodeIfPresent(PaymentCredential.self, forKey: .credential)
+        self.display = try container.decodeIfPresent([String: JSONAny].self, forKey: .display)
+        self.handlerID = try container.decode(String.self, forKey: .handlerID)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.type = try container.decode(String.self, forKey: .type)
+        self.selected = try container.decodeIfPresent(Bool.self, forKey: .selected)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(billingAddress, forKey: .billingAddress)
+        try container.encodeIfPresent(credential, forKey: .credential)
+        try container.encodeIfPresent(display, forKey: .display)
+        try container.encode(handlerID, forKey: .handlerID)
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(selected, forKey: .selected)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: SelectedPaymentInstrument convenience initializers and mutators
@@ -1737,6 +2440,33 @@ public struct PaymentCredential: Codable, Sendable {
     public init(type: String) {
         self.type = type
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case type
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.type = try container.decode(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: PaymentCredential convenience initializers and mutators
@@ -1762,66 +2492,6 @@ public extension PaymentCredential {
     ) -> PaymentCredential {
         return PaymentCredential(
             type: type ?? self.type
-        )
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
-
-/// Environment data provided by the platform to support authorization and abuse prevention.
-/// Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
-/// observation or independently verifiable third-party attestations. All signal keys MUST
-/// use reverse-domain naming to ensure provenance and prevent collisions when multiple
-/// extensions contribute to the shared namespace.
-// MARK: - Signals
-public struct Signals: Codable, Sendable {
-    /// Client's IP address (IPv4 or IPv6).
-    public let devUcpBuyerIP: String?
-    /// Client's HTTP User-Agent header or equivalent.
-    public let devUcpUserAgent: String?
-
-    public enum CodingKeys: String, CodingKey {
-        case devUcpBuyerIP = "dev.ucp.buyer_ip"
-        case devUcpUserAgent = "dev.ucp.user_agent"
-    }
-
-    public init(devUcpBuyerIP: String?, devUcpUserAgent: String?) {
-        self.devUcpBuyerIP = devUcpBuyerIP
-        self.devUcpUserAgent = devUcpUserAgent
-    }
-}
-
-// MARK: Signals convenience initializers and mutators
-
-public extension Signals {
-    init(data: Data) throws {
-        self = try newJSONDecoder().decode(Signals.self, from: data)
-    }
-
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
-        }
-        try self.init(data: data)
-    }
-
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func with(
-        devUcpBuyerIP: String?? = nil,
-        devUcpUserAgent: String?? = nil
-    ) -> Signals {
-        return Signals(
-            devUcpBuyerIP: devUcpBuyerIP ?? self.devUcpBuyerIP,
-            devUcpUserAgent: devUcpUserAgent ?? self.devUcpUserAgent
         )
     }
 
@@ -1876,6 +2546,35 @@ public struct CheckoutTotal: Codable, Sendable {
         self.displayText = displayText
         self.type = type
         self.lines = lines
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.amount = try container.decode(Int.self, forKey: .amount)
+        self.displayText = try container.decodeIfPresent(String.self, forKey: .displayText)
+        self.type = try container.decode(String.self, forKey: .type)
+        self.lines = try container.decodeIfPresent([Line].self, forKey: .lines)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(amount, forKey: .amount)
+        try container.encodeIfPresent(displayText, forKey: .displayText)
+        try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(lines, forKey: .lines)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -1935,6 +2634,31 @@ public struct Line: Codable, Sendable {
     public init(amount: Int, displayText: String) {
         self.amount = amount
         self.displayText = displayText
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.amount = try container.decode(Int.self, forKey: .amount)
+        self.displayText = try container.decode(String.self, forKey: .displayText)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(amount, forKey: .amount)
+        try container.encode(displayText, forKey: .displayText)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -2002,6 +2726,37 @@ public struct UCPCheckoutResponseSchema: Codable, Sendable {
         self.services = services
         self.status = status
         self.version = version
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.capabilities = try container.decodeIfPresent([String: [CapabilityResponseSchema]].self, forKey: .capabilities)
+        self.paymentHandlers = try container.decode([String: [PaymentHandlerResponseSchema]].self, forKey: .paymentHandlers)
+        self.services = try container.decodeIfPresent([String: [ServiceResponseSchema]].self, forKey: .services)
+        self.status = try container.decodeIfPresent(UCPCheckoutResponseSchemaStatus.self, forKey: .status)
+        self.version = try container.decode(String.self, forKey: .version)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(capabilities, forKey: .capabilities)
+        try container.encode(paymentHandlers, forKey: .paymentHandlers)
+        try container.encodeIfPresent(services, forKey: .services)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encode(version, forKey: .version)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -2076,6 +2831,43 @@ public struct CapabilityResponseSchema: Codable, Sendable {
         self.spec = spec
         self.version = version
         self.extends = extends
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case config, id, schema, spec, version, extends
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.config = try container.decodeIfPresent([String: JSONAny].self, forKey: .config)
+        self.id = try container.decodeIfPresent(String.self, forKey: .id)
+        self.schema = try container.decodeIfPresent(String.self, forKey: .schema)
+        self.spec = try container.decodeIfPresent(String.self, forKey: .spec)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.extends = try container.decodeIfPresent(Extends.self, forKey: .extends)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(config, forKey: .config)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encodeIfPresent(schema, forKey: .schema)
+        try container.encodeIfPresent(spec, forKey: .spec)
+        try container.encode(version, forKey: .version)
+        try container.encodeIfPresent(extends, forKey: .extends)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -2188,6 +2980,39 @@ public struct PaymentHandlerResponseSchema: Codable, Sendable {
         self.version = version
         self.availableInstruments = availableInstruments
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.config = try container.decodeIfPresent([String: JSONAny].self, forKey: .config)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.schema = try container.decodeIfPresent(String.self, forKey: .schema)
+        self.spec = try container.decodeIfPresent(String.self, forKey: .spec)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.availableInstruments = try container.decodeIfPresent([PaymentHandlerResponseSchemaAvailableInstrument].self, forKey: .availableInstruments)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(config, forKey: .config)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(schema, forKey: .schema)
+        try container.encodeIfPresent(spec, forKey: .spec)
+        try container.encode(version, forKey: .version)
+        try container.encodeIfPresent(availableInstruments, forKey: .availableInstruments)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: PaymentHandlerResponseSchema convenience initializers and mutators
@@ -2248,6 +3073,35 @@ public struct PaymentHandlerResponseSchemaAvailableInstrument: Codable, Sendable
     public init(constraints: [String: JSONAny]?, type: String) {
         self.constraints = constraints
         self.type = type
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case constraints, type
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.constraints = try container.decodeIfPresent([String: JSONAny].self, forKey: .constraints)
+        self.type = try container.decode(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(constraints, forKey: .constraints)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -2319,6 +3173,45 @@ public struct ServiceResponseSchema: Codable, Sendable {
         self.endpoint = endpoint
         self.transport = transport
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case config, id, schema, spec, version, endpoint, transport
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.config = try container.decodeIfPresent(EmbeddedTransportConfig.self, forKey: .config)
+        self.id = try container.decodeIfPresent(String.self, forKey: .id)
+        self.schema = try container.decodeIfPresent(String.self, forKey: .schema)
+        self.spec = try container.decodeIfPresent(String.self, forKey: .spec)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.endpoint = try container.decodeIfPresent(String.self, forKey: .endpoint)
+        self.transport = try container.decode(Transport.self, forKey: .transport)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(config, forKey: .config)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encodeIfPresent(schema, forKey: .schema)
+        try container.encodeIfPresent(spec, forKey: .spec)
+        try container.encode(version, forKey: .version)
+        try container.encodeIfPresent(endpoint, forKey: .endpoint)
+        try container.encode(transport, forKey: .transport)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: ServiceResponseSchema convenience initializers and mutators
@@ -2389,6 +3282,31 @@ public struct EmbeddedTransportConfig: Codable, Sendable {
     public init(colorScheme: [EmbeddedColorScheme]?, delegate: [String]?) {
         self.colorScheme = colorScheme
         self.delegate = delegate
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.colorScheme = try container.decodeIfPresent([EmbeddedColorScheme].self, forKey: .colorScheme)
+        self.delegate = try container.decodeIfPresent([String].self, forKey: .delegate)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(colorScheme, forKey: .colorScheme)
+        try container.encodeIfPresent(delegate, forKey: .delegate)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -2502,6 +3420,51 @@ public struct Order: Codable, Sendable {
         self.totals = totals
         self.ucp = ucp
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.adjustments = try container.decodeIfPresent([Adjustment].self, forKey: .adjustments)
+        self.attribution = try container.decodeIfPresent([String: String].self, forKey: .attribution)
+        self.checkoutID = try container.decode(String.self, forKey: .checkoutID)
+        self.currency = try container.decode(String.self, forKey: .currency)
+        self.fulfillment = try container.decode(Fulfillment.self, forKey: .fulfillment)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.label = try container.decodeIfPresent(String.self, forKey: .label)
+        self.lineItems = try container.decode([OrderLineItem].self, forKey: .lineItems)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        self.permalinkURL = try container.decode(String.self, forKey: .permalinkURL)
+        self.totals = try container.decode([CheckoutTotal].self, forKey: .totals)
+        self.ucp = try container.decode(UCPOrderResponseSchema.self, forKey: .ucp)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(adjustments, forKey: .adjustments)
+        try container.encodeIfPresent(attribution, forKey: .attribution)
+        try container.encode(checkoutID, forKey: .checkoutID)
+        try container.encode(currency, forKey: .currency)
+        try container.encode(fulfillment, forKey: .fulfillment)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(label, forKey: .label)
+        try container.encode(lineItems, forKey: .lineItems)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        try container.encode(permalinkURL, forKey: .permalinkURL)
+        try container.encode(totals, forKey: .totals)
+        try container.encode(ucp, forKey: .ucp)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: Order convenience initializers and mutators
@@ -2600,6 +3563,41 @@ public struct Adjustment: Codable, Sendable {
         self.totals = totals
         self.type = type
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItems = try container.decodeIfPresent([AdjustmentLineItem].self, forKey: .lineItems)
+        self.occurredAt = try container.decode(Date.self, forKey: .occurredAt)
+        self.status = try container.decode(AdjustmentStatus.self, forKey: .status)
+        self.totals = try container.decodeIfPresent([LineItemTotal].self, forKey: .totals)
+        self.type = try container.decode(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(lineItems, forKey: .lineItems)
+        try container.encode(occurredAt, forKey: .occurredAt)
+        try container.encode(status, forKey: .status)
+        try container.encodeIfPresent(totals, forKey: .totals)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: Adjustment convenience initializers and mutators
@@ -2661,6 +3659,35 @@ public struct AdjustmentLineItem: Codable, Sendable {
         self.id = id
         self.quantity = quantity
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case id, quantity
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.quantity = try container.decode(Int.self, forKey: .quantity)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(quantity, forKey: .quantity)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: AdjustmentLineItem convenience initializers and mutators
@@ -2719,6 +3746,35 @@ public struct Fulfillment: Codable, Sendable {
     public init(events: [FulfillmentEvent]?, expectations: [Expectation]?) {
         self.events = events
         self.expectations = expectations
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case events, expectations
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.events = try container.decodeIfPresent([FulfillmentEvent].self, forKey: .events)
+        self.expectations = try container.decodeIfPresent([Expectation].self, forKey: .expectations)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(events, forKey: .events)
+        try container.encodeIfPresent(expectations, forKey: .expectations)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -2803,6 +3859,43 @@ public struct FulfillmentEvent: Codable, Sendable {
         self.trackingURL = trackingURL
         self.type = type
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.carrier = try container.decodeIfPresent(String.self, forKey: .carrier)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItems = try container.decode([EventLineItem].self, forKey: .lineItems)
+        self.occurredAt = try container.decode(Date.self, forKey: .occurredAt)
+        self.trackingNumber = try container.decodeIfPresent(String.self, forKey: .trackingNumber)
+        self.trackingURL = try container.decodeIfPresent(String.self, forKey: .trackingURL)
+        self.type = try container.decode(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(carrier, forKey: .carrier)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItems, forKey: .lineItems)
+        try container.encode(occurredAt, forKey: .occurredAt)
+        try container.encodeIfPresent(trackingNumber, forKey: .trackingNumber)
+        try container.encodeIfPresent(trackingURL, forKey: .trackingURL)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: FulfillmentEvent convenience initializers and mutators
@@ -2864,6 +3957,35 @@ public struct EventLineItem: Codable, Sendable {
     public init(id: String, quantity: Int) {
         self.id = id
         self.quantity = quantity
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case id, quantity
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.quantity = try container.decode(Int.self, forKey: .quantity)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(quantity, forKey: .quantity)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -2939,6 +4061,39 @@ public struct Expectation: Codable, Sendable {
         self.lineItems = lineItems
         self.methodType = methodType
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.destination = try container.decode(PostalAddress.self, forKey: .destination)
+        self.fulfillableOn = try container.decodeIfPresent(String.self, forKey: .fulfillableOn)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItems = try container.decode([ExpectationLineItem].self, forKey: .lineItems)
+        self.methodType = try container.decode(MethodType.self, forKey: .methodType)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encode(destination, forKey: .destination)
+        try container.encodeIfPresent(fulfillableOn, forKey: .fulfillableOn)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItems, forKey: .lineItems)
+        try container.encode(methodType, forKey: .methodType)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: Expectation convenience initializers and mutators
@@ -2996,6 +4151,35 @@ public struct ExpectationLineItem: Codable, Sendable {
     public init(id: String, quantity: Int) {
         self.id = id
         self.quantity = quantity
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case id, quantity
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.quantity = try container.decode(Int.self, forKey: .quantity)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(quantity, forKey: .quantity)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -3074,6 +4258,39 @@ public struct OrderLineItem: Codable, Sendable {
         self.status = status
         self.totals = totals
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.item = try container.decode(Item.self, forKey: .item)
+        self.parentID = try container.decodeIfPresent(String.self, forKey: .parentID)
+        self.quantity = try container.decode(LineItemQuantity.self, forKey: .quantity)
+        self.status = try container.decode(LineItemStatus.self, forKey: .status)
+        self.totals = try container.decode([LineItemTotal].self, forKey: .totals)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(item, forKey: .item)
+        try container.encodeIfPresent(parentID, forKey: .parentID)
+        try container.encode(quantity, forKey: .quantity)
+        try container.encode(status, forKey: .status)
+        try container.encode(totals, forKey: .totals)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: OrderLineItem convenience initializers and mutators
@@ -3136,6 +4353,37 @@ public struct LineItemQuantity: Codable, Sendable {
         self.fulfilled = fulfilled
         self.original = original
         self.total = total
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case fulfilled, original, total
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.fulfilled = try container.decode(Int.self, forKey: .fulfilled)
+        self.original = try container.decodeIfPresent(Int.self, forKey: .original)
+        self.total = try container.decode(Int.self, forKey: .total)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(fulfilled, forKey: .fulfilled)
+        try container.encodeIfPresent(original, forKey: .original)
+        try container.encode(total, forKey: .total)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -3216,6 +4464,37 @@ public struct UCPOrderResponseSchema: Codable, Sendable {
         self.status = status
         self.version = version
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.capabilities = try container.decodeIfPresent([String: [CapabilityResponseSchema]].self, forKey: .capabilities)
+        self.paymentHandlers = try container.decodeIfPresent([String: [PaymentHandlerResponseSchema]].self, forKey: .paymentHandlers)
+        self.services = try container.decodeIfPresent([String: [Service]].self, forKey: .services)
+        self.status = try container.decodeIfPresent(UCPCheckoutResponseSchemaStatus.self, forKey: .status)
+        self.version = try container.decode(String.self, forKey: .version)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(capabilities, forKey: .capabilities)
+        try container.encodeIfPresent(paymentHandlers, forKey: .paymentHandlers)
+        try container.encodeIfPresent(services, forKey: .services)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encode(version, forKey: .version)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: UCPOrderResponseSchema convenience initializers and mutators
@@ -3288,6 +4567,45 @@ public struct Service: Codable, Sendable {
         self.version = version
         self.endpoint = endpoint
         self.transport = transport
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case config, id, schema, spec, version, endpoint, transport
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.config = try container.decodeIfPresent([String: JSONAny].self, forKey: .config)
+        self.id = try container.decodeIfPresent(String.self, forKey: .id)
+        self.schema = try container.decodeIfPresent(String.self, forKey: .schema)
+        self.spec = try container.decodeIfPresent(String.self, forKey: .spec)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.endpoint = try container.decodeIfPresent(String.self, forKey: .endpoint)
+        self.transport = try container.decode(Transport.self, forKey: .transport)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(config, forKey: .config)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encodeIfPresent(schema, forKey: .schema)
+        try container.encodeIfPresent(spec, forKey: .spec)
+        try container.encode(version, forKey: .version)
+        try container.encodeIfPresent(endpoint, forKey: .endpoint)
+        try container.encode(transport, forKey: .transport)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -3431,6 +4749,37 @@ public struct ErrorResponseUcp: Codable, Sendable {
         self.status = status
         self.version = version
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.capabilities = try container.decodeIfPresent([String: [CapabilityResponseSchema]].self, forKey: .capabilities)
+        self.paymentHandlers = try container.decodeIfPresent([String: [PaymentHandlerResponseSchema]].self, forKey: .paymentHandlers)
+        self.services = try container.decodeIfPresent([String: [Service]].self, forKey: .services)
+        self.status = try container.decode(ErrorStatus.self, forKey: .status)
+        self.version = try container.decode(String.self, forKey: .version)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(capabilities, forKey: .capabilities)
+        try container.encodeIfPresent(paymentHandlers, forKey: .paymentHandlers)
+        try container.encodeIfPresent(services, forKey: .services)
+        try container.encode(status, forKey: .status)
+        try container.encode(version, forKey: .version)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: ErrorResponseUcp convenience initializers and mutators
@@ -3508,6 +4857,35 @@ public struct InstrumentsChangeResult: Codable, Sendable {
         self.continueURL = continueURL
         self.messages = messages
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.checkout = try container.decodeIfPresent(InstrumentsChangeCheckout.self, forKey: .checkout)
+        self.ucp = try container.decode(InstrumentsChangeResultUcp.self, forKey: .ucp)
+        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(checkout, forKey: .checkout)
+        try container.encode(ucp, forKey: .ucp)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: InstrumentsChangeResult convenience initializers and mutators
@@ -3559,6 +4937,33 @@ public struct InstrumentsChangeCheckout: Codable, Sendable {
 
     public init(payment: InstrumentsChangePayment?) {
         self.payment = payment
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case payment
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.payment = try container.decodeIfPresent(InstrumentsChangePayment.self, forKey: .payment)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(payment, forKey: .payment)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -3617,6 +5022,31 @@ public struct InstrumentsChangePayment: Codable, Sendable {
     public init(instruments: [SelectedPaymentInstrument]?, selectedInstrumentID: String?) {
         self.instruments = instruments
         self.selectedInstrumentID = selectedInstrumentID
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.instruments = try container.decodeIfPresent([SelectedPaymentInstrument].self, forKey: .instruments)
+        self.selectedInstrumentID = try container.decodeIfPresent(String.self, forKey: .selectedInstrumentID)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(instruments, forKey: .instruments)
+        try container.encodeIfPresent(selectedInstrumentID, forKey: .selectedInstrumentID)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -3689,6 +5119,37 @@ public struct InstrumentsChangeResultUcp: Codable, Sendable {
         self.services = services
         self.status = status
         self.version = version
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.capabilities = try container.decodeIfPresent([String: [CapabilityElement]].self, forKey: .capabilities)
+        self.paymentHandlers = try container.decodeIfPresent([String: [PaymentHandlerElement]].self, forKey: .paymentHandlers)
+        self.services = try container.decodeIfPresent([String: [EmbeddedService]].self, forKey: .services)
+        self.status = try container.decode(UCPCheckoutResponseSchemaStatus.self, forKey: .status)
+        self.version = try container.decode(String.self, forKey: .version)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(capabilities, forKey: .capabilities)
+        try container.encodeIfPresent(paymentHandlers, forKey: .paymentHandlers)
+        try container.encodeIfPresent(services, forKey: .services)
+        try container.encode(status, forKey: .status)
+        try container.encode(version, forKey: .version)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -3763,6 +5224,43 @@ public struct CapabilityElement: Codable, Sendable {
         self.spec = spec
         self.version = version
         self.extends = extends
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case config, id, schema, spec, version, extends
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.config = try container.decodeIfPresent([String: JSONAny].self, forKey: .config)
+        self.id = try container.decodeIfPresent(String.self, forKey: .id)
+        self.schema = try container.decodeIfPresent(String.self, forKey: .schema)
+        self.spec = try container.decodeIfPresent(String.self, forKey: .spec)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.extends = try container.decodeIfPresent(Extends.self, forKey: .extends)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(config, forKey: .config)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encodeIfPresent(schema, forKey: .schema)
+        try container.encodeIfPresent(spec, forKey: .spec)
+        try container.encode(version, forKey: .version)
+        try container.encodeIfPresent(extends, forKey: .extends)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -3845,6 +5343,39 @@ public struct PaymentHandlerElement: Codable, Sendable {
         self.version = version
         self.availableInstruments = availableInstruments
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.config = try container.decodeIfPresent([String: JSONAny].self, forKey: .config)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.schema = try container.decodeIfPresent(String.self, forKey: .schema)
+        self.spec = try container.decodeIfPresent(String.self, forKey: .spec)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.availableInstruments = try container.decodeIfPresent([PaymentHandlerAvailableInstrument].self, forKey: .availableInstruments)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(config, forKey: .config)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(schema, forKey: .schema)
+        try container.encodeIfPresent(spec, forKey: .spec)
+        try container.encode(version, forKey: .version)
+        try container.encodeIfPresent(availableInstruments, forKey: .availableInstruments)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: PaymentHandlerElement convenience initializers and mutators
@@ -3905,6 +5436,35 @@ public struct PaymentHandlerAvailableInstrument: Codable, Sendable {
     public init(constraints: [String: JSONAny]?, type: String) {
         self.constraints = constraints
         self.type = type
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case constraints, type
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.constraints = try container.decodeIfPresent([String: JSONAny].self, forKey: .constraints)
+        self.type = try container.decode(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(constraints, forKey: .constraints)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -3972,6 +5532,45 @@ public struct EmbeddedService: Codable, Sendable {
         self.version = version
         self.endpoint = endpoint
         self.transport = transport
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case config, id, schema, spec, version, endpoint, transport
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.config = try container.decodeIfPresent([String: JSONAny].self, forKey: .config)
+        self.id = try container.decodeIfPresent(String.self, forKey: .id)
+        self.schema = try container.decodeIfPresent(String.self, forKey: .schema)
+        self.spec = try container.decodeIfPresent(String.self, forKey: .spec)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.endpoint = try container.decodeIfPresent(String.self, forKey: .endpoint)
+        self.transport = try container.decode(Transport.self, forKey: .transport)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(config, forKey: .config)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encodeIfPresent(schema, forKey: .schema)
+        try container.encodeIfPresent(spec, forKey: .spec)
+        try container.encode(version, forKey: .version)
+        try container.encodeIfPresent(endpoint, forKey: .endpoint)
+        try container.encode(transport, forKey: .transport)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -4049,6 +5648,35 @@ public struct CredentialResult: Codable, Sendable {
         self.continueURL = continueURL
         self.messages = messages
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.checkout = try container.decodeIfPresent(CredentialCheckout.self, forKey: .checkout)
+        self.ucp = try container.decode(InstrumentsChangeResultUcp.self, forKey: .ucp)
+        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(checkout, forKey: .checkout)
+        try container.encode(ucp, forKey: .ucp)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: CredentialResult convenience initializers and mutators
@@ -4099,6 +5727,33 @@ public struct CredentialCheckout: Codable, Sendable {
 
     public init(payment: Payment?) {
         self.payment = payment
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case payment
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.payment = try container.decodeIfPresent(Payment.self, forKey: .payment)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(payment, forKey: .payment)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -4164,6 +5819,35 @@ public struct AddressChangeResult: Codable, Sendable {
         self.continueURL = continueURL
         self.messages = messages
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.checkout = try container.decodeIfPresent(AddressChangeCheckout.self, forKey: .checkout)
+        self.ucp = try container.decode(InstrumentsChangeResultUcp.self, forKey: .ucp)
+        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(checkout, forKey: .checkout)
+        try container.encode(ucp, forKey: .ucp)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: AddressChangeResult convenience initializers and mutators
@@ -4215,6 +5899,33 @@ public struct AddressChangeCheckout: Codable, Sendable {
 
     public init(fulfillment: CheckoutFulfillmentClass?) {
         self.fulfillment = fulfillment
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case fulfillment
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.fulfillment = try container.decodeIfPresent(CheckoutFulfillmentClass.self, forKey: .fulfillment)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(fulfillment, forKey: .fulfillment)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -4272,6 +5983,31 @@ public struct CheckoutFulfillmentClass: Codable, Sendable {
         self.availableMethods = availableMethods
         self.methods = methods
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.availableMethods = try container.decodeIfPresent([FulfillmentAvailableMethod].self, forKey: .availableMethods)
+        self.methods = try container.decodeIfPresent([FulfillmentMethod].self, forKey: .methods)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(availableMethods, forKey: .availableMethods)
+        try container.encodeIfPresent(methods, forKey: .methods)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: CheckoutFulfillmentClass convenience initializers and mutators
@@ -4321,6 +6057,35 @@ public struct ReadyRequest: Codable, Sendable {
         self.auth = auth
         self.delegate = delegate
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case auth, delegate
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.auth = try container.decodeIfPresent(Auth.self, forKey: .auth)
+        self.delegate = try container.decode([String].self, forKey: .delegate)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(auth, forKey: .auth)
+        try container.encode(delegate, forKey: .delegate)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: ReadyRequest convenience initializers and mutators
@@ -4366,6 +6131,33 @@ public struct Auth: Codable, Sendable {
 
     public init(type: String?) {
         self.type = type
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case type
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.type = try container.decodeIfPresent(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -4438,6 +6230,39 @@ public struct ReadyResult: Codable, Sendable {
         self.continueURL = continueURL
         self.messages = messages
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.checkout = try container.decodeIfPresent(ReadyCheckout.self, forKey: .checkout)
+        self.credential = try container.decodeIfPresent(String.self, forKey: .credential)
+        self.ucp = try container.decode(InstrumentsChangeResultUcp.self, forKey: .ucp)
+        self.upgrade = try container.decodeIfPresent(Upgrade.self, forKey: .upgrade)
+        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(checkout, forKey: .checkout)
+        try container.encodeIfPresent(credential, forKey: .credential)
+        try container.encode(ucp, forKey: .ucp)
+        try container.encodeIfPresent(upgrade, forKey: .upgrade)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: ReadyResult convenience initializers and mutators
@@ -4496,6 +6321,35 @@ public struct ReadyCheckout: Codable, Sendable {
     public init(fulfillment: CheckoutFulfillmentClass?, payment: ReadyPayment?) {
         self.fulfillment = fulfillment
         self.payment = payment
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case fulfillment, payment
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.fulfillment = try container.decodeIfPresent(CheckoutFulfillmentClass.self, forKey: .fulfillment)
+        self.payment = try container.decodeIfPresent(ReadyPayment.self, forKey: .payment)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(fulfillment, forKey: .fulfillment)
+        try container.encodeIfPresent(payment, forKey: .payment)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -4557,6 +6411,31 @@ public struct ReadyPayment: Codable, Sendable {
         self.instruments = instruments
         self.selectedInstrumentID = selectedInstrumentID
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.instruments = try container.decodeIfPresent([SelectedPaymentInstrument].self, forKey: .instruments)
+        self.selectedInstrumentID = try container.decodeIfPresent(String.self, forKey: .selectedInstrumentID)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(instruments, forKey: .instruments)
+        try container.encodeIfPresent(selectedInstrumentID, forKey: .selectedInstrumentID)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: ReadyPayment convenience initializers and mutators
@@ -4605,6 +6484,33 @@ public struct Upgrade: Codable, Sendable {
     public init(port: [String: JSONAny]?) {
         self.port = port
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case port
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.port = try container.decodeIfPresent([String: JSONAny].self, forKey: .port)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(port, forKey: .port)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: Upgrade convenience initializers and mutators
@@ -4648,6 +6554,33 @@ public struct AuthRequest: Codable, Sendable {
 
     public init(type: String?) {
         self.type = type
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case type
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.type = try container.decodeIfPresent(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -4713,6 +6646,35 @@ public struct AuthResult: Codable, Sendable {
         self.continueURL = continueURL
         self.messages = messages
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.credential = try container.decodeIfPresent(String.self, forKey: .credential)
+        self.ucp = try container.decode(InstrumentsChangeResultUcp.self, forKey: .ucp)
+        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(credential, forKey: .credential)
+        try container.encode(ucp, forKey: .ucp)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: AuthResult convenience initializers and mutators
@@ -4763,6 +6725,33 @@ public struct WindowOpenRequest: Codable, Sendable {
 
     public init(url: String) {
         self.url = url
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case url
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.url = try container.decode(String.self, forKey: .url)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(url, forKey: .url)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -4824,6 +6813,33 @@ public struct WindowOpenResult: Codable, Sendable {
         self.ucp = ucp
         self.continueURL = continueURL
         self.messages = messages
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.ucp = try container.decode(InstrumentsChangeResultUcp.self, forKey: .ucp)
+        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        let knownKeys = Set(container.allKeys.map { $0.stringValue })
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(ucp, forKey: .ucp)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 

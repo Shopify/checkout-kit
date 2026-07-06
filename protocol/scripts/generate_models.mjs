@@ -236,6 +236,11 @@ async function prepareCodegenSchemas(tempDir) {
   });
   await writeJson(path.join(schemaDir, "ucp.json"), ucp);
 
+  const signals = await readJson(path.join(specDir, "types", "signals.json"));
+  delete signals.properties["dev.ucp.buyer_ip"];
+  delete signals.properties["dev.ucp.user_agent"];
+  await writeJson(path.join(specDir, "types", "signals.json"), signals);
+
   return specDir;
 }
 
@@ -386,6 +391,113 @@ function commonSchemaSources(specDir) {
   ];
 }
 
+const KOTLIN_CLOSED_CLASSES = new Set(["ErrorResponse"]);
+
+function parseKotlinFields(inner) {
+  const fields = [];
+  const fieldPattern = /(?:    @SerialName\("([^"]+)"\)\n)?    public val (\w+): ([^\n]+)/g;
+  let entry;
+  while ((entry = fieldPattern.exec(inner)) !== null) {
+    const [, serialName, name, tail] = entry;
+    let rest = tail.trim();
+    if (rest.endsWith(",")) {
+      rest = rest.slice(0, -1).trim();
+    }
+    const eq = rest.indexOf(" = ");
+    const type = eq === -1 ? rest : rest.slice(0, eq).trim();
+    const optional = eq !== -1;
+    fields.push({
+      name,
+      wire: serialName ?? name,
+      type,
+      baseType: type.endsWith("?") ? type.slice(0, -1) : type,
+      optional,
+    });
+  }
+  return fields;
+}
+
+function kotlinSerializerObject(name, fields) {
+  const knownList = fields.map((field) => `"${field.wire}"`).join(", ");
+
+  const ctorArgs = fields
+    .map((field) =>
+      field.optional
+        ? `            ${field.name} = obj["${field.wire}"]?.let { json.decodeFromJsonElement(serializer<${field.baseType}>(), it) },`
+        : `            ${field.name} = json.decodeFromJsonElement(serializer<${field.type}>(), obj["${field.wire}"] ?: throw SerializationException("Missing ${field.wire} for ${name}")),`,
+    )
+    .join("\n");
+
+  const serLines = fields
+    .map((field) =>
+      field.optional
+        ? `        value.${field.name}?.let { map["${field.wire}"] = json.encodeToJsonElement(serializer<${field.baseType}>(), it) }`
+        : `        map["${field.wire}"] = json.encodeToJsonElement(serializer<${field.type}>(), value.${field.name})`,
+    )
+    .join("\n");
+
+  return [
+    "",
+    `public object ${name}Serializer : KSerializer<${name}> {`,
+    "    override val descriptor: SerialDescriptor =",
+    `        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.${name}")`,
+    "",
+    `    override fun deserialize(decoder: Decoder): ${name} {`,
+    "        val input = decoder as? JsonDecoder",
+    `            ?: throw SerializationException("${name} can only be deserialized from JSON")`,
+    "        val obj = input.decodeJsonElement().jsonObject",
+    "        val json = input.json",
+    `        val known = setOf(${knownList})`,
+    `        return ${name}(`,
+    ctorArgs,
+    "            additionalProperties = obj.filterKeys { it !in known }",
+    "        )",
+    "    }",
+    "",
+    `    override fun serialize(encoder: Encoder, value: ${name}) {`,
+    "        val output = encoder as? JsonEncoder",
+    `            ?: throw SerializationException("${name} can only be serialized to JSON")`,
+    "        val json = output.json",
+    "        val map = linkedMapOf<String, JsonElement>()",
+    serLines,
+    "        map.putAll(value.additionalProperties)",
+    "        output.encodeJsonElement(JsonObject(map))",
+    "    }",
+    "}",
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+}
+
+function injectKotlinAdditionalProperties(source) {
+  const serializers = [];
+
+  const result = source.replace(
+    /^@Serializable\npublic data class (\w+) \(\n([\s\S]*?)\n\)$/gm,
+    (match, name, inner) => {
+      if (KOTLIN_CLOSED_CLASSES.has(name)) {
+        return match;
+      }
+
+      const fields = parseKotlinFields(inner);
+      serializers.push(kotlinSerializerObject(name, fields));
+
+      const widenedInner = `${inner},\n\n    public val additionalProperties: Map<String, JsonElement> = emptyMap()`;
+      return `@Serializable(with = ${name}Serializer::class)\npublic data class ${name} (\n${widenedInner}\n)`;
+    },
+  );
+
+  const expected = [...source.matchAll(/^public data class (\w+) \(/gm)]
+    .map((entry) => entry[1])
+    .filter((name) => !KOTLIN_CLOSED_CLASSES.has(name)).length;
+
+  if (serializers.length !== expected) {
+    throw new Error(`Kotlin additionalProperties injection reached ${serializers.length} classes, expected ${expected}`);
+  }
+
+  return `${result}\n${serializers.join("\n")}\n`;
+}
+
 async function generateKotlin(specDir, output) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
@@ -422,8 +534,90 @@ async function generateKotlin(specDir, output) {
       throw new Error("ExtendsSerializer injection failed; quicktype Extends output may have changed");
     }
 
-    return withSerializer;
+    return injectKotlinAdditionalProperties(withSerializer);
   });
+}
+
+const SWIFT_CLOSED_STRUCTS = new Set(["ErrorResponse"]);
+
+function injectSwiftAdditionalProperties(source) {
+  let injected = 0;
+
+  const result = source.replace(
+    /^public struct (\w+): Codable, Sendable \{\n([\s\S]*?)\n\}$/gm,
+    (match, name, inner) => {
+      if (SWIFT_CLOSED_STRUCTS.has(name)) {
+        return match;
+      }
+      if (/\n    public init\(from decoder:/.test(inner)) {
+        throw new Error(`Swift additionalProperties injection: struct ${name} already declares a custom decoder`);
+      }
+
+      const props = [...inner.matchAll(/^    public let (\w+): (.+)$/gm)].map((entry) => {
+        const type = entry[2].trim();
+        const optional = type.endsWith("?");
+        return {name: entry[1], optional, baseType: optional ? type.slice(0, -1) : type};
+      });
+
+      const hasCodingKeys = /^    public enum CodingKeys: String, CodingKey \{/m.test(inner);
+
+      const lines = ["", "", "    public var additionalProperties: [String: JSONAny] = [:]", ""];
+
+      if (!hasCodingKeys) {
+        lines.push("    public enum CodingKeys: String, CodingKey {");
+        if (props.length > 0) {
+          lines.push(`        case ${props.map((prop) => prop.name).join(", ")}`);
+        }
+        lines.push("    }", "");
+      }
+
+      lines.push("    public init(from decoder: Decoder) throws {");
+      lines.push("        let container = try decoder.container(keyedBy: CodingKeys.self)");
+      for (const prop of props) {
+        lines.push(
+          prop.optional
+            ? `        self.${prop.name} = try container.decodeIfPresent(${prop.baseType}.self, forKey: .${prop.name})`
+            : `        self.${prop.name} = try container.decode(${prop.baseType}.self, forKey: .${prop.name})`,
+        );
+      }
+      lines.push("        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)");
+      lines.push("        let knownKeys = Set(container.allKeys.map { $0.stringValue })");
+      lines.push("        var extras: [String: JSONAny] = [:]");
+      lines.push("        for key in additionalContainer.allKeys where !knownKeys.contains(key.stringValue) {");
+      lines.push("            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)");
+      lines.push("        }");
+      lines.push("        self.additionalProperties = extras");
+      lines.push("    }", "");
+
+      lines.push("    public func encode(to encoder: Encoder) throws {");
+      lines.push("        var container = encoder.container(keyedBy: CodingKeys.self)");
+      for (const prop of props) {
+        lines.push(
+          prop.optional
+            ? `        try container.encodeIfPresent(${prop.name}, forKey: .${prop.name})`
+            : `        try container.encode(${prop.name}, forKey: .${prop.name})`,
+        );
+      }
+      lines.push("        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)");
+      lines.push("        for key in additionalProperties.keys.sorted() {");
+      lines.push("            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)");
+      lines.push("        }");
+      lines.push("    }");
+
+      injected += 1;
+      return `public struct ${name}: Codable, Sendable {\n${inner}${lines.join("\n")}\n}`;
+    },
+  );
+
+  const expected = [...source.matchAll(/^public struct (\w+): Codable, Sendable \{$/gm)]
+    .map((entry) => entry[1])
+    .filter((name) => !SWIFT_CLOSED_STRUCTS.has(name)).length;
+
+  if (injected !== expected) {
+    throw new Error(`Swift additionalProperties injection reached ${injected} structs, expected ${expected}`);
+  }
+
+  return result;
 }
 
 async function generateSwift(specDir, output) {
@@ -459,7 +653,8 @@ async function generateSwift(specDir, output) {
       throw new Error(`Swift JSON helper normalization failed; quicktype helper output changed (sha256: ${generatedHelperHash})`);
     }
 
-    return `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
+    const stripped = `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
+    return injectSwiftAdditionalProperties(stripped);
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);

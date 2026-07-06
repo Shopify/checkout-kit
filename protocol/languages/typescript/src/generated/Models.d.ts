@@ -51,7 +51,9 @@ export interface Checkout {
      */
     order?: OrderConfirmation;
     payment?: Payment;
-    signals?: Signals;
+    signals?: {
+        [key: string]: any;
+    };
     /**
      * Checkout state indicating the current phase and required action. See Checkout Status
      * lifecycle documentation for state transition details.
@@ -706,24 +708,6 @@ export interface PaymentCredential {
      * value.
      */
     type: string;
-    [property: string]: any;
-}
-/**
- * Environment data provided by the platform to support authorization and abuse prevention.
- * Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
- * observation or independently verifiable third-party attestations. All signal keys MUST
- * use reverse-domain naming to ensure provenance and prevent collisions when multiple
- * extensions contribute to the shared namespace.
- */
-export interface Signals {
-    /**
-     * Client's IP address (IPv4 or IPv6).
-     */
-    devUcpBuyerIp?: string;
-    /**
-     * Client's HTTP User-Agent header or equivalent.
-     */
-    devUcpUserAgent?: string;
     [property: string]: any;
 }
 /**
