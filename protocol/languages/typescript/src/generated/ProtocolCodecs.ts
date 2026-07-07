@@ -4,148 +4,60 @@
 import {
   decodeProtocolObject,
   encodeProtocolObject,
-  type ProtocolCodecMetadata,
 } from '../protocol_codec_runtime';
-import type {
-  AddressChangeResult,
-  AuthRequest,
-  AuthResult,
-  Checkout,
-  CredentialResult,
-  ErrorResponse,
-  InstrumentsChangeResult,
-  ReadyRequest,
-  ReadyResult,
-  WindowOpenRequest,
-  WindowOpenResult,
-} from './Models';
 
-const CODEC_METADATA = {
-  wireToJs: {
-    address_country: 'addressCountry',
-    address_locality: 'addressLocality',
-    address_region: 'addressRegion',
-    available_instruments: 'availableInstruments',
-    available_methods: 'availableMethods',
-    billing_address: 'billingAddress',
-    checkout_id: 'checkoutId',
-    color_scheme: 'colorScheme',
-    content_type: 'contentType',
-    continue_url: 'continueUrl',
-    'dev.ucp.buyer_ip': 'devUcpBuyerIp',
-    'dev.ucp.user_agent': 'devUcpUserAgent',
-    display_text: 'displayText',
-    earliest_fulfillment_time: 'earliestFulfillmentTime',
-    expires_at: 'expiresAt',
-    extended_address: 'extendedAddress',
-    first_name: 'firstName',
-    fulfillable_on: 'fulfillableOn',
-    handler_id: 'handlerId',
-    image_url: 'imageUrl',
-    last_name: 'lastName',
-    latest_fulfillment_time: 'latestFulfillmentTime',
-    line_item_ids: 'lineItemIds',
-    line_items: 'lineItems',
-    method_type: 'methodType',
-    occurred_at: 'occurredAt',
-    parent_id: 'parentId',
-    payment_handlers: 'paymentHandlers',
-    permalink_url: 'permalinkUrl',
-    phone_number: 'phoneNumber',
-    postal_code: 'postalCode',
-    selected_destination_id: 'selectedDestinationId',
-    selected_instrument_id: 'selectedInstrumentId',
-    selected_option_id: 'selectedOptionId',
-    street_address: 'streetAddress',
-    tracking_number: 'trackingNumber',
-    tracking_url: 'trackingUrl',
-  },
-  freeFormMapFields: ['attribution', 'config', 'constraints', 'display', 'port'],
-  typedDynamicMapFields: ['capabilities', 'paymentHandlers', 'payment_handlers', 'services'],
-  guardedObjectFields: {
-    config: ['colorScheme', 'color_scheme', 'delegate'],
-  },
-  requiredFieldsByModel: {
-    Checkout: ['currency', 'id', 'line_items', 'links', 'status', 'totals', 'ucp'],
-    ErrorResponse: ['messages', 'ucp'],
-    ReadyRequest: ['delegate'],
-    WindowOpenRequest: ['url'],
-  },
-  requiredStringFieldsByModel: {
-    Checkout: ['currency', 'id'],
-    WindowOpenRequest: ['url'],
-  },
-  nestedRequiredFieldsByField: {
-    order: ['id', 'permalink_url'],
-    ucp: ['version'],
-  },
-} as const satisfies ProtocolCodecMetadata;
+type AddressChangeResult = import('./Models').AddressChangeResult;
+type AuthRequest = import('./Models').AuthRequest;
+type AuthResult = import('./Models').AuthResult;
+type Checkout = import('./Models').Checkout;
+type CredentialResult = import('./Models').CredentialResult;
+type ErrorResponse = import('./Models').ErrorResponse;
+type InstrumentsChangeResult = import('./Models').InstrumentsChangeResult;
+type ReadyRequest = import('./Models').ReadyRequest;
+type ReadyResult = import('./Models').ReadyResult;
+type WindowOpenRequest = import('./Models').WindowOpenRequest;
+type WindowOpenResult = import('./Models').WindowOpenResult;
 
 export function decodeAuthRequest(value: unknown): AuthRequest {
-  return decodeProtocolObject(
-    value,
-    CODEC_METADATA,
-    'AuthRequest',
-    'AuthRequest',
-  ) as unknown as AuthRequest;
+  return decodeProtocolObject(value, 'AuthRequest') as unknown as AuthRequest;
 }
 
 export function decodeCheckout(value: unknown): Checkout {
-  return decodeProtocolObject(
-    value,
-    CODEC_METADATA,
-    'Checkout',
-    'Checkout',
-  ) as unknown as Checkout;
+  return decodeProtocolObject(value, 'Checkout') as unknown as Checkout;
 }
 
 export function decodeErrorResponse(value: unknown): ErrorResponse {
-  return decodeProtocolObject(
-    value,
-    CODEC_METADATA,
-    'ErrorResponse',
-    'ErrorResponse',
-  ) as unknown as ErrorResponse;
+  return decodeProtocolObject(value, 'ErrorResponse') as unknown as ErrorResponse;
 }
 
 export function decodeReadyRequest(value: unknown): ReadyRequest {
-  return decodeProtocolObject(
-    value,
-    CODEC_METADATA,
-    'ReadyRequest',
-    'ReadyRequest',
-  ) as unknown as ReadyRequest;
+  return decodeProtocolObject(value, 'ReadyRequest') as unknown as ReadyRequest;
 }
 
 export function decodeWindowOpenRequest(value: unknown): WindowOpenRequest {
-  return decodeProtocolObject(
-    value,
-    CODEC_METADATA,
-    'WindowOpenRequest',
-    'WindowOpenRequest',
-  ) as unknown as WindowOpenRequest;
+  return decodeProtocolObject(value, 'WindowOpenRequest') as unknown as WindowOpenRequest;
 }
 
 export function encodeAddressChangeResult(value: AddressChangeResult): unknown {
-  return encodeProtocolObject(value, CODEC_METADATA);
+  return encodeProtocolObject(value);
 }
 
 export function encodeAuthResult(value: AuthResult): unknown {
-  return encodeProtocolObject(value, CODEC_METADATA);
+  return encodeProtocolObject(value);
 }
 
 export function encodeCredentialResult(value: CredentialResult): unknown {
-  return encodeProtocolObject(value, CODEC_METADATA);
+  return encodeProtocolObject(value);
 }
 
 export function encodeInstrumentsChangeResult(value: InstrumentsChangeResult): unknown {
-  return encodeProtocolObject(value, CODEC_METADATA);
+  return encodeProtocolObject(value);
 }
 
 export function encodeReadyResult(value: ReadyResult): unknown {
-  return encodeProtocolObject(value, CODEC_METADATA);
+  return encodeProtocolObject(value);
 }
 
 export function encodeWindowOpenResult(value: WindowOpenResult): unknown {
-  return encodeProtocolObject(value, CODEC_METADATA);
+  return encodeProtocolObject(value);
 }

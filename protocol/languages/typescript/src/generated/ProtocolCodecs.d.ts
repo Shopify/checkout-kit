@@ -1,4 +1,14 @@
-import type { AddressChangeResult, AuthRequest, AuthResult, Checkout, CredentialResult, ErrorResponse, InstrumentsChangeResult, ReadyRequest, ReadyResult, WindowOpenRequest, WindowOpenResult } from './Models';
+type AddressChangeResult = import('./Models').AddressChangeResult;
+type AuthRequest = import('./Models').AuthRequest;
+type AuthResult = import('./Models').AuthResult;
+type Checkout = import('./Models').Checkout;
+type CredentialResult = import('./Models').CredentialResult;
+type ErrorResponse = import('./Models').ErrorResponse;
+type InstrumentsChangeResult = import('./Models').InstrumentsChangeResult;
+type ReadyRequest = import('./Models').ReadyRequest;
+type ReadyResult = import('./Models').ReadyResult;
+type WindowOpenRequest = import('./Models').WindowOpenRequest;
+type WindowOpenResult = import('./Models').WindowOpenResult;
 export declare function decodeAuthRequest(value: unknown): AuthRequest;
 export declare function decodeCheckout(value: unknown): Checkout;
 export declare function decodeErrorResponse(value: unknown): ErrorResponse;
@@ -10,3 +20,4 @@ export declare function encodeCredentialResult(value: CredentialResult): unknown
 export declare function encodeInstrumentsChangeResult(value: InstrumentsChangeResult): unknown;
 export declare function encodeReadyResult(value: ReadyResult): unknown;
 export declare function encodeWindowOpenResult(value: WindowOpenResult): unknown;
+export {};

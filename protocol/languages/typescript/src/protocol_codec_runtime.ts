@@ -1,175 +1,118 @@
 type JSONRecord = Record<string, unknown>;
 
-export interface ProtocolCodecMetadata {
-  readonly wireToJs: Readonly<Record<string, string>>;
-  readonly freeFormMapFields: readonly string[];
-  readonly typedDynamicMapFields: readonly string[];
-  readonly guardedObjectFields: Readonly<Record<string, readonly string[]>>;
-  readonly requiredFieldsByModel: Readonly<Record<string, readonly string[]>>;
-  readonly requiredStringFieldsByModel: Readonly<
-    Record<string, readonly string[]>
-  >;
-  readonly nestedRequiredFieldsByField: Readonly<
-    Record<string, readonly string[]>
-  >;
-}
+const FREE_FORM_FIELDS = new Set([
+  'attribution',
+  'constraints',
+  'display',
+  'port',
+  'signals',
+]);
+
+const DYNAMIC_RECORD_FIELDS = new Set([
+  'capabilities',
+  'paymentHandlers',
+  'payment_handlers',
+  'services',
+]);
+
+const REQUIRED_FIELDS: Record<string, readonly string[]> = {
+  Checkout: ['currency', 'id', 'line_items', 'links', 'status', 'totals', 'ucp'],
+  ErrorResponse: ['messages', 'ucp'],
+  ReadyRequest: ['delegate'],
+  WindowOpenRequest: ['url'],
+};
+
+const REQUIRED_STRING_FIELDS: Record<string, readonly string[]> = {
+  Checkout: ['currency', 'id'],
+  WindowOpenRequest: ['url'],
+};
+
+const NESTED_REQUIRED_FIELDS: Record<string, readonly string[]> = {
+  order: ['id', 'permalink_url'],
+  ucp: ['version'],
+};
 
 export function decodeProtocolObject(
   value: unknown,
-  metadata: ProtocolCodecMetadata,
   modelName: string,
-  label: string,
 ): JSONRecord {
-  const input = requireObject(value, label);
-  requireFields(
-    input,
-    metadata.requiredFieldsByModel[modelName] ?? [],
-    label,
-  );
-  requireStringFields(
-    input,
-    metadata.requiredStringFieldsByModel[modelName] ?? [],
-    label,
-  );
-  requireNestedFields(input, metadata, label);
-  return camelizeProtocolObject(input, metadata);
+  const input = requireObject(value, modelName);
+  requireFields(input, REQUIRED_FIELDS[modelName] ?? [], modelName);
+  requireStringFields(input, REQUIRED_STRING_FIELDS[modelName] ?? [], modelName);
+  requireNestedFields(input, modelName);
+  return camelizeProtocolObject(input);
 }
 
-export function encodeProtocolObject(
-  value: unknown,
-  metadata: ProtocolCodecMetadata,
-): unknown {
-  return snakeifyProtocolValue(value, metadata);
+export function encodeProtocolObject(value: unknown): unknown {
+  return snakeifyProtocolValue(value);
 }
 
-function camelizeProtocolValue(
-  value: unknown,
-  metadata: ProtocolCodecMetadata,
-  fieldName?: string,
-): unknown {
+function camelizeProtocolValue(value: unknown, fieldName?: string): unknown {
   if (Array.isArray(value)) {
-    return value.map(item => camelizeProtocolValue(item, metadata));
+    return value.map(item => camelizeProtocolValue(item));
   }
-  if (value === null || typeof value !== 'object') {
+  if (!isObjectRecord(value)) {
     return value;
   }
 
-  const guardedFields =
-    fieldName === undefined
-      ? undefined
-      : metadata.guardedObjectFields[fieldName];
-  if (guardedFields !== undefined) {
-    return objectHasAnyKey(value, guardedFields)
-      ? camelizeProtocolObject(value as JSONRecord, metadata)
-      : value;
+  if (fieldName === 'config') {
+    return isEmbeddedConfig(value) ? camelizeProtocolObject(value) : value;
   }
-
-  if (
-    fieldName !== undefined &&
-    metadata.freeFormMapFields.includes(fieldName)
-  ) {
+  if (fieldName !== undefined && FREE_FORM_FIELDS.has(fieldName)) {
     return value;
   }
-
-  if (
-    fieldName !== undefined &&
-    metadata.typedDynamicMapFields.includes(fieldName)
-  ) {
-    return mapDynamicRecord(value, item => camelizeProtocolValue(item, metadata));
+  if (fieldName !== undefined && DYNAMIC_RECORD_FIELDS.has(fieldName)) {
+    return mapDynamicRecord(value, item => camelizeProtocolValue(item));
   }
 
-  return camelizeProtocolObject(value as JSONRecord, metadata);
+  return camelizeProtocolObject(value);
 }
 
-function camelizeProtocolObject(
-  value: JSONRecord,
-  metadata: ProtocolCodecMetadata,
-): JSONRecord {
+function camelizeProtocolObject(value: JSONRecord): JSONRecord {
   const output: JSONRecord = {};
   for (const [key, item] of Object.entries(value)) {
-    const mappedKey = metadata.wireToJs[key] ?? key;
-    output[mappedKey] = camelizeProtocolValue(item, metadata, key);
+    const mappedKey = snakeToCamel(key);
+    output[mappedKey] = camelizeProtocolValue(item, key);
   }
   return output;
 }
 
-function snakeifyProtocolValue(
-  value: unknown,
-  metadata: ProtocolCodecMetadata,
-  fieldName?: string,
-): unknown {
+function snakeifyProtocolValue(value: unknown, fieldName?: string): unknown {
   if (Array.isArray(value)) {
-    return value.map(item => snakeifyProtocolValue(item, metadata));
+    return value.map(item => snakeifyProtocolValue(item));
   }
-  if (value === null || typeof value !== 'object') {
+  if (!isObjectRecord(value)) {
     return value;
   }
 
-  const guardedFields =
-    fieldName === undefined
-      ? undefined
-      : metadata.guardedObjectFields[fieldName];
-  if (guardedFields !== undefined) {
-    return objectHasAnyKey(value, guardedFields)
-      ? snakeifyProtocolObject(value as JSONRecord, metadata)
-      : value;
+  if (fieldName === 'config') {
+    return isEmbeddedConfig(value) ? snakeifyProtocolObject(value) : value;
   }
-
-  if (
-    fieldName !== undefined &&
-    metadata.freeFormMapFields.includes(fieldName)
-  ) {
+  if (fieldName !== undefined && FREE_FORM_FIELDS.has(fieldName)) {
     return value;
   }
-
-  if (
-    fieldName !== undefined &&
-    metadata.typedDynamicMapFields.includes(fieldName)
-  ) {
-    return mapDynamicRecord(value, item => snakeifyProtocolValue(item, metadata));
+  if (fieldName !== undefined && DYNAMIC_RECORD_FIELDS.has(fieldName)) {
+    return mapDynamicRecord(value, item => snakeifyProtocolValue(item));
   }
 
-  return snakeifyProtocolObject(value as JSONRecord, metadata);
+  return snakeifyProtocolObject(value);
 }
 
-function snakeifyProtocolObject(
-  value: JSONRecord,
-  metadata: ProtocolCodecMetadata,
-): JSONRecord {
+function snakeifyProtocolObject(value: JSONRecord): JSONRecord {
   const output: JSONRecord = {};
   for (const [key, item] of Object.entries(value)) {
-    const mappedKey = jsToWire(metadata, key);
-    output[mappedKey] = snakeifyProtocolValue(item, metadata, key);
+    const mappedKey = camelToSnake(key);
+    output[mappedKey] = snakeifyProtocolValue(item, key);
   }
   return output;
-}
-
-const jsToWireCache = new WeakMap<
-  ProtocolCodecMetadata,
-  Record<string, string>
->();
-
-function jsToWire(metadata: ProtocolCodecMetadata, value: string): string {
-  let reverse = jsToWireCache.get(metadata);
-  if (reverse === undefined) {
-    reverse = {};
-    for (const [wire, js] of Object.entries(metadata.wireToJs)) {
-      reverse[js] = wire;
-    }
-    jsToWireCache.set(metadata, reverse);
-  }
-  return reverse[value] ?? value;
 }
 
 function mapDynamicRecord(
-  value: unknown,
+  value: JSONRecord,
   mapValue: (value: unknown) => unknown,
-): unknown {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return value;
-  }
+): JSONRecord {
   const output: JSONRecord = {};
-  for (const [key, item] of Object.entries(value as JSONRecord)) {
+  for (const [key, item] of Object.entries(value)) {
     output[key] = Array.isArray(item)
       ? item.map(entry => mapValue(entry))
       : mapValue(item);
@@ -177,11 +120,29 @@ function mapDynamicRecord(
   return output;
 }
 
+function snakeToCamel(value: string): string {
+  return value.replace(/_([a-z0-9])/g, (_match, character: string) =>
+    character.toUpperCase(),
+  );
+}
+
+function camelToSnake(value: string): string {
+  return value.replace(/[A-Z]/g, character => `_${character.toLowerCase()}`);
+}
+
+function isEmbeddedConfig(value: JSONRecord): boolean {
+  return 'colorScheme' in value || 'color_scheme' in value || 'delegate' in value;
+}
+
 function requireObject(value: unknown, label: string): JSONRecord {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+  if (!isObjectRecord(value)) {
     throw new TypeError(`Invalid ${label}`);
   }
-  return value as JSONRecord;
+  return value;
+}
+
+function isObjectRecord(value: unknown): value is JSONRecord {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function requireFields(
@@ -208,28 +169,12 @@ function requireStringFields(
   }
 }
 
-function requireNestedFields(
-  value: JSONRecord,
-  metadata: ProtocolCodecMetadata,
-  label: string,
-): void {
-  for (const [field, requiredFields] of Object.entries(
-    metadata.nestedRequiredFieldsByField,
-  )) {
+function requireNestedFields(value: JSONRecord, label: string): void {
+  for (const [field, requiredFields] of Object.entries(NESTED_REQUIRED_FIELDS)) {
     if (!(field in value)) {
       continue;
     }
     const nested = requireObject(value[field], `${label}.${field}`);
     requireFields(nested, requiredFields, `${label}.${field}`);
   }
-}
-
-function objectHasAnyKey(
-  value: unknown,
-  keys: readonly string[],
-): value is JSONRecord {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return false;
-  }
-  return keys.some(key => key in value);
 }

@@ -3,7 +3,18 @@
 
 import {notificationDescriptor, requestDescriptor, type NotificationDescriptor, type RequestDescriptor} from '../descriptors';
 import {decodeAuthRequest, decodeCheckout, decodeErrorResponse, decodeReadyRequest, decodeWindowOpenRequest, encodeAddressChangeResult, encodeAuthResult, encodeCredentialResult, encodeInstrumentsChangeResult, encodeReadyResult, encodeWindowOpenResult} from './ProtocolCodecs';
-import type {AddressChangeResult, AuthRequest, AuthResult, Checkout, CredentialResult, ErrorResponse, InstrumentsChangeResult, ReadyRequest, ReadyResult, WindowOpenRequest, WindowOpenResult} from './Models';
+
+type AddressChangeResult = import('./Models').AddressChangeResult;
+type AuthRequest = import('./Models').AuthRequest;
+type AuthResult = import('./Models').AuthResult;
+type Checkout = import('./Models').Checkout;
+type CredentialResult = import('./Models').CredentialResult;
+type ErrorResponse = import('./Models').ErrorResponse;
+type InstrumentsChangeResult = import('./Models').InstrumentsChangeResult;
+type ReadyRequest = import('./Models').ReadyRequest;
+type ReadyResult = import('./Models').ReadyResult;
+type WindowOpenRequest = import('./Models').WindowOpenRequest;
+type WindowOpenResult = import('./Models').WindowOpenResult;
 
 export const SPEC_VERSION = '2026-04-08';
 
