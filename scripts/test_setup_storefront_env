@@ -135,12 +135,16 @@ test_required_values_only() {
   fixture="$(make_fixture)"
   output="$fixture/output.log"
 
-  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
+  STOREFRONT_DOMAIN=https://synthetic-store.example.myshopify.com/ \
     STOREFRONT_ACCESS_TOKEN=synthetic-token \
     "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
   assert_file_exists "$fixture/.env"
+  assert_contains "$fixture/.env" "STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com"
+  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com"
+  assert_contains "$fixture/platforms/react-native/sample/.env" "STOREFRONT_DOMAIN=\"synthetic-store.example.myshopify.com\""
+  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "STOREFRONT_DOMAIN = synthetic-store.example.myshopify.com"
   assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="

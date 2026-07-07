@@ -148,6 +148,13 @@ is_placeholder_value() {
     [[ "$value" == "your-public-storefront-access-token" ]]
 }
 
+normalize_storefront_domain() {
+  local value
+  value="$(strip_outer_quotes "$1")"
+  value="$(printf '%s' "$value" | sed -E 's#^https?://##I; s#/.*$##')"
+  printf '%s' "$value"
+}
+
 env_fallback() {
   local key="$1"
   printf '%s' "${!key:-}"
@@ -389,6 +396,7 @@ load_values() {
     "$(read_env_value STOREFRONT_DOMAIN "$REACT_NATIVE_ENV")" \
     "$(read_env_value STOREFRONT_DOMAIN "$SWIFT_DEMO_XCCONFIG")" \
     "$(read_env_value STOREFRONT_DOMAIN "$SWIFT_ACCELERATED_XCCONFIG")")"
+  STOREFRONT_DOMAIN_VALUE="$(normalize_storefront_domain "$STOREFRONT_DOMAIN_VALUE")"
 
   STOREFRONT_ACCESS_TOKEN_VALUE="$(first_config_value \
     "$(required_config_value STOREFRONT_ACCESS_TOKEN)" \
