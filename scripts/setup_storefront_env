@@ -151,7 +151,7 @@ is_placeholder_value() {
 normalize_storefront_domain() {
   local value
   value="$(strip_outer_quotes "$1")"
-  value="$(printf '%s' "$value" | sed -E 's#^[Hh][Tt][Tt][Pp][Ss]?://##; s#/.*$##')"
+  value="$(printf '%s' "$value" | sed -E 's#^https?://##I; s#/.*$##')"
   printf '%s' "$value"
 }
 
