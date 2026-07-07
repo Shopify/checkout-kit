@@ -3,11 +3,12 @@ package com.shopify.checkoutkit
 /**
  * Configuration for Shopify Checkout Kit.
  *
- * Allows specifying the colorScheme that should be used for checkout.
+ * Allows specifying the colors, sheet presentation, and runtime behavior that should be used for checkout.
  */
 @ConsistentCopyVisibility
 public data class Configuration internal constructor(
     var colorScheme: ColorScheme = ColorScheme.Automatic(),
+    var sheet: CheckoutSheetOptions = CheckoutSheetOptions(),
     var platform: Platform? = null,
     var logLevel: LogLevel = LogLevel.WARN,
     var preloading: Preloading = Preloading(),

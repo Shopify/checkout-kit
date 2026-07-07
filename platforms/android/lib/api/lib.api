@@ -90,6 +90,105 @@ public final class com/shopify/checkoutkit/CheckoutProtocol$Client {
 	public final fun on (Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
 }
 
+public final class com/shopify/checkoutkit/CheckoutSheetDismissal {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public fun <init> (ZZ)V
+	public synthetic fun <init> (ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun copy (ZZ)Lcom/shopify/checkoutkit/CheckoutSheetDismissal;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutSheetDismissal;ZZILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutSheetDismissal;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDragToDismissEnabled ()Z
+	public final fun getTapAwayToDismissEnabled ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/CheckoutSheetDragHandle {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun copy (Z)Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;ZILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getVisible ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/CheckoutSheetOptions {
+	public fun <init> ()V
+	public fun <init> (F)V
+	public fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;)V
+	public fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;F)V
+	public fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;)V
+	public fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;)V
+	public fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;)V
+	public fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/CheckoutSheetDismissal;)V
+	public fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/CheckoutSheetDismissal;Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;)V
+	public fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/CheckoutSheetDismissal;Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;Ljava/util/List;)V
+	public synthetic fun <init> (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/CheckoutSheetDismissal;Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()F
+	public final fun component2 ()Lcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;
+	public final fun component3 ()F
+	public final fun component4 ()Lcom/shopify/checkoutkit/DrawableResource;
+	public final fun component5 ()Lcom/shopify/checkoutkit/Color;
+	public final fun component6 ()Lcom/shopify/checkoutkit/Color;
+	public final fun component7 ()Lcom/shopify/checkoutkit/CheckoutSheetDismissal;
+	public final fun component8 ()Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;
+	public final fun component9 ()Ljava/util/List;
+	public final fun copy (FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/CheckoutSheetDismissal;Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;Ljava/util/List;)Lcom/shopify/checkoutkit/CheckoutSheetOptions;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutSheetOptions;FLcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;FLcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/CheckoutSheetDismissal;Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutSheetOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCloseIcon ()Lcom/shopify/checkoutkit/DrawableResource;
+	public final fun getCloseIconTint ()Lcom/shopify/checkoutkit/Color;
+	public final fun getCornerRadiusDp ()F
+	public final fun getDismissal ()Lcom/shopify/checkoutkit/CheckoutSheetDismissal;
+	public final fun getDragHandle ()Lcom/shopify/checkoutkit/CheckoutSheetDragHandle;
+	public final fun getScrimColor ()Lcom/shopify/checkoutkit/Color;
+	public final fun getSnapPoints ()Ljava/util/List;
+	public final fun getTitleAlignment ()Lcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;
+	public final fun getToolbarElevationDp ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/shopify/checkoutkit/CheckoutSheetSnapPoint {
+	public static final field Companion Lcom/shopify/checkoutkit/CheckoutSheetSnapPoint$Companion;
+	public static final field MATERIAL_TOP_MARGIN_DP F
+	public static final field MATERIAL_WIDE_TOP_MARGIN_DP F
+	public static final field MATERIAL_WIDE_WINDOW_WIDTH_THRESHOLD_DP F
+}
+
+public final class com/shopify/checkoutkit/CheckoutSheetSnapPoint$Companion {
+}
+
+public final class com/shopify/checkoutkit/CheckoutSheetSnapPoint$Expanded : com/shopify/checkoutkit/CheckoutSheetSnapPoint {
+	public fun <init> (F)V
+	public final fun component1 ()F
+	public final fun copy (F)Lcom/shopify/checkoutkit/CheckoutSheetSnapPoint$Expanded;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutSheetSnapPoint$Expanded;FILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutSheetSnapPoint$Expanded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTopMarginDp ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/CheckoutSheetSnapPoint$MaterialExpanded : com/shopify/checkoutkit/CheckoutSheetSnapPoint {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutSheetSnapPoint$MaterialExpanded;
+}
+
+public final class com/shopify/checkoutkit/CheckoutSheetTitleAlignment : java/lang/Enum {
+	public static final field CENTER Lcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;
+	public static final field START Lcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;
+	public static fun values ()[Lcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;
+}
+
 public class com/shopify/checkoutkit/CheckoutUnavailableException : com/shopify/checkoutkit/CheckoutException {
 	public static final field CLIENT_ERROR Ljava/lang/String;
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutUnavailableException$Companion;
@@ -314,19 +413,21 @@ public final class com/shopify/checkoutkit/ColorScheme$Web$Companion {
 
 public final class com/shopify/checkoutkit/Colors {
 	public static final field Companion Lcom/shopify/checkoutkit/Colors$Companion;
-	public fun <init> (Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/shopify/checkoutkit/Color;
 	public final fun component2 ()Lcom/shopify/checkoutkit/Color;
 	public final fun component3 ()Lcom/shopify/checkoutkit/Color;
 	public final fun component4 ()Lcom/shopify/checkoutkit/Color;
 	public final fun component5 ()Lcom/shopify/checkoutkit/DrawableResource;
 	public final fun component6 ()Lcom/shopify/checkoutkit/Color;
-	public final fun copy (Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;)Lcom/shopify/checkoutkit/Colors;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Colors;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Colors;
+	public final fun component7 ()Lcom/shopify/checkoutkit/Color;
+	public final fun copy (Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;)Lcom/shopify/checkoutkit/Colors;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Colors;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Colors;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCloseIcon ()Lcom/shopify/checkoutkit/DrawableResource;
 	public final fun getCloseIconTint ()Lcom/shopify/checkoutkit/Color;
+	public final fun getDragHandleColor ()Lcom/shopify/checkoutkit/Color;
 	public final fun getHeaderBackground ()Lcom/shopify/checkoutkit/Color;
 	public final fun getHeaderFont ()Lcom/shopify/checkoutkit/Color;
 	public final fun getProgressIndicator ()Lcom/shopify/checkoutkit/Color;
@@ -353,18 +454,21 @@ public final class com/shopify/checkoutkit/Colors$Companion {
 public final class com/shopify/checkoutkit/ColorsBuilder {
 	public final fun getCloseIcon ()Lcom/shopify/checkoutkit/DrawableResource;
 	public final fun getCloseIconTint ()Lcom/shopify/checkoutkit/Color;
+	public final fun getDragHandleColor ()Lcom/shopify/checkoutkit/Color;
 	public final fun getHeaderBackground ()Lcom/shopify/checkoutkit/Color;
 	public final fun getHeaderFont ()Lcom/shopify/checkoutkit/Color;
 	public final fun getProgressIndicator ()Lcom/shopify/checkoutkit/Color;
 	public final fun getWebViewBackground ()Lcom/shopify/checkoutkit/Color;
 	public final fun setCloseIcon (Lcom/shopify/checkoutkit/DrawableResource;)V
 	public final fun setCloseIconTint (Lcom/shopify/checkoutkit/Color;)V
+	public final fun setDragHandleColor (Lcom/shopify/checkoutkit/Color;)V
 	public final fun setHeaderBackground (Lcom/shopify/checkoutkit/Color;)V
 	public final fun setHeaderFont (Lcom/shopify/checkoutkit/Color;)V
 	public final fun setProgressIndicator (Lcom/shopify/checkoutkit/Color;)V
 	public final fun setWebViewBackground (Lcom/shopify/checkoutkit/Color;)V
 	public final fun withCloseIcon (Lcom/shopify/checkoutkit/DrawableResource;)Lcom/shopify/checkoutkit/ColorsBuilder;
 	public final fun withCloseIconTint (Lcom/shopify/checkoutkit/Color;)Lcom/shopify/checkoutkit/ColorsBuilder;
+	public final fun withDragHandleColor (Lcom/shopify/checkoutkit/Color;)Lcom/shopify/checkoutkit/ColorsBuilder;
 	public final fun withHeaderBackground (Lcom/shopify/checkoutkit/Color;)Lcom/shopify/checkoutkit/ColorsBuilder;
 	public final fun withHeaderFont (Lcom/shopify/checkoutkit/Color;)Lcom/shopify/checkoutkit/ColorsBuilder;
 	public final fun withProgressIndicator (Lcom/shopify/checkoutkit/Color;)Lcom/shopify/checkoutkit/ColorsBuilder;
@@ -374,19 +478,22 @@ public final class com/shopify/checkoutkit/ColorsBuilder {
 public final class com/shopify/checkoutkit/Configuration {
 	public fun <init> ()V
 	public final fun component1 ()Lcom/shopify/checkoutkit/ColorScheme;
-	public final fun component2 ()Lcom/shopify/checkoutkit/Platform;
-	public final fun component3 ()Lcom/shopify/checkoutkit/LogLevel;
-	public final fun component4 ()Lcom/shopify/checkoutkit/Preloading;
+	public final fun component2 ()Lcom/shopify/checkoutkit/CheckoutSheetOptions;
+	public final fun component3 ()Lcom/shopify/checkoutkit/Platform;
+	public final fun component4 ()Lcom/shopify/checkoutkit/LogLevel;
+	public final fun component5 ()Lcom/shopify/checkoutkit/Preloading;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getColorScheme ()Lcom/shopify/checkoutkit/ColorScheme;
 	public final fun getLogLevel ()Lcom/shopify/checkoutkit/LogLevel;
 	public final fun getPlatform ()Lcom/shopify/checkoutkit/Platform;
 	public final fun getPreloading ()Lcom/shopify/checkoutkit/Preloading;
+	public final fun getSheet ()Lcom/shopify/checkoutkit/CheckoutSheetOptions;
 	public fun hashCode ()I
 	public final fun setColorScheme (Lcom/shopify/checkoutkit/ColorScheme;)V
 	public final fun setLogLevel (Lcom/shopify/checkoutkit/LogLevel;)V
 	public final fun setPlatform (Lcom/shopify/checkoutkit/Platform;)V
 	public final fun setPreloading (Lcom/shopify/checkoutkit/Preloading;)V
+	public final fun setSheet (Lcom/shopify/checkoutkit/CheckoutSheetOptions;)V
 	public fun toString ()Ljava/lang/String;
 }
 

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="checkout_sheet_top_gap">24dp</dimen>
-    <dimen name="checkout_sheet_corner_radius">32dp</dimen>
+    <dimen name="checkout_sheet_drag_handle_width">32dp</dimen>
+    <dimen name="checkout_sheet_drag_handle_height">4dp</dimen>
+    <dimen name="checkout_sheet_drag_handle_top_margin">8dp</dimen>
+    <dimen name="checkout_sheet_drag_handle_title_top_margin">10dp</dimen>
     <dimen name="checkout_sheet_title_text_size">17sp</dimen>
 </resources>

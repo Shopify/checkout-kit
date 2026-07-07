@@ -73,6 +73,16 @@ public sealed class ColorScheme(public val id: String) {
         is Web -> this.colors.progressIndicator
     }
 
+    internal fun dragHandleColor(isDark: Boolean): Color {
+        val colors = when (this) {
+            is Automatic -> if (isDark) this.darkColors else this.lightColors
+            is Dark -> this.colors
+            is Light -> this.colors
+            is Web -> this.colors
+        }
+        return colors.dragHandleColor ?: colors.headerFont
+    }
+
     internal fun closeIcon(isDark: Boolean) = when (this) {
         is Automatic -> if (isDark) this.darkColors.closeIcon else this.lightColors.closeIcon
         is Dark -> this.colors.closeIcon
@@ -177,7 +187,8 @@ public sealed class ColorScheme(public val id: String) {
  * that can be overridden are:
  * - The WebView background color,
  * - The native header background and font color,
- * - The progress/loading indicator.
+ * - The progress/loading indicator,
+ * - The optional drag handle.
  *
  * @see ColorScheme
  */
@@ -189,6 +200,7 @@ public data class Colors(
     val progressIndicator: Color,
     val closeIcon: DrawableResource? = null,
     val closeIconTint: Color? = null,
+    val dragHandleColor: Color? = null,
 )
 
 /**
@@ -201,6 +213,7 @@ public class ColorsBuilder internal constructor(private val baseColors: Colors) 
     public var progressIndicator: Color? = null
     public var closeIcon: DrawableResource? = null
     public var closeIconTint: Color? = null
+    public var dragHandleColor: Color? = null
 
     public fun withWebViewBackground(color: Color): ColorsBuilder {
         webViewBackground = color
@@ -222,6 +235,11 @@ public class ColorsBuilder internal constructor(private val baseColors: Colors) 
         return this
     }
 
+    public fun withDragHandleColor(color: Color): ColorsBuilder {
+        dragHandleColor = color
+        return this
+    }
+
     public fun withCloseIcon(icon: DrawableResource): ColorsBuilder {
         closeIcon = icon
         return this
@@ -239,7 +257,8 @@ public class ColorsBuilder internal constructor(private val baseColors: Colors) 
             headerFont = headerFont ?: baseColors.headerFont,
             progressIndicator = progressIndicator ?: baseColors.progressIndicator,
             closeIcon = closeIcon ?: baseColors.closeIcon,
-            closeIconTint = closeIconTint ?: baseColors.closeIconTint
+            closeIconTint = closeIconTint ?: baseColors.closeIconTint,
+            dragHandleColor = dragHandleColor ?: baseColors.dragHandleColor
         )
     }
 }
@@ -294,6 +313,7 @@ private val defaultLightColors = Colors(
     headerBackground = Color.ResourceId(R.color.checkoutLightBg),
     headerFont = Color.ResourceId(R.color.checkoutLightFont),
     progressIndicator = Color.ResourceId(R.color.checkoutLightProgressIndicator),
+    dragHandleColor = Color.ResourceId(R.color.checkoutLightFont),
 )
 
 private val defaultDarkColors = Colors(
@@ -301,4 +321,5 @@ private val defaultDarkColors = Colors(
     headerBackground = Color.ResourceId(R.color.checkoutDarkBg),
     headerFont = Color.ResourceId(R.color.checkoutDarkFont),
     progressIndicator = Color.ResourceId(R.color.checkoutDarkProgressIndicator),
+    dragHandleColor = Color.ResourceId(R.color.checkoutDarkFont),
 )

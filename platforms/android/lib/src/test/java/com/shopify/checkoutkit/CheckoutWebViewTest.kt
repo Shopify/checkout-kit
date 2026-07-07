@@ -44,6 +44,7 @@ class CheckoutWebViewTest {
         CheckoutWebView.cacheClock = PreloadCache.Clock()
         ShopifyCheckoutKit.configure {
             it.colorScheme = initialConfiguration.colorScheme
+            it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel

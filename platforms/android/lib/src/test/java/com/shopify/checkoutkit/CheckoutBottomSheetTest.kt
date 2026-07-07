@@ -16,6 +16,9 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
@@ -35,6 +38,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 import android.graphics.Color as AndroidColor
 
 @Suppress("LargeClass")
@@ -47,7 +51,7 @@ class CheckoutBottomSheetTest {
 
     @Before
     fun setUp() {
-        configuration = ShopifyCheckoutKit.configuration
+        configuration = ShopifyCheckoutKit.getConfiguration()
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
         processor = noopDefaultCheckoutListener()
     }
@@ -58,6 +62,7 @@ class CheckoutBottomSheetTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         ShopifyCheckoutKit.configure {
             it.colorScheme = configuration.colorScheme
+            it.sheet = configuration.sheet
             it.preloading = configuration.preloading
             it.platform = configuration.platform
             it.logLevel = configuration.logLevel
@@ -72,16 +77,70 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `bottom sheet leaves configured top gap without grabber chrome`() {
+    fun `bottom sheet leaves configured window top margin without grabber chrome`() {
+        ShopifyCheckoutKit.configure {
+            it.sheet = CheckoutSheetOptions(
+                snapPoints = listOf(CheckoutSheetSnapPoint.Expanded(topMarginDp = 12f))
+            )
+        }
+
         val sheet = presentBottomSheet()
 
         val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
         val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
 
-        assertThat(layoutParams.topMargin).isEqualTo(
-            activity.resources.getDimensionPixelSize(R.dimen.checkout_sheet_top_gap)
+        assertThat(layoutParams.topMargin).isEqualTo(12f.dpToPx(activity).roundToInt())
+        assertThat(bottomSheet.findViewById<View>(R.id.checkoutKitDragHandle)!!.visibility).isEqualTo(View.GONE)
+    }
+
+    @Test
+    fun `bottom sheet clamps configured window top margin below status bar`() {
+        ShopifyCheckoutKit.configure {
+            it.sheet = CheckoutSheetOptions(
+                snapPoints = listOf(CheckoutSheetSnapPoint.Expanded(topMarginDp = 12f))
+            )
+        }
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+        val statusBarTopInset = 24f.dpToPx(activity).roundToInt()
+
+        ViewCompat.dispatchApplyWindowInsets(
+            bottomSheet,
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, statusBarTopInset, 0, 0))
+                .build(),
         )
-        assertThat(bottomSheet.childCount).isEqualTo(2)
+
+        val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
+
+        assertThat(layoutParams.topMargin).isEqualTo(statusBarTopInset)
+    }
+
+    @Test
+    fun `material expanded snap point uses wide window top margin above width threshold`() {
+        ShopifyCheckoutKit.configure {
+            it.sheet = CheckoutSheetOptions(
+                snapPoints = listOf(CheckoutSheetSnapPoint.MaterialExpanded)
+            )
+        }
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+        val wideWindowWidth = (CheckoutSheetSnapPoint.MATERIAL_WIDE_WINDOW_WIDTH_THRESHOLD_DP + 1f)
+            .dpToPx(activity)
+            .roundToInt()
+        sheet.window!!.decorView.layout(0, 0, wideWindowWidth, TEST_SHEET_SIZE)
+
+        ViewCompat.dispatchApplyWindowInsets(
+            bottomSheet,
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.NONE)
+                .build(),
+        )
+
+        val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
+
+        assertThat(layoutParams.topMargin)
+            .isEqualTo(CheckoutSheetSnapPoint.MATERIAL_WIDE_TOP_MARGIN_DP.dpToPx(activity).roundToInt())
     }
 
     @Test
@@ -177,6 +236,18 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
+    fun `checkoutView handoff does not move sheet when drag to dismiss is disabled`() {
+        val (sheet, webView) = scrollHandoffWebView(canScrollUp = false)
+        val onTouchListener = shadowOf(webView).getOnTouchListener()
+        sheet.dragToDismissEnabled = false
+
+        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
+        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
+
+        assertThat(sheetOffsetY(sheet)).isEqualTo(0f)
+    }
+
+    @Test
     fun `checkoutView handoff keeps small-scroll downward drags in WebView while checkout can scroll up`() {
         val (sheet, webView) = scrollHandoffWebView(canScrollUp = true, scrollY = 10)
         val onTouchListener = shadowOf(webView).getOnTouchListener()
@@ -222,6 +293,18 @@ class CheckoutBottomSheetTest {
         assertThat(
             sheet.onInterceptTouchEvent(motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
         ).isTrue()
+    }
+
+    @Test
+    fun `checkout sheet does not intercept downward drag when drag to dismiss is disabled`() {
+        val (sheet, _) = checkoutSheetWithScrollableChild(childTop = TEST_SHEET_HEADER_SIZE)
+        sheet.dragToDismissEnabled = false
+
+        sheet.onInterceptTouchEvent(motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
+
+        assertThat(
+            sheet.onInterceptTouchEvent(motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
+        ).isFalse()
     }
 
     @Test
@@ -321,6 +404,20 @@ class CheckoutBottomSheetTest {
         sheet.finishScrollableChildGesture()
 
         assertThat(dismissed).isFalse()
+    }
+
+    @Test
+    fun `bottom sheet applies configured drag to dismiss setting`() {
+        ShopifyCheckoutKit.configure {
+            it.sheet = CheckoutSheetOptions(
+                dismissal = CheckoutSheetDismissal(dragToDismissEnabled = false)
+            )
+        }
+
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+
+        assertThat(bottomSheet.dragToDismissEnabled).isFalse()
     }
 
     @Test
@@ -501,6 +598,38 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
+    fun `calls onCheckoutCanceled if outside touch target is clicked`() {
+        val mockListener = mock<DefaultCheckoutListener>()
+        val sheet = presentBottomSheet(checkoutListener = mockListener)
+
+        sheet.findViewById<View>(R.id.checkoutKitOutsideTouchTarget)!!.performClick()
+        ShadowLooper.runUiThreadTasks()
+
+        verify(mockListener).onCheckoutCanceled()
+        verify(mockListener, never()).onCheckoutFailed(any())
+    }
+
+    @Test
+    fun `outside touch target does not cancel when tap away to dismiss is disabled`() {
+        ShopifyCheckoutKit.configure {
+            it.sheet = CheckoutSheetOptions(
+                dismissal = CheckoutSheetDismissal(tapAwayToDismissEnabled = false)
+            )
+        }
+        val mockListener = mock<DefaultCheckoutListener>()
+        val sheet = presentBottomSheet(checkoutListener = mockListener)
+        val outsideTouchTarget = sheet.findViewById<View>(R.id.checkoutKitOutsideTouchTarget)!!
+
+        outsideTouchTarget.performClick()
+        ShadowLooper.runUiThreadTasks()
+
+        assertThat(outsideTouchTarget.isClickable).isFalse()
+        assertThat(sheet.isShowing).isTrue()
+        verify(mockListener, never()).onCheckoutCanceled()
+        verify(mockListener, never()).onCheckoutFailed(any())
+    }
+
+    @Test
     fun `clicking close invokes cancel(), removing checkoutView from the container`() {
         val sheet = presentBottomSheet()
 
@@ -530,11 +659,13 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `rounds only top header corners`() {
+        ShopifyCheckoutKit.configuration.sheet = CheckoutSheetOptions(cornerRadiusDp = 18f)
+
         val sheet = presentBottomSheet()
 
         val header = sheet.findViewById<Toolbar>(R.id.checkoutKitHeader)!!
         val background = header.background as CheckoutSheetHeaderBackgroundDrawable
-        val cornerRadius = activity.resources.getDimension(R.dimen.checkout_sheet_corner_radius)
+        val cornerRadius = 18f.dpToPx(activity)
 
         assertThat(background.appliedCornerRadii).containsExactly(
             cornerRadius,
@@ -568,6 +699,24 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
+    fun `applies configured header title alignment and toolbar elevation`() {
+        ShopifyCheckoutKit.configuration.sheet = CheckoutSheetOptions(
+            titleAlignment = CheckoutSheetTitleAlignment.START,
+            toolbarElevationDp = 6f,
+        )
+
+        val sheet = presentBottomSheet()
+
+        val header = sheet.findViewById<Toolbar>(R.id.checkoutKitHeader)!!
+        val title = sheet.findViewById<TextView>(R.id.checkoutKitHeaderTitle)!!
+        val titleLayoutParams = title.layoutParams as Toolbar.LayoutParams
+
+        assertThat(header.elevation).isEqualTo(6f.dpToPx(activity))
+        assertThat(titleLayoutParams.gravity and Gravity.START).isEqualTo(Gravity.START)
+        assertThat(titleLayoutParams.gravity and Gravity.CENTER_VERTICAL).isEqualTo(Gravity.CENTER_VERTICAL)
+    }
+
+    @Test
     fun `sets WebView container background color based on current configuration`() {
         val customColors = customColors()
         ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Web(customColors)
@@ -587,15 +736,7 @@ class CheckoutBottomSheetTest {
     fun `bottom sheet applies custom close icon when provided`() {
         val customIcon = DrawableResource(android.R.drawable.ic_delete)
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Light(
-                colors = Colors(
-                    headerBackground = Color.ResourceId(R.color.checkoutLightBg),
-                    headerFont = Color.ResourceId(R.color.checkoutLightFont),
-                    webViewBackground = Color.ResourceId(R.color.checkoutLightBg),
-                    progressIndicator = Color.ResourceId(R.color.checkoutLightProgressIndicator),
-                    closeIcon = customIcon
-                )
-            )
+            it.sheet = CheckoutSheetOptions(closeIcon = customIcon)
         }
 
         val sheet = presentBottomSheet(checkoutListener = mock<DefaultCheckoutListener>())
@@ -616,9 +757,7 @@ class CheckoutBottomSheetTest {
     fun `bottom sheet applies close icon tint when provided and no custom icon`() {
         val tintColor = Color.SRGB(0xFF0000)
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Dark().customize {
-                closeIconTint = tintColor
-            }
+            it.sheet = CheckoutSheetOptions(closeIconTint = tintColor)
         }
 
         val sheet = presentBottomSheet(checkoutListener = mock<DefaultCheckoutListener>())
@@ -640,7 +779,8 @@ class CheckoutBottomSheetTest {
     @Test
     fun `bottom sheet uses default close icon when no customization provided`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Light() // Default colors, no custom icon or tint
+            it.colorScheme = ColorScheme.Light()
+            it.sheet = CheckoutSheetOptions()
         }
         val mockProcessor = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockProcessor)
@@ -662,26 +802,13 @@ class CheckoutBottomSheetTest {
     fun `bottom sheet prioritizes custom icon over tint when both are provided`() {
         val customIcon = DrawableResource(android.R.drawable.ic_delete)
         val tintColor = Color.SRGB(0xFF0000)
-        val colorScheme = ColorScheme.Automatic(
-            lightColors = Colors(
-                headerBackground = Color.ResourceId(R.color.checkoutLightBg),
-                headerFont = Color.ResourceId(R.color.checkoutLightFont),
-                webViewBackground = Color.ResourceId(R.color.checkoutLightBg),
-                progressIndicator = Color.ResourceId(R.color.checkoutLightProgressIndicator),
-                closeIcon = customIcon,
-                closeIconTint = tintColor // Should be ignored when closeIcon is present
-            ),
-            darkColors = Colors(
-                headerBackground = Color.ResourceId(R.color.checkoutDarkBg),
-                headerFont = Color.ResourceId(R.color.checkoutDarkFont),
-                webViewBackground = Color.ResourceId(R.color.checkoutDarkBg),
-                progressIndicator = Color.ResourceId(R.color.checkoutDarkProgressIndicator),
-                closeIcon = customIcon,
-                closeIconTint = tintColor
-            )
-        )
 
-        ShopifyCheckoutKit.configure { it.colorScheme = colorScheme }
+        ShopifyCheckoutKit.configure {
+            it.sheet = CheckoutSheetOptions(
+                closeIcon = customIcon,
+                closeIconTint = tintColor,
+            )
+        }
         val mockProcessor = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockProcessor)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()

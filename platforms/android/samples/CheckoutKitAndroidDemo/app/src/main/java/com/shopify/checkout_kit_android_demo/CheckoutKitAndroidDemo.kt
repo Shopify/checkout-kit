@@ -4,6 +4,7 @@ import android.app.Application
 import com.shopify.checkout_kit_android_demo.common.di.setupDI
 import com.shopify.checkout_kit_android_demo.common.withCustomCloseIcon
 import com.shopify.checkout_kit_android_demo.settings.PreferencesManager
+import com.shopify.checkout_kit_android_demo.settings.data.toCheckoutSheetOptions
 import com.shopify.checkoutkit.LogLevel
 import com.shopify.checkoutkit.Preloading
 import com.shopify.checkoutkit.ShopifyCheckoutKit
@@ -33,6 +34,10 @@ class CheckoutKitAndroidDemo : Application() {
             ShopifyCheckoutKit.configure {
                 it.logLevel = LogLevel.DEBUG
                 it.colorScheme = settings.colorScheme.withCustomCloseIcon()
+                it.sheet = settings.checkoutSheetPreset.toCheckoutSheetOptions(
+                    dragToDismissEnabled = settings.dragToDismissEnabled,
+                    tapAwayToDismissEnabled = settings.tapAwayToDismissEnabled,
+                )
                 it.preloading = Preloading(enabled = settings.checkoutPreloadingEnabled)
             }
         }

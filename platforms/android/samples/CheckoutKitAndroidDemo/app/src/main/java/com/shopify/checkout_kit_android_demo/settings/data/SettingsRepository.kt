@@ -18,7 +18,10 @@ class SettingsRepository(
                 colorScheme = preferences.colorScheme,
                 buyerIdentityDemoEnabled = preferences.buyerIdentityDemoEnabled,
                 checkoutPreloadingEnabled = preferences.checkoutPreloadingEnabled,
+                dragToDismissEnabled = preferences.dragToDismissEnabled,
+                tapAwayToDismissEnabled = preferences.tapAwayToDismissEnabled,
                 windowOpenHandler = preferences.windowOpenHandler,
+                checkoutSheetPreset = preferences.checkoutSheetPreset,
             )
         }
     }
@@ -42,7 +45,19 @@ class SettingsRepository(
         preferencesManager.setCheckoutPreloadingEnabled(enabled)
     }
 
+    suspend fun setDragToDismissEnabled(enabled: Boolean) {
+        preferencesManager.setDragToDismissEnabled(enabled)
+    }
+
+    suspend fun setTapAwayToDismissEnabled(enabled: Boolean) {
+        preferencesManager.setTapAwayToDismissEnabled(enabled)
+    }
+
     suspend fun setWindowOpenHandler(handler: WindowOpenHandler) {
         preferencesManager.setWindowOpenHandler(handler)
+    }
+
+    suspend fun setCheckoutSheetPreset(preset: CheckoutSheetPreset) {
+        preferencesManager.setCheckoutSheetPreset(preset)
     }
 }

@@ -16,12 +16,20 @@
 
     <string name="settings_account_details" translatable="false">Account details</string>
     <string name="checkout_preloading" translatable="false">Checkout preloading</string>
+    <string name="checkout_drag_to_dismiss" translatable="false">Drag to dismiss checkout</string>
+    <string name="checkout_tap_away_to_dismiss" translatable="false">Tap outside to dismiss</string>
 
     <string name="color_scheme" translatable="false">Color Scheme</string>
     <string name="color_scheme_automatic" translatable="false">Automatic</string>
     <string name="color_scheme_dark" translatable="false">Dark</string>
     <string name="color_scheme_light" translatable="false">Light</string>
     <string name="color_scheme_web" translatable="false">Web</string>
+
+    <string name="checkout_sheet_preset" translatable="false">Checkout sheet preset</string>
+    <string name="checkout_sheet_preset_new_defaults" translatable="false">New defaults</string>
+    <string name="checkout_sheet_preset_legacy_dialog" translatable="false">Legacy dialog</string>
+    <string name="checkout_sheet_preset_new_defaults_description" translatable="false">Use rounded top corners, centered title, and no toolbar elevation</string>
+    <string name="checkout_sheet_preset_legacy_dialog_description" translatable="false">Use square corners, start-aligned title, and toolbar elevation</string>
 
     <string name="window_open_handler" translatable="false">Window open handler</string>
     <string name="window_open_handler_default" translatable="false">Default (Intent.ACTION_VIEW)</string>

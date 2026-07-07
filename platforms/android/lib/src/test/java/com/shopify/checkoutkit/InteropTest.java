@@ -2,6 +2,8 @@ package com.shopify.checkoutkit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import android.app.Dialog;
+
 import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
 
@@ -13,6 +15,8 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.shadows.ShadowDialog;
+
+import java.util.Collections;
 
 import kotlin.Unit;
 
@@ -29,6 +33,7 @@ public class InteropTest {
     public void tearDown() {
         ShopifyCheckoutKit.configure(config -> {
             config.setColorScheme(initialConfiguration.getColorScheme());
+            config.setSheet(initialConfiguration.getSheet());
             config.setPreloading(initialConfiguration.getPreloading());
             config.setPlatform(initialConfiguration.getPlatform());
             config.setLogLevel(initialConfiguration.getLogLevel());
@@ -75,6 +80,50 @@ public class InteropTest {
     }
 
     @Test
+    public void canConfigureSheet() {
+        CheckoutSheetOptions sheet = new CheckoutSheetOptions(
+                12f,
+                CheckoutSheetTitleAlignment.START,
+                4f,
+                null,
+                new Color.ResourceId(android.R.color.holo_red_dark),
+                new Color.SRGB(0x52000000),
+                new CheckoutSheetDismissal(false, false),
+                new CheckoutSheetDragHandle(true),
+                Collections.singletonList(new CheckoutSheetSnapPoint.Expanded(12f))
+        );
+
+        ShopifyCheckoutKit.configure(configuration -> configuration.setSheet(sheet));
+
+        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+
+        assertThat(configuration.getSheet()).isEqualTo(sheet);
+    }
+
+    @Test
+    public void canConfigureSheetDismissal() {
+        CheckoutSheetDismissal dismissal = new CheckoutSheetDismissal(false, false);
+
+        ShopifyCheckoutKit.configure(configuration -> configuration.setSheet(
+                new CheckoutSheetOptions(
+                        32f,
+                        CheckoutSheetTitleAlignment.CENTER,
+                        0f,
+                        null,
+                        null,
+                        new Color.SRGB(0x52000000),
+                        dismissal,
+                        new CheckoutSheetDragHandle(),
+                        Collections.singletonList(CheckoutSheetSnapPoint.MaterialExpanded.INSTANCE)
+                )
+        ));
+
+        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+
+        assertThat(configuration.getSheet().getDismissal()).isEqualTo(dismissal);
+    }
+
+    @Test
     public void canPreloadAndInvalidate() {
         try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
             ComponentActivity activity = controller.get();
@@ -105,7 +154,7 @@ public class InteropTest {
             );
 
             assertThat(checkout).isNotNull();
-            CheckoutBottomSheet sheet = (CheckoutBottomSheet) ShadowDialog.getLatestDialog();
+            Dialog sheet = ShadowDialog.getLatestDialog();
             assertThat(sheet.isShowing()).isTrue();
 
             checkout.dismiss();
@@ -133,16 +182,20 @@ public class InteropTest {
         ColorScheme.Automatic autoScheme = new ColorScheme.Automatic();
         Color lightTint = new Color.ResourceId(android.R.color.holo_orange_light);
         Color darkTint = new Color.ResourceId(android.R.color.holo_blue_dark);
+        Color lightHandle = new Color.ResourceId(android.R.color.holo_green_light);
+        Color darkHandle = new Color.ResourceId(android.R.color.holo_green_dark);
         DrawableResource customIcon = new DrawableResource(android.R.drawable.ic_menu_close_clear_cancel);
 
         ColorScheme customized = autoScheme.customize(
                 lightBuilder -> {
                     lightBuilder.setCloseIconTint(lightTint);
+                    lightBuilder.setDragHandleColor(lightHandle);
                     return Unit.INSTANCE;
                 },
                 darkBuilder -> {
                     darkBuilder.setCloseIcon(customIcon);
                     darkBuilder.setCloseIconTint(darkTint);
+                    darkBuilder.setDragHandleColor(darkHandle);
                     return Unit.INSTANCE;
                 }
         );
@@ -155,6 +208,8 @@ public class InteropTest {
 
         assertThat(customizedAuto.getDarkColors().getCloseIconTint()).isEqualTo(darkTint);
         assertThat(customizedAuto.getDarkColors().getCloseIcon()).isEqualTo(customIcon);
+        assertThat(customizedAuto.getLightColors().getDragHandleColor()).isEqualTo(lightHandle);
+        assertThat(customizedAuto.getDarkColors().getDragHandleColor()).isEqualTo(darkHandle);
     }
 
     @Test
@@ -180,12 +235,14 @@ public class InteropTest {
         ColorScheme.Web webScheme = new ColorScheme.Web();
         Color webViewBg = new Color.ResourceId(android.R.color.white);
         Color progressColor = new Color.ResourceId(android.R.color.holo_green_dark);
+        Color dragHandle = new Color.ResourceId(android.R.color.holo_blue_light);
         DrawableResource icon = new DrawableResource(android.R.drawable.ic_menu_close_clear_cancel);
 
         ColorScheme customized = webScheme.customize(builder -> {
             builder
                     .withWebViewBackground(webViewBg)
                     .withProgressIndicator(progressColor)
+                    .withDragHandleColor(dragHandle)
                     .withCloseIcon(icon);
             return Unit.INSTANCE;
         });
@@ -196,6 +253,7 @@ public class InteropTest {
 
         assertThat(colors.getWebViewBackground()).isEqualTo(webViewBg);
         assertThat(colors.getProgressIndicator()).isEqualTo(progressColor);
+        assertThat(colors.getDragHandleColor()).isEqualTo(dragHandle);
         assertThat(colors.getCloseIcon()).isEqualTo(icon);
     }
 }
