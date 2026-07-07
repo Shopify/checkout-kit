@@ -46,7 +46,7 @@ public struct Checkout: Codable, Sendable {
     /// Details about an order created for this checkout session.
     public let order: OrderConfirmation?
     public let payment: Payment?
-    public let signals: Signals?
+    public let signals: [String: JSONAny]?
     /// Checkout state indicating the current phase and required action. See Checkout Status
     /// lifecycle documentation for state transition details.
     public let status: CheckoutStatus
@@ -64,7 +64,7 @@ public struct Checkout: Codable, Sendable {
         case links, messages, order, payment, signals, status, totals, ucp
     }
 
-    public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: Signals?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
+    public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
         self.attribution = attribution
         self.buyer = buyer
         self.context = context
@@ -83,6 +83,64 @@ public struct Checkout: Codable, Sendable {
         self.status = status
         self.totals = totals
         self.ucp = ucp
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at", "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "signals", "status", "totals", "ucp"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.attribution = try container.decodeIfPresent([String: String].self, forKey: .attribution)
+        self.buyer = try container.decodeIfPresent(Buyer.self, forKey: .buyer)
+        self.context = try container.decodeIfPresent(Context.self, forKey: .context)
+        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        self.currency = try container.decode(String.self, forKey: .currency)
+        self.discounts = try container.decodeIfPresent(CheckoutDiscounts.self, forKey: .discounts)
+        self.expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+        self.fulfillment = try container.decodeIfPresent(CheckoutFulfillment.self, forKey: .fulfillment)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItems = try container.decode([LineItem].self, forKey: .lineItems)
+        self.links = try container.decode([Link].self, forKey: .links)
+        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        self.order = try container.decodeIfPresent(OrderConfirmation.self, forKey: .order)
+        self.payment = try container.decodeIfPresent(Payment.self, forKey: .payment)
+        self.signals = try container.decodeIfPresent([String: JSONAny].self, forKey: .signals)
+        self.status = try container.decode(CheckoutStatus.self, forKey: .status)
+        self.totals = try container.decode([CheckoutTotal].self, forKey: .totals)
+        self.ucp = try container.decode(UCPCheckoutResponseSchema.self, forKey: .ucp)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(attribution, forKey: .attribution)
+        try container.encodeIfPresent(buyer, forKey: .buyer)
+        try container.encodeIfPresent(context, forKey: .context)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encode(currency, forKey: .currency)
+        try container.encodeIfPresent(discounts, forKey: .discounts)
+        try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
+        try container.encodeIfPresent(fulfillment, forKey: .fulfillment)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItems, forKey: .lineItems)
+        try container.encode(links, forKey: .links)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        try container.encodeIfPresent(order, forKey: .order)
+        try container.encodeIfPresent(payment, forKey: .payment)
+        try container.encodeIfPresent(signals, forKey: .signals)
+        try container.encode(status, forKey: .status)
+        try container.encode(totals, forKey: .totals)
+        try container.encode(ucp, forKey: .ucp)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -119,7 +177,7 @@ public extension Checkout {
         messages: [Message]?? = nil,
         order: OrderConfirmation?? = nil,
         payment: Payment?? = nil,
-        signals: Signals?? = nil,
+        signals: [String: JSONAny]?? = nil,
         status: CheckoutStatus? = nil,
         totals: [CheckoutTotal]? = nil,
         ucp: UCPCheckoutResponseSchema? = nil
@@ -179,6 +237,36 @@ public struct Buyer: Codable, Sendable {
         self.firstName = firstName
         self.lastName = lastName
         self.phoneNumber = phoneNumber
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["email", "first_name", "last_name", "phone_number"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.email = try container.decodeIfPresent(String.self, forKey: .email)
+        self.firstName = try container.decodeIfPresent(String.self, forKey: .firstName)
+        self.lastName = try container.decodeIfPresent(String.self, forKey: .lastName)
+        self.phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(email, forKey: .email)
+        try container.encodeIfPresent(firstName, forKey: .firstName)
+        try container.encodeIfPresent(lastName, forKey: .lastName)
+        try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -284,6 +372,42 @@ public struct Context: Codable, Sendable {
         self.intent = intent
         self.language = language
         self.postalCode = postalCode
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["address_country", "address_region", "currency", "eligibility", "intent", "language", "postal_code"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.addressCountry = try container.decodeIfPresent(String.self, forKey: .addressCountry)
+        self.addressRegion = try container.decodeIfPresent(String.self, forKey: .addressRegion)
+        self.currency = try container.decodeIfPresent(String.self, forKey: .currency)
+        self.eligibility = try container.decodeIfPresent([String].self, forKey: .eligibility)
+        self.intent = try container.decodeIfPresent(String.self, forKey: .intent)
+        self.language = try container.decodeIfPresent(String.self, forKey: .language)
+        self.postalCode = try container.decodeIfPresent(String.self, forKey: .postalCode)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(addressCountry, forKey: .addressCountry)
+        try container.encodeIfPresent(addressRegion, forKey: .addressRegion)
+        try container.encodeIfPresent(currency, forKey: .currency)
+        try container.encodeIfPresent(eligibility, forKey: .eligibility)
+        try container.encodeIfPresent(intent, forKey: .intent)
+        try container.encodeIfPresent(language, forKey: .language)
+        try container.encodeIfPresent(postalCode, forKey: .postalCode)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -616,6 +740,36 @@ public struct FulfillmentAvailableMethod: Codable, Sendable {
         self.lineItemIDS = lineItemIDS
         self.type = type
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["description", "fulfillable_on", "line_item_ids", "type"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.fulfillableOn = try container.decodeIfPresent(String.self, forKey: .fulfillableOn)
+        self.lineItemIDS = try container.decode([String].self, forKey: .lineItemIDS)
+        self.type = try container.decode(FulfillmentMethodType.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(fulfillableOn, forKey: .fulfillableOn)
+        try container.encode(lineItemIDS, forKey: .lineItemIDS)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: FulfillmentAvailableMethod convenience initializers and mutators
@@ -698,6 +852,40 @@ public struct FulfillmentMethod: Codable, Sendable {
         self.lineItemIDS = lineItemIDS
         self.selectedDestinationID = selectedDestinationID
         self.type = type
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["destinations", "groups", "id", "line_item_ids", "selected_destination_id", "type"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.destinations = try container.decodeIfPresent([FulfillmentDestination].self, forKey: .destinations)
+        self.groups = try container.decodeIfPresent([FulfillmentGroup].self, forKey: .groups)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItemIDS = try container.decode([String].self, forKey: .lineItemIDS)
+        self.selectedDestinationID = try container.decodeIfPresent(String.self, forKey: .selectedDestinationID)
+        self.type = try container.decode(FulfillmentMethodType.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(destinations, forKey: .destinations)
+        try container.encodeIfPresent(groups, forKey: .groups)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItemIDS, forKey: .lineItemIDS)
+        try container.encodeIfPresent(selectedDestinationID, forKey: .selectedDestinationID)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -1009,6 +1197,36 @@ public struct FulfillmentGroup: Codable, Sendable {
         self.options = options
         self.selectedOptionID = selectedOptionID
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["id", "line_item_ids", "options", "selected_option_id"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.lineItemIDS = try container.decode([String].self, forKey: .lineItemIDS)
+        self.options = try container.decodeIfPresent([FulfillmentOption].self, forKey: .options)
+        self.selectedOptionID = try container.decodeIfPresent(String.self, forKey: .selectedOptionID)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItemIDS, forKey: .lineItemIDS)
+        try container.encodeIfPresent(options, forKey: .options)
+        try container.encodeIfPresent(selectedOptionID, forKey: .selectedOptionID)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: FulfillmentGroup convenience initializers and mutators
@@ -1086,6 +1304,42 @@ public struct FulfillmentOption: Codable, Sendable {
         self.latestFulfillmentTime = latestFulfillmentTime
         self.title = title
         self.totals = totals
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["carrier", "description", "earliest_fulfillment_time", "id", "latest_fulfillment_time", "title", "totals"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.carrier = try container.decodeIfPresent(String.self, forKey: .carrier)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.earliestFulfillmentTime = try container.decodeIfPresent(Date.self, forKey: .earliestFulfillmentTime)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.latestFulfillmentTime = try container.decodeIfPresent(Date.self, forKey: .latestFulfillmentTime)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.totals = try container.decode([LineItemTotal].self, forKey: .totals)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(carrier, forKey: .carrier)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(earliestFulfillmentTime, forKey: .earliestFulfillmentTime)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(latestFulfillmentTime, forKey: .latestFulfillmentTime)
+        try container.encode(title, forKey: .title)
+        try container.encode(totals, forKey: .totals)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
     }
 }
 
@@ -1678,6 +1932,42 @@ public struct SelectedPaymentInstrument: Codable, Sendable {
         self.type = type
         self.selected = selected
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["billing_address", "credential", "display", "handler_id", "id", "type", "selected"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.billingAddress = try container.decodeIfPresent(PostalAddress.self, forKey: .billingAddress)
+        self.credential = try container.decodeIfPresent(PaymentCredential.self, forKey: .credential)
+        self.display = try container.decodeIfPresent([String: JSONAny].self, forKey: .display)
+        self.handlerID = try container.decode(String.self, forKey: .handlerID)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.type = try container.decode(String.self, forKey: .type)
+        self.selected = try container.decodeIfPresent(Bool.self, forKey: .selected)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(billingAddress, forKey: .billingAddress)
+        try container.encodeIfPresent(credential, forKey: .credential)
+        try container.encodeIfPresent(display, forKey: .display)
+        try container.encode(handlerID, forKey: .handlerID)
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(selected, forKey: .selected)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: SelectedPaymentInstrument convenience initializers and mutators
@@ -1737,6 +2027,34 @@ public struct PaymentCredential: Codable, Sendable {
     public init(type: String) {
         self.type = type
     }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    public enum CodingKeys: String, CodingKey {
+        case type
+    }
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["type"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.type = try container.decode(String.self, forKey: .type)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
 }
 
 // MARK: PaymentCredential convenience initializers and mutators
@@ -1779,60 +2097,7 @@ public extension PaymentCredential {
 /// observation or independently verifiable third-party attestations. All signal keys MUST
 /// use reverse-domain naming to ensure provenance and prevent collisions when multiple
 /// extensions contribute to the shared namespace.
-// MARK: - Signals
-public struct Signals: Codable, Sendable {
-    /// Client's IP address (IPv4 or IPv6).
-    public let devUcpBuyerIP: String?
-    /// Client's HTTP User-Agent header or equivalent.
-    public let devUcpUserAgent: String?
 
-    public enum CodingKeys: String, CodingKey {
-        case devUcpBuyerIP = "dev.ucp.buyer_ip"
-        case devUcpUserAgent = "dev.ucp.user_agent"
-    }
-
-    public init(devUcpBuyerIP: String?, devUcpUserAgent: String?) {
-        self.devUcpBuyerIP = devUcpBuyerIP
-        self.devUcpUserAgent = devUcpUserAgent
-    }
-}
-
-// MARK: Signals convenience initializers and mutators
-
-public extension Signals {
-    init(data: Data) throws {
-        self = try newJSONDecoder().decode(Signals.self, from: data)
-    }
-
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
-        }
-        try self.init(data: data)
-    }
-
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func with(
-        devUcpBuyerIP: String?? = nil,
-        devUcpUserAgent: String?? = nil
-    ) -> Signals {
-        return Signals(
-            devUcpBuyerIP: devUcpBuyerIP ?? self.devUcpBuyerIP,
-            devUcpUserAgent: devUcpUserAgent ?? self.devUcpUserAgent
-        )
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
 
 /// Checkout state indicating the current phase and required action. See Checkout Status
 /// lifecycle documentation for state transition details.

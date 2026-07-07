@@ -386,7 +386,246 @@ function commonSchemaSources(specDir) {
   ];
 }
 
-async function generateKotlin(specDir, output) {
+async function listJsonFiles(dir) {
+  const entries = await fs.readdir(dir, {withFileTypes: true});
+  const files = await Promise.all(entries.map(async (entry) => {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return listJsonFiles(entryPath);
+    }
+    return entry.isFile() && entry.name.endsWith(".json") ? [entryPath] : [];
+  }));
+  return files.flat();
+}
+
+function schemaTitleToTypeName(title) {
+  return title
+    .split(/[^A-Za-z0-9]+/g)
+    .filter(Boolean)
+    .map((part) => (/^[A-Z0-9]+$/.test(part) ? part : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
+    .join("");
+}
+
+function jsonPointerGet(doc, pointer) {
+  if (pointer === "") {
+    return doc;
+  }
+
+  return pointer
+    .split("/")
+    .filter(Boolean)
+    .reduce((node, rawSegment) => {
+      if (node == null) {
+        return undefined;
+      }
+      const segment = rawSegment.replaceAll("~1", "/").replaceAll("~0", "~");
+      return node[segment];
+    }, doc);
+}
+
+async function collectModelCodegenInfo(specDir) {
+  const schemaDir = path.dirname(specDir);
+  const jsonFiles = await listJsonFiles(schemaDir);
+  const docs = new Map();
+  for (const file of jsonFiles) {
+    docs.set(file, await readJson(file));
+  }
+
+  const resolveRef = (ref, baseFile) => {
+    const [relativePath = "", pointer = ""] = ref.split("#");
+    const targetFile = relativePath === "" ? baseFile : path.resolve(path.dirname(baseFile), relativePath);
+    const targetDoc = docs.get(targetFile);
+    return targetDoc === undefined ? undefined : {file: targetFile, node: jsonPointerGet(targetDoc, pointer)};
+  };
+
+  const isOpenObject = (node, file, seen = new Set()) => {
+    if (node == null || typeof node !== "object") {
+      return false;
+    }
+
+    const ref = typeof node.$ref === "string" ? resolveRef(node.$ref, file) : undefined;
+    if (ref !== undefined) {
+      const key = `${ref.file}#${node.$ref.split("#")[1] ?? ""}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        if (isOpenObject(ref.node, ref.file, seen)) {
+          return true;
+        }
+      }
+    }
+
+    if (Array.isArray(node.allOf) && node.allOf.some((item) => isOpenObject(item, file, seen))) {
+      return true;
+    }
+
+    return node.type === "object" && node.additionalProperties !== undefined && node.additionalProperties !== false;
+  };
+
+  const isMapModel = (node) =>
+    node?.type === "object" &&
+    node.propertyNames !== undefined &&
+    node.additionalProperties !== undefined &&
+    node.additionalProperties !== false;
+
+  const openModelNames = new Set();
+  const mapModelNames = new Set();
+  const visit = (node, file) => {
+    if (node == null || typeof node !== "object") {
+      return;
+    }
+
+    if (typeof node.title === "string" && isOpenObject(node, file)) {
+      const modelName = schemaTitleToTypeName(node.title);
+      openModelNames.add(modelName);
+      if (isMapModel(node)) {
+        mapModelNames.add(modelName);
+      }
+    }
+
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          visit(item, file);
+        }
+      } else {
+        visit(value, file);
+      }
+    }
+  };
+
+  for (const [file, doc] of docs) {
+    visit(doc, file);
+  }
+
+  return {openModelNames, mapModelNames};
+}
+
+function parseKotlinFields(inner) {
+  const fields = [];
+  const fieldPattern = /(?:    @SerialName\("([^"]+)"\)\n)?    public val (\w+): ([^\n]+)/g;
+  let entry;
+  while ((entry = fieldPattern.exec(inner)) !== null) {
+    const [, serialName, name, tail] = entry;
+    let rest = tail.trim();
+    if (rest.endsWith(",")) {
+      rest = rest.slice(0, -1).trim();
+    }
+    const eq = rest.indexOf(" = ");
+    const type = eq === -1 ? rest : rest.slice(0, eq).trim();
+    const optional = eq !== -1;
+    fields.push({
+      name,
+      wire: serialName ?? name,
+      type,
+      baseType: type.endsWith("?") ? type.slice(0, -1) : type,
+      optional,
+    });
+  }
+  return fields;
+}
+
+function kotlinSerializerObject(name, fields) {
+  const knownList = fields.map((field) => `"${field.wire}"`).join(", ");
+
+  const ctorArgs = fields
+    .map((field) =>
+      field.optional
+        ? `            ${field.name} = obj["${field.wire}"]?.let { json.decodeFromJsonElement(serializer<${field.baseType}>(), it) },`
+        : `            ${field.name} = json.decodeFromJsonElement(serializer<${field.type}>(), obj["${field.wire}"] ?: throw SerializationException("Missing ${field.wire} for ${name}")),`,
+    )
+    .join("\n");
+
+  const serLines = fields
+    .map((field) =>
+      field.optional
+        ? `        value.${field.name}?.let { map["${field.wire}"] = json.encodeToJsonElement(serializer<${field.baseType}>(), it) }`
+        : `        map["${field.wire}"] = json.encodeToJsonElement(serializer<${field.type}>(), value.${field.name})`,
+    )
+    .join("\n");
+
+  return [
+    "",
+    `public object ${name}Serializer : KSerializer<${name}> {`,
+    "    override val descriptor: SerialDescriptor =",
+    `        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.${name}")`,
+    "",
+    `    override fun deserialize(decoder: Decoder): ${name} {`,
+    "        val input = decoder as? JsonDecoder",
+    `            ?: throw SerializationException("${name} can only be deserialized from JSON")`,
+    "        val obj = input.decodeJsonElement().jsonObject",
+    "        val json = input.json",
+    `        val known = setOf(${knownList})`,
+    `        return ${name}(`,
+    ctorArgs,
+    "            additionalProperties = obj.filterKeys { it !in known }",
+    "        )",
+    "    }",
+    "",
+    `    override fun serialize(encoder: Encoder, value: ${name}) {`,
+    "        val output = encoder as? JsonEncoder",
+    `            ?: throw SerializationException("${name} can only be serialized to JSON")`,
+    "        val json = output.json",
+    `        val known = setOf(${knownList})`,
+    "        val map = linkedMapOf<String, JsonElement>()",
+    serLines,
+    "        value.additionalProperties",
+    "            .filterKeys { it !in known }",
+    "            .forEach { (key, element) -> map[key] = element }",
+    "        output.encodeJsonElement(JsonObject(map))",
+    "    }",
+    "}",
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+}
+
+function injectKotlinAdditionalProperties(source, openModelNames) {
+  const serializers = [];
+  const generatedModelNames = new Set([...source.matchAll(/^public data class (\w+) \(/gm)].map((entry) => entry[1]));
+  const missingOpenModels = new Set([...openModelNames].filter((name) => generatedModelNames.has(name)));
+
+  const result = source.replace(
+    /^@Serializable\npublic data class (\w+) \(\n([\s\S]*?)\n\)$/gm,
+    (match, name, inner) => {
+      if (!openModelNames.has(name)) {
+        return match;
+      }
+
+      missingOpenModels.delete(name);
+      const fields = parseKotlinFields(inner);
+      serializers.push(kotlinSerializerObject(name, fields));
+
+      const widenedInner = `${inner},\n\n    public val additionalProperties: Map<String, JsonElement> = emptyMap()`;
+      return `@Serializable(with = ${name}Serializer::class)\npublic data class ${name} (\n${widenedInner}\n)`;
+    },
+  );
+
+  if (missingOpenModels.size > 0) {
+    throw new Error(`Kotlin additionalProperties injection missed open models:\n${[...missingOpenModels].sort().join("\n")}`);
+  }
+
+  return `${result}\n${serializers.join("\n")}\n`;
+}
+
+function removeKotlinMapModel(source, modelName) {
+  return source.replace(
+    new RegExp(`\\n@Serializable\\npublic data class ${modelName} \\(\\n[\\s\\S]*?\\n\\)\\n`, "m"),
+    "\n",
+  );
+}
+
+function useKotlinMapsForModels(source, mapModelNames) {
+  let result = source;
+  for (const modelName of mapModelNames) {
+    result = removeKotlinMapModel(result, modelName);
+    result = result
+      .replace(new RegExp(`\\b${modelName}\\?`, "g"), "JsonObject?")
+      .replace(new RegExp(`\\b${modelName}\\b`, "g"), "JsonObject");
+  }
+  return result;
+}
+
+async function generateKotlin(specDir, output, {openModelNames, mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
     "--lang",
@@ -413,20 +652,131 @@ async function generateKotlin(specDir, output) {
       .replace(/^    val /gm, "    public val ")
       .replace(/\(val value: /g, "(public val value: ");
 
-    const withSerializer = result.replace(
+    const withMapModels = useKotlinMapsForModels(result, mapModelNames);
+
+    const withSerializer = withMapModels.replace(
       /@Serializable(\s+public sealed class Extends\b)/,
       "@Serializable(with = ExtendsSerializer::class)$1",
     );
 
-    if (withSerializer === result) {
+    if (withSerializer === withMapModels) {
       throw new Error("ExtendsSerializer injection failed; quicktype Extends output may have changed");
     }
 
-    return withSerializer;
+    return injectKotlinAdditionalProperties(withSerializer, openModelNames);
   });
 }
 
-async function generateSwift(specDir, output) {
+function injectSwiftAdditionalProperties(source, openModelNames) {
+  let injected = 0;
+  const generatedModelNames = new Set([...source.matchAll(/^public struct (\w+): Codable, Sendable \{$/gm)].map((entry) => entry[1]));
+  const missingOpenModels = new Set([...openModelNames].filter((name) => generatedModelNames.has(name)));
+
+  const result = source.replace(
+    /^public struct (\w+): Codable, Sendable \{\n([\s\S]*?)\n\}$/gm,
+    (match, name, inner) => {
+      if (!openModelNames.has(name)) {
+        return match;
+      }
+      if (/\n    public init\(from decoder:/.test(inner)) {
+        throw new Error(`Swift additionalProperties injection: struct ${name} already declares a custom decoder`);
+      }
+
+      missingOpenModels.delete(name);
+      const props = [...inner.matchAll(/^    public let (\w+): (.+)$/gm)].map((entry) => {
+        const type = entry[2].trim();
+        const optional = type.endsWith("?");
+        return {name: entry[1], optional, baseType: optional ? type.slice(0, -1) : type};
+      });
+
+      const hasCodingKeys = /^    public enum CodingKeys: String, CodingKey \{/m.test(inner);
+
+      const lines = ["", "", "    public var additionalProperties: [String: JSONAny] = [:]", ""];
+      const knownWireKeys = props.map((prop) => {
+        const match = inner.match(new RegExp(`^        case ${prop.name} = "([^"]+)"$`, "m"));
+        return `"${match?.[1] ?? prop.name}"`;
+      }).join(", ");
+
+      if (!hasCodingKeys) {
+        lines.push("    public enum CodingKeys: String, CodingKey {");
+        if (props.length > 0) {
+          lines.push(`        case ${props.map((prop) => prop.name).join(", ")}`);
+        }
+        lines.push("    }", "");
+      }
+
+      lines.push(`    private static let knownAdditionalPropertyKeys: Set<String> = [${knownWireKeys}]`, "");
+
+      lines.push("    public init(from decoder: Decoder) throws {");
+      lines.push("        let container = try decoder.container(keyedBy: CodingKeys.self)");
+      for (const prop of props) {
+        lines.push(
+          prop.optional
+            ? `        self.${prop.name} = try container.decodeIfPresent(${prop.baseType}.self, forKey: .${prop.name})`
+            : `        self.${prop.name} = try container.decode(${prop.baseType}.self, forKey: .${prop.name})`,
+        );
+      }
+      lines.push("        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)");
+      lines.push("        var extras: [String: JSONAny] = [:]");
+      lines.push("        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {");
+      lines.push("            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)");
+      lines.push("        }");
+      lines.push("        self.additionalProperties = extras");
+      lines.push("    }", "");
+
+      lines.push("    public func encode(to encoder: Encoder) throws {");
+      lines.push("        var container = encoder.container(keyedBy: CodingKeys.self)");
+      for (const prop of props) {
+        lines.push(
+          prop.optional
+            ? `        try container.encodeIfPresent(${prop.name}, forKey: .${prop.name})`
+            : `        try container.encode(${prop.name}, forKey: .${prop.name})`,
+        );
+      }
+      lines.push("        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)");
+      lines.push("        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {");
+      lines.push("            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)");
+      lines.push("        }");
+      lines.push("    }");
+
+      injected += 1;
+      return `public struct ${name}: Codable, Sendable {\n${inner}${lines.join("\n")}\n}`;
+    },
+  );
+
+  if (missingOpenModels.size > 0) {
+    throw new Error(`Swift additionalProperties injection missed open models:\n${[...missingOpenModels].sort().join("\n")}`);
+  }
+
+  return result;
+}
+
+function removeSwiftMapModel(source, modelName) {
+  return source
+    .replace(
+      new RegExp(`\\n// MARK: - ${modelName}\\n[\\s\\S]*?^public struct ${modelName}: Codable, Sendable \\{\\n[\\s\\S]*?^\\}\\n`, "m"),
+      "\n",
+    )
+    .replace(
+      new RegExp(`\\n// MARK: ${modelName} convenience initializers and mutators\\n[\\s\\S]*?^\\}\\n`, "m"),
+      "\n",
+    );
+}
+
+function useSwiftMapsForModels(source, mapModelNames) {
+  let result = source;
+  for (const modelName of mapModelNames) {
+    result = removeSwiftMapModel(result, modelName);
+    result = result
+      .replace(new RegExp(`\\b${modelName}\\?\\?`, "g"), "[String: JSONAny]??")
+      .replace(new RegExp(`\\b${modelName}\\?`, "g"), "[String: JSONAny]?")
+      .replace(new RegExp(`\\b${modelName}\\.self`, "g"), "[String: JSONAny].self")
+      .replace(new RegExp(`\\b${modelName}\\b`, "g"), "[String: JSONAny]");
+  }
+  return result;
+}
+
+async function generateSwift(specDir, output, {openModelNames, mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
     "--lang",
@@ -459,13 +809,38 @@ async function generateSwift(specDir, output) {
       throw new Error(`Swift JSON helper normalization failed; quicktype helper output changed (sha256: ${generatedHelperHash})`);
     }
 
-    return `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
+    const stripped = `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
+    const withMapModels = useSwiftMapsForModels(stripped, mapModelNames);
+    return injectSwiftAdditionalProperties(withMapModels, openModelNames);
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);
 }
 
-async function generateTypescript(specDir, output) {
+function removeTypescriptMapModel(source, modelName) {
+  return source
+    .replace(
+      new RegExp(`\\nexport interface ${modelName} \\{\\n[\\s\\S]*?^\\}\\n`, "m"),
+      "\n",
+    )
+    .replace(
+      new RegExp(`\\n    "${modelName}": o\\(\\[\\n[\\s\\S]*?\\n    \\], "any"\\),`, "m"),
+      "",
+    );
+}
+
+function useTypescriptMapsForModels(source, mapModelNames) {
+  let result = source;
+  for (const modelName of mapModelNames) {
+    result = removeTypescriptMapModel(result, modelName);
+    result = result
+      .replace(new RegExp(`\\b${modelName}\\b`, "g"), "{ [key: string]: any }")
+      .replace(new RegExp(`r\\("\\{ \\[key: string\\]: any \\}"\\)`, "g"), 'm("any")');
+  }
+  return result;
+}
+
+async function generateTypescript(specDir, output, {mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
     "--lang",
@@ -482,7 +857,9 @@ async function generateTypescript(specDir, output) {
     output,
   ]);
 
-  await normalizeGeneratedFile(output, (source) => source.replace(/^type /gm, "export type "));
+  await normalizeGeneratedFile(output, (source) =>
+    useTypescriptMapsForModels(source.replace(/^type /gm, "export type "), mapModelNames),
+  );
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 
@@ -533,6 +910,8 @@ async function main() {
       }
     }
 
+    const modelCodegenInfo = await collectModelCodegenInfo(specDir);
+
     switch (lang) {
       case "kotlin": {
         const target = output || path.join(
@@ -551,20 +930,20 @@ async function main() {
           "checkout",
           "Models.kt",
         );
-        await generateKotlin(specDir, target);
+        await generateKotlin(specDir, target, modelCodegenInfo);
         await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_kotlin_catalog.mjs")]);
         console.log(`Generated ${target}`);
         break;
       }
       case "swift": {
         const target = output || path.join(PROTOCOL_DIR, "languages", "swift", "Sources", "UniversalCommerceProtocol", "EmbeddedCheckoutProtocol", "Generated", "Models.swift");
-        await generateSwift(specDir, target);
+        await generateSwift(specDir, target, modelCodegenInfo);
         console.log(`Generated ${target}`);
         break;
       }
       case "typescript": {
         const target = output || path.join(PROTOCOL_DIR, "languages", "typescript", "src", "generated", "Models.ts");
-        const declarationOutput = await generateTypescript(specDir, target);
+        const declarationOutput = await generateTypescript(specDir, target, modelCodegenInfo);
         console.log(`Generated ${target}, TypeScript protocol notifications, and ${declarationOutput}`);
         break;
       }

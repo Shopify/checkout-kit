@@ -153,6 +153,36 @@ struct ModelDecodingTests {
         #expect(colorScheme == [.light, .dark])
         #expect(config.delegate == ["window.open"])
     }
+
+    @Test func preservesUnknownExtensionKeysOnCheckout() throws {
+        let json = """
+        {
+          "id": "checkout-123",
+          "currency": "USD",
+          "line_items": [],
+          "links": [],
+          "status": "incomplete",
+          "totals": [],
+          "ucp": {"payment_handlers": {}, "version": "2026-04-08"},
+          "signals": {"dev.ucp.buyer_ip": "203.0.113.7", "com.example.device_id": "abc-123"},
+          "com.example.foo": "bar"
+        }
+        """
+        var checkout = try JSONDecoder().decode(Checkout.self, from: Data(json.utf8))
+        let reEncoded = try JSONEncoder().encode(checkout)
+        let object = try #require(try JSONSerialization.jsonObject(with: reEncoded) as? [String: Any])
+
+        #expect(object["com.example.foo"] as? String == "bar")
+
+        let signals = try #require(object["signals"] as? [String: Any])
+        #expect(signals["dev.ucp.buyer_ip"] as? String == "203.0.113.7")
+        #expect(signals["com.example.device_id"] as? String == "abc-123")
+
+        checkout.additionalProperties["id"] = try JSONDecoder().decode(JSONAny.self, from: Data("\"extension-id\"".utf8))
+        let collisionEncoded = try JSONEncoder().encode(checkout)
+        let collisionObject = try #require(try JSONSerialization.jsonObject(with: collisionEncoded) as? [String: Any])
+        #expect(collisionObject["id"] as? String == "checkout-123")
+    }
 }
 
 private func fixtureString(_ name: String) throws -> String {

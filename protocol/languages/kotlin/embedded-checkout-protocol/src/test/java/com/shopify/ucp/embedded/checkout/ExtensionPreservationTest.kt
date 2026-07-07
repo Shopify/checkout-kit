@@ -1,0 +1,45 @@
+package com.shopify.ucp.embedded.checkout
+
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Test
+
+class ExtensionPreservationTest {
+
+    private val json = Json { ignoreUnknownKeys = true }
+
+    @Test
+    fun `preserves unknown extension keys on Checkout`() {
+        val wire = """
+            {
+              "id": "checkout-123",
+              "currency": "USD",
+              "line_items": [],
+              "links": [],
+              "status": "incomplete",
+              "totals": [],
+              "ucp": {"payment_handlers": {}, "version": "2026-04-08"},
+              "signals": {"dev.ucp.buyer_ip": "203.0.113.7", "com.example.device_id": "abc-123"},
+              "com.example.foo": "bar"
+            }
+        """.trimIndent()
+
+        val checkout = json.decodeFromString(Checkout.serializer(), wire)
+        val reEncoded = json.parseToJsonElement(json.encodeToString(Checkout.serializer(), checkout)).jsonObject
+
+        assertThat(reEncoded["com.example.foo"]?.jsonPrimitive?.content).isEqualTo("bar")
+
+        val signals = reEncoded["signals"]?.jsonObject
+        assertThat(signals?.get("dev.ucp.buyer_ip")?.jsonPrimitive?.content).isEqualTo("203.0.113.7")
+        assertThat(signals?.get("com.example.device_id")?.jsonPrimitive?.content).isEqualTo("abc-123")
+
+        val colliding = checkout.copy(
+            additionalProperties = checkout.additionalProperties + ("id" to JsonPrimitive("extension-id")),
+        )
+        val collisionEncoded = json.parseToJsonElement(json.encodeToString(Checkout.serializer(), colliding)).jsonObject
+        assertThat(collisionEncoded["id"]?.jsonPrimitive?.content).isEqualTo("checkout-123")
+    }
+}
