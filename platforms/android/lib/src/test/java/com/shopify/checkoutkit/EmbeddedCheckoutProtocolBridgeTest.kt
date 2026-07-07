@@ -27,6 +27,7 @@ import org.robolectric.Shadows.shadowOf
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
+@Suppress("LargeClass")
 @RunWith(RobolectricTestRunner::class)
 @Suppress("LargeClass")
 class EmbeddedCheckoutProtocolBridgeTest {
@@ -247,7 +248,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     // region ec.window.open_request — merchant-overridable with kit fallback
 
     @Test
-    fun `window open launches intent when activity resolves the uri`() {
+    fun `window open launches Custom Tabs when activity resolves the uri`() {
         registerFakeBrowserFor("https://example.com")
 
         val response = captureSentMessage {
@@ -260,6 +261,9 @@ class EmbeddedCheckoutProtocolBridgeTest {
         assertThat(launched).isNotNull()
         assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)
         assertThat(launched.data.toString()).isEqualTo("https://example.com")
+        assertThat(launched.`package`).isNull()
+        assertThat(launched.extras?.keySet()).contains("android.support.customtabs.extra.SESSION")
+        assertThat(launched.flags and Intent.FLAG_ACTIVITY_NEW_TASK).isNotEqualTo(0)
     }
 
     @Test
@@ -287,6 +291,22 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
         assertThat(response).contains("\"status\":\"success\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNotNull()
+    }
+
+    @Test
+    fun `window open default launches non-web URLs with native app controller`() {
+        registerFakeBrowserFor("mailto:help@example.com")
+
+        val js = captureEvaluatedJs {
+            ecp.postMessage(windowOpenRequest(id = "\"43\"", url = "mailto:help@example.com"))
+        }
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(js).contains("\"status\":\"success\"")
+        val launched = shadowOf(activity).nextStartedActivity
+        assertThat(launched).isNotNull()
+        assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)
+        assertThat(launched.data.toString()).isEqualTo("mailto:help@example.com")
     }
 
     @Test
@@ -904,8 +924,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     /**
-     * Makes [uri] resolvable through Robolectric's shadow package manager so that
-     * `queryIntentActivities(Intent.ACTION_VIEW, uri)` returns a non-empty list.
+     * Makes [uri] resolvable through Robolectric's shadow package manager.
      * Mirrors the behavior of a real device with a browser installed.
      */
     private fun registerFakeBrowserFor(uri: String) {

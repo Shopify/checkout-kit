@@ -14,12 +14,12 @@ enum AppStorageKeys: String {
 
 enum WindowOpenHandlerOption: String, CaseIterable {
     case `default`
-    case safariViewController
+    case externalApp
 
     var title: String {
         switch self {
-        case .default: return "Default (UIApplication.open)"
-        case .safariViewController: return "SFSafariViewController"
+        case .default: return "Default (SFSafariViewController)"
+        case .externalApp: return "External app"
         }
     }
 }

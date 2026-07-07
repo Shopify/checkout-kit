@@ -299,7 +299,7 @@ internal class CheckoutWebView private constructor(
             return when {
                 uri == null -> false
                 uri.isContactLink() || uri.isDeepLink() -> {
-                    when (val result = ExternalUriLauncher.launch(context, uri)) {
+                    when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
                         is ExternalUriLauncher.Result.Launched ->
                             log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
                         is ExternalUriLauncher.Result.Rejected ->

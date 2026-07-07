@@ -1,6 +1,7 @@
 #if !COCOAPODS
     import EmbeddedCheckoutProtocol
 #endif
+import SafariServices
 import UIKit
 import WebKit
 
@@ -249,6 +250,17 @@ protocol CheckoutWebViewDelegate: AnyObject {
     func checkoutViewDidFailWithError(error: CheckoutError)
 }
 
+protocol ExternalURLHandling: Sendable {
+    @MainActor func open(_ url: URL) async -> Bool
+}
+
+struct UIApplicationExternalURLHandler: ExternalURLHandling {
+    @MainActor
+    func open(_ url: URL) async -> Bool {
+        await UIApplication.shared.openURL(url)
+    }
+}
+
 @MainActor
 class CheckoutWebView: WKWebView {
     static let preloadCache = PreloadCache()
@@ -267,10 +279,7 @@ class CheckoutWebView: WKWebView {
     private var bridgeRegistration: ScriptMessageHandlerRegistration?
 
     var client: (any CheckoutCommunicationProtocol)?
-
-    var canOpenExternalURL: (URL) -> Bool = { UIApplication.shared.canOpenURL($0) }
-
-    var openExternalURL: (URL) -> Void = { UIApplication.shared.open($0) }
+    var externalURLHandler: any ExternalURLHandling = UIApplicationExternalURLHandler()
 
     /// Resolves whether a navigation targets the main frame. Overridable in tests.
     var navigationIsMainFrame: (WKNavigationAction) -> Bool = { $0.targetFrame?.isMainFrame == true }
@@ -294,8 +303,9 @@ class CheckoutWebView: WKWebView {
     ///     ready result carries only the UCP envelope and the kit simply answers the
     ///     delegated calls it supports. It is abstracted from consumers and cannot be
     ///     overridden by a merchant-supplied client.
-    ///   - `window.open` - falls back to `UIApplication.shared.open(...)` after a
-    ///     `canOpenURL` check (consumers may still override via their own client).
+    ///   - `window.open` - opens web URLs in `SFSafariViewController` so buyers stay in an
+    ///     in-app browser surface, and routes non-web URLs through `externalURLHandler`
+    ///     (consumers may still override via their own client).
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
         .onDecodeError { method, error, params in
             OSLogger.shared.error("Failed to decode \(method) payload: \(error)")
@@ -308,11 +318,24 @@ class CheckoutWebView: WKWebView {
             guard let self, CheckoutWebView.preloadCache.contains(self) else { return }
             CheckoutWebView.preloadCache.evict(with: .idle, disconnect: false)
         }
-        .on(CheckoutProtocol.windowOpen) { request in
-            guard let target = request.parsedURL, self.canOpenExternalURL(target) else {
-                return .rejected(reason: "canOpenURL returned false")
+        .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
+            guard let target = request.parsedURL else {
+                return .rejected(reason: "failed to open URL")
             }
-            self.openExternalURL(target)
+
+            let scheme = target.scheme?.lowercased()
+            guard scheme == "http" || scheme == "https",
+                  let presenter = UIApplication.shared.foregroundActiveWindow?.topMostViewController()
+            else {
+                let didOpen = await externalURLHandler.open(target)
+                return didOpen ? .success() : .rejected(reason: "failed to open URL")
+            }
+
+            let safari = SFSafariViewController(url: target)
+            safari.modalPresentationStyle = .pageSheet
+            safari.modalTransitionStyle = .coverVertical
+            presenter.present(safari, animated: true)
+
             return .success()
         }
 
@@ -693,6 +716,42 @@ extension CheckoutWebView {
     }
 }
 
+extension UIApplication {
+    var foregroundActiveWindow: UIWindow? {
+        let activeScenes = connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive }
+
+        if #available(iOS 15.0, *) {
+            return activeScenes.compactMap(\.keyWindow).first
+        } else {
+            return activeScenes.flatMap(\.windows).first { $0.isKeyWindow }
+        }
+    }
+
+    func openURL(_ url: URL) async -> Bool {
+        await withCheckedContinuation { continuation in
+            open(url, options: [:]) { didOpen in
+                continuation.resume(returning: didOpen)
+            }
+        }
+    }
+}
+
+extension UIWindow {
+    func topMostViewController() -> UIViewController? {
+        guard var topController = rootViewController else {
+            return nil
+        }
+
+        while let presentedViewController = topController.presentedViewController {
+            topController = presentedViewController
+        }
+
+        return topController
+    }
+}
+
 extension CheckoutWebView: WKNavigationDelegate {
     func webView(_: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
         // Handle rare cases where the url is nil
@@ -707,14 +766,15 @@ extension CheckoutWebView: WKNavigationDelegate {
         // 	- Deep links on offsite payment sites
         //
         if CheckoutURL(from: url).isDeepLink() {
-            if canOpenExternalURL(url) {
-                openExternalURL(url)
-                OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - opened externally")
-                return decisionHandler(.cancel)
-            } else {
-                OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). If you're expecting this scheme, it must be listed under LSApplicationSchemeQueries in Info.plist.")
-                return decisionHandler(.cancel)
+            Task { @MainActor [externalURLHandler] in
+                if await externalURLHandler.open(url) {
+                    OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - opened externally")
+                } else {
+                    OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). No installed app can open this scheme.")
+                }
+                decisionHandler(.cancel)
             }
+            return
         }
 
         if navigationIsMainFrame(action), url.scheme?.lowercased() != "https" {
