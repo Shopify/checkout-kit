@@ -3960,21 +3960,35 @@
               {
                 "kind": "TypeNominal",
                 "name": "Optional",
-                "printedName": "EmbeddedCheckoutProtocol.Signals?",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]?",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "Signals",
-                    "printedName": "EmbeddedCheckoutProtocol.Signals",
-                    "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
                   }
                 ],
                 "usr": "s:Sq"
               }
             ],
             "declKind": "Var",
-            "usr": "s:24EmbeddedCheckoutProtocol0B0V7signalsAA7SignalsVSgvp",
-            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V7signalsAA7SignalsVSgvp",
+            "usr": "s:24EmbeddedCheckoutProtocol0B0V7signalsSDySSAA7JSONAnyCGSgvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V7signalsSDySSAA7JSONAnyCGSgvp",
             "moduleName": "EmbeddedCheckoutProtocol",
             "declAttributes": [
               "HasStorage"
@@ -3990,21 +4004,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "Optional",
-                    "printedName": "EmbeddedCheckoutProtocol.Signals?",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]?",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Signals",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals",
-                        "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
+                        "name": "Dictionary",
+                        "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONAny",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                            "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                          }
+                        ],
+                        "usr": "s:SD"
                       }
                     ],
                     "usr": "s:Sq"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:24EmbeddedCheckoutProtocol0B0V7signalsAA7SignalsVSgvg",
-                "mangledName": "$s24EmbeddedCheckoutProtocol0B0V7signalsAA7SignalsVSgvg",
+                "usr": "s:24EmbeddedCheckoutProtocol0B0V7signalsSDySSAA7JSONAnyCGSgvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol0B0V7signalsSDySSAA7JSONAnyCGSgvg",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "implicit": true,
                 "declAttributes": [
@@ -5406,13 +5434,27 @@
               {
                 "kind": "TypeNominal",
                 "name": "Optional",
-                "printedName": "EmbeddedCheckoutProtocol.Signals?",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]?",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "Signals",
-                    "printedName": "EmbeddedCheckoutProtocol.Signals",
-                    "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
                   }
                 ],
                 "usr": "s:Sq"
@@ -5445,35 +5487,125 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol0B0V11attribution5buyer7context11continueURL8currency9discounts9expiresAt11fulfillment2id9lineItems5links8messages5order7payment7signals6status6totals3ucpACSDyS2SGSg_AA5BuyerVSgAA7ContextVSgSSSgSSAA0B9DiscountsVSg10Foundation4DateVSgAA0B11FulfillmentVSgSSSayAA8LineItemVGSayAA4LinkVGSayAA7MessageVGSgAA17OrderConfirmationVSgAA7PaymentVSgAA7SignalsVSgAA0B6StatusOSayAA0B5TotalVGAA25UCPCheckoutResponseSchemaVtcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V11attribution5buyer7context11continueURL8currency9discounts9expiresAt11fulfillment2id9lineItems5links8messages5order7payment7signals6status6totals3ucpACSDyS2SGSg_AA5BuyerVSgAA7ContextVSgSSSgSSAA0B9DiscountsVSg10Foundation4DateVSgAA0B11FulfillmentVSgSSSayAA8LineItemVGSayAA4LinkVGSayAA7MessageVGSgAA17OrderConfirmationVSgAA7PaymentVSgAA7SignalsVSgAA0B6StatusOSayAA0B5TotalVGAA25UCPCheckoutResponseSchemaVtcfc",
+            "usr": "s:24EmbeddedCheckoutProtocol0B0V11attribution5buyer7context11continueURL8currency9discounts9expiresAt11fulfillment2id9lineItems5links8messages5order7payment7signals6status6totals3ucpACSDyS2SGSg_AA5BuyerVSgAA7ContextVSgSSSgSSAA0B9DiscountsVSg10Foundation4DateVSgAA0B11FulfillmentVSgSSSayAA8LineItemVGSayAA4LinkVGSayAA7MessageVGSgAA17OrderConfirmationVSgAA7PaymentVSgSDySSAA7JSONAnyCGSgAA0B6StatusOSayAA0B5TotalVGAA25UCPCheckoutResponseSchemaVtcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V11attribution5buyer7context11continueURL8currency9discounts9expiresAt11fulfillment2id9lineItems5links8messages5order7payment7signals6status6totals3ucpACSDyS2SGSg_AA5BuyerVSgAA7ContextVSgSSSgSSAA0B9DiscountsVSg10Foundation4DateVSgAA0B11FulfillmentVSgSSSayAA8LineItemVGSayAA4LinkVGSayAA7MessageVGSgAA17OrderConfirmationVSgAA7PaymentVSgSDySSAA7JSONAnyCGSgAA0B6StatusOSayAA0B5TotalVGAA25UCPCheckoutResponseSchemaVtcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol0B0V6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol0B0V20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol0B0V20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol0B0V20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol0B0V20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol0B0V20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -5497,9 +5629,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol0B0V4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol0B0V4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol0B0V6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -5928,18 +6083,32 @@
               {
                 "kind": "TypeNominal",
                 "name": "Optional",
-                "printedName": "EmbeddedCheckoutProtocol.Signals??",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]??",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Optional",
-                    "printedName": "EmbeddedCheckoutProtocol.Signals?",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]?",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Signals",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals",
-                        "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
+                        "name": "Dictionary",
+                        "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONAny",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                            "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                          }
+                        ],
+                        "usr": "s:SD"
                       }
                     ],
                     "usr": "s:Sq"
@@ -6003,8 +6172,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol0B0V4with11attribution5buyer7context11continueURL8currency9discounts9expiresAt11fulfillment2id9lineItems5links8messages5order7payment7signals6status6totals3ucpACSDyS2SGSgSg_AA5BuyerVSgSgAA7ContextVSgSgSSSgSgA6_AA0B9DiscountsVSgSg10Foundation4DateVSgSgAA0B11FulfillmentVSgSgA6_SayAA8LineItemVGSgSayAA4LinkVGSgSayAA7MessageVGSgSgAA17OrderConfirmationVSgSgAA7PaymentVSgSgAA7SignalsVSgSgAA0B6StatusOSgSayAA0B5TotalVGSgAA25UCPCheckoutResponseSchemaVSgtF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V4with11attribution5buyer7context11continueURL8currency9discounts9expiresAt11fulfillment2id9lineItems5links8messages5order7payment7signals6status6totals3ucpACSDyS2SGSgSg_AA5BuyerVSgSgAA7ContextVSgSgSSSgSgA6_AA0B9DiscountsVSgSg10Foundation4DateVSgSgAA0B11FulfillmentVSgSgA6_SayAA8LineItemVGSgSayAA4LinkVGSgSayAA7MessageVGSgSgAA17OrderConfirmationVSgSgAA7PaymentVSgSgAA7SignalsVSgSgAA0B6StatusOSgSayAA0B5TotalVGSgAA25UCPCheckoutResponseSchemaVSgtF",
+            "usr": "s:24EmbeddedCheckoutProtocol0B0V4with11attribution5buyer7context11continueURL8currency9discounts9expiresAt11fulfillment2id9lineItems5links8messages5order7payment7signals6status6totals3ucpACSDyS2SGSgSg_AA5BuyerVSgSgAA7ContextVSgSgSSSgSgA6_AA0B9DiscountsVSgSg10Foundation4DateVSgSgAA0B11FulfillmentVSgSgA6_SayAA8LineItemVGSgSayAA4LinkVGSgSayAA7MessageVGSgSgAA17OrderConfirmationVSgSgAA7PaymentVSgSgSDySSAA7JSONAnyCGSgSgAA0B6StatusOSgSayAA0B5TotalVGSgAA25UCPCheckoutResponseSchemaVSgtF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol0B0V4with11attribution5buyer7context11continueURL8currency9discounts9expiresAt11fulfillment2id9lineItems5links8messages5order7payment7signals6status6totals3ucpACSDyS2SGSgSg_AA5BuyerVSgSgAA7ContextVSgSgSSSgSgA6_AA0B9DiscountsVSgSg10Foundation4DateVSgSgAA0B11FulfillmentVSgSgA6_SayAA8LineItemVGSgSayAA4LinkVGSgSayAA7MessageVGSgSgAA17OrderConfirmationVSgSgAA7PaymentVSgSgSDySSAA7JSONAnyCGSgSgAA0B6StatusOSgSayAA0B5TotalVGSgAA25UCPCheckoutResponseSchemaVSgtF",
             "moduleName": "EmbeddedCheckoutProtocol",
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
@@ -6953,29 +7122,119 @@
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol5BuyerV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol5BuyerV6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol5BuyerV20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol5BuyerV20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol5BuyerV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol5BuyerV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol5BuyerV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol5BuyerV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -6999,9 +7258,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol5BuyerV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol5BuyerV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol5BuyerV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol5BuyerV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -8499,29 +8781,119 @@
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol7ContextV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7ContextV6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol7ContextV20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol7ContextV20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol7ContextV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol7ContextV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol7ContextV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol7ContextV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -8545,9 +8917,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol7ContextV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol7ContextV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol7ContextV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol7ContextV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -13077,29 +13472,119 @@
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -13123,9 +13608,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol26FulfillmentAvailableMethodV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -14741,29 +15249,119 @@
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentMethodV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentMethodV6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentMethodV20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentMethodV20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentMethodV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentMethodV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentMethodV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentMethodV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -14787,9 +15385,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentMethodV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentMethodV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentMethodV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentMethodV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -20072,29 +20693,119 @@
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol16FulfillmentGroupV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol16FulfillmentGroupV6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol16FulfillmentGroupV20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16FulfillmentGroupV20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol16FulfillmentGroupV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16FulfillmentGroupV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol16FulfillmentGroupV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol16FulfillmentGroupV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -20118,9 +20829,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol16FulfillmentGroupV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol16FulfillmentGroupV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol16FulfillmentGroupV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol16FulfillmentGroupV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -21546,29 +22280,119 @@
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentOptionV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentOptionV6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentOptionV20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentOptionV20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentOptionV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentOptionV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentOptionV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentOptionV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -21592,9 +22416,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentOptionV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentOptionV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol17FulfillmentOptionV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17FulfillmentOptionV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -30996,29 +31843,119 @@
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -31042,9 +31979,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol25SelectedPaymentInstrumentV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -31482,29 +32442,512 @@
             "init_kind": "Designated"
           },
           {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
+            "kind": "Var",
+            "name": "additionalProperties",
+            "printedName": "additionalProperties",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONAny",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV6encode2toys7Encoder_p_tKF",
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV20additionalPropertiesSDySSAA7JSONAnyCGvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV20additionalPropertiesSDySSAA7JSONAnyCGvp",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV20additionalPropertiesSDySSAA7JSONAnyCGvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONAny",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                        "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV20additionalPropertiesSDySSAA7JSONAnyCGvs",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
+          },
+          {
+            "kind": "TypeDecl",
+            "name": "CodingKeys",
+            "printedName": "CodingKeys",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "type",
+                "printedName": "type",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys.Type) -> EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "CodingKeys",
+                            "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys",
+                            "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO4typeyA2EmF",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO4typeyA2EmF",
+                "moduleName": "EmbeddedCheckoutProtocol"
+              },
+              {
+                "kind": "Constructor",
+                "name": "init",
+                "printedName": "init(rawValue:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Constructor",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8rawValueAESgSS_tcfc",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8rawValueAESgSS_tcfc",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Inlinable"
+                ],
+                "init_kind": "Designated"
+              },
+              {
+                "kind": "Constructor",
+                "name": "init",
+                "printedName": "init(stringValue:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Constructor",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO11stringValueAESgSS_tcfc",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO11stringValueAESgSS_tcfc",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "init_kind": "Designated"
+              },
+              {
+                "kind": "Constructor",
+                "name": "init",
+                "printedName": "init(intValue:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CodingKeys",
+                        "printedName": "EmbeddedCheckoutProtocol.PaymentCredential.CodingKeys",
+                        "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Constructor",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8intValueAESgSi_tcfc",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8intValueAESgSi_tcfc",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "init_kind": "Designated"
+              },
+              {
+                "kind": "TypeAlias",
+                "name": "RawValue",
+                "printedName": "RawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "TypeAlias",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8RawValuea",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8RawValuea",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true
+              },
+              {
+                "kind": "Var",
+                "name": "intValue",
+                "printedName": "intValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.Int?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8intValueSiSgvp",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8intValueSiSgvp",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Swift.Int?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Int",
+                            "printedName": "Swift.Int",
+                            "usr": "s:Si"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8intValueSiSgvg",
+                    "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8intValueSiSgvg",
+                    "moduleName": "EmbeddedCheckoutProtocol",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              },
+              {
+                "kind": "Var",
+                "name": "rawValue",
+                "printedName": "rawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8rawValueSSvp",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8rawValueSSvp",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8rawValueSSvg",
+                    "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO8rawValueSSvg",
+                    "moduleName": "EmbeddedCheckoutProtocol",
+                    "implicit": true,
+                    "declAttributes": [
+                      "Inlinable"
+                    ],
+                    "accessorKind": "get"
+                  }
+                ]
+              },
+              {
+                "kind": "Var",
+                "name": "stringValue",
+                "printedName": "stringValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO11stringValueSSvp",
+                "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO11stringValueSSvp",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO11stringValueSSvg",
+                    "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO11stringValueSSvg",
+                    "moduleName": "EmbeddedCheckoutProtocol",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV10CodingKeysO",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "enumRawTypeName": "String",
+            "isEnumExhaustive": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Hashable",
+                "printedName": "Hashable",
+                "usr": "s:SH",
+                "mangledName": "$sSH"
+              },
+              {
+                "kind": "Conformance",
+                "name": "RawRepresentable",
+                "printedName": "RawRepresentable",
+                "children": [
+                  {
+                    "kind": "TypeWitness",
+                    "name": "RawValue",
+                    "printedName": "RawValue",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ]
+                  }
+                ],
+                "usr": "s:SY",
+                "mangledName": "$sSY"
+              },
+              {
+                "kind": "Conformance",
+                "name": "CodingKey",
+                "printedName": "CodingKey",
+                "usr": "s:s9CodingKeyP",
+                "mangledName": "$ss9CodingKeyP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "CustomDebugStringConvertible",
+                "printedName": "CustomDebugStringConvertible",
+                "usr": "s:s28CustomDebugStringConvertibleP",
+                "mangledName": "$ss28CustomDebugStringConvertibleP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "CustomStringConvertible",
+                "printedName": "CustomStringConvertible",
+                "usr": "s:s23CustomStringConvertibleP",
+                "mangledName": "$ss23CustomStringConvertibleP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              }
+            ]
           },
           {
             "kind": "Constructor",
@@ -31528,9 +32971,32 @@
             "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -31710,917 +33176,6 @@
         "declKind": "Struct",
         "usr": "s:24EmbeddedCheckoutProtocol17PaymentCredentialV",
         "mangledName": "$s24EmbeddedCheckoutProtocol17PaymentCredentialV",
-        "moduleName": "EmbeddedCheckoutProtocol",
-        "conformances": [
-          {
-            "kind": "Conformance",
-            "name": "Decodable",
-            "printedName": "Decodable",
-            "usr": "s:Se",
-            "mangledName": "$sSe"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Encodable",
-            "printedName": "Encodable",
-            "usr": "s:SE",
-            "mangledName": "$sSE"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          }
-        ]
-      },
-      {
-        "kind": "TypeDecl",
-        "name": "Signals",
-        "printedName": "Signals",
-        "children": [
-          {
-            "kind": "Var",
-            "name": "devUcpBuyerIP",
-            "printedName": "devUcpBuyerIP",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "Swift.String?",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "usr": "s:Sq"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV13devUcpBuyerIPSSSgvp",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV13devUcpBuyerIPSSSgvp",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "declAttributes": [
-              "HasStorage"
-            ],
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Swift.String?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV13devUcpBuyerIPSSSgvg",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV13devUcpBuyerIPSSSgvg",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "Var",
-            "name": "devUcpUserAgent",
-            "printedName": "devUcpUserAgent",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "Swift.String?",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "usr": "s:Sq"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV15devUcpUserAgentSSSgvp",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV15devUcpUserAgentSSSgvp",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "declAttributes": [
-              "HasStorage"
-            ],
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Swift.String?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV15devUcpUserAgentSSSgvg",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV15devUcpUserAgentSSSgvg",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "TypeDecl",
-            "name": "CodingKeys",
-            "printedName": "CodingKeys",
-            "children": [
-              {
-                "kind": "Var",
-                "name": "devUcpBuyerIP",
-                "printedName": "devUcpBuyerIP",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(EmbeddedCheckoutProtocol.Signals.CodingKeys.Type) -> EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CodingKeys",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                        "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Metatype",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys.Type",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "CodingKeys",
-                            "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO"
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ],
-                "declKind": "EnumElement",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO13devUcpBuyerIPyA2EmF",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO13devUcpBuyerIPyA2EmF",
-                "moduleName": "EmbeddedCheckoutProtocol"
-              },
-              {
-                "kind": "Var",
-                "name": "devUcpUserAgent",
-                "printedName": "devUcpUserAgent",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(EmbeddedCheckoutProtocol.Signals.CodingKeys.Type) -> EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CodingKeys",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                        "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Metatype",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys.Type",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "CodingKeys",
-                            "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO"
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ],
-                "declKind": "EnumElement",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO15devUcpUserAgentyA2EmF",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO15devUcpUserAgentyA2EmF",
-                "moduleName": "EmbeddedCheckoutProtocol"
-              },
-              {
-                "kind": "Constructor",
-                "name": "init",
-                "printedName": "init(rawValue:)",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CodingKeys",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                        "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Constructor",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8rawValueAESgSS_tcfc",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8rawValueAESgSS_tcfc",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true,
-                "declAttributes": [
-                  "Inlinable"
-                ],
-                "init_kind": "Designated"
-              },
-              {
-                "kind": "Constructor",
-                "name": "init",
-                "printedName": "init(stringValue:)",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CodingKeys",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                        "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Constructor",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO11stringValueAESgSS_tcfc",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO11stringValueAESgSS_tcfc",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true,
-                "init_kind": "Designated"
-              },
-              {
-                "kind": "Constructor",
-                "name": "init",
-                "printedName": "init(intValue:)",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CodingKeys",
-                        "printedName": "EmbeddedCheckoutProtocol.Signals.CodingKeys",
-                        "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Int",
-                    "printedName": "Swift.Int",
-                    "usr": "s:Si"
-                  }
-                ],
-                "declKind": "Constructor",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8intValueAESgSi_tcfc",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8intValueAESgSi_tcfc",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true,
-                "init_kind": "Designated"
-              },
-              {
-                "kind": "TypeAlias",
-                "name": "RawValue",
-                "printedName": "RawValue",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "TypeAlias",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8RawValuea",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8RawValuea",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true
-              },
-              {
-                "kind": "Var",
-                "name": "intValue",
-                "printedName": "intValue",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Swift.Int?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Int",
-                        "printedName": "Swift.Int",
-                        "usr": "s:Si"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  }
-                ],
-                "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8intValueSiSgvp",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8intValueSiSgvp",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true,
-                "accessors": [
-                  {
-                    "kind": "Accessor",
-                    "name": "Get",
-                    "printedName": "Get()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Optional",
-                        "printedName": "Swift.Int?",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "Int",
-                            "printedName": "Swift.Int",
-                            "usr": "s:Si"
-                          }
-                        ],
-                        "usr": "s:Sq"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8intValueSiSgvg",
-                    "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8intValueSiSgvg",
-                    "moduleName": "EmbeddedCheckoutProtocol",
-                    "implicit": true,
-                    "accessorKind": "get"
-                  }
-                ]
-              },
-              {
-                "kind": "Var",
-                "name": "rawValue",
-                "printedName": "rawValue",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8rawValueSSvp",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8rawValueSSvp",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true,
-                "accessors": [
-                  {
-                    "kind": "Accessor",
-                    "name": "Get",
-                    "printedName": "Get()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8rawValueSSvg",
-                    "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO8rawValueSSvg",
-                    "moduleName": "EmbeddedCheckoutProtocol",
-                    "implicit": true,
-                    "declAttributes": [
-                      "Inlinable"
-                    ],
-                    "accessorKind": "get"
-                  }
-                ]
-              },
-              {
-                "kind": "Var",
-                "name": "stringValue",
-                "printedName": "stringValue",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO11stringValueSSvp",
-                "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO11stringValueSSvp",
-                "moduleName": "EmbeddedCheckoutProtocol",
-                "implicit": true,
-                "accessors": [
-                  {
-                    "kind": "Accessor",
-                    "name": "Get",
-                    "printedName": "Get()",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO11stringValueSSvg",
-                    "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO11stringValueSSvg",
-                    "moduleName": "EmbeddedCheckoutProtocol",
-                    "implicit": true,
-                    "accessorKind": "get"
-                  }
-                ]
-              }
-            ],
-            "declKind": "Enum",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10CodingKeysO",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "enumRawTypeName": "String",
-            "isEnumExhaustive": true,
-            "conformances": [
-              {
-                "kind": "Conformance",
-                "name": "Equatable",
-                "printedName": "Equatable",
-                "usr": "s:SQ",
-                "mangledName": "$sSQ"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Hashable",
-                "printedName": "Hashable",
-                "usr": "s:SH",
-                "mangledName": "$sSH"
-              },
-              {
-                "kind": "Conformance",
-                "name": "RawRepresentable",
-                "printedName": "RawRepresentable",
-                "children": [
-                  {
-                    "kind": "TypeWitness",
-                    "name": "RawValue",
-                    "printedName": "RawValue",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ]
-                  }
-                ],
-                "usr": "s:SY",
-                "mangledName": "$sSY"
-              },
-              {
-                "kind": "Conformance",
-                "name": "CodingKey",
-                "printedName": "CodingKey",
-                "usr": "s:s9CodingKeyP",
-                "mangledName": "$ss9CodingKeyP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "CustomDebugStringConvertible",
-                "printedName": "CustomDebugStringConvertible",
-                "usr": "s:s28CustomDebugStringConvertibleP",
-                "mangledName": "$ss28CustomDebugStringConvertibleP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "CustomStringConvertible",
-                "printedName": "CustomStringConvertible",
-                "usr": "s:s23CustomStringConvertibleP",
-                "mangledName": "$ss23CustomStringConvertibleP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Sendable",
-                "printedName": "Sendable",
-                "usr": "s:s8SendableP",
-                "mangledName": "$ss8SendableP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "SendableMetatype",
-                "printedName": "SendableMetatype",
-                "usr": "s:s16SendableMetatypeP",
-                "mangledName": "$ss16SendableMetatypeP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Copyable",
-                "printedName": "Copyable",
-                "usr": "s:s8CopyableP",
-                "mangledName": "$ss8CopyableP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Escapable",
-                "printedName": "Escapable",
-                "usr": "s:s9EscapableP",
-                "mangledName": "$ss9EscapableP"
-              }
-            ]
-          },
-          {
-            "kind": "Constructor",
-            "name": "init",
-            "printedName": "init(devUcpBuyerIP:devUcpUserAgent:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Signals",
-                "printedName": "EmbeddedCheckoutProtocol.Signals",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "Swift.String?",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "usr": "s:Sq"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "Swift.String?",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "usr": "s:Sq"
-              }
-            ],
-            "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV13devUcpBuyerIP0eF9UserAgentACSSSg_AFtcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV13devUcpBuyerIP0eF9UserAgentACSSSg_AFtcfc",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "init_kind": "Designated"
-          },
-          {
-            "kind": "Function",
-            "name": "encode",
-            "printedName": "encode(to:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoder",
-                "printedName": "any Swift.Encoder",
-                "usr": "s:s7EncoderP"
-              }
-            ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV6encode2toys7Encoder_p_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV6encode2toys7Encoder_p_tKF",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
-          },
-          {
-            "kind": "Constructor",
-            "name": "init",
-            "printedName": "init(from:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Signals",
-                "printedName": "EmbeddedCheckoutProtocol.Signals",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Decoder",
-                "printedName": "any Swift.Decoder",
-                "usr": "s:s7DecoderP"
-              }
-            ],
-            "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV4fromACs7Decoder_p_tKcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV4fromACs7Decoder_p_tKcfc",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
-            "throwing": true,
-            "init_kind": "Designated"
-          },
-          {
-            "kind": "Constructor",
-            "name": "init",
-            "printedName": "init(data:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Signals",
-                "printedName": "EmbeddedCheckoutProtocol.Signals",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Data",
-                "printedName": "Foundation.Data",
-                "usr": "s:10Foundation4DataV"
-              }
-            ],
-            "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV4dataAC10Foundation4DataV_tKcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV4dataAC10Foundation4DataV_tKcfc",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "isFromExtension": true,
-            "throwing": true,
-            "init_kind": "Designated"
-          },
-          {
-            "kind": "Constructor",
-            "name": "init",
-            "printedName": "init(_:using:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Signals",
-                "printedName": "EmbeddedCheckoutProtocol.Signals",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoding",
-                "printedName": "Swift.String.Encoding",
-                "hasDefaultArg": true,
-                "usr": "s:SS10FoundationE8EncodingV"
-              }
-            ],
-            "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV_5usingACSS_SS10FoundationE8EncodingVtKcfc",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "isFromExtension": true,
-            "throwing": true,
-            "init_kind": "Designated"
-          },
-          {
-            "kind": "Constructor",
-            "name": "init",
-            "printedName": "init(fromURL:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Signals",
-                "printedName": "EmbeddedCheckoutProtocol.Signals",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "URL",
-                "printedName": "Foundation.URL",
-                "usr": "s:10Foundation3URLV"
-              }
-            ],
-            "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV7fromURLAC10Foundation0F0V_tKcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV7fromURLAC10Foundation0F0V_tKcfc",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "isFromExtension": true,
-            "throwing": true,
-            "init_kind": "Designated"
-          },
-          {
-            "kind": "Function",
-            "name": "with",
-            "printedName": "with(devUcpBuyerIP:devUcpUserAgent:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Signals",
-                "printedName": "EmbeddedCheckoutProtocol.Signals",
-                "usr": "s:24EmbeddedCheckoutProtocol7SignalsV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "Swift.String??",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Swift.String?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  }
-                ],
-                "hasDefaultArg": true,
-                "usr": "s:Sq"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "Swift.String??",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Swift.String?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "String",
-                        "printedName": "Swift.String",
-                        "usr": "s:SS"
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  }
-                ],
-                "hasDefaultArg": true,
-                "usr": "s:Sq"
-              }
-            ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV4with13devUcpBuyerIP0fG9UserAgentACSSSgSg_AHtF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV4with13devUcpBuyerIP0fG9UserAgentACSSSgSg_AHtF",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "isFromExtension": true,
-            "funcSelfKind": "NonMutating"
-          },
-          {
-            "kind": "Function",
-            "name": "jsonData",
-            "printedName": "jsonData()",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Data",
-                "printedName": "Foundation.Data",
-                "usr": "s:10Foundation4DataV"
-              }
-            ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV8jsonData10Foundation0F0VyKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV8jsonData10Foundation0F0VyKF",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "isFromExtension": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
-          },
-          {
-            "kind": "Function",
-            "name": "jsonString",
-            "printedName": "jsonString(encoding:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "Swift.String?",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "usr": "s:Sq"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Encoding",
-                "printedName": "Swift.String.Encoding",
-                "hasDefaultArg": true,
-                "usr": "s:SS10FoundationE8EncodingV"
-              }
-            ],
-            "declKind": "Func",
-            "usr": "s:24EmbeddedCheckoutProtocol7SignalsV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
-            "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV10jsonString8encodingSSSgSS10FoundationE8EncodingV_tKF",
-            "moduleName": "EmbeddedCheckoutProtocol",
-            "isFromExtension": true,
-            "throwing": true,
-            "funcSelfKind": "NonMutating"
-          }
-        ],
-        "declKind": "Struct",
-        "usr": "s:24EmbeddedCheckoutProtocol7SignalsV",
-        "mangledName": "$s24EmbeddedCheckoutProtocol7SignalsV",
         "moduleName": "EmbeddedCheckoutProtocol",
         "conformances": [
           {
