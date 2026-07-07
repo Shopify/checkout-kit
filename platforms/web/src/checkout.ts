@@ -519,7 +519,19 @@ export class ShopifyCheckout
       return;
     }
 
-    void this.#dispatchProtocolMessage(JSON.stringify(event.data), event);
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(event.data);
+    } catch (error) {
+      this.#debugWarn(
+        `Dropped message because it could not be serialized: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return;
+    }
+
+    void this.#dispatchProtocolMessage(serialized, event);
   };
 
   /**

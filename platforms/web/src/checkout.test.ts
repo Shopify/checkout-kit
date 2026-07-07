@@ -1632,6 +1632,29 @@ describe("<shopify-checkout>", () => {
 
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
+
+    it("drops non-serializable messages without throwing", async () => {
+      const { checkout, mockCheckoutWindow } = openPopupCheckout();
+      checkout.setAttribute("debug", "");
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const circularMessage: Record<string, unknown> = {
+        jsonrpc: "2.0",
+        method: "ec.start",
+        params: { checkout: makeCheckoutPayload() },
+      };
+      circularMessage.self = circularMessage;
+
+      expect(() => {
+        simulateRawMessageEvent(checkout, circularMessage, {
+          source: mockCheckoutWindow,
+        });
+      }).not.toThrow();
+      await flushProtocolDispatch();
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Dropped message because it could not be serialized"),
+      );
+    });
   });
 
   describe("overlay link", () => {
