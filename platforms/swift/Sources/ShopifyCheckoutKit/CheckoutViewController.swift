@@ -33,11 +33,15 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     var onFailAction: ((CheckoutError) -> Void)?
 
     public init(checkout url: URL) {
-        checkoutURL = CheckoutProtocol.url(for: url)
+        checkoutURL = url
+    }
+
+    var decoratedCheckoutURL: URL {
+        CheckoutURLDecorator.decorate(checkoutURL)
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
-        let viewController = CheckoutViewController(checkout: checkoutURL, client: client)
+        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL, client: client)
         configureWebViewController(viewController)
         return viewController
     }

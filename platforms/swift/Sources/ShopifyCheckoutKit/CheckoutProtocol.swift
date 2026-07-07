@@ -7,7 +7,7 @@ public enum CheckoutProtocol {
     public typealias Client = EmbeddedCheckoutProtocol.Client
 
     public static func url(for url: URL) -> URL {
-        EmbeddedCheckoutProtocol.url(for: url, options: .init(delegations: defaultDelegations))
+        CheckoutURLDecorator.decorate(url)
     }
 
     static let defaultDelegations: [EmbeddedCheckoutProtocol.Delegation] = [.windowOpen]
