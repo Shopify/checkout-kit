@@ -406,17 +406,28 @@ private fun MenuItem.setupCloseButton(
 }
 
 /**
- * Pads checkout content above system bars and the keyboard while the dialog window draws edge-to-edge.
+ * Pads checkout content above bottom insets while the dialog window draws edge-to-edge.
  */
 private fun View.applyBottomInsetPadding() {
     ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
         val systemBarsBottomInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
         val imeBottomInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-        updateBottomPadding(maxOf(systemBarsBottomInset, imeBottomInset))
+        updateBottomPadding(checkoutBottomInsetPadding(systemBarsBottomInset, imeBottomInset))
         insets
     }
     ViewCompat.requestApplyInsets(this)
 }
+
+internal fun checkoutBottomInsetPadding(
+    systemBarsBottomInset: Int,
+    imeBottomInset: Int,
+    sdkInt: Int = Build.VERSION.SDK_INT,
+): Int =
+    if (sdkInt <= Build.VERSION_CODES.Q) {
+        maxOf(systemBarsBottomInset, imeBottomInset)
+    } else {
+        systemBarsBottomInset
+    }
 
 /**
  * Keeps the requested window top margin while preventing the sheet from overlapping the status bar.

@@ -2,6 +2,7 @@ package com.shopify.checkoutkit
 
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
@@ -500,6 +501,44 @@ class CheckoutBottomSheetTest {
         runDismissAnimation()
 
         assertThat(activity.window.attributes.softInputMode).isEqualTo(originalMode)
+    }
+
+    @Test
+    fun `bottom inset padding uses ime inset through Android 10`() {
+        assertThat(
+            checkoutBottomInsetPadding(
+                systemBarsBottomInset = 16,
+                imeBottomInset = 240,
+                sdkInt = Build.VERSION_CODES.M,
+            )
+        ).isEqualTo(240)
+
+        assertThat(
+            checkoutBottomInsetPadding(
+                systemBarsBottomInset = 16,
+                imeBottomInset = 240,
+                sdkInt = Build.VERSION_CODES.Q,
+            )
+        ).isEqualTo(240)
+
+        assertThat(
+            checkoutBottomInsetPadding(
+                systemBarsBottomInset = 24,
+                imeBottomInset = 8,
+                sdkInt = Build.VERSION_CODES.Q,
+            )
+        ).isEqualTo(24)
+    }
+
+    @Test
+    fun `bottom inset padding ignores ime inset after Android 10`() {
+        assertThat(
+            checkoutBottomInsetPadding(
+                systemBarsBottomInset = 16,
+                imeBottomInset = 240,
+                sdkInt = Build.VERSION_CODES.R,
+            )
+        ).isEqualTo(16)
     }
 
     @Test
