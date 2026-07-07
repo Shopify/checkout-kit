@@ -9,5 +9,5 @@ data class Settings(
     val dragToDismissEnabled: Boolean,
     val tapAwayToDismissEnabled: Boolean,
     val windowOpenHandler: WindowOpenHandler,
-    val checkoutSheetStyle: CheckoutSheetStylePreset,
+    val checkoutSheetPreset: CheckoutSheetPreset,
 )

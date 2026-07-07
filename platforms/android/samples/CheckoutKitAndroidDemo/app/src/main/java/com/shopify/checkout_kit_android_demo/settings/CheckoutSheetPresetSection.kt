@@ -22,15 +22,15 @@ import com.shopify.checkout_kit_android_demo.R
 import com.shopify.checkout_kit_android_demo.common.components.BodyMedium
 import com.shopify.checkout_kit_android_demo.common.components.Header3
 import com.shopify.checkout_kit_android_demo.common.ui.theme.verticalPadding
-import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetStylePreset
+import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetPreset
 
 @Composable
-fun CheckoutSheetStyleSection(
-    selected: CheckoutSheetStylePreset,
-    setSelected: (CheckoutSheetStylePreset) -> Unit,
+fun CheckoutSheetPresetSection(
+    selected: CheckoutSheetPreset,
+    setSelected: (CheckoutSheetPreset) -> Unit,
 ) {
     Column {
-        Header3(text = stringResource(id = R.string.checkout_sheet_style))
+        Header3(text = stringResource(id = R.string.checkout_sheet_preset))
 
         Column(
             modifier = Modifier
@@ -42,17 +42,17 @@ fun CheckoutSheetStyleSection(
                 .background(color = MaterialTheme.colorScheme.background)
                 .fillMaxWidth()
 
-            CheckoutSheetStyleOption(
-                style = CheckoutSheetStylePreset.NewDefaults,
-                description = stringResource(id = R.string.checkout_sheet_style_new_defaults_description),
+            CheckoutSheetPresetOption(
+                preset = CheckoutSheetPreset.NewDefaults,
+                description = stringResource(id = R.string.checkout_sheet_preset_new_defaults_description),
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
             )
 
-            CheckoutSheetStyleOption(
-                style = CheckoutSheetStylePreset.LegacyDialog,
-                description = stringResource(id = R.string.checkout_sheet_style_legacy_dialog_description),
+            CheckoutSheetPresetOption(
+                preset = CheckoutSheetPreset.LegacyDialog,
+                description = stringResource(id = R.string.checkout_sheet_preset_legacy_dialog_description),
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
@@ -62,21 +62,21 @@ fun CheckoutSheetStyleSection(
 }
 
 @Composable
-fun CheckoutSheetStyleOption(
-    style: CheckoutSheetStylePreset,
-    setSelected: (CheckoutSheetStylePreset) -> Unit,
+fun CheckoutSheetPresetOption(
+    preset: CheckoutSheetPreset,
+    setSelected: (CheckoutSheetPreset) -> Unit,
     description: String,
-    selected: CheckoutSheetStylePreset,
+    selected: CheckoutSheetPreset,
     modifier: Modifier,
 ) {
-    val isSelected = selected == style
+    val isSelected = selected == preset
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.selectable(
             selected = isSelected,
             role = Role.RadioButton,
-            onClick = { setSelected(style) }
+            onClick = { setSelected(preset) }
         ),
     ) {
         RadioButton(
@@ -85,7 +85,7 @@ fun CheckoutSheetStyleOption(
             modifier = Modifier.semantics { contentDescription = description }
         )
         BodyMedium(
-            stringResource(id = style.title),
+            stringResource(id = preset.title),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp)
@@ -93,8 +93,8 @@ fun CheckoutSheetStyleOption(
     }
 }
 
-private val CheckoutSheetStylePreset.title: Int
+private val CheckoutSheetPreset.title: Int
     get() = when (this) {
-        CheckoutSheetStylePreset.NewDefaults -> R.string.checkout_sheet_style_new_defaults
-        CheckoutSheetStylePreset.LegacyDialog -> R.string.checkout_sheet_style_legacy_dialog
+        CheckoutSheetPreset.NewDefaults -> R.string.checkout_sheet_preset_new_defaults
+        CheckoutSheetPreset.LegacyDialog -> R.string.checkout_sheet_preset_legacy_dialog
     }

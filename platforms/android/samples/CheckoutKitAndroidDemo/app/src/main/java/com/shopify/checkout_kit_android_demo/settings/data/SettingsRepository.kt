@@ -21,7 +21,7 @@ class SettingsRepository(
                 dragToDismissEnabled = preferences.dragToDismissEnabled,
                 tapAwayToDismissEnabled = preferences.tapAwayToDismissEnabled,
                 windowOpenHandler = preferences.windowOpenHandler,
-                checkoutSheetStyle = preferences.checkoutSheetStyle,
+                checkoutSheetPreset = preferences.checkoutSheetPreset,
             )
         }
     }
@@ -57,7 +57,7 @@ class SettingsRepository(
         preferencesManager.setWindowOpenHandler(handler)
     }
 
-    suspend fun setCheckoutSheetStyle(style: CheckoutSheetStylePreset) {
-        preferencesManager.setCheckoutSheetStyle(style)
+    suspend fun setCheckoutSheetPreset(preset: CheckoutSheetPreset) {
+        preferencesManager.setCheckoutSheetPreset(preset)
     }
 }

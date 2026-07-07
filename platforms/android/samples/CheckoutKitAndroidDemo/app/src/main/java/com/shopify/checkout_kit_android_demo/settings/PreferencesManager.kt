@@ -7,7 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetStylePreset
+import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetPreset
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.ColorScheme
 import kotlinx.coroutines.flow.Flow
@@ -30,9 +30,9 @@ class PreferencesManager(private val context: Context) {
         val windowOpenHandler = preferences[WINDOW_OPEN_HANDLER]?.let { value ->
             runCatching { WindowOpenHandler.valueOf(value) }.getOrNull()
         } ?: WindowOpenHandler.Default
-        val checkoutSheetStyle = preferences[CHECKOUT_SHEET_STYLE]?.let { value ->
-            runCatching { CheckoutSheetStylePreset.valueOf(value) }.getOrNull()
-        } ?: CheckoutSheetStylePreset.NewDefaults
+        val checkoutSheetPreset = preferences[CHECKOUT_SHEET_PRESET]?.let { value ->
+            runCatching { CheckoutSheetPreset.valueOf(value) }.getOrNull()
+        } ?: CheckoutSheetPreset.NewDefaults
 
         UserPreferences(
             colorScheme = colorScheme,
@@ -41,7 +41,7 @@ class PreferencesManager(private val context: Context) {
             dragToDismissEnabled = dragToDismissEnabled,
             tapAwayToDismissEnabled = tapAwayToDismissEnabled,
             windowOpenHandler = windowOpenHandler,
-            checkoutSheetStyle = checkoutSheetStyle,
+            checkoutSheetPreset = checkoutSheetPreset,
         )
     }
 
@@ -58,7 +58,7 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setWindowOpenHandler(handler: WindowOpenHandler) = saveData(WINDOW_OPEN_HANDLER, handler.name)
 
-    suspend fun setCheckoutSheetStyle(style: CheckoutSheetStylePreset) = saveData(CHECKOUT_SHEET_STYLE, style.name)
+    suspend fun setCheckoutSheetPreset(preset: CheckoutSheetPreset) = saveData(CHECKOUT_SHEET_PRESET, preset.name)
 
     private suspend fun <T> saveData(key: Preferences.Key<T>, value: T) = context.dataStore.edit {
         it[key] = value
@@ -71,7 +71,7 @@ class PreferencesManager(private val context: Context) {
         private val DRAG_TO_DISMISS = booleanPreferencesKey("dragToDismiss")
         private val TAP_AWAY_TO_DISMISS = booleanPreferencesKey("tapAwayToDismiss")
         private val WINDOW_OPEN_HANDLER = stringPreferencesKey("windowOpenHandler")
-        private val CHECKOUT_SHEET_STYLE = stringPreferencesKey("checkoutSheetStyle")
+        private val CHECKOUT_SHEET_PRESET = stringPreferencesKey("checkoutSheetStyle")
 
         private val DEFAULT_COLOR_SCHEME = Json.encodeToString(
             ColorScheme.serializer(),
@@ -87,5 +87,5 @@ data class UserPreferences(
     val dragToDismissEnabled: Boolean,
     val tapAwayToDismissEnabled: Boolean,
     val windowOpenHandler: WindowOpenHandler,
-    val checkoutSheetStyle: CheckoutSheetStylePreset,
+    val checkoutSheetPreset: CheckoutSheetPreset,
 )
