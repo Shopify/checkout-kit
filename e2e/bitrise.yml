@@ -20,6 +20,8 @@ tools:
 trigger_map:
   - pull_request_source_branch: "*"
     draft_pull_request_enabled: false
+    changed_files:
+      regex: '^(platforms/(swift|android|react-native)|protocol|e2e|\.ci)/.*|^Package\.(swift|resolved)$'
     pipeline: e2e
 
 pipelines:
@@ -27,18 +29,26 @@ pipelines:
     workflows:
       e2e-produce-browserstack-run-plan: {}
       e2e-build-react-native-ios:
+        run_if:
+          expression: '{{ enveq "E2E_BUILD_REACT_NATIVE_IOS" "true" }}'
         depends_on:
           - e2e-produce-browserstack-run-plan
       e2e-build-react-native-android:
+        run_if:
+          expression: '{{ enveq "E2E_BUILD_REACT_NATIVE_ANDROID" "true" }}'
         depends_on:
           - e2e-produce-browserstack-run-plan
       e2e-execute-browserstack-run:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
         depends_on:
           - e2e-produce-browserstack-run-plan
           - e2e-build-react-native-ios
           - e2e-build-react-native-android
-        parallel: $E2E_BROWSERSTACK_RUN_PLAN_COUNT
+        parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
       e2e-report:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
         depends_on:
           - e2e-execute-browserstack-run
         should_always_run: workflow
@@ -110,11 +120,22 @@ workflows:
             - content: |-
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate
+                changed_files="$(e2e_deploy_dir)/changed-files.txt"
+                e2e_log "Fetching pull request changed files"
+                if [ -n "${BITRISE_PULL_REQUEST:-}" ]; then
+                  ruby e2e/scripts/github_pr_changed_files > "$changed_files"
+                else
+                  git diff --name-only "${BITRISE_GIT_BRANCH_DEST:-origin/main}...HEAD" > "$changed_files"
+                fi
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate --changed-files-file "$changed_files"
                 e2e_log "Producing BrowserStack run plan"
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
-                e2e_log "Publishing BrowserStack run plan count"
-                envman add --key E2E_BROWSERSTACK_RUN_PLAN_COUNT --value "$(ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count)"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand --changed-files-file "$changed_files" > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
+                e2e_log "Publishing BrowserStack run plan environment"
+                bitrise_env_file="$(e2e_deploy_dir)/bitrise-env.txt"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan bitrise-env --changed-files-file "$changed_files" > "$bitrise_env_file"
+                while IFS='=' read -r key value; do
+                  envman add --key "$key" --value "$value"
+                done < "$bitrise_env_file"
                 e2e_log "Zipping E2E tests"
                 tests_zip="$(e2e_deploy_dir)/e2e-tests.zip"
                 e2e/scripts/zip_e2e_tests --output "$tests_zip"
@@ -122,7 +143,12 @@ workflows:
                 envman add --key E2E_TESTS_ZIP --value "$tests_zip"
       - share-pipeline-variable@1:
           inputs:
-            - variables: E2E_BROWSERSTACK_RUN_PLAN_COUNT
+            - variables: |-
+                E2E_BROWSERSTACK_RUN_PLAN_COUNT
+                E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
+                E2E_HAS_E2E_RUNS
+                E2E_BUILD_REACT_NATIVE_IOS
+                E2E_BUILD_REACT_NATIVE_ANDROID
       - deploy-to-bitrise-io@2:
           is_always_run: false
           inputs:
@@ -195,7 +221,7 @@ workflows:
       - git-clone@8: {}
       - pull-intermediate-files@1:
           inputs:
-            - artifact_sources: e2e-produce-browserstack-run-plan,e2e-build-react-native-.*
+            - artifact_sources: e2e-produce-browserstack-run-plan,e2e-build-.*
       - script@1:
           title: Execute BrowserStack run
           timeout: 2700
@@ -214,8 +240,8 @@ workflows:
                 : "${BROWSERSTACK_ACCESS_KEY:?BROWSERSTACK_ACCESS_KEY is required}"
                 : "${E2E_TESTS_ZIP:?E2E_TESTS_ZIP is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
-                : "${E2E_REACT_NATIVE_IOS_APP_PATH:?E2E_REACT_NATIVE_IOS_APP_PATH is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
-                : "${E2E_REACT_NATIVE_ANDROID_APP_PATH:?E2E_REACT_NATIVE_ANDROID_APP_PATH is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
+                run_artifact_env="$(ruby -rjson -e 'run_plan = JSON.parse(File.read(ARGV.fetch(0))); puts run_plan.fetch(Integer(ARGV.fetch(1))).fetch("artifact_env")' "$E2E_BROWSERSTACK_RUN_PLAN_JSON" "$run_index")"
+                : "${!run_artifact_env:?${run_artifact_env} is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 e2e_log "Executing BrowserStack run plan row ${run_index}"
                 e2e/scripts/execute_browserstack_run \
                   --index "$run_index" \

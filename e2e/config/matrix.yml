@@ -1,4 +1,5 @@
 version: 1
+changed_file_filters: .ci/changed-file-filters.yml
 applications:
   - id: react-native-ios
     target: react-native
@@ -6,12 +7,22 @@ applications:
     app_id: com.shopify.checkoutkit.reactnativedemo
     artifact_env: E2E_REACT_NATIVE_IOS_APP_PATH
     ready_marker: checkout-kit-sample-ready
+    changed_files_filters:
+      - reactNative
+      - protocolTypescript
+      - e2e
+      - ciFilters
   - id: react-native-android
     target: react-native
     platform: android
     app_id: com.shopify.checkoutkit.reactnativedemo
     artifact_env: E2E_REACT_NATIVE_ANDROID_APP_PATH
     ready_marker: checkout-kit-sample-ready
+    changed_files_filters:
+      - reactNative
+      - protocolTypescript
+      - e2e
+      - ciFilters
 os_version_tags:
   - latest
 suites:

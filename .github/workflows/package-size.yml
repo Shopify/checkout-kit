@@ -28,7 +28,7 @@ jobs:
         id: package
         with:
           predicate-quantifier: every
-          filters: .github/filters/platform-non-docs.yml
+          filters: .ci/changed-file-filters.yml
 
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: infra
@@ -36,17 +36,17 @@ jobs:
           filters: |
             android:
               - '.github/scripts/measure-package-size'
-              - '.github/filters/**'
+              - '.ci/changed-file-filters.yml'
               - '.github/workflows/package-size.yml'
             reactNative:
               - '.github/actions/setup/**'
               - '.github/scripts/measure-package-size'
-              - '.github/filters/**'
+              - '.ci/changed-file-filters.yml'
               - '.github/workflows/package-size.yml'
             web:
               - '.github/actions/setup/**'
               - '.github/scripts/measure-package-size'
-              - '.github/filters/**'
+              - '.ci/changed-file-filters.yml'
               - '.github/workflows/package-size.yml'
 
   measure:

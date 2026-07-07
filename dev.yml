@@ -40,6 +40,7 @@ open:
 
 check:
   storefront-env-tests: ./scripts/test_setup_storefront_env
+  ruby-script-tests: ./scripts/test_ruby
   android-detekt: platforms/android/gradlew -p platforms/android detekt
   android-lint: platforms/android/gradlew -p platforms/android lintRelease
   swift-lint: cd platforms/swift && ./Scripts/lint

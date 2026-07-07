@@ -1,0 +1,43 @@
+# Shared changed-file filters for workflows and pipelines that should ignore docs-only changes.
+# Negative patterns need `predicate-quantifier: every` in dorny/paths-filter workflow steps.
+android:
+  - 'platforms/android/**'
+  - &exclude-markdown '!**/*.md'
+  - &exclude-docs-directory '!**/docs/**'
+swift:
+  - 'platforms/swift/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+reactNative:
+  - 'platforms/react-native/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+web:
+  - 'platforms/web/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+protocol:
+  - 'protocol/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+protocolTypescript:
+  - 'protocol/languages/typescript/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+protocolSwift:
+  - 'protocol/languages/swift/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+protocolKotlin:
+  - 'protocol/languages/kotlin/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+packageSwift:
+  - 'Package.swift'
+  - 'Package.resolved'
+e2e:
+  - 'e2e/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+ciFilters:
+  - '.ci/changed-file-filters.yml'
