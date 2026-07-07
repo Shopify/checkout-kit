@@ -54,7 +54,9 @@ public class InteropTest {
 
     @Test
     public void canConfigureCheckoutKit() {
-        ShopifyCheckoutKit.configure(configuration -> configuration.setColorScheme(new ColorScheme.Dark()));
+        ShopifyCheckoutKit.configure(configuration -> {
+            configuration.setColorScheme(new ColorScheme.Dark());
+        });
 
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
 

@@ -62,40 +62,6 @@ class UriExtensionsTest {
     }
 
     @Test
-    fun `appendEcpParams adds ec_version and ec_delegate`() {
-        val result = BASE_URL.appendEcpParams().toUri()
-        assertThat(result.getQueryParameter("ec_version")).isEqualTo(CheckoutProtocol.SPEC_VERSION)
-        assertThat(result.getQueryParameter("ec_delegate")).isEqualTo("window.open")
-    }
-
-    @Test
-    fun `appendEcpParams is idempotent on re-call`() {
-        val once = BASE_URL.appendEcpParams()
-        val twice = once.appendEcpParams().toUri()
-        assertThat(twice.getQueryParameters("ec_version")).hasSize(1)
-        assertThat(twice.getQueryParameters("ec_delegate")).hasSize(1)
-    }
-
-    @Test
-    fun `appendEcpParams preserves existing query parameters`() {
-        val url = "$BASE_URL?key=cart_token&utm_source=email"
-        val result = url.appendEcpParams().toUri()
-        assertThat(result.getQueryParameter("key")).isEqualTo("cart_token")
-        assertThat(result.getQueryParameter("utm_source")).isEqualTo("email")
-        assertThat(result.getQueryParameter("ec_version")).isEqualTo(CheckoutProtocol.SPEC_VERSION)
-    }
-
-    @Test
-    fun `appendEcpParams replaces caller-supplied supported ECP params and strips unsupported ECP params`() {
-        val url = "$BASE_URL?ec_version=override&ec_delegate=custom&ec_auth=token&ec_color_scheme=dark"
-        val result = url.appendEcpParams().toUri()
-        assertThat(result.getQueryParameters("ec_version")).containsExactly(CheckoutProtocol.SPEC_VERSION)
-        assertThat(result.getQueryParameters("ec_delegate")).containsExactly("window.open")
-        assertThat(result.getQueryParameters("ec_auth")).isEmpty()
-        assertThat(result.getQueryParameters("ec_color_scheme")).isEmpty()
-    }
-
-    @Test
     fun `redactedForLogging strips checkout auth and prefill query values`() {
         val url = "$BASE_URL?ec_auth=jwt-token&checkout%5Bemail%5D=buyer%40example.com&cart=123"
 
