@@ -35,6 +35,7 @@ jobs:
       reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       web: ${{ steps.platform.outputs.web == 'true' || steps.infra.outputs.web == 'true' }}
       protocol: ${{ steps.platform.outputs.protocol == 'true' || steps.infra.outputs.protocol == 'true' }}
+      scripts: ${{ steps.infra.outputs.scripts == 'true' }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -42,7 +43,7 @@ jobs:
         id: platform
         with:
           predicate-quantifier: every
-          filters: .github/filters/platform-non-docs.yml
+          filters: .ci/changed-file-filters.yml
 
       - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: infra
@@ -55,7 +56,7 @@ jobs:
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/release.yml'
               - '.github/scripts/validate-release-version'
-              - '.github/filters/**'
+              - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             swift:
               - 'Package.swift'
@@ -65,7 +66,7 @@ jobs:
               - '.github/workflows/swift-test-workflow.yml'
               - '.github/workflows/swift-lint.yml'
               - '.github/workflows/breaking-changes.yml'
-              - '.github/filters/**'
+              - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             # Common React Native infra: JS-level jobs (jest, lint, packed
             # files) and shared config that should trigger all RN jobs.
@@ -78,7 +79,7 @@ jobs:
               - '.github/scripts/package-json-version'
               - '.github/scripts/validate-release-version'
               - '.github/actions/setup/**'
-              - '.github/filters/**'
+              - '.ci/changed-file-filters.yml'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
             # iOS-only RN infra: gates the macOS build/test jobs.
@@ -94,12 +95,22 @@ jobs:
             web:
               - '.github/workflows/web.yml'
               - '.github/actions/setup/**'
-              - '.github/filters/**'
+              - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             protocol:
               - '.github/workflows/protocol-test.yml'
               - '.github/actions/setup/**'
-              - '.github/filters/**'
+              - '.ci/changed-file-filters.yml'
+              - '.github/workflows/ci.yml'
+            scripts:
+              - 'scripts/lib/**'
+              - 'scripts/test_ruby'
+              - 'scripts/test/**'
+              - 'e2e/lib/**'
+              - 'e2e/test/**'
+              - 'e2e/scripts/**'
+              - 'e2e/config/matrix.yml'
+              - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
 
   android-test:
@@ -198,6 +209,18 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/protocol-test.yml
 
+  scripts-test:
+    name: Scripts
+    needs: changes
+    if: needs.changes.outputs.scripts == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: ruby/setup-ruby@9eb537ca036ebaed86729dcb9309076e4c5c3b74 # v1.314.0
+        with:
+          ruby-version: .ruby-version
+      - run: ./scripts/test_ruby
+
   breaking-changes:
     name: Breaking Changes
     needs: changes
@@ -233,6 +256,7 @@ jobs:
       - rn-lint
       - web
       - protocol-test
+      - scripts-test
       - breaking-changes
     runs-on: ubuntu-latest
     steps:
