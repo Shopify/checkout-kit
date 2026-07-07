@@ -176,7 +176,7 @@
                 "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV6methodSSvg",
                 "mangledName": "$s24EmbeddedCheckoutProtocol22NotificationDescriptorV6methodSSvg",
                 "moduleName": "EmbeddedCheckoutProtocol",
-                "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+                "genericSig": "<Payload, Handler where Payload : EmbeddedCheckoutProtocol.EventPayload>",
                 "implicit": true,
                 "declAttributes": [
                   "Transparent"
@@ -184,13 +184,125 @@
                 "accessorKind": "get"
               }
             ]
+          },
+          {
+            "kind": "Function",
+            "name": "map",
+            "printedName": "map(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "NotificationDescriptor",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<Payload, Mapped>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Mapped"
+                  }
+                ],
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Handler) -> Mapped",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Mapped"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Handler"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV3mapyACyxqd__Gqd__q_YbclF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol22NotificationDescriptorV3mapyACyxqd__Gqd__q_YbclF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "genericSig": "<Payload, Handler, Mapped where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(method:decode:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "NotificationDescriptor",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<Payload, Handler>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Handler"
+                  }
+                ],
+                "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Foundation.Data) -> Payload?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Payload?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "GenericTypeParam",
+                        "printedName": "Payload"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Data",
+                    "printedName": "Foundation.Data",
+                    "usr": "s:10Foundation4DataV"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorVA2A0D7MessageVyxGRs_rlE6method6decodeACyxAFGSS_xSg10Foundation4DataVYbctcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol22NotificationDescriptorVA2A0D7MessageVyxGRs_rlE6method6decodeACyxAFGSS_xSg10Foundation4DataVYbctcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "genericSig": "<Payload, Handler where Payload : EmbeddedCheckoutProtocol.EventPayload, Handler == EmbeddedCheckoutProtocol.NotificationMessage<Payload>>",
+            "isFromExtension": true,
+            "init_kind": "Designated"
           }
         ],
         "declKind": "Struct",
         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV",
         "mangledName": "$s24EmbeddedCheckoutProtocol22NotificationDescriptorV",
         "moduleName": "EmbeddedCheckoutProtocol",
-        "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+        "genericSig": "<Payload, Handler where Payload : EmbeddedCheckoutProtocol.EventPayload>",
         "conformances": [
           {
             "kind": "Conformance",
@@ -265,7 +377,7 @@
                 "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV6methodSSvg",
                 "mangledName": "$s24EmbeddedCheckoutProtocol17RequestDescriptorV6methodSSvg",
                 "moduleName": "EmbeddedCheckoutProtocol",
-                "genericSig": "<Payload, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
+                "genericSig": "<Payload, Handler, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
                 "implicit": true,
                 "declAttributes": [
                   "Transparent"
@@ -328,7 +440,7 @@
                 "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV10delegationSSSgvg",
                 "mangledName": "$s24EmbeddedCheckoutProtocol17RequestDescriptorV10delegationSSSgvg",
                 "moduleName": "EmbeddedCheckoutProtocol",
-                "genericSig": "<Payload, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
+                "genericSig": "<Payload, Handler, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
                 "implicit": true,
                 "declAttributes": [
                   "Transparent"
@@ -338,6 +450,59 @@
             ]
           },
           {
+            "kind": "Function",
+            "name": "map",
+            "printedName": "map(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "RequestDescriptor",
+                "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<Payload, Mapped, Result>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Mapped"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Result"
+                  }
+                ],
+                "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Handler) -> Mapped",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Mapped"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Handler"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV3mapyACyxqd__q0_Gqd__q_YbclF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17RequestDescriptorV3mapyACyxqd__q0_Gqd__q_YbclF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "genericSig": "<Payload, Handler, Result, Mapped where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
+            "funcSelfKind": "NonMutating"
+          },
+          {
             "kind": "Constructor",
             "name": "init",
             "printedName": "init(method:delegation:decode:)",
@@ -345,12 +510,17 @@
               {
                 "kind": "TypeNominal",
                 "name": "RequestDescriptor",
-                "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<Payload, Result>",
+                "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<Payload, Handler, Result>",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "GenericTypeParam",
                     "printedName": "Payload"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Handler"
                   },
                   {
                     "kind": "TypeNominal",
@@ -409,10 +579,11 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV6method10delegation6decodeACyxq_GSS_SSSgxSg10Foundation4DataVYbctcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol17RequestDescriptorV6method10delegation6decodeACyxq_GSS_SSSgxSg10Foundation4DataVYbctcfc",
+            "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorVA2A0D7MessageVyxGRs_rlE6method10delegation6decodeACyxAFq0_GSS_SSSgxSg10Foundation4DataVYbctcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17RequestDescriptorVA2A0D7MessageVyxGRs_rlE6method10delegation6decodeACyxAFq0_GSS_SSSgxSg10Foundation4DataVYbctcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "genericSig": "<Payload, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
+            "genericSig": "<Payload, Handler, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Handler == EmbeddedCheckoutProtocol.RequestMessage<Payload>, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
+            "isFromExtension": true,
             "init_kind": "Designated"
           }
         ],
@@ -420,7 +591,7 @@
         "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV",
         "mangledName": "$s24EmbeddedCheckoutProtocol17RequestDescriptorV",
         "moduleName": "EmbeddedCheckoutProtocol",
-        "genericSig": "<Payload, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
+        "genericSig": "<Payload, Handler, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
         "conformances": [
           {
             "kind": "Conformance",
@@ -1161,12 +1332,17 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<P>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<P, Handler>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "GenericTypeParam",
                         "printedName": "P"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "GenericTypeParam",
+                        "printedName": "Handler"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
@@ -1174,7 +1350,7 @@
                   {
                     "kind": "TypeFunc",
                     "name": "Function",
-                    "printedName": "(P) -> Swift.Void",
+                    "printedName": "(Handler) -> Swift.Void",
                     "children": [
                       {
                         "kind": "TypeNameAlias",
@@ -1191,16 +1367,16 @@
                       {
                         "kind": "TypeNominal",
                         "name": "GenericTypeParam",
-                        "printedName": "P"
+                        "printedName": "Handler"
                       }
                     ]
                   }
                 ],
                 "declKind": "Func",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV2on_7performAdA22NotificationDescriptorVyxG_yxYbScMYcctAA12EventPayloadRzlF",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO6ClientV2on_7performAdA22NotificationDescriptorVyxG_yxYbScMYcctAA12EventPayloadRzlF",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV2on_7performAdA22NotificationDescriptorVyxq_G_yq_YbScMYcctAA12EventPayloadRzr0_lF",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO6ClientV2on_7performAdA22NotificationDescriptorVyxq_G_yq_YbScMYcctAA12EventPayloadRzr0_lF",
                 "moduleName": "EmbeddedCheckoutProtocol",
-                "genericSig": "<P where P : EmbeddedCheckoutProtocol.EventPayload>",
+                "genericSig": "<P, Handler where P : EmbeddedCheckoutProtocol.EventPayload>",
                 "declAttributes": [
                   "DiscardableResult"
                 ],
@@ -1220,12 +1396,17 @@
                   {
                     "kind": "TypeNominal",
                     "name": "RequestDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<P, R>",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<P, Handler, R>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "GenericTypeParam",
                         "printedName": "P"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "GenericTypeParam",
+                        "printedName": "Handler"
                       },
                       {
                         "kind": "TypeNominal",
@@ -1238,7 +1419,7 @@
                   {
                     "kind": "TypeFunc",
                     "name": "Function",
-                    "printedName": "(P) async -> R",
+                    "printedName": "(Handler) async -> R",
                     "children": [
                       {
                         "kind": "TypeNominal",
@@ -1248,16 +1429,16 @@
                       {
                         "kind": "TypeNominal",
                         "name": "GenericTypeParam",
-                        "printedName": "P"
+                        "printedName": "Handler"
                       }
                     ]
                   }
                 ],
                 "declKind": "Func",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV2on_7performAdA17RequestDescriptorVyxq_G_q_xYaYbScMYcctAA12EventPayloadRzAA08ResponseJ0R_r0_lF",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO6ClientV2on_7performAdA17RequestDescriptorVyxq_G_q_xYaYbScMYcctAA12EventPayloadRzAA08ResponseJ0R_r0_lF",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV2on_7performAdA17RequestDescriptorVyxq_q0_G_q0_q_YaYbScMYcctAA12EventPayloadRzAA08ResponseJ0R0_r1_lF",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO6ClientV2on_7performAdA17RequestDescriptorVyxq_q0_G_q0_q_YaYbScMYcctAA12EventPayloadRzAA08ResponseJ0R0_r1_lF",
                 "moduleName": "EmbeddedCheckoutProtocol",
-                "genericSig": "<P, R where P : EmbeddedCheckoutProtocol.EventPayload, R : EmbeddedCheckoutProtocol.ResponsePayload>",
+                "genericSig": "<P, Handler, R where P : EmbeddedCheckoutProtocol.EventPayload, R : EmbeddedCheckoutProtocol.ResponsePayload>",
                 "declAttributes": [
                   "DiscardableResult"
                 ],
@@ -1345,21 +1526,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.ErrorResponse>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCErrorParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCErrorParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "ErrorResponse",
-                        "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
-                        "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
+                        "name": "JSONRPCErrorParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCErrorParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCErrorParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCErrorParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCErrorParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5errorAA22NotificationDescriptorVyAA13ErrorResponseVGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5errorAA22NotificationDescriptorVyAA13ErrorResponseVGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5errorAA22NotificationDescriptorVyAA18JSONRPCErrorParamsVAA0F7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5errorAA22NotificationDescriptorVyAA18JSONRPCErrorParamsVAA0F7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1377,21 +1572,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.ErrorResponse>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCErrorParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCErrorParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "ErrorResponse",
-                            "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
-                            "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
+                            "name": "JSONRPCErrorParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCErrorParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCErrorParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCErrorParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCErrorParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5errorAA22NotificationDescriptorVyAA13ErrorResponseVGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5errorAA22NotificationDescriptorVyAA13ErrorResponseVGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5errorAA22NotificationDescriptorVyAA18JSONRPCErrorParamsVAA0F7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5errorAA22NotificationDescriptorVyAA18JSONRPCErrorParamsVAA0F7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1410,21 +1619,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5startAA22NotificationDescriptorVyAA0B0VGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5startAA22NotificationDescriptorVyAA0B0VGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5startAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0F7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5startAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0F7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1442,21 +1665,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5startAA22NotificationDescriptorVyAA0B0VGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5startAA22NotificationDescriptorVyAA0B0VGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5startAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0F7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5startAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0F7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1475,21 +1712,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO8completeAA22NotificationDescriptorVyAA0B0VGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO8completeAA22NotificationDescriptorVyAA0B0VGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO8completeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0F7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO8completeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0F7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1507,21 +1758,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO8completeAA22NotificationDescriptorVyAA0B0VGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO8completeAA22NotificationDescriptorVyAA0B0VGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO8completeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0F7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO8completeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0F7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1540,21 +1805,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO14messagesChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO14messagesChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO14messagesChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO14messagesChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1572,21 +1851,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO14messagesChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO14messagesChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO14messagesChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO14messagesChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1605,21 +1898,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO15lineItemsChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO15lineItemsChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO15lineItemsChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO15lineItemsChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1637,21 +1944,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO15lineItemsChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO15lineItemsChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO15lineItemsChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO15lineItemsChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1670,21 +1991,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO11buyerChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO11buyerChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO11buyerChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO11buyerChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1702,21 +2037,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO11buyerChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO11buyerChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO11buyerChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO11buyerChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1735,21 +2084,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO12totalsChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO12totalsChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO12totalsChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO12totalsChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1767,21 +2130,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO12totalsChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO12totalsChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO12totalsChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO12totalsChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1800,21 +2177,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO13paymentChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO13paymentChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO13paymentChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO13paymentChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1832,21 +2223,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO13paymentChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO13paymentChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO13paymentChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO13paymentChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1865,21 +2270,35 @@
                   {
                     "kind": "TypeNominal",
                     "name": "NotificationDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                    "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "NotificationMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                       }
                     ],
                     "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO17fulfillmentChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO17fulfillmentChangeAA22NotificationDescriptorVyAA0B0VGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO17fulfillmentChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO17fulfillmentChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1897,21 +2316,35 @@
                       {
                         "kind": "TypeNominal",
                         "name": "NotificationDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.Checkout>",
+                        "printedName": "EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NotificationMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
                           }
                         ],
                         "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorV"
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO17fulfillmentChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO17fulfillmentChangeAA22NotificationDescriptorVyAA0B0VGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO17fulfillmentChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO17fulfillmentChangeAA22NotificationDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -1930,13 +2363,27 @@
                   {
                     "kind": "TypeNominal",
                     "name": "RequestDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.ReadyResult>",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.ReadyRequest>, EmbeddedCheckoutProtocol.ReadyResult>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "ReadyRequest",
                         "printedName": "EmbeddedCheckoutProtocol.ReadyRequest",
                         "usr": "s:24EmbeddedCheckoutProtocol12ReadyRequestV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "RequestMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.ReadyRequest>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "ReadyRequest",
+                            "printedName": "EmbeddedCheckoutProtocol.ReadyRequest",
+                            "usr": "s:24EmbeddedCheckoutProtocol12ReadyRequestV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                       },
                       {
                         "kind": "TypeNominal",
@@ -1949,8 +2396,8 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5readyAA17RequestDescriptorVyAA05ReadyF0VAA0H6ResultVGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5readyAA17RequestDescriptorVyAA05ReadyF0VAA0H6ResultVGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5readyAA17RequestDescriptorVyAA05ReadyF0VAA0F7MessageVyAIGAA0H6ResultVGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5readyAA17RequestDescriptorVyAA05ReadyF0VAA0F7MessageVyAIGAA0H6ResultVGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -1968,13 +2415,27 @@
                       {
                         "kind": "TypeNominal",
                         "name": "RequestDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.ReadyResult>",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.ReadyRequest>, EmbeddedCheckoutProtocol.ReadyResult>",
                         "children": [
                           {
                             "kind": "TypeNominal",
                             "name": "ReadyRequest",
                             "printedName": "EmbeddedCheckoutProtocol.ReadyRequest",
                             "usr": "s:24EmbeddedCheckoutProtocol12ReadyRequestV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "RequestMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.ReadyRequest>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "ReadyRequest",
+                                "printedName": "EmbeddedCheckoutProtocol.ReadyRequest",
+                                "usr": "s:24EmbeddedCheckoutProtocol12ReadyRequestV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                           },
                           {
                             "kind": "TypeNominal",
@@ -1987,8 +2448,8 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5readyAA17RequestDescriptorVyAA05ReadyF0VAA0H6ResultVGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5readyAA17RequestDescriptorVyAA05ReadyF0VAA0H6ResultVGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO5readyAA17RequestDescriptorVyAA05ReadyF0VAA0F7MessageVyAIGAA0H6ResultVGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO5readyAA17RequestDescriptorVyAA05ReadyF0VAA0F7MessageVyAIGAA0H6ResultVGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2007,13 +2468,27 @@
                   {
                     "kind": "TypeNominal",
                     "name": "RequestDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.AuthRequest, EmbeddedCheckoutProtocol.AuthResult>",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.AuthRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.AuthRequest>, EmbeddedCheckoutProtocol.AuthResult>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "AuthRequest",
                         "printedName": "EmbeddedCheckoutProtocol.AuthRequest",
                         "usr": "s:24EmbeddedCheckoutProtocol11AuthRequestV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "RequestMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.AuthRequest>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "AuthRequest",
+                            "printedName": "EmbeddedCheckoutProtocol.AuthRequest",
+                            "usr": "s:24EmbeddedCheckoutProtocol11AuthRequestV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                       },
                       {
                         "kind": "TypeNominal",
@@ -2026,8 +2501,8 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO4authAA17RequestDescriptorVyAA04AuthF0VAA0H6ResultVGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO4authAA17RequestDescriptorVyAA04AuthF0VAA0H6ResultVGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO4authAA17RequestDescriptorVyAA04AuthF0VAA0F7MessageVyAIGAA0H6ResultVGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO4authAA17RequestDescriptorVyAA04AuthF0VAA0F7MessageVyAIGAA0H6ResultVGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2045,13 +2520,27 @@
                       {
                         "kind": "TypeNominal",
                         "name": "RequestDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.AuthRequest, EmbeddedCheckoutProtocol.AuthResult>",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.AuthRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.AuthRequest>, EmbeddedCheckoutProtocol.AuthResult>",
                         "children": [
                           {
                             "kind": "TypeNominal",
                             "name": "AuthRequest",
                             "printedName": "EmbeddedCheckoutProtocol.AuthRequest",
                             "usr": "s:24EmbeddedCheckoutProtocol11AuthRequestV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "RequestMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.AuthRequest>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "AuthRequest",
+                                "printedName": "EmbeddedCheckoutProtocol.AuthRequest",
+                                "usr": "s:24EmbeddedCheckoutProtocol11AuthRequestV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                           },
                           {
                             "kind": "TypeNominal",
@@ -2064,8 +2553,8 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO4authAA17RequestDescriptorVyAA04AuthF0VAA0H6ResultVGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO4authAA17RequestDescriptorVyAA04AuthF0VAA0H6ResultVGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO4authAA17RequestDescriptorVyAA04AuthF0VAA0F7MessageVyAIGAA0H6ResultVGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO4authAA17RequestDescriptorVyAA04AuthF0VAA0F7MessageVyAIGAA0H6ResultVGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2084,13 +2573,27 @@
                   {
                     "kind": "TypeNominal",
                     "name": "RequestDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.Checkout, EmbeddedCheckoutProtocol.InstrumentsChangeResult>",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.InstrumentsChangeResult>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "RequestMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                       },
                       {
                         "kind": "TypeNominal",
@@ -2103,8 +2606,8 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGAA0fG6ResultVGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGAA0fG6ResultVGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2122,13 +2625,27 @@
                       {
                         "kind": "TypeNominal",
                         "name": "RequestDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.Checkout, EmbeddedCheckoutProtocol.InstrumentsChangeResult>",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.InstrumentsChangeResult>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "RequestMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                           },
                           {
                             "kind": "TypeNominal",
@@ -2141,8 +2658,8 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGAA0fG6ResultVGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO24paymentInstrumentsChangeAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGAA0fG6ResultVGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2161,13 +2678,27 @@
                   {
                     "kind": "TypeNominal",
                     "name": "RequestDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.Checkout, EmbeddedCheckoutProtocol.CredentialResult>",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.CredentialResult>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "RequestMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                       },
                       {
                         "kind": "TypeNominal",
@@ -2180,8 +2711,8 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0F6ResultVGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0F6ResultVGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO17paymentCredentialAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGAA0F6ResultVGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO17paymentCredentialAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGAA0F6ResultVGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2199,13 +2730,27 @@
                       {
                         "kind": "TypeNominal",
                         "name": "RequestDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.Checkout, EmbeddedCheckoutProtocol.CredentialResult>",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.CredentialResult>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "RequestMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                           },
                           {
                             "kind": "TypeNominal",
@@ -2218,8 +2763,8 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0F6ResultVGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO17paymentCredentialAA17RequestDescriptorVyAA0B0VAA0F6ResultVGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO17paymentCredentialAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGAA0F6ResultVGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO17paymentCredentialAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0G7MessageVyAIGAA0F6ResultVGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2238,13 +2783,27 @@
                   {
                     "kind": "TypeNominal",
                     "name": "RequestDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.WindowOpenRequest, EmbeddedCheckoutProtocol.WindowOpenResult>",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.WindowOpenRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.WindowOpenRequest>, EmbeddedCheckoutProtocol.WindowOpenResult>",
                     "children": [
                       {
                         "kind": "TypeNominal",
                         "name": "WindowOpenRequest",
                         "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
                         "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "RequestMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.WindowOpenRequest>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "WindowOpenRequest",
+                            "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                            "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                       },
                       {
                         "kind": "TypeNominal",
@@ -2257,8 +2816,8 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0iF6ResultVGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0iF6ResultVGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0G7MessageVyAIGAA0iF6ResultVGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0G7MessageVyAIGAA0iF6ResultVGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2276,13 +2835,27 @@
                       {
                         "kind": "TypeNominal",
                         "name": "RequestDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.WindowOpenRequest, EmbeddedCheckoutProtocol.WindowOpenResult>",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.WindowOpenRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.WindowOpenRequest>, EmbeddedCheckoutProtocol.WindowOpenResult>",
                         "children": [
                           {
                             "kind": "TypeNominal",
                             "name": "WindowOpenRequest",
                             "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
                             "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "RequestMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.WindowOpenRequest>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "WindowOpenRequest",
+                                "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                                "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                           },
                           {
                             "kind": "TypeNominal",
@@ -2295,8 +2868,8 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0iF6ResultVGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0iF6ResultVGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0G7MessageVyAIGAA0iF6ResultVGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO10windowOpenAA17RequestDescriptorVyAA06WindowfG0VAA0G7MessageVyAIGAA0iF6ResultVGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -2315,13 +2888,27 @@
                   {
                     "kind": "TypeNominal",
                     "name": "RequestDescriptor",
-                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.Checkout, EmbeddedCheckoutProtocol.AddressChangeResult>",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.AddressChangeResult>",
                     "children": [
                       {
                         "kind": "TypeNominal",
-                        "name": "Checkout",
-                        "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                        "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                        "name": "JSONRPCCheckoutParams",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "RequestMessage",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          }
+                        ],
+                        "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                       },
                       {
                         "kind": "TypeNominal",
@@ -2334,8 +2921,8 @@
                   }
                 ],
                 "declKind": "Var",
-                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvpZ",
-                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvpZ",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGAA0fG6ResultVGvpZ",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGAA0fG6ResultVGvpZ",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "static": true,
                 "declAttributes": [
@@ -2353,13 +2940,27 @@
                       {
                         "kind": "TypeNominal",
                         "name": "RequestDescriptor",
-                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.Checkout, EmbeddedCheckoutProtocol.AddressChangeResult>",
+                        "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.AddressChangeResult>",
                         "children": [
                           {
                             "kind": "TypeNominal",
-                            "name": "Checkout",
-                            "printedName": "EmbeddedCheckoutProtocol.Checkout",
-                            "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                            "name": "JSONRPCCheckoutParams",
+                            "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "RequestMessage",
+                            "printedName": "EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONRPCCheckoutParams",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+                              }
+                            ],
+                            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
                           },
                           {
                             "kind": "TypeNominal",
@@ -2372,8 +2973,8 @@
                       }
                     ],
                     "declKind": "Accessor",
-                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvgZ",
-                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA0B0VAA0fG6ResultVGvgZ",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGAA0fG6ResultVGvgZ",
+                    "mangledName": "$s24EmbeddedCheckoutProtocolAAO5EventO24fulfillmentAddressChangeAA17RequestDescriptorVyAA21JSONRPCCheckoutParamsVAA0H7MessageVyAIGAA0fG6ResultVGvgZ",
                     "moduleName": "EmbeddedCheckoutProtocol",
                     "static": true,
                     "implicit": true,
@@ -79292,6 +79893,1301 @@
             "usr": "s:SE",
             "mangledName": "$sSE"
           },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "JSONRPCID",
+        "printedName": "JSONRPCID",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "string",
+            "printedName": "string",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.JSONRPCID.Type) -> (Swift.String) -> EmbeddedCheckoutProtocol.JSONRPCID",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(Swift.String) -> EmbeddedCheckoutProtocol.JSONRPCID",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONRPCID",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                        "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONRPCID.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONRPCID",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                        "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO6stringyACSScACmF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO6stringyACSScACmF",
+            "moduleName": "EmbeddedCheckoutProtocol"
+          },
+          {
+            "kind": "Var",
+            "name": "int",
+            "printedName": "int",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.JSONRPCID.Type) -> (Swift.Int64) -> EmbeddedCheckoutProtocol.JSONRPCID",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(Swift.Int64) -> EmbeddedCheckoutProtocol.JSONRPCID",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONRPCID",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                        "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int64",
+                        "printedName": "Swift.Int64",
+                        "usr": "s:s5Int64V"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONRPCID.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONRPCID",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                        "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO3intyACs5Int64VcACmF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO3intyACs5Int64VcACmF",
+            "moduleName": "EmbeddedCheckoutProtocol"
+          },
+          {
+            "kind": "Var",
+            "name": "null",
+            "printedName": "null",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.JSONRPCID.Type) -> EmbeddedCheckoutProtocol.JSONRPCID",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONRPCID",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                    "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONRPCID.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "JSONRPCID",
+                        "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                        "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO4nullyA2CmF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO4nullyA2CmF",
+            "moduleName": "EmbeddedCheckoutProtocol"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(stringLiteral:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCID",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO13stringLiteralACSS_tcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO13stringLiteralACSS_tcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(integerLiteral:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCID",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO14integerLiteralACs5Int64V_tcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO14integerLiteralACs5Int64V_tcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(from:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCID",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Decoder",
+                "printedName": "any Swift.Decoder",
+                "usr": "s:s7DecoderP"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO4fromACs7Decoder_p_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO4fromACs7Decoder_p_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "any Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO6encode2toys7Encoder_p_tKF",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "TypeAlias",
+            "name": "ExtendedGraphemeClusterLiteralType",
+            "printedName": "ExtendedGraphemeClusterLiteralType",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "TypeAlias",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO34ExtendedGraphemeClusterLiteralTypea",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO34ExtendedGraphemeClusterLiteralTypea",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "implicit": true
+          },
+          {
+            "kind": "TypeAlias",
+            "name": "IntegerLiteralType",
+            "printedName": "IntegerLiteralType",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+              }
+            ],
+            "declKind": "TypeAlias",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO18IntegerLiteralTypea",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO18IntegerLiteralTypea",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "implicit": true
+          },
+          {
+            "kind": "TypeAlias",
+            "name": "StringLiteralType",
+            "printedName": "StringLiteralType",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "TypeAlias",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO17StringLiteralTypea",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO17StringLiteralTypea",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "implicit": true
+          },
+          {
+            "kind": "TypeAlias",
+            "name": "UnicodeScalarLiteralType",
+            "printedName": "UnicodeScalarLiteralType",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "TypeAlias",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO24UnicodeScalarLiteralTypea",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO24UnicodeScalarLiteralTypea",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "implicit": true
+          },
+          {
+            "kind": "Function",
+            "name": "__derived_enum_equals",
+            "printedName": "__derived_enum_equals(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCID",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCID",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO21__derived_enum_equalsySbAC_ACtFZ",
+            "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO21__derived_enum_equalsySbAC_ACtFZ",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "static": true,
+            "implicit": true,
+            "declAttributes": [
+              "Implements"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO",
+        "mangledName": "$s24EmbeddedCheckoutProtocol9JSONRPCIDO",
+        "moduleName": "EmbeddedCheckoutProtocol",
+        "isEnumExhaustive": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se",
+            "mangledName": "$sSe"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE",
+            "mangledName": "$sSE"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ExpressibleByStringLiteral",
+            "printedName": "ExpressibleByStringLiteral",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "StringLiteralType",
+                "printedName": "StringLiteralType",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s26ExpressibleByStringLiteralP",
+            "mangledName": "$ss26ExpressibleByStringLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ExpressibleByIntegerLiteral",
+            "printedName": "ExpressibleByIntegerLiteral",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "IntegerLiteralType",
+                "printedName": "IntegerLiteralType",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int64",
+                    "printedName": "Swift.Int64",
+                    "usr": "s:s5Int64V"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s27ExpressibleByIntegerLiteralP",
+            "mangledName": "$ss27ExpressibleByIntegerLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ExpressibleByExtendedGraphemeClusterLiteral",
+            "printedName": "ExpressibleByExtendedGraphemeClusterLiteral",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "ExtendedGraphemeClusterLiteralType",
+                "printedName": "ExtendedGraphemeClusterLiteralType",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s43ExpressibleByExtendedGraphemeClusterLiteralP",
+            "mangledName": "$ss43ExpressibleByExtendedGraphemeClusterLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "ExpressibleByUnicodeScalarLiteral",
+            "printedName": "ExpressibleByUnicodeScalarLiteral",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "UnicodeScalarLiteralType",
+                "printedName": "UnicodeScalarLiteralType",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s33ExpressibleByUnicodeScalarLiteralP",
+            "mangledName": "$ss33ExpressibleByUnicodeScalarLiteralP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "JSONRPCCheckoutParams",
+        "printedName": "JSONRPCCheckoutParams",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "checkout",
+            "printedName": "checkout",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Checkout",
+                "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV8checkoutAA0B0Vvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV8checkoutAA0B0Vvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV8checkoutAA0B0Vvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV8checkoutAA0B0Vvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(checkout:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCCheckoutParams",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Checkout",
+                "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV8checkoutAcA0B0V_tcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV8checkoutAcA0B0V_tcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(from:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCCheckoutParams",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCCheckoutParams",
+                "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Decoder",
+                "printedName": "any Swift.Decoder",
+                "usr": "s:s7DecoderP"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV4fromACs7Decoder_p_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV4fromACs7Decoder_p_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV",
+        "mangledName": "$s24EmbeddedCheckoutProtocol21JSONRPCCheckoutParamsV",
+        "moduleName": "EmbeddedCheckoutProtocol",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "EventPayload",
+            "printedName": "EventPayload",
+            "usr": "s:24EmbeddedCheckoutProtocol12EventPayloadP",
+            "mangledName": "$s24EmbeddedCheckoutProtocol12EventPayloadP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se",
+            "mangledName": "$sSe"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "JSONRPCErrorParams",
+        "printedName": "JSONRPCErrorParams",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "error",
+            "printedName": "error",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ErrorResponse",
+                "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
+                "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV5errorAA13ErrorResponseVvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV5errorAA13ErrorResponseVvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ErrorResponse",
+                    "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
+                    "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV5errorAA13ErrorResponseVvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV5errorAA13ErrorResponseVvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(error:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCErrorParams",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCErrorParams",
+                "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "ErrorResponse",
+                "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
+                "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV5errorAcA13ErrorResponseV_tcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV5errorAcA13ErrorResponseV_tcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(from:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCErrorParams",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCErrorParams",
+                "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Decoder",
+                "printedName": "any Swift.Decoder",
+                "usr": "s:s7DecoderP"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV4fromACs7Decoder_p_tKcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV4fromACs7Decoder_p_tKcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "throwing": true,
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV",
+        "mangledName": "$s24EmbeddedCheckoutProtocol18JSONRPCErrorParamsV",
+        "moduleName": "EmbeddedCheckoutProtocol",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "EventPayload",
+            "printedName": "EventPayload",
+            "usr": "s:24EmbeddedCheckoutProtocol12EventPayloadP",
+            "mangledName": "$s24EmbeddedCheckoutProtocol12EventPayloadP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se",
+            "mangledName": "$sSe"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "NotificationMessage",
+        "printedName": "NotificationMessage",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "jsonrpc",
+            "printedName": "jsonrpc",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV7jsonrpcSSvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol19NotificationMessageV7jsonrpcSSvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV7jsonrpcSSvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol19NotificationMessageV7jsonrpcSSvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "method",
+            "printedName": "method",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV6methodSSvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol19NotificationMessageV6methodSSvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV6methodSSvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol19NotificationMessageV6methodSSvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "params",
+            "printedName": "params",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "GenericTypeParam",
+                "printedName": "Payload"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV6paramsxvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol19NotificationMessageV6paramsxvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV6paramsxvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol19NotificationMessageV6paramsxvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(jsonrpc:method:params:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "NotificationMessage",
+                "printedName": "EmbeddedCheckoutProtocol.NotificationMessage<Payload>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
+                  }
+                ],
+                "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "GenericTypeParam",
+                "printedName": "Payload"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV7jsonrpc6method6paramsACyxGSS_SSxtcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol19NotificationMessageV7jsonrpc6method6paramsACyxGSS_SSxtcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:24EmbeddedCheckoutProtocol19NotificationMessageV",
+        "mangledName": "$s24EmbeddedCheckoutProtocol19NotificationMessageV",
+        "moduleName": "EmbeddedCheckoutProtocol",
+        "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "RequestMessage",
+        "printedName": "RequestMessage",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "jsonrpc",
+            "printedName": "jsonrpc",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV7jsonrpcSSvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV7jsonrpcSSvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV7jsonrpcSSvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV7jsonrpcSSvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "method",
+            "printedName": "method",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV6methodSSvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV6methodSSvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV6methodSSvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV6methodSSvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "id",
+            "printedName": "id",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCID",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV2idAA9JSONRPCIDOvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV2idAA9JSONRPCIDOvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "JSONRPCID",
+                    "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                    "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV2idAA9JSONRPCIDOvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV2idAA9JSONRPCIDOvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "params",
+            "printedName": "params",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "GenericTypeParam",
+                "printedName": "Payload"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV6paramsxvp",
+            "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV6paramsxvp",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV6paramsxvg",
+                "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV6paramsxvg",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(jsonrpc:method:id:params:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "RequestMessage",
+                "printedName": "EmbeddedCheckoutProtocol.RequestMessage<Payload>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
+                  }
+                ],
+                "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "JSONRPCID",
+                "printedName": "EmbeddedCheckoutProtocol.JSONRPCID",
+                "usr": "s:24EmbeddedCheckoutProtocol9JSONRPCIDO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "GenericTypeParam",
+                "printedName": "Payload"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV7jsonrpc6method2id6paramsACyxGSS_SSAA9JSONRPCIDOxtcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV7jsonrpc6method2id6paramsACyxGSS_SSAA9JSONRPCIDOxtcfc",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+            "init_kind": "Designated"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:24EmbeddedCheckoutProtocol14RequestMessageV",
+        "mangledName": "$s24EmbeddedCheckoutProtocol14RequestMessageV",
+        "moduleName": "EmbeddedCheckoutProtocol",
+        "genericSig": "<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>",
+        "conformances": [
           {
             "kind": "Conformance",
             "name": "Sendable",

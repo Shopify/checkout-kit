@@ -32,10 +32,16 @@ public object CheckoutProtocol {
 
     public val start: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.start.map { it.checkout }
     public val complete: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.complete.map { it.checkout }
-    public val messagesChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.messagesChange.map { it.checkout }
-    public val lineItemsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.lineItemsChange.map { it.checkout }
+    public val messagesChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.messagesChange.map {
+        it.checkout
+    }
+    public val lineItemsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.lineItemsChange.map {
+        it.checkout
+    }
     public val totalsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.totalsChange.map { it.checkout }
-    public val fulfillmentChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.fulfillmentChange.map { it.checkout }
+    public val fulfillmentChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.fulfillmentChange.map {
+        it.checkout
+    }
     public val error: NotificationDescriptor<ErrorResponse> = EmbeddedCheckoutProtocol.error.map { it.error }
 
     internal val ready: RequestDescriptor<ReadyRequest, ReadyResult> = EmbeddedCheckoutProtocol.ready
