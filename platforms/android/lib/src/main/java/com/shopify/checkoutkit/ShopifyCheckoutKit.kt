@@ -86,13 +86,13 @@ public object ShopifyCheckoutKit {
     }
 
     /**
-     * Presents a Shopify checkout within a Dialog
+     * Presents a Shopify checkout within a bottom sheet
      *
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
      * @param configure a Kotlin-first builder for fail/cancel callbacks, browser/system hooks,
      * and an optional typed protocol client
-     * @return An instance of [CheckoutKitDialog] if the dialog was successfully created and displayed.
+     * @return A [CheckoutHandle] if the sheet was successfully created and displayed.
      */
     @JvmStatic
     @JvmSynthetic
@@ -100,7 +100,7 @@ public object ShopifyCheckoutKit {
         checkoutUrl: String,
         context: ComponentActivity,
         configure: CheckoutPresentation.() -> Unit,
-    ): CheckoutKitDialog? {
+    ): CheckoutHandle? {
         val presentation = CheckoutPresentation().apply(configure)
         return present(
             checkoutUrl = checkoutUrl,
@@ -111,7 +111,7 @@ public object ShopifyCheckoutKit {
     }
 
     /**
-     * Presents a Shopify checkout within a Dialog
+     * Presents a Shopify checkout within a bottom sheet
      *
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
@@ -121,7 +121,7 @@ public object ShopifyCheckoutKit {
      * callbacks from the checkout web page. Built-in messages
      * (`ec.ready` and [ec.start][CheckoutProtocol.start])
      * are handled automatically by the SDK.
-     * @return An instance of [CheckoutKitDialog] if the dialog was successfully created and displayed.
+     * @return A [CheckoutHandle] if the sheet was successfully created and displayed.
      */
     @JvmOverloads
     @JvmStatic
@@ -130,35 +130,34 @@ public object ShopifyCheckoutKit {
         context: ComponentActivity,
         checkoutListener: T,
         protocolClient: CheckoutProtocol.Client? = null,
-    ): CheckoutKitDialog? {
+    ): CheckoutHandle? {
         log.d("ShopifyCheckoutKit", "Present called with checkoutUrl ${checkoutUrl.redactedUrlForLogging()}.")
         if (context.isDestroyed || context.isFinishing) {
             log.d("ShopifyCheckoutKit", "Context is destroyed or finishing, returning null.")
             return null
         }
-        log.d("ShopifyCheckoutKit", "Constructing Dialog")
-        val dialog = CheckoutDialog(checkoutUrl, checkoutListener, context, protocolClient)
+        log.d("ShopifyCheckoutKit", "Constructing bottom sheet")
+        val checkout = CheckoutBottomSheet(checkoutUrl, checkoutListener, context, protocolClient)
         context.lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
-                log.d("ShopifyCheckoutKit", "Context is being destroyed, dismissing dialog.")
-                dialog.dismiss()
+                log.d("ShopifyCheckoutKit", "Context is being destroyed, dismissing bottom sheet.")
+                checkout.dismiss(animate = false)
                 super.onDestroy(owner)
             }
         })
 
-        log.d("ShopifyCheckoutKit", "Starting Dialog.")
-        dialog.start(context)
-        return CheckoutKitDialog { dialog.dismiss() }
+        log.d("ShopifyCheckoutKit", "Starting bottom sheet.")
+        checkout.start()
+        return CheckoutHandle { checkout.dismiss() }
     }
 }
 
 /**
- * A checkout sheet dialog. Use the [dismiss] method to dismiss the presented dialog
+ * A handle to a presented checkout. Use [dismiss] to dismiss the checkout programmatically.
  */
-@FunctionalInterface
-public fun interface CheckoutKitDialog {
+public fun interface CheckoutHandle {
     /**
-     * Dismisses the checkout sheet dialog.
+     * Dismisses the presented checkout.
      */
     public fun dismiss()
 }

@@ -7,55 +7,26 @@ import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient.FileChooserParams
 import android.webkit.WebView
-import android.widget.RelativeLayout
-import androidx.activity.ComponentActivity
-import androidx.core.view.children
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
-import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.shadows.ShadowDialog
 
 @RunWith(RobolectricTestRunner::class)
 class CheckoutPresentationTest {
-
-    private lateinit var activity: ComponentActivity
-    private lateinit var configuration: Configuration
-
-    @Before
-    fun setUp() {
-        configuration = ShopifyCheckoutKit.getConfiguration()
-        activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
-    }
-
-    @After
-    fun tearDown() {
-        ShopifyCheckoutKit.configure {
-            it.colorScheme = configuration.colorScheme
-            it.platform = configuration.platform
-            it.logLevel = configuration.logLevel
-        }
-    }
 
     @Test
     fun `present builder invokes onFail callback`() {
         var received: CheckoutException? = null
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity) {
+        val listener = listener {
             onFail { received = it }
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
         val error = CheckoutKitException("boom")
-
-        dialog.closeCheckoutDialogWithError(error)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        listener.onCheckoutFailed(error)
 
         assertThat(received).isSameAs(error)
     }
@@ -64,33 +35,25 @@ class CheckoutPresentationTest {
     fun `present builder invokes onCancel callback`() {
         var canceled = false
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity) {
+        val listener = listener {
             onCancel { canceled = true }
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        val dialog = ShadowDialog.getLatestDialog()
-        dialog.cancel()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        listener.onCheckoutCanceled()
 
         assertThat(canceled).isTrue()
     }
 
     @Test
-    fun `present builder forwards connected client to embedded checkout protocol`() {
+    fun `present builder stores connected client`() {
         var received = false
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.messagesChange) { received = true }
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity) {
+        val presentation = presentation {
             connect(client)
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-        val webView = dialog.currentWebView()
-
-        webView.embeddedCheckoutProtocol().postMessage(ecMessagesChangeMessage())
+        presentation.protocolClient?.process(ecMessagesChangeMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received).isTrue()
@@ -101,15 +64,11 @@ class CheckoutPresentationTest {
         var received: PermissionRequest? = null
         val permissionRequest = mock<PermissionRequest>()
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity) {
+        val listener = listener {
             onPermissionRequest { received = it }
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-
-        dialog.currentWebView().getListener().onPermissionRequest(permissionRequest)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        listener.onPermissionRequest(permissionRequest)
 
         assertThat(received).isSameAs(permissionRequest)
     }
@@ -123,7 +82,7 @@ class CheckoutPresentationTest {
         var receivedFilePathCallback: ValueCallback<Array<Uri>>? = null
         var receivedFileChooserParams: FileChooserParams? = null
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity) {
+        val listener = listener {
             onShowFileChooser { presentedWebView, callback, params ->
                 receivedWebView = presentedWebView
                 receivedFilePathCallback = callback
@@ -131,11 +90,8 @@ class CheckoutPresentationTest {
                 true
             }
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-
-        val handled = dialog.currentWebView().getListener().onShowFileChooser(
+        val handled = listener.onShowFileChooser(
             webView,
             filePathCallback,
             fileChooserParams,
@@ -153,17 +109,14 @@ class CheckoutPresentationTest {
         var receivedOrigin: String? = null
         var receivedCallback: GeolocationPermissions.Callback? = null
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity) {
+        val listener = listener {
             onGeolocationPermissionsShowPrompt { origin, geolocationCallback ->
                 receivedOrigin = origin
                 receivedCallback = geolocationCallback
             }
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-
-        dialog.currentWebView().getListener().onGeolocationPermissionsShowPrompt("origin", callback)
+        listener.onGeolocationPermissionsShowPrompt("origin", callback)
 
         assertThat(receivedOrigin).isEqualTo("origin")
         assertThat(receivedCallback).isSameAs(callback)
@@ -173,40 +126,34 @@ class CheckoutPresentationTest {
     fun `present builder invokes onGeolocationPermissionsHidePrompt callback`() {
         var hidden = false
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity) {
+        val listener = listener {
             onGeolocationPermissionsHidePrompt { hidden = true }
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
-
-        dialog.currentWebView().getListener().onGeolocationPermissionsHidePrompt()
+        listener.onGeolocationPermissionsHidePrompt()
 
         assertThat(hidden).isTrue()
     }
 
     @Test
     fun `present builder with no callbacks is safe`() {
-        val dialogHandle = ShopifyCheckoutKit.present("https://shopify.com", activity) {}
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val listener = listener {}
 
-        val dialog = ShadowDialog.getLatestDialog() as CheckoutDialog
+        listener.onCheckoutFailed(CheckoutKitException("boom"))
+        listener.onCheckoutCanceled()
+        listener.onPermissionRequest(mock())
+        listener.onGeolocationPermissionsShowPrompt("origin", mock())
+        listener.onGeolocationPermissionsHidePrompt()
+        val handled = listener.onShowFileChooser(mock(), mock(), mock())
 
-        dialogHandle?.dismiss()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(dialog.isShowing).isFalse()
+        assertThat(handled).isFalse()
     }
 
-    private fun CheckoutDialog.currentWebView(): CheckoutWebView =
-        findViewById<RelativeLayout>(R.id.checkoutKitContainer)
-            .children.first { it is CheckoutWebView } as CheckoutWebView
+    private fun presentation(configure: CheckoutPresentation.() -> Unit): CheckoutPresentation =
+        CheckoutPresentation().apply(configure)
 
-    private fun CheckoutWebView.embeddedCheckoutProtocol(): EmbeddedCheckoutProtocolBridge {
-        val field = CheckoutWebView::class.java.getDeclaredField("embeddedCheckoutProtocol")
-        field.isAccessible = true
-        return field.get(this) as EmbeddedCheckoutProtocolBridge
-    }
+    private fun listener(configure: CheckoutPresentation.() -> Unit): DefaultCheckoutListener =
+        presentation(configure).buildListener()
 
     private fun ecMessagesChangeMessage(): String =
         """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":$CHECKOUT_JSON}}"""

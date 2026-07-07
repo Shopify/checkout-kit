@@ -43,6 +43,8 @@ apollo-ios-cli
 .gradle/
 .kotlin/
 build/
+*.apk
+*.aab
 captures/
 .externalNativeBuild
 .cxx
