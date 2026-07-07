@@ -16,7 +16,8 @@ export default defineConfig({
       outDir: fromRoot('dist'),
       tsconfigPath: fromRoot('tsconfig.json'),
       insertTypesEntry: true,
-      copyDtsFiles: true,
+      rollupTypes: true,
+      bundledPackages: ['@shopify/checkout-kit-protocol'],
     }),
   ],
   build: {

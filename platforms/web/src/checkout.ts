@@ -3,6 +3,7 @@ import {
   decodeProtocolMessage,
   windowOpenSuccess,
   windowOpenRejected,
+  INVALID_PARAMS_CODE,
   type WindowOpenRequest,
   type WindowOpenResult,
 } from "@shopify/checkout-kit-protocol";
@@ -19,7 +20,6 @@ import type {
   LineItem,
   Message,
   CheckoutTotal,
-  OrderConfirmation,
   ErrorResponse,
 } from "./checkout.types";
 
@@ -545,16 +545,17 @@ export class ShopifyCheckout
       })
       .on(Event.complete, (checkout) => {
         this.#checkout = checkout;
-        // `order` is populated on `ec.complete` per ECP spec.
-        const order = checkout.order as OrderConfirmation;
-        this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout, order }));
+        this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout, order: checkout.order }));
       })
       .on(Event.error, (error) => {
         this.#error = error;
         this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
         // Per UCP spec, `unrecoverable` means no valid resource exists to act on —
         // the kit closes so consumers don't have to wire dismissal in every handler.
-        if (error.messages.some((m) => m.severity === "unrecoverable")) {
+        if (
+          Array.isArray(error.messages) &&
+          error.messages.some((m) => m.severity === "unrecoverable")
+        ) {
           this.close();
         }
       })
@@ -598,12 +599,14 @@ export class ShopifyCheckout
     const response = await this.#client.process(serialized);
     if (response === undefined) return;
 
-    const parsed = JSON.parse(response) as Record<string, unknown>;
+    const parsed = JSON.parse(response) as {
+      error?: { code?: number };
+    } & Record<string, unknown>;
 
     // The client returns -32602 for a window.open request whose url is missing
     // or not a string (the handler never runs). Preserve the host-side warning.
     if (
-      parsed.error !== undefined &&
+      parsed.error?.code === INVALID_PARAMS_CODE &&
       decodeProtocolMessage(serialized)?.method === EmbeddedCheckoutProtocol.Event.windowOpen.method
     ) {
       // eslint-disable-next-line no-console
@@ -753,8 +756,7 @@ export interface ShopifyCheckoutStartEventDetail {
 export interface ShopifyCheckoutCompleteEventDetail {
   /** Final checkout snapshot from the ECP `ec.complete` notification. */
   checkout: Checkout;
-  /** Order confirmation populated when checkout completes. */
-  order: OrderConfirmation;
+  order?: Checkout["order"];
 }
 
 export interface ShopifyCheckoutErrorEventDetail {

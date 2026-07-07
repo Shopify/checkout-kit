@@ -144,13 +144,21 @@ function snakeifyProtocolObject(
   return output;
 }
 
+const jsToWireCache = new WeakMap<
+  ProtocolCodecMetadata,
+  Record<string, string>
+>();
+
 function jsToWire(metadata: ProtocolCodecMetadata, value: string): string {
-  for (const [wire, js] of Object.entries(metadata.wireToJs)) {
-    if (js === value) {
-      return wire;
+  let reverse = jsToWireCache.get(metadata);
+  if (reverse === undefined) {
+    reverse = {};
+    for (const [wire, js] of Object.entries(metadata.wireToJs)) {
+      reverse[js] = wire;
     }
+    jsToWireCache.set(metadata, reverse);
   }
-  return value;
+  return reverse[value] ?? value;
 }
 
 function mapDynamicRecord(

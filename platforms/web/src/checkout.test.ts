@@ -986,6 +986,48 @@ describe("<shopify-checkout>", () => {
           expect(closeSpy).not.toHaveBeenCalled();
         },
       );
+
+      it("does not crash when ec.error messages is not an array", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onErrorSpy = vi.fn();
+        const closeSpy = vi.fn();
+        checkout.addEventListener("ec.error", onErrorSpy);
+        checkout.addEventListener("ec.close", closeSpy);
+
+        const nodeProcess = (
+          globalThis as unknown as {
+            process: {
+              on(event: "unhandledRejection", listener: (reason: unknown) => void): void;
+              off(event: "unhandledRejection", listener: (reason: unknown) => void): void;
+            };
+          }
+        ).process;
+        const rejections: unknown[] = [];
+        const onRejection = (reason: unknown) => rejections.push(reason);
+        nodeProcess.on("unhandledRejection", onRejection);
+
+        try {
+          simulateProtocolMessageEvent(
+            checkout,
+            "ec.error",
+            {
+              error: {
+                ucp: { version: EMBED_PROTOCOL_VERSION, status: "error" },
+                messages: "not-an-array",
+              },
+            },
+            { source: mockCheckoutWindow },
+          );
+          await flushProtocolDispatch();
+          await flushProtocolDispatch();
+        } finally {
+          nodeProcess.off("unhandledRejection", onRejection);
+        }
+
+        expect(rejections).toEqual([]);
+        expect(onErrorSpy).toHaveBeenCalledOnce();
+        expect(closeSpy).not.toHaveBeenCalled();
+      });
     });
 
     describe("ec.line_items.change", () => {
@@ -1055,7 +1097,7 @@ describe("<shopify-checkout>", () => {
         expect(event.detail).toEqual({ checkout: decodeCheckout(payload) });
       });
 
-      it("ec.complete carries {checkout, order}", async () => {
+      it("ec.complete carries {checkout, order} with order derived from checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "ec.complete", spy);
@@ -1073,6 +1115,22 @@ describe("<shopify-checkout>", () => {
         const event = spy.mock.calls[0]![0] as CustomEvent;
         const decoded = decodeCheckout(payload);
         expect(event.detail).toEqual({ checkout: decoded, order: decoded.order });
+        expect(event.detail.order).toEqual(event.detail.checkout.order);
+      });
+
+      it("ec.complete leaves order undefined when the checkout has no order", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const spy = vi.fn();
+        const wait = waitForEvent(checkout, "ec.complete", spy);
+
+        const payload = makeCheckoutPayload();
+        simulateProtocolMessageEvent(checkout, "ec.complete", payload, {
+          source: mockCheckoutWindow,
+        });
+        await wait;
+
+        const event = spy.mock.calls[0]![0] as CustomEvent;
+        expect(event.detail.order).toBeUndefined();
       });
 
       it("ec.error carries {error}", async () => {
@@ -1334,6 +1392,35 @@ describe("<shopify-checkout>", () => {
           "http://example.com/insecure",
           "_blank",
           "noopener",
+        );
+      });
+
+      it("does not warn about an invalid url when the handler throws internally", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        vi.spyOn(window, "open").mockImplementation(() => {
+          throw new Error("popup blocked");
+        });
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.window.open_request",
+          { url: "https://example.com/return" },
+          { id: "open-throw", source: mockCheckoutWindow },
+        );
+        await flushProtocolDispatch();
+
+        expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining("ec.window.open_request received without a valid url"),
+          expect.anything(),
+        );
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          expect.objectContaining({
+            jsonrpc: "2.0",
+            id: "open-throw",
+            error: expect.objectContaining({ code: -32603 }),
+          }),
+          new URL(checkout.src).origin,
         );
       });
     });

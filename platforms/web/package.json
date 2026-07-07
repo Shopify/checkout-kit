@@ -22,7 +22,6 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "source": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -41,9 +40,7 @@
     "LICENSE",
     "README.md",
     "package.json",
-    "dist",
-    "src",
-    "!src/**/*.test.ts"
+    "dist"
   ],
   "keywords": [
     "shopify",
