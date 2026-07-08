@@ -19,6 +19,7 @@ import type {
   Checkout,
   LineItem,
   Message,
+  CheckoutAppearance,
   CheckoutTotal,
   ErrorResponse,
 } from "./checkout.types";
@@ -29,6 +30,14 @@ export const CK_VERSION = "4.0.0";
 
 const WINDOW_OPEN_INVALID_URL_WARNING =
   "<shopify-checkout>: ec.window.open_request received without a valid url";
+
+const EMBED_DELEGATIONS = [EmbeddedCheckoutProtocol.Delegations.windowOpen] as const;
+const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: string }>([
+  ["app:light", { colorScheme: "light", branding: "app" }],
+  ["app:dark", { colorScheme: "dark", branding: "app" }],
+  ["app:automatic", { colorScheme: "automatic", branding: "app" }],
+  ["storefront", { colorScheme: "web_default", branding: "shop" }],
+]);
 
 const SHADOW_TEMPLATE = createTemplate(html`
   <div id="shopify-element-wrapper">
@@ -68,6 +77,7 @@ const SHADOW_TEMPLATE = createTemplate(html`
  *
  * @attribute src - The URL of the checkout to load.
  * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
+ * @attribute appearance - Checkout appearance preference (app:light, app:dark, app:automatic, storefront).
  *
  * @event ec.start - Dispatched when the checkout has started
  * @event ec.complete - Dispatched when the checkout was successfully completed
@@ -91,7 +101,7 @@ export class ShopifyCheckout
   extends HTMLElement
   implements CheckoutAttributes, CheckoutMethods, CheckoutProperties
 {
-  static observedAttributes = ["src", "target"] as const;
+  static observedAttributes = ["src", "target", "appearance"] as const;
 
   constructor() {
     super();
@@ -131,7 +141,7 @@ export class ShopifyCheckout
    * Returns `undefined` if `src` is unset, malformed, or uses a non-
    * `https:` scheme.
    */
-  #srcAsURL() {
+  #srcAsURL({ warnInvalidAppearance = false } = {}) {
     let url: URL;
     try {
       url = new URL(this.src);
@@ -140,10 +150,22 @@ export class ShopifyCheckout
     }
     if (url.protocol !== "https:") return undefined;
 
+    url.searchParams.delete("ck_branding");
+
+    const appearance = this.appearance;
+    const queryParams = CHECKOUT_APPEARANCES.get(appearance);
+    if (!queryParams && appearance !== "" && warnInvalidAppearance) {
+      this.#debugWarn(`appearance="${appearance}" is not supported and will be ignored`);
+    }
+
     const negotiatedUrl = EmbeddedCheckoutProtocol.url(url.toString(), {
-      delegations: [EmbeddedCheckoutProtocol.Delegations.windowOpen],
+      delegations: EMBED_DELEGATIONS,
+      colorScheme: queryParams?.colorScheme,
     });
     const finalUrl = new URL(negotiatedUrl);
+    if (queryParams) {
+      finalUrl.searchParams.set("ck_branding", queryParams.branding);
+    }
     finalUrl.searchParams.set("ck_version", CK_VERSION);
     return finalUrl;
   }
@@ -177,6 +199,14 @@ export class ShopifyCheckout
 
   set target(value: CheckoutTarget | string | undefined) {
     this.#setAttribute("target", value);
+  }
+
+  get appearance(): CheckoutAppearance | string {
+    return this.getAttribute("appearance") ?? "storefront";
+  }
+
+  set appearance(value: CheckoutAppearance | string | undefined) {
+    this.#setAttribute("appearance", value);
   }
 
   #setAttribute(name: string, value: string | boolean | undefined) {
@@ -253,7 +283,7 @@ export class ShopifyCheckout
    */
   open(): void {
     const { target } = this;
-    const src = this.#srcAsURL()?.href;
+    const src = this.#srcAsURL({ warnInvalidAppearance: true })?.href;
 
     if (!src) {
       // eslint-disable-next-line no-console
@@ -683,6 +713,9 @@ export class ShopifyCheckout
 
     switch (name) {
       case "src":
+        this.#updateOverlayLink();
+        break;
+      case "appearance":
         this.#updateOverlayLink();
         break;
       case "target": {

@@ -41,6 +41,7 @@ const stateNodes = {
   checkout: $<HTMLElement>("#state-checkout"),
   error: $<HTMLElement>("#state-error"),
   target: $<HTMLElement>("#state-target"),
+  appearance: $<HTMLElement>("#state-appearance"),
   debug: $<HTMLElement>("#state-debug"),
 };
 
@@ -71,6 +72,7 @@ function syncAttributes(): void {
   const data = new FormData(form);
   setStringAttribute(checkout, "src", data.get("src"));
   setStringAttribute(checkout, "target", data.get("target"));
+  setStringAttribute(checkout, "appearance", data.get("appearance"));
   if (data.has("debug")) {
     checkout.setAttribute("debug", "");
   } else {
@@ -154,6 +156,7 @@ function snapshotState(): Record<string, unknown> {
     checkout: checkout.checkout,
     error: checkout.error,
     target: checkout.target,
+    appearance: checkout.appearance,
     debug: checkout.debug,
   };
 }
@@ -162,6 +165,7 @@ function refreshState(): void {
   stateNodes.checkout.textContent = formatValue(checkout.checkout);
   stateNodes.error.textContent = formatValue(checkout.error);
   stateNodes.target.textContent = formatValue(checkout.target);
+  stateNodes.appearance.textContent = formatValue(checkout.appearance);
   stateNodes.debug.textContent = formatValue(checkout.debug);
 }
 
