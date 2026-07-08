@@ -241,6 +241,8 @@ def print_help(manifest)
 
     Options:
       --wait              Wait for in-progress Bitrise builds to finish, then install.
+      --clear-token       Remove dev tophat's saved Bitrise token from your keychain
+                          (does not change Tophat's own token) and exit.
       -h, --help          Show this help.
 
     Available targets:
@@ -262,6 +264,15 @@ def main
   manifest = CheckoutKitTophat.load_manifest
   if help_requested?
     print_help(manifest)
+    exit 0
+  end
+
+  if extract_flag("--clear-token")
+    if BitriseAuth.clear_token
+      puts "✅ Cleared dev tophat's saved Bitrise token from your keychain."
+    else
+      puts "No saved Bitrise token to clear."
+    end
     exit 0
   end
 
