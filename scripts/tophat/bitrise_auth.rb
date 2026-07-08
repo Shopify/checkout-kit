@@ -59,6 +59,7 @@ module BitriseAuth
 
       case token_status(token, app_slug)
       when :ok
+        puts "✅ Authentication successful."
         return token
       when :unknown
         warn "Could not reach Bitrise to validate the token; continuing."
@@ -84,8 +85,12 @@ module BitriseAuth
   def sync_to_tophat(token)
     return true unless File.exist?(TOPHAT_APP)
 
+    puts "Storing the token in Tophat for the Bitrise artifact provider."
     system("security", "delete-generic-password", "-s", TOPHAT_KEYCHAIN_SERVICE, "-a", TOPHAT_KEYCHAIN_ACCOUNT, out: File::NULL, err: File::NULL)
-    return true if write_keychain(TOPHAT_KEYCHAIN_SERVICE, TOPHAT_KEYCHAIN_ACCOUNT, token, trusted_app: TOPHAT_APP)
+    if write_keychain(TOPHAT_KEYCHAIN_SERVICE, TOPHAT_KEYCHAIN_ACCOUNT, token, trusted_app: TOPHAT_APP)
+      puts "✅ Tophat is configured with your Bitrise token."
+      return true
+    end
 
     warn <<~MESSAGE
       Could not save the token into Tophat automatically.

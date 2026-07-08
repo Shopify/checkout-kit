@@ -280,4 +280,11 @@ def main
   end
 end
 
-main if $PROGRAM_NAME == __FILE__
+if $PROGRAM_NAME == __FILE__
+  begin
+    main
+  rescue Interrupt
+    warn "\nCancelled."
+    exit 130
+  end
+end
