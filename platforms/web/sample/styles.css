@@ -298,11 +298,6 @@ legend {
   background: var(--surface-subdued);
 }
 
-.source-group[data-invalid="true"] {
-  border-color: color-mix(in srgb, var(--error) 55%, var(--border));
-  background: color-mix(in srgb, var(--error-bg) 45%, var(--surface-subdued));
-}
-
 .source-switcher,
 .source-fields {
   display: flex;
