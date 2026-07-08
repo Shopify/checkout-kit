@@ -9,6 +9,7 @@ up:
       - swiftlint
       - swiftformat
       - sccache
+      - bitrise
   - ruby
   - xcode:
       version: "26.2"
@@ -47,6 +48,7 @@ check:
   react-native-lint-sample: cd platforms/react-native && pnpm sample lint
   web-lint: cd platforms/web && pnpm lint
   web-test: cd platforms/web && pnpm test
+  e2e-bitrise-validate: bitrise validate --config=e2e/bitrise.yml
 
 commands:
   # Repo-wide

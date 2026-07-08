@@ -2,12 +2,12 @@
 
 require "yaml"
 
-# Expands the compact E2E test matrix in config/matrix.yml into one fully-resolved
-# run per (application x os_version_tag x suite) combination.
+# Transforms the compact E2E matrix in config/matrix.yml into the BrowserStack
+# run plan consumed by the parallel Bitrise execution workflow.
 #
 # Unlike GitHub Actions, Bitrise has no built-in matrix/strategy support, so we
-# do the fan-out ourselves: `expand` produces the JSON list of runs that the
-# pipeline consumes, and Bitrise parallelizes over it via `run_at`/`count`.
+# do the fan-out ourselves: `expand` produces the JSON list of runs, and Bitrise
+# parallelizes over it via `run_at`/`count`.
 #
 # Today the numbers make the config and the expansion look equivalent -
 # 2 applications + 1 os_version_tag + 1 suite, and 2 * 1 * 1 = 2 runs - so it can look
@@ -15,7 +15,7 @@ require "yaml"
 # adding a single os_version_tag (e.g. a minimum-supported OS) transparently duplicates
 # every application x suite across that OS, turning an additive config change into
 # a multiplicative set of runs without hand-writing each one.
-class E2EMatrix
+class E2EMatrixToBrowserStackRunPlan
   attr_reader :config_path
 
   def self.load(config_path)
@@ -44,6 +44,10 @@ class E2EMatrix
     end
 
     runs.fetch(index)
+  end
+
+  def count
+    expand.length
   end
 
   def validation_errors

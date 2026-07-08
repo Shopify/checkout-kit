@@ -1,0 +1,168 @@
+format_version: "23"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+meta:
+  bitrise.io:
+    stack: ubuntu-noble-24.04-bitrise-2025-android
+    machine_type_id: g2.linux.medium
+
+app:
+  envs:
+    - E2E_STRICT: "false"
+    - E2E_BROWSERSTACK_API_RETRIES: "1"
+    - E2E_BROWSERSTACK_TIMEOUT_SECONDS: "1800"
+    - E2E_BROWSERSTACK_POLL_SECONDS: "30"
+
+tools:
+  ruby: 3.3.6
+  nodejs: 22.14.0
+
+pipelines:
+  e2e:
+    workflows:
+      e2e-produce-browserstack-run-plan: {}
+      e2e-build-react-native-ios:
+        depends_on:
+          - e2e-produce-browserstack-run-plan
+      e2e-build-react-native-android:
+        depends_on:
+          - e2e-produce-browserstack-run-plan
+      e2e-execute-browserstack-run:
+        depends_on:
+          - e2e-produce-browserstack-run-plan
+          - e2e-build-react-native-ios
+          - e2e-build-react-native-android
+        parallel: $E2E_BROWSERSTACK_RUN_PLAN_COUNT
+      e2e-report:
+        depends_on:
+          - e2e-execute-browserstack-run
+        should_always_run: workflow
+
+workflows:
+  e2e-produce-browserstack-run-plan:
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Produce BrowserStack run plan placeholder
+          timeout: 1800
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate
+                e2e_log "Producing BrowserStack run plan"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
+                e2e_log "Publishing BrowserStack run plan count"
+                envman add --key E2E_BROWSERSTACK_RUN_PLAN_COUNT --value "$(ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count)"
+                e2e_log "Creating E2E tests zip placeholder"
+                mkdir -p "$BITRISE_DEPLOY_DIR/e2e"
+                echo "Phase 2 placeholder for E2E tests zip" > "$BITRISE_DEPLOY_DIR/e2e/e2e-tests.zip"
+                e2e_log "Publishing E2E tests zip path"
+                envman add --key E2E_TESTS_ZIP --value "$BITRISE_DEPLOY_DIR/e2e/e2e-tests.zip"
+      - share-pipeline-variable@1:
+          inputs:
+            - variables: E2E_BROWSERSTACK_RUN_PLAN_COUNT
+      - deploy-to-bitrise-io@2:
+          is_always_run: false
+          inputs:
+            - pipeline_intermediate_files: |-
+                $E2E_TESTS_ZIP:E2E_TESTS_ZIP
+                $BITRISE_DEPLOY_DIR/browserstack-run-plan.json:E2E_BROWSERSTACK_RUN_PLAN_JSON
+
+  e2e-build-react-native-ios:
+    steps:
+      - git-clone@8: {}
+      - restore-cache@3:
+          inputs:
+            - key: |-
+                rn-ios-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}
+      - script@1:
+          title: Create React Native iOS artifact placeholder
+          inputs:
+            - content: |-
+                set -euo pipefail
+                mkdir -p "$BITRISE_DEPLOY_DIR/e2e"
+                echo "Phase 2 placeholder for React Native iOS IPA" > "$BITRISE_DEPLOY_DIR/e2e/react-native-ios.ipa"
+                envman add --key E2E_REACT_NATIVE_IOS_APP_PATH --value "$BITRISE_DEPLOY_DIR/e2e/react-native-ios.ipa"
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - pipeline_intermediate_files: |-
+                $E2E_REACT_NATIVE_IOS_APP_PATH:E2E_REACT_NATIVE_IOS_APP_PATH
+      - save-cache@1:
+          inputs:
+            - key: |-
+                rn-ios-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}
+            - paths: |-
+                platforms/react-native/node_modules
+                platforms/react-native/sample/ios/Pods
+
+  e2e-build-react-native-android:
+    steps:
+      - git-clone@8: {}
+      - restore-cache@3:
+          inputs:
+            - key: |-
+                rn-android-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}-{{ checksum "platforms/react-native/sample/android/**/*.gradle*" }}
+      - script@1:
+          title: Create React Native Android artifact placeholder
+          inputs:
+            - content: |-
+                set -euo pipefail
+                mkdir -p "$BITRISE_DEPLOY_DIR/e2e"
+                echo "Phase 2 placeholder for React Native Android APK" > "$BITRISE_DEPLOY_DIR/e2e/react-native-android.apk"
+                envman add --key E2E_REACT_NATIVE_ANDROID_APP_PATH --value "$BITRISE_DEPLOY_DIR/e2e/react-native-android.apk"
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - pipeline_intermediate_files: |-
+                $E2E_REACT_NATIVE_ANDROID_APP_PATH:E2E_REACT_NATIVE_ANDROID_APP_PATH
+      - save-cache@1:
+          inputs:
+            - key: |-
+                rn-android-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}-{{ checksum "platforms/react-native/sample/android/**/*.gradle*" }}
+            - paths: |-
+                platforms/react-native/node_modules
+                ~/.gradle/caches
+                ~/.gradle/wrapper
+
+  e2e-execute-browserstack-run:
+    steps:
+      - git-clone@8: {}
+      - pull-intermediate-files@1:
+          inputs:
+            - artifact_sources: |-
+                e2e-produce-browserstack-run-plan
+                e2e-build-react-native-*
+      - script@1:
+          title: Resolve BrowserStack run plan row placeholder
+          timeout: 2700
+          no_output_timeout: 2700
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                : "${BITRISE_IO_PARALLEL_INDEX:?BITRISE_IO_PARALLEL_INDEX is required for the parallel e2e-execute-browserstack-run workflow.}"
+                run_index="$BITRISE_IO_PARALLEL_INDEX"
+                mkdir -p "$BITRISE_DEPLOY_DIR/e2e/results"
+                : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
+                e2e_log "Resolving BrowserStack run plan row ${run_index}"
+                ruby -rjson -e 'runs = JSON.parse(File.read(ARGV.fetch(0))); puts JSON.pretty_generate(runs.fetch(Integer(ARGV.fetch(1))))' "$E2E_BROWSERSTACK_RUN_PLAN_JSON" "$run_index" > "$BITRISE_DEPLOY_DIR/e2e/results/run-${run_index}.json"
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - pipeline_intermediate_files: |-
+                $BITRISE_DEPLOY_DIR/e2e/results:E2E_BROWSERSTACK_RESULTS_DIR
+
+  e2e-report:
+    steps:
+      - git-clone@8: {}
+      - pull-intermediate-files@1:
+          inputs:
+            - artifact_sources: |-
+                e2e-execute-browserstack-run
+      - script@1:
+          title: Placeholder E2E report
+          inputs:
+            - content: |-
+                set -euo pipefail
+                echo "Phase 2 placeholder for aggregate E2E reporting"
