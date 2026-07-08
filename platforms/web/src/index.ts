@@ -30,6 +30,7 @@ export type { CheckoutTarget } from "./checkout.types";
 
 // UCP domain types — surfaced because they appear on event details and the
 // `element.checkout` / `element.error` mirrors.
+// TODO: REMOVE THIS COMMENT. IT WAS USED TO TRIGGER THE PACKAGE SIZE CI STEP.
 export type {
   Buyer,
   Checkout,

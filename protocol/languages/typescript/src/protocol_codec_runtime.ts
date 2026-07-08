@@ -1,19 +1,8 @@
+import {renameMap} from './generated/ProtocolRenameMap';
+import type {RenameChild, RenameEntry} from './generated/ProtocolRenameMap';
+
 type JSONRecord = Record<string, unknown>;
-
-const FREE_FORM_FIELDS = new Set([
-  'attribution',
-  'constraints',
-  'display',
-  'port',
-  'signals',
-]);
-
-const DYNAMIC_RECORD_FIELDS = new Set([
-  'capabilities',
-  'paymentHandlers',
-  'payment_handlers',
-  'services',
-]);
+type Direction = 'decode' | 'encode';
 
 const REQUIRED_FIELDS: Record<string, readonly string[]> = {
   Checkout: ['currency', 'id', 'line_items', 'links', 'status', 'totals', 'ucp'],
@@ -40,98 +29,102 @@ export function decodeProtocolObject(
   requireFields(input, REQUIRED_FIELDS[modelName] ?? [], modelName);
   requireStringFields(input, REQUIRED_STRING_FIELDS[modelName] ?? [], modelName);
   requireNestedFields(input, modelName);
-  return camelizeProtocolObject(input);
+  return walkObject(input, renameMap[modelName], 'decode') as JSONRecord;
 }
 
-export function encodeProtocolObject(value: unknown): unknown {
-  return snakeifyProtocolValue(value);
+export function encodeProtocolObject(
+  value: unknown,
+  modelName: string,
+): unknown {
+  return walkObject(value, renameMap[modelName], 'encode');
 }
 
-function camelizeProtocolValue(value: unknown, fieldName?: string): unknown {
-  if (Array.isArray(value)) {
-    return value.map(item => camelizeProtocolValue(item));
-  }
-  if (!isObjectRecord(value)) {
+function walkObject(
+  value: unknown,
+  entries: RenameEntry[] | undefined,
+  direction: Direction,
+): unknown {
+  if (!entries || !isObjectRecord(value)) {
     return value;
   }
 
-  if (fieldName === 'config') {
-    return isEmbeddedConfig(value) ? camelizeProtocolObject(value) : value;
-  }
-  if (fieldName !== undefined && FREE_FORM_FIELDS.has(fieldName)) {
-    return value;
-  }
-  if (fieldName !== undefined && DYNAMIC_RECORD_FIELDS.has(fieldName)) {
-    return mapDynamicRecord(value, item => camelizeProtocolValue(item));
+  const sourceIndex = direction === 'decode' ? 0 : 1;
+  const targetIndex = direction === 'decode' ? 1 : 0;
+
+  const entryBySource = new Map<string, RenameEntry>();
+  for (const entry of entries) {
+    entryBySource.set(entry[sourceIndex], entry);
   }
 
-  return camelizeProtocolObject(value);
-}
-
-function camelizeProtocolObject(value: JSONRecord): JSONRecord {
   const output: JSONRecord = {};
   for (const [key, item] of Object.entries(value)) {
-    const mappedKey = snakeToCamel(key);
-    output[mappedKey] = camelizeProtocolValue(item, key);
+    const entry = entryBySource.get(key);
+    if (entry) {
+      output[entry[targetIndex]] = walkChild(item, entry[2], direction);
+    } else {
+      output[key] = item;
+    }
   }
   return output;
 }
 
-function snakeifyProtocolValue(value: unknown, fieldName?: string): unknown {
-  if (Array.isArray(value)) {
-    return value.map(item => snakeifyProtocolValue(item));
-  }
-  if (!isObjectRecord(value)) {
+function walkChild(
+  value: unknown,
+  child: RenameChild | undefined,
+  direction: Direction,
+): unknown {
+  if (!child) {
     return value;
   }
 
-  if (fieldName === 'config') {
-    return isEmbeddedConfig(value) ? snakeifyProtocolObject(value) : value;
+  switch (child[0]) {
+    case 'r':
+      return walkObject(value, renameMap[child[1]], direction);
+    case 'a':
+      return Array.isArray(value)
+        ? value.map(item => walkChild(item, child[1], direction))
+        : value;
+    case 'm':
+      return isObjectRecord(value)
+        ? mapValues(value, child[1], direction)
+        : value;
+    case 'u':
+      return walkUnion(value, child.slice(1) as RenameChild[], direction);
   }
-  if (fieldName !== undefined && FREE_FORM_FIELDS.has(fieldName)) {
-    return value;
-  }
-  if (fieldName !== undefined && DYNAMIC_RECORD_FIELDS.has(fieldName)) {
-    return mapDynamicRecord(value, item => snakeifyProtocolValue(item));
-  }
-
-  return snakeifyProtocolObject(value);
 }
 
-function snakeifyProtocolObject(value: JSONRecord): JSONRecord {
-  const output: JSONRecord = {};
-  for (const [key, item] of Object.entries(value)) {
-    const mappedKey = camelToSnake(key);
-    output[mappedKey] = snakeifyProtocolValue(item, key);
-  }
-  return output;
-}
-
-function mapDynamicRecord(
+function mapValues(
   value: JSONRecord,
-  mapValue: (value: unknown) => unknown,
+  child: RenameChild,
+  direction: Direction,
 ): JSONRecord {
   const output: JSONRecord = {};
   for (const [key, item] of Object.entries(value)) {
-    output[key] = Array.isArray(item)
-      ? item.map(entry => mapValue(entry))
-      : mapValue(item);
+    output[key] = walkChild(item, child, direction);
   }
   return output;
 }
 
-function snakeToCamel(value: string): string {
-  return value.replace(/_([a-z0-9])/g, (_match, character: string) =>
-    character.toUpperCase(),
-  );
+function walkUnion(
+  value: unknown,
+  members: RenameChild[],
+  direction: Direction,
+): unknown {
+  if (Array.isArray(value)) {
+    const arrayMember = members.find(member => member[0] === 'a');
+    return arrayMember ? walkChild(value, arrayMember, direction) : value;
+  }
+  if (isObjectRecord(value)) {
+    const objectMember = members.find(
+      member => member[0] === 'r' || member[0] === 'm',
+    );
+    return objectMember ? walkChild(value, objectMember, direction) : value;
+  }
+  return value;
 }
 
-function camelToSnake(value: string): string {
-  return value.replace(/[A-Z]/g, character => `_${character.toLowerCase()}`);
-}
-
-function isEmbeddedConfig(value: JSONRecord): boolean {
-  return 'colorScheme' in value || 'color_scheme' in value || 'delegate' in value;
+function isObjectRecord(value: unknown): value is JSONRecord {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function requireObject(value: unknown, label: string): JSONRecord {
@@ -139,10 +132,6 @@ function requireObject(value: unknown, label: string): JSONRecord {
     throw new TypeError(`Invalid ${label}`);
   }
   return value;
-}
-
-function isObjectRecord(value: unknown): value is JSONRecord {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function requireFields(

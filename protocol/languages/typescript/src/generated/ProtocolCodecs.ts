@@ -39,25 +39,25 @@ export function decodeWindowOpenRequest(value: unknown): WindowOpenRequest {
 }
 
 export function encodeAddressChangeResult(value: AddressChangeResult): unknown {
-  return encodeProtocolObject(value);
+  return encodeProtocolObject(value, 'AddressChangeResult');
 }
 
 export function encodeAuthResult(value: AuthResult): unknown {
-  return encodeProtocolObject(value);
+  return encodeProtocolObject(value, 'AuthResult');
 }
 
 export function encodeCredentialResult(value: CredentialResult): unknown {
-  return encodeProtocolObject(value);
+  return encodeProtocolObject(value, 'CredentialResult');
 }
 
 export function encodeInstrumentsChangeResult(value: InstrumentsChangeResult): unknown {
-  return encodeProtocolObject(value);
+  return encodeProtocolObject(value, 'InstrumentsChangeResult');
 }
 
 export function encodeReadyResult(value: ReadyResult): unknown {
-  return encodeProtocolObject(value);
+  return encodeProtocolObject(value, 'ReadyResult');
 }
 
 export function encodeWindowOpenResult(value: WindowOpenResult): unknown {
-  return encodeProtocolObject(value);
+  return encodeProtocolObject(value, 'WindowOpenResult');
 }

@@ -44,7 +44,7 @@ function renderDecodeFunction(modelName) {
 
 function renderEncodeFunction(modelName) {
   return `export function encode${modelName}(value: ${modelName}): unknown {
-  return encodeProtocolObject(value);
+  return encodeProtocolObject(value, '${modelName}');
 }`;
 }
 
