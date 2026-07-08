@@ -72,6 +72,17 @@
               </select>
             </label>
 
+            <label>
+              <span>appearance</span>
+              <select id="checkout-appearance" name="appearance">
+                <option value="" selected>default (storefront)</option>
+                <option value="app:light">app:light</option>
+                <option value="app:dark">app:dark</option>
+                <option value="app:automatic">app:automatic</option>
+                <option value="storefront">storefront</option>
+              </select>
+            </label>
+
             <label class="checkbox">
               <input id="debug-toggle" type="checkbox" name="debug" />
               <span>debug</span>
@@ -141,7 +152,6 @@
           <div class="panel-header">
             <div>
               <h2>Existing checkout source</h2>
-              <p class="muted">Paste a full checkout URL or cart permalink and open checkout.</p>
             </div>
           </div>
 
@@ -156,14 +166,13 @@
               />
             </label>
             <p class="field-help">
-              A storefront homepage URL is not enough. Use a full checkout URL or cart permalink.
+              A storefront homepage URL is not enough. Use a full checkout URL
+              (<code>https://your-store.myshopify.com/checkouts/cn/…</code>) or a cart permalink
+              (<code>https://your-store.myshopify.com/cart/123:1,456:2</code>).
             </p>
             <button type="button" id="manual-checkout" class="primary-action" disabled>
               Open checkout
             </button>
-            <p id="manual-checkout-hint" class="muted">
-              Paste a checkout source to enable checkout.
-            </p>
           </section>
         </div>
       </section>
@@ -178,6 +187,8 @@
             <dd id="state-error">—</dd>
             <dt>target</dt>
             <dd id="state-target">—</dd>
+            <dt>appearance</dt>
+            <dd id="state-appearance">—</dd>
             <dt>debug</dt>
             <dd id="state-debug">—</dd>
           </dl>

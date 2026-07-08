@@ -17,8 +17,8 @@ The default flow highlights a multi-item cart use case:
 
 1. Choose **Build cart permalink** in Settings.
 2. Enter a storefront domain, for example `your-store.myshopify.com`.
-3. The domain, selected flow, target, and debug setting are saved in local storage for the next page load.
-4. After a 300 ms debounce, the demo automatically fetches `https://your-store.myshopify.com/products.json`.
+3. The domain, selected flow, target, appearance, and debug setting are saved in local storage for the next page load.
+4. After a 500 ms debounce, the demo automatically fetches `https://your-store.myshopify.com/products.json`.
 5. Add multiple available variants from the storefront-style product cards.
 6. The cart banner at the top of the center workspace shows selected lines, the derived cart permalink, and **Open checkout**.
 
@@ -32,7 +32,7 @@ You can also choose **Use existing checkout source** in Settings. In that mode, 
 
 ## Panels
 
-- **Settings** — persisted storefront domain, flow, target (`popup` | `auto`), and debug settings. The storefront domain appears first because the cart builder cannot load products without it.
+- **Settings** — persisted storefront domain, flow, target (`popup` | `auto`), appearance (default `storefront` | `app:light` | `app:dark` | `app:automatic` | `storefront`), and debug settings. The storefront domain appears first because the cart builder cannot load products without it.
 - **Center workspace** — build mode shows a storefront-style product grid plus sticky cart banner; manual mode shows a focused checkout URL/cart permalink input.
 - **Runtime** — shows component state above the `ec.*` event log, with a JSON snapshot of component state at fire time.
 

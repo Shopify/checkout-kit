@@ -205,5 +205,10 @@ export function buildCartPermalink(storefrontDomain: string, lines: readonly Car
     .map((line) => `${encodeURIComponent(line.variantId)}:${line.quantity}`)
     .join(",");
 
-  return `https://${domain}/cart/${permalinkLines}`;
+  const permalink = new URL(`https://${domain}/cart/${permalinkLines}`);
+  if (permalink.protocol !== "https:") {
+    throw new Error("Cart permalink must use HTTPS.");
+  }
+
+  return permalink.toString();
 }
