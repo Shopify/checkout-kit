@@ -402,6 +402,17 @@ button:disabled {
   overflow: hidden;
 }
 
+#build-workspace[data-ready="false"] .cart-banner,
+#build-workspace[data-ready="false"] .storefront-header,
+#build-workspace[data-ready="false"] .notice,
+#build-workspace[data-ready="false"] .product-scroll {
+  display: none;
+}
+
+#build-workspace[data-ready="false"] .empty-state {
+  flex: 1 1 auto;
+}
+
 .cart-banner {
   min-width: 0;
   flex: none;
