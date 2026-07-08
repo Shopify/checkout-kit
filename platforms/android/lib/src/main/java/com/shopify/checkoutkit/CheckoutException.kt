@@ -23,6 +23,7 @@ public class CheckoutKitException @JvmOverloads constructor(
         public const val ERROR_SENDING_MESSAGE_TO_CHECKOUT: String = "error_sending_message"
         public const val ERROR_RECEIVING_MESSAGE_FROM_CHECKOUT: String = "error_receiving_message"
         public const val RENDER_PROCESS_GONE: String = "render_process_gone"
+        public const val WEB_VIEW_NOT_SUPPORTED: String = "web_view_not_supported"
         public const val UNKNOWN: String = "unknown"
     }
 }

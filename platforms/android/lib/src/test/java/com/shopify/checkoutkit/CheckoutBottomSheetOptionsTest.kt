@@ -31,6 +31,7 @@ class CheckoutBottomSheetOptionsTest {
     private lateinit var activity: ComponentActivity
     private lateinit var initialConfiguration: Configuration
     private var presentedSheet: CheckoutBottomSheet? = null
+    private val webMessageTransport = FakeWebMessageTransport()
 
     @Before
     fun setUp() {
@@ -252,7 +253,12 @@ class CheckoutBottomSheetOptionsTest {
         checkoutUrl: String = "https://shopify.com",
         checkoutListener: CheckoutListener = noopDefaultCheckoutListener(),
     ): CheckoutBottomSheet =
-        CheckoutBottomSheet(checkoutUrl, checkoutListener, activity).also { sheet ->
+        CheckoutBottomSheet(
+            checkoutUrl,
+            checkoutListener,
+            activity,
+            webMessageTransport = webMessageTransport,
+        ).also { sheet ->
             presentedSheet = sheet
             sheet.start()
         }

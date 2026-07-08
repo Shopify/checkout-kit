@@ -22,6 +22,7 @@ class CheckoutBottomSheetAccessibilityTest {
 
     private lateinit var activity: ComponentActivity
     private lateinit var configuration: Configuration
+    private val webMessageTransport = FakeWebMessageTransport()
 
     @Before
     fun setUp() {
@@ -93,6 +94,7 @@ class CheckoutBottomSheetAccessibilityTest {
             checkoutUrl = "https://shopify.com",
             checkoutListener = noopDefaultCheckoutListener(),
             activity = activity,
+            webMessageTransport = webMessageTransport,
         ).also { it.start() }
 
     private fun CheckoutBottomSheet.closeButton(): View =

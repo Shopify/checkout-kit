@@ -46,6 +46,7 @@ class CheckoutBottomSheetTest {
     private lateinit var activity: ComponentActivity
     private lateinit var processor: DefaultCheckoutListener
     private lateinit var configuration: Configuration
+    private val webMessageTransport = FakeWebMessageTransport()
 
     @Before
     fun setUp() {
@@ -431,7 +432,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `bottom sheet uses cached preloaded checkoutView for matching URL`() {
-        CheckoutWebView.preload("https://shopify.com/cart/123", activity)
+        CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
@@ -465,7 +466,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `dismiss() destroys consumed preloaded checkoutView`() {
-        CheckoutWebView.preload("https://shopify.com/cart/123", activity)
+        CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
@@ -504,7 +505,12 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `present returns handle allowing dismissal of checkout`() {
-        val checkout = ShopifyCheckoutKit.present("https://shopify.com", activity, processor)
+        val checkout = ShopifyCheckoutKit.present(
+            "https://shopify.com",
+            activity,
+            processor,
+            webMessageTransport = webMessageTransport,
+        )
         val sheet = ShadowDialog.getLatestDialog() as CheckoutBottomSheet
         val container = sheet.findViewById<RelativeLayout>(R.id.checkoutKitContainer)!!
         val webView = container.children.first { it is CheckoutWebView } as CheckoutWebView
@@ -527,18 +533,16 @@ class CheckoutBottomSheetTest {
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.messagesChange) { received = true }
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity) {
+        ShopifyCheckoutKit.present("https://shopify.com", activity, webMessageTransport) {
             connect(client)
         }
-        val sheet = ShadowDialog.getLatestDialog() as CheckoutBottomSheet
-        val webView = sheet.currentCheckoutWebView()
-        val bridge = shadowOf(webView)
-            .getJavascriptInterface(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME) as EmbeddedCheckoutProtocolBridge
 
-        bridge.postMessage(ecMessagesChangeMessage())
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage())
 
-        assertThat(received).isTrue()
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+            assertThat(received).isTrue()
+        }
     }
 
     @Test
@@ -882,7 +886,13 @@ class CheckoutBottomSheetTest {
         checkoutListener: CheckoutListener = processor,
         protocolClient: CheckoutProtocol.Client? = null,
     ): CheckoutBottomSheet =
-        CheckoutBottomSheet(checkoutUrl, checkoutListener, activity, protocolClient).also { sheet ->
+        CheckoutBottomSheet(
+            checkoutUrl,
+            checkoutListener,
+            activity,
+            protocolClient,
+            webMessageTransport,
+        ).also { sheet ->
             sheet.start()
         }
 

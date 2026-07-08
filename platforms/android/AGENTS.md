@@ -26,10 +26,11 @@ The sample is a separate Gradle composite (`samples/CheckoutKitAndroidDemo/setti
 
 - **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, present).
 - **`CheckoutBottomSheet.kt`** — the bottom sheet that hosts the WebView, including the progress indicator, gesture coordination, and checkout error coordination.
-- **`CheckoutWebView.kt`** — primary WebView. Instruments page loads and attaches the ECP JavaScript interface.
+- **`CheckoutWebView.kt`** — primary WebView. Instruments page loads and owns the ECP bridge.
 - **`BaseWebView.kt`** — abstract base class. Any new WebView variant must extend this so shared configuration (user agent suffix, WebChromeClient hooks, navigation error handling) is consistent.
 - **`CheckoutProtocol.kt`** — the curated consumer-facing Checkout Kit protocol API. This is where supported events/delegations are intentionally exposed.
-- **`EmbeddedCheckoutProtocolBridge.kt`** — the internal JavaScript interface attached to the WebView. Handles `ec.ready`, ECP notifications, and request/response delegations.
+- **`EmbeddedCheckoutProtocolBridge.kt`** — connects the WebView message transport to the ECP client. Owns transport attachment, message filtering, protocol execution, and default-client composition.
+- **`WebMessageTransport.kt`** — the WebView messaging boundary. Its production implementation receives messages through AndroidX WebMessageListener and sends responses through JavaScript evaluation; tests inject a fake implementation.
 - **`../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol.kt`** — the generated low-level Embedded Checkout Protocol event catalog.
 - **`../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/ProtocolCodec.kt`** — hand-written JSON-RPC request/response helpers.
 - **`../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/Descriptors.kt`** — reusable protocol descriptor and codec types.

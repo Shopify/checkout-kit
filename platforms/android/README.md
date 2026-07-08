@@ -41,6 +41,9 @@
 - JDK 17+
 - Android `minSdk` 23+
 - Android `compileSdk` 35+ for consuming apps. This repository currently builds the library with `compileSdk` 36.
+- WebMessageListener support in the WebView installed on the buyer's device. This is available in Android System WebView
+  or Chrome version 83 or newer (released May 2020). If unsupported, `present` invokes the failure callback with
+  `web_view_not_supported` and returns `null`.
 
 ## Install
 
@@ -318,7 +321,7 @@ Checkout failures are delivered as `CheckoutException` values. Checkout web erro
 | `CheckoutExpiredException` | `invalid_cart` | The cart is invalid or empty. | Rebuild the cart before presenting checkout. |
 | `HttpException` | `http_error` | Checkout returned an unexpected HTTP response. | Treat as fatal for this attempt; retry with a fresh URL if appropriate. |
 | `ClientException` | `client_error` | Checkout could not load for a client-side reason. | Show a recoverable error and log details. |
-| `CheckoutKitException` | `error_receiving_message`, `error_sending_message`, `render_process_gone`, `unknown` | Checkout Kit encountered an SDK or WebView issue. | Log details and open an issue if it persists. |
+| `CheckoutKitException` | `error_receiving_message`, `error_sending_message`, `render_process_gone`, `web_view_not_supported`, `unknown` | Checkout Kit encountered an SDK or WebView issue. | Log details and open an issue if it persists. |
 
 ## Browser and system callbacks
 
@@ -394,6 +397,9 @@ Checkout Kit opens external HTTPS links, `mailto:`, `tel:`, and custom-scheme li
   ```
 - If checkout reports an expired, completed, or invalid cart, create a fresh cart and use its new `checkoutUrl`.
 - If checkout cannot access camera, file upload, or location features, check your manifest permissions and runtime permission flow.
+- If checkout fails with `web_view_not_supported`, the installed WebView provider does not expose WebMessageListener.
+  Prompt the buyer to update Android System WebView or Chrome before trying embedded checkout again, or open the
+  checkout URL in Mobile Chrome, Chrome Custom Tabs, or another full mobile browser.
 - If offsite payment redirects do not return to your app, verify App Links/deep link intent filters and domain association.
 - Password-protected storefronts return `storefront_password_required` and are not supported by Checkout Kit.
 

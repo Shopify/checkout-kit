@@ -71,6 +71,20 @@ public object ShopifyCheckoutKit {
      */
     @JvmStatic
     public fun preload(checkoutUrl: String, context: ComponentActivity) {
+        preload(checkoutUrl, context, WebMessageListenerTransport)
+    }
+
+    /**
+     * Internal preload entry point that allows [webMessageTransport] to be injected.
+     *
+     * Public calls use [WebMessageListenerTransport]; tests can supply a deterministic transport
+     * without depending on the installed WebView provider.
+     */
+    internal fun preload(
+        checkoutUrl: String,
+        context: ComponentActivity,
+        webMessageTransport: WebMessageTransport,
+    ) {
         log.d("ShopifyCheckoutKit", "Preload called with checkoutUrl ${checkoutUrl.redactedUrlForLogging()}.")
         if (!configuration.preloading.enabled) {
             log.d("ShopifyCheckoutKit", "Preloading disabled, ignoring preload.")
@@ -82,7 +96,7 @@ public object ShopifyCheckoutKit {
             return
         }
 
-        CheckoutWebView.preload(checkoutUrl, context)
+        CheckoutWebView.preload(checkoutUrl, context, webMessageTransport)
     }
 
     /**
@@ -111,6 +125,28 @@ public object ShopifyCheckoutKit {
     }
 
     /**
+     * Internal Kotlin presentation entry point that allows [webMessageTransport] to be injected.
+     *
+     * Builds the callbacks and protocol client from [configure], then delegates to the core
+     * presentation path.
+     */
+    internal fun present(
+        checkoutUrl: String,
+        context: ComponentActivity,
+        webMessageTransport: WebMessageTransport,
+        configure: CheckoutPresentation.() -> Unit,
+    ): CheckoutHandle? {
+        val presentation = CheckoutPresentation().apply(configure)
+        return present(
+            checkoutUrl = checkoutUrl,
+            context = context,
+            checkoutListener = presentation.buildListener(),
+            protocolClient = presentation.protocolClient,
+            webMessageTransport = webMessageTransport,
+        )
+    }
+
+    /**
      * Presents a Shopify checkout within a bottom sheet
      *
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
@@ -131,24 +167,64 @@ public object ShopifyCheckoutKit {
         checkoutListener: T,
         protocolClient: CheckoutProtocol.Client? = null,
     ): CheckoutHandle? {
+        return present(
+            checkoutUrl = checkoutUrl,
+            context = context,
+            checkoutListener = checkoutListener,
+            protocolClient = protocolClient,
+            webMessageTransport = WebMessageListenerTransport,
+        )
+    }
+
+    /**
+     * Core presentation path shared by the public entry points and transport-injected tests.
+     *
+     * Owns activity validation, bottom-sheet creation, lifecycle cleanup, and unsupported-WebView
+     * error reporting. [webMessageTransport] is forwarded to the checkout protocol bridge.
+     */
+    internal fun <T : DefaultCheckoutListener> present(
+        checkoutUrl: String,
+        context: ComponentActivity,
+        checkoutListener: T,
+        protocolClient: CheckoutProtocol.Client? = null,
+        webMessageTransport: WebMessageTransport,
+    ): CheckoutHandle? {
         log.d("ShopifyCheckoutKit", "Present called with checkoutUrl ${checkoutUrl.redactedUrlForLogging()}.")
         if (context.isDestroyed || context.isFinishing) {
             log.d("ShopifyCheckoutKit", "Context is destroyed or finishing, returning null.")
             return null
         }
+
         log.d("ShopifyCheckoutKit", "Constructing bottom sheet")
-        val checkout = CheckoutBottomSheet(checkoutUrl, checkoutListener, context, protocolClient)
-        context.lifecycle.addObserver(object : DefaultLifecycleObserver {
+        val checkout = CheckoutBottomSheet(
+            checkoutUrl = checkoutUrl,
+            checkoutListener = checkoutListener,
+            activity = context,
+            protocolClient = protocolClient,
+            webMessageTransport = webMessageTransport,
+        )
+        val lifecycleObserver = object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
                 log.d("ShopifyCheckoutKit", "Context is being destroyed, dismissing bottom sheet.")
                 checkout.dismiss(animate = false)
                 super.onDestroy(owner)
             }
-        })
+        }
+        context.lifecycle.addObserver(lifecycleObserver)
 
         log.d("ShopifyCheckoutKit", "Starting bottom sheet.")
-        checkout.start()
-        return CheckoutHandle { checkout.dismiss() }
+        val checkoutStarted = try {
+            checkout.start()
+            true
+        } catch (error: UnsupportedWebViewException) {
+            context.lifecycle.removeObserver(lifecycleObserver)
+            checkout.dismiss(animate = false)
+
+            log.e("ShopifyCheckoutKit", "WebView is not supported, failing checkout presentation.")
+            checkoutListener.onCheckoutFailed(error.checkoutError)
+            false
+        }
+        return if (checkoutStarted) CheckoutHandle { checkout.dismiss() } else null
     }
 }
 
