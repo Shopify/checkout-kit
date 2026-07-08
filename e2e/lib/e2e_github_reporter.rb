@@ -2,7 +2,7 @@
 
 require "json"
 require "uri"
-require_relative "json_http_client"
+require_relative "../../scripts/lib/json_http_client"
 
 # Publishes normalized E2E run results back to GitHub as a check run and a
 # sticky pull request comment carrying the Tophat install link and run summary.

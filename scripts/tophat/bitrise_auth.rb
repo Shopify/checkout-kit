@@ -20,6 +20,10 @@ module BitriseAuth
     bootstrap_token(app_slug)
   end
 
+  def clear_token
+    system("security", "delete-generic-password", "-s", KEYCHAIN_SERVICE, "-a", KEYCHAIN_ACCOUNT, out: File::NULL, err: File::NULL)
+  end
+
   def ensure_tophat_token(app_slug)
     token = read_keychain(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT)
     return false unless token && token_status(token, app_slug) == :ok
