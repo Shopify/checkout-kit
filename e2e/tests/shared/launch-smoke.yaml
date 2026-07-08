@@ -1,0 +1,7 @@
+appId: ${E2E_APP_ID}
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: ${E2E_READY_MARKER}
+    timeout: 60000

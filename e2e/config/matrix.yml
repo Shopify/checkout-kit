@@ -1,0 +1,19 @@
+version: 1
+applications:
+  - id: react-native-ios
+    target: react-native
+    platform: ios
+    app_id: com.shopify.checkoutkit.reactnativedemo
+    artifact_env: E2E_REACT_NATIVE_IOS_APP_PATH
+    ready_marker: checkout-kit-sample-ready
+  - id: react-native-android
+    target: react-native
+    platform: android
+    app_id: com.shopify.checkoutkit.reactnativedemo
+    artifact_env: E2E_REACT_NATIVE_ANDROID_APP_PATH
+    ready_marker: checkout-kit-sample-ready
+os_version_tags:
+  - latest
+suites:
+  - id: launch-smoke
+    execute: tests/shared/launch-smoke.yaml
