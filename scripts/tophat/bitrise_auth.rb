@@ -24,6 +24,7 @@ module BitriseAuth
     token = read_keychain(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT)
     return false unless token && token_status(token, app_slug) == :ok
 
+    puts "==> Your saved Bitrise token is authorized, but Tophat's token is missing or invalid; syncing them."
     sync_to_tophat(token)
     true
   end
