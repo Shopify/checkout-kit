@@ -199,12 +199,22 @@ def install_with_tophat(config_path, app_slug)
   return true if status.success?
   return false unless bitrise_auth_error?(output)
 
+  puts ""
+  puts "==> Tophat could not authenticate with Bitrise. dev tophat will try to fix this for you."
+  puts "    (You can ignore Tophat's suggestion above to add a token manually.)"
+
   if BitriseAuth.ensure_tophat_token(app_slug)
+    puts "==> Retrying the install with the synced token."
     _synced_output, synced_status = run_tophat_install(config_path)
     return true if synced_status.success?
+    puts "==> Tophat still could not authenticate after syncing; trying a fresh token."
+  else
+    puts "==> Your saved Bitrise token is missing or no longer valid."
   end
 
+  puts "==> Let's create a new Bitrise token."
   BitriseAuth.bootstrap_token(app_slug)
+  puts "==> Retrying the install with the new token."
   _final_output, final_status = run_tophat_install(config_path)
   final_status.success?
 end
