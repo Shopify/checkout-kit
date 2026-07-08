@@ -7,6 +7,8 @@
   <body>
     <script>
       const READY_ID = "ready_1";
+      const DELEGATIONS = ['window.open'];
+      const SPEC_VERSION = '2026-04-08';
 
       class SyntheticCheckout {
         constructor({ opener }) {
@@ -33,7 +35,7 @@
         }
 
         ready() {
-          this.request("ec.ready", { delegate: [] }, READY_ID);
+          this.request("ec.ready", { delegate: DELEGATIONS }, READY_ID);
         }
 
         start() {
@@ -42,7 +44,7 @@
 
         complete() {
           this.notify("ec.complete", {
-            checkout: { ...this.checkoutResource("completed"), order: this.order() },
+            checkout: { ...this.checkoutResource("completed"), order: this.order },
           });
         }
 
@@ -66,7 +68,7 @@
           this.notify("ec.error", { error: this.errorResponse() });
         }
 
-        order() {
+        get order() {
           return {
             id: "order_test_1",
             permalink_url: "https://checkout.example.test/orders/order_test_1",
@@ -75,7 +77,7 @@
 
         checkoutResource(status) {
           return {
-            ucp: { version: "2026-04-08", status: "success", capabilities: {} },
+            ucp: { version: SPEC_VERSION, status: "success", capabilities: {} },
             id: "checkout_test_1",
             currency: "USD",
             line_items: [
@@ -105,7 +107,7 @@
 
         errorResponse() {
           return {
-            ucp: { version: "2026-04-08", status: "error" },
+            ucp: { version: SPEC_VERSION, status: "error" },
             messages: [
               {
                 type: "error",

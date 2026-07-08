@@ -15,6 +15,7 @@ export class ShopifyCheckoutPopup {
   constructor(private readonly page: Page) {}
 
   async waitForReadyResponse(): Promise<void> {
+    await this.waitForSyntheticCheckout();
     await this.page.evaluate(() => {
       const checkout = (
         window as unknown as {
@@ -57,6 +58,7 @@ export class ShopifyCheckoutPopup {
     method: Exclude<keyof SyntheticCheckoutDriver, "readyResponse">,
     ...args: string[]
   ): Promise<void> {
+    await this.waitForSyntheticCheckout();
     await this.page.evaluate(
       ({ methodName, methodArgs }) => {
         const checkout = (
@@ -67,6 +69,12 @@ export class ShopifyCheckoutPopup {
         checkout[methodName]?.(...methodArgs);
       },
       { methodName: method, methodArgs: args },
+    );
+  }
+
+  private async waitForSyntheticCheckout(): Promise<void> {
+    await this.page.waitForFunction(() =>
+      Boolean((window as unknown as { __syntheticCheckout?: unknown }).__syntheticCheckout),
     );
   }
 }

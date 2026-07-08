@@ -51,23 +51,16 @@ test.describe("src reflection and overlay link", () => {
 
 test.describe("open()", () => {
   test("warns and opens no popup when src is empty", async ({ page }) => {
-    const warnings: string[] = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "warning") warnings.push(msg.text());
-    });
-
-    let popped = false;
-    page.on("popup", () => {
-      popped = true;
-    });
-
     const host = new CheckoutHostPage(page);
     await host.goto();
-    await host.clickBuy();
-    await page.waitForTimeout(200);
 
-    expect(popped).toBe(false);
-    expect(warnings.join("\n")).toContain("src property is empty or invalid");
+    const [warning] = await Promise.all([
+      page.waitForEvent("console", (msg) => msg.type() === "warning"),
+      host.clickBuy(),
+    ]);
+
+    expect(warning.text()).toContain("src property is empty or invalid");
+    expect(page.context().pages()).toHaveLength(1);
   });
 
   test("opens a popup and shows the modal scrim for an https popup target", async ({
@@ -91,6 +84,22 @@ test.describe("open()", () => {
     await expect(host.overlay).toHaveAttribute("open", "");
 
     await host.close();
+
+    await host.expectEvent("ec.close");
+    await expect.poll(() => popup.isClosed()).toBe(true);
+  });
+
+  test("overlay close button dismisses the popup and dispatches ec.close", async ({
+    page,
+    context,
+  }) => {
+    await EmbeddedCheckoutStub.blank(context);
+
+    const host = new CheckoutHostPage(page);
+    const popup = await host.startCheckout({ src: HTTPS_SRC, target: "popup" });
+    await expect(host.overlay).toHaveAttribute("open", "");
+
+    await host.overlayCloseButton.click();
 
     await host.expectEvent("ec.close");
     await expect.poll(() => popup.isClosed()).toBe(true);

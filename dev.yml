@@ -661,12 +661,12 @@ commands:
           pnpm run format
 
       check:
-        desc: Run Web lint, unit tests, build, package verification, and sample build checks
+        desc: Run Web lint, unit tests, end-to-end tests, package verification, and sample build checks
         run: |
           set -e
           /opt/dev/bin/dev web lint
           /opt/dev/bin/dev web test
-          /opt/dev/bin/dev web build
+          /opt/dev/bin/dev web e2e
           /opt/dev/bin/dev web verify
           /opt/dev/bin/dev web sample build
 

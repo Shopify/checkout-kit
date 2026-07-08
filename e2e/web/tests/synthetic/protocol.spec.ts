@@ -98,9 +98,11 @@ test.describe("embedded checkout protocol", () => {
       const popup = await host.startCheckout({ src: CheckoutFixture.src(), target: "popup" });
       const syntheticCheckout = new ShopifyCheckoutPopup(popup);
       await syntheticCheckout.waitForReadyResponse();
-      await syntheticCheckout.openRequest(requestedUrl);
 
-      const delegatedWindow = await page.waitForEvent("popup");
+      const [delegatedWindow] = await Promise.all([
+        page.waitForEvent("popup"),
+        syntheticCheckout.openRequest(requestedUrl),
+      ]);
       await expect(delegatedWindow).toHaveURL(requestedUrl);
     });
   });
