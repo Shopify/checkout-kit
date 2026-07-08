@@ -6,7 +6,7 @@ require "optparse"
 require_relative "../lib/e2e_matrix"
 
 options = {
-  config: "e2e/config/matrix.yml"
+  config: File.expand_path("../config/matrix.yml", __dir__)
 }
 
 parser = OptionParser.new do |opts|

@@ -43,7 +43,7 @@ React Native iOS:
 
 ```bash
 E2E_APP_ID=com.shopify.checkoutkit.reactnativedemo \
-E2E_READY_MARKER=catalog-tab \
+E2E_READY_MARKER=checkout-kit-sample-ready \
 maestro --platform ios test e2e/tests/shared/launch-smoke.yaml
 ```
 
@@ -51,7 +51,7 @@ React Native Android:
 
 ```bash
 E2E_APP_ID=com.shopify.checkoutkit.reactnativedemo \
-E2E_READY_MARKER=catalog-tab \
+E2E_READY_MARKER=checkout-kit-sample-ready \
 maestro --platform android test e2e/tests/shared/launch-smoke.yaml
 ```
 
@@ -110,7 +110,7 @@ ruby e2e/scripts/e2e_matrix expand --index 0
 Shared flows rely on stable cross-app identifiers. The launch smoke requires each
 target app to expose this ready marker:
 
-- `catalog-tab`
+- `checkout-kit-sample-ready`
 
 Future shared flows should add identifiers here before they are used across
 React Native, Swift, and Android sample apps.

@@ -39,6 +39,10 @@ class E2EMatrix
 
   def run_at(index)
     runs = expand
+    unless index.is_a?(Integer) && index >= 0 && index < runs.length
+      raise IndexError, "index #{index} outside of run range 0...#{runs.length}"
+    end
+
     runs.fetch(index)
   end
 
@@ -139,7 +143,8 @@ class E2EMatrix
 
     validate_unique_ids(errors, "suite", suites)
     suites.each do |suite|
-      id = suite.fetch("id", "<missing>")
+      id = suite.fetch("id", "")
+      errors << "suite missing id" if id.to_s.empty?
       execute = suite.fetch("execute", "")
       errors << "suite #{id} missing execute" if execute.empty?
       next if execute.empty?
