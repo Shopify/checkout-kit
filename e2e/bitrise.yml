@@ -210,7 +210,6 @@ workflows:
                 : "${BROWSERSTACK_ACCESS_KEY:?BROWSERSTACK_ACCESS_KEY is required}"
                 : "${E2E_TESTS_ZIP:?E2E_TESTS_ZIP is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
-                : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 : "${E2E_REACT_NATIVE_IOS_APP_PATH:?E2E_REACT_NATIVE_IOS_APP_PATH is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 : "${E2E_REACT_NATIVE_ANDROID_APP_PATH:?E2E_REACT_NATIVE_ANDROID_APP_PATH is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 e2e_log "Executing BrowserStack run plan row ${run_index}"

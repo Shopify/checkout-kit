@@ -191,7 +191,7 @@ end
 
 options = {
   run_plan_path: ENV.fetch("E2E_BROWSERSTACK_RUN_PLAN_JSON", "browserstack-run-plan.json"),
-  run_index: Integer(ENV.fetch("BITRISE_IO_PARALLEL_INDEX", "0")),
+  run_index: Integer(ENV.fetch("BITRISE_IO_PARALLEL_INDEX")),
   tests_zip: ENV.fetch("E2E_TESTS_ZIP"),
   output_dir: ENV.fetch("E2E_BROWSERSTACK_RESULTS_DIR", File.join(Dir.pwd, "e2e-results"))
 }
