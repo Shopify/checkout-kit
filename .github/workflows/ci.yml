@@ -33,7 +33,7 @@ jobs:
       reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       reactNativeIos: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' }}
       reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
-      web: ${{ steps.platform.outputs.web == 'true' || steps.infra.outputs.web == 'true' }}
+      web: ${{ steps.platform.outputs.web == 'true' || steps.platform.outputs.webE2e == 'true' || steps.infra.outputs.web == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 

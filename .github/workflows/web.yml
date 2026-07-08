@@ -22,15 +22,29 @@ jobs:
         uses: ./.github/actions/setup
         with:
           node-version-file: platforms/web/package.json
-          cache-dependency-path: platforms/web/pnpm-lock.yaml
+          cache-dependency-path: |
+            platforms/web/pnpm-lock.yaml
+            e2e/web/pnpm-lock.yaml
           package-json-file: platforms/web/package.json
           working-directory: platforms/web
+
+      - name: Install web e2e dependencies
+        working-directory: e2e/web
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        working-directory: e2e/web
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Lint (typecheck + oxlint + oxfmt --check)
         run: pnpm lint
 
       - name: Test
         run: pnpm test
+
+      - name: Typecheck web e2e tests
+        working-directory: e2e/web
+        run: pnpm typecheck
 
       - name: Coverage comment
         if: github.event_name == 'pull_request'
@@ -42,6 +56,10 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Web end-to-end tests
+        working-directory: e2e/web
+        run: pnpm exec playwright test
 
       - name: Verify package (publint)
         run: pnpm verify

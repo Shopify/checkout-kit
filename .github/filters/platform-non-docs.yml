@@ -17,6 +17,10 @@ web:
   - 'platforms/web/**'
   - *exclude-markdown
   - *exclude-docs-directory
+webE2e:
+  - 'e2e/web/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
 protocol:
   - 'protocol/**'
   - *exclude-markdown
