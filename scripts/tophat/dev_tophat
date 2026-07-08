@@ -291,6 +291,7 @@ def main
     file.write(JSON.generate(config))
     file.flush
     install_with_tophat(file.path, manifest.fetch("app_slug")) || abort_with("Tophat install failed.")
+    puts "✅ Installed #{option.fetch("label")} to #{device.fetch("name")}."
   end
 end
 
