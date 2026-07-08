@@ -178,22 +178,6 @@ def bitrise_auth_error?(output)
     normalized.match?(/\b(401|403)\b/)
 end
 
-def prompt_for_bitrise_token_setup
-  puts <<~MESSAGE
-
-    Tophat could not authenticate with Bitrise.
-
-    Tophat needs a Bitrise Personal Access Token to download Checkout Kit build artifacts.
-    Create a token, then add it in Tophat -> Settings -> Extensions -> Bitrise.
-
-    Press Enter to open the Bitrise token page, or Ctrl-C to cancel.
-  MESSAGE
-  STDIN.gets || abort_with("Cancelled.")
-  system("open", CheckoutKitTophat::BITRISE_PAT_URL)
-  puts "Add the token in Tophat -> Settings -> Extensions -> Bitrise, then press Enter to retry."
-  STDIN.gets || abort_with("Cancelled.")
-end
-
 def run_tophat_install(config_path)
   output = +""
   status = nil
@@ -210,17 +194,19 @@ def run_tophat_install(config_path)
   [output, status]
 end
 
-def install_with_tophat(config_path)
+def install_with_tophat(config_path, app_slug)
   output, status = run_tophat_install(config_path)
   return true if status.success?
+  return false unless bitrise_auth_error?(output)
 
-  if bitrise_auth_error?(output)
-    prompt_for_bitrise_token_setup
-    _retry_output, retry_status = run_tophat_install(config_path)
-    return true if retry_status.success?
+  if BitriseAuth.ensure_tophat_token(app_slug)
+    _synced_output, synced_status = run_tophat_install(config_path)
+    return true if synced_status.success?
   end
 
-  false
+  BitriseAuth.bootstrap_token(app_slug)
+  _final_output, final_status = run_tophat_install(config_path)
+  final_status.success?
 end
 
 def help_requested?
@@ -290,7 +276,7 @@ def main
   Tempfile.create(["tophat-install", ".json"]) do |file|
     file.write(JSON.generate(config))
     file.flush
-    install_with_tophat(file.path) || abort_with("Tophat install failed.")
+    install_with_tophat(file.path, manifest.fetch("app_slug")) || abort_with("Tophat install failed.")
   end
 end
 
