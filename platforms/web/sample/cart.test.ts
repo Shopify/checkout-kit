@@ -14,37 +14,33 @@ import {
 
 describe("normalizeStorefrontDomain", () => {
   it("accepts bare storefront domains", () => {
-    expect(normalizeStorefrontDomain("kieran-osgood.myshopify.com")).toBe(
-      "kieran-osgood.myshopify.com",
-    );
+    expect(normalizeStorefrontDomain("your-store.myshopify.com")).toBe("your-store.myshopify.com");
   });
 
   it("extracts the host from full storefront URLs", () => {
-    expect(normalizeStorefrontDomain("https://KIERAN-OSGOOD.myshopify.com/products/book")).toBe(
-      "kieran-osgood.myshopify.com",
+    expect(normalizeStorefrontDomain("https://YOUR-STORE.myshopify.com/products/book")).toBe(
+      "your-store.myshopify.com",
     );
   });
 });
 
 describe("isLikelyStorefrontDomain", () => {
   it("accepts bare domains and full URLs", () => {
-    expect(isLikelyStorefrontDomain("kieran-osgood.myshopify.com")).toBe(true);
-    expect(isLikelyStorefrontDomain("https://kieran-osgood.myshopify.com/products/book")).toBe(
-      true,
-    );
+    expect(isLikelyStorefrontDomain("your-store.myshopify.com")).toBe(true);
+    expect(isLikelyStorefrontDomain("https://your-store.myshopify.com/products/book")).toBe(true);
   });
 
   it("waits for a complete domain before auto-loading products", () => {
     expect(isLikelyStorefrontDomain("")).toBe(false);
-    expect(isLikelyStorefrontDomain("kieran-osgood")).toBe(false);
+    expect(isLikelyStorefrontDomain("your-store")).toBe(false);
     expect(isLikelyStorefrontDomain("not a domain")).toBe(false);
   });
 });
 
 describe("buildProductsJsonUrl", () => {
   it("points at the public products JSON endpoint", () => {
-    expect(buildProductsJsonUrl("https://kieran-osgood.myshopify.com/")).toBe(
-      "https://kieran-osgood.myshopify.com/products.json",
+    expect(buildProductsJsonUrl("https://your-store.myshopify.com/")).toBe(
+      "https://your-store.myshopify.com/products.json",
     );
   });
 });
@@ -120,7 +116,7 @@ describe("fetchProductVariants", () => {
         }),
     });
 
-    await expect(fetchProductVariants("kieran-osgood.myshopify.com", fetcher)).resolves.toEqual([
+    await expect(fetchProductVariants("your-store.myshopify.com", fetcher)).resolves.toEqual([
       {
         id: "1",
         title: "Physical Bundle - Blue",
@@ -132,14 +128,14 @@ describe("fetchProductVariants", () => {
         imageUrl: undefined,
       },
     ]);
-    expect(fetcher).toHaveBeenCalledWith("https://kieran-osgood.myshopify.com/products.json");
+    expect(fetcher).toHaveBeenCalledWith("https://your-store.myshopify.com/products.json");
   });
 
   it("returns a useful error when the storefront does not expose products.json", async () => {
     const fetcher = vi.fn().mockResolvedValue({ ok: false, status: 404 });
 
-    await expect(fetchProductVariants("kieran-osgood.myshopify.com", fetcher)).rejects.toThrow(
-      "Could not load products from https://kieran-osgood.myshopify.com/products.json (HTTP 404). Confirm the storefront domain is correct and products are published to the Online Store channel.",
+    await expect(fetchProductVariants("your-store.myshopify.com", fetcher)).rejects.toThrow(
+      "Could not load products from https://your-store.myshopify.com/products.json (HTTP 404). Confirm the storefront domain is correct and products are published to the Online Store channel.",
     );
   });
 });
@@ -168,12 +164,12 @@ describe("cartLineTotalQuantity", () => {
 describe("buildCartPermalink", () => {
   it("builds a multi-line cart permalink", () => {
     const lines: CartLine[] = [
-      { variantId: "54888789213532", quantity: 1 },
-      { variantId: "54888789246300", quantity: 2 },
+      { variantId: "123", quantity: 1 },
+      { variantId: "456", quantity: 2 },
     ];
 
-    expect(buildCartPermalink("https://kieran-osgood.myshopify.com", lines)).toBe(
-      "https://kieran-osgood.myshopify.com/cart/54888789213532:1,54888789246300:2",
+    expect(buildCartPermalink("https://your-store.myshopify.com", lines)).toBe(
+      "https://your-store.myshopify.com/cart/123:1,456:2",
     );
   });
 
@@ -184,8 +180,16 @@ describe("buildCartPermalink", () => {
       { variantId: "2", quantity: 0 },
     ];
 
-    expect(buildCartPermalink("kieran-osgood.myshopify.com", lines)).toBe(
-      "https://kieran-osgood.myshopify.com/cart/1:999,2:1",
+    expect(buildCartPermalink("your-store.myshopify.com", lines)).toBe(
+      "https://your-store.myshopify.com/cart/1:999,2:1",
     );
+  });
+
+  it("always produces an https permalink", () => {
+    const permalink = buildCartPermalink("your-store.myshopify.com", [
+      { variantId: "123", quantity: 1 },
+    ]);
+
+    expect(new URL(permalink).protocol).toBe("https:");
   });
 });
