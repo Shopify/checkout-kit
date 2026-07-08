@@ -22,6 +22,8 @@ class MainApplication : Application(), ReactApplication {
 
         override fun getJSMainModuleName(): String = "index"
 
+        override fun getBundleAssetName(): String = "CheckoutKitReactNativeDemo.android.bundle"
+
         override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
 
         override val isHermesEnabled: Boolean = BuildConfig.IS_HERMES_ENABLED

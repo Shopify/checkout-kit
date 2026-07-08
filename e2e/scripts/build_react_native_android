@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/bitrise_ci_helpers"
+
+e2e_enable_corepack
+e2e_configure_storefront
+
+e2e_log "Building React Native module"
+cd platforms/react-native
+pnpm module build
+
+e2e_log "Building Android E2E APK"
+cd sample/android
+./gradlew assembleE2e --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a
+
+android_apk="$PWD/app/build/outputs/apk/e2e/app-e2e.apk"
+test -f "$android_apk"
+
+e2e_log "Publishing Android APK path"
+envman add --key E2E_REACT_NATIVE_ANDROID_APP_PATH --value "$android_apk"

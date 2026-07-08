@@ -4,7 +4,7 @@ project_type: other
 
 meta:
   bitrise.io:
-    stack: ubuntu-noble-24.04-bitrise-2025-android
+    stack: &android_stack ubuntu-noble-24.04-bitrise-2025-android
     machine_type_id: g2.linux.medium
 
 app:
@@ -38,6 +38,27 @@ pipelines:
         depends_on:
           - e2e-execute-browserstack-run
         should_always_run: workflow
+
+step_bundles:
+  install-node-modules:
+    steps:
+      - restore-cache@3:
+          inputs:
+            - key: &rn_node_modules_cache_key |-
+                rn-node-modules-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}
+      - script@1:
+          title: Install React Native dependencies
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                e2e_enable_corepack
+                cd platforms/react-native
+                pnpm install --frozen-lockfile
+      - save-cache@1:
+          inputs:
+            - key: *rn_node_modules_cache_key
+            - paths: platforms/react-native/node_modules
 
 workflows:
   e2e-produce-browserstack-run-plan:
@@ -99,30 +120,33 @@ workflows:
                 platforms/react-native/sample/ios/Pods
 
   e2e-build-react-native-android:
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
     steps:
       - git-clone@8: {}
+      - bundle::install-node-modules: {}
       - restore-cache@3:
           inputs:
-            - key: |-
-                rn-android-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}-{{ checksum "platforms/react-native/sample/android/**/*.gradle*" }}
+            - key: &rn_gradle_cache_key |-
+                rn-gradle-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/android/**/*.gradle*" }}
       - script@1:
-          title: Create React Native Android artifact placeholder
+          title: Build React Native Android APK artifact
+          timeout: 3600
+          no_output_timeout: 3600
           inputs:
             - content: |-
                 set -euo pipefail
-                mkdir -p "$BITRISE_DEPLOY_DIR/e2e"
-                echo "Phase 2 placeholder for React Native Android APK" > "$BITRISE_DEPLOY_DIR/e2e/react-native-android.apk"
-                envman add --key E2E_REACT_NATIVE_ANDROID_APP_PATH --value "$BITRISE_DEPLOY_DIR/e2e/react-native-android.apk"
+                e2e/scripts/build_react_native_android
       - deploy-to-bitrise-io@2:
           inputs:
             - pipeline_intermediate_files: |-
                 $E2E_REACT_NATIVE_ANDROID_APP_PATH:E2E_REACT_NATIVE_ANDROID_APP_PATH
       - save-cache@1:
           inputs:
-            - key: |-
-                rn-android-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}-{{ checksum "platforms/react-native/sample/android/**/*.gradle*" }}
+            - key: *rn_gradle_cache_key
             - paths: |-
-                platforms/react-native/node_modules
                 ~/.gradle/caches
                 ~/.gradle/wrapper
 
