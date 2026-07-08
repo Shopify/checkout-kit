@@ -178,7 +178,7 @@ def bitrise_auth_error?(output)
     normalized.match?(/\b(401|403)\b/)
 end
 
-def run_tophat_install(config_path)
+def run_tophat_install(config_path, stream: true)
   output = +""
   status = nil
 
@@ -186,7 +186,7 @@ def run_tophat_install(config_path)
     stdin.close
     stdout_and_stderr.each do |line|
       output << line
-      print line
+      print line if stream
     end
     status = wait_thread.value
   end
@@ -195,13 +195,17 @@ def run_tophat_install(config_path)
 end
 
 def install_with_tophat(config_path, app_slug)
-  output, status = run_tophat_install(config_path)
-  return true if status.success?
-  return false unless bitrise_auth_error?(output)
+  output, status = run_tophat_install(config_path, stream: false)
+  if status.success?
+    print output
+    return true
+  end
+  unless bitrise_auth_error?(output)
+    print output
+    return false
+  end
 
-  puts ""
   puts "==> Tophat could not authenticate with Bitrise. dev tophat will try to fix this for you."
-  puts "    (You can ignore Tophat's suggestion above to add a token manually.)"
 
   if BitriseAuth.ensure_tophat_token(app_slug)
     puts "==> Retrying the install with the synced token."
