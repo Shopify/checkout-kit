@@ -3,6 +3,11 @@
 
 require "tempfile"
 require_relative "common"
+require_relative "bitrise_client"
+require_relative "bitrise_auth"
+
+WAIT_POLL_SECONDS = 30
+WAIT_TIMEOUT_SECONDS = 1800
 
 def abort_with(message)
   CheckoutKitTophat.abort_with(message)
@@ -18,6 +23,87 @@ def fzf_select(lines, prompt:, preview: nil)
   selection, status = Open3.capture2(*args, stdin_data: lines.join("\n"))
   abort_with("Nothing selected.") unless status.success? && !selection.strip.empty?
   selection.strip
+end
+
+def extract_flag(flag)
+  present = ARGV.include?(flag)
+  ARGV.delete(flag)
+  present
+end
+
+def skip_artifact_check?
+  ENV["TOPHAT_SKIP_ARTIFACT_CHECK"] == "1"
+end
+
+def recipes_for_option(option)
+  option.fetch("target").fetch("recipes").select { |recipe| recipe.fetch("platform") == option.fetch("platform") }
+end
+
+def workflow_state(client, branch, workflow, artifact_names)
+  build = client.latest_build(branch: branch, workflow: workflow)
+  return :missing unless build
+  return :running if build.fetch("status") == 0
+  return :failed unless build.fetch("status") == 1
+
+  titles = client.artifact_titles(build.fetch("slug"))
+  artifact_names.all? { |name| titles.include?(name) } ? :ready : :missing
+end
+
+def combine_states(states)
+  return :ready if states.all? { |state| state == :ready }
+  return :running if states.include?(:running)
+  return :failed if states.include?(:failed)
+  :missing
+end
+
+def option_state(client, branch, option)
+  states = recipes_for_option(option).group_by { |recipe| recipe.fetch("workflow") }.map do |workflow, recipes|
+    workflow_state(client, branch, workflow, recipes.map { |recipe| recipe.fetch("artifact_name") })
+  end
+  combine_states(states)
+end
+
+def evaluate_options(client, branch, options)
+  options.map { |option| {option: option, state: option_state(client, branch, option)} }
+end
+
+def wait_for_ready(client, branch, options)
+  deadline = Time.now + WAIT_TIMEOUT_SECONDS
+  loop do
+    evaluated = evaluate_options(client, branch, options)
+    running = evaluated.select { |entry| entry.fetch(:state) == :running }
+    return evaluated if running.empty? || Time.now >= deadline
+
+    puts "==> Waiting for Bitrise builds to finish: #{running.map { |entry| entry.fetch(:option).fetch("label") }.join(", ")}"
+    sleep WAIT_POLL_SECONDS
+  end
+end
+
+def unavailable_message(evaluated, pr_number, branch)
+  states = evaluated.map { |entry| entry.fetch(:state) }
+  guidance =
+    if states.include?(:running)
+      "Bitrise is still building. Re-run once it finishes, or pass --wait to block until artifacts are ready."
+    elsif states.all? { |state| state == :missing }
+      "No Bitrise builds found for this branch. Draft PRs do not trigger the pipeline; mark the PR ready for review or push a commit to start a build."
+    else
+      "The build workflow(s) failed, so no artifact was produced. Check the pipeline in Bitrise and re-run it."
+    end
+  "No installable build artifacts for PR ##{pr_number} (#{branch}).\n#{guidance}"
+end
+
+def filter_available_options(options, manifest, branch, pr_number, wait:)
+  app_slug = manifest.fetch("app_slug")
+  client = BitriseClient.new(token: BitriseAuth.resolve_token(app_slug), app_slug: app_slug)
+  evaluated = evaluate_options(client, branch, options)
+  evaluated = wait_for_ready(client, branch, options) if wait && evaluated.any? { |entry| entry.fetch(:state) == :running }
+  ready = evaluated.select { |entry| entry.fetch(:state) == :ready }.map { |entry| entry.fetch(:option) }
+  return ready unless ready.empty?
+
+  abort_with(unavailable_message(evaluated, pr_number, branch))
+rescue => error
+  warn "Could not verify Bitrise artifacts (#{error.message}). Showing all targets."
+  options
 end
 
 def resolve_pr_number(argument)
@@ -154,6 +240,7 @@ def print_help(manifest)
       <target>            Optional target ID. If omitted, choose with fzf.
 
     Options:
+      --wait              Wait for in-progress Bitrise builds to finish, then install.
       -h, --help          Show this help.
 
     Available targets:
@@ -166,36 +253,45 @@ def print_help(manifest)
       dev tophat https://github.com/Shopify/checkout-kit/pull/382
 
     Environment:
-      TOPHAT_DRY_RUN=1    Print the generated Tophat install config without installing.
+      TOPHAT_DRY_RUN=1              Print the generated Tophat install config without installing.
+      TOPHAT_SKIP_ARTIFACT_CHECK=1 Skip filtering targets by available Bitrise artifacts.
   HELP
 end
 
-manifest = CheckoutKitTophat.load_manifest
-if help_requested?
-  print_help(manifest)
-  exit 0
+def main
+  manifest = CheckoutKitTophat.load_manifest
+  if help_requested?
+    print_help(manifest)
+    exit 0
+  end
+
+  wait_for_builds = extract_flag("--wait")
+
+  CheckoutKitTophat.require_tophat!
+
+  pr_number = resolve_pr_number(ARGV[0])
+  branch = branch_for(pr_number)
+  options = CheckoutKitTophat.install_options(manifest)
+  options = filter_available_options(options, manifest, branch, pr_number, wait: wait_for_builds) unless skip_artifact_check?
+  option = select_option(options, ARGV[1])
+  device = select_device(option.fetch("platform"))
+  recipe = recipe_for(option.fetch("target"), device)
+  config = CheckoutKitTophat.install_config(recipe, device, manifest.fetch("app_slug"), branch)
+
+  puts "==> Installing #{option.fetch("label")} from PR ##{pr_number} (#{branch})"
+  puts "    Device: #{device.fetch("name")} #{device.fetch("runtimeVersion")} (#{device.fetch("type")})"
+  puts "    Artifact: #{recipe.fetch("artifact_name")}"
+
+  if ENV["TOPHAT_DRY_RUN"] == "1"
+    puts JSON.pretty_generate(config)
+    exit 0
+  end
+
+  Tempfile.create(["tophat-install", ".json"]) do |file|
+    file.write(JSON.generate(config))
+    file.flush
+    install_with_tophat(file.path) || abort_with("Tophat install failed.")
+  end
 end
 
-CheckoutKitTophat.require_tophat!
-
-pr_number = resolve_pr_number(ARGV[0])
-branch = branch_for(pr_number)
-option = select_option(CheckoutKitTophat.install_options(manifest), ARGV[1])
-device = select_device(option.fetch("platform"))
-recipe = recipe_for(option.fetch("target"), device)
-config = CheckoutKitTophat.install_config(recipe, device, manifest.fetch("app_slug"), branch)
-
-puts "==> Installing #{option.fetch("label")} from PR ##{pr_number} (#{branch})"
-puts "    Device: #{device.fetch("name")} #{device.fetch("runtimeVersion")} (#{device.fetch("type")})"
-puts "    Artifact: #{recipe.fetch("artifact_name")}"
-
-if ENV["TOPHAT_DRY_RUN"] == "1"
-  puts JSON.pretty_generate(config)
-  exit 0
-end
-
-Tempfile.create(["tophat-install", ".json"]) do |file|
-  file.write(JSON.generate(config))
-  file.flush
-  install_with_tophat(file.path) || abort_with("Tophat install failed.")
-end
+main if $PROGRAM_NAME == __FILE__
