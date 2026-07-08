@@ -23,6 +23,12 @@ up:
         - protocol
         - platforms/react-native
         - platforms/web
+        - e2e/web
+  - custom:
+      name: Install Playwright Chromium for web e2e
+      met?: |
+        cd e2e/web && pnpm exec node -e 'const fs = require("fs"); const {chromium} = require("@playwright/test"); if (!fs.existsSync(chromium.executablePath())) process.exit(1)'
+      meet: cd e2e/web && pnpm exec playwright install chromium
   - custom:
       name: Copy root env into worktree
       met?: ./scripts/copy_worktree_env --check
@@ -687,6 +693,29 @@ commands:
       verify:
         desc: Run Web package verification
         run: cd platforms/web && pnpm verify
+
+      e2e:
+        desc: Run Playwright end-to-end tests against a built copy of the package
+        long_desc: |
+          Builds the @shopify/checkout-kit package, then runs the Playwright
+          suite under e2e/web against the built dist/index.js. Any extra
+          arguments are forwarded to `playwright test`.
+
+            dev web e2e                    Run the suite headless
+            dev web e2e --headed           Run in a headed browser
+            dev web e2e --ui               Open the Playwright UI runner
+            dev web e2e --grep "happy"     Run only specs matching a pattern
+            dev web e2e report             Open the last HTML report
+        syntax:
+          optional: "[playwright test args]"
+        run: |
+          set -e
+          /opt/dev/bin/dev web build
+          cd e2e/web && pnpm exec playwright test "$@"
+        subcommands:
+          report:
+            desc: Open the last Playwright HTML report
+            run: cd e2e/web && pnpm report
 
       snapshot:
         desc: Manage snapshots for packaged contents

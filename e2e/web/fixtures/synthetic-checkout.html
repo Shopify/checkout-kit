@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Synthetic checkout</title>
+  </head>
+  <body>
+    <script>
+      const READY_ID = "ready_1";
+
+      class SyntheticCheckout {
+        constructor({ opener }) {
+          this.opener = opener;
+          this.readyResponse = new Promise((resolve) => {
+            this.resolveReadyResponse = resolve;
+          });
+          window.addEventListener("message", (event) => this.handleMessage(event));
+          this.ready();
+        }
+
+        handleMessage(event) {
+          const data = event.data;
+          if (!data || data.jsonrpc !== "2.0" || data.id !== READY_ID) return;
+          this.resolveReadyResponse(data);
+        }
+
+        notify(method, payload) {
+          this.opener.postMessage({ jsonrpc: "2.0", method, params: payload }, "*");
+        }
+
+        request(method, payload, id) {
+          this.opener.postMessage({ jsonrpc: "2.0", id, method, params: payload }, "*");
+        }
+
+        ready() {
+          this.request("ec.ready", { delegate: [] }, READY_ID);
+        }
+
+        start() {
+          this.notify("ec.start", { checkout: this.checkoutResource("incomplete") });
+        }
+
+        complete() {
+          this.notify("ec.complete", {
+            checkout: { ...this.checkoutResource("completed"), order: this.order() },
+          });
+        }
+
+        lineItemsChange() {
+          this.notify("ec.line_items.change", { checkout: this.checkoutResource("incomplete") });
+        }
+
+        totalsChange() {
+          this.notify("ec.totals.change", { checkout: this.checkoutResource("incomplete") });
+        }
+
+        messagesChange() {
+          this.notify("ec.messages.change", { checkout: this.checkoutResource("incomplete") });
+        }
+
+        openRequest(url) {
+          this.request("ec.window.open_request", { url }, "open_request_1");
+        }
+
+        error() {
+          this.notify("ec.error", { error: this.errorResponse() });
+        }
+
+        order() {
+          return {
+            id: "order_test_1",
+            permalink_url: "https://checkout.example.test/orders/order_test_1",
+          };
+        }
+
+        checkoutResource(status) {
+          return {
+            ucp: { version: "2026-04-08", status: "success", capabilities: {} },
+            id: "checkout_test_1",
+            currency: "USD",
+            line_items: [
+              {
+                id: "li_1",
+                item: { id: "variant_1", title: "Test Product", price: 2000 },
+                quantity: 1,
+                totals: [{ type: "total", amount: 2000 }],
+              },
+            ],
+            totals: [
+              { type: "subtotal", amount: 2000 },
+              { type: "total", amount: 2000 },
+            ],
+            status,
+            links: [],
+            messages: [
+              {
+                type: "notice",
+                code: "inventory_updated",
+                content: "Inventory changed.",
+                severity: "informational",
+              },
+            ],
+          };
+        }
+
+        errorResponse() {
+          return {
+            ucp: { version: "2026-04-08", status: "error" },
+            messages: [
+              {
+                type: "error",
+                code: "checkout_failed",
+                content: "Payment could not be completed.",
+                severity: "unrecoverable",
+              },
+            ],
+          };
+        }
+      }
+
+      window.__syntheticCheckout = new SyntheticCheckout({ opener: window.opener });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Checkout Kit web e2e host</title>
+    <script type="module" src="/dist/index.js"></script>
+  </head>
+  <body>
+    <h1>Checkout Kit web e2e host</h1>
+    <shopify-checkout id="checkout"></shopify-checkout>
+    <button id="buy" type="button">Buy</button>
+
+    <script type="module">
+      const checkout = document.getElementById("checkout");
+      const events = [];
+
+      window.__ck = {
+        events,
+        get checkout() {
+          return checkout.checkout;
+        },
+        get error() {
+          return checkout.error;
+        },
+        configure({ src, target } = {}) {
+          if (src !== undefined) checkout.setAttribute("src", src);
+          if (target !== undefined) checkout.setAttribute("target", target);
+        },
+        open() {
+          checkout.open();
+        },
+        close() {
+          checkout.close();
+        },
+      };
+
+      const record = (type) => (event) => {
+        events.push({ type, detail: event.detail ?? null });
+      };
+
+      for (const type of [
+        "ec.ready",
+        "ec.start",
+        "ec.complete",
+        "ec.error",
+        "ec.close",
+        "ec.line_items.change",
+        "ec.totals.change",
+        "ec.messages.change",
+      ]) {
+        checkout.addEventListener(type, record(type));
+      }
+
+      document.getElementById("buy").addEventListener("click", () => {
+        checkout.open();
+      });
+    </script>
+  </body>
+</html>

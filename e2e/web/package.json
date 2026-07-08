@@ -1,0 +1,21 @@
+{
+  "name": "@shopify/checkout-kit-web-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright end-to-end tests for the @shopify/checkout-kit web component, run against a built copy of the package.",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0"
+  },
+  "packageManager": "pnpm@10.33.1",
+  "engines": {
+    "node": ">=22.14.0"
+  }
+}
