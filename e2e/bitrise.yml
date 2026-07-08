@@ -142,7 +142,8 @@ workflows:
             - content: |-
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
-                run_index="${BITRISE_IO_PARALLEL_INDEX:-0}"
+                : "${BITRISE_IO_PARALLEL_INDEX:?BITRISE_IO_PARALLEL_INDEX is required for the parallel e2e-execute-browserstack-run workflow.}"
+                run_index="$BITRISE_IO_PARALLEL_INDEX"
                 mkdir -p "$BITRISE_DEPLOY_DIR/e2e/results"
                 : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 e2e_log "Resolving BrowserStack run plan row ${run_index}"
