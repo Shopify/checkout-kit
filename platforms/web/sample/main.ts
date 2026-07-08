@@ -138,6 +138,14 @@ function updateSourceVisibility(): void {
   storefrontSourceFields.hidden = isManual;
   buildWorkspace.hidden = isManual;
   manualWorkspace.hidden = !isManual;
+  updateStorefrontValidation();
+}
+
+function updateStorefrontValidation(): void {
+  const isInvalid =
+    sourceMode() === "build" && normalizeStorefrontDomain(storefrontInput.value) === "";
+  storefrontSourceFields.dataset["invalid"] = String(isInvalid);
+  storefrontInput.setAttribute("aria-invalid", String(isInvalid));
 }
 
 function refreshCheckoutButtons(): void {
@@ -201,6 +209,8 @@ function scheduleProductLoad(): void {
 
   const domain = normalizeStorefrontDomain(storefrontInput.value);
   writeStorage(STORAGE_KEYS.storefrontDomain, domain);
+
+  updateStorefrontValidation();
 
   if (!domain) {
     loadState.textContent = "Waiting for domain";
