@@ -144,7 +144,6 @@ function updateSourceVisibility(): void {
 function updateStorefrontValidation(): void {
   const isInvalid =
     sourceMode() === "build" && normalizeStorefrontDomain(storefrontInput.value) === "";
-  storefrontSourceFields.dataset["invalid"] = String(isInvalid);
   storefrontInput.setAttribute("aria-invalid", String(isInvalid));
 }
 
