@@ -256,6 +256,12 @@ select:focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
+input[aria-invalid="true"] {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error-bg) 70%, var(--bg));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--error) 14%, transparent);
+}
+
 input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
@@ -290,6 +296,11 @@ legend {
 
 .source-group {
   background: var(--surface-subdued);
+}
+
+.source-group[data-invalid="true"] {
+  border-color: color-mix(in srgb, var(--error) 55%, var(--border));
+  background: color-mix(in srgb, var(--error-bg) 45%, var(--surface-subdued));
 }
 
 .source-switcher,
