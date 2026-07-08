@@ -85,7 +85,11 @@ module BitriseAuth
   def sync_to_tophat(token)
     return true unless File.exist?(TOPHAT_APP)
 
-    puts "Storing the token in Tophat for the Bitrise artifact provider."
+    puts <<~MESSAGE
+      Storing the token in Tophat for the Bitrise artifact provider.
+      macOS may ask for your login password to let Tophat read this token; this is
+      expected, approve it (Always Allow) so the install can continue.
+    MESSAGE
     system("security", "delete-generic-password", "-s", TOPHAT_KEYCHAIN_SERVICE, "-a", TOPHAT_KEYCHAIN_ACCOUNT, out: File::NULL, err: File::NULL)
     if write_keychain(TOPHAT_KEYCHAIN_SERVICE, TOPHAT_KEYCHAIN_ACCOUNT, token, trusted_app: TOPHAT_APP)
       puts "✅ Tophat is configured with your Bitrise token."
