@@ -8,6 +8,7 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.view.WindowManager
 import android.webkit.WebView
 import android.widget.FrameLayout
@@ -18,6 +19,7 @@ import androidx.activity.ComponentActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import org.assertj.core.api.Assertions.assertThat
@@ -35,6 +37,7 @@ import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.TimeUnit
@@ -48,6 +51,7 @@ class CheckoutBottomSheetTest {
     private lateinit var activity: ComponentActivity
     private lateinit var processor: DefaultCheckoutListener
     private lateinit var configuration: Configuration
+    private var presentedSheet: CheckoutBottomSheet? = null
 
     @Before
     fun setUp() {
@@ -58,6 +62,8 @@ class CheckoutBottomSheetTest {
 
     @After
     fun tearDown() {
+        presentedSheet?.dismiss(animate = false)
+        presentedSheet = null
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         ShopifyCheckoutKit.configure {
@@ -504,6 +510,8 @@ class CheckoutBottomSheetTest {
         assertThat(activity.window.attributes.softInputMode).isEqualTo(originalMode)
     }
 
+    @Suppress("DEPRECATION")
+    @Config(sdk = [29])
     @Test
     fun `bottom sheet keeps transparent system bars with navigation contrast`() {
         val sheet = presentBottomSheet()
@@ -513,6 +521,45 @@ class CheckoutBottomSheetTest {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             assertThat(sheet.window?.isNavigationBarContrastEnforced).isTrue()
         }
+    }
+
+    @Suppress("DEPRECATION")
+    @Config(sdk = [29])
+    @Test
+    fun `bottom sheet uses dark navigation bar buttons over light checkout backgrounds`() {
+        ShopifyCheckoutKit.configure {
+            it.colorScheme = ColorScheme.Light()
+        }
+
+        val sheet = presentBottomSheet()
+
+        assertThat(sheet.window!!.isAppearanceLightNavigationBars).isTrue()
+        assertThat(sheet.window!!.navigationBarColor).isEqualTo(AndroidColor.TRANSPARENT)
+    }
+
+    @Config(sdk = [29])
+    @Test
+    fun `bottom sheet uses light navigation bar buttons over dark checkout backgrounds`() {
+        ShopifyCheckoutKit.configure {
+            it.colorScheme = ColorScheme.Dark()
+        }
+
+        val sheet = presentBottomSheet()
+
+        assertThat(sheet.window!!.isAppearanceLightNavigationBars).isFalse()
+    }
+
+    @Suppress("DEPRECATION")
+    @Config(sdk = [25])
+    @Test
+    fun `bottom sheet uses navigation bar scrim over light checkout backgrounds before dark nav buttons`() {
+        ShopifyCheckoutKit.configure {
+            it.colorScheme = ColorScheme.Light()
+        }
+
+        val sheet = presentBottomSheet()
+
+        assertThat(sheet.window!!.navigationBarColor).isEqualTo(LEGACY_LIGHT_BACKGROUND_NAVIGATION_BAR_COLOR)
     }
 
     @Test
@@ -896,6 +943,7 @@ class CheckoutBottomSheetTest {
         protocolClient: CheckoutProtocol.Client? = null,
     ): CheckoutBottomSheet =
         CheckoutBottomSheet(checkoutUrl, checkoutListener, activity, protocolClient).also { sheet ->
+            presentedSheet = sheet
             sheet.start()
         }
 
@@ -990,6 +1038,9 @@ class CheckoutBottomSheetTest {
         )
     }
 
+    private val Window.isAppearanceLightNavigationBars: Boolean
+        get() = WindowCompat.getInsetsController(this, decorView).isAppearanceLightNavigationBars
+
     private class ScrollableView(context: Context) : View(context) {
         var canScrollUp = false
 
@@ -1028,6 +1079,7 @@ class CheckoutBottomSheetTest {
         private const val TEST_SHEET_SIZE = 1000
         private const val TEST_SHEET_HEADER_SIZE = 120
         private const val TEST_SCROLL_OFFSET = 100
+        private const val LEGACY_LIGHT_BACKGROUND_NAVIGATION_BAR_COLOR = 0x52000000
         private const val CHECKOUT_JSON =
             """{"id":"chk1","currency":"USD","status":"incomplete","line_items":[],"totals":[],"links":[],"ucp":""" +
                 """{"payment_handlers":{},"version":"1.0"}}"""
