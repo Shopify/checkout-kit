@@ -147,6 +147,11 @@ function updateStorefrontValidation(): void {
   storefrontInput.setAttribute("aria-invalid", String(isInvalid));
 }
 
+function updateBuildWorkspaceVisibility(): void {
+  const domain = normalizeStorefrontDomain(storefrontInput.value);
+  buildWorkspace.dataset["ready"] = String(variants.length > 0 || isLikelyStorefrontDomain(domain));
+}
+
 function refreshCheckoutButtons(): void {
   const hasSrc = activeSourceUrl().length > 0;
   cartCheckoutButton.disabled = sourceMode() !== "build" || !hasSrc;
@@ -192,6 +197,7 @@ function resetLoadedProducts(): void {
   variants = [];
   renderProducts();
   refreshBuildState();
+  updateBuildWorkspaceVisibility();
 }
 
 function cancelScheduledProductLoad(): void {
@@ -210,16 +216,9 @@ function scheduleProductLoad(): void {
   writeStorage(STORAGE_KEYS.storefrontDomain, domain);
 
   updateStorefrontValidation();
-
-  if (!domain) {
-    loadState.textContent = "Waiting for domain";
-    showCartStatus("Enter a storefront domain to load products automatically.");
-    return;
-  }
+  updateBuildWorkspaceVisibility();
 
   if (!isLikelyStorefrontDomain(domain)) {
-    loadState.textContent = "Waiting for domain";
-    showCartStatus("Keep typing a full storefront domain, for example your-store.myshopify.com.");
     return;
   }
 
@@ -238,6 +237,7 @@ function productQuantity(variantId: string): number {
 function renderProducts(): void {
   productList.replaceChildren();
   productEmpty.style.display = variants.length > 0 ? "none" : "";
+  updateBuildWorkspaceVisibility();
 
   for (const variant of variants) {
     const quantity = productQuantity(variant.id);
@@ -687,6 +687,7 @@ function appendLog(type: string): void {
 
 renderProducts();
 refreshBuildState();
+updateBuildWorkspaceVisibility();
 syncAttributes();
 if (sourceMode() === "build" && storefrontInput.value) {
   scheduleProductLoad();
