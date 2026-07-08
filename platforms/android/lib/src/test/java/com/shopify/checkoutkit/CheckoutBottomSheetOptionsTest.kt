@@ -4,38 +4,45 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.view.MotionEvent
 import android.view.View
+import android.view.Window
 import android.view.WindowManager
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.WindowCompat
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ActivityController
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 class CheckoutBottomSheetOptionsTest {
 
+    private lateinit var activityController: ActivityController<ComponentActivity>
     private lateinit var activity: ComponentActivity
     private lateinit var initialConfiguration: Configuration
+    private var presentedSheet: CheckoutBottomSheet? = null
 
     @Before
     fun setUp() {
         initialConfiguration = ShopifyCheckoutKit.getConfiguration()
-        activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
+        activityController = Robolectric.buildActivity(ComponentActivity::class.java)
+        activity = activityController.get()
     }
 
     @After
     fun tearDown() {
+        presentedSheet?.dismiss(animate = false)
+        presentedSheet = null
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         ShopifyCheckoutKit.configure {
@@ -44,6 +51,9 @@ class CheckoutBottomSheetOptionsTest {
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel
+        }
+        if (::activityController.isInitialized) {
+            activityController.close()
         }
     }
 
@@ -73,9 +83,59 @@ class CheckoutBottomSheetOptionsTest {
         assertThat(windowDimFlag).isEqualTo(0)
     }
 
+    @Suppress("DEPRECATION")
+    @Config(sdk = [29])
+    @Test
+    fun `keeps transparent system bars with navigation contrast enforcement`() {
+        val sheet = presentBottomSheet()
+
+        assertThat(sheet.window!!.statusBarColor).isEqualTo(android.graphics.Color.TRANSPARENT)
+        assertThat(sheet.window!!.navigationBarColor).isEqualTo(android.graphics.Color.TRANSPARENT)
+        assertThat(sheet.window!!.isNavigationBarContrastEnforced).isTrue()
+    }
+
+    @Suppress("DEPRECATION")
+    @Config(sdk = [29])
+    @Test
+    fun `uses dark navigation bar buttons over light checkout backgrounds`() {
+        ShopifyCheckoutKit.configure {
+            it.colorScheme = ColorScheme.Light()
+        }
+
+        val sheet = presentBottomSheet()
+
+        assertThat(sheet.window!!.isAppearanceLightNavigationBars).isTrue()
+        assertThat(sheet.window!!.navigationBarColor).isEqualTo(android.graphics.Color.TRANSPARENT)
+    }
+
+    @Config(sdk = [29])
+    @Test
+    fun `uses light navigation bar buttons over dark checkout backgrounds`() {
+        ShopifyCheckoutKit.configure {
+            it.colorScheme = ColorScheme.Dark()
+        }
+
+        val sheet = presentBottomSheet()
+
+        assertThat(sheet.window!!.isAppearanceLightNavigationBars).isFalse()
+    }
+
+    @Suppress("DEPRECATION")
+    @Config(sdk = [25])
+    @Test
+    fun `uses navigation bar scrim over light checkout backgrounds when dark nav buttons are unavailable`() {
+        ShopifyCheckoutKit.configure {
+            it.colorScheme = ColorScheme.Light()
+        }
+
+        val sheet = presentBottomSheet()
+
+        assertThat(sheet.window!!.navigationBarColor).isEqualTo(LEGACY_LIGHT_BACKGROUND_NAVIGATION_BAR_COLOR)
+    }
+
     @Test
     fun `disabling drag to dismiss keeps outside touch cancellation enabled`() {
-        val listener = mock<DefaultCheckoutListener>()
+        val listener = RecordingCheckoutListener()
         ShopifyCheckoutKit.configure {
             it.sheet = CheckoutSheetOptions(
                 dismissal = CheckoutSheetDismissal(dragToDismissEnabled = false)
@@ -89,7 +149,7 @@ class CheckoutBottomSheetOptionsTest {
 
         sheet.findViewById<View>(R.id.checkoutKitOutsideTouchTarget)!!.performClick()
 
-        verify(listener).onCheckoutCanceled()
+        assertThat(listener.canceled).isTrue()
     }
 
     @Test
@@ -191,6 +251,7 @@ class CheckoutBottomSheetOptionsTest {
         checkoutListener: CheckoutListener = noopDefaultCheckoutListener(),
     ): CheckoutBottomSheet =
         CheckoutBottomSheet(checkoutUrl, checkoutListener, activity).also { sheet ->
+            presentedSheet = sheet
             sheet.start()
         }
 
@@ -221,9 +282,23 @@ class CheckoutBottomSheetOptionsTest {
     private fun motionEvent(action: Int, y: Float): MotionEvent =
         MotionEvent.obtain(0, 0, action, 100f, y, 0)
 
+    private val Window.isAppearanceLightNavigationBars: Boolean
+        get() = WindowCompat.getInsetsController(this, decorView).isAppearanceLightNavigationBars
+
+    private class RecordingCheckoutListener : DefaultCheckoutListener() {
+        var canceled = false
+
+        override fun onCheckoutFailed(error: CheckoutException) = Unit
+
+        override fun onCheckoutCanceled() {
+            canceled = true
+        }
+    }
+
     private companion object {
         private const val TEST_SHEET_SIZE = 1000
         private const val TEST_SHEET_HEADER_SIZE = 120
         private const val MATERIAL_COMPONENTS_SCRIM_COLOR = 0x52000000
+        private const val LEGACY_LIGHT_BACKGROUND_NAVIGATION_BAR_COLOR = 0x52000000
     }
 }
