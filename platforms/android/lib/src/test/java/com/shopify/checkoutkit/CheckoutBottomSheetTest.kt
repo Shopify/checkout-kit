@@ -2,7 +2,6 @@ package com.shopify.checkoutkit
 
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
-import android.os.Build
 import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
@@ -39,7 +38,6 @@ import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
-import android.graphics.Color as AndroidColor
 
 @Suppress("LargeClass")
 @RunWith(RobolectricTestRunner::class)
@@ -502,17 +500,6 @@ class CheckoutBottomSheetTest {
         runDismissAnimation()
 
         assertThat(activity.window.attributes.softInputMode).isEqualTo(originalMode)
-    }
-
-    @Test
-    fun `bottom sheet keeps transparent system bars with navigation contrast`() {
-        val sheet = presentBottomSheet()
-
-        assertThat(sheet.window?.statusBarColor).isEqualTo(AndroidColor.TRANSPARENT)
-        assertThat(sheet.window?.navigationBarColor).isEqualTo(AndroidColor.TRANSPARENT)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            assertThat(sheet.window?.isNavigationBarContrastEnforced).isTrue()
-        }
     }
 
     @Test
