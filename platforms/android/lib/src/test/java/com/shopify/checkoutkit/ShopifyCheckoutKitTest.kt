@@ -31,7 +31,7 @@ class ShopifyCheckoutKitTest {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         ShopifyCheckoutKit.configure {
-            it.colorScheme = initialConfiguration.colorScheme
+            it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform

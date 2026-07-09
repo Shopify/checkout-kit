@@ -71,12 +71,13 @@ internal class CheckoutBottomSheet(
         dismissFinalized = false
 
         setContentView(R.layout.checkout_sheet_content)
-        val colorScheme = ShopifyCheckoutKit.configuration.colorScheme
+        val appearance = ShopifyCheckoutKit.configuration.appearance
+        val colorScheme = appearance.colorScheme
         val sheet = ShopifyCheckoutKit.configuration.sheet
         window?.configureCheckoutBottomSheetWindow()
         configureSheet(sheet)
 
-        log.d(LOG_TAG, "Configured colorScheme $colorScheme")
+        log.d(LOG_TAG, "Configured appearance $appearance")
         val sheetColors = applySheetColors(colorScheme, sheet)
 
         onBackPressedDispatcher.addCallback(backNavigationCallback)

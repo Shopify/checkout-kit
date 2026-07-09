@@ -6,6 +6,72 @@ public final class com/shopify/checkoutkit/BuildConfig {
 	public fun <init> ()V
 }
 
+public abstract interface class com/shopify/checkoutkit/CheckoutAppearance {
+	public static final field Companion Lcom/shopify/checkoutkit/CheckoutAppearance$Companion;
+}
+
+public final class com/shopify/checkoutkit/CheckoutAppearance$App : com/shopify/checkoutkit/CheckoutAppearance {
+	public static final field Companion Lcom/shopify/checkoutkit/CheckoutAppearance$App$Companion;
+	public fun <init> ()V
+	public fun <init> (Lcom/shopify/checkoutkit/ColorScheme;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/ColorScheme;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/ColorScheme;
+	public final fun copy (Lcom/shopify/checkoutkit/ColorScheme;)Lcom/shopify/checkoutkit/CheckoutAppearance$App;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutAppearance$App;Lcom/shopify/checkoutkit/ColorScheme;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutAppearance$App;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColorScheme ()Lcom/shopify/checkoutkit/ColorScheme;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/checkoutkit/CheckoutAppearance$App$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutAppearance$App$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/CheckoutAppearance$App;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/CheckoutAppearance$App;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/CheckoutAppearance$App$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/CheckoutAppearance$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/CheckoutAppearance$Storefront : com/shopify/checkoutkit/CheckoutAppearance {
+	public static final field Companion Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront$Companion;
+	public fun <init> ()V
+	public fun <init> (Lcom/shopify/checkoutkit/ColorScheme;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/ColorScheme;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/ColorScheme;
+	public final fun copy (Lcom/shopify/checkoutkit/ColorScheme;)Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront;Lcom/shopify/checkoutkit/ColorScheme;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColorScheme ()Lcom/shopify/checkoutkit/ColorScheme;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/shopify/checkoutkit/CheckoutAppearance$Storefront$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/shopify/checkoutkit/CheckoutAppearance$Storefront$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public abstract class com/shopify/checkoutkit/CheckoutException : java/lang/Exception {
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutException$Companion;
 	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
@@ -381,36 +447,6 @@ public final class com/shopify/checkoutkit/ColorScheme$Light$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
-public final class com/shopify/checkoutkit/ColorScheme$Web : com/shopify/checkoutkit/ColorScheme {
-	public static final field Companion Lcom/shopify/checkoutkit/ColorScheme$Web$Companion;
-	public fun <init> ()V
-	public fun <init> (Lcom/shopify/checkoutkit/Colors;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/Colors;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/shopify/checkoutkit/Colors;
-	public final fun copy (Lcom/shopify/checkoutkit/Colors;)Lcom/shopify/checkoutkit/ColorScheme$Web;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/ColorScheme$Web;Lcom/shopify/checkoutkit/Colors;ILjava/lang/Object;)Lcom/shopify/checkoutkit/ColorScheme$Web;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getColors ()Lcom/shopify/checkoutkit/Colors;
-	public fun hashCode ()I
-	public final fun setColors (Lcom/shopify/checkoutkit/Colors;)V
-	public fun toString ()Ljava/lang/String;
-}
-
-public final synthetic class com/shopify/checkoutkit/ColorScheme$Web$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/ColorScheme$Web$$serializer;
-	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/shopify/checkoutkit/ColorScheme$Web;
-	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/shopify/checkoutkit/ColorScheme$Web;)V
-	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
-	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
-}
-
-public final class com/shopify/checkoutkit/ColorScheme$Web$Companion {
-	public final fun serializer ()Lkotlinx/serialization/KSerializer;
-}
-
 public final class com/shopify/checkoutkit/Colors {
 	public static final field Companion Lcom/shopify/checkoutkit/Colors$Companion;
 	public fun <init> (Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/DrawableResource;Lcom/shopify/checkoutkit/Color;Lcom/shopify/checkoutkit/Color;)V
@@ -477,19 +513,19 @@ public final class com/shopify/checkoutkit/ColorsBuilder {
 
 public final class com/shopify/checkoutkit/Configuration {
 	public fun <init> ()V
-	public final fun component1 ()Lcom/shopify/checkoutkit/ColorScheme;
+	public final fun component1 ()Lcom/shopify/checkoutkit/CheckoutAppearance;
 	public final fun component2 ()Lcom/shopify/checkoutkit/CheckoutSheetOptions;
 	public final fun component3 ()Lcom/shopify/checkoutkit/Platform;
 	public final fun component4 ()Lcom/shopify/checkoutkit/LogLevel;
 	public final fun component5 ()Lcom/shopify/checkoutkit/Preloading;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getColorScheme ()Lcom/shopify/checkoutkit/ColorScheme;
+	public final fun getAppearance ()Lcom/shopify/checkoutkit/CheckoutAppearance;
 	public final fun getLogLevel ()Lcom/shopify/checkoutkit/LogLevel;
 	public final fun getPlatform ()Lcom/shopify/checkoutkit/Platform;
 	public final fun getPreloading ()Lcom/shopify/checkoutkit/Preloading;
 	public final fun getSheet ()Lcom/shopify/checkoutkit/CheckoutSheetOptions;
 	public fun hashCode ()I
-	public final fun setColorScheme (Lcom/shopify/checkoutkit/ColorScheme;)V
+	public final fun setAppearance (Lcom/shopify/checkoutkit/CheckoutAppearance;)V
 	public final fun setLogLevel (Lcom/shopify/checkoutkit/LogLevel;)V
 	public final fun setPlatform (Lcom/shopify/checkoutkit/Platform;)V
 	public final fun setPreloading (Lcom/shopify/checkoutkit/Preloading;)V

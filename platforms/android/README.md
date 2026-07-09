@@ -167,7 +167,7 @@ Configure global presentation defaults before presenting checkout:
 
 ```kotlin
 ShopifyCheckoutKit.configure {
-    it.colorScheme = ColorScheme.Automatic()
+    it.appearance = CheckoutAppearance.Storefront()
     it.sheet = CheckoutSheetOptions(
         dismissal = CheckoutSheetDismissal(
             dragToDismissEnabled = true,
@@ -180,7 +180,7 @@ ShopifyCheckoutKit.configure {
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `colorScheme` | `ColorScheme.Automatic()` | Use device appearance, force `Light` or `Dark`, or use `Web` to match web checkout branding. |
+| `appearance` | `CheckoutAppearance.Storefront()` | Use the storefront's web checkout branding with automatic color scheme, or use the Checkout Kit style with `App(Automatic)`, `App(Light)`, or `App(Dark)`. |
 | `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
@@ -189,10 +189,11 @@ ShopifyCheckoutKit.configure {
 
 ```kotlin
 ShopifyCheckoutKit.configure {
-    it.colorScheme = ColorScheme.Light()
-    it.colorScheme = ColorScheme.Dark()
-    it.colorScheme = ColorScheme.Web()
-    it.colorScheme = ColorScheme.Automatic()
+    it.appearance = CheckoutAppearance.App(ColorScheme.Light())
+    it.appearance = CheckoutAppearance.App(ColorScheme.Dark())
+    it.appearance = CheckoutAppearance.App(ColorScheme.Automatic())
+    it.appearance = CheckoutAppearance.Storefront()
+    it.appearance = CheckoutAppearance.Storefront(ColorScheme.Automatic())
 }
 ```
 
@@ -200,7 +201,7 @@ Customize native colors with resource IDs or sRGB integers:
 
 ```kotlin
 ShopifyCheckoutKit.configure {
-    it.colorScheme = ColorScheme.Automatic().customize(
+    it.appearance = CheckoutAppearance.App(ColorScheme.Automatic().customize(
         light = {
             headerBackground = Color.ResourceId(R.color.checkout_header_light)
             headerFont = Color.ResourceId(R.color.checkout_header_text_light)
@@ -215,7 +216,7 @@ ShopifyCheckoutKit.configure {
             progressIndicator = Color.ResourceId(R.color.checkout_progress_dark)
             dragHandleColor = Color.ResourceId(R.color.checkout_drag_handle_dark)
         },
-    )
+    ))
 }
 ```
 

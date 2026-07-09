@@ -46,7 +46,7 @@ class CheckoutBottomSheetOptionsTest {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         ShopifyCheckoutKit.configure {
-            it.colorScheme = initialConfiguration.colorScheme
+            it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform
@@ -99,7 +99,7 @@ class CheckoutBottomSheetOptionsTest {
     @Test
     fun `uses dark navigation bar buttons over light checkout backgrounds`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Light()
+            it.appearance = CheckoutAppearance.App(ColorScheme.Light())
         }
 
         val sheet = presentBottomSheet()
@@ -112,7 +112,7 @@ class CheckoutBottomSheetOptionsTest {
     @Test
     fun `uses light navigation bar buttons over dark checkout backgrounds`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Dark()
+            it.appearance = CheckoutAppearance.App(ColorScheme.Dark())
         }
 
         val sheet = presentBottomSheet()
@@ -125,7 +125,7 @@ class CheckoutBottomSheetOptionsTest {
     @Test
     fun `uses navigation bar scrim over light checkout backgrounds when dark nav buttons are unavailable`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Light()
+            it.appearance = CheckoutAppearance.App(ColorScheme.Light())
         }
 
         val sheet = presentBottomSheet()
@@ -197,9 +197,11 @@ class CheckoutBottomSheetOptionsTest {
     fun `drag handle applies configured color scheme color when provided`() {
         val customDragHandleColor = Color.SRGB(0xFF336699.toInt())
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Light().customize {
-                dragHandleColor = customDragHandleColor
-            }
+            it.appearance = CheckoutAppearance.App(
+                colorScheme = ColorScheme.Light().customize {
+                    dragHandleColor = customDragHandleColor
+                },
+            )
             it.sheet = CheckoutSheetOptions(dragHandle = CheckoutSheetDragHandle(visible = true))
         }
 

@@ -173,7 +173,7 @@ private fun SettingsUiState.isDarkTheme(isSystemInDarkTheme: Boolean) = when (th
     is SettingsUiState.Loaded -> {
         when (settings.colorScheme) {
             is ColorScheme.Dark -> true
-            is ColorScheme.Light, is ColorScheme.Web -> false
+            is ColorScheme.Light -> false
             is ColorScheme.Automatic -> isSystemInDarkTheme
         }
     }

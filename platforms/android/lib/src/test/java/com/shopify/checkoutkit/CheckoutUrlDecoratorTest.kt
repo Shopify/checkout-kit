@@ -17,14 +17,14 @@ class CheckoutUrlDecoratorTest {
     fun setUp() {
         initialConfiguration = ShopifyCheckoutKit.getConfiguration()
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Automatic()
+            it.appearance = CheckoutAppearance.App()
         }
     }
 
     @After
     fun tearDown() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = initialConfiguration.colorScheme
+            it.appearance = initialConfiguration.appearance
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel
@@ -71,24 +71,27 @@ class CheckoutUrlDecoratorTest {
     }
 
     @Test
-    fun `decorate derives app branding for app color schemes`() {
-        assertColorSchemeDecoratesWith(ColorScheme.Light(), "light", "app")
-        assertColorSchemeDecoratesWith(ColorScheme.Dark(), "dark", "app")
-        assertColorSchemeDecoratesWith(ColorScheme.Automatic(), "automatic", "app")
+    fun `decorate derives app branding for app appearances`() {
+        assertAppearanceDecoratesWith(CheckoutAppearance.App(ColorScheme.Light()), "light", "app")
+        assertAppearanceDecoratesWith(CheckoutAppearance.App(ColorScheme.Dark()), "dark", "app")
+        assertAppearanceDecoratesWith(CheckoutAppearance.App(ColorScheme.Automatic()), "automatic", "app")
     }
 
     @Test
-    fun `decorate derives shop branding for web color scheme`() {
-        assertColorSchemeDecoratesWith(ColorScheme.Web(), "web_default", "shop")
+    fun `decorate derives shop branding for storefront appearance`() {
+        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(), "automatic", "shop")
+        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(ColorScheme.Light()), "automatic", "shop")
+        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(ColorScheme.Dark()), "automatic", "shop")
+        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(ColorScheme.Automatic()), "automatic", "shop")
     }
 
-    private fun assertColorSchemeDecoratesWith(
-        colorScheme: ColorScheme,
+    private fun assertAppearanceDecoratesWith(
+        appearance: CheckoutAppearance,
         expectedColorScheme: String,
         expectedBranding: String,
     ) {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = colorScheme
+            it.appearance = appearance
         }
 
         val result = CheckoutUrlDecorator.decorate(BASE_URL).toUri()

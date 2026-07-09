@@ -18,7 +18,7 @@ class ConfigurationTest {
     @After
     fun tearDown() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = initialConfiguration.colorScheme
+            it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform
@@ -27,44 +27,63 @@ class ConfigurationTest {
     }
 
     @Test
-    fun `can set colorScheme via configure function - light`() {
+    fun `can set appearance via configure function - app light`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Light()
+            it.appearance = CheckoutAppearance.App(ColorScheme.Light())
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().colorScheme).isEqualTo(ColorScheme.Light())
+        assertThat(
+            ShopifyCheckoutKit.getConfiguration().appearance
+        ).isEqualTo(
+            CheckoutAppearance.App(ColorScheme.Light())
+        )
     }
 
     @Test
-    fun `can set colorScheme via configure function - dark`() {
+    fun `can set appearance via configure function - app dark`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Dark()
+            it.appearance = CheckoutAppearance.App(ColorScheme.Dark())
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().colorScheme).isEqualTo(ColorScheme.Dark())
+        assertThat(
+            ShopifyCheckoutKit.getConfiguration().appearance
+        ).isEqualTo(
+            CheckoutAppearance.App(ColorScheme.Dark())
+        )
     }
 
     @Test
-    fun `can set colorScheme via configure function - web`() {
+    fun `can set appearance via configure function - storefront`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Web()
+            it.appearance = CheckoutAppearance.Storefront()
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().colorScheme).isEqualTo(ColorScheme.Web())
+        assertThat(ShopifyCheckoutKit.getConfiguration().appearance).isEqualTo(
+            CheckoutAppearance.Storefront()
+        )
     }
 
     @Test
-    fun `can set colorScheme via configure function - automatic`() {
+    fun `can set appearance via configure function - app automatic`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Automatic()
+            it.appearance = CheckoutAppearance.App(ColorScheme.Automatic())
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().colorScheme).isEqualTo(ColorScheme.Automatic())
+        assertThat(
+            ShopifyCheckoutKit.getConfiguration().appearance
+        ).isEqualTo(
+            CheckoutAppearance.App(ColorScheme.Automatic())
+        )
     }
 
     @Test
     fun `preloading defaults to enabled`() {
         assertThat(ShopifyCheckoutKit.getConfiguration().preloading.enabled).isTrue()
+    }
+
+    @Test
+    fun `appearance defaults to storefront`() {
+        assertThat(ShopifyCheckoutKit.getConfiguration().appearance).isEqualTo(CheckoutAppearance.Storefront())
     }
 
     @Test

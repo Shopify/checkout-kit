@@ -59,7 +59,7 @@ class CheckoutBottomSheetTest {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         ShopifyCheckoutKit.configure {
-            it.colorScheme = configuration.colorScheme
+            it.appearance = configuration.appearance
             it.sheet = configuration.sheet
             it.preloading = configuration.preloading
             it.platform = configuration.platform
@@ -633,7 +633,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `sets header background color based on current configuration`() {
         val customColors = customColors()
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Web(customColors)
+        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
 
         val sheet = presentBottomSheet()
 
@@ -669,7 +669,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `centers header title without toolbar elevation`() {
         val customColors = customColors()
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Web(customColors)
+        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
 
         val sheet = presentBottomSheet()
 
@@ -706,7 +706,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `sets WebView container background color based on current configuration`() {
         val customColors = customColors()
-        ShopifyCheckoutKit.configuration.colorScheme = ColorScheme.Web(customColors)
+        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
 
         val sheet = presentBottomSheet()
 
@@ -766,7 +766,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `bottom sheet uses default close icon when no customization provided`() {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = ColorScheme.Light()
+            it.appearance = CheckoutAppearance.App(ColorScheme.Light())
             it.sheet = CheckoutSheetOptions()
         }
         val mockProcessor = mock<DefaultCheckoutListener>()

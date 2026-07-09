@@ -38,39 +38,28 @@ public sealed class ColorScheme(public val id: String) {
         public var darkColors: Colors = defaultDarkColors
     ) : ColorScheme("automatic")
 
-    /**
-     * Show checkout in a color scheme matching the store's web/desktop checkout branding.
-     * This is especially useful for stores where checkout branding settings have been customised.
-     */
-    @Serializable
-    public data class Web(public var colors: Colors = defaultLightColors) : ColorScheme("web_default")
-
     internal fun headerBackgroundColor(isDark: Boolean) = when (this) {
         is Automatic -> if (isDark) this.darkColors.headerBackground else this.lightColors.headerBackground
         is Dark -> this.colors.headerBackground
         is Light -> this.colors.headerBackground
-        is Web -> this.colors.headerBackground
     }
 
     internal fun webViewBackgroundColor(isDark: Boolean) = when (this) {
         is Automatic -> if (isDark) this.darkColors.webViewBackground else this.lightColors.webViewBackground
         is Dark -> this.colors.webViewBackground
         is Light -> this.colors.webViewBackground
-        is Web -> this.colors.webViewBackground
     }
 
     internal fun headerFontColor(isDark: Boolean) = when (this) {
         is Automatic -> if (isDark) this.darkColors.headerFont else this.lightColors.headerFont
         is Dark -> this.colors.headerFont
         is Light -> this.colors.headerFont
-        is Web -> this.colors.headerFont
     }
 
     internal fun progressIndicatorColor(isDark: Boolean) = when (this) {
         is Automatic -> if (isDark) this.darkColors.progressIndicator else this.lightColors.progressIndicator
         is Dark -> this.colors.progressIndicator
         is Light -> this.colors.progressIndicator
-        is Web -> this.colors.progressIndicator
     }
 
     internal fun dragHandleColor(isDark: Boolean): Color {
@@ -78,7 +67,6 @@ public sealed class ColorScheme(public val id: String) {
             is Automatic -> if (isDark) this.darkColors else this.lightColors
             is Dark -> this.colors
             is Light -> this.colors
-            is Web -> this.colors
         }
         return colors.dragHandleColor ?: colors.headerFont
     }
@@ -87,14 +75,12 @@ public sealed class ColorScheme(public val id: String) {
         is Automatic -> if (isDark) this.darkColors.closeIcon else this.lightColors.closeIcon
         is Dark -> this.colors.closeIcon
         is Light -> this.colors.closeIcon
-        is Web -> this.colors.closeIcon
     }
 
     internal fun closeIconTint(isDark: Boolean) = when (this) {
         is Automatic -> if (isDark) this.darkColors.closeIconTint else this.lightColors.closeIconTint
         is Dark -> this.colors.closeIconTint
         is Light -> this.colors.closeIconTint
-        is Web -> this.colors.closeIconTint
     }
 
     /**
@@ -112,12 +98,6 @@ public sealed class ColorScheme(public val id: String) {
             }
 
             is Dark -> {
-                val builder = ColorsBuilder(colors)
-                builder.block()
-                copy(colors = builder.build())
-            }
-
-            is Web -> {
                 val builder = ColorsBuilder(colors)
                 builder.block()
                 copy(colors = builder.build())
@@ -164,7 +144,6 @@ public sealed class ColorScheme(public val id: String) {
                 val colors = when (this) {
                     is Light -> this.colors
                     is Dark -> this.colors
-                    is Web -> this.colors
                     else -> return this
                 }
                 val builder = ColorsBuilder(colors)
@@ -172,7 +151,6 @@ public sealed class ColorScheme(public val id: String) {
                 when (this) {
                     is Light -> copy(colors = builder.build())
                     is Dark -> copy(colors = builder.build())
-                    is Web -> copy(colors = builder.build())
                     else -> this
                 }
             }

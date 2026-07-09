@@ -43,7 +43,7 @@ class CheckoutWebViewTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         CheckoutWebView.cacheClock = PreloadCache.Clock()
         ShopifyCheckoutKit.configure {
-            it.colorScheme = initialConfiguration.colorScheme
+            it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform

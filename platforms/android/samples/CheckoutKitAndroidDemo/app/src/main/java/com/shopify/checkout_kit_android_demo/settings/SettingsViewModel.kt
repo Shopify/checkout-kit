@@ -10,7 +10,7 @@ import com.shopify.checkout_kit_android_demo.settings.data.Settings
 import com.shopify.checkout_kit_android_demo.settings.data.SettingsRepository
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
 import com.shopify.checkout_kit_android_demo.settings.data.toCheckoutSheetOptions
-import com.shopify.checkoutkit.ColorScheme
+import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.Preloading
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,11 +44,11 @@ class SettingsViewModel(
         }
     }
 
-    fun setColorScheme(colorScheme: ColorScheme) = viewModelScope.launch {
+    fun setAppearance(appearance: CheckoutAppearance) = viewModelScope.launch {
         ShopifyCheckoutKit.configure {
-            it.colorScheme = colorScheme.withCustomCloseIcon()
+            it.appearance = appearance.withCustomCloseIcon()
         }
-        settingsRepository.setColorScheme(colorScheme)
+        settingsRepository.setAppearance(appearance)
     }
 
     fun setBuyerIdentityDemoEnabled(enabled: Boolean) = viewModelScope.launch {

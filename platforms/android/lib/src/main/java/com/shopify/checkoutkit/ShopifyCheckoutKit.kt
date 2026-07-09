@@ -36,7 +36,7 @@ public object ShopifyCheckoutKit {
      * Allows configuring ShopifyCheckoutKit.
      *
      * Kotlin example:
-     * {@code ShopifyCheckoutKit.configure { it.colorScheme = ColorScheme.Dark() }}
+     * {@code ShopifyCheckoutKit.configure { it.appearance = CheckoutAppearance.App(ColorScheme.Dark()) }}
      *
      * @param setter a function that modifies the configuration object
      * @see Configuration
