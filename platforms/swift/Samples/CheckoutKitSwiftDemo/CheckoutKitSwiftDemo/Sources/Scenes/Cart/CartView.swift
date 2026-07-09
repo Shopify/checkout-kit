@@ -103,7 +103,7 @@ struct CartView: View {
                             print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
                             isCompleted = true
                         })
-                        .colorScheme(.automatic)
+                        .appearance(.app(.automatic))
                         .onCancel {
                             print("[ShopifyCheckoutKit] CANCEL")
                             showCheckoutSheet = false

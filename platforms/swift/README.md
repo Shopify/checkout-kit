@@ -142,7 +142,7 @@ struct CartView: View {
     .sheet(isPresented: $isPresented) {
       ShopifyCheckout(checkout: checkoutURL)
         .title("Checkout")
-        .colorScheme(.automatic)
+        .appearance(.storefront())
         .tintColor(.systemBlue)
         .backgroundColor(.systemBackground)
         .closeButtonTintColor(nil)
@@ -204,7 +204,7 @@ Configure global presentation defaults before presenting checkout:
 import ShopifyCheckoutKit
 
 ShopifyCheckoutKit.configure {
-  $0.colorScheme = .automatic
+  $0.appearance = .storefront()
   $0.tintColor = .systemBlue
   $0.backgroundColor = .systemBackground
   $0.closeButtonTintColor = nil
@@ -214,7 +214,7 @@ ShopifyCheckoutKit.configure {
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `colorScheme` | `.automatic` | Use device appearance, force `.light` or `.dark`, or use `.web` to match web checkout branding. |
+| `appearance` | `.storefront()` | Match the storefront's web checkout branding with automatic color scheme, or use the Checkout Kit style with `.app(.automatic)`, `.app(.light)`, or `.app(.dark)`. |
 | `tintColor` | Shopify blue | Progress indicator color while checkout initializes. |
 | `backgroundColor` | `.systemBackground` | Background behind the web view while checkout initializes. |
 | `title` | Localized `shopify_checkout_kit_title` or `Checkout` | Navigation title for the checkout sheet. |

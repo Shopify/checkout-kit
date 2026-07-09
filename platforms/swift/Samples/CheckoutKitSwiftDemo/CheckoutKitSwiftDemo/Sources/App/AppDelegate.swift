@@ -26,7 +26,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         ) as? Bool ?? true
 
         ShopifyCheckoutKit.configure {
-            $0.colorScheme = .automatic
+            $0.appearance = .app(.automatic)
             $0.tintColor = ColorPalette.primaryColor
             $0.logger = FileLogger("log.txt")
             $0.logLevel = checkoutKitLogLevel

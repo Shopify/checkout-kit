@@ -12,7 +12,7 @@ enum CheckoutURLDecorator {
             for: url,
             options: .init(
                 delegations: CheckoutProtocol.defaultDelegations,
-                colorScheme: configuration.colorScheme.rawValue
+                colorScheme: configuration.appearance.colorSchemeValue
             )
         )
 
@@ -22,7 +22,7 @@ enum CheckoutURLDecorator {
 
         var queryItems = components.queryItems ?? []
         queryItems.removeAll { $0.name == Self.brandingQueryItemName }
-        queryItems.append(URLQueryItem(name: Self.brandingQueryItemName, value: configuration.colorScheme.brandingValue))
+        queryItems.append(URLQueryItem(name: Self.brandingQueryItemName, value: configuration.appearance.brandingValue))
         components.queryItems = queryItems
 
         return components.url ?? decorated
@@ -31,13 +31,22 @@ enum CheckoutURLDecorator {
     private static let brandingQueryItemName = "ck_branding"
 }
 
-extension Configuration.ColorScheme {
+extension Configuration.Appearance {
+    fileprivate var colorSchemeValue: String {
+        switch self {
+        case let .app(colorScheme):
+            return colorScheme.rawValue
+        case .storefront:
+            return Configuration.ColorScheme.automatic.rawValue
+        }
+    }
+
     fileprivate var brandingValue: String {
         switch self {
-        case .web:
-            return "shop"
-        case .automatic, .dark, .light:
+        case .app:
             return "app"
+        case .storefront:
+            return "shop"
         }
     }
 }

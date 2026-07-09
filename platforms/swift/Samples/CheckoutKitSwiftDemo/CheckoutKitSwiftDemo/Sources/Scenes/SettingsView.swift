@@ -52,8 +52,7 @@ struct SettingsView: View {
     var windowOpenHandler: WindowOpenHandlerOption = .default
 
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
-    @State private var selectedColorScheme = ShopifyCheckoutKit.configuration.colorScheme
-    @State private var colorScheme: ColorScheme = .light
+    @State private var selectedAppearance = ShopifyCheckoutKit.configuration.appearance
 
     var body: some View {
         NavigationView {
@@ -106,20 +105,23 @@ struct SettingsView: View {
                 }
 
                 Section(header: Text("Theme")) {
-                    ForEach(Configuration.ColorScheme.allCases, id: \.self) { scheme in
-                        ColorSchemeView(scheme: scheme, isSelected: scheme == selectedColorScheme)
-                            .background(Color.clear)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedColorScheme = scheme
-                                ShopifyCheckoutKit.configuration.colorScheme = scheme
-                                ShopifyCheckoutKit.configuration.tintColor = scheme.tintColor
-                                ShopifyCheckoutKit.configuration.backgroundColor =
-                                    scheme.backgroundColor
-                                NotificationCenter.default.post(
-                                    name: .colorSchemeChanged, object: nil
-                                )
-                            }
+                    ForEach(AppearanceOption.allCases) { option in
+                        AppearanceOptionView(
+                            title: option.title,
+                            isSelected: option.appearance == selectedAppearance
+                        )
+                        .background(Color.clear)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedAppearance = option.appearance
+                            ShopifyCheckoutKit.configuration.appearance = option.appearance
+                            ShopifyCheckoutKit.configuration.tintColor = option.appearance.colorScheme.tintColor
+                            ShopifyCheckoutKit.configuration.backgroundColor =
+                                option.appearance.colorScheme.backgroundColor
+                            NotificationCenter.default.post(
+                                name: .colorSchemeChanged, object: nil
+                            )
+                        }
                     }
                 }
 
@@ -189,16 +191,6 @@ struct SettingsView: View {
         }
         .navigationBarHidden(true)
         .preferredColorScheme(.dark)
-        .onAppear {
-            switch ShopifyCheckoutKit.configuration.colorScheme {
-            case .light:
-                colorScheme = .light
-            case .dark:
-                colorScheme = .dark
-            default:
-                colorScheme = .light
-            }
-        }
     }
 
     private func currentVersion() -> String {
@@ -264,13 +256,13 @@ struct BuyerIdentityDetails: View {
     }
 }
 
-struct ColorSchemeView: View {
-    let scheme: Configuration.ColorScheme
+struct AppearanceOptionView: View {
+    let title: String
     let isSelected: Bool
 
     var body: some View {
         HStack {
-            Text(scheme.prettyTitle)
+            Text(title)
             Spacer()
             if isSelected {
                 Text("✓")
@@ -279,35 +271,60 @@ struct ColorSchemeView: View {
     }
 }
 
-extension Configuration.ColorScheme {
-    var prettyTitle: String {
+enum AppearanceOption: CaseIterable, Identifiable {
+    case storefrontAutomatic
+    case appAutomatic
+    case appLight
+    case appDark
+
+    var id: Self {
+        self
+    }
+
+    var title: String {
         switch self {
-        case .light:
-            return "Light"
-        case .dark:
-            return "Dark"
-        case .automatic:
-            return "Automatic"
-        case .web:
-            return "Web"
+        case .storefrontAutomatic:
+            return "Storefront automatic"
+        case .appAutomatic:
+            return "App automatic"
+        case .appLight:
+            return "App light"
+        case .appDark:
+            return "App dark"
         }
     }
 
-    var tintColor: UIColor {
+    var appearance: Configuration.Appearance {
         switch self {
-        case .web:
-            return UIColor(red: 0.18, green: 0.16, blue: 0.22, alpha: 1.00)
-        default:
-            return UIColor(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
+        case .storefrontAutomatic:
+            return .storefront(.automatic)
+        case .appAutomatic:
+            return .app(.automatic)
+        case .appLight:
+            return .app(.light)
+        case .appDark:
+            return .app(.dark)
         }
+    }
+}
+
+extension Configuration.ColorScheme {
+    var tintColor: UIColor {
+        return UIColor(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
     }
 
     var backgroundColor: UIColor {
+        return .systemBackground
+    }
+}
+
+extension Configuration.Appearance {
+    var colorScheme: Configuration.ColorScheme {
         switch self {
-        case .web:
-            return ColorPalette.backgroundColor
-        default:
-            return .systemBackground
+        case let .app(colorScheme):
+            return colorScheme
+        case .storefront:
+            return .automatic
         }
     }
 }

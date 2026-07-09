@@ -89,17 +89,17 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, color)
     }
 
-    func testColorScheme() {
-        let colorScheme = ShopifyCheckoutKit.Configuration.ColorScheme.light
-        shopifyCheckout.colorScheme(colorScheme)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, colorScheme)
+    func testAppearance() {
+        let appearance = ShopifyCheckoutKit.Configuration.Appearance.app(.light)
+        shopifyCheckout.appearance(appearance)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, appearance)
     }
 
-    func testColorSchemeDecoratesCheckoutURLAfterModifierRuns() throws {
-        let sheet = shopifyCheckout.colorScheme(.web)
+    func testAppearanceDecoratesCheckoutURLAfterModifierRuns() throws {
+        let sheet = shopifyCheckout.appearance(.storefront())
         let items = try XCTUnwrap(URLComponents(url: sheet.decoratedCheckoutURL, resolvingAgainstBaseURL: false)?.queryItems)
 
-        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "web_default")
+        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "automatic")
         XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "shop")
     }
 

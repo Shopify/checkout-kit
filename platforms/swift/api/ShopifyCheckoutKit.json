@@ -2733,8 +2733,8 @@
           },
           {
             "kind": "Function",
-            "name": "colorScheme",
-            "printedName": "colorScheme(_:)",
+            "name": "appearance",
+            "printedName": "appearance(_:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -2743,14 +2743,14 @@
               },
               {
                 "kind": "TypeNominal",
-                "name": "ColorScheme",
-                "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
+                "name": "Appearance",
+                "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
               }
             ],
             "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0B12ConfigurableP11colorSchemeyxAA13ConfigurationV05ColorF0OF",
-            "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurableP11colorSchemeyxAA13ConfigurationV05ColorF0OF",
+            "usr": "s:18ShopifyCheckoutKit0B12ConfigurableP10appearanceyxAA13ConfigurationV10AppearanceOF",
+            "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurableP10appearanceyxAA13ConfigurationV10AppearanceOF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "protocolReq": true,
@@ -2886,8 +2886,8 @@
           },
           {
             "kind": "Function",
-            "name": "colorScheme",
-            "printedName": "colorScheme(_:)",
+            "name": "appearance",
+            "printedName": "appearance(_:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -2896,14 +2896,14 @@
               },
               {
                 "kind": "TypeNominal",
-                "name": "ColorScheme",
-                "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
+                "name": "Appearance",
+                "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
               }
             ],
             "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0B12ConfigurablePAAE11colorSchemeyxAA13ConfigurationV05ColorF0OF",
-            "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurablePAAE11colorSchemeyxAA13ConfigurationV05ColorF0OF",
+            "usr": "s:18ShopifyCheckoutKit0B12ConfigurablePAAE10appearanceyxAA13ConfigurationV10AppearanceOF",
+            "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurablePAAE10appearanceyxAA13ConfigurationV10AppearanceOF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
             "declAttributes": [
@@ -3305,19 +3305,19 @@
         "children": [
           {
             "kind": "Var",
-            "name": "colorScheme",
-            "printedName": "colorScheme",
+            "name": "appearance",
+            "printedName": "appearance",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "ColorScheme",
-                "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
+                "name": "Appearance",
+                "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit13ConfigurationV11colorSchemeAC05ColorF0Ovp",
-            "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV11colorSchemeAC05ColorF0Ovp",
+            "usr": "s:18ShopifyCheckoutKit13ConfigurationV10appearanceAC10AppearanceOvp",
+            "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10appearanceAC10AppearanceOvp",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "HasInitialValue",
@@ -3332,14 +3332,14 @@
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "ColorScheme",
-                    "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
-                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
+                    "name": "Appearance",
+                    "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV11colorSchemeAC05ColorF0Ovg",
-                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV11colorSchemeAC05ColorF0Ovg",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10appearanceAC10AppearanceOvg",
+                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10appearanceAC10AppearanceOvg",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3359,14 +3359,14 @@
                   },
                   {
                     "kind": "TypeNominal",
-                    "name": "ColorScheme",
-                    "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
-                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
+                    "name": "Appearance",
+                    "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV11colorSchemeAC05ColorF0Ovs",
-                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV11colorSchemeAC05ColorF0Ovs",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10appearanceAC10AppearanceOvs",
+                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10appearanceAC10AppearanceOvs",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -4157,6 +4157,191 @@
           },
           {
             "kind": "TypeDecl",
+            "name": "Appearance",
+            "printedName": "Appearance",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "app",
+                "printedName": "app",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.Configuration.Appearance.Type) -> (ShopifyCheckoutKit.Configuration.ColorScheme) -> ShopifyCheckoutKit.Configuration.Appearance",
+                    "children": [
+                      {
+                        "kind": "TypeFunc",
+                        "name": "Function",
+                        "printedName": "(ShopifyCheckoutKit.Configuration.ColorScheme) -> ShopifyCheckoutKit.Configuration.Appearance",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Appearance",
+                            "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "ColorScheme",
+                            "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
+                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.Configuration.Appearance.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Appearance",
+                            "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO3appyAeC11ColorSchemeOcAEmF",
+                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10AppearanceO3appyAeC11ColorSchemeOcAEmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Var",
+                "name": "storefront",
+                "printedName": "storefront",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.Configuration.Appearance.Type) -> (ShopifyCheckoutKit.Configuration.ColorScheme) -> ShopifyCheckoutKit.Configuration.Appearance",
+                    "children": [
+                      {
+                        "kind": "TypeFunc",
+                        "name": "Function",
+                        "printedName": "(ShopifyCheckoutKit.Configuration.ColorScheme) -> ShopifyCheckoutKit.Configuration.Appearance",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Appearance",
+                            "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "ColorScheme",
+                            "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
+                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.Configuration.Appearance.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Appearance",
+                            "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO10storefrontyAeC11ColorSchemeOcAEmF",
+                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10AppearanceO10storefrontyAeC11ColorSchemeOcAEmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Function",
+                "name": "__derived_enum_equals",
+                "printedName": "__derived_enum_equals(_:_:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Appearance",
+                    "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Appearance",
+                    "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO21__derived_enum_equalsySbAE_AEtFZ",
+                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10AppearanceO21__derived_enum_equalsySbAE_AEtFZ",
+                "moduleName": "ShopifyCheckoutKit",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Implements"
+                ],
+                "funcSelfKind": "NonMutating"
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO",
+            "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10AppearanceO",
+            "moduleName": "ShopifyCheckoutKit",
+            "isFromExtension": true,
+            "isEnumExhaustive": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              }
+            ]
+          },
+          {
+            "kind": "TypeDecl",
             "name": "ColorScheme",
             "printedName": "ColorScheme",
             "children": [
@@ -4269,43 +4454,6 @@
                 "declKind": "EnumElement",
                 "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO9automaticyA2EmF",
                 "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO9automaticyA2EmF",
-                "moduleName": "ShopifyCheckoutKit"
-              },
-              {
-                "kind": "Var",
-                "name": "web",
-                "printedName": "web",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(ShopifyCheckoutKit.Configuration.ColorScheme.Type) -> ShopifyCheckoutKit.Configuration.ColorScheme",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "ColorScheme",
-                        "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
-                        "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Metatype",
-                        "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme.Type",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "ColorScheme",
-                            "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
-                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ],
-                "declKind": "EnumElement",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO3webyA2EmF",
-                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO3webyA2EmF",
                 "moduleName": "ShopifyCheckoutKit"
               },
               {
