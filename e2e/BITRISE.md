@@ -64,6 +64,20 @@ These secrets are configured in Bitrise.io; they cannot live in the repository. 
 | `STOREFRONT_DOMAIN` | Storefront domain for sample app builds. |
 | `STOREFRONT_ACCESS_TOKEN` | Storefront access token for sample app builds. |
 
+## Code signing
+
+React Native iOS IPA generation uses Bitrise's certificate and profile installer before running `xcodebuild archive` and `xcodebuild -exportArchive`.
+
+Upload the signing certificate and provisioning profile for the React Native sample app to the Bitrise app; the iOS artifact workflow installs them before archiving. The iOS build reads the following signing values with the defaults shown, and each can be overridden with a matching Bitrise environment variable:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `E2E_IOS_EXPORT_METHOD` | `development` | Export method for the React Native iOS IPA. |
+| `E2E_IOS_BUNDLE_ID` | `com.shopify.checkoutkit.reactnativedemo` | Bundle identifier used for iOS archive and export signing. |
+| `E2E_IOS_DEVELOPMENT_TEAM` | `A7XGC83MZE` | Apple development team used for iOS archive signing. |
+| `E2E_IOS_CODE_SIGN_IDENTITY` | `Apple Development` | Code signing identity used for iOS archive and export signing. |
+| `E2E_IOS_PROVISIONING_PROFILE_SPECIFIER` | `bitrise-checkout-kit-e2e` | Provisioning profile specifier installed by Bitrise and passed to `xcodebuild`; override it if the Bitrise-installed profile uses a different name. |
+
 ## Caching
 
 React Native Android E2E builds use the released native Maven artifact versions declared by the React Native sample and module configuration. Do not pass the React Native `--local` flag or set local native SDK override environment variables for these builds.

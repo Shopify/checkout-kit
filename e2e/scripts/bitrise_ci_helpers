@@ -11,6 +11,12 @@ e2e_enable_corepack() {
   corepack enable
 }
 
+e2e_deploy_dir() {
+  local dir="$BITRISE_DEPLOY_DIR/e2e"
+  mkdir -p "$dir"
+  printf '%s\n' "$dir"
+}
+
 e2e_configure_storefront() {
   e2e_log "Checking storefront configuration secrets"
   : "${STOREFRONT_DOMAIN:?STOREFRONT_DOMAIN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"

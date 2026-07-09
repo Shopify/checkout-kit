@@ -59,6 +59,40 @@ step_bundles:
           inputs:
             - key: *rn_node_modules_cache_key
             - paths: platforms/react-native/node_modules
+  install-ruby-gems:
+    steps:
+      - restore-cache@3:
+          inputs:
+            - key: &rn_ruby_gems_cache_key |-
+                rn-ruby-gems-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/Gemfile.lock" }}
+      - script@1:
+          title: Install iOS Ruby dependencies
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/react-native/sample
+                bundle install
+      - save-cache@1:
+          inputs:
+            - key: *rn_ruby_gems_cache_key
+            - paths: platforms/react-native/sample/vendor/bundle
+  install-cocoapods:
+    steps:
+      - restore-cache@3:
+          inputs:
+            - key: &rn_cocoapods_cache_key |-
+                rn-cocoapods-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}
+      - script@1:
+          title: Install CocoaPods dependencies
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/react-native/sample/ios
+                bundle exec pod install --deployment
+      - save-cache@1:
+          inputs:
+            - key: *rn_cocoapods_cache_key
+            - paths: platforms/react-native/sample/ios/Pods
 
 workflows:
   e2e-produce-browserstack-run-plan:
@@ -67,7 +101,7 @@ workflows:
       - script@1:
           title: Produce BrowserStack run plan placeholder
           timeout: 1800
-          no_output_timeout: 1800
+          no_output_timeout: 900
           inputs:
             - content: |-
                 set -euo pipefail
@@ -93,31 +127,33 @@ workflows:
                 $BITRISE_DEPLOY_DIR/browserstack-run-plan.json:E2E_BROWSERSTACK_RUN_PLAN_JSON
 
   e2e-build-react-native-ios:
+    meta:
+      bitrise.io:
+        # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
+        # only receive Xcode patch updates, so this pins Xcode 26.2 / iOS 26.2
+        # (23C54) to match local development.
+        stack: osx-xcode-26.2.x
+        machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
-      - restore-cache@3:
-          inputs:
-            - key: |-
-                rn-ios-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}
+      - certificate-and-profile-installer@1: {}
+      - bundle::install-node-modules: {}
+      - bundle::install-ruby-gems: {}
+      - bundle::install-cocoapods: {}
       - script@1:
-          title: Create React Native iOS artifact placeholder
+          title: Build React Native iOS IPA artifact
+          timeout: 5400
+          no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
-                mkdir -p "$BITRISE_DEPLOY_DIR/e2e"
-                echo "Phase 2 placeholder for React Native iOS IPA" > "$BITRISE_DEPLOY_DIR/e2e/react-native-ios.ipa"
-                envman add --key E2E_REACT_NATIVE_IOS_APP_PATH --value "$BITRISE_DEPLOY_DIR/e2e/react-native-ios.ipa"
+                e2e/scripts/build_react_native_ios
       - deploy-to-bitrise-io@2:
+          is_always_run: false
           inputs:
             - pipeline_intermediate_files: |-
                 $E2E_REACT_NATIVE_IOS_APP_PATH:E2E_REACT_NATIVE_IOS_APP_PATH
-      - save-cache@1:
-          inputs:
-            - key: |-
-                rn-ios-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/pnpm-lock.yaml" }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}
-            - paths: |-
-                platforms/react-native/node_modules
-                platforms/react-native/sample/ios/Pods
+                $E2E_REACT_NATIVE_IOS_SIMULATOR_APP_PATH:E2E_REACT_NATIVE_IOS_SIMULATOR_APP_PATH
 
   e2e-build-react-native-android:
     meta:
@@ -134,7 +170,7 @@ workflows:
       - script@1:
           title: Build React Native Android APK artifact
           timeout: 3600
-          no_output_timeout: 3600
+          no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
@@ -161,7 +197,7 @@ workflows:
       - script@1:
           title: Resolve BrowserStack run plan row placeholder
           timeout: 2700
-          no_output_timeout: 2700
+          no_output_timeout: 1350
           inputs:
             - content: |-
                 set -euo pipefail
