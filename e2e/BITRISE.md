@@ -64,6 +64,15 @@ These secrets are configured in Bitrise.io; they cannot live in the repository. 
 | `STOREFRONT_DOMAIN` | Storefront domain for sample app builds. |
 | `STOREFRONT_ACCESS_TOKEN` | Storefront access token for sample app builds. |
 
+## BrowserStack secrets
+
+The `e2e-execute-browserstack-run` workflow authenticates with BrowserStack using these secrets, configured in Bitrise.io:
+
+| Secret | Purpose |
+|---|---|
+| `BROWSERSTACK_USERNAME` | BrowserStack API username. |
+| `BROWSERSTACK_ACCESS_KEY` | BrowserStack API access key. |
+
 ## Code signing
 
 React Native iOS IPA generation uses Bitrise's certificate and profile installer before running `xcodebuild archive` and `xcodebuild -exportArchive`.
@@ -77,6 +86,17 @@ Upload the signing certificate and provisioning profile for the React Native sam
 | `E2E_IOS_DEVELOPMENT_TEAM` | `A7XGC83MZE` | Apple development team used for iOS archive signing. |
 | `E2E_IOS_CODE_SIGN_IDENTITY` | `Apple Development` | Code signing identity used for iOS archive and export signing. |
 | `E2E_IOS_PROVISIONING_PROFILE_SPECIFIER` | `bitrise-checkout-kit-e2e` | Provisioning profile specifier installed by Bitrise and passed to `xcodebuild`; override it if the Bitrise-installed profile uses a different name. |
+
+## BrowserStack execution
+
+The `e2e-execute-browserstack-run` workflow resolves the Bitrise parallel index into a BrowserStack run plan row, resolves a BrowserStack device dynamically, uploads the app artifact and E2E tests zip, executes the selected flow, and stores raw plus normalized result JSON as artifacts.
+
+The launch smoke suite sends only non-sensitive Maestro environment values to BrowserStack:
+
+- `E2E_APP_ID`
+- `E2E_READY_MARKER`
+
+Do not pass storefront tokens or customer data through BrowserStack Maestro environment variables without explicit review, because those values are visible in BrowserStack dashboards.
 
 ## Caching
 
