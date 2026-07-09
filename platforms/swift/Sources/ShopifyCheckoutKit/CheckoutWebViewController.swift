@@ -6,6 +6,8 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     /// Stable identifier consumed by React Native Maestro E2E tests.
     /// Keep this value in sync with the checkout close selector used by E2E flows.
     private static let closeButtonAccessibilityIdentifier = "shopify_checkout_kit_close_button"
+    private static let closeButtonLength: CGFloat = 44
+    private static let closeButtonSymbolPointSize: CGFloat = 14
 
     var onCancel: (() -> Void)?
     var onFail: ((CheckoutError) -> Void)?
@@ -25,35 +27,45 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     private let checkoutURL: URL
 
     private lazy var closeBarButtonItem: UIBarButtonItem = {
-        if let closeButtonTintColor = ShopifyCheckoutKit.configuration.closeButtonTintColor {
-            var item: UIBarButtonItem
+        let closeButtonTintColor = ShopifyCheckoutKit.configuration.closeButtonTintColor
+        let item: UIBarButtonItem
 
-            if #available(iOS 26.0, *) {
-                item = UIBarButtonItem(
-                    image: UIImage(systemName: "xmark"),
-                    style: .plain,
-                    target: self,
-                    action: #selector(close)
-                )
-            } else {
-                item = UIBarButtonItem(
-                    image: UIImage(systemName: "xmark.circle.fill"),
-                    style: .plain,
-                    target: self,
-                    action: #selector(close)
-                )
-            }
+        if #available(iOS 26.0, *) {
+            let symbolConfiguration = UIImage.SymbolConfiguration(pointSize: Self.closeButtonSymbolPointSize)
+            var buttonConfiguration = UIButton.Configuration.glass()
+            buttonConfiguration.image = UIImage(systemName: "xmark", withConfiguration: symbolConfiguration)
+            buttonConfiguration.preferredSymbolConfigurationForImage = symbolConfiguration
+            buttonConfiguration.baseForegroundColor = closeButtonTintColor
 
-            item.tintColor = closeButtonTintColor
-            item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
-            return item
+            let button = UIButton(configuration: buttonConfiguration)
+            button.addTarget(self, action: #selector(close), for: .touchUpInside)
+            button.accessibilityTraits.insert(.button)
+            button.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
+
+            let container = CheckoutCloseButtonContainer(
+                button: button,
+                length: Self.closeButtonLength
+            )
+            item = UIBarButtonItem(customView: container)
+            item.hidesSharedBackground = true
+        } else if closeButtonTintColor != nil {
+            item = UIBarButtonItem(
+                image: UIImage(systemName: "xmark.circle.fill"),
+                style: .plain,
+                target: self,
+                action: #selector(close)
+            )
+        } else {
+            item = UIBarButtonItem(
+                barButtonSystemItem: .close,
+                target: self,
+                action: #selector(close)
+            )
         }
 
-        let item = UIBarButtonItem(
-            barButtonSystemItem: .close,
-            target: self,
-            action: #selector(close)
-        )
+        if let closeButtonTintColor {
+            item.tintColor = closeButtonTintColor
+        }
         item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
         return item
     }()
@@ -187,6 +199,35 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         }
 
         checkoutView = nil
+    }
+}
+
+@MainActor
+private final class CheckoutCloseButtonContainer: UIView {
+    private let length: CGFloat
+
+    init(button: UIButton, length: CGFloat) {
+        self.length = length
+        super.init(frame: CGRect(x: 0, y: 0, width: length, height: length))
+
+        button.frame = bounds
+        button.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(button)
+        NSLayoutConstraint.activate([
+            button.topAnchor.constraint(equalTo: topAnchor),
+            button.leadingAnchor.constraint(equalTo: leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: trailingAnchor),
+            button.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: length, height: length)
     }
 }
 
