@@ -30,6 +30,17 @@ React Native Android:
 dev rn e2e android
 ```
 
+Run one or more focused React Native scenarios by passing scenario flags:
+
+```bash
+dev rn e2e ios --guest
+dev rn e2e ios --hardcoded-buyer-identity
+dev rn e2e ios --guest --hardcoded-buyer-identity
+dev rn e2e android --guest
+dev rn e2e android --hardcoded-buyer-identity
+dev rn e2e android --guest --hardcoded-buyer-identity
+```
+
 The React Native commands start Metro if needed, build and launch the target
 sample app, then run Maestro. They require the standard storefront `.env` setup,
 but the E2E flows seed their own carts through the bootstrap deep link. The
