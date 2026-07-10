@@ -42,6 +42,17 @@
             </select>
           </label>
 
+          <label>
+            <span>appearance</span>
+            <select name="appearance">
+              <option value="" selected>default (storefront)</option>
+              <option value="app:light">app:light</option>
+              <option value="app:dark">app:dark</option>
+              <option value="app:automatic">app:automatic</option>
+              <option value="storefront">storefront</option>
+            </select>
+          </label>
+
           <label class="checkbox">
             <input type="checkbox" name="debug" />
             <span>debug</span>
@@ -120,6 +131,8 @@
             <dd id="state-error">—</dd>
             <dt>target</dt>
             <dd id="state-target">—</dd>
+            <dt>appearance</dt>
+            <dd id="state-appearance">—</dd>
             <dt>debug</dt>
             <dd id="state-debug">—</dd>
           </dl>

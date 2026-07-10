@@ -34,6 +34,7 @@ Check out our blog to
 - [Configuration](#configuration)
   - [`src`](#src)
   - [`target`](#target)
+  - [`appearance`](#appearance)
   - [`debug`](#debug)
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
@@ -216,7 +217,12 @@ declare module 'react' {
       'shopify-checkout': DetailedHTMLProps<
         HTMLAttributes<ShopifyCheckout>,
         ShopifyCheckout
-      > & {src?: string; target?: string; debug?: boolean};
+      > & {
+        src?: string;
+        target?: string;
+        appearance?: string;
+        debug?: boolean;
+      };
     }
   }
 }
@@ -342,6 +348,30 @@ Where the checkout is presented. Defaults to `"auto"`.
 > `"_self"`, `"_parent"`, and `"_top"` are not allowed — they would navigate
 > the host page away. The component falls back to `"auto"` if you set one,
 > and logs a warning when `debug` is enabled.
+
+### `appearance`
+
+Sets the checkout appearance preference. Defaults to `"storefront"`.
+
+| Value             | Behavior                                            |
+| ----------------- | --------------------------------------------------- |
+| _(unset)_         | Uses the storefront's configured checkout branding. |
+| `"app:light"`     | Uses the app appearance with the light color scheme. |
+| `"app:dark"`      | Uses the app appearance with the dark color scheme. |
+| `"app:automatic"` | Uses the app appearance and lets checkout choose.   |
+| `"storefront"`    | Uses the storefront's configured checkout branding. |
+
+```html
+<shopify-checkout appearance="app:dark" />
+```
+
+```ts
+checkout.appearance = 'app:dark';
+checkout.appearance = undefined;
+```
+
+Invalid values are ignored. When `debug` is enabled, the component logs a
+warning for invalid values.
 
 ### `debug`
 

@@ -42,6 +42,21 @@ describe("<shopify-checkout>", () => {
         expect(checkout.src).toBe(newSrc);
       });
     });
+
+    describe("appearance", () => {
+      it("changing the appearance attribute reflects to the appearance property", () => {
+        const checkout = renderCheckout();
+        checkout.setAttribute("appearance", "app:dark");
+
+        expect(checkout.appearance).toBe("app:dark");
+      });
+
+      it("defaults to storefront when the appearance attribute is unset", () => {
+        const checkout = renderCheckout();
+
+        expect(checkout.appearance).toBe("storefront");
+      });
+    });
   });
 
   describe("target", () => {
@@ -107,6 +122,24 @@ describe("<shopify-checkout>", () => {
         const newTarget = "_blank";
         checkout.target = newTarget;
         expect(checkout.getAttribute("target")).toBe(newTarget);
+      });
+    });
+
+    describe("appearance", () => {
+      it("changing the appearance property reflects to the appearance attribute", () => {
+        const checkout = renderCheckout();
+        checkout.appearance = "app:light";
+
+        expect(checkout.getAttribute("appearance")).toBe("app:light");
+      });
+
+      it("removes the appearance attribute when assigned undefined", () => {
+        const checkout = renderCheckout({ appearance: "app:dark" });
+
+        checkout.appearance = undefined;
+
+        expect(checkout.hasAttribute("appearance")).toBe(false);
+        expect(checkout.appearance).toBe("storefront");
       });
     });
 
@@ -185,6 +218,83 @@ describe("<shopify-checkout>", () => {
       expect(url.searchParams.get("ec_auth")).toBeNull();
       expect(url.searchParams.get("keep")).toBe("1");
       expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
+    });
+
+    it.each([
+      ["app:light", "light", "app"],
+      ["app:dark", "dark", "app"],
+      ["app:automatic", "automatic", "app"],
+      ["storefront", "web_default", "shop"],
+    ] as const)(
+      "sets checkout params for appearance=%s and replaces incoming appearance params",
+      (appearance, colorScheme, branding) => {
+        const checkout = renderCheckout({
+          src: "https://example.com/checkout?ec_color_scheme=light&ck_branding=app&keep=1",
+          appearance,
+        });
+
+        const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+        checkout.open();
+
+        const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+        expect(url.searchParams.getAll("ec_color_scheme")).toEqual([colorScheme]);
+        expect(url.searchParams.getAll("ck_branding")).toEqual([branding]);
+        expect(url.searchParams.get("keep")).toBe("1");
+        expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
+      },
+    );
+
+    it("sets storefront appearance query params when appearance is unset", () => {
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_color_scheme=dark&ck_branding=shop&keep=1",
+      });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_color_scheme")).toBe("web_default");
+      expect(url.searchParams.get("ck_branding")).toBe("shop");
+      expect(url.searchParams.get("keep")).toBe("1");
+    });
+
+    it("omits invalid appearance values and does not warn when debug is disabled", () => {
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_color_scheme=dark&ck_branding=shop&keep=1",
+        appearance: "sepia",
+      });
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_color_scheme")).toBeNull();
+      expect(url.searchParams.get("ck_branding")).toBeNull();
+      expect(url.searchParams.get("keep")).toBe("1");
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it("omits invalid appearance values and warns when debug is enabled", () => {
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_color_scheme=dark&ck_branding=shop&keep=1",
+        appearance: "sepia",
+        debug: "",
+      });
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_color_scheme")).toBeNull();
+      expect(url.searchParams.get("ck_branding")).toBeNull();
+      expect(url.searchParams.get("keep")).toBe("1");
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('appearance="sepia" is not supported and will be ignored'),
+      );
     });
 
     it("handles invalid src URL gracefully", () => {

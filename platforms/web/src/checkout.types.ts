@@ -23,10 +23,12 @@ import type { Checkout, ReadyRequest, ErrorResponse } from "@shopify/checkout-ki
 // Documentation-safe types:
 
 export type CheckoutTarget = "auto" | "popup" | "_blank";
+export type CheckoutAppearance = "app:light" | "app:dark" | "app:automatic" | "storefront";
 
 export interface CheckoutAttributes {
   src?: string;
   target?: CheckoutTarget | string;
+  appearance?: CheckoutAppearance | string;
   debug?: boolean | string;
 }
 
@@ -66,6 +68,14 @@ export interface CheckoutProperties {
    * or this property interchangeably.
    */
   target?: CheckoutTarget | string;
+
+  /**
+   * The checkout appearance preference. Defaults to `'storefront'`.
+   *
+   * This property is automatically reflected to the `appearance` attribute, so you can use the
+   * `appearance` attribute or this property interchangeably.
+   */
+  appearance?: CheckoutAppearance | string;
 
   /**
    * Whether the component should log diagnostic warnings to the console.
