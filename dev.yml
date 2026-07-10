@@ -141,7 +141,7 @@ commands:
           echo "Building Kotlin protocol..."
           ./gradlew :embedded-checkout-protocol:build
       test:
-        desc: "Run protocol package tests. Usage: dev protocol test [kotlin|swift|typescript]"
+        desc: "Run protocol package tests. Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"
         syntax: "[kotlin|swift|typescript]"
         run: |
           set -e
@@ -159,14 +159,16 @@ commands:
           run_typescript() {
             cd $root/protocol
             echo "Running tests for TypeScript..."
-            pnpm test
+            pnpm test "$@"
           }
-          case "$1" in
+          target="${1:-all}"
+          [ $# -gt 0 ] && shift
+          case "$target" in
             swift) run_swift ;;
             kotlin) run_kotlin ;;
-            typescript|ts) run_typescript ;;
-            ""|all) run_swift; run_kotlin; run_typescript ;;
-            *) echo "Usage: dev protocol test [kotlin|swift|typescript]"; exit 1 ;;
+            typescript|ts) run_typescript "$@" ;;
+            all) run_swift; run_kotlin; run_typescript ;;
+            *) echo "Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"; exit 1 ;;
           esac
 
       check:

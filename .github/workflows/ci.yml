@@ -34,6 +34,7 @@ jobs:
       reactNativeIos: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' }}
       reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       web: ${{ steps.platform.outputs.web == 'true' || steps.infra.outputs.web == 'true' }}
+      protocol: ${{ steps.platform.outputs.protocol == 'true' || steps.infra.outputs.protocol == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
@@ -92,6 +93,11 @@ jobs:
               - '.github/workflows/rn-build-android.yml'
             web:
               - '.github/workflows/web.yml'
+              - '.github/actions/setup/**'
+              - '.github/filters/**'
+              - '.github/workflows/ci.yml'
+            protocol:
+              - '.github/workflows/protocol-test.yml'
               - '.github/actions/setup/**'
               - '.github/filters/**'
               - '.github/workflows/ci.yml'
@@ -183,6 +189,15 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/web.yml
 
+  protocol-test:
+    name: Protocol
+    needs: changes
+    if: needs.changes.outputs.protocol == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/protocol-test.yml
+
   breaking-changes:
     name: Breaking Changes
     needs: changes
@@ -217,6 +232,7 @@ jobs:
       - rn-check-packed-files
       - rn-lint
       - web
+      - protocol-test
       - breaking-changes
     runs-on: ubuntu-latest
     steps:

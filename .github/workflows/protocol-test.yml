@@ -1,0 +1,38 @@
+name: Protocol
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: protocol
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: protocol/package.json
+          cache-dependency-path: protocol/pnpm-lock.yaml
+          package-json-file: protocol/package.json
+          working-directory: protocol
+
+      - name: Test with coverage
+        run: pnpm test --coverage
+
+      - name: Coverage comment
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/jest-coverage-comment@fb83bcbaeb5ca467936175796f862a2992938833 # main
+        with:
+          coverage-summary-path: protocol/coverage/coverage-summary.json
+          title: 'Protocol — Coverage Report'
+          create-new-comment: false
