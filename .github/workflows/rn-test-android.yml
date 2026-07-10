@@ -51,6 +51,27 @@ jobs:
             platforms/react-native/modules/@shopify/checkout-kit-react-native/android/**/*.gradle*
             platforms/react-native/modules/@shopify/checkout-kit-react-native/android/gradle.properties
 
+      - name: Resolve Android SDK inputs
+        id: android-sdk
+        run: |
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [ -z "$sdk_root" ]; then
+            echo "ANDROID_HOME or ANDROID_SDK_ROOT must be set" >&2
+            exit 1
+          fi
+          echo "root=$sdk_root" >> "$GITHUB_OUTPUT"
+          echo "ndk_version=$(${{ github.workspace }}/scripts/install_android_ndk --print-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Android NDK
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ steps.android-sdk.outputs.root }}/ndk/${{ steps.android-sdk.outputs.ndk_version }}
+          key: android-ndk-${{ runner.os }}-${{ runner.arch }}-${{ steps.android-sdk.outputs.ndk_version }}
+
+      - name: Install Android NDK
+        timeout-minutes: 10
+        run: ${{ github.workspace }}/scripts/install_android_ndk
+
       - name: Run Android tests
         timeout-minutes: 20
         env:
