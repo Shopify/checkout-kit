@@ -22,14 +22,13 @@ import com.shopify.checkout_kit_android_demo.R
 import com.shopify.checkout_kit_android_demo.common.components.BodyMedium
 import com.shopify.checkout_kit_android_demo.common.components.Header3
 import com.shopify.checkout_kit_android_demo.common.ui.theme.verticalPadding
-import com.shopify.checkoutkit.Color
+import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.ColorScheme
-import com.shopify.checkoutkit.Colors
 
 @Composable
 fun ColorSchemeSection(
-    selected: ColorScheme,
-    setSelected: (ColorScheme) -> Unit,
+    selected: CheckoutAppearance,
+    setSelected: (CheckoutAppearance) -> Unit,
 ) {
 
     Column {
@@ -46,41 +45,34 @@ fun ColorSchemeSection(
                 .background(color = MaterialTheme.colorScheme.background)
                 .fillMaxWidth()
 
-            ColorSchemeOption(
-                colorScheme = ColorScheme.Automatic(),
+            AppearanceOption(
+                appearance = CheckoutAppearance.Storefront(ColorScheme.Automatic()),
+                description = "Uses the storefront checkout branding based on device preferences",
+                selected = selected,
+                setSelected = setSelected,
+                modifier = optionModifier,
+            )
+
+            AppearanceOption(
+                appearance = CheckoutAppearance.App(ColorScheme.Automatic()),
                 description = "Applies a color scheme in checkout based on device preferences",
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
             )
 
-            ColorSchemeOption(
-                colorScheme = ColorScheme.Light(),
+            AppearanceOption(
+                appearance = CheckoutAppearance.App(ColorScheme.Light()),
                 description = "Applies a light color scheme to checkout",
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier
             )
 
-            ColorSchemeOption(
-                colorScheme = ColorScheme.Dark(),
+            AppearanceOption(
+                appearance = CheckoutAppearance.App(ColorScheme.Dark()),
                 selected = selected,
                 description = "Applies a dark color scheme to checkout",
-                setSelected = setSelected,
-                modifier = optionModifier,
-            )
-
-            ColorSchemeOption(
-                colorScheme = ColorScheme.Web(
-                    colors = Colors(
-                        headerBackground = Color.ResourceId(R.color.header_bg),
-                        webViewBackground = Color.ResourceId(R.color.web_view_bg),
-                        headerFont = Color.ResourceId(R.color.header_font),
-                        progressIndicator = Color.ResourceId(R.color.bright_progress_indicator),
-                    )
-                ),
-                description = "Applies a color scheme in checkout based on the current checkout web configuration",
-                selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
             )
@@ -89,21 +81,21 @@ fun ColorSchemeSection(
 }
 
 @Composable
-fun ColorSchemeOption(
-    colorScheme: ColorScheme,
-    setSelected: (ColorScheme) -> Unit,
+fun AppearanceOption(
+    appearance: CheckoutAppearance,
+    setSelected: (CheckoutAppearance) -> Unit,
     description: String,
-    selected: ColorScheme,
+    selected: CheckoutAppearance,
     modifier: Modifier,
 ) {
-    val isSelected = selected.id == colorScheme.id
+    val isSelected = selected.optionKey == appearance.optionKey
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.selectable(
             selected = isSelected,
             role = Role.RadioButton,
-            onClick = { setSelected(colorScheme) }
+            onClick = { setSelected(appearance) }
         ),
     ) {
         RadioButton(
@@ -112,7 +104,7 @@ fun ColorSchemeOption(
             modifier = Modifier.semantics { contentDescription = description }
         )
         BodyMedium(
-            stringResource(id = colorScheme.name),
+            stringResource(id = appearance.name),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp)
@@ -120,10 +112,18 @@ fun ColorSchemeOption(
     }
 }
 
-private val ColorScheme.name: Int
+private val CheckoutAppearance.name: Int
     get() = when (this) {
-        is ColorScheme.Light -> R.string.color_scheme_light
-        is ColorScheme.Dark -> R.string.color_scheme_dark
-        is ColorScheme.Web -> R.string.color_scheme_web
-        is ColorScheme.Automatic -> R.string.color_scheme_automatic
+        is CheckoutAppearance.Storefront -> R.string.color_scheme_storefront_automatic
+        is CheckoutAppearance.App -> when (colorScheme) {
+            is ColorScheme.Light -> R.string.color_scheme_app_light
+            is ColorScheme.Dark -> R.string.color_scheme_app_dark
+            is ColorScheme.Automatic -> R.string.color_scheme_app_automatic
+        }
+    }
+
+private val CheckoutAppearance.optionKey: String
+    get() = when (this) {
+        is CheckoutAppearance.Storefront -> "storefront:${colorScheme.id}"
+        is CheckoutAppearance.App -> "app:${colorScheme.id}"
     }

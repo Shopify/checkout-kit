@@ -13,7 +13,7 @@ internal object CheckoutUrlDecorator {
             checkoutUrl,
             options = EmbeddedCheckoutProtocol.Options(
                 delegations = CheckoutProtocol.defaultDelegations,
-                colorScheme = configuration.colorScheme.id,
+                colorScheme = configuration.appearance.colorSchemeId,
             ),
         )
 
@@ -21,19 +21,23 @@ internal object CheckoutUrlDecorator {
         if (uri.isOpaque) return decorated
 
         return uri
-            .replacingQueryParameter(CK_BRANDING_PARAM, configuration.colorScheme.brandingId)
+            .replacingQueryParameter(CK_BRANDING_PARAM, configuration.appearance.brandingId)
             .toString()
     }
 
     private const val CK_BRANDING_PARAM = "ck_branding"
 }
 
-private val ColorScheme.brandingId: String
+private val CheckoutAppearance.colorSchemeId: String
     get() = when (this) {
-        is ColorScheme.Web -> "shop"
-        is ColorScheme.Automatic,
-        is ColorScheme.Dark,
-        is ColorScheme.Light -> "app"
+        is CheckoutAppearance.App -> colorScheme.id
+        is CheckoutAppearance.Storefront -> ColorScheme.Automatic().id
+    }
+
+private val CheckoutAppearance.brandingId: String
+    get() = when (this) {
+        is CheckoutAppearance.App -> "app"
+        is CheckoutAppearance.Storefront -> "shop"
     }
 
 private fun Uri.replacingQueryParameter(name: String, value: String): Uri {

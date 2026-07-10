@@ -34,7 +34,7 @@ class CheckoutBottomSheetAccessibilityTest {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         ShopifyCheckoutKit.configure {
-            it.colorScheme = configuration.colorScheme
+            it.appearance = configuration.appearance
             it.preloading = configuration.preloading
             it.platform = configuration.platform
             it.logLevel = configuration.logLevel

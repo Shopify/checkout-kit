@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetPreset
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
+import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.ColorScheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -20,9 +21,17 @@ class PreferencesManager(private val context: Context) {
     private val decoder: Json = Json { ignoreUnknownKeys = true }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data.map { preferences ->
-        val colorScheme = decoder.decodeFromString<ColorScheme>(
-            preferences[COLOR_SCHEME] ?: DEFAULT_COLOR_SCHEME
-        )
+        val appearance = preferences[APPEARANCE]?.let { value ->
+            runCatching {
+                decoder.decodeFromString<CheckoutAppearance>(value)
+            }.getOrNull()
+        } ?: preferences[COLOR_SCHEME]?.let { value ->
+            runCatching {
+                CheckoutAppearance.App(
+                    decoder.decodeFromString<ColorScheme>(value)
+                )
+            }.getOrNull()
+        } ?: CheckoutAppearance.Storefront()
         val buyerIdentityDemoEnabled = preferences[BUYER_IDENTITY] ?: false
         val checkoutPreloadingEnabled = preferences[CHECKOUT_PRELOADING] ?: true
         val dragToDismissEnabled = preferences[DRAG_TO_DISMISS] ?: true
@@ -35,7 +44,7 @@ class PreferencesManager(private val context: Context) {
         } ?: CheckoutSheetPreset.NewDefaults
 
         UserPreferences(
-            colorScheme = colorScheme,
+            appearance = appearance,
             buyerIdentityDemoEnabled = buyerIdentityDemoEnabled,
             checkoutPreloadingEnabled = checkoutPreloadingEnabled,
             dragToDismissEnabled = dragToDismissEnabled,
@@ -45,8 +54,8 @@ class PreferencesManager(private val context: Context) {
         )
     }
 
-    suspend fun setColorScheme(colorScheme: ColorScheme) =
-        saveData(COLOR_SCHEME, Json.encodeToString(ColorScheme.serializer(), colorScheme))
+    suspend fun setAppearance(appearance: CheckoutAppearance) =
+        saveData(APPEARANCE, Json.encodeToString(CheckoutAppearance.serializer(), appearance))
 
     suspend fun setBuyerIdentityDemoEnabled(enabled: Boolean) = saveData(BUYER_IDENTITY, enabled)
 
@@ -66,6 +75,7 @@ class PreferencesManager(private val context: Context) {
 
     companion object {
         private val COLOR_SCHEME = stringPreferencesKey("colorScheme")
+        private val APPEARANCE = stringPreferencesKey("appearance")
         private val BUYER_IDENTITY = booleanPreferencesKey("buyerIdentity")
         private val CHECKOUT_PRELOADING = booleanPreferencesKey("checkoutPreloading")
         private val DRAG_TO_DISMISS = booleanPreferencesKey("dragToDismiss")
@@ -73,15 +83,11 @@ class PreferencesManager(private val context: Context) {
         private val WINDOW_OPEN_HANDLER = stringPreferencesKey("windowOpenHandler")
         private val CHECKOUT_SHEET_PRESET = stringPreferencesKey("checkoutSheetStyle")
 
-        private val DEFAULT_COLOR_SCHEME = Json.encodeToString(
-            ColorScheme.serializer(),
-            ColorScheme.Automatic()
-        )
     }
 }
 
 data class UserPreferences(
-    val colorScheme: ColorScheme,
+    val appearance: CheckoutAppearance,
     val buyerIdentityDemoEnabled: Boolean,
     val checkoutPreloadingEnabled: Boolean,
     val dragToDismissEnabled: Boolean,

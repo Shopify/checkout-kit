@@ -32,7 +32,7 @@ public class InteropTest {
     @After
     public void tearDown() {
         ShopifyCheckoutKit.configure(config -> {
-            config.setColorScheme(initialConfiguration.getColorScheme());
+            config.setAppearance(initialConfiguration.getAppearance());
             config.setSheet(initialConfiguration.getSheet());
             config.setPreloading(initialConfiguration.getPreloading());
             config.setPlatform(initialConfiguration.getPlatform());
@@ -60,12 +60,23 @@ public class InteropTest {
     @Test
     public void canConfigureCheckoutKit() {
         ShopifyCheckoutKit.configure(configuration -> {
-            configuration.setColorScheme(new ColorScheme.Dark());
+            configuration.setAppearance(new CheckoutAppearance.App(new ColorScheme.Dark()));
         });
 
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
 
-        assertThat(configuration.getColorScheme().getId()).isEqualTo("dark");
+        assertThat(configuration.getAppearance()).isEqualTo(new CheckoutAppearance.App(new ColorScheme.Dark()));
+    }
+
+    @Test
+    public void canConfigureStorefrontAppearance() {
+        ShopifyCheckoutKit.configure(configuration -> {
+            configuration.setAppearance(new CheckoutAppearance.Storefront());
+        });
+
+        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+
+        assertThat(configuration.getAppearance()).isEqualTo(new CheckoutAppearance.Storefront());
     }
 
     @Test
@@ -232,13 +243,13 @@ public class InteropTest {
 
     @Test
     public void canChainColorsBuilderMethods() {
-        ColorScheme.Web webScheme = new ColorScheme.Web();
+        ColorScheme.Light lightScheme = new ColorScheme.Light();
         Color webViewBg = new Color.ResourceId(android.R.color.white);
         Color progressColor = new Color.ResourceId(android.R.color.holo_green_dark);
         Color dragHandle = new Color.ResourceId(android.R.color.holo_blue_light);
         DrawableResource icon = new DrawableResource(android.R.drawable.ic_menu_close_clear_cancel);
 
-        ColorScheme customized = webScheme.customize(builder -> {
+        ColorScheme customized = lightScheme.customize(builder -> {
             builder
                     .withWebViewBackground(webViewBg)
                     .withProgressIndicator(progressColor)
@@ -247,9 +258,9 @@ public class InteropTest {
             return Unit.INSTANCE;
         });
 
-        assertThat(customized).isInstanceOf(ColorScheme.Web.class);
-        ColorScheme.Web customizedWeb = (ColorScheme.Web) customized;
-        Colors colors = customizedWeb.getColors();
+        assertThat(customized).isInstanceOf(ColorScheme.Light.class);
+        ColorScheme.Light customizedLight = (ColorScheme.Light) customized;
+        Colors colors = customizedLight.getColors();
 
         assertThat(colors.getWebViewBackground()).isEqualTo(webViewBg);
         assertThat(colors.getProgressIndicator()).isEqualTo(progressColor);

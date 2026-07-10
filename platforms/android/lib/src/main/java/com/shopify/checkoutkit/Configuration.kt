@@ -7,7 +7,7 @@ package com.shopify.checkoutkit
  */
 @ConsistentCopyVisibility
 public data class Configuration internal constructor(
-    var colorScheme: ColorScheme = ColorScheme.Automatic(),
+    var appearance: CheckoutAppearance = CheckoutAppearance.Storefront(),
     var sheet: CheckoutSheetOptions = CheckoutSheetOptions(),
     var platform: Platform? = null,
     var logLevel: LogLevel = LogLevel.WARN,

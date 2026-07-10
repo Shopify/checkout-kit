@@ -20,10 +20,10 @@
     <string name="checkout_tap_away_to_dismiss" translatable="false">Tap outside to dismiss</string>
 
     <string name="color_scheme" translatable="false">Color Scheme</string>
-    <string name="color_scheme_automatic" translatable="false">Automatic</string>
-    <string name="color_scheme_dark" translatable="false">Dark</string>
-    <string name="color_scheme_light" translatable="false">Light</string>
-    <string name="color_scheme_web" translatable="false">Web</string>
+    <string name="color_scheme_app_automatic" translatable="false">App automatic</string>
+    <string name="color_scheme_app_dark" translatable="false">App dark</string>
+    <string name="color_scheme_app_light" translatable="false">App light</string>
+    <string name="color_scheme_storefront_automatic" translatable="false">Storefront automatic</string>
 
     <string name="checkout_sheet_preset" translatable="false">Checkout sheet preset</string>
     <string name="checkout_sheet_preset_new_defaults" translatable="false">New defaults</string>

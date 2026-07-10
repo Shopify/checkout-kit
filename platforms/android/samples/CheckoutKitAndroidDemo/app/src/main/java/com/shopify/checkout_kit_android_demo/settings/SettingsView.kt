@@ -125,8 +125,8 @@ fun SettingsView(
                 }
 
                 ColorSchemeSection(
-                    selected = uiState.settings.colorScheme,
-                    setSelected = settingsViewModel::setColorScheme
+                    selected = uiState.settings.appearance,
+                    setSelected = settingsViewModel::setAppearance
                 )
 
                 CheckoutSheetPresetSection(

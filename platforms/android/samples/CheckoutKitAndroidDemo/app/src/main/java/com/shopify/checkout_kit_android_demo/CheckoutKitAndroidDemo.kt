@@ -33,7 +33,7 @@ class CheckoutKitAndroidDemo : Application() {
             val settings = preferencesManager.userPreferencesFlow.first()
             ShopifyCheckoutKit.configure {
                 it.logLevel = LogLevel.DEBUG
-                it.colorScheme = settings.colorScheme.withCustomCloseIcon()
+                it.appearance = settings.appearance.withCustomCloseIcon()
                 it.sheet = settings.checkoutSheetPreset.toCheckoutSheetOptions(
                     dragToDismissEnabled = settings.dragToDismissEnabled,
                     tapAwayToDismissEnabled = settings.tapAwayToDismissEnabled,
