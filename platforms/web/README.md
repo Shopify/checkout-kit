@@ -134,7 +134,7 @@ checkout.target = 'popup';
 document.body.append(checkout);
 
 checkout.addEventListener('ec.complete', (event) => {
-  console.log('Order complete', event.detail.order.id);
+  console.log('Order complete', event.detail.checkout.order?.id);
 });
 
 checkout.open();
@@ -181,7 +181,7 @@ export function BuyNowButton({checkoutUrl}: {checkoutUrl: string}) {
 
     checkout.addEventListener(
       'ec.complete',
-      (event) => console.log('Order complete', event.detail.order.id),
+      (event) => console.log('Order complete', event.detail.checkout.order?.id),
       {signal},
     );
     checkout.addEventListener('ec.close', () => console.log('Dismissed'), {
@@ -200,10 +200,10 @@ export function BuyNowButton({checkoutUrl}: {checkoutUrl: string}) {
 }
 ```
 
-`event` is fully typed inside each listener — `event.detail.order` on
-`ec.complete`, and so on — courtesy of the element's overloaded
-`addEventListener` signatures. See [Checkout lifecycle](#checkout-lifecycle)
-for the full event list.
+`event` is fully typed inside each listener. For example, order data for
+`ec.complete` is available at `event.detail.checkout.order`. The element's
+overloaded `addEventListener` signatures provide these types. See
+[Checkout lifecycle](#checkout-lifecycle) for the full event list.
 
 TypeScript doesn't know about the `<shopify-checkout>` tag in JSX out of the
 box. Declare it once, anywhere in your project's type definitions:
@@ -418,28 +418,29 @@ DOM — including a single delegated listener at `document` if you have many
 elements on the page. Each event carries a typed `event.detail` payload with
 exactly the fields relevant to that moment.
 
-| Event                  | `event.detail`          | When it fires                                                              |
-| ---------------------- | ----------------------- | -------------------------------------------------------------------------- |
-| `ec.start`             | `{checkout}`            | Checkout has loaded and is interactive.                                    |
-| `ec.complete`          | `{checkout, order}`     | The buyer completed the order successfully.                                |
-| `ec.close`             | _(none)_                | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
-| `ec.error`             | `{error}`               | Session-level fatal error — tear down the embedded context.                |
-| `ec.line_items.change` | `{checkout, lineItems}` | The cart's line items changed (item added/removed/quantity updated).       |
-| `ec.totals.change`     | `{checkout, totals}`    | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
-| `ec.messages.change`   | `{checkout, messages}`  | Checkout-level warnings/errors/info shown inside the checkout changed.     |
+| Event                  | `event.detail` | When it fires                                                              |
+| ---------------------- | -------------- | -------------------------------------------------------------------------- |
+| `ec.start`             | `{checkout}`   | Checkout has loaded and is interactive.                                    |
+| `ec.complete`          | `{checkout}`   | The buyer completed the order successfully.                                |
+| `ec.close`             | _(none)_       | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
+| `ec.error`             | `{error}`      | Session-level fatal error — tear down the embedded context.                |
+| `ec.line_items.change` | `{checkout}`   | The cart's line items changed (item added/removed/quantity updated).       |
+| `ec.totals.change`     | `{checkout}`   | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
+| `ec.messages.change`   | `{checkout}`   | Checkout-level warnings/errors/info shown inside the checkout changed.     |
 
-The `checkout` field on every change event is the full UCP `Checkout`
-snapshot, included for handlers that want broader context. Most handlers only
-need the named slice (e.g. `event.detail.totals`).
+`ec.start`, `ec.complete`, and the change events carry the full UCP `Checkout`
+snapshot in `event.detail.checkout` for handlers that need broader context.
 
 ```ts
 checkout.addEventListener('ec.complete', (event) => {
-  const {order} = event.detail;
-  analytics.track('checkout_complete', {orderId: order.id});
+  const {order} = event.detail.checkout;
+  if (order) {
+    analytics.track('checkout_complete', {orderId: order.id});
+  }
 });
 
 checkout.addEventListener('ec.totals.change', (event) => {
-  miniCart.updateTotals(event.detail.totals);
+  miniCart.updateTotals(event.detail.checkout.totals);
 });
 
 checkout.addEventListener('ec.close', () => {
@@ -447,10 +448,9 @@ checkout.addEventListener('ec.close', () => {
 });
 ```
 
-Reach for `event.detail.checkout` when a handler needs fields beyond the
-named slice. It carries the full UCP `Checkout` snapshot at the moment the
-event was dispatched. For example, rendering an inline cart summary on
-`ec.start` requires line items, totals, and currency together:
+Because these events carry the full snapshot, one handler can combine fields.
+For example, rendering an inline cart summary on `ec.start` requires line
+items, totals, and currency together:
 
 ```ts
 checkout.addEventListener('ec.start', (event) => {
@@ -458,18 +458,18 @@ checkout.addEventListener('ec.start', (event) => {
   loadingSpinner.hide();
   cartSummary.render({
     currency: snapshot.currency,
-    items: snapshot.line_items,
+    items: snapshot.lineItems,
     totals: snapshot.totals,
   });
 });
 ```
 
-The full UCP `Checkout` snapshot is also mirrored to the
-[`element.checkout`](#) property every time a payload-carrying event arrives,
-and the latest error is mirrored to [`element.error`](#) when `ec.error`
-fires — useful for handlers that don't have a reference to the originating
-event. TypeScript users get fully typed events via overloaded
-`addEventListener` signatures — no additional setup required.
+The latest full UCP `Checkout` snapshot is also mirrored to `element.checkout`
+whenever an event with `{checkout}` arrives. The latest error is mirrored to
+`element.error` when `ec.error` fires. These properties are useful for handlers
+that don't have a reference to the originating event. TypeScript users get
+fully typed events through overloaded `addEventListener` signatures with no
+additional setup.
 
 > [!NOTE]
 > Most public `ec.*` DOM event names mirror the underlying
