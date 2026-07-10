@@ -861,6 +861,8 @@ async function generateTypescript(specDir, output, {mapModelNames}) {
     useTypescriptMapsForModels(source.replace(/^type /gm, "export type "), mapModelNames),
   );
 
+  await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_rename_map.mjs")]);
+  await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_codecs.mjs")]);
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 
   const declarationOutput = path.join(PROTOCOL_DIR, "languages", "typescript", "src", "index.d.ts");

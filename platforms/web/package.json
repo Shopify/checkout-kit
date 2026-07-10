@@ -22,7 +22,6 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "source": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -41,9 +40,7 @@
     "LICENSE",
     "README.md",
     "package.json",
-    "dist",
-    "src",
-    "!src/**/*.test.ts"
+    "dist"
   ],
   "keywords": [
     "shopify",
@@ -77,6 +74,7 @@
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
+    "@shopify/checkout-kit-protocol": "workspace:*",
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^4.1.0",
     "happy-dom": "^20.8.9",

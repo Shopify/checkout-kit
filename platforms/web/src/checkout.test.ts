@@ -1,14 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
 
-import type { Checkout, CheckoutProtocolMessageMap, UcpErrorResponse } from "./checkout.types";
-import type { CheckoutMessageError } from "./ucp-embed-types";
+import type { CheckoutProtocolMessageMap, ErrorResponse, Message } from "./checkout.types";
 import "./checkout-web-component";
-import {
-  DEFAULT_POPUP_WIDTH,
-  DEFAULT_POPUP_HEIGHT,
-  EMBED_PROTOCOL_VERSION,
-  CK_VERSION,
-} from "./checkout";
+import { DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT, CK_VERSION } from "./checkout";
+
+const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 import type { ShopifyCheckout } from "./checkout";
 
 const POPUP_TARGETS = ["popup"] as const;
@@ -740,10 +737,14 @@ describe("<shopify-checkout>", () => {
           { delegate: [] },
           { id: "ready-1", source: mockCheckoutWindow },
         );
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
-          { jsonrpc: "2.0", id: "ready-1", result: {} },
+          {
+            jsonrpc: "2.0",
+            id: "ready-1",
+            result: { ucp: { status: "success", version: EMBED_PROTOCOL_VERSION } },
+          },
           new URL(checkout.src).origin,
         );
         expect(onReadySpy).not.toHaveBeenCalled();
@@ -764,7 +765,7 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("unsupported protocol methods", () => {
-      it("posts method-not-found for unsupported requests", () => {
+      it("posts method-not-found for unsupported requests", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const targetOrigin = new URL(checkout.src).origin;
 
@@ -779,6 +780,8 @@ describe("<shopify-checkout>", () => {
           { source: mockCheckoutWindow },
         );
 
+        await flushProtocolDispatch();
+
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
           {
             jsonrpc: "2.0",
@@ -788,14 +791,46 @@ describe("<shopify-checkout>", () => {
               message: "Method not found",
             },
           },
-          { targetOrigin },
+          targetOrigin,
         );
       });
 
-      it("ignores unsupported requests with invalid request ids", () => {
+      it("posts method-not-found for unsupported requests with a null id", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const targetOrigin = new URL(checkout.src).origin;
+
+        simulateRawMessageEvent(
+          checkout,
+          {
+            jsonrpc: "2.0",
+            method: "ep.cart.ready",
+            id: null,
+            params: {},
+          },
+          { source: mockCheckoutWindow },
+        );
+
+        await flushProtocolDispatch();
+
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: null,
+            error: {
+              code: -32601,
+              message: "Method not found",
+            },
+          },
+          targetOrigin,
+        );
+      });
+
+      it("ignores unsupported requests with unusable request ids", () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
 
-        for (const id of [{}, null, true]) {
+        // `{}` and `true` are not valid JSON-RPC ids, so the shared decoder
+        // drops them entirely. (`null` is valid — see the test above.)
+        for (const id of [{}, true]) {
           simulateRawMessageEvent(
             checkout,
             {
@@ -853,7 +888,7 @@ describe("<shopify-checkout>", () => {
         });
         await listenForEvent;
 
-        expect(checkout.checkout).toBe(payload.checkout);
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
         expect(onStartSpy).toHaveBeenCalledOnce();
       });
     });
@@ -870,7 +905,7 @@ describe("<shopify-checkout>", () => {
         });
         await listenForEvent;
 
-        expect(checkout.checkout).toBe(payload.checkout);
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
         expect(onCompleteSpy).toHaveBeenCalledOnce();
       });
     });
@@ -887,7 +922,7 @@ describe("<shopify-checkout>", () => {
         });
         await listenForEvent;
 
-        expect(checkout.error).toStrictEqual(errorParams.error);
+        expect(checkout.error).toEqual(decodeError(errorParams));
         expect(onErrorSpy).toHaveBeenCalledOnce();
       });
 
@@ -908,7 +943,7 @@ describe("<shopify-checkout>", () => {
             source: mockCheckoutWindow,
           }),
         );
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(checkout.error).toBeUndefined();
         expect(onErrorSpy).not.toHaveBeenCalled();
@@ -926,19 +961,19 @@ describe("<shopify-checkout>", () => {
           makeErrorParams({ severity: "unrecoverable" }),
           { source: mockCheckoutWindow },
         );
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(errorOrder).toStrictEqual(["error", "close"]);
       });
 
-      const NON_FATAL_SEVERITIES: ReadonlyArray<CheckoutMessageError["severity"]> = [
+      const NON_FATAL_SEVERITIES: ReadonlyArray<Message["severity"]> = [
         "recoverable",
         "requires_buyer_input",
         "requires_buyer_review",
       ];
       it.each(NON_FATAL_SEVERITIES)(
         "does not auto-close when severity is %s",
-        async (severity: CheckoutMessageError["severity"]) => {
+        async (severity: Message["severity"]) => {
           const { checkout, mockCheckoutWindow } = openPopupCheckout();
           const closeSpy = vi.fn();
           checkout.addEventListener("ec.close", closeSpy);
@@ -946,11 +981,53 @@ describe("<shopify-checkout>", () => {
           simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams({ severity }), {
             source: mockCheckoutWindow,
           });
-          await Promise.resolve();
+          await flushProtocolDispatch();
 
           expect(closeSpy).not.toHaveBeenCalled();
         },
       );
+
+      it("does not crash when ec.error messages is not an array", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onErrorSpy = vi.fn();
+        const closeSpy = vi.fn();
+        checkout.addEventListener("ec.error", onErrorSpy);
+        checkout.addEventListener("ec.close", closeSpy);
+
+        const nodeProcess = (
+          globalThis as unknown as {
+            process: {
+              on(event: "unhandledRejection", listener: (reason: unknown) => void): void;
+              off(event: "unhandledRejection", listener: (reason: unknown) => void): void;
+            };
+          }
+        ).process;
+        const rejections: unknown[] = [];
+        const onRejection = (reason: unknown) => rejections.push(reason);
+        nodeProcess.on("unhandledRejection", onRejection);
+
+        try {
+          simulateProtocolMessageEvent(
+            checkout,
+            "ec.error",
+            {
+              error: {
+                ucp: { version: EMBED_PROTOCOL_VERSION, status: "error" },
+                messages: "not-an-array",
+              },
+            },
+            { source: mockCheckoutWindow },
+          );
+          await flushProtocolDispatch();
+          await flushProtocolDispatch();
+        } finally {
+          nodeProcess.off("unhandledRejection", onRejection);
+        }
+
+        expect(rejections).toEqual([]);
+        expect(onErrorSpy).toHaveBeenCalledOnce();
+        expect(closeSpy).not.toHaveBeenCalled();
+      });
     });
 
     describe("ec.line_items.change", () => {
@@ -965,7 +1042,7 @@ describe("<shopify-checkout>", () => {
         });
         await listenForEvent;
 
-        expect(checkout.checkout).toBe(payload.checkout);
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
         expect(onLineItemsChangeSpy).toHaveBeenCalledOnce();
       });
     });
@@ -982,7 +1059,7 @@ describe("<shopify-checkout>", () => {
         });
         await listenForEvent;
 
-        expect(checkout.checkout).toBe(payload.checkout);
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
         expect(onTotalsChangeSpy).toHaveBeenCalledOnce();
       });
     });
@@ -999,7 +1076,7 @@ describe("<shopify-checkout>", () => {
         });
         await listenForEvent;
 
-        expect(checkout.checkout).toBe(payload.checkout);
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
         expect(onMessagesChangeSpy).toHaveBeenCalledOnce();
       });
     });
@@ -1017,10 +1094,10 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail).toEqual({ checkout: payload.checkout });
+        expect(event.detail).toEqual({ checkout: decodeCheckout(payload) });
       });
 
-      it("ec.complete carries {checkout, order}", async () => {
+      it("ec.complete carries {checkout, order} with order derived from checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "ec.complete", spy);
@@ -1036,7 +1113,24 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail).toEqual({ checkout: payload.checkout, order });
+        const decoded = decodeCheckout(payload);
+        expect(event.detail).toEqual({ checkout: decoded, order: decoded.order });
+        expect(event.detail.order).toEqual(event.detail.checkout.order);
+      });
+
+      it("ec.complete leaves order undefined when the checkout has no order", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const spy = vi.fn();
+        const wait = waitForEvent(checkout, "ec.complete", spy);
+
+        const payload = makeCheckoutPayload();
+        simulateProtocolMessageEvent(checkout, "ec.complete", payload, {
+          source: mockCheckoutWindow,
+        });
+        await wait;
+
+        const event = spy.mock.calls[0]![0] as CustomEvent;
+        expect(event.detail.order).toBeUndefined();
       });
 
       it("ec.error carries {error}", async () => {
@@ -1051,7 +1145,7 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail).toEqual({ error: errorParams.error });
+        expect(event.detail).toEqual({ error: decodeError(errorParams) });
       });
 
       it("ec.line_items.change carries {lineItems, checkout}", async () => {
@@ -1066,8 +1160,9 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail.lineItems).toBe(payload.checkout.line_items);
-        expect(event.detail.checkout).toBe(payload.checkout);
+        const decoded = decodeCheckout(payload);
+        expect(event.detail.lineItems).toEqual(decoded.lineItems);
+        expect(event.detail.checkout).toEqual(decoded);
       });
 
       it("ec.totals.change carries {totals, checkout}", async () => {
@@ -1082,8 +1177,9 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail.totals).toBe(payload.checkout.totals);
-        expect(event.detail.checkout).toBe(payload.checkout);
+        const decoded = decodeCheckout(payload);
+        expect(event.detail.totals).toEqual(decoded.totals);
+        expect(event.detail.checkout).toEqual(decoded);
       });
 
       it("ec.messages.change carries {messages, checkout}", async () => {
@@ -1098,8 +1194,9 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail.messages).toEqual(payload.checkout.messages ?? []);
-        expect(event.detail.checkout).toBe(payload.checkout);
+        const decoded = decodeCheckout(payload);
+        expect(event.detail.messages).toEqual(decoded.messages ?? []);
+        expect(event.detail.checkout).toEqual(decoded);
       });
 
       it("ec.close carries no detail", () => {
@@ -1115,7 +1212,7 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("ec.window.open_request", () => {
-      it("opens the requested url in a new tab with noopener when an id is present", () => {
+      it("opens the requested url in a new tab with noopener when an id is present", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const windowOpenSpy = vi.spyOn(window, "open");
 
@@ -1125,6 +1222,7 @@ describe("<shopify-checkout>", () => {
           { url: "https://example.com/return" },
           { id: "open-1", source: mockCheckoutWindow },
         );
+        await flushProtocolDispatch();
 
         expect(windowOpenSpy).toHaveBeenLastCalledWith(
           "https://example.com/return",
@@ -1133,7 +1231,7 @@ describe("<shopify-checkout>", () => {
         );
       });
 
-      it("posts a JSON-RPC response back to the source", () => {
+      it("posts a JSON-RPC response back to the source", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         vi.spyOn(window, "open").mockReturnValue(null);
 
@@ -1143,10 +1241,15 @@ describe("<shopify-checkout>", () => {
           { url: "https://example.com/return" },
           { id: "open-resp", source: mockCheckoutWindow },
         );
+        await flushProtocolDispatch();
 
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
-          { jsonrpc: "2.0", id: "open-resp", result: {} },
-          { targetOrigin: new URL(checkout.src).origin },
+          {
+            jsonrpc: "2.0",
+            id: "open-resp",
+            result: { ucp: { status: "success", version: EMBED_PROTOCOL_VERSION } },
+          },
+          new URL(checkout.src).origin,
         );
       });
 
@@ -1169,31 +1272,40 @@ describe("<shopify-checkout>", () => {
         expect(windowOpenSpy).toHaveBeenCalledOnce();
       });
 
-      it("posts JSON-RPC errors when params are missing or malformed", () => {
+      it("posts JSON-RPC errors when params are missing or malformed", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         simulateProtocolMessageEvent(
           checkout,
           "ec.window.open_request",
-          {} as CheckoutProtocolMessageMap["ec.window.open_request"],
-          { id: "open-missing", source: mockCheckoutWindow },
+          {},
+          {
+            id: "open-missing",
+            source: mockCheckoutWindow,
+          },
         );
 
         simulateProtocolMessageEvent(
           checkout,
           "ec.window.open_request",
+          { url: 42 },
           {
-            url: 42,
-          } as unknown as CheckoutProtocolMessageMap["ec.window.open_request"],
-          { id: "open-malformed", source: mockCheckoutWindow },
+            id: "open-malformed",
+            source: mockCheckoutWindow,
+          },
         );
+
+        await flushProtocolDispatch();
 
         const targetOrigin = new URL(checkout.src).origin;
 
+        // The shared client can't decode a request without a valid `url`, so
+        // the handler never runs. The host preserves the diagnostic warning,
+        // logging the raw message data that failed to decode.
         expect(consoleWarnSpy).toHaveBeenCalledWith(
           expect.stringContaining("ec.window.open_request received without a valid url"),
-          expect.objectContaining({ name: "ec.window.open_request" }),
+          expect.objectContaining({ method: "ec.window.open_request" }),
         );
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
           {
@@ -1201,10 +1313,10 @@ describe("<shopify-checkout>", () => {
             id: "open-missing",
             error: {
               code: -32602,
-              message: "Invalid params: expected {url: string}",
+              message: "Invalid params",
             },
           },
-          { targetOrigin },
+          targetOrigin,
         );
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
           {
@@ -1212,15 +1324,16 @@ describe("<shopify-checkout>", () => {
             id: "open-malformed",
             error: {
               code: -32602,
-              message: "Invalid params: expected {url: string}",
+              message: "Invalid params",
             },
           },
-          { targetOrigin },
+          targetOrigin,
         );
       });
 
-      it("posts a JSON-RPC error when the url string cannot be parsed", () => {
+      it("rejects the request when the url string cannot be parsed", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         simulateProtocolMessageEvent(
           checkout,
@@ -1229,22 +1342,28 @@ describe("<shopify-checkout>", () => {
           { id: "open-bad-url", source: mockCheckoutWindow },
         );
 
+        await flushProtocolDispatch();
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("ec.window.open_request received without a valid url"),
+          expect.objectContaining({ url: "not a real url" }),
+        );
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
-          {
+          expect.objectContaining({
             jsonrpc: "2.0",
             id: "open-bad-url",
-            error: {
-              code: -32602,
-              message: "Invalid params: url is not a valid URL",
-            },
-          },
-          { targetOrigin: new URL(checkout.src).origin },
+            result: expect.objectContaining({
+              ucp: { status: "error", version: EMBED_PROTOCOL_VERSION },
+            }),
+          }),
+          new URL(checkout.src).origin,
         );
       });
 
-      it("posts a JSON-RPC error when the url uses a non-https scheme", () => {
+      it("rejects the request when the url uses a non-https scheme", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const windowOpenSpy = vi.spyOn(window, "open");
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         simulateProtocolMessageEvent(
           checkout,
@@ -1253,21 +1372,55 @@ describe("<shopify-checkout>", () => {
           { id: "open-http", source: mockCheckoutWindow },
         );
 
+        await flushProtocolDispatch();
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("ec.window.open_request received without a valid url"),
+          expect.objectContaining({ url: "http://example.com/insecure" }),
+        );
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
-          {
+          expect.objectContaining({
             jsonrpc: "2.0",
             id: "open-http",
-            error: {
-              code: -32602,
-              message: "Invalid params: url must use https scheme",
-            },
-          },
-          { targetOrigin: new URL(checkout.src).origin },
+            result: expect.objectContaining({
+              ucp: { status: "error", version: EMBED_PROTOCOL_VERSION },
+            }),
+          }),
+          new URL(checkout.src).origin,
         );
         expect(windowOpenSpy).not.toHaveBeenCalledWith(
           "http://example.com/insecure",
           "_blank",
           "noopener",
+        );
+      });
+
+      it("does not warn about an invalid url when the handler throws internally", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        vi.spyOn(window, "open").mockImplementation(() => {
+          throw new Error("popup blocked");
+        });
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.window.open_request",
+          { url: "https://example.com/return" },
+          { id: "open-throw", source: mockCheckoutWindow },
+        );
+        await flushProtocolDispatch();
+
+        expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining("ec.window.open_request received without a valid url"),
+          expect.anything(),
+        );
+        expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+          expect.objectContaining({
+            jsonrpc: "2.0",
+            id: "open-throw",
+            error: expect.objectContaining({ code: -32603 }),
+          }),
+          new URL(checkout.src).origin,
         );
       });
     });
@@ -1283,10 +1436,10 @@ describe("<shopify-checkout>", () => {
           source: mockCheckoutWindow,
           origin: "https://other.example.com",
         });
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(onStartSpy).toHaveBeenCalledOnce();
-        expect(checkout.checkout).toBe(payload.checkout);
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
       });
 
       it("drops protocol messages when the source is not the checkout window", async () => {
@@ -1302,7 +1455,7 @@ describe("<shopify-checkout>", () => {
           // Right origin, wrong window.
           { source: otherWindow },
         );
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(onStartSpy).not.toHaveBeenCalled();
         expect(checkout.checkout).toBeUndefined();
@@ -1332,7 +1485,7 @@ describe("<shopify-checkout>", () => {
           source: mockCheckoutWindow,
         });
         window.dispatchEvent(event);
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(onStartSpy).not.toHaveBeenCalled();
         expect(checkout.checkout).toBeUndefined();
@@ -1347,7 +1500,7 @@ describe("<shopify-checkout>", () => {
           source: mockCheckoutWindow,
           origin: "http://shop.example.com",
         });
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(onStartSpy).not.toHaveBeenCalled();
         expect(checkout.checkout).toBeUndefined();
@@ -1362,7 +1515,7 @@ describe("<shopify-checkout>", () => {
           source: mockCheckoutWindow,
           origin: "null",
         });
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(onStartSpy).not.toHaveBeenCalled();
         expect(checkout.checkout).toBeUndefined();
@@ -1381,7 +1534,7 @@ describe("<shopify-checkout>", () => {
             origin: new URL(checkout.src).origin,
           }),
         );
-        await Promise.resolve();
+        await flushProtocolDispatch();
 
         expect(onStartSpy).not.toHaveBeenCalled();
         expect(debugWarnSpy).not.toHaveBeenCalled();
@@ -1460,7 +1613,7 @@ describe("<shopify-checkout>", () => {
         source: mockCheckoutWindow,
         origin: "http://shop.example.com",
       });
-      await Promise.resolve();
+      await flushProtocolDispatch();
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining("Dropped message from non-HTTPS origin"),
@@ -1475,9 +1628,32 @@ describe("<shopify-checkout>", () => {
         source: mockCheckoutWindow,
         origin: "http://shop.example.com",
       });
-      await Promise.resolve();
+      await flushProtocolDispatch();
 
       expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it("drops non-serializable messages without throwing", async () => {
+      const { checkout, mockCheckoutWindow } = openPopupCheckout();
+      checkout.setAttribute("debug", "");
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const circularMessage: Record<string, unknown> = {
+        jsonrpc: "2.0",
+        method: "ec.start",
+        params: { checkout: makeCheckoutPayload() },
+      };
+      circularMessage.self = circularMessage;
+
+      expect(() => {
+        simulateRawMessageEvent(checkout, circularMessage, {
+          source: mockCheckoutWindow,
+        });
+      }).not.toThrow();
+      await flushProtocolDispatch();
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Dropped message because it could not be serialized"),
+      );
     });
   });
 
@@ -1524,7 +1700,7 @@ describe("<shopify-checkout>", () => {
       simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
         source: mockCheckoutWindow,
       });
-      await Promise.resolve();
+      await flushProtocolDispatch();
 
       expect(onStartSpy).not.toHaveBeenCalled();
     });
@@ -1537,7 +1713,7 @@ describe("<shopify-checkout>", () => {
       simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
         source: mockCheckoutWindow,
       });
-      await Promise.resolve();
+      await flushProtocolDispatch();
       expect(onStartSpy).toHaveBeenCalledOnce();
 
       const newParent = document.createElement("div");
@@ -1548,7 +1724,7 @@ describe("<shopify-checkout>", () => {
       simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
         source: mockCheckoutWindow,
       });
-      await Promise.resolve();
+      await flushProtocolDispatch();
 
       expect(onStartSpy).toHaveBeenCalledTimes(2);
     });
@@ -1566,23 +1742,23 @@ describe("<shopify-checkout>", () => {
       simulateProtocolMessageEvent(first.checkout, "ec.start", firstPayload, {
         source: first.mockCheckoutWindow,
       });
-      await Promise.resolve();
+      await flushProtocolDispatch();
 
       expect(firstSpy).toHaveBeenCalledOnce();
       expect(secondSpy).not.toHaveBeenCalled();
-      expect(first.checkout.checkout).toBe(firstPayload.checkout);
+      expect(first.checkout.checkout).toEqual(decodeCheckout(firstPayload));
       expect(second.checkout.checkout).toBeUndefined();
 
       const secondPayload = makeCheckoutPayload();
       simulateProtocolMessageEvent(second.checkout, "ec.start", secondPayload, {
         source: second.mockCheckoutWindow,
       });
-      await Promise.resolve();
+      await flushProtocolDispatch();
 
       expect(firstSpy).toHaveBeenCalledOnce();
       expect(secondSpy).toHaveBeenCalledOnce();
-      expect(first.checkout.checkout).toBe(firstPayload.checkout);
-      expect(second.checkout.checkout).toBe(secondPayload.checkout);
+      expect(first.checkout.checkout).toEqual(decodeCheckout(firstPayload));
+      expect(second.checkout.checkout).toEqual(decodeCheckout(secondPayload));
     });
 
     it("aborts the prior protocol listener controller when reattached to the DOM", () => {
@@ -1608,10 +1784,10 @@ describe("<shopify-checkout>", () => {
  * - `origin`: the origin of `checkout.src`. Override `origin` to test
  *   that messages from non-HTTPS origins are dropped.
  */
-function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMessageMap>(
+function simulateProtocolMessageEvent(
   checkout: ShopifyCheckout,
-  name: Message,
-  params: CheckoutProtocolMessageMap[Message],
+  name: keyof CheckoutProtocolMessageMap,
+  params: unknown,
   options?: {
     id?: string;
     source?: MessageEventSource | null;
@@ -1640,6 +1816,10 @@ function simulateProtocolMessageEvent<Message extends keyof CheckoutProtocolMess
     source,
   });
   window.dispatchEvent(event);
+}
+
+function flushProtocolDispatch(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function simulateRawMessageEvent(
@@ -1753,29 +1933,46 @@ function openPopupCheckout(): {
   return { checkout, mockCheckoutWindow };
 }
 
-function makeCheckoutPayload(overrides: Partial<Checkout> = {}): {
-  checkout: Checkout;
+/**
+ * Decodes a wire (`snake_case`) `{checkout}` fixture the same way the shared
+ * client does, yielding the `camelCase` `Checkout` the component exposes. Use
+ * this for assertions since decoding produces a fresh object (no reference
+ * equality with the fixture).
+ */
+function decodeCheckout(payload: { checkout: unknown }) {
+  return EmbeddedCheckoutProtocol.Event.start.decode(payload);
+}
+
+/** Wire → decoded `ErrorResponse`, mirroring the client's `ec.error` handling. */
+function decodeError(params: { error: unknown }) {
+  return EmbeddedCheckoutProtocol.Event.error.decode(params);
+}
+
+/**
+ * Builds a minimal wire-format (`snake_case`) `{checkout}` payload that decodes
+ * cleanly through the shared client. Keys mirror the UCP JSON contract
+ * (`line_items`, `payment_handlers`), not the decoded `camelCase` shape.
+ */
+function makeCheckoutPayload(overrides: Record<string, unknown> = {}): {
+  checkout: Record<string, unknown>;
 } {
   return {
     checkout: {
-      ucp: { version: "2026-04-08" } as Checkout["ucp"],
+      ucp: { version: EMBED_PROTOCOL_VERSION, payment_handlers: {} },
       id: "gid://shopify/Checkout/test",
       currency: "USD",
       line_items: [],
       totals: [],
-      payment: {} as Checkout["payment"],
       status: "incomplete",
       links: [],
       ...overrides,
-    } as Checkout,
+    },
   };
 }
 
-function makeErrorPayload(overrides?: {
-  severity?: CheckoutMessageError["severity"];
-}): UcpErrorResponse {
+function makeErrorPayload(overrides?: { severity?: Message["severity"] }): ErrorResponse {
   return {
-    ucp: { version: "2026-04-08", status: "error" },
+    ucp: { version: EMBED_PROTOCOL_VERSION, status: "error" },
     messages: [
       {
         type: "error",
@@ -1788,7 +1985,7 @@ function makeErrorPayload(overrides?: {
 }
 
 function makeErrorParams(overrides?: {
-  severity?: CheckoutMessageError["severity"];
+  severity?: Message["severity"];
 }): CheckoutProtocolMessageMap["ec.error"] {
   return { error: makeErrorPayload(overrides) };
 }
