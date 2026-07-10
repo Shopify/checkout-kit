@@ -30,6 +30,7 @@ export type SettingsSlice = {
   logLevel: LogLevel;
   manualSrc: string;
   settingsCollapsed: boolean;
+  eventsCollapsed: boolean;
 };
 
 export type AppState = SettingsSlice & {

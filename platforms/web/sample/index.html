@@ -18,15 +18,6 @@
       <section class="panel settings-panel" aria-labelledby="settings-heading">
         <div class="panel-header settings-header">
           <h2 id="settings-heading">Settings</h2>
-          <button
-            type="button"
-            id="toggle-settings"
-            class="panel-toggle"
-            aria-expanded="true"
-            aria-controls="options-form"
-          >
-            Hide
-          </button>
         </div>
 
         <form id="options-form" autocomplete="off">
@@ -94,7 +85,36 @@
             </label>
           </fieldset>
         </form>
+
+        <button
+          type="button"
+          id="toggle-settings"
+          class="panel-collapse-toggle"
+          aria-expanded="true"
+          aria-controls="options-form"
+          aria-label="Hide settings panel"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              fill-rule="evenodd"
+              d="M7.22 14.47L9.69 12 7.22 9.53a.75.75 0 111.06-1.06l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 01-1.06-1.06z"
+            />
+            <path
+              fill-rule="evenodd"
+              d="M3.75 2A1.75 1.75 0 002 3.75v16.5c0 .966.784 1.75 1.75 1.75h16.5A1.75 1.75 0 0022 20.25V3.75A1.75 1.75 0 0020.25 2H3.75zM3.5 3.75a.25.25 0 01.25-.25H15v17H3.75a.25.25 0 01-.25-.25V3.75zm13 16.75v-17h3.75a.25.25 0 01.25.25v16.5a.25.25 0 01-.25.25H16.5z"
+            />
+          </svg>
+        </button>
       </section>
+
+      <div
+        class="col-resizer"
+        id="resize-left"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize the settings panel"
+        tabindex="0"
+      ></div>
 
       <section class="panel storefront" aria-label="Storefront workspace">
         <div id="build-workspace" class="workspace">
@@ -182,31 +202,62 @@
         </div>
       </section>
 
-      <section class="panel runtime-panel" aria-labelledby="events-heading">
-        <details id="component-state" open>
-          <summary>Component state</summary>
-          <dl>
-            <dt>checkout</dt>
-            <dd id="state-checkout">—</dd>
-            <dt>error</dt>
-            <dd id="state-error">—</dd>
-            <dt>target</dt>
-            <dd id="state-target">—</dd>
-            <dt>appearance</dt>
-            <dd id="state-appearance">—</dd>
-            <dt>log-level</dt>
-            <dd id="state-log-level">—</dd>
-          </dl>
-        </details>
+      <div
+        class="col-resizer"
+        id="resize-right"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize the events panel"
+        tabindex="0"
+      ></div>
 
-        <div class="panel-header events-header">
-          <h2 id="events-heading">Events</h2>
-          <button type="button" id="clear-log">Clear</button>
+      <section class="panel runtime-panel" aria-labelledby="events-heading">
+        <div class="runtime-scroll">
+          <details id="component-state" open>
+            <summary>Component state</summary>
+            <dl>
+              <dt>checkout</dt>
+              <dd id="state-checkout">—</dd>
+              <dt>error</dt>
+              <dd id="state-error">—</dd>
+              <dt>target</dt>
+              <dd id="state-target">—</dd>
+              <dt>appearance</dt>
+              <dd id="state-appearance">—</dd>
+              <dt>log-level</dt>
+              <dd id="state-log-level">—</dd>
+            </dl>
+          </details>
+
+          <div class="panel-header events-header">
+            <h2 id="events-heading">Events</h2>
+            <button type="button" id="clear-log">Clear</button>
+          </div>
+          <ul id="event-log"></ul>
+          <p id="event-empty" class="muted">
+            Open checkout and interact; <code>ec.*</code> events from the component appear here.
+          </p>
         </div>
-        <ul id="event-log"></ul>
-        <p id="event-empty" class="muted">
-          Open checkout and interact; <code>ec.*</code> events from the component appear here.
-        </p>
+
+        <button
+          type="button"
+          id="toggle-events"
+          class="panel-collapse-toggle"
+          aria-expanded="true"
+          aria-controls="event-log"
+          aria-label="Hide events panel"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              fill-rule="evenodd"
+              d="M7.22 14.47L9.69 12 7.22 9.53a.75.75 0 111.06-1.06l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 01-1.06-1.06z"
+            />
+            <path
+              fill-rule="evenodd"
+              d="M3.75 2A1.75 1.75 0 002 3.75v16.5c0 .966.784 1.75 1.75 1.75h16.5A1.75 1.75 0 0022 20.25V3.75A1.75 1.75 0 0020.25 2H3.75zM3.5 3.75a.25.25 0 01.25-.25H15v17H3.75a.25.25 0 01-.25-.25V3.75zm13 16.75v-17h3.75a.25.25 0 01.25.25v16.5a.25.25 0 01-.25.25H16.5z"
+            />
+          </svg>
+        </button>
       </section>
     </main>
 

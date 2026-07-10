@@ -9,6 +9,7 @@ export type PersistedSettings = {
   appearance: string;
   logLevel: LogLevel;
   settingsCollapsed: boolean;
+  eventsCollapsed: boolean;
 };
 
 export const STORAGE_KEYS = {
@@ -18,6 +19,9 @@ export const STORAGE_KEYS = {
   appearance: "checkout-kit:web-demo:appearance",
   logLevel: "checkout-kit:web-demo:log-level",
   settingsCollapsed: "checkout-kit:web-demo:settings-collapsed",
+  eventsCollapsed: "checkout-kit:web-demo:events-collapsed",
+  columnLeft: "checkout-kit:web-demo:col-left",
+  columnRight: "checkout-kit:web-demo:col-right",
 } as const;
 
 export const DEFAULT_LOG_LEVEL: LogLevel = "warn";
@@ -56,6 +60,7 @@ export function loadPersistedSettings(): PersistedSettings {
     appearance: readStorage(STORAGE_KEYS.appearance),
     logLevel: coerceLogLevel(readStorage(STORAGE_KEYS.logLevel)),
     settingsCollapsed: readStorage(STORAGE_KEYS.settingsCollapsed) === "1",
+    eventsCollapsed: readStorage(STORAGE_KEYS.eventsCollapsed) === "1",
   };
 }
 
@@ -77,5 +82,8 @@ export function persistSettings(settings: Partial<PersistedSettings>): void {
   }
   if (settings.settingsCollapsed !== undefined) {
     writeStorage(STORAGE_KEYS.settingsCollapsed, settings.settingsCollapsed ? "1" : "");
+  }
+  if (settings.eventsCollapsed !== undefined) {
+    writeStorage(STORAGE_KEYS.eventsCollapsed, settings.eventsCollapsed ? "1" : "");
   }
 }

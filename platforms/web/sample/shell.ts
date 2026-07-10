@@ -1,5 +1,9 @@
 export const SAMPLE_SHELL = `
   <main id="layout">
+    <section class="panel settings-panel"></section>
+    <section class="panel runtime-panel"></section>
+    <div class="col-resizer" id="resize-left" tabindex="0"></div>
+    <div class="col-resizer" id="resize-right" tabindex="0"></div>
     <form id="options-form" autocomplete="off">
       <label><input type="radio" name="source-mode" value="build" checked /></label>
       <label><input type="radio" name="source-mode" value="manual" /></label>
@@ -24,7 +28,8 @@ export const SAMPLE_SHELL = `
         <option value="none">none</option>
       </select>
     </form>
-    <button type="button" id="toggle-settings" aria-expanded="true">Hide</button>
+    <button type="button" id="toggle-settings" class="panel-collapse-toggle" aria-expanded="true"></button>
+    <button type="button" id="toggle-events" class="panel-collapse-toggle" aria-expanded="true"></button>
 
     <div id="build-workspace">
       <p id="cart-summary-text"></p>

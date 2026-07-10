@@ -54,6 +54,13 @@ describe("writeStorage", () => {
   });
 });
 
+describe("STORAGE_KEYS", () => {
+  it("namespaces the column width keys", () => {
+    expect(STORAGE_KEYS.columnLeft).toBe("checkout-kit:web-demo:col-left");
+    expect(STORAGE_KEYS.columnRight).toBe("checkout-kit:web-demo:col-right");
+  });
+});
+
 describe("loadPersistedSettings", () => {
   it("returns defaults when nothing is stored", () => {
     expect(loadPersistedSettings()).toEqual({
@@ -63,6 +70,7 @@ describe("loadPersistedSettings", () => {
       appearance: "",
       logLevel: "warn",
       settingsCollapsed: false,
+      eventsCollapsed: false,
     });
   });
 
@@ -73,6 +81,7 @@ describe("loadPersistedSettings", () => {
     localStorage.setItem(STORAGE_KEYS.appearance, "app:dark");
     localStorage.setItem(STORAGE_KEYS.logLevel, "debug");
     localStorage.setItem(STORAGE_KEYS.settingsCollapsed, "1");
+    localStorage.setItem(STORAGE_KEYS.eventsCollapsed, "1");
 
     expect(loadPersistedSettings()).toEqual({
       sourceMode: "manual",
@@ -81,6 +90,7 @@ describe("loadPersistedSettings", () => {
       appearance: "app:dark",
       logLevel: "debug",
       settingsCollapsed: true,
+      eventsCollapsed: true,
     });
   });
 
@@ -99,6 +109,7 @@ describe("persistSettings", () => {
       appearance: "app:dark",
       logLevel: "debug",
       settingsCollapsed: true,
+      eventsCollapsed: true,
     });
 
     expect(localStorage.getItem(STORAGE_KEYS.sourceMode)).toBe("manual");
@@ -107,15 +118,22 @@ describe("persistSettings", () => {
     expect(localStorage.getItem(STORAGE_KEYS.appearance)).toBe("app:dark");
     expect(localStorage.getItem(STORAGE_KEYS.logLevel)).toBe("debug");
     expect(localStorage.getItem(STORAGE_KEYS.settingsCollapsed)).toBe("1");
+    expect(localStorage.getItem(STORAGE_KEYS.eventsCollapsed)).toBe("1");
   });
 
   it("removes keys for falsey boolean and empty string fields", () => {
     localStorage.setItem(STORAGE_KEYS.settingsCollapsed, "1");
+    localStorage.setItem(STORAGE_KEYS.eventsCollapsed, "1");
     localStorage.setItem(STORAGE_KEYS.storefrontDomain, "your-store.myshopify.com");
 
-    persistSettings({ settingsCollapsed: false, storefrontDomain: "" });
+    persistSettings({
+      settingsCollapsed: false,
+      eventsCollapsed: false,
+      storefrontDomain: "",
+    });
 
     expect(localStorage.getItem(STORAGE_KEYS.settingsCollapsed)).toBeNull();
+    expect(localStorage.getItem(STORAGE_KEYS.eventsCollapsed)).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.storefrontDomain)).toBeNull();
   });
 

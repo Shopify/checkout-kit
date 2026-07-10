@@ -13,6 +13,7 @@ function settings(overrides: Partial<SettingsSlice> = {}): SettingsSlice {
     logLevel: "warn",
     manualSrc: "",
     settingsCollapsed: false,
+    eventsCollapsed: false,
     ...overrides,
   };
 }
