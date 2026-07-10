@@ -104,6 +104,7 @@
   "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolCodecs.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolNotifications.d.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolNotifications.ts",
+  "node_modules/@shopify/checkout-kit-protocol/src/generated/ProtocolRenameMap.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/index.d.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/index.ts",
   "node_modules/@shopify/checkout-kit-protocol/src/protocol_codec_runtime.d.ts",
