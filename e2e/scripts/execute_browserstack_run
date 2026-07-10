@@ -1,19 +1,15 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "base64"
 require "fileutils"
 require "json"
-require "net/http"
 require "optparse"
-require "securerandom"
+require_relative "../lib/browserstack_client"
 require_relative "../lib/browserstack_device_resolver"
-require_relative "../../scripts/lib/json_http_client"
 
 # Executes one row from the BrowserStack run plan, from artifact upload through
 # build polling and normalized result persistence.
 class BrowserStackRunExecutor
-  API_HOST = "api-cloud.browserstack.com"
   TERMINAL_STATUSES = %w[passed failed error timedout stopped done].freeze
 
   def self.failure_result(context, error)
@@ -72,16 +68,11 @@ class BrowserStackRunExecutor
 
   def initialize(options)
     @options = options
-    @username = ENV.fetch("BROWSERSTACK_USERNAME")
-    @access_key = ENV.fetch("BROWSERSTACK_ACCESS_KEY")
-    @client = JsonHttpClient.new(
-      host: API_HOST,
-      error_label: "BrowserStack",
-      retries: ENV.fetch("E2E_BROWSERSTACK_API_RETRIES", "1").to_i,
-      retryable: ->(response) { response.code.to_i == 429 || response.code.to_i >= 500 }
-    ) do |request|
-      request.basic_auth(@username, @access_key)
-    end
+    @client = BrowserStackClient.new(
+      username: ENV.fetch("BROWSERSTACK_USERNAME"),
+      access_key: ENV.fetch("BROWSERSTACK_ACCESS_KEY"),
+      retries: ENV.fetch("E2E_BROWSERSTACK_API_RETRIES", "1").to_i
+    )
   end
 
   def run
@@ -118,13 +109,13 @@ class BrowserStackRunExecutor
       }
     end
 
-    devices = @client.get("/app-automate/devices.json")
-    limits = @client.get("/app-automate/device_tier_limits.json")
+    devices = @client.list_devices
+    limits = @client.list_device_tier_limits
     BrowserStackDeviceResolver.new(devices, limits).resolve(run.fetch("device_selector"))
   end
 
   def upload_file(path, file_path, custom_id)
-    response = multipart_post(path, file_path, custom_id)
+    response = @client.upload(path, file_path, custom_id)
     write_json("#{custom_id}.json", response)
     response
   end
@@ -143,7 +134,7 @@ class BrowserStackRunExecutor
         E2E_READY_MARKER: run.fetch("ready_marker")
       }
     }
-    response = @client.post_json("/app-automate/maestro/v2/#{run.fetch("platform")}/build", body)
+    response = @client.start_build(run.fetch("platform"), body)
     write_json("build-start.json", response)
     response
   end
@@ -151,7 +142,7 @@ class BrowserStackRunExecutor
   def poll_build(build_id)
     deadline = Time.now + ENV.fetch("E2E_BROWSERSTACK_TIMEOUT_SECONDS", "1800").to_i
     loop do
-      response = @client.get("/app-automate/maestro/v2/builds/#{build_id}")
+      response = @client.get_build(build_id)
       write_json("build-status.json", response)
       return response if TERMINAL_STATUSES.include?(response.fetch("status").to_s.downcase)
       if Time.now >= deadline
@@ -167,7 +158,7 @@ class BrowserStackRunExecutor
   # build-status endpoint uses; this asymmetry is intentional per BrowserStack.
   # https://www.browserstack.com/docs/app-automate/api-reference/maestro/builds
   def stop_build(build_id)
-    @client.post_json("/app-automate/maestro/builds/#{build_id}/stop", {})
+    @client.stop_build(build_id)
   rescue StandardError => error
     warn "Unable to stop BrowserStack build #{build_id}: #{error.message}"
   end
@@ -176,7 +167,7 @@ class BrowserStackRunExecutor
     build_id = build_status.fetch("id")
     build_status.fetch("devices", []).flat_map do |device|
       device.fetch("sessions", []).map do |session|
-        @client.get("/app-automate/maestro/v2/builds/#{build_id}/sessions/#{session.fetch("id")}")
+        @client.get_session(build_id, session.fetch("id"))
       end
     end
   end
@@ -227,23 +218,6 @@ class BrowserStackRunExecutor
       "test_suite_url" => @suite && @suite["test_suite_url"],
       "build_id" => @build && @build["build_id"]
     }
-  end
-
-  def multipart_post(path, file_path, custom_id)
-    boundary = "----checkout-kit-#{SecureRandom.hex(12)}"
-    file = File.binread(file_path)
-    body = +""
-    body << "--#{boundary}\r\n"
-    body << "Content-Disposition: form-data; name=\"file\"; filename=\"#{File.basename(file_path)}\"\r\n\r\n"
-    body << file
-    body << "\r\n--#{boundary}\r\n"
-    body << "Content-Disposition: form-data; name=\"custom_id\"\r\n\r\n"
-    body << custom_id
-    body << "\r\n--#{boundary}--\r\n"
-    request = Net::HTTP::Post.new(path)
-    request["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
-    request.body = body
-    @client.execute(request)
   end
 
   def custom_id(run, suffix)
