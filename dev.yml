@@ -152,9 +152,8 @@ commands:
             swift test
           }
           run_kotlin() {
-            cd $root/protocol/languages/kotlin
             echo "Running tests for Kotlin..."
-            ./gradlew :embedded-checkout-protocol:test
+            platforms/android/gradlew -p platforms/android :embedded-checkout-protocol:test
           }
           run_typescript() {
             cd $root/protocol
@@ -167,7 +166,7 @@ commands:
             swift) run_swift ;;
             kotlin) run_kotlin ;;
             typescript|ts) run_typescript "$@" ;;
-            all) run_swift; run_kotlin; run_typescript ;;
+            all) run_kotlin; run_swift; run_typescript ;;
             *) echo "Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"; exit 1 ;;
           esac
 
