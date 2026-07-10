@@ -67,8 +67,8 @@
     "react-native-gesture-handler": "2.26.0",
     "react-native-gradle-plugin": "^0.71.19",
     "react-test-renderer": "19.1.0",
-    "ts-jest": "^29.4.1",
-    "typescript": "^5.9.2"
+    "ts-jest": "^29.4.11",
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": "22.14.0"

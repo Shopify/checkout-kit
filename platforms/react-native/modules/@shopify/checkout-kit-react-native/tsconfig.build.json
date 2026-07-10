@@ -9,7 +9,7 @@
     "jsx": "react-native",
     "lib": ["esnext"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "noImplicitUseStrict": false,
@@ -22,6 +22,8 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",
+    "types": ["node"],
     "verbatimModuleSyntax": true,
-  }
+  },
+  "include": ["src"]
 }
