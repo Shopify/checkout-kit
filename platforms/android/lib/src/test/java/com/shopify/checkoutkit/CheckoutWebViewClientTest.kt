@@ -1,8 +1,8 @@
 package com.shopify.checkoutkit
 
+import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.ActivityInfo
-import android.content.pm.ResolveInfo
+import android.content.IntentFilter
 import android.net.Uri
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceError
@@ -362,14 +362,13 @@ class CheckoutWebViewClientTest {
     }
 
     private fun registerResolverFor(uri: Uri) {
-        val intent = Intent(Intent.ACTION_VIEW, uri)
-        val resolveInfo = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
-                packageName = "com.fake.handler"
-                name = "FakeHandlerActivity"
-            }
+        val componentName = ComponentName("com.fake.handler", "FakeHandlerActivity")
+        val intentFilter = IntentFilter(Intent.ACTION_VIEW).apply {
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addDataScheme(uri.scheme)
         }
-        shadowOf(activity.packageManager).addResolveInfoForIntent(intent, resolveInfo)
+        shadowOf(activity.packageManager).addActivityIfNotPresent(componentName)
+        shadowOf(activity.packageManager).addIntentFilterForActivity(componentName, intentFilter)
     }
 
     private fun mockWebRequest(uri: Uri, forMainFrame: Boolean = false): WebResourceRequest {

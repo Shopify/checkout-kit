@@ -40,8 +40,8 @@ open:
 
 check:
   storefront-env-tests: ./scripts/test_setup_storefront_env
-  android-detekt: cd platforms/android && ./gradlew detekt
-  android-lint: cd platforms/android && ./gradlew lintRelease
+  android-detekt: platforms/android/gradlew -p platforms/android detekt
+  android-lint: platforms/android/gradlew -p platforms/android lintRelease
   swift-lint: cd platforms/swift && ./Scripts/lint
   react-native-lint-swift: cd platforms/react-native && ./scripts/lint_swift
   react-native-lint-module: cd platforms/react-native && pnpm module lint
@@ -177,34 +177,34 @@ commands:
     subcommands:
       build:
         desc: Build the library
-        run: cd platforms/android && ./gradlew :lib:build
+        run: platforms/android/gradlew -p platforms/android :lib:build
         subcommands:
           samples:
             desc: Build all sample applications
-            run: cd platforms/android/samples/MobileBuyIntegration && ./gradlew build
+            run: platforms/android/samples/MobileBuyIntegration/gradlew -p platforms/android/samples/MobileBuyIntegration build
 
       start:
         desc: Build the android sample app and install it to the booted emulator
-        run: cd platforms/android/samples/CheckoutKitAndroidDemo && ./gradlew installDebug
+        run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
 
       test:
         desc: Run all tests with clean build
-        run: cd platforms/android && ./gradlew clean test --console=plain
+        run: platforms/android/gradlew -p platforms/android clean test --console=plain
         subcommands:
           specific:
             desc: Run specific test class
             syntax: <TestClassName> (e.g. CheckoutBridgeTest)
-            run: cd platforms/android && ./gradlew :lib:testDebugUnitTest --tests "$1"
+            run: platforms/android/gradlew -p platforms/android :lib:testDebugUnitTest --tests "$1"
 
       lint:
         desc: Check code style and lint (detekt + Android lint)
         aliases: [style]
-        run: cd platforms/android && ./gradlew detekt lintRelease
+        run: platforms/android/gradlew -p platforms/android detekt lintRelease
 
       format:
         desc: Auto-format and apply safe lint autocorrections
         aliases: [fix]
-        run: cd platforms/android && ./gradlew detekt --auto-correct
+        run: platforms/android/gradlew -p platforms/android detekt --auto-correct
 
       check:
         desc: Run all Android checks (detekt, Android lint)
@@ -215,14 +215,14 @@ commands:
         subcommands:
           detekt:
             desc: Run detekt static analysis
-            run: cd platforms/android && ./gradlew detekt
+            run: platforms/android/gradlew -p platforms/android detekt
           android-lint:
             desc: Run Android lint
-            run: cd platforms/android && ./gradlew lintRelease
+            run: platforms/android/gradlew -p platforms/android lintRelease
 
       clean:
         desc: Clean Android Gradle build outputs
-        run: cd platforms/android && ./gradlew clean
+        run: platforms/android/gradlew -p platforms/android clean
 
       open:
         desc: Open the Android library or sample app in Android Studio
@@ -265,18 +265,14 @@ commands:
             desc: Verify public APIs match the committed baselines
             run: |
               set -e
-              cd platforms/android
-              ./gradlew :lib:apiCheck
-              cd ../../protocol/languages/kotlin
-              ./gradlew :embedded-checkout-protocol:apiCheck
+              platforms/android/gradlew -p platforms/android :lib:apiCheck
+              protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:apiCheck
           dump:
             desc: Regenerate the baselines after intentional public API changes
             run: |
               set -e
-              cd platforms/android
-              ./gradlew :lib:apiDump
-              cd ../../protocol/languages/kotlin
-              ./gradlew :embedded-checkout-protocol:apiDump
+              platforms/android/gradlew -p platforms/android :lib:apiDump
+              protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:apiDump
 
   # Swift
   swift:

@@ -1,4 +1,7 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.gradle.api.file.FileCollection
+import org.gradle.api.tasks.Classpath
+import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
@@ -16,6 +19,28 @@ apply from: file('../gradle/android-library-versions.gradle')
 
 def kotlinCompatibility = kotlinVersionCompatibility
 def versionName = libs.versions.checkoutKitAndroid.get()
+
+class MockitoAgentArgumentProvider implements CommandLineArgumentProvider {
+    @Classpath
+    final FileCollection classpath
+
+    MockitoAgentArgumentProvider(FileCollection classpath) {
+        this.classpath = classpath
+    }
+
+    @Override
+    Iterable<String> asArguments() {
+        ["-javaagent:${classpath.singleFile.absolutePath}".toString()]
+    }
+}
+
+configurations {
+    mockitoAgent {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
 
 android {
     namespace = 'com.shopify.checkoutkit'
@@ -56,6 +81,7 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
         unitTests.all {
+            jvmArgumentProviders.add(new MockitoAgentArgumentProvider(configurations.mockitoAgent))
             testLogging {
                 events "passed", "skipped", "failed", "standardOut", "standardError"
                 outputs.upToDateWhen { false }
@@ -92,6 +118,7 @@ tasks.withType(KotlinJvmCompile).configureEach {
 
 dependencies {
     detektPlugins libs.detekt.formatting
+    mockitoAgent libs.mockito.core
 
     api project(':embedded-checkout-protocol')
 
