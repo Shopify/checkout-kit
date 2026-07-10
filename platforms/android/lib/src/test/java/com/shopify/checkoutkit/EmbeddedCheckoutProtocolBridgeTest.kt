@@ -1,8 +1,8 @@
 package com.shopify.checkoutkit
 
+import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.ActivityInfo
-import android.content.pm.ResolveInfo
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Looper
 import androidx.activity.ComponentActivity
@@ -790,14 +790,13 @@ class EmbeddedCheckoutProtocolBridgeTest {
      * Mirrors the behavior of a real device with a browser installed.
      */
     private fun registerFakeBrowserFor(uri: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-        val resolveInfo = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
-                packageName = "com.fake.browser"
-                name = "FakeBrowserActivity"
-            }
+        val componentName = ComponentName("com.fake.browser", "FakeBrowserActivity")
+        val intentFilter = IntentFilter(Intent.ACTION_VIEW).apply {
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addDataScheme(Uri.parse(uri).scheme)
         }
-        shadowOf(activity.packageManager).addResolveInfoForIntent(intent, resolveInfo)
+        shadowOf(activity.packageManager).addActivityIfNotPresent(componentName)
+        shadowOf(activity.packageManager).addIntentFilterForActivity(componentName, intentFilter)
     }
 
     // endregion
