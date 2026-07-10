@@ -1,10 +1,7 @@
 import {describe, test, expect} from 'vitest';
 
-import {SPEC_VERSION} from '../languages/typescript/src/generated/ProtocolNotifications';
-import {
-  windowOpenSuccess,
-  windowOpenRejected,
-} from '../languages/typescript/src/window_open';
+import {SPEC_VERSION} from '../src/generated/ProtocolNotifications';
+import {windowOpenSuccess, windowOpenRejected} from '../src/window_open';
 
 describe('window.open result factories', () => {
   test('success sets ucp status success and no messages', () => {
@@ -18,7 +15,7 @@ describe('window.open result factories', () => {
     const result = windowOpenRejected('nope');
     expect(result.ucp.status).toBe('error');
     expect(result.messages).toHaveLength(1);
-    expect(result.messages?.[0]).toMatchObject({
+    expect(result.messages![0]).toMatchObject({
       code: 'window_open_rejected_error',
       content: 'nope',
       severity: 'unrecoverable',
@@ -27,7 +24,7 @@ describe('window.open result factories', () => {
   });
 
   test('rejected falls back to default content', () => {
-    expect(windowOpenRejected().messages?.[0]?.content).toBe(
+    expect(windowOpenRejected().messages![0]!.content).toBe(
       'Window open rejected',
     );
   });

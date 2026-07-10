@@ -49,3 +49,31 @@ test('round-trips extension keys through decode + encode', () => {
   expect(encoded.x_partner_data).toEqual({nested_key: 'value'});
   expect(encoded['com.example.foo']).toBe('bar');
 });
+
+test('renames fields inside array elements', () => {
+  const decoded = decodeProtocolObject(
+    {...wire, line_items: [{parent_id: 'parent-1', quantity: 2}]},
+    'Checkout',
+  ) as Record<string, Array<Record<string, unknown>>>;
+
+  expect(decoded.lineItems[0].parentId).toBe('parent-1');
+  expect(decoded.lineItems[0].quantity).toBe(2);
+  expect('parent_id' in decoded.lineItems[0]).toBe(false);
+});
+
+test('renames fields inside map values', () => {
+  const decoded = decodeProtocolObject(
+    {payment_handlers: {stripe: [{available_instruments: ['card']}]}},
+    'InstrumentsChangeResultUcp',
+  ) as Record<string, Record<string, Array<Record<string, unknown>>>>;
+
+  const handler = decoded.paymentHandlers.stripe[0];
+  expect(handler.availableInstruments).toEqual(['card']);
+  expect('available_instruments' in handler).toBe(false);
+});
+
+test('throws when a required string field is not a string', () => {
+  expect(() => decodeProtocolObject({...wire, currency: 123}, 'Checkout')).toThrow(
+    'Invalid Checkout',
+  );
+});

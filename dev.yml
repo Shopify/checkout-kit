@@ -141,19 +141,42 @@ commands:
           echo "Building Kotlin protocol..."
           ./gradlew :embedded-checkout-protocol:build
       test:
-        desc: Run protocol package tests
+        desc: "Run protocol package tests. Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"
+        syntax: "[kotlin|swift|typescript]"
         run: |
+          set -e
           root=$(pwd)
-          cd protocol/languages/swift
-          echo "Running tests for Swift..."
-          swift test
-          cd $root/protocol/languages/kotlin
-          echo "Running tests for Kotlin..."
-          ./gradlew :embedded-checkout-protocol:test
-          cd $root/protocol
-          echo "Running tests for TypeScript..."
-          pnpm test
+          run_swift() {
+            cd $root/protocol/languages/swift
+            echo "Running tests for Swift..."
+            swift test
+          }
+          run_kotlin() {
+            echo "Running tests for Kotlin..."
+            platforms/android/gradlew -p platforms/android :embedded-checkout-protocol:test
+          }
+          run_typescript() {
+            cd $root/protocol
+            echo "Running tests for TypeScript..."
+            pnpm test "$@"
+          }
+          target="${1:-all}"
+          [ $# -gt 0 ] && shift
+          case "$target" in
+            swift) run_swift ;;
+            kotlin) run_kotlin ;;
+            typescript|ts) run_typescript "$@" ;;
+            all) run_kotlin; run_swift; run_typescript ;;
+            *) echo "Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"; exit 1 ;;
+          esac
 
+      lint:
+        desc: "Lint protocol TypeScript test files"
+        run: |
+          set -e
+          root=$(pwd)
+          cd $root/protocol
+          pnpm lint
       check:
         desc: Build and test the protocol package
         run: |

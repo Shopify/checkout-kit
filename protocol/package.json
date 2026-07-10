@@ -5,15 +5,23 @@
   "license": "MIT",
   "description": "Tooling for generating Shopify Checkout Kit protocol models.",
   "packageManager": "pnpm@10.33.1+sha512.05ba3c1d5d1c18f68df06470d74055e62d41fc110a0c660db1b2dfb2785327f04cf0f68345d4609bc52089e7fa0343c31593b2f9594e2c5d5da426230acc9820",
+  "engines": {
+    "node": ">=22.14.0"
+  },
   "scripts": {
     "check-tools": "./scripts/check_codegen_tools.sh",
     "codegen:kotlin": "./scripts/generate_models.sh --lang kotlin",
     "codegen:swift": "./scripts/generate_models.sh --lang swift",
     "codegen:typescript": "./scripts/generate_models.sh --lang typescript",
+    "lint": "eslint languages/typescript/test",
     "test": "vitest run"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.9",
+    "eslint": "^10.6.0",
     "quicktype": "23.2.6",
-    "vitest": "^4.1.0"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.1",
+    "vitest": "^4.1.9"
   }
 }
