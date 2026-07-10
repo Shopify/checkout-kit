@@ -228,11 +228,21 @@ workflows:
       - git-clone@8: {}
       - pull-intermediate-files@1:
           inputs:
-            - artifact_sources: |-
-                e2e-execute-browserstack-run
+            - artifact_sources: e2e-execute-browserstack-run.*
       - script@1:
-          title: Placeholder E2E report
+          title: Report E2E results to GitHub
+          timeout: 900
+          no_output_timeout: 450
           inputs:
             - content: |-
                 set -euo pipefail
-                echo "Phase 2 placeholder for aggregate E2E reporting"
+                source e2e/scripts/bitrise_ci_helpers
+                e2e_log "Checking GitHub reporting configuration"
+                if [ -z "${GITHUB_TOKEN:-}" ]; then
+                  : "${GIT_HTTP_PASSWORD:?GITHUB_TOKEN or Bitrise GitHub App GIT_HTTP_PASSWORD is required. Enable Project settings > Repository > Extend GitHub App permissions to builds.}"
+                  export GITHUB_TOKEN="$GIT_HTTP_PASSWORD"
+                fi
+                : "${BITRISE_GIT_COMMIT:?BITRISE_GIT_COMMIT is required}"
+                results_root="${E2E_BROWSERSTACK_RESULTS_DIR:-$BITRISE_DEPLOY_DIR/e2e/results}"
+                e2e_log "Reporting E2E results to GitHub"
+                e2e/scripts/report_e2e_results --results-root "$results_root"

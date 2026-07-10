@@ -7,8 +7,8 @@ require "json"
 require "net/http"
 require "optparse"
 require "securerandom"
-require "uri"
 require_relative "../lib/browserstack_device_resolver"
+require_relative "../lib/json_http_client"
 
 # Executes one row from the BrowserStack run plan, from artifact upload through
 # build polling and normalized result persistence.
@@ -20,6 +20,9 @@ class BrowserStackRunExecutor
     @options = options
     @username = ENV.fetch("BROWSERSTACK_USERNAME")
     @access_key = ENV.fetch("BROWSERSTACK_ACCESS_KEY")
+    @client = JsonHttpClient.new(host: API_HOST, error_label: "BrowserStack") do |request|
+      request.basic_auth(@username, @access_key)
+    end
   end
 
   def run
@@ -42,16 +45,17 @@ class BrowserStackRunExecutor
   def resolve_device(run)
     override = ENV["E2E_DEVICE_OVERRIDE"] || ENV["E2E_#{run.fetch("platform").upcase}_DEVICE_OVERRIDE"]
     if override && !override.empty?
+      name, separator, version = override.rpartition("-")
       return {
         "device_selector" => run.fetch("device_selector"),
         "browserstack_device" => override,
-        "resolved_device" => override.split("-").first,
-        "resolved_os_version" => override.split("-").last
+        "resolved_device" => separator.empty? ? override : name,
+        "resolved_os_version" => separator.empty? ? nil : version
       }
     end
 
-    devices = get_json("/app-automate/devices.json")
-    limits = get_json("/app-automate/device_tier_limits.json")
+    devices = @client.get("/app-automate/devices.json")
+    limits = @client.get("/app-automate/device_tier_limits.json")
     BrowserStackDeviceResolver.new(devices, limits).resolve(run.fetch("device_selector"))
   end
 
@@ -75,7 +79,7 @@ class BrowserStackRunExecutor
         E2E_READY_MARKER: run.fetch("ready_marker")
       }
     }
-    response = post_json("/app-automate/maestro/v2/#{run.fetch("platform")}/build", body)
+    response = @client.post_json("/app-automate/maestro/v2/#{run.fetch("platform")}/build", body)
     write_json("build-start.json", response)
     response
   end
@@ -83,7 +87,7 @@ class BrowserStackRunExecutor
   def poll_build(build_id)
     deadline = Time.now + ENV.fetch("E2E_BROWSERSTACK_TIMEOUT_SECONDS", "1800").to_i
     loop do
-      response = get_json("/app-automate/maestro/v2/builds/#{build_id}")
+      response = @client.get("/app-automate/maestro/v2/builds/#{build_id}")
       write_json("build-status.json", response)
       return response if TERMINAL_STATUSES.include?(response.fetch("status").to_s.downcase)
       raise "BrowserStack build timed out: #{build_id}" if Time.now >= deadline
@@ -96,7 +100,7 @@ class BrowserStackRunExecutor
     build_id = build_status.fetch("id")
     build_status.fetch("devices", []).flat_map do |device|
       device.fetch("sessions", []).map do |session|
-        get_json("/app-automate/maestro/v2/builds/#{build_id}/sessions/#{session.fetch("id")}")
+        @client.get("/app-automate/maestro/v2/builds/#{build_id}/sessions/#{session.fetch("id")}")
       end
     end
   end
@@ -117,7 +121,9 @@ class BrowserStackRunExecutor
       "os_version_tag" => run.fetch("os_version_tag"),
       "execute" => run.fetch("execute"),
       "device_selector" => device.fetch("device_selector"),
-      "resolved_device" => device.fetch("browserstack_device"),
+      "resolved_device" => device.fetch("resolved_device"),
+      "resolved_os_version" => device.fetch("resolved_os_version"),
+      "browserstack_device" => device.fetch("browserstack_device"),
       "app_url" => app.fetch("app_url"),
       "test_suite_url" => suite.fetch("test_suite_url"),
       "build_id" => build.fetch("build_id"),
@@ -141,27 +147,7 @@ class BrowserStackRunExecutor
     request = Net::HTTP::Post.new(path)
     request["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
     request.body = body
-    execute_request(request)
-  end
-
-  def get_json(path)
-    execute_request(Net::HTTP::Get.new(path))
-  end
-
-  def post_json(path, body)
-    request = Net::HTTP::Post.new(path)
-    request["Content-Type"] = "application/json"
-    request.body = JSON.generate(body)
-    execute_request(request)
-  end
-
-  def execute_request(request)
-    request.basic_auth(@username, @access_key)
-    response = Net::HTTP.start(API_HOST, 443, use_ssl: true) { |http| http.request(request) }
-    parsed = JSON.parse(response.body)
-    return parsed if response.is_a?(Net::HTTPSuccess)
-
-    raise "BrowserStack request failed #{response.code}: #{parsed}"
+    @client.execute(request)
   end
 
   def custom_id(run, suffix)
