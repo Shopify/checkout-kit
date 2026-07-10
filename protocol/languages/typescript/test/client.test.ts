@@ -36,7 +36,11 @@ describe('Client', () => {
     expect(response).toBeUndefined();
     expect(received).toHaveLength(1);
     expect(received[0].id).toBe('checkout-123');
-    expect(received[0].lineItems).toEqual([]);
+    expect(received[0].lineItems).toHaveLength(2);
+    expect(received[0].lineItems[0].item.imageUrl).toBe(
+      'https://cdn.example.com/products/beanie.png',
+    );
+    expect(received[0].lineItems[1].parentId).toBe('line-1');
   });
 
   test('ignores a notification with no registered handler', async () => {

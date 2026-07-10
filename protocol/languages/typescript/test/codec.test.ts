@@ -29,10 +29,10 @@ describe('codec', () => {
     );
 
     expect(message).toBeDefined();
-    expect(message?.kind).toBe('request');
-    expect(message?.method).toBe('ec.ready');
-    expect(message?.id).toBe(7);
-    expect(message?.params).toEqual({delegate: []});
+    expect(message!.kind).toBe('request');
+    expect(message!.method).toBe('ec.ready');
+    expect(message!.id).toBe(7);
+    expect(message!.params).toEqual({delegate: []});
   });
 
   test('treats a missing id as a notification', () => {
@@ -40,8 +40,8 @@ describe('codec', () => {
       JSON.stringify({jsonrpc: '2.0', method: 'ec.start', params: {}}),
     );
 
-    expect(message?.kind).toBe('notification');
-    expect(message?.id).toBeUndefined();
+    expect(message!.kind).toBe('notification');
+    expect(message!.id).toBeUndefined();
   });
 
   test('treats an explicit null id as a request', () => {
@@ -49,8 +49,8 @@ describe('codec', () => {
       JSON.stringify({jsonrpc: '2.0', method: 'ec.ready', id: null}),
     );
 
-    expect(message?.kind).toBe('request');
-    expect(message?.id).toBeNull();
+    expect(message!.kind).toBe('request');
+    expect(message!.id).toBeNull();
   });
 
   test('drops a message whose id is present but invalid', () => {

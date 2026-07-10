@@ -48,7 +48,13 @@ describe('request descriptors', () => {
     });
 
     expect(decoded.id).toBe('checkout-123');
-    expect(decoded.lineItems).toEqual([]);
+    expect(decoded.lineItems[0].totals[0].displayText).toBe('Subtotal');
+    expect(decoded.buyer.firstName).toBe('Ada');
+    expect(decoded.context.addressCountry).toBe('CA');
+    expect(
+      decoded.ucp.paymentHandlers['com.shopify.payments'][0]
+        .availableInstruments,
+    ).toHaveLength(1);
   });
 
   test('encode round-trips a result back to the wire shape', () => {
@@ -71,7 +77,17 @@ describe('notification descriptors', () => {
     });
 
     expect(decoded.id).toBe('checkout-123');
-    expect(decoded.lineItems).toEqual([]);
+    expect(decoded.lineItems[0].item.imageUrl).toBe(
+      'https://cdn.example.com/products/beanie.png',
+    );
+    expect(decoded.fulfillment.methods[0].lineItemIds).toEqual([
+      'line-1',
+      'line-2',
+    ]);
+    expect(decoded.payment.instruments[0].handlerId).toBe(
+      'com.shopify.payments',
+    );
+    expect(decoded['com.example.custom'].loyalty_tier).toBe('gold');
   });
 
   test('decode unwraps the error envelope', () => {

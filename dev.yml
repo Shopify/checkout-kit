@@ -171,6 +171,13 @@ commands:
             *) echo "Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"; exit 1 ;;
           esac
 
+      lint:
+        desc: "Lint protocol TypeScript test files"
+        run: |
+          set -e
+          root=$(pwd)
+          cd $root/protocol
+          pnpm lint
       check:
         desc: Build and test the protocol package
         run: |
