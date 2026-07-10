@@ -1,10 +1,7 @@
 import {describe, test, expect} from 'vitest';
 
-import {SPEC_VERSION} from '../languages/typescript/src/generated/ProtocolNotifications';
-import {
-  windowOpenSuccess,
-  windowOpenRejected,
-} from '../languages/typescript/src/window_open';
+import {SPEC_VERSION} from '../src/generated/ProtocolNotifications';
+import {windowOpenSuccess, windowOpenRejected} from '../src/window_open';
 
 describe('window.open result factories', () => {
   test('success sets ucp status success and no messages', () => {
