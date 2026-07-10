@@ -102,21 +102,31 @@ There are three ways to install a build:
    dev tophat                                              # pick a PR, then what to test, then a device
    dev tophat 382                                          # PR 382
    dev tophat 382 react-native-ios                         # skip the "what to test" prompt
+   dev tophat 382 --wait                                   # ensure the HEAD build, then install
    dev tophat https://github.com/Shopify/checkout-kit/pull/382
    ```
 
-   It resolves the PR's branch, then queries Bitrise for that branch and only
-   offers targets whose latest build succeeded and produced the expected
-   artifact, so you cannot pick a target that has no installable build. If no
-   target is ready it explains why (draft PRs do not trigger the pipeline, a
-   build is still running, or a build failed) and exits. Pass `--wait` to block
-   until in-progress builds finish, then install. It then asks what to test
-   (e.g. React Native iOS / Android), reuses a running device that matches or
-   lets you pick one with `fzf`, and installs the matching artifact.
+   It resolves the PR's HEAD commit, asks what to test (e.g. React Native iOS /
+   Android), then checks that the selected target's newest Bitrise build was
+   built at that HEAD commit. Tophat's branch provider always installs the
+   newest build for the branch, so this guards against silently installing an
+   older commit's artifact. When the newest build already matches HEAD it
+   installs straight away. Otherwise it shows the current CI state and offers to:
+   - trigger a HEAD build and wait (~6 min), or, when a HEAD build is already
+     running, wait for that one instead of starting a duplicate;
+   - install the current (older) build, showing its short SHA, commit title,
+     how many commits it is behind HEAD, and its age; or
+   - cancel.
+
+   Draft PRs do not automatically trigger CI, so on a draft with no builds it
+   offers to trigger the build directly. Pass `--wait` to skip the menu and
+   ensure the HEAD build non-interactively (wait for a running HEAD build, or
+   trigger one and wait). After the build is ready it reuses a running device
+   that matches or lets you pick one with `fzf`, and installs the artifact.
 
    Set `TOPHAT_DRY_RUN=1` to print the generated install config without
-   installing, or `TOPHAT_SKIP_ARTIFACT_CHECK=1` to skip the Bitrise artifact
-   filtering and offer every target.
+   installing, or `TOPHAT_SKIP_ARTIFACT_CHECK=1` to skip the HEAD-build
+   verification and install whatever the branch provider resolves.
 
 **Adding a new SDK target.** Add an entry to `scripts/tophat/targets.json` with
 an `id`, `label`, and `recipes` (each a `platform`, `destination`, Bitrise
@@ -285,7 +295,7 @@ If your change intentionally modifies the public API:
 2. Review the diff in `platforms/react-native/modules/@shopify/checkout-kit-react-native/api/checkout-kit-react-native.api.md` alongside your code changes.
 3. Commit the updated `.api.md` file in the same PR.
 
-If you did *not* intend to change public API and `api:check` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
+If you did _not_ intend to change public API and `api:check` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
 
 ### Releasing a new React Native version
 
