@@ -30,6 +30,56 @@ jobs:
       - name: Run Tests
         run: ./gradlew test --console=plain
 
+      - name: Annotate failed tests
+        if: failure()
+        working-directory: ${{ github.workspace }}
+        run: |
+          ruby <<'RUBY'
+          require "rexml/document"
+
+          def escape_data(value)
+            value.to_s.gsub("%", "%25").gsub("\r", "%0D").gsub("\n", "%0A")
+          end
+
+          def escape_property(value)
+            escape_data(value).gsub(":", "%3A").gsub(",", "%2C")
+          end
+
+          result_files = Dir[
+            "platforms/android/lib/build/test-results/testDebugUnitTest/TEST-*.xml",
+            "protocol/languages/kotlin/embedded-checkout-protocol/build/test-results/test/TEST-*.xml",
+          ]
+
+          result_files.each do |file|
+            document = REXML::Document.new(File.read(file))
+
+            REXML::XPath.each(document, "//testcase[failure or error]") do |testcase|
+              failure = REXML::XPath.first(testcase, "failure") || REXML::XPath.first(testcase, "error")
+              title = "#{testcase.attributes["classname"]}##{testcase.attributes["name"]}"
+              details = [failure&.attributes&.[]("message"), failure&.text].compact.reject(&:empty?).join("\n\n")
+              message = details.empty? ? "Test failed" : details.slice(0, 8000)
+
+              puts "::error title=#{escape_property(title)}::#{escape_data(message)}"
+            end
+          rescue REXML::ParseException => error
+            warn "Could not parse #{file}: #{error.message}"
+          end
+          RUBY
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-test-reports
+          path: |
+            platforms/android/**/build/reports/tests/
+            platforms/android/**/build/test-results/
+            platforms/android/**/build/reports/problems/
+            protocol/languages/kotlin/**/build/reports/tests/
+            protocol/languages/kotlin/**/build/test-results/
+            protocol/languages/kotlin/**/build/reports/problems/
+          if-no-files-found: warn
+
   build:
     runs-on: ubuntu-latest
 
