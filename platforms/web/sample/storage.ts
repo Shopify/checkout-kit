@@ -16,6 +16,8 @@ export const STORAGE_KEYS = {
   appearance: "checkout-kit:web-demo:appearance",
   debug: "checkout-kit:web-demo:debug",
   settingsCollapsed: "checkout-kit:web-demo:settings-collapsed",
+  columnLeft: "checkout-kit:web-demo:col-left",
+  columnRight: "checkout-kit:web-demo:col-right",
 } as const;
 
 export function readStorage(key: string): string {

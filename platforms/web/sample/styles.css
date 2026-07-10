@@ -106,11 +106,15 @@ code {
 }
 
 main {
+  position: relative;
   width: 100%;
   min-width: 0;
   height: 0;
   display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr) minmax(320px, 560px);
+  grid-template-columns:
+    var(--col-left, minmax(260px, 340px))
+    minmax(360px, 1fr)
+    var(--col-right, minmax(320px, 560px));
   gap: var(--gap);
   padding: var(--gap);
   flex: 1 1 auto;
@@ -119,13 +123,65 @@ main {
 }
 
 main.settings-collapsed {
-  grid-template-columns: 64px minmax(0, 1fr) minmax(340px, 640px);
+  grid-template-columns: 64px minmax(360px, 1fr) var(--col-right, minmax(340px, 640px));
+}
+
+.col-resizer {
+  position: absolute;
+  top: var(--gap);
+  bottom: var(--gap);
+  width: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+}
+
+.col-resizer::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: var(--border);
+  transition:
+    background 0.12s ease,
+    height 0.12s ease;
+}
+
+.col-resizer:hover::after,
+.col-resizer.dragging::after,
+.col-resizer:focus-visible::after {
+  height: 52px;
+  background: var(--accent);
+}
+
+.col-resizer:focus-visible {
+  outline: none;
+}
+
+main.resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.settings-collapsed #resize-left {
+  display: none;
 }
 
 @media (max-width: 1180px) {
   main,
   main.settings-collapsed {
     grid-template-columns: 1fr;
+  }
+
+  .col-resizer {
+    display: none;
   }
 
   .topbar {

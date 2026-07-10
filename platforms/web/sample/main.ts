@@ -2,6 +2,7 @@ import "@shopify/checkout-kit";
 import type { ShopifyCheckout } from "@shopify/checkout-kit";
 
 import { normalizeQuantity, normalizeStorefrontDomain, upsertCartLine } from "./cart";
+import { createColumnResizer } from "./column-resizer";
 import { queryRefs, timestamp } from "./dom";
 import { createProductLoader } from "./product-loader";
 import { renderApp } from "./render";
@@ -41,10 +42,23 @@ const loader = createProductLoader({
   },
 });
 
-store.subscribe(() => renderApp(refs, store.getState(), checkout));
+const resizer = createColumnResizer({
+  layout: refs.layout,
+  leftPanel: refs.settingsPanel,
+  rightPanel: refs.runtimePanel,
+  leftHandle: refs.resizeLeft,
+  rightHandle: refs.resizeRight,
+});
+
+store.subscribe(() => {
+  renderApp(refs, store.getState(), checkout);
+  resizer.reposition();
+});
 
 attachListeners();
 renderApp(refs, store.getState(), checkout);
+resizer.applyWidths();
+window.addEventListener("resize", resizer.reposition);
 
 if (store.getState().sourceMode === "build" && store.getState().storefrontDomain) {
   loader.schedule(store.getState().storefrontDomain);

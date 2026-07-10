@@ -1,5 +1,9 @@
 export const SAMPLE_SHELL = `
   <main id="layout">
+    <section class="panel settings-panel"></section>
+    <section class="panel runtime-panel"></section>
+    <div class="col-resizer" id="resize-left" tabindex="0"></div>
+    <div class="col-resizer" id="resize-right" tabindex="0"></div>
     <form id="options-form" autocomplete="off">
       <label><input type="radio" name="source-mode" value="build" checked /></label>
       <label><input type="radio" name="source-mode" value="manual" /></label>

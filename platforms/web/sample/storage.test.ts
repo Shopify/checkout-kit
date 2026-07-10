@@ -54,6 +54,13 @@ describe("writeStorage", () => {
   });
 });
 
+describe("STORAGE_KEYS", () => {
+  it("namespaces the column width keys", () => {
+    expect(STORAGE_KEYS.columnLeft).toBe("checkout-kit:web-demo:col-left");
+    expect(STORAGE_KEYS.columnRight).toBe("checkout-kit:web-demo:col-right");
+  });
+});
+
 describe("loadPersistedSettings", () => {
   it("returns defaults when nothing is stored", () => {
     expect(loadPersistedSettings()).toEqual({
