@@ -1204,10 +1204,10 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail).toEqual({ checkout: decodeCheckout(payload) });
+        expect(event.detail).toStrictEqual({ checkout: decodeCheckout(payload) });
       });
 
-      it("ec.complete carries {checkout, order} with order derived from checkout", async () => {
+      it("ec.complete carries {checkout} with order nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "ec.complete", spy);
@@ -1224,11 +1224,11 @@ describe("<shopify-checkout>", () => {
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
         const decoded = decodeCheckout(payload);
-        expect(event.detail).toEqual({ checkout: decoded, order: decoded.order });
-        expect(event.detail.order).toEqual(event.detail.checkout.order);
+        expect(event.detail).toStrictEqual({ checkout: decoded });
+        expect(event.detail.checkout.order).toEqual(decoded.order);
       });
 
-      it("ec.complete leaves order undefined when the checkout has no order", async () => {
+      it("ec.complete keeps an absent order nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "ec.complete", spy);
@@ -1240,7 +1240,9 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail.order).toBeUndefined();
+        const decoded = decodeCheckout(payload);
+        expect(event.detail).toStrictEqual({ checkout: decoded });
+        expect(event.detail.checkout.order).toBeUndefined();
       });
 
       it("ec.error carries {error}", async () => {
@@ -1255,10 +1257,10 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail).toEqual({ error: decodeError(errorParams) });
+        expect(event.detail).toStrictEqual({ error: decodeError(errorParams) });
       });
 
-      it("ec.line_items.change carries {lineItems, checkout}", async () => {
+      it("ec.line_items.change carries {checkout} with lineItems nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "ec.line_items.change", spy);
@@ -1271,11 +1273,11 @@ describe("<shopify-checkout>", () => {
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
         const decoded = decodeCheckout(payload);
-        expect(event.detail.lineItems).toEqual(decoded.lineItems);
-        expect(event.detail.checkout).toEqual(decoded);
+        expect(event.detail).toStrictEqual({ checkout: decoded });
+        expect(event.detail.checkout.lineItems).toEqual(decoded.lineItems);
       });
 
-      it("ec.totals.change carries {totals, checkout}", async () => {
+      it("ec.totals.change carries {checkout} with totals nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "ec.totals.change", spy);
@@ -1288,11 +1290,11 @@ describe("<shopify-checkout>", () => {
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
         const decoded = decodeCheckout(payload);
-        expect(event.detail.totals).toEqual(decoded.totals);
-        expect(event.detail.checkout).toEqual(decoded);
+        expect(event.detail).toStrictEqual({ checkout: decoded });
+        expect(event.detail.checkout.totals).toEqual(decoded.totals);
       });
 
-      it("ec.messages.change carries {messages, checkout}", async () => {
+      it("ec.messages.change carries {checkout} with messages nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
         const wait = waitForEvent(checkout, "ec.messages.change", spy);
@@ -1305,8 +1307,8 @@ describe("<shopify-checkout>", () => {
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
         const decoded = decodeCheckout(payload);
-        expect(event.detail.messages).toEqual(decoded.messages ?? []);
-        expect(event.detail.checkout).toEqual(decoded);
+        expect(event.detail).toStrictEqual({ checkout: decoded });
+        expect(event.detail.checkout.messages).toEqual(decoded.messages);
       });
 
       it("ec.close carries no detail", () => {

@@ -17,10 +17,7 @@ import type {
   CheckoutTarget,
   TypedEventListener,
   Checkout,
-  LineItem,
-  Message,
   CheckoutAppearance,
-  CheckoutTotal,
   ErrorResponse,
 } from "./checkout.types";
 
@@ -232,7 +229,7 @@ export class ShopifyCheckout
    * @returns The current Checkout, or undefined before the first notification.
    * @example
    * checkout.addEventListener('ec.start', (event) => {
-   *   const {line_items, totals, buyer} = event.detail.checkout;
+   *   const {lineItems, totals, buyer} = event.detail.checkout;
    * });
    */
   get checkout(): Checkout | undefined {
@@ -587,7 +584,7 @@ export class ShopifyCheckout
       })
       .on(Event.complete, ({ params: { checkout } }) => {
         this.#checkout = checkout;
-        this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout, order: checkout.order }));
+        this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout }));
       })
       .on(Event.error, ({ params: { error } }) => {
         this.#error = error;
@@ -603,30 +600,15 @@ export class ShopifyCheckout
       })
       .on(Event.lineItemsChange, ({ params: { checkout } }) => {
         this.#checkout = checkout;
-        this.dispatchEvent(
-          new ShopifyCheckoutLineItemsChangeEvent({
-            checkout,
-            lineItems: checkout.lineItems,
-          }),
-        );
+        this.dispatchEvent(new ShopifyCheckoutLineItemsChangeEvent({ checkout }));
       })
       .on(Event.totalsChange, ({ params: { checkout } }) => {
         this.#checkout = checkout;
-        this.dispatchEvent(
-          new ShopifyCheckoutTotalsChangeEvent({
-            checkout,
-            totals: checkout.totals,
-          }),
-        );
+        this.dispatchEvent(new ShopifyCheckoutTotalsChangeEvent({ checkout }));
       })
       .on(Event.messagesChange, ({ params: { checkout } }) => {
         this.#checkout = checkout;
-        this.dispatchEvent(
-          new ShopifyCheckoutMessagesChangeEvent({
-            checkout,
-            messages: checkout.messages ?? [],
-          }),
-        );
+        this.dispatchEvent(new ShopifyCheckoutMessagesChangeEvent({ checkout }));
       })
       .on(Event.windowOpen, ({ params }) => this.#handleWindowOpen(params));
   }
@@ -801,7 +783,6 @@ export interface ShopifyCheckoutStartEventDetail {
 export interface ShopifyCheckoutCompleteEventDetail {
   /** Final checkout snapshot from the ECP `ec.complete` notification. */
   checkout: Checkout;
-  order?: Checkout["order"];
 }
 
 export interface ShopifyCheckoutErrorEventDetail {
@@ -810,23 +791,17 @@ export interface ShopifyCheckoutErrorEventDetail {
 }
 
 export interface ShopifyCheckoutLineItemsChangeEventDetail {
-  /** Updated cart line items. */
-  lineItems: readonly LineItem[];
-  /** Full checkout snapshot for handlers that want broader context. */
+  /** Checkout snapshot with updated cart line items. */
   checkout: Checkout;
 }
 
 export interface ShopifyCheckoutTotalsChangeEventDetail {
-  /** Updated totals. */
-  totals: readonly CheckoutTotal[];
-  /** Full checkout snapshot for handlers that want broader context. */
+  /** Checkout snapshot with updated totals. */
   checkout: Checkout;
 }
 
 export interface ShopifyCheckoutMessagesChangeEventDetail {
-  /** Updated checkout-level messages (warnings, errors, info). */
-  messages: readonly Message[];
-  /** Full checkout snapshot for handlers that want broader context. */
+  /** Checkout snapshot with updated warnings, errors, and informational messages. */
   checkout: Checkout;
 }
 
