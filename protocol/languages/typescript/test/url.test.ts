@@ -36,4 +36,11 @@ describe('url handshake', () => {
     expect(result.endsWith('#section')).toBe(true);
     expect(result).toContain('ec_version=2026-04-08');
   });
+
+  test('keeps a query param with a malformed percent-encoded name', () => {
+    const result = url('https://shop.example/c?%=1');
+
+    expect(result).toContain('%=1');
+    expect(result).toContain('ec_version=2026-04-08');
+  });
 });

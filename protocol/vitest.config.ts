@@ -11,6 +11,7 @@ export default defineConfig({
         '**/*.test.ts',
         '**/*.d.ts',
         'languages/typescript/src/generated/**',
+        'languages/typescript/src/index.ts',
       ],
     },
   },
