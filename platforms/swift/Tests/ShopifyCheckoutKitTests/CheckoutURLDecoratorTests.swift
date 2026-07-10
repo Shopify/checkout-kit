@@ -4,9 +4,9 @@ import Testing
 
 @Suite("Checkout URL Decoration")
 struct CheckoutURLDecoratorTests {
-    @Test func appendsColorSchemeAndDerivedAppBranding() throws {
+    @Test func appendsAppAppearanceAndBranding() throws {
         var configuration = Configuration()
-        configuration.colorScheme = .dark
+        configuration.appearance = .app(.dark)
 
         let url = try #require(URL(string: "https://shop.com/cart/c/abc?key=cart_token"))
         let items = queryItems(CheckoutURLDecorator.decorate(url, configuration: configuration))
@@ -18,7 +18,7 @@ struct CheckoutURLDecoratorTests {
 
     @Test func replacesCallerSuppliedBrandingAndIsIdempotent() throws {
         var configuration = Configuration()
-        configuration.colorScheme = .light
+        configuration.appearance = .app(.light)
 
         let url = try #require(URL(string: "https://shop.com/cart/c/abc?ck_branding=app&ec_color_scheme=dark"))
         let once = CheckoutURLDecorator.decorate(url, configuration: configuration)
@@ -29,20 +29,23 @@ struct CheckoutURLDecoratorTests {
         #expect(items.filter { $0.name == "ec_color_scheme" }.map(\.value) == ["light"])
     }
 
-    @Test func derivesBrandingForEachColorScheme() throws {
-        try assertColorSchemeDecoratesWith(.light, colorScheme: "light", branding: "app")
-        try assertColorSchemeDecoratesWith(.dark, colorScheme: "dark", branding: "app")
-        try assertColorSchemeDecoratesWith(.automatic, colorScheme: "automatic", branding: "app")
-        try assertColorSchemeDecoratesWith(.web, colorScheme: "web_default", branding: "shop")
+    @Test func derivesCheckoutParamsForEachAppearance() throws {
+        try assertAppearanceDecoratesWith(.app(.light), colorScheme: "light", branding: "app")
+        try assertAppearanceDecoratesWith(.app(.dark), colorScheme: "dark", branding: "app")
+        try assertAppearanceDecoratesWith(.app(.automatic), colorScheme: "automatic", branding: "app")
+        try assertAppearanceDecoratesWith(.storefront(), colorScheme: "automatic", branding: "shop")
+        try assertAppearanceDecoratesWith(.storefront(.light), colorScheme: "automatic", branding: "shop")
+        try assertAppearanceDecoratesWith(.storefront(.dark), colorScheme: "automatic", branding: "shop")
+        try assertAppearanceDecoratesWith(.storefront(.automatic), colorScheme: "automatic", branding: "shop")
     }
 
-    private func assertColorSchemeDecoratesWith(
-        _ colorScheme: Configuration.ColorScheme,
+    private func assertAppearanceDecoratesWith(
+        _ appearance: Configuration.Appearance,
         colorScheme expectedColorScheme: String,
         branding expectedBranding: String
     ) throws {
         var configuration = Configuration()
-        configuration.colorScheme = colorScheme
+        configuration.appearance = appearance
 
         let url = try #require(URL(string: "https://shop.com/cart/c/abc"))
         let items = queryItems(CheckoutURLDecorator.decorate(url, configuration: configuration))

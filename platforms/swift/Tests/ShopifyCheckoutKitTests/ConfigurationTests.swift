@@ -42,6 +42,10 @@ class ConfigurationTests: XCTestCase {
         XCTAssertTrue(ShopifyCheckoutKit.configuration.preloading.enabled)
     }
 
+    func testAppearanceDefaultsToStorefront() {
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront())
+    }
+
     func testPreloadingCanBeDisabled() async throws {
         let checkoutURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
 
@@ -73,19 +77,19 @@ class ConfigurationTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }
 
-    func testColorSchemeCanBeSetDirectly() {
-        ShopifyCheckoutKit.configuration.colorScheme = .light
+    func testAppearanceCanBeSetDirectly() {
+        ShopifyCheckoutKit.configuration.appearance = .app(.light)
 
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .light)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.light))
     }
 
     func testConfigureCanBatchConfigurationChanges() {
         ShopifyCheckoutKit.configure {
-            $0.colorScheme = .dark
+            $0.appearance = .app(.dark)
             $0.closeButtonTintColor = .blue
         }
 
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .dark)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark))
         XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, .blue)
     }
 

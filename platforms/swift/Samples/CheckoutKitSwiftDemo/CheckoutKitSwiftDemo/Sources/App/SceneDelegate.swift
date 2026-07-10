@@ -157,7 +157,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = rootViewController
         window.makeKeyAndVisible()
         window.tintColor = ColorPalette.primaryColor
-        window.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.colorScheme.userInterfaceStyle
+        window.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.appearance.userInterfaceStyle
         return window
     }
 
@@ -284,7 +284,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     @objc func colorSchemeChanged() {
-        window?.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.colorScheme.userInterfaceStyle
+        window?.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.appearance.userInterfaceStyle
     }
 
     private func getRootViewController() -> UINavigationController? {
@@ -313,6 +313,17 @@ extension Configuration.ColorScheme {
             return .dark
         default:
             return .unspecified
+        }
+    }
+}
+
+extension Configuration.Appearance {
+    var userInterfaceStyle: UIUserInterfaceStyle {
+        switch self {
+        case let .app(colorScheme):
+            return colorScheme.userInterfaceStyle
+        case .storefront:
+            return Configuration.ColorScheme.automatic.userInterfaceStyle
         }
     }
 }

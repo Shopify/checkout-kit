@@ -88,7 +88,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 @MainActor
 public protocol CheckoutConfigurable {
     func backgroundColor(_ color: UIColor) -> Self
-    func colorScheme(_ colorScheme: ShopifyCheckoutKit.Configuration.ColorScheme) -> Self
+    func appearance(_ appearance: ShopifyCheckoutKit.Configuration.Appearance) -> Self
     func tintColor(_ color: UIColor) -> Self
     func title(_ title: String) -> Self
     func closeButtonTintColor(_ color: UIColor?) -> Self
@@ -100,8 +100,8 @@ extension CheckoutConfigurable {
         return self
     }
 
-    @discardableResult public func colorScheme(_ colorScheme: ShopifyCheckoutKit.Configuration.ColorScheme) -> Self {
-        ShopifyCheckoutKit.configuration.colorScheme = colorScheme
+    @discardableResult public func appearance(_ appearance: ShopifyCheckoutKit.Configuration.Appearance) -> Self {
+        ShopifyCheckoutKit.configuration.appearance = appearance
         return self
     }
 

@@ -12,16 +12,12 @@ public struct Platform: Equatable, Sendable {
 }
 
 public struct Configuration: Sendable {
-    /// Determines the color scheme used when checkout is presented.
+    /// Determines the appearance used when checkout is presented.
     ///
-    /// By default, the color scheme is determined based on the current
-    /// `UITraitCollection.userInterfaceStyle`. To force a
-    /// particular idiomatic color scheme, use the corresponding `.light`
-    /// or `.dark` values.
-    ///
-    /// Alternatively you can use `.web` to match the look and feel of what your
-    /// buyers will see when performing a checkout via a desktop or mobile browser.
-    public var colorScheme = ColorScheme.automatic
+    /// By default, checkout uses the storefront's web checkout branding.
+    /// Use `.app(.automatic)`, `.app(.light)`, or `.app(.dark)` to use the
+    /// Checkout Kit style instead.
+    public var appearance = Appearance.storefront()
 
     public var confetti = Configuration.Confetti()
 
@@ -57,8 +53,15 @@ extension Configuration {
         case dark
         /// Infers either `.light` or `.dark` based on the current `UIUserInterfaceStyle`.
         case automatic
-        /// The color scheme presented to buyers using a desktop or mobile browser.
-        case web = "web_default"
+    }
+}
+
+extension Configuration {
+    public enum Appearance: Equatable, Sendable {
+        /// Uses the Checkout Kit style with the provided color scheme.
+        case app(ColorScheme = .automatic)
+        /// Uses the storefront's web checkout branding with the automatic color scheme.
+        case storefront(ColorScheme = .automatic)
     }
 }
 
