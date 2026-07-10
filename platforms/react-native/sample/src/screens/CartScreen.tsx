@@ -227,7 +227,11 @@ function CartScreen(): React.JSX.Element {
                 ]}
                 disabled={totalQuantity === 0 || cartMutationInProgress}
                 onPress={presentCheckout}>
-                <Text style={styles.cartButtonText}>Checkout</Text>
+                <Text
+                  testID={E2ETestIds.cart.checkoutReady}
+                  style={styles.cartButtonText}>
+                  Checkout
+                </Text>
                 <Text style={styles.cartButtonTextSubtitle}>
                   {price(data.cart.cost.totalAmount)}
                 </Text>

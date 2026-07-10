@@ -2,6 +2,12 @@ appId: ${APP_ID}
 ---
 - runFlow:
     when:
+      platform: android
+    commands:
+      - hideKeyboard
+- runFlow:
+    when:
+      platform: ios
       visible: "selected"
     commands:
       - tapOn: "selected"

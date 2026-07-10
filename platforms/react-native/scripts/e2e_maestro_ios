@@ -4,10 +4,35 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
 METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-ios-metro.log"
 METRO_PID=""
+E2E_ENV_FILE=""
 APP_ID="com.shopify.checkoutkit.reactnativedemo"
-CART_BOOTSTRAP_LINK="${APP_ID}://cart?productIndex=0&quantity=1"
+CART_BOOTSTRAP_BASE_LINK="${APP_ID}://cart?productIndex=0&quantity=1"
+
+usage() {
+  cat <<EOF >&2
+Usage: dev rn e2e ios
+
+Runs React Native iOS Maestro checkout smoke flows against the released native SDK artifacts.
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      echo "Unknown option: $arg" >&2
+      exit 1
+      ;;
+  esac
+done
+
 
 metro_running() {
   curl --silent --fail http://localhost:8081/status | grep -q "packager-status:running"
@@ -17,6 +42,21 @@ cleanup() {
   if [ -n "$METRO_PID" ]; then
     kill "$METRO_PID" 2>/dev/null || true
   fi
+
+  if [ -n "$E2E_ENV_FILE" ]; then
+    rm -f "$E2E_ENV_FILE"
+  fi
+}
+
+prepare_e2e_env() {
+  E2E_ENV_FILE="$(mktemp "${TMPDIR:-/tmp}/checkout-kit-rn-e2e-env.XXXXXX")"
+
+  if [ -f "$ROOT_DIR/sample/.env" ]; then
+    cp "$ROOT_DIR/sample/.env" "$E2E_ENV_FILE"
+    printf "\n" >>"$E2E_ENV_FILE"
+  fi
+
+  printf "CHECKOUT_KIT_E2E_DISABLE_LOGBOX=1\n" >>"$E2E_ENV_FILE"
 }
 
 wait_for_metro() {
@@ -43,16 +83,21 @@ require_maestro() {
 cd "$ROOT_DIR"
 
 require_maestro
+trap cleanup EXIT
 
 if ! metro_running; then
   /opt/dev/bin/dev react-native start >"$METRO_LOG" 2>&1 &
   METRO_PID="$!"
-  trap cleanup EXIT
 fi
 
 wait_for_metro
-pnpm sample ios --local
-maestro --platform ios test --config ../../e2e/config.yaml \
-  -e "APP_ID=${APP_ID}" \
-  -e "CART_BOOTSTRAP_LINK=${CART_BOOTSTRAP_LINK}" \
-  ../../e2e/tests/react-native/full-guest-checkout.yaml
+prepare_e2e_env
+ENVFILE="$E2E_ENV_FILE" pnpm sample ios
+
+(
+  cd "$REPO_ROOT/e2e"
+  maestro --platform ios test --config config.yaml \
+    -e "APP_ID=${APP_ID}" \
+    -e "CART_BOOTSTRAP_BASE_LINK=${CART_BOOTSTRAP_BASE_LINK}" \
+    tests/react-native
+)

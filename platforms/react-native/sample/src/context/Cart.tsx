@@ -22,9 +22,18 @@ interface Context {
   addingToCart: Set<string>;
   clearCart: () => void;
   addToCart: (variantId: string, quantity?: number) => Promise<void>;
-  seedCart: (variantId: string, quantity?: number) => Promise<void>;
+  seedCart: (
+    variantId: string,
+    quantity?: number,
+    buyerIdentityMode?: BuyerIdentityMode,
+  ) => Promise<void>;
   removeFromCart: (variantId: string) => Promise<void>;
 }
+
+type AddToCartOptions = {
+  forceNewCart?: boolean;
+  buyerIdentityMode?: BuyerIdentityMode;
+};
 
 const defaultCartId = undefined;
 const defaultCheckoutURL = undefined;
@@ -114,19 +123,30 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
   }, [cartId, fetchCart, setTotalQuantity]);
 
   const addToCart = useCallback(
-    async (variantId: string, quantity = 1, forceNewCart = false) => {
+    async (
+      variantId: string,
+      quantity = 1,
+      {
+        forceNewCart = false,
+        buyerIdentityMode = appConfig.buyerIdentityMode,
+      }: AddToCartOptions = {},
+    ) => {
       if (!Number.isInteger(quantity) || quantity < 1) {
         throw new Error('Cart quantity must be a positive integer');
       }
 
       let id = forceNewCart ? undefined : cartId;
+      const cartAppConfig = {
+        ...appConfig,
+        buyerIdentityMode,
+      };
 
       dispatch({type: 'add', variantId});
 
       try {
         if (
           !id &&
-          appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount &&
+          buyerIdentityMode === BuyerIdentityMode.CustomerAccount &&
           !isAuthenticated
         ) {
           const signInRequiredMessage =
@@ -144,14 +164,11 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
 
         if (!id) {
           let customerAccessToken: string | undefined;
-          if (
-            appConfig.buyerIdentityMode === BuyerIdentityMode.CustomerAccount
-          ) {
-            customerAccessToken =
-              (await getValidAccessToken()) ?? undefined;
+          if (buyerIdentityMode === BuyerIdentityMode.CustomerAccount) {
+            customerAccessToken = (await getValidAccessToken()) ?? undefined;
           }
           const cartInput = createBuyerIdentityCartInput(
-            appConfig,
+            cartAppConfig,
             customerAccessToken,
           );
           const cart = await createCart({variables: {input: cartInput}});
@@ -198,8 +215,15 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
   );
 
   const seedCart = useCallback(
-    async (variantId: string, quantity = 1) => {
-      await addToCart(variantId, quantity, true);
+    async (
+      variantId: string,
+      quantity = 1,
+      buyerIdentityMode?: BuyerIdentityMode,
+    ) => {
+      await addToCart(variantId, quantity, {
+        forceNewCart: true,
+        buyerIdentityMode,
+      });
     },
     [addToCart],
   );

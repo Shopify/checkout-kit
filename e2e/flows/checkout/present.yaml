@@ -5,5 +5,5 @@ appId: ${APP_ID}
     enabled: true
 - extendedWaitUntil:
     visible:
-      text: "^Email( or mobile phone number)?$"
+      text: "^(Email( or mobile phone number)?|Delivery|Card number)$"
     timeout: 10000
