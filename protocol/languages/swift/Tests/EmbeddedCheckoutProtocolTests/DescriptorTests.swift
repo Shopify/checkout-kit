@@ -34,7 +34,7 @@ struct DescriptorTests {
         }
 
         @Test func requestMethodsBindAsTypedDescriptors() {
-            func method<Payload, Result>(of descriptor: RequestDescriptor<Payload, Result>) -> String {
+            func method<Payload, Handler, Result>(of descriptor: RequestDescriptor<Payload, Handler, Result>) -> String {
                 descriptor.method
             }
 

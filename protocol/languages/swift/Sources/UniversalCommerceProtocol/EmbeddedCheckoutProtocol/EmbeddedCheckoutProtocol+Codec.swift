@@ -10,23 +10,16 @@ extension EmbeddedCheckoutProtocol {
             return .unknown(method: "", rawParams: jsonRpc)
         }
 
-        if envelope.method == "ec.error",
-           let request = try? JSONDecoder().decode(JSONRPCRequest<JSONRPCErrorParams>.self, from: data) {
-            return .notification(method: envelope.method, payload: request.params.error)
-        }
-
-        // Any id-bearing message is a request. The raw `params` object is lifted
-        // verbatim; typed decoding (and invalid-params reporting) is the registered
-        // handler's responsibility, so every request method travels the same rail.
+        // The raw `params` object is lifted verbatim for both requests and
+        // notifications; typed decoding (and, for requests, invalid-params
+        // reporting) is the registered handler's responsibility, so every method
+        // travels the same rail. An id-bearing message is a request; otherwise it
+        // is a notification.
         if let id = envelope.id {
             return .request(id: id, method: envelope.method, params: rawParams(from: data))
         }
 
-        if let request = try? JSONDecoder().decode(JSONRPCRequest<JSONRPCCheckoutParams>.self, from: data) {
-            return .notification(method: envelope.method, payload: request.params.checkout)
-        }
-
-        return .unknown(method: envelope.method, rawParams: jsonRpc)
+        return .notification(method: envelope.method, params: rawParams(from: data))
     }
 
     /// Lifts the top-level `params` object from a JSON-RPC message as standalone

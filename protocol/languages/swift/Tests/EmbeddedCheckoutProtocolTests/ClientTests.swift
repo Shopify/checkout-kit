@@ -37,7 +37,7 @@ private enum TestDelegationResult: ResponsePayload {
     }
 }
 
-private let windowOpenDescriptor = RequestDescriptor<TestURLPayload, TestDelegationResult>(
+private let windowOpenDescriptor = RequestDescriptor<TestURLPayload, RequestMessage<TestURLPayload>, TestDelegationResult>(
     method: "ec.window.open_request",
     delegation: "window.open",
     decode: { params in
@@ -65,8 +65,8 @@ struct ClientTests {
     @Test @MainActor func notificationDispatchesToRegisteredHandler() async throws {
         var receivedCheckout: Checkout?
         let client = EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.Event.start) { checkout in
-                receivedCheckout = checkout
+            .on(EmbeddedCheckoutProtocol.Event.start) { message in
+                receivedCheckout = message.params.checkout
             }
 
         let response = try await client.process(notificationFixture())
@@ -79,7 +79,7 @@ struct ClientTests {
     @Test @MainActor func notificationDoesNotFireUnregisteredHandler() async throws {
         var completeFired = false
         let client = EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.Event.complete) { (_: Checkout) in
+            .on(EmbeddedCheckoutProtocol.Event.complete) { _ in
                 completeFired = true
             }
 
@@ -91,7 +91,7 @@ struct ClientTests {
 
     @Test @MainActor func notificationReturnsNil() async throws {
         let client = EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.Event.start) { (_: Checkout) in }
+            .on(EmbeddedCheckoutProtocol.Event.start) { _ in }
 
         let response = try await client.process(notificationFixture())
 
@@ -102,8 +102,8 @@ struct ClientTests {
         var startFired = false
         var completeFired = false
         let client = EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.Event.start) { (_: Checkout) in startFired = true }
-            .on(EmbeddedCheckoutProtocol.Event.complete) { (_: Checkout) in completeFired = true }
+            .on(EmbeddedCheckoutProtocol.Event.start) { _ in startFired = true }
+            .on(EmbeddedCheckoutProtocol.Event.complete) { _ in completeFired = true }
 
         _ = try await client.process(notificationFixture())
 
@@ -113,7 +113,7 @@ struct ClientTests {
 
     @Test @MainActor func unknownMessageReturnsNil() async {
         let client = EmbeddedCheckoutProtocol.Client()
-            .on(EmbeddedCheckoutProtocol.Event.start) { (_: Checkout) in }
+            .on(EmbeddedCheckoutProtocol.Event.start) { _ in }
 
         let response = await client.process("not valid json")
 
@@ -126,8 +126,8 @@ struct ClientTests {
         """#
 
         let client = EmbeddedCheckoutProtocol.Client()
-            .on(windowOpenDescriptor) { payload in
-                payload.url == URL(string: "https://example.com/terms") ? .success : .rejected(reason: "unexpected url")
+            .on(windowOpenDescriptor) { message in
+                message.params.url == URL(string: "https://example.com/terms") ? .success : .rejected(reason: "unexpected url")
             }
 
         let response = try #require(await client.process(request))
@@ -281,8 +281,8 @@ struct ClientTests {
         var receivedCheckoutID: String?
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
-                .on(EmbeddedCheckoutProtocol.Event.paymentCredential) { checkout in
-                    receivedCheckoutID = checkout.id
+                .on(EmbeddedCheckoutProtocol.Event.paymentCredential) { message in
+                    receivedCheckoutID = message.params.checkout.id
                     return CredentialResult(
                         checkout: nil,
                         ucp: InstrumentsChangeResultUcp(

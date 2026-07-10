@@ -30,13 +30,19 @@ import java.util.concurrent.CountDownLatch
 public object CheckoutProtocol {
     public const val SPEC_VERSION: String = EmbeddedCheckoutProtocol.SPEC_VERSION
 
-    public val start: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.start
-    public val complete: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.complete
-    public val messagesChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.messagesChange
-    public val lineItemsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.lineItemsChange
-    public val totalsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.totalsChange
-    public val fulfillmentChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.fulfillmentChange
-    public val error: NotificationDescriptor<ErrorResponse> = EmbeddedCheckoutProtocol.error
+    public val start: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.start.map { it.checkout }
+    public val complete: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.complete.map { it.checkout }
+    public val messagesChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.messagesChange.map {
+        it.checkout
+    }
+    public val lineItemsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.lineItemsChange.map {
+        it.checkout
+    }
+    public val totalsChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.totalsChange.map { it.checkout }
+    public val fulfillmentChange: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.fulfillmentChange.map {
+        it.checkout
+    }
+    public val error: NotificationDescriptor<ErrorResponse> = EmbeddedCheckoutProtocol.error.map { it.error }
 
     internal val ready: RequestDescriptor<ReadyRequest, ReadyResult> = EmbeddedCheckoutProtocol.ready
 

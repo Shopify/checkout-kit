@@ -2050,12 +2050,12 @@ function openPopupCheckout(): {
  * equality with the fixture).
  */
 function decodeCheckout(payload: { checkout: unknown }) {
-  return EmbeddedCheckoutProtocol.Event.start.decode(payload);
+  return EmbeddedCheckoutProtocol.Event.start.decode(payload).checkout;
 }
 
 /** Wire → decoded `ErrorResponse`, mirroring the client's `ec.error` handling. */
 function decodeError(params: { error: unknown }) {
-  return EmbeddedCheckoutProtocol.Event.error.decode(params);
+  return EmbeddedCheckoutProtocol.Event.error.decode(params).error;
 }
 
 /**

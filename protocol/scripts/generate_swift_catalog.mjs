@@ -16,15 +16,42 @@ const outputPath = path.resolve(
 const notifications = EC_METHODS.filter(entry => entry.kind === 'notification');
 const requests = EC_METHODS.filter(entry => entry.kind === 'request');
 
-// Conformances are emitted only for model-generated types. Notification payloads
-// and the params/result types the model generator synthesizes conform here. Every
-// bound request result is generated (enforced by assertResultsAreGenerated in the
+// The spec-shaped JSON-RPC `params` wrapper each `{checkout}`/`{error}` payload
+// decodes into. These are hand-written in JSONRPCMessage.swift and declare their
+// own `EventPayload` conformance, so they are excluded from generated conformances.
+function paramsWrapper(payloadType) {
+  switch (payloadType) {
+    case 'Checkout':
+      return 'JSONRPCCheckoutParams';
+    case 'ErrorResponse':
+      return 'JSONRPCErrorParams';
+    default:
+      return null;
+  }
+}
+
+// The decoded `params` type a descriptor surfaces. `checkoutUnwrap` methods carry
+// the `{checkout}` wrapper (matching the wire envelope); `whole` methods decode
+// their payload directly.
+function paramsType(entry) {
+  return entry.decode === 'checkoutUnwrap' ? 'JSONRPCCheckoutParams' : entry.payload;
+}
+
+// Notifications surface the spec `params` wrapper.
+function notificationParamsType(entry) {
+  const wrapper = paramsWrapper(entry.payload);
+  if (wrapper === null) {
+    throw new Error(
+      `No Swift notification params wrapper for ${entry.payload} (${entry.method})`,
+    );
+  }
+  return wrapper;
+}
+
+// Conformances are emitted only for model-generated types (notification/request
+// inner payloads and results). The hand-written `params` wrappers conform in
+// JSONRPCMessage.swift. Every bound request result is generated (enforced by the
 // catalog manifest), so no hand-written result type conforms separately.
-const generatedRequestPayloads = new Set(
-  MODEL_EXTRACTIONS.filter(extraction => extraction.kind === 'params').map(
-    extraction => extraction.rootTitle,
-  ),
-);
 const generatedResults = new Set(
   MODEL_EXTRACTIONS.filter(extraction => extraction.kind === 'result').map(
     extraction => extraction.rootTitle,
@@ -34,7 +61,9 @@ const generatedResults = new Set(
 const eventPayloadTypes = Array.from(
   new Set([
     ...notifications.map(entry => entry.payload),
-    ...generatedRequestPayloads,
+    ...requests
+      .filter(entry => entry.decode === 'whole')
+      .map(entry => entry.payload),
   ]),
 ).sort();
 
@@ -71,14 +100,10 @@ uniqueIdentifiers(
 );
 
 function decodeClosure(entry) {
-  switch (entry.decode) {
-    case 'whole':
-      return `{ try? JSONDecoder().decode(${entry.payload}.self, from: $0) }`;
-    case 'checkoutUnwrap':
-      return '{ try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: $0).checkout }';
-    default:
-      throw new Error(`Unknown decode strategy: ${entry.decode}`);
+  if (entry.decode !== 'whole' && entry.decode !== 'checkoutUnwrap') {
+    throw new Error(`Unknown decode strategy: ${entry.decode}`);
   }
+  return `{ try? JSONDecoder().decode(${paramsType(entry)}.self, from: $0) }`;
 }
 
 const conformances = [
@@ -88,19 +113,22 @@ const conformances = [
 
 const notificationCatalog = notifications
   .map(
-    entry =>
-      `        public static let ${entry.identifier} = NotificationDescriptor<${entry.payload}>(method: "${entry.method}")`,
+    entry => `        public static let ${entry.identifier} = NotificationDescriptor(
+            method: "${entry.method}",
+            decode: { try? JSONDecoder().decode(${notificationParamsType(entry)}.self, from: $0) }
+        )`,
   )
-  .join('\n');
+  .join('\n\n');
 
 const requestDescriptors = requests
-  .map(
-    entry => `        public static let ${entry.descriptorIdentifier} = RequestDescriptor<${entry.payload}, ${entry.result}>(
+  .map(entry => {
+    const payload = paramsType(entry);
+    return `        public static let ${entry.descriptorIdentifier}: RequestDescriptor<${payload}, RequestMessage<${payload}>, ${entry.result}> = .init(
             method: "${entry.method}",
             delegation: ${entry.delegation === null ? 'nil' : `"${entry.delegation}"`},
             decode: ${decodeClosure(entry)}
-        )`,
-  )
+        )`;
+  })
   .join('\n\n');
 
 const allMethods = EC_METHODS.map(
