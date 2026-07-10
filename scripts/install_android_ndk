@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+RN_ANDROID_BUILD_FILE="${ROOT_DIR}/platforms/react-native/sample/android/build.gradle"
+
+usage() {
+  cat <<EOF
+Usage: scripts/install_android_ndk [--version <version>] [--print-version]
+
+Installs the React Native Android sample NDK with retries.
+By default, the version is read from platforms/react-native/sample/android/build.gradle.
+Set ANDROID_NDK_VERSION or pass --version to override it.
+EOF
+}
+
+ndk_version="${ANDROID_NDK_VERSION:-}"
+print_version="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version)
+      if [[ $# -lt 2 ]]; then
+        usage >&2
+        exit 1
+      fi
+      ndk_version="$2"
+      shift 2
+      ;;
+    --print-version)
+      print_version="true"
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$ndk_version" ]]; then
+  ndk_version="$(sed -nE 's/^[[:space:]]*ndkVersion[[:space:]]*=[[:space:]]*"([^"]+)".*$/\1/p' "$RN_ANDROID_BUILD_FILE" | head -n 1)"
+fi
+
+if [[ -z "$ndk_version" ]]; then
+  echo "install_android_ndk: unable to determine NDK version" >&2
+  exit 1
+fi
+
+if [[ "$print_version" == "true" ]]; then
+  printf '%s\n' "$ndk_version"
+  exit 0
+fi
+
+sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+
+if [[ -z "$sdk_root" ]]; then
+  echo "install_android_ndk: ANDROID_HOME or ANDROID_SDK_ROOT must be set" >&2
+  exit 1
+fi
+
+find_sdkmanager() {
+  local candidates=(
+    "$sdk_root/cmdline-tools/latest/bin/sdkmanager"
+    "$sdk_root/cmdline-tools/bin/sdkmanager"
+    "$sdk_root/tools/bin/sdkmanager"
+  )
+  local candidate
+
+  for candidate in "${candidates[@]}"; do
+    if [[ -x "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  command -v sdkmanager
+}
+
+if ! sdkmanager_path="$(find_sdkmanager)"; then
+  echo "install_android_ndk: sdkmanager was not found under $sdk_root or PATH" >&2
+  exit 1
+fi
+
+run_with_yes() {
+  set +o pipefail
+  yes | "$@"
+  local status=${PIPESTATUS[1]}
+  set -o pipefail
+  return "$status"
+}
+
+ndk_dir="$sdk_root/ndk/$ndk_version"
+package="ndk;$ndk_version"
+
+ndk_installed() {
+  [[ -f "$ndk_dir/source.properties" ]] &&
+    grep -Fq "Pkg.Revision = $ndk_version" "$ndk_dir/source.properties"
+}
+
+if ndk_installed; then
+  echo "install_android_ndk: $package is already installed"
+  exit 0
+fi
+
+attempts="${ANDROID_SDK_INSTALL_ATTEMPTS:-3}"
+
+if ! [[ "$attempts" =~ ^[1-9][0-9]*$ ]]; then
+  echo "install_android_ndk: ANDROID_SDK_INSTALL_ATTEMPTS must be a positive integer" >&2
+  exit 1
+fi
+
+run_with_yes "$sdkmanager_path" --licenses >/dev/null || true
+
+last_status=1
+
+for attempt in $(seq 1 "$attempts"); do
+  echo "install_android_ndk: installing $package (attempt $attempt/$attempts)"
+
+  if run_with_yes "$sdkmanager_path" --install "$package"; then
+    if ndk_installed; then
+      echo "install_android_ndk: installed $package"
+      exit 0
+    fi
+
+    echo "install_android_ndk: sdkmanager completed, but $ndk_dir did not verify" >&2
+    last_status=1
+  else
+    last_status=$?
+  fi
+
+  if [[ "$attempt" -lt "$attempts" ]]; then
+    echo "install_android_ndk: removing partial install before retry"
+    rm -rf "$ndk_dir" "$sdk_root/.temp"
+    sleep "$((attempt * 10))"
+  fi
+done
+
+echo "install_android_ndk: failed to install $package" >&2
+exit "$last_status"

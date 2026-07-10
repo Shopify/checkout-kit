@@ -51,6 +51,10 @@ jobs:
             platforms/react-native/modules/@shopify/checkout-kit-react-native/android/**/*.gradle*
             platforms/react-native/modules/@shopify/checkout-kit-react-native/android/gradle.properties
 
+      - name: Setup Android NDK
+        timeout-minutes: 10
+        uses: ./.github/actions/setup-android-ndk
+
       - name: Build Android sample
         timeout-minutes: 20
         env:
