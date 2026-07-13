@@ -56,7 +56,7 @@ public object ShopifyCheckoutKit {
     @JvmStatic
     public fun invalidate() {
         log.d("ShopifyCheckoutKit", "Invalidate called.")
-        CheckoutWebView.invalidate()
+        CheckoutWebView.invalidateAndResetState()
     }
 
     /**
@@ -68,11 +68,16 @@ public object ShopifyCheckoutKit {
      *
      * @param checkoutUrl The URL of the checkout to preload, obtained via the Storefront API.
      * @param context The activity used to create the background WebView.
+     * @param onStateChange optional callback invoked on the main thread whenever the preload state changes.
+     * @return A [CheckoutPreload] handle exposing the current preload state.
      */
     @JvmStatic
-    public fun preload(checkoutUrl: String, context: ComponentActivity) {
-        preload(checkoutUrl, context, WebMessageListenerTransport)
-    }
+    @JvmOverloads
+    public fun preload(
+        checkoutUrl: String,
+        context: ComponentActivity,
+        onStateChange: ((PreloadState) -> Unit)? = null,
+    ): CheckoutPreload = preload(checkoutUrl, context, WebMessageListenerTransport, onStateChange)
 
     /**
      * Internal preload entry point that allows [webMessageTransport] to be injected.
@@ -84,19 +89,22 @@ public object ShopifyCheckoutKit {
         checkoutUrl: String,
         context: ComponentActivity,
         webMessageTransport: WebMessageTransport,
-    ) {
+        onStateChange: ((PreloadState) -> Unit)? = null,
+    ): CheckoutPreload {
         log.d("ShopifyCheckoutKit", "Preload called with checkoutUrl ${checkoutUrl.redactedUrlForLogging()}.")
-        if (!configuration.preloading.enabled) {
-            log.d("ShopifyCheckoutKit", "Preloading disabled, ignoring preload.")
-            return
+        val handle = CheckoutWebView.newPreloadHandle()
+        handle.onStateChange = onStateChange
+
+        when {
+            !configuration.preloading.enabled ->
+                log.d("ShopifyCheckoutKit", "Preloading disabled, ignoring preload.")
+            context.isDestroyed || context.isFinishing ->
+                log.d("ShopifyCheckoutKit", "Context is destroyed or finishing, ignoring preload.")
+            else ->
+                CheckoutWebView.preload(checkoutUrl, context, webMessageTransport)
         }
 
-        if (context.isDestroyed || context.isFinishing) {
-            log.d("ShopifyCheckoutKit", "Context is destroyed or finishing, ignoring preload.")
-            return
-        }
-
-        CheckoutWebView.preload(checkoutUrl, context, webMessageTransport)
+        return handle
     }
 
     /**

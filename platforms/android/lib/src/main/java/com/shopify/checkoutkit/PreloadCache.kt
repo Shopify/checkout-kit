@@ -3,6 +3,7 @@ package com.shopify.checkoutkit
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import java.lang.ref.WeakReference
 
 internal data class PreloadKey(val url: String) {
     companion object {
@@ -34,9 +35,24 @@ internal class PreloadCache : DefaultLifecycleObserver {
 
     var clock: Clock = Clock()
     private var entry: Entry? = null
+    private var observer: WeakReference<CheckoutPreload>? = null
+
+    var state: PreloadState = PreloadState.Idle
+        private set
 
     val hasEntry: Boolean
         get() = entry != null
+
+    fun setObserver(observer: CheckoutPreload) {
+        this.observer = WeakReference(observer)
+    }
+
+    fun transition(state: PreloadState) {
+        this.state = state
+        observer?.get()?.receive(state)
+    }
+
+    fun contains(view: CheckoutWebView): Boolean = entry?.view === view
 
     fun store(key: PreloadKey, view: CheckoutWebView, lifecycleOwner: LifecycleOwner) {
         invalidate()
@@ -51,13 +67,14 @@ internal class PreloadCache : DefaultLifecycleObserver {
             return
         }
         lifecycleOwner.lifecycle.addObserver(this)
+        transition(PreloadState.Loading)
     }
 
     fun take(key: PreloadKey): CheckoutWebView? = when (val cached = entry) {
         null -> null
         else -> if (!cached.isValid(key, clock.currentTimeMillis())) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
-            invalidate()
+            terminate(if (cached.key == key) PreloadState.Expired else PreloadState.Idle)
             null
         } else if (cached.view.isPresented) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Preloaded WebView is already presented; creating a new WebView.")
@@ -107,6 +124,11 @@ internal class PreloadCache : DefaultLifecycleObserver {
         if (entry?.view === view) {
             invalidate()
         }
+    }
+
+    private fun terminate(state: PreloadState) {
+        invalidate()
+        transition(state)
     }
 
     fun cachedViewForTesting(): CheckoutWebView? = entry?.view

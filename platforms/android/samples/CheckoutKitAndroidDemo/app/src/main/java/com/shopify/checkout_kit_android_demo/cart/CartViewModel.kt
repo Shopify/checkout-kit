@@ -22,6 +22,7 @@ import com.shopify.checkout_kit_android_demo.settings.PreferencesManager
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.CustomerRepository
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutPresentationMode
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
+import com.shopify.checkoutkit.CheckoutPreload
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.CheckoutException
 import com.shopify.checkoutkit.CheckoutPresentation
@@ -59,6 +60,7 @@ class CartViewModel(
 
     private var demoBuyerIdentityEnabled = false
     private var checkoutPreloadingEnabled = true
+    private var checkoutPreload: CheckoutPreload? = null
     private var windowOpenHandler = WindowOpenHandler.Default
 
     init {
@@ -106,6 +108,7 @@ class CartViewModel(
     }
 
     fun clearCart() {
+        ShopifyCheckoutKit.invalidate()
         _cartState.value = CartState.Empty
     }
 
@@ -156,7 +159,10 @@ class CartViewModel(
         if (!checkoutPreloadingEnabled) return
 
         Timber.i("Preloading checkout")
-        ShopifyCheckoutKit.preload(url, activity)
+        ShopifyCheckoutKit.invalidate()
+        checkoutPreload = ShopifyCheckoutKit.preload(url, activity) { state ->
+            Timber.i("Preload state changed to $state")
+        }
     }
 
     fun continueShopping(navController: NavController) {
