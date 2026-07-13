@@ -114,6 +114,9 @@ internal class CheckoutWebView private constructor(
             super.onPageFinished(view, url)
             log.d(LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
             loadComplete = true
+            if (preloadCache.contains(this@CheckoutWebView)) {
+                preloadCache.transition(PreloadState.Ready)
+            }
             getListener().onCheckoutViewLoadComplete()
         }
 
@@ -123,6 +126,9 @@ internal class CheckoutWebView private constructor(
             error: WebResourceError?
         ) {
             if (request?.isForMainFrame == true) {
+                if (preloadCache.contains(this@CheckoutWebView)) {
+                    preloadCache.transition(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+                }
                 CheckoutWebView.invalidate()
             }
             super.onReceivedError(view, request, error)
@@ -134,6 +140,10 @@ internal class CheckoutWebView private constructor(
             errorResponse: WebResourceResponse?
         ) {
             if (request?.isForMainFrame == true) {
+                if (preloadCache.contains(this@CheckoutWebView)) {
+                    val statusCode = errorResponse?.statusCode ?: 0
+                    preloadCache.transition(PreloadState.Failed(PreloadState.FailureReason.HttpError(statusCode)))
+                }
                 CheckoutWebView.invalidate()
             }
             super.onReceivedHttpError(view, request, errorResponse)
@@ -221,6 +231,13 @@ internal class CheckoutWebView private constructor(
             }
         }
 
+        fun invalidateAndResetState() {
+            runOnMainThread {
+                preloadCache.invalidate()
+                preloadCache.transition(PreloadState.Idle)
+            }
+        }
+
         fun clearCache() {
             if (!preloadCache.hasEntry) return
             invalidate()
@@ -250,6 +267,10 @@ internal class CheckoutWebView private constructor(
             }
         }
 
+        internal fun newPreloadHandle(): CheckoutPreload = CheckoutPreload(preloadCache)
+
         internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedViewForTesting()
+
+        internal fun hasCacheEntryForTesting(): Boolean = preloadCache.hasEntry
     }
 }
