@@ -22,17 +22,17 @@ class ShopifyAcceleratedCheckoutsTests: XCTestCase {
         XCTAssertEqual(ShopifyAcceleratedCheckouts.apiVersion, "2026-04")
     }
 
-    func test_logLevel_withDefaultConfiguration_shouldDefaultToError() {
+    func test_logLevel_withDefaultConfiguration_shouldDefaultToWarn() {
         XCTAssertEqual(
             ShopifyAcceleratedCheckouts.logLevel,
-            LogLevel.error,
-            "Default logLevel should be .error"
+            LogLevel.warn,
+            "Default logLevel should be .warn"
         )
         XCTAssertNotNil(ShopifyAcceleratedCheckouts.logger)
         XCTAssertEqual(
             ShopifyAcceleratedCheckouts.logger.logLevel,
-            LogLevel.error,
-            "Default logger logLevel should be .error"
+            LogLevel.warn,
+            "Default logger logLevel should be .warn"
         )
     }
 
@@ -50,9 +50,9 @@ class ShopifyAcceleratedCheckoutsTests: XCTestCase {
     }
 
     func test_logger_withDifferentLogLevels_shouldHaveCorrectLogLevel() {
-        ShopifyAcceleratedCheckouts.logLevel = .all
+        ShopifyAcceleratedCheckouts.logLevel = .debug
         XCTAssertEqual(
-            ShopifyAcceleratedCheckouts.logger.logLevel, .all, "Logger should have .all log level"
+            ShopifyAcceleratedCheckouts.logger.logLevel, .debug, "Logger should have .debug log level"
         )
 
         ShopifyAcceleratedCheckouts.logLevel = .debug

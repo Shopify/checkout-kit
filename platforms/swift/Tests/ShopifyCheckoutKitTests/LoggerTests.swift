@@ -34,6 +34,10 @@ final class TestableOSLogger: Sendable {
         logger.debug(message)
     }
 
+    func warn(_ message: String) {
+        logger.warn(message)
+    }
+
     func error(_ message: String) {
         logger.error(message)
     }
@@ -54,6 +58,14 @@ final class OSLoggerTests: XCTestCase {
     override func tearDown() {
         ShopifyCheckoutKit.configuration = originalConfiguration
         super.tearDown()
+    }
+
+    private func emitAll(_ logger: TestableOSLogger) {
+        logger.info("test info")
+        logger.debug("test debug")
+        logger.warn("test warn")
+        logger.error("test error")
+        logger.fault("test fault")
     }
 
     func test_sharedLogger_whenAccessed_shouldExist() {
@@ -82,89 +94,80 @@ final class OSLoggerTests: XCTestCase {
     func test_logLevelNone_withAllLogCalls_shouldBlockAllLogging() {
         let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .none)
 
-        logger.info("test info")
-        logger.debug("test debug")
-        logger.error("test error")
-        logger.fault("test fault")
+        emitAll(logger)
 
         XCTAssertEqual(logger.capturedMessages.count, 0)
     }
 
-    func test_logLevelAll_withAllLogCalls_shouldAllowAllLogging() {
-        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .all)
-
-        logger.info("test info")
-        logger.debug("test debug")
-        logger.error("test error")
-        logger.fault("test fault")
-
-        XCTAssertEqual(logger.capturedMessages.count, 4)
-        XCTAssertEqual(
-            logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Info) - test info"
-        )
-        XCTAssertEqual(logger.capturedMessages[0].type, OSLogType.info)
-        XCTAssertEqual(
-            logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Debug) - test debug"
-        )
-        XCTAssertEqual(logger.capturedMessages[1].type, OSLogType.debug)
-        XCTAssertEqual(
-            logger.capturedMessages[2].message, "[ShopifyCheckoutKit] (Error) - test error"
-        )
-        XCTAssertEqual(logger.capturedMessages[2].type, OSLogType.error)
-        XCTAssertEqual(
-            logger.capturedMessages[3].message, "[ShopifyCheckoutKit] (Fault) - test fault"
-        )
-        XCTAssertEqual(logger.capturedMessages[3].type, OSLogType.fault)
-    }
-
-    func test_logLevelDebug_withAllLogCalls_shouldAllowDebugAndInfo() {
+    func test_logLevelDebug_withAllLogCalls_shouldAllowEveryLevel() {
         let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
 
-        logger.info("test info")
-        logger.debug("test debug")
-        logger.error("test error")
-        logger.fault("test fault")
+        emitAll(logger)
 
-        XCTAssertEqual(logger.capturedMessages.count, 2)
-        XCTAssertEqual(
-            logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Info) - test info"
-        )
-        XCTAssertEqual(
-            logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Debug) - test debug"
-        )
+        XCTAssertEqual(logger.capturedMessages.count, 5)
+        XCTAssertEqual(logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Info) - test info")
+        XCTAssertEqual(logger.capturedMessages[0].type, OSLogType.info)
+        XCTAssertEqual(logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Debug) - test debug")
+        XCTAssertEqual(logger.capturedMessages[1].type, OSLogType.debug)
+        XCTAssertEqual(logger.capturedMessages[2].message, "[ShopifyCheckoutKit] (Warning) - test warn")
+        XCTAssertEqual(logger.capturedMessages[2].type, OSLogType.default)
+        XCTAssertEqual(logger.capturedMessages[3].message, "[ShopifyCheckoutKit] (Error) - test error")
+        XCTAssertEqual(logger.capturedMessages[3].type, OSLogType.error)
+        XCTAssertEqual(logger.capturedMessages[4].message, "[ShopifyCheckoutKit] (Fault) - test fault")
+        XCTAssertEqual(logger.capturedMessages[4].type, OSLogType.fault)
+    }
+
+    func test_logLevelWarn_withAllLogCalls_shouldAllowWarnErrorAndFault() {
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .warn)
+
+        emitAll(logger)
+
+        XCTAssertEqual(logger.capturedMessages.count, 3)
+        XCTAssertEqual(logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Warning) - test warn")
+        XCTAssertEqual(logger.capturedMessages[0].type, OSLogType.default)
+        XCTAssertEqual(logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Error) - test error")
+        XCTAssertEqual(logger.capturedMessages[2].message, "[ShopifyCheckoutKit] (Fault) - test fault")
     }
 
     func test_logLevelError_withAllLogCalls_shouldAllowErrorAndFault() {
         let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .error)
 
-        logger.info("test info")
-        logger.debug("test debug")
-        logger.error("test error")
-        logger.fault("test fault")
+        emitAll(logger)
 
         XCTAssertEqual(logger.capturedMessages.count, 2)
-        XCTAssertEqual(
-            logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Error) - test error"
-        )
-        XCTAssertEqual(
-            logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Fault) - test fault"
-        )
+        XCTAssertEqual(logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Error) - test error")
+        XCTAssertEqual(logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Fault) - test fault")
+    }
+
+    /// Regression: under the old exact-match model, selecting `.debug` silenced
+    /// errors. Threshold semantics must make `.debug` the most verbose level, so
+    /// errors and faults still surface.
+    func test_logLevelDebug_shouldStillEmitErrorsAndFaults() {
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
+
+        logger.error("boom")
+        logger.fault("critical")
+
+        XCTAssertEqual(logger.capturedMessages.count, 2)
+        XCTAssertEqual(logger.capturedMessages[0].message, "[ShopifyCheckoutKit] (Error) - boom")
+        XCTAssertEqual(logger.capturedMessages[1].message, "[ShopifyCheckoutKit] (Fault) - critical")
     }
 
     func test_sharedLogger_withConfigurationLogLevel_shouldMaintainBackwardsCompatibility() {
-        ShopifyCheckoutKit.configuration.logLevel = .all
+        ShopifyCheckoutKit.configuration.logLevel = .debug
         OSLogger.shared.info("test message")
     }
 
     func test_messageFormatting_withDifferentLogLevels_shouldFormatExactly() {
-        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .all)
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
 
         logger.info("user action completed")
         logger.debug("processing checkout data")
+        logger.warn("approaching rate limit")
         logger.error("network request failed")
         logger.fault("critical system error")
 
-        XCTAssertEqual(logger.capturedMessages.count, 4)
+        XCTAssertEqual(logger.capturedMessages.count, 5)
         XCTAssertEqual(
             logger.capturedMessages[0].message,
             "[ShopifyCheckoutKit] (Info) - user action completed"
@@ -175,16 +178,20 @@ final class OSLoggerTests: XCTestCase {
         )
         XCTAssertEqual(
             logger.capturedMessages[2].message,
-            "[ShopifyCheckoutKit] (Error) - network request failed"
+            "[ShopifyCheckoutKit] (Warning) - approaching rate limit"
         )
         XCTAssertEqual(
             logger.capturedMessages[3].message,
+            "[ShopifyCheckoutKit] (Error) - network request failed"
+        )
+        XCTAssertEqual(
+            logger.capturedMessages[4].message,
             "[ShopifyCheckoutKit] (Fault) - critical system error"
         )
     }
 
     func test_customPrefix_withLoggerInitialization_shouldUseCustomPrefix() {
-        let customLogger = TestableOSLogger(prefix: "CustomModule", logLevel: .all)
+        let customLogger = TestableOSLogger(prefix: "CustomModule", logLevel: .debug)
 
         customLogger.info("custom module message")
         customLogger.error("custom error")
@@ -203,38 +210,19 @@ final class OSLoggerTests: XCTestCase {
     func test_logLevelNone_withAllMessageTypes_shouldBlockAllMessagesRegardlessOfType() {
         let logger = TestableOSLogger(prefix: "Test", logLevel: .none)
 
-        logger.info("should not log")
-        logger.debug("should not log")
-        logger.error("should not log")
-        logger.fault("should not log")
+        emitAll(logger)
 
         XCTAssertEqual(logger.capturedMessages.count, 0, "LogLevel.none should block all messages")
-    }
-
-    func test_logLevelDebug_withAllMessageTypes_shouldAllowDebugAndInfoOnly() {
-        let logger = TestableOSLogger(prefix: "Test", logLevel: .debug)
-
-        logger.info("info message")
-        logger.debug("debug message")
-        logger.error("error message")
-        logger.fault("fault message")
-
-        XCTAssertEqual(logger.capturedMessages.count, 2, "Debug level should only allow debug and info messages")
-        XCTAssertTrue(logger.capturedMessages[0].message.contains("(Info) - info message"))
-        XCTAssertTrue(logger.capturedMessages[1].message.contains("(Debug) - debug message"))
     }
 
     func test_logLevelError_withAllMessageTypes_shouldAllowErrorAndFaultOnly() {
         let logger = TestableOSLogger(prefix: "Test", logLevel: .error)
 
-        logger.info("should be blocked")
-        logger.debug("should be blocked")
-        logger.error("should be allowed")
-        logger.fault("should be allowed")
+        emitAll(logger)
 
         XCTAssertEqual(logger.capturedMessages.count, 2, "Error level should only allow error and fault messages")
-        XCTAssertTrue(logger.capturedMessages[0].message.contains("(Error) - should be allowed"))
-        XCTAssertTrue(logger.capturedMessages[1].message.contains("(Fault) - should be allowed"))
+        XCTAssertTrue(logger.capturedMessages[0].message.contains("(Error) - test error"))
+        XCTAssertTrue(logger.capturedMessages[1].message.contains("(Fault) - test fault"))
     }
 }
 

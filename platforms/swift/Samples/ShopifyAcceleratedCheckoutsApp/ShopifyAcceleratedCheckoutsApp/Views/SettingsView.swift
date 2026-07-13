@@ -16,7 +16,7 @@ struct SettingsView: View {
     @AppStorage(AppStorageKeys.requireEmail.rawValue) var requireEmail: Bool = true
     @AppStorage(AppStorageKeys.requirePhone.rawValue) var requirePhone: Bool = true
     @AppStorage(AppStorageKeys.locale.rawValue) var locale: String = "en"
-    @AppStorage(AppStorageKeys.logLevel.rawValue) var logLevel: LogLevel = .all {
+    @AppStorage(AppStorageKeys.logLevel.rawValue) var logLevel: LogLevel = .debug {
         didSet {
             ShopifyAcceleratedCheckouts.logLevel = logLevel
         }

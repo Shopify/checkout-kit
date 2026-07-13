@@ -7,7 +7,7 @@ struct ShopifyAcceleratedCheckoutsApp: App {
     @AppStorage(AppStorageKeys.requireEmail.rawValue) var requireEmail: Bool = true
     @AppStorage(AppStorageKeys.requirePhone.rawValue) var requirePhone: Bool = true
     @AppStorage(AppStorageKeys.locale.rawValue) var locale: String = "en"
-    @AppStorage(AppStorageKeys.logLevel.rawValue) var logLevel: LogLevel = .all
+    @AppStorage(AppStorageKeys.logLevel.rawValue) var logLevel: LogLevel = .debug
     @AppStorage(AppStorageKeys.email.rawValue) var email: String = ""
     @AppStorage(AppStorageKeys.phone.rawValue) var phone: String = ""
     @AppStorage(AppStorageKeys.supportedCountries.rawValue) var supportedCountriesString: String = ""
