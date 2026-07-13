@@ -19,17 +19,30 @@
     <string name="checkout_drag_to_dismiss" translatable="false">Drag to dismiss checkout</string>
     <string name="checkout_tap_away_to_dismiss" translatable="false">Tap outside to dismiss</string>
 
-    <string name="color_scheme" translatable="false">Color Scheme</string>
-    <string name="color_scheme_app_automatic" translatable="false">App automatic</string>
-    <string name="color_scheme_app_dark" translatable="false">App dark</string>
-    <string name="color_scheme_app_light" translatable="false">App light</string>
-    <string name="color_scheme_storefront_automatic" translatable="false">Storefront automatic</string>
+    <string name="checkout_presentation" translatable="false">Checkout presentation</string>
+    <string name="checkout_presentation_checkout_kit_sheet" translatable="false">Checkout Kit sheet</string>
+    <string name="checkout_presentation_app_owned_compose_sheet" translatable="false">App-owned Compose sheet</string>
+    <string name="checkout_presentation_checkout_kit_sheet_description" translatable="false">Present checkout using Checkout Kit\'s imperative API</string>
+    <string name="checkout_presentation_app_owned_compose_sheet_description" translatable="false">Host CheckoutView in the sample app\'s Compose sheet</string>
+    <string name="checkout_presentation_app_owned_compose_sheet_note" translatable="false">The host app controls sheet styling and dismissal.</string>
 
-    <string name="checkout_sheet_preset" translatable="false">Checkout sheet preset</string>
-    <string name="checkout_sheet_preset_new_defaults" translatable="false">New defaults</string>
-    <string name="checkout_sheet_preset_legacy_dialog" translatable="false">Legacy dialog</string>
-    <string name="checkout_sheet_preset_new_defaults_description" translatable="false">Use rounded top corners, centered title, and no toolbar elevation</string>
-    <string name="checkout_sheet_preset_legacy_dialog_description" translatable="false">Use square corners, start-aligned title, and toolbar elevation</string>
+    <string name="appearance" translatable="false">Appearance</string>
+    <string name="appearance_storefront" translatable="false">Storefront</string>
+    <string name="appearance_storefront_description" translatable="false">Use storefront checkout branding based on device preferences</string>
+    <string name="appearance_app" translatable="false">App</string>
+    <string name="appearance_app_description" translatable="false">Use an app-defined color scheme for checkout</string>
+    <string name="appearance_app_dark" translatable="false">Dark</string>
+    <string name="appearance_app_dark_description" translatable="false">Use a dark color scheme for checkout</string>
+    <string name="appearance_app_light" translatable="false">Light</string>
+    <string name="appearance_app_light_description" translatable="false">Use a light color scheme for checkout</string>
+    <string name="appearance_app_automatic" translatable="false">Automatic (device preference)</string>
+    <string name="appearance_app_automatic_description" translatable="false">Follow the device light or dark preference</string>
+
+    <string name="checkout_sheet_style" translatable="false">Sheet style</string>
+    <string name="checkout_sheet_style_default" translatable="false">Default</string>
+    <string name="checkout_sheet_style_legacy_dialog" translatable="false">Legacy dialog</string>
+    <string name="checkout_sheet_style_default_description" translatable="false">Use rounded top corners, centered title, and no toolbar elevation</string>
+    <string name="checkout_sheet_style_legacy_dialog_description" translatable="false">Use square corners, start-aligned title, and toolbar elevation</string>
 
     <string name="window_open_handler" translatable="false">Window open handler</string>
     <string name="window_open_handler_default" translatable="false">Default (Intent.ACTION_VIEW)</string>
@@ -91,6 +104,7 @@
     <string name="cart_product_header" translatable="false">PRODUCT</string>
     <string name="cart_total_header" translatable="false">TOTAL</string>
     <string name="cart_checkout" translatable="false">Check out</string>
+    <string name="checkout_sheet_drag_handle_content_description" translatable="false">Checkout sheet drag handle</string>
     <string name="cart_empty" translatable="false">Your cart is empty</string>
     <string name="cart_emtpy_description" translatable="false">Add products while you shop, so they\'ll be ready for checkout later.</string>
     <string name="cart_trash_content_description" translatable="false">Delete line item</string>

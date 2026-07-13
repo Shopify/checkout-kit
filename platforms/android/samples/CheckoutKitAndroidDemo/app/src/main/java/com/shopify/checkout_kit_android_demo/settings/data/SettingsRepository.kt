@@ -18,6 +18,7 @@ class SettingsRepository(
                 appearance = preferences.appearance,
                 buyerIdentityDemoEnabled = preferences.buyerIdentityDemoEnabled,
                 checkoutPreloadingEnabled = preferences.checkoutPreloadingEnabled,
+                checkoutPresentationMode = preferences.checkoutPresentationMode,
                 dragToDismissEnabled = preferences.dragToDismissEnabled,
                 tapAwayToDismissEnabled = preferences.tapAwayToDismissEnabled,
                 windowOpenHandler = preferences.windowOpenHandler,
@@ -43,6 +44,10 @@ class SettingsRepository(
 
     suspend fun setCheckoutPreloadingEnabled(enabled: Boolean) {
         preferencesManager.setCheckoutPreloadingEnabled(enabled)
+    }
+
+    suspend fun setCheckoutPresentationMode(mode: CheckoutPresentationMode) {
+        preferencesManager.setCheckoutPresentationMode(mode)
     }
 
     suspend fun setDragToDismissEnabled(enabled: Boolean) {

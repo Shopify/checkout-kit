@@ -11,17 +11,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,6 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -53,6 +58,7 @@ import com.shopify.checkout_kit_android_demo.common.components.MoneyText
 import com.shopify.checkout_kit_android_demo.common.components.ProgressIndicator
 import com.shopify.checkout_kit_android_demo.common.ui.theme.horizontalPadding
 import com.shopify.checkout_kit_android_demo.common.ui.theme.verticalPadding
+import com.shopify.checkout_kit_android_demo.settings.data.CheckoutPresentationMode
 import com.shopify.checkoutkit.CheckoutView
 
 @Composable
@@ -63,10 +69,11 @@ fun CartView(
 
     val state = cartViewModel.cartState.collectAsState().value
     val loading = cartViewModel.loadingState.collectAsState().value
+    val checkoutPresentationMode = cartViewModel.checkoutPresentationMode.collectAsState().value
 
     val activity = LocalActivity.current as ComponentActivity
     var mutableQuantity by remember { mutableStateOf<Map<String, Int>>(mutableMapOf()) }
-    var embeddedCheckoutUrl by remember { mutableStateOf<String?>(null) }
+    var appOwnedCheckoutUrl by remember { mutableStateOf<String?>(null) }
 
     if (loading) {
         ProgressIndicator()
@@ -99,7 +106,16 @@ fun CartView(
                         modifyLineItem = cartViewModel::modifyLineItem,
                         continueShopping = { cartViewModel.continueShopping(navController) },
                         checkout = {
-                            embeddedCheckoutUrl = state.checkoutUrl
+                            when (checkoutPresentationMode) {
+                                CheckoutPresentationMode.CheckoutKitSheet -> cartViewModel.presentCheckout(
+                                    url = state.checkoutUrl,
+                                    activity = activity,
+                                    navController = navController,
+                                )
+                                CheckoutPresentationMode.AppOwnedComposeSheet -> {
+                                    appOwnedCheckoutUrl = state.checkoutUrl
+                                }
+                            }
                         },
                         totalAmount = state.cartTotals.totalAmount,
                         totalAmountEstimated = state.cartTotals.totalAmountEstimated,
@@ -110,20 +126,20 @@ fun CartView(
         }
     }
 
-    embeddedCheckoutUrl?.let { checkoutUrl ->
-        EmbeddedCheckoutSheet(
+    appOwnedCheckoutUrl?.let { checkoutUrl ->
+        AppOwnedCheckoutSheet(
             checkoutUrl = checkoutUrl,
             activity = activity,
             navController = navController,
             cartViewModel = cartViewModel,
-            onDismiss = { embeddedCheckoutUrl = null },
+            onDismiss = { appOwnedCheckoutUrl = null },
         )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EmbeddedCheckoutSheet(
+private fun AppOwnedCheckoutSheet(
     checkoutUrl: String,
     activity: ComponentActivity,
     navController: NavController,
@@ -137,6 +153,7 @@ private fun EmbeddedCheckoutSheet(
             currentOnDismiss()
             cartViewModel.checkoutDismissedByHost()
         },
+        dragHandle = { CompactCheckoutDragHandle() },
     ) {
         AndroidView(
             factory = { context ->
@@ -153,6 +170,21 @@ private fun EmbeddedCheckoutSheet(
             modifier = Modifier.fillMaxSize(),
             onRelease = CheckoutView::destroy,
         )
+    }
+}
+
+@Composable
+private fun CompactCheckoutDragHandle() {
+    val dragHandleDescription = stringResource(id = R.string.checkout_sheet_drag_handle_content_description)
+
+    Surface(
+        modifier = Modifier
+            .padding(vertical = 8.dp)
+            .semantics { contentDescription = dragHandleDescription },
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        shape = CircleShape,
+    ) {
+        Box(Modifier.size(width = 32.dp, height = 4.dp))
     }
 }
 

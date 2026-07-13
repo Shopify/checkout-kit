@@ -20,7 +20,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.shopify.checkout_kit_android_demo.R
 import com.shopify.checkout_kit_android_demo.common.components.BodyMedium
-import com.shopify.checkout_kit_android_demo.common.components.Header3
 import com.shopify.checkout_kit_android_demo.common.ui.theme.verticalPadding
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetPreset
 
@@ -30,7 +29,10 @@ fun CheckoutSheetPresetSection(
     setSelected: (CheckoutSheetPreset) -> Unit,
 ) {
     Column {
-        Header3(text = stringResource(id = R.string.checkout_sheet_preset))
+        BodyMedium(
+            text = stringResource(id = R.string.checkout_sheet_style),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
         Column(
             modifier = Modifier
@@ -44,7 +46,7 @@ fun CheckoutSheetPresetSection(
 
             CheckoutSheetPresetOption(
                 preset = CheckoutSheetPreset.NewDefaults,
-                description = stringResource(id = R.string.checkout_sheet_preset_new_defaults_description),
+                description = stringResource(id = R.string.checkout_sheet_style_default_description),
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
@@ -52,7 +54,7 @@ fun CheckoutSheetPresetSection(
 
             CheckoutSheetPresetOption(
                 preset = CheckoutSheetPreset.LegacyDialog,
-                description = stringResource(id = R.string.checkout_sheet_preset_legacy_dialog_description),
+                description = stringResource(id = R.string.checkout_sheet_style_legacy_dialog_description),
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
@@ -95,6 +97,6 @@ fun CheckoutSheetPresetOption(
 
 private val CheckoutSheetPreset.title: Int
     get() = when (this) {
-        CheckoutSheetPreset.NewDefaults -> R.string.checkout_sheet_preset_new_defaults
-        CheckoutSheetPreset.LegacyDialog -> R.string.checkout_sheet_preset_legacy_dialog
+        CheckoutSheetPreset.NewDefaults -> R.string.checkout_sheet_style_default
+        CheckoutSheetPreset.LegacyDialog -> R.string.checkout_sheet_style_legacy_dialog
     }

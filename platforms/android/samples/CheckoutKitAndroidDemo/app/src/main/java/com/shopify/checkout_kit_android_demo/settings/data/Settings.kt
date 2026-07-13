@@ -7,6 +7,7 @@ data class Settings(
     val appearance: CheckoutAppearance,
     val buyerIdentityDemoEnabled: Boolean,
     val checkoutPreloadingEnabled: Boolean,
+    val checkoutPresentationMode: CheckoutPresentationMode,
     val dragToDismissEnabled: Boolean,
     val tapAwayToDismissEnabled: Boolean,
     val windowOpenHandler: WindowOpenHandler,
