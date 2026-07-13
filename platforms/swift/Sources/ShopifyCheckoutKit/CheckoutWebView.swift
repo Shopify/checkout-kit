@@ -236,6 +236,9 @@ class CheckoutWebView: WKWebView {
     ///     resource exists to act on, so consumers don't have to wire dismissal in
     ///     every error handler.
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
+        .onDecodeError { method, error in
+            OSLogger.shared.error("Failed to decode \(method) payload: \(error)")
+        }
         .on(CheckoutProtocol.ready) { _ in
             ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
         }

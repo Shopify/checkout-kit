@@ -22,9 +22,21 @@ interface RequestEntry {
   handle(message: unknown): unknown | Promise<unknown>;
 }
 
+export interface DecodeErrorContext {
+  method: string;
+  error: unknown;
+  params: unknown;
+}
+
 export class Client {
   private readonly notifications = new Map<string, NotificationEntry>();
   private readonly requests = new Map<string, RequestEntry>();
+  private decodeErrorHandler?: (context: DecodeErrorContext) => void;
+
+  onDecodeError(handler: (context: DecodeErrorContext) => void): this {
+    this.decodeErrorHandler = handler;
+    return this;
+  }
 
   on<Message extends {readonly params: unknown}, Result>(
     descriptor: RequestDescriptor<Message, Result>,
@@ -67,7 +79,12 @@ export class Client {
         let params: unknown;
         try {
           params = entry.decode(decoded.params);
-        } catch {
+        } catch (error) {
+          this.decodeErrorHandler?.({
+            method: decoded.method,
+            error,
+            params: decoded.params,
+          });
           return undefined;
         }
         entry.handle({jsonrpc: '2.0', method: decoded.method, params});
@@ -87,7 +104,12 @@ export class Client {
     let params: unknown;
     try {
       params = entry.decode(decoded.params);
-    } catch {
+    } catch (error) {
+      this.decodeErrorHandler?.({
+        method: decoded.method,
+        error,
+        params: decoded.params,
+      });
       return encodeJSONRPCError(
         decoded.id,
         INVALID_PARAMS_CODE,

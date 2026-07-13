@@ -984,6 +984,28 @@ describe("<shopify-checkout>", () => {
           expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
         },
       );
+
+      it("warns with the decode error when a notification payload fails to decode even without debug mode", () => {
+        const checkout = renderCheckout({ target: "popup" });
+        const mockCheckoutWindow = createMockWindow();
+        vi.spyOn(window, "open").mockReturnValue(mockCheckoutWindow);
+        vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+        vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+        checkout.open();
+
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        simulateRawMessageEvent(
+          checkout,
+          { jsonrpc: "2.0", method: "ec.start", params: {} },
+          { source: mockCheckoutWindow },
+        );
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("ec.start"),
+          expect.any(Error),
+        );
+      });
     });
 
     describe("ec.start", () => {

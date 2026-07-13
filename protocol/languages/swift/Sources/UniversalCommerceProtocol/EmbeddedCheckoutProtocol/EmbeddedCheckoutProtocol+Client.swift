@@ -1,9 +1,12 @@
 import Foundation
 
 extension EmbeddedCheckoutProtocol {
+    package typealias DecodeErrorHandler = @Sendable (_ method: String, _ error: Error) -> Void
+
     public struct Client: Sendable, MutableCopyable {
         private var notificationHandlers: [String: @MainActor @Sendable (Data) -> Void]
         private var requestEntries: [String: RequestEntry]
+        private var decodeErrorHandler: DecodeErrorHandler?
 
         /// The delegation strings this client can fulfill, derived from the
         /// registered request handlers that carry a delegation. Core requests
@@ -18,13 +21,27 @@ extension EmbeddedCheckoutProtocol {
         }
 
         @discardableResult
+        package func onDecodeError(_ handler: @escaping DecodeErrorHandler) -> Client {
+            return copy {
+                $0.decodeErrorHandler = handler
+            }
+        }
+
+        @discardableResult
         public func on<P: EventPayload, Handler>(
             _ descriptor: NotificationDescriptor<P, Handler>,
             perform: @escaping @MainActor (Handler) -> Void
         ) -> Client {
             return copy {
+                let onDecodeError = $0.decodeErrorHandler
                 $0.notificationHandlers[descriptor.method] = { params in
-                    guard let payload = descriptor.decode(params) else { return }
+                    let payload: P
+                    do {
+                        payload = try descriptor.decode(params)
+                    } catch {
+                        onDecodeError?(descriptor.method, error)
+                        return
+                    }
                     let message = NotificationMessage(method: descriptor.method, params: payload)
                     perform(descriptor.project(message))
                 }
@@ -37,10 +54,15 @@ extension EmbeddedCheckoutProtocol {
             perform: @escaping @MainActor @Sendable (Handler) async -> R
         ) -> Client {
             return copy {
+                let onDecodeError = $0.decodeErrorHandler
                 $0.requestEntries[descriptor.method] = RequestEntry(
                     delegation: descriptor.delegation,
                     handler: { id, params in
-                        guard let payload = descriptor.decode(params) else {
+                        let payload: P
+                        do {
+                            payload = try descriptor.decode(params)
+                        } catch {
+                            onDecodeError?(descriptor.method, error)
                             return EmbeddedCheckoutProtocol.encodeErrorResponse(
                                 id: id,
                                 code: EmbeddedCheckoutProtocol.invalidParamsCode,

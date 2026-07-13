@@ -265,20 +265,12 @@
               {
                 "kind": "TypeFunc",
                 "name": "Function",
-                "printedName": "(Foundation.Data) -> Payload?",
+                "printedName": "(Foundation.Data) throws -> Payload",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Payload?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "GenericTypeParam",
-                        "printedName": "Payload"
-                      }
-                    ],
-                    "usr": "s:Sq"
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
                   },
                   {
                     "kind": "TypeNominal",
@@ -290,8 +282,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorVA2A0D7MessageVyxGRs_rlE6method6decodeACyxAFGSS_xSg10Foundation4DataVYbctcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol22NotificationDescriptorVA2A0D7MessageVyxGRs_rlE6method6decodeACyxAFGSS_xSg10Foundation4DataVYbctcfc",
+            "usr": "s:24EmbeddedCheckoutProtocol22NotificationDescriptorVA2A0D7MessageVyxGRs_rlE6method6decodeACyxAFGSS_x10Foundation4DataVYbKctcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol22NotificationDescriptorVA2A0D7MessageVyxGRs_rlE6method6decodeACyxAFGSS_x10Foundation4DataVYbKctcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
             "genericSig": "<Payload, Handler where Payload : EmbeddedCheckoutProtocol.EventPayload, Handler == EmbeddedCheckoutProtocol.NotificationMessage<Payload>>",
             "isFromExtension": true,
@@ -554,20 +546,12 @@
               {
                 "kind": "TypeFunc",
                 "name": "Function",
-                "printedName": "(Foundation.Data) -> Payload?",
+                "printedName": "(Foundation.Data) throws -> Payload",
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "Payload?",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "GenericTypeParam",
-                        "printedName": "Payload"
-                      }
-                    ],
-                    "usr": "s:Sq"
+                    "name": "GenericTypeParam",
+                    "printedName": "Payload"
                   },
                   {
                     "kind": "TypeNominal",
@@ -579,8 +563,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorVA2A0D7MessageVyxGRs_rlE6method10delegation6decodeACyxAFq0_GSS_SSSgxSg10Foundation4DataVYbctcfc",
-            "mangledName": "$s24EmbeddedCheckoutProtocol17RequestDescriptorVA2A0D7MessageVyxGRs_rlE6method10delegation6decodeACyxAFq0_GSS_SSSgxSg10Foundation4DataVYbctcfc",
+            "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorVA2A0D7MessageVyxGRs_rlE6method10delegation6decodeACyxAFq0_GSS_SSSgx10Foundation4DataVYbKctcfc",
+            "mangledName": "$s24EmbeddedCheckoutProtocol17RequestDescriptorVA2A0D7MessageVyxGRs_rlE6method10delegation6decodeACyxAFq0_GSS_SSSgx10Foundation4DataVYbKctcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
             "genericSig": "<Payload, Handler, Result where Payload : EmbeddedCheckoutProtocol.EventPayload, Handler == EmbeddedCheckoutProtocol.RequestMessage<Payload>, Result : EmbeddedCheckoutProtocol.ResponsePayload>",
             "isFromExtension": true,
@@ -1296,6 +1280,57 @@
             "funcSelfKind": "NonMutating"
           },
           {
+            "kind": "TypeAlias",
+            "name": "DecodeErrorHandler",
+            "printedName": "DecodeErrorHandler",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Swift.String, any Swift.Error) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Tuple",
+                    "printedName": "(Swift.String, any Swift.Error)",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Error",
+                        "printedName": "any Swift.Error",
+                        "usr": "s:s5ErrorP"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "TypeAlias",
+            "usr": "s:24EmbeddedCheckoutProtocolAAO18DecodeErrorHandlera",
+            "mangledName": "$s24EmbeddedCheckoutProtocolAAO18DecodeErrorHandlera",
+            "moduleName": "EmbeddedCheckoutProtocol",
+            "isInternal": true,
+            "isFromExtension": true
+          },
+          {
             "kind": "TypeDecl",
             "name": "Client",
             "printedName": "Client",
@@ -1317,6 +1352,73 @@
                 "mangledName": "$s24EmbeddedCheckoutProtocolAAO6ClientVADycfc",
                 "moduleName": "EmbeddedCheckoutProtocol",
                 "init_kind": "Designated"
+              },
+              {
+                "kind": "Function",
+                "name": "onDecodeError",
+                "printedName": "onDecodeError(_:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Client",
+                    "printedName": "EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Client",
+                    "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV"
+                  },
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "DecodeErrorHandler",
+                    "printedName": "EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.DecodeErrorHandler",
+                    "children": [
+                      {
+                        "kind": "TypeFunc",
+                        "name": "Function",
+                        "printedName": "(Swift.String, any Swift.Error) -> Swift.Void",
+                        "children": [
+                          {
+                            "kind": "TypeNameAlias",
+                            "name": "Void",
+                            "printedName": "Swift.Void",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "Void",
+                                "printedName": "()"
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Tuple",
+                            "printedName": "(Swift.String, any Swift.Error)",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "String",
+                                "printedName": "Swift.String",
+                                "usr": "s:SS"
+                              },
+                              {
+                                "kind": "TypeNominal",
+                                "name": "Error",
+                                "printedName": "any Swift.Error",
+                                "usr": "s:s5ErrorP"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV13onDecodeErroryADySS_s0G0_ptYbcF",
+                "mangledName": "$s24EmbeddedCheckoutProtocolAAO6ClientV13onDecodeErroryADySS_s0G0_ptYbcF",
+                "moduleName": "EmbeddedCheckoutProtocol",
+                "isInternal": true,
+                "declAttributes": [
+                  "DiscardableResult"
+                ],
+                "funcSelfKind": "NonMutating"
               },
               {
                 "kind": "Function",
