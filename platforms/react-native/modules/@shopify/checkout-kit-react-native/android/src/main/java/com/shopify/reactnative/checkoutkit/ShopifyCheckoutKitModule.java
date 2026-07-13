@@ -135,7 +135,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
         LogLevel logLevel = getLogLevel(config.getString("logLevel"));
         configuration.setLogLevel(logLevel);
       } else {
-        configuration.setLogLevel(LogLevel.ERROR);
+        configuration.setLogLevel(LogLevel.WARN);
       }
 
       if (config.hasKey("colorScheme")) {
@@ -218,22 +218,35 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   private LogLevel getLogLevel(String logLevel) {
     if (logLevel == null) {
-      return LogLevel.ERROR;
+      return LogLevel.WARN;
     }
 
     switch (logLevel.toLowerCase()) {
       case "debug":
         return LogLevel.DEBUG;
-      default:
+      case "warn":
+        return LogLevel.WARN;
+      case "error":
         return LogLevel.ERROR;
+      case "none":
+        return LogLevel.NONE;
+      default:
+        return LogLevel.WARN;
     }
   }
 
   private String logLevelToString(LogLevel logLevel) {
-    if (logLevel == LogLevel.DEBUG) {
-      return "debug";
+    switch (logLevel) {
+      case DEBUG:
+        return "debug";
+      case WARN:
+        return "warn";
+      case NONE:
+        return "none";
+      case ERROR:
+      default:
+        return "error";
     }
-    return "error";
   }
 
   private boolean isValidColorConfig(ReadableMap config) {

@@ -23,7 +23,7 @@ class RCTShopifyCheckoutKit: NSObject {
     internal var checkoutSheet: UIViewController?
     private var acceleratedCheckoutsConfiguration: Any?
     private var acceleratedCheckoutsApplePayConfiguration: Any?
-    private var defaultLogLevel: LogLevel = .error
+    private var defaultLogLevel: LogLevel = .warn
 
     @objc var methodQueue: DispatchQueue {
         return DispatchQueue.main
@@ -282,12 +282,14 @@ class RCTShopifyCheckoutKit: NSObject {
 
     private func logLevelToString(_ logLevel: LogLevel) -> String {
         switch logLevel {
-        case .all, .debug:
+        case .debug:
             return "debug"
+        case .warn:
+            return "warn"
         case .error:
             return "error"
-        default:
-            return "error"
+        case .none:
+            return "none"
         }
     }
 }

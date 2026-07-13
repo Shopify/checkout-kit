@@ -437,26 +437,36 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
+  public void testCanSetLogLevelWarn() {
+    JavaOnlyMap config = new JavaOnlyMap();
+    config.putString("logLevel", "warn");
+
+    shopifyCheckoutKitModule.setConfig(config);
+
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
+        .isEqualTo(LogLevel.WARN);
+  }
+
+  @Test
   public void testCanSetLogLevelNone() {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "none");
 
     shopifyCheckoutKitModule.setConfig(config);
 
-    // "none" maps to ERROR on Android (closest equivalent)
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
-        .isEqualTo(LogLevel.ERROR);
+        .isEqualTo(LogLevel.NONE);
   }
 
   @Test
-  public void testInvalidLogLevelDefaultsToError() {
+  public void testInvalidLogLevelDefaultsToWarn() {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "invalid");
 
     shopifyCheckoutKitModule.setConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
-        .isEqualTo(LogLevel.ERROR);
+        .isEqualTo(LogLevel.WARN);
   }
 
   @Test
@@ -493,13 +503,13 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testSetConfigWithoutLogLevelDefaultsToError() {
+  public void testSetConfigWithoutLogLevelDefaultsToWarn() {
     JavaOnlyMap config = new JavaOnlyMap();
 
     shopifyCheckoutKitModule.setConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
-        .isEqualTo(LogLevel.ERROR);
+        .isEqualTo(LogLevel.WARN);
   }
 
   @Test
@@ -553,7 +563,20 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testGetConfigReturnsErrorForNoneLogLevel() {
+  public void testGetConfigReturnsWarnForWarnLogLevel() {
+    JavaOnlyMap config = new JavaOnlyMap();
+    config.putString("logLevel", "warn");
+
+    shopifyCheckoutKitModule.setConfig(config);
+
+    WritableMap result = shopifyCheckoutKitModule.getConfig();
+
+    assertThat(result).isNotNull();
+    assertThat(result.getString("logLevel")).isEqualTo("warn");
+  }
+
+  @Test
+  public void testGetConfigReturnsNoneForNoneLogLevel() {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "none");
 
@@ -562,11 +585,11 @@ public class ShopifyCheckoutKitModuleTest {
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
     assertThat(result).isNotNull();
-    assertThat(result.getString("logLevel")).isEqualTo("error");
+    assertThat(result.getString("logLevel")).isEqualTo("none");
   }
 
   @Test
-  public void testGetConfigReturnsErrorForInvalidLogLevel() {
+  public void testGetConfigReturnsWarnForInvalidLogLevel() {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "invalid");
 
@@ -575,7 +598,7 @@ public class ShopifyCheckoutKitModuleTest {
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
     assertThat(result).isNotNull();
-    assertThat(result.getString("logLevel")).isEqualTo("error");
+    assertThat(result.getString("logLevel")).isEqualTo("warn");
   }
 
   @Test
@@ -583,7 +606,7 @@ public class ShopifyCheckoutKitModuleTest {
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
     assertThat(result).isNotNull();
-    assertThat(result.getString("logLevel")).isEqualTo("error");
+    assertThat(result.getString("logLevel")).isEqualTo("warn");
   }
 
   /**
