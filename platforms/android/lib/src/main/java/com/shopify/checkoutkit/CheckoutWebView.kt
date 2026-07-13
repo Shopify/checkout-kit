@@ -74,6 +74,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
             } else {
                 mutableMapOf()
             }
+            ShopifyCheckoutKit.configuration.cookieStore.prepare(checkoutUrl)
             loadUrl(checkoutUrl, headers)
         }
     }

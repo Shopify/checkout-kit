@@ -12,6 +12,7 @@ public data class Configuration internal constructor(
     var platform: Platform? = null,
     var logLevel: LogLevel = LogLevel.WARN,
     var preloading: Preloading = Preloading(),
+    var cookieStore: CheckoutCookieStore = CheckoutCookieStore.Shared,
 )
 
 public data class Preloading(

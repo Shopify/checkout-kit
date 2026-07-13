@@ -72,6 +72,28 @@ public final class com/shopify/checkoutkit/CheckoutAppearance$Storefront$Compani
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public abstract class com/shopify/checkoutkit/CheckoutCookieStore {
+}
+
+public final class com/shopify/checkoutkit/CheckoutCookieStore$Ephemeral : com/shopify/checkoutkit/CheckoutCookieStore {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutCookieStore$Ephemeral;
+}
+
+public final class com/shopify/checkoutkit/CheckoutCookieStore$Seeded : com/shopify/checkoutkit/CheckoutCookieStore {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/shopify/checkoutkit/CheckoutCookieStore$Seeded;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutCookieStore$Seeded;Ljava/util/List;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutCookieStore$Seeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCookies ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/CheckoutCookieStore$Shared : com/shopify/checkoutkit/CheckoutCookieStore {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutCookieStore$Shared;
+}
+
 public abstract class com/shopify/checkoutkit/CheckoutException : java/lang/Exception {
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutException$Companion;
 	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
@@ -518,14 +540,17 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun component3 ()Lcom/shopify/checkoutkit/Platform;
 	public final fun component4 ()Lcom/shopify/checkoutkit/LogLevel;
 	public final fun component5 ()Lcom/shopify/checkoutkit/Preloading;
+	public final fun component6 ()Lcom/shopify/checkoutkit/CheckoutCookieStore;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAppearance ()Lcom/shopify/checkoutkit/CheckoutAppearance;
+	public final fun getCookieStore ()Lcom/shopify/checkoutkit/CheckoutCookieStore;
 	public final fun getLogLevel ()Lcom/shopify/checkoutkit/LogLevel;
 	public final fun getPlatform ()Lcom/shopify/checkoutkit/Platform;
 	public final fun getPreloading ()Lcom/shopify/checkoutkit/Preloading;
 	public final fun getSheet ()Lcom/shopify/checkoutkit/CheckoutSheetOptions;
 	public fun hashCode ()I
 	public final fun setAppearance (Lcom/shopify/checkoutkit/CheckoutAppearance;)V
+	public final fun setCookieStore (Lcom/shopify/checkoutkit/CheckoutCookieStore;)V
 	public final fun setLogLevel (Lcom/shopify/checkoutkit/LogLevel;)V
 	public final fun setPlatform (Lcom/shopify/checkoutkit/Platform;)V
 	public final fun setPreloading (Lcom/shopify/checkoutkit/Preloading;)V
