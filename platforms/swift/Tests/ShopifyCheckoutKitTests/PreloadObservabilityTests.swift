@@ -50,20 +50,22 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testNewObserverReplacesPrevious() {
+    func testDistinctKeysObserveIndependently() throws {
+        let urlB = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/456"))
         var firstStates: [PreloadState] = []
         var secondStates: [PreloadState] = []
 
         let first = ShopifyCheckoutKit.preload(checkout: url)
         first?.onStateChange = { firstStates.append($0) }
-        let second = ShopifyCheckoutKit.preload(checkout: url)
+        let second = ShopifyCheckoutKit.preload(checkout: urlB)
         second?.onStateChange = { secondStates.append($0) }
 
-        ShopifyCheckoutKit.invalidate()
+        let view = try XCTUnwrap(CheckoutWebView.preloadCache.preloadedView)
+        view.webView(view, didFinish: nil)
 
         withExtendedLifetime((first, second)) {
             XCTAssertEqual(firstStates, [.loading])
-            XCTAssertEqual(secondStates, [.loading, .idle])
+            XCTAssertEqual(secondStates, [.loading, .ready])
         }
     }
 
@@ -79,10 +81,9 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testReadyTransitionOnDidFinish() {
+    func testReadyTransitionOnDidFinish() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
-        let view = CheckoutWebView(entryPoint: nil)
-        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let view = try XCTUnwrap(CheckoutWebView.preloadCache.preloadedView)
 
         view.webView(view, didFinish: nil)
 
@@ -129,9 +130,7 @@ class PreloadObservabilityTests: XCTestCase {
 
     func testHTTPErrorTransitionsToFailed() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
-        let view = CheckoutWebView(entryPoint: nil)
-        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
-        view.load(checkout: url)
+        let view = try XCTUnwrap(CheckoutWebView.preloadCache.preloadedView)
         let link = view.url ?? url
 
         let response = try XCTUnwrap(HTTPURLResponse(url: link, statusCode: 500, httpVersion: nil, headerFields: nil))
@@ -142,10 +141,9 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testNavigationFailureTransitionsToFailed() {
+    func testNavigationFailureTransitionsToFailed() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
-        let view = CheckoutWebView(entryPoint: nil)
-        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let view = try XCTUnwrap(CheckoutWebView.preloadCache.preloadedView)
 
         let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
         view.webView(view, didFail: nil, withError: error)
@@ -155,10 +153,9 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testProvisionalNavigationFailureTransitionsToFailed() {
+    func testProvisionalNavigationFailureTransitionsToFailed() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
-        let view = CheckoutWebView(entryPoint: nil)
-        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let view = try XCTUnwrap(CheckoutWebView.preloadCache.preloadedView)
 
         let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
         view.webView(view, didFailProvisionalNavigation: nil, withError: error)
@@ -168,10 +165,9 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testProvisionalNavigationCancelledDoesNotTransition() {
+    func testProvisionalNavigationCancelledDoesNotTransition() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
-        let view = CheckoutWebView(entryPoint: nil)
-        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let view = try XCTUnwrap(CheckoutWebView.preloadCache.preloadedView)
 
         let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
         view.webView(view, didFailProvisionalNavigation: nil, withError: error)
@@ -183,10 +179,6 @@ class PreloadObservabilityTests: XCTestCase {
 
     func testViewLookupWithDifferentKeyTransitionsHandleToIdle() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
-        _ = CheckoutWebView.preloadCache.store(
-            CheckoutWebView(entryPoint: nil),
-            for: PreloadKey(url: url, entryPoint: nil)
-        )
 
         let otherURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/other"))
         _ = CheckoutWebView.preloadCache.view(for: PreloadKey(url: otherURL, entryPoint: nil))

@@ -50,8 +50,9 @@ public func preload(checkout url: URL) -> CheckoutPreload? {
         return nil
     }
 
-    let checkoutPreload = CheckoutPreload(cache: CheckoutWebView.preloadCache)
     let decorated = CheckoutURLDecorator.decorate(url)
+    let key = PreloadKey(url: decorated, entryPoint: nil)
+    let checkoutPreload = CheckoutPreload(key: key, cache: CheckoutWebView.preloadCache)
     CheckoutWebView.preload(checkout: decorated)
     return checkoutPreload
 }

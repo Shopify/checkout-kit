@@ -12,10 +12,16 @@ struct PreloadKey: Hashable {
 
 @MainActor
 final class PreloadCache {
-    private struct Entry {
+    @MainActor
+    private final class Entry {
         let key: PreloadKey
         let view: CheckoutWebView
         let createdAt: Date
+
+        private(set) var state: PreloadState = .idle
+        weak var observer: CheckoutPreload?
+        var keepAliveTimer: Timer?
+        var expiryTimer: Timer?
 
         private static let ttl: TimeInterval = 5 * 60
 
@@ -32,23 +38,41 @@ final class PreloadCache {
         var remainingTTL: TimeInterval {
             Self.ttl - Date().timeIntervalSince(createdAt)
         }
+
+        func transition(to newState: PreloadState) {
+            guard state != newState else { return }
+
+            state = newState
+            observer?.receive(newState)
+        }
+
+        func stopTimers() {
+            keepAliveTimer?.invalidate()
+            keepAliveTimer = nil
+            expiryTimer?.invalidate()
+            expiryTimer = nil
+        }
+    }
+
+    private struct WeakHandle {
+        weak var value: CheckoutPreload?
     }
 
     private static let keepAliveInterval: TimeInterval = 0.5
 
     private var entry: Entry?
-    private var keepAliveTimer: Timer?
-    private var expiryTimer: Timer?
+    private var handles: [PreloadKey: WeakHandle] = [:]
 
-    private(set) var state: PreloadState = .idle
+    func register(_ handle: CheckoutPreload, for key: PreloadKey) {
+        handles[key] = WeakHandle(value: handle)
+        if let entry, entry.key == key, !entry.isStale {
+            entry.observer = handle
+            handle.receive(entry.state)
+        }
+    }
 
-    /// The cache notifies a single observer. Each `preload(checkout:)` call
-    /// replaces it, so only the most recently returned `CheckoutPreload` handle
-    /// receives state updates; earlier handles stop observing.
-    private weak var observer: CheckoutPreload?
-
-    func setObserver(_ observer: CheckoutPreload) {
-        self.observer = observer
+    var preloadedView: CheckoutWebView? {
+        entry?.view
     }
 
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
@@ -64,26 +88,28 @@ final class PreloadCache {
         }
 
         view.frame = Self.preloadFrame()
+        entry.observer = handles[key]?.value
         self.entry = entry
-        startKeepAlive(for: view)
-        startExpiryTimer(after: entry.remainingTTL)
-        transition(to: .loading)
+        startKeepAlive(for: entry)
+        startExpiryTimer(for: entry)
+        entry.transition(to: .loading)
         return true
     }
 
-    func transition(to newState: PreloadState) {
-        guard state != newState else { return }
-
-        state = newState
-        observer?.receive(newState)
+    func transition(_ view: CheckoutWebView, to newState: PreloadState) {
+        guard let entry, entry.view === view, !entry.isStale else {
+            return
+        }
+        entry.transition(to: newState)
     }
 
     /// Evicts the cached view, then notifies observers of the resulting `state`.
     /// Clearing before notifying ensures a preload started re-entrantly from the
     /// callback is not wiped by this invalidation.
     func evict(with state: PreloadState, disconnect: Bool = true) {
+        let evicted = entry
         invalidate(disconnect: disconnect)
-        transition(to: state)
+        evicted?.transition(to: state)
     }
 
     func view(for key: PreloadKey) -> CheckoutWebView? {
@@ -91,13 +117,12 @@ final class PreloadCache {
             let missed = entry
             invalidate()
             if let missed {
-                transition(to: missed.isStale ? .expired : .idle)
+                missed.transition(to: missed.isStale ? .expired : .idle)
             }
             return nil
         }
 
-        stopKeepAlive()
-        stopExpiryTimer()
+        cached.stopTimers()
         cached.view.hasBeenPresented = true
         return cached.view
     }
@@ -105,13 +130,12 @@ final class PreloadCache {
     func invalidate(disconnect: Bool = true) {
         OSLogger.shared.debug("Invalidating preload cache, disconnect: \(disconnect)")
 
-        let cachedView = entry?.view
-        stopKeepAlive()
-        stopExpiryTimer()
+        let cachedEntry = entry
+        cachedEntry?.stopTimers()
         entry = nil
 
         if disconnect {
-            cachedView?.detachBridge()
+            cachedEntry?.view.detachBridge()
         }
     }
 
@@ -146,19 +170,20 @@ final class PreloadCache {
     }
 
     func hasActiveKeepAlive() -> Bool {
-        return keepAliveTimer != nil
+        return entry?.keepAliveTimer != nil
     }
 
     /// While the preloaded webview is unparented, WebKit can suspend its web process before
     /// the page finishes loading. Periodically evaluating a no-op keeps the process scheduled
     /// so the preloaded page can finish loading before it is presented. The 500ms cadence is
     /// empirical and intentionally conservative rather than a documented WebKit guarantee.
-    private func startKeepAlive(for view: CheckoutWebView) {
-        stopKeepAlive()
-        let timer = Timer.scheduledTimer(withTimeInterval: Self.keepAliveInterval, repeats: true) { [weak self, weak view] _ in
+    private func startKeepAlive(for entry: Entry) {
+        entry.keepAliveTimer?.invalidate()
+        let timer = Timer.scheduledTimer(withTimeInterval: Self.keepAliveInterval, repeats: true) { [weak self, weak entry] _ in
             Task { @MainActor in
+                guard let entry else { return }
                 do {
-                    _ = try await view?.evaluateJavaScript("void 0")
+                    _ = try await entry.view.evaluateJavaScript("void 0")
                 } catch {
                     OSLogger.shared.debug("Preload keep-alive failed; invalidating preload cache")
                     self?.keepAliveDidFail()
@@ -166,18 +191,19 @@ final class PreloadCache {
             }
         }
         timer.tolerance = Self.keepAliveInterval / 2
-        keepAliveTimer = timer
+        entry.keepAliveTimer = timer
     }
 
-    private func startExpiryTimer(after interval: TimeInterval) {
-        stopExpiryTimer()
+    private func startExpiryTimer(for entry: Entry) {
+        entry.expiryTimer?.invalidate()
+        let interval = entry.remainingTTL
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor in
                 self?.expire()
             }
         }
         timer.tolerance = min(interval / 2, 1)
-        expiryTimer = timer
+        entry.expiryTimer = timer
     }
 
     func expire() {
@@ -186,16 +212,6 @@ final class PreloadCache {
 
     func keepAliveDidFail() {
         evict(with: .failed(reason: .keepAliveLost))
-    }
-
-    private func stopKeepAlive() {
-        keepAliveTimer?.invalidate()
-        keepAliveTimer = nil
-    }
-
-    private func stopExpiryTimer() {
-        expiryTimer?.invalidate()
-        expiryTimer = nil
     }
 
     private static func preloadFrame() -> CGRect {
@@ -491,7 +507,7 @@ class CheckoutWebView: WKWebView {
     private func markPreloadReadyIfActive() {
         guard isPreloadBackgrounded else { return }
 
-        CheckoutWebView.preloadCache.transition(to: .ready)
+        CheckoutWebView.preloadCache.transition(self, to: .ready)
     }
 }
 
