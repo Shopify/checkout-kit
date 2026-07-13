@@ -31,6 +31,9 @@ public fun jsonRpcRequestId(id: JsonElement?): JsonElement? =
         else -> null
     }
 
+public fun EcpRequest.hasValidJsonRpcRequestId(): Boolean =
+    id == null || jsonRpcRequestId(id) != null
+
 public fun encodeJsonRpcResult(id: JsonElement?, result: JsonElement): String =
     embeddedProtocolJson.encodeToString(
         JsonObject.serializer(),

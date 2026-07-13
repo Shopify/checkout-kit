@@ -13,19 +13,18 @@ import com.shopify.ucp.embedded.checkout.RequestDescriptor
 import com.shopify.ucp.embedded.checkout.WindowOpenRequest
 import com.shopify.ucp.embedded.checkout.WindowOpenResult
 import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
-import com.shopify.ucp.embedded.checkout.encodeJsonRpcError
-import com.shopify.ucp.embedded.checkout.encodeJsonRpcResult
-import com.shopify.ucp.embedded.checkout.jsonRpcRequestId
+import com.shopify.ucp.embedded.checkout.hasValidJsonRpcRequestId
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.JsonElement
 import java.util.concurrent.CountDownLatch
+import com.shopify.ucp.embedded.checkout.Client as ProtocolClient
 
 /**
  * Consumer-facing typed Embedded Checkout Protocol API curated by Checkout Kit.
  *
- * The lower-level `embedded-checkout-protocol` artifact owns generated models and raw wire
- * method names. Checkout Kit decides which of those methods are supported for app
- * developers and exposes them through this typed namespace.
+ * The lower-level `embedded-checkout-protocol` artifact owns generated models, raw wire
+ * method names, and the generic dispatch [ProtocolClient]. Checkout Kit decides which of
+ * those methods are supported for app developers and exposes them through this typed
+ * namespace.
  */
 public object CheckoutProtocol {
     public const val SPEC_VERSION: String = EmbeddedCheckoutProtocol.SPEC_VERSION
@@ -95,28 +94,28 @@ public object CheckoutProtocol {
     /**
      * A typed, fluent client for supported Checkout Kit protocol callbacks.
      *
-     * Each [on] call returns a new [Client] instance, making it safe to share a
-     * base configuration across multiple checkout presentations.
+     * Wraps the generic protocol [ProtocolClient], adding Checkout Kit curation (only
+     * supported descriptors are registered), main-thread delivery of consumer handlers,
+     * and unconditional logging of decode failures via the kit logger.
+     *
+     * Each [on] call returns a new [Client] instance, making it safe to share a base
+     * configuration across multiple checkout presentations.
      */
     public class Client private constructor(
-        private val handlers: Map<String, NotificationHandler>,
-        private val delegations: Map<String, Delegation>,
+        private val delegate: ProtocolClient,
     ) {
-        public constructor() : this(emptyMap(), emptyMap())
+        public constructor() : this(
+            ProtocolClient().onDecodeError { method, error ->
+                log.e(LOG_TAG, "Failed to decode $method params", error)
+            },
+        )
 
         public fun <P : Any> on(
             descriptor: NotificationDescriptor<P>,
             handler: (P) -> Unit,
         ): Client {
             if (descriptor !in supportedNotificationDescriptors) return this
-            val entry = NotificationHandler(
-                decode = { params -> descriptor.decode(params) },
-                invoke = { payload ->
-                    @Suppress("UNCHECKED_CAST")
-                    (payload as? P)?.let { handler(it) }
-                },
-            )
-            return Client(handlers + (descriptor.method to entry), delegations)
+            return Client(delegate.on(descriptor) { payload -> onMainThread { handler(payload) } })
         }
 
         public fun <P : Any, R : Any> on(
@@ -124,88 +123,12 @@ public object CheckoutProtocol {
             handler: (P) -> R,
         ): Client {
             if (descriptor !in supportedRequestDescriptors) return this
-            return Client(handlers, delegations + (descriptor.method to Delegation.Typed(descriptor, handler)))
+            return Client(delegate.on(descriptor) { payload -> invokeOnMainThread { handler(payload) } })
         }
 
-        internal fun process(message: String): String? =
-            decodeRequest(message)?.let { request ->
-                val delegation = delegations[request.method]
-                if (delegation != null) {
-                    jsonRpcRequestId(request.id)?.let { delegation.dispatch(request) }
-                } else {
-                    dispatchNotification(request)
-                    null
-                }
-            }
-
-        private fun decodeRequest(message: String): EcpRequest? = try {
-            decodeProtocolRequest(message)
-                .takeIf { it.hasValidJsonRpcRequestId() }
-        } catch (e: SerializationException) {
-            log.d(LOG_TAG, "Error processing ECP message in typed client: $e")
-            null
-        }
-
-        private fun dispatchNotification(request: EcpRequest) {
-            val handler = handlers[request.method]
-            if (handler == null) {
-                log.d(LOG_TAG, "No handler registered for method=${request.method}")
-                return
-            }
-            val payload = try {
-                handler.decode(request.params)
-            } catch (e: SerializationException) {
-                val message = "Failed to decode ${request.method} notification params"
-                val details = if (ShopifyCheckoutKit.configuration.logLevel == LogLevel.DEBUG) {
-                    "$message raw=${request.params}"
-                } else {
-                    message
-                }
-                log.e(LOG_TAG, details, e)
-                null
-            }
-            log.d(
-                LOG_TAG,
-                "Decoded payload for method=${request.method}: ${payload ?: "null, skipping"}",
-            )
-            payload?.let { onMainThread { handler.invoke(it) } }
-        }
+        internal fun process(message: String): String? = delegate.process(message)
     }
 
-    private class NotificationHandler(
-        val decode: (JsonElement?) -> Any?,
-        val invoke: (Any) -> Unit,
-    )
-
-    private sealed class Delegation {
-        abstract fun dispatch(request: EcpRequest): String
-
-        class Typed<P : Any, R : Any>(
-            private val descriptor: RequestDescriptor<P, R>,
-            private val handler: (P) -> R,
-        ) : Delegation() {
-            override fun dispatch(request: EcpRequest): String {
-                val payload = try {
-                    descriptor.decode(request.params)
-                } catch (e: SerializationException) {
-                    log.e(
-                        LOG_TAG,
-                        "Failed to decode ${request.method} delegation params: raw=${request.params}",
-                        e,
-                    )
-                    null
-                } ?: return encodeJsonRpcError(
-                    request.id,
-                    CODE_INVALID_PARAMS,
-                    "Invalid params for ${request.method}",
-                )
-                val result = invokeOnMainThread { handler(payload) }
-                return encodeJsonRpcResult(request.id, descriptor.encode(result))
-            }
-        }
-    }
-
-    private const val CODE_INVALID_PARAMS: Int = -32602
     private const val LOG_TAG: String = BaseWebView.ECP_LOG_TAG
 
     private fun <R> invokeOnMainThread(block: () -> R): R {
@@ -220,6 +143,3 @@ public object CheckoutProtocol {
         return result!!.getOrThrow()
     }
 }
-
-internal fun EcpRequest.hasValidJsonRpcRequestId(): Boolean =
-    id == null || jsonRpcRequestId(id) != null
