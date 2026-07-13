@@ -1,5 +1,7 @@
 package com.shopify.checkout_kit_android_demo
 
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
@@ -34,12 +36,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
+import com.shopify.checkout_kit_android_demo.cart.AppOwnedCheckoutSheet
 import com.shopify.checkout_kit_android_demo.cart.CartViewModel
 import com.shopify.checkout_kit_android_demo.cart.data.totalQuantity
 import com.shopify.checkout_kit_android_demo.common.ObserveAsEvents
@@ -52,6 +56,7 @@ import com.shopify.checkout_kit_android_demo.e2e.E2ETestIds
 import com.shopify.checkout_kit_android_demo.logs.LogsViewModel
 import com.shopify.checkout_kit_android_demo.settings.SettingsUiState
 import com.shopify.checkout_kit_android_demo.settings.SettingsViewModel
+import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.ColorScheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -72,14 +77,21 @@ fun CheckoutKitAppRoot(
     cartViewModel: CartViewModel,
     logsViewModel: LogsViewModel,
 ) {
-    val useDarkTheme = settingsViewModel.uiState.collectAsState().value
-        .isDarkTheme(isSystemInDarkTheme())
+    val settingsUiState = settingsViewModel.uiState.collectAsState().value
+    val useDarkTheme = settingsUiState.isDarkTheme(isSystemInDarkTheme())
 
     val cartState = cartViewModel.cartState.collectAsState()
     val totalQuantity = cartState.value.totalQuantity
+    val activity = LocalActivity.current as ComponentActivity
     val context = LocalContext.current
 
     CheckoutKitSampleTheme(darkTheme = useDarkTheme) {
+        val checkoutAppearance = (settingsUiState as? SettingsUiState.Loaded)?.settings?.appearance
+        val appOwnedCheckoutContainerColor = when (checkoutAppearance) {
+            is CheckoutAppearance.Storefront -> colorResource(id = R.color.header_bg)
+            else -> MaterialTheme.colorScheme.background
+        }
+
         Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -88,6 +100,7 @@ fun CheckoutKitAppRoot(
         ) {
             val navController = rememberNavController()
             var currentScreen by remember { mutableStateOf<Screen>(Screen.Product) }
+            var presentedCheckoutUrl by remember { mutableStateOf<String?>(null) }
             val scope = rememberCoroutineScope()
             val snackbarHostState = remember { SnackbarHostState() }
 
@@ -165,8 +178,21 @@ fun CheckoutKitAppRoot(
                         cartViewModel = cartViewModel,
                         settingsViewModel = settingsViewModel,
                         logsViewModel = logsViewModel,
+                        onPresentAppOwnedCheckout = { presentedCheckoutUrl = it },
                     )
                 }
+            }
+
+            // Keep app-owned checkout above navigation so completion can navigate behind its thank-you page.
+            presentedCheckoutUrl?.let { checkoutUrl ->
+                AppOwnedCheckoutSheet(
+                    checkoutUrl = checkoutUrl,
+                    activity = activity,
+                    navController = navController,
+                    cartViewModel = cartViewModel,
+                    containerColor = appOwnedCheckoutContainerColor,
+                    onDismiss = { presentedCheckoutUrl = null },
+                )
             }
         }
     }

@@ -105,33 +105,22 @@ fun SettingsView(
                             .fillMaxWidth()
                     )
 
-                    SettingsSwitch(
-                        label = stringResource(id = R.string.checkout_drag_to_dismiss),
-                        checked = uiState.settings.dragToDismissEnabled,
-                        onCheckedChange = settingsViewModel::setDragToDismissEnabled,
-                        modifier = Modifier
-                            .background(color = MaterialTheme.colorScheme.background)
-                            .fillMaxWidth()
-                    )
-
-                    SettingsSwitch(
-                        label = stringResource(id = R.string.checkout_tap_away_to_dismiss),
-                        checked = uiState.settings.tapAwayToDismissEnabled,
-                        onCheckedChange = settingsViewModel::setTapAwayToDismissEnabled,
-                        modifier = Modifier
-                            .background(color = MaterialTheme.colorScheme.background)
-                            .fillMaxWidth()
-                    )
                 }
 
-                ColorSchemeSection(
+                AppearanceSection(
                     selected = uiState.settings.appearance,
                     setSelected = settingsViewModel::setAppearance
                 )
 
-                CheckoutSheetPresetSection(
-                    selected = uiState.settings.checkoutSheetPreset,
-                    setSelected = settingsViewModel::setCheckoutSheetPreset
+                CheckoutPresentationModeSection(
+                    selected = uiState.settings.checkoutPresentationMode,
+                    checkoutSheetPreset = uiState.settings.checkoutSheetPreset,
+                    dragToDismissEnabled = uiState.settings.dragToDismissEnabled,
+                    tapAwayToDismissEnabled = uiState.settings.tapAwayToDismissEnabled,
+                    setSelected = settingsViewModel::setCheckoutPresentationMode,
+                    setCheckoutSheetPreset = settingsViewModel::setCheckoutSheetPreset,
+                    setDragToDismissEnabled = settingsViewModel::setDragToDismissEnabled,
+                    setTapAwayToDismissEnabled = settingsViewModel::setTapAwayToDismissEnabled,
                 )
 
                 WindowOpenHandlerSection(

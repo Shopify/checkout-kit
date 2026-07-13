@@ -3,24 +3,16 @@ package com.shopify.checkout_kit_android_demo.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.shopify.checkout_kit_android_demo.R
 import com.shopify.checkout_kit_android_demo.common.components.BodyMedium
-import com.shopify.checkout_kit_android_demo.common.components.Header3
 import com.shopify.checkout_kit_android_demo.common.ui.theme.verticalPadding
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetPreset
 
@@ -30,7 +22,10 @@ fun CheckoutSheetPresetSection(
     setSelected: (CheckoutSheetPreset) -> Unit,
 ) {
     Column {
-        Header3(text = stringResource(id = R.string.checkout_sheet_preset))
+        BodyMedium(
+            text = stringResource(id = R.string.checkout_sheet_style),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
         Column(
             modifier = Modifier
@@ -44,7 +39,7 @@ fun CheckoutSheetPresetSection(
 
             CheckoutSheetPresetOption(
                 preset = CheckoutSheetPreset.NewDefaults,
-                description = stringResource(id = R.string.checkout_sheet_preset_new_defaults_description),
+                description = stringResource(id = R.string.checkout_sheet_style_default_description),
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
@@ -52,7 +47,7 @@ fun CheckoutSheetPresetSection(
 
             CheckoutSheetPresetOption(
                 preset = CheckoutSheetPreset.LegacyDialog,
-                description = stringResource(id = R.string.checkout_sheet_preset_legacy_dialog_description),
+                description = stringResource(id = R.string.checkout_sheet_style_legacy_dialog_description),
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
@@ -69,32 +64,17 @@ fun CheckoutSheetPresetOption(
     selected: CheckoutSheetPreset,
     modifier: Modifier,
 ) {
-    val isSelected = selected == preset
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.selectable(
-            selected = isSelected,
-            role = Role.RadioButton,
-            onClick = { setSelected(preset) }
-        ),
-    ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = null,
-            modifier = Modifier.semantics { contentDescription = description }
-        )
-        BodyMedium(
-            stringResource(id = preset.title),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-        )
-    }
+    SettingsRadioOption(
+        label = stringResource(id = preset.title),
+        description = description,
+        selected = selected == preset,
+        onClick = { setSelected(preset) },
+        modifier = modifier,
+    )
 }
 
 private val CheckoutSheetPreset.title: Int
     get() = when (this) {
-        CheckoutSheetPreset.NewDefaults -> R.string.checkout_sheet_preset_new_defaults
-        CheckoutSheetPreset.LegacyDialog -> R.string.checkout_sheet_preset_legacy_dialog
+        CheckoutSheetPreset.NewDefaults -> R.string.checkout_sheet_style_default
+        CheckoutSheetPreset.LegacyDialog -> R.string.checkout_sheet_style_legacy_dialog
     }

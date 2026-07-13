@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.shopify.checkout_kit_android_demo.common.sampleStorefrontAppearance
+import com.shopify.checkout_kit_android_demo.settings.data.CheckoutPresentationMode
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetPreset
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.CheckoutAppearance
@@ -35,6 +36,9 @@ class PreferencesManager(private val context: Context) {
         } ?: sampleStorefrontAppearance()
         val buyerIdentityDemoEnabled = preferences[BUYER_IDENTITY] ?: false
         val checkoutPreloadingEnabled = preferences[CHECKOUT_PRELOADING] ?: true
+        val checkoutPresentationMode = preferences[CHECKOUT_PRESENTATION_MODE]?.let { value ->
+            runCatching { CheckoutPresentationMode.valueOf(value) }.getOrNull()
+        } ?: CheckoutPresentationMode.CheckoutKitSheet
         val dragToDismissEnabled = preferences[DRAG_TO_DISMISS] ?: true
         val tapAwayToDismissEnabled = preferences[TAP_AWAY_TO_DISMISS] ?: true
         val windowOpenHandler = preferences[WINDOW_OPEN_HANDLER]?.let { value ->
@@ -48,6 +52,7 @@ class PreferencesManager(private val context: Context) {
             appearance = appearance,
             buyerIdentityDemoEnabled = buyerIdentityDemoEnabled,
             checkoutPreloadingEnabled = checkoutPreloadingEnabled,
+            checkoutPresentationMode = checkoutPresentationMode,
             dragToDismissEnabled = dragToDismissEnabled,
             tapAwayToDismissEnabled = tapAwayToDismissEnabled,
             windowOpenHandler = windowOpenHandler,
@@ -61,6 +66,8 @@ class PreferencesManager(private val context: Context) {
     suspend fun setBuyerIdentityDemoEnabled(enabled: Boolean) = saveData(BUYER_IDENTITY, enabled)
 
     suspend fun setCheckoutPreloadingEnabled(enabled: Boolean) = saveData(CHECKOUT_PRELOADING, enabled)
+
+    suspend fun setCheckoutPresentationMode(mode: CheckoutPresentationMode) = saveData(CHECKOUT_PRESENTATION_MODE, mode.name)
 
     suspend fun setDragToDismissEnabled(enabled: Boolean) = saveData(DRAG_TO_DISMISS, enabled)
 
@@ -79,6 +86,7 @@ class PreferencesManager(private val context: Context) {
         private val APPEARANCE = stringPreferencesKey("appearance")
         private val BUYER_IDENTITY = booleanPreferencesKey("buyerIdentity")
         private val CHECKOUT_PRELOADING = booleanPreferencesKey("checkoutPreloading")
+        private val CHECKOUT_PRESENTATION_MODE = stringPreferencesKey("checkoutPresentationMode")
         private val DRAG_TO_DISMISS = booleanPreferencesKey("dragToDismiss")
         private val TAP_AWAY_TO_DISMISS = booleanPreferencesKey("tapAwayToDismiss")
         private val WINDOW_OPEN_HANDLER = stringPreferencesKey("windowOpenHandler")
@@ -91,6 +99,7 @@ data class UserPreferences(
     val appearance: CheckoutAppearance,
     val buyerIdentityDemoEnabled: Boolean,
     val checkoutPreloadingEnabled: Boolean,
+    val checkoutPresentationMode: CheckoutPresentationMode,
     val dragToDismissEnabled: Boolean,
     val tapAwayToDismissEnabled: Boolean,
     val windowOpenHandler: WindowOpenHandler,
