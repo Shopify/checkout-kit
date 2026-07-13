@@ -129,6 +129,7 @@ class CheckoutWebViewTest {
         }
             .isInstanceOf(UnsupportedWebViewException::class.java)
             .hasMessage("This Android WebView does not support Shopify Checkout Kit.")
+        assertThat(shadowOf(webMessageTransport.lastAttachAttempt!!.webView).wasDestroyCalled()).isTrue
     }
 
     @Test
@@ -313,7 +314,7 @@ class CheckoutWebViewTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/123")
+        val presentedView = takePreloadedOrCreate("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isSameAs(cachedView)
@@ -328,7 +329,7 @@ class CheckoutWebViewTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/456")
+        val presentedView = takePreloadedOrCreate("https://checkout.shopify.com/cart/456")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isNotSameAs(cachedView)
@@ -342,7 +343,7 @@ class CheckoutWebViewTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/123?cart=second")
+        val presentedView = takePreloadedOrCreate("https://checkout.shopify.com/cart/123?cart=second")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isNotSameAs(cachedView)
@@ -361,7 +362,7 @@ class CheckoutWebViewTest {
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         now += 5 * 60 * 1000L
-        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/123")
+        val presentedView = takePreloadedOrCreate("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isNotSameAs(cachedView)
@@ -385,7 +386,7 @@ class CheckoutWebViewTest {
     fun `invalidate does not destroy presented checkout view`() {
         preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
-        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/123")
+        val presentedView = takePreloadedOrCreate("https://checkout.shopify.com/cart/123")
         presentedView.markPresented()
 
         CheckoutWebView.invalidate()
@@ -453,8 +454,8 @@ class CheckoutWebViewTest {
         CheckoutWebView.preload(url, activity, webMessageTransport)
     }
 
-    private fun checkoutViewFor(url: String): CheckoutWebView =
-        CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+    private fun takePreloadedOrCreate(url: String): CheckoutWebView =
+        CheckoutWebView.takePreloadedOrCreate(url, activity, webMessageTransport)
 
     /**
      * Verifies a WebMessage is ignored after a valid sentinel drains earlier protocol work.

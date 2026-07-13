@@ -24,6 +24,8 @@ internal class FakeWebMessageTransport(
     private var onMessage: ((message: String, isMainFrame: Boolean) -> Unit)? = null
     var lastAttachment: Attachment? = null
         private set
+    var lastAttachAttempt: Attachment? = null
+        private set
     var lastDetachment: Detachment? = null
         private set
     val sentMessages = mutableListOf<SentMessage>()
@@ -39,9 +41,11 @@ internal class FakeWebMessageTransport(
         onMessage: (message: String, isMainFrame: Boolean) -> Unit,
     ): Boolean {
         attachCount += 1
+        val attachment = Attachment(webView, jsObjectName, allowedOriginRules.toSet())
+        lastAttachAttempt = attachment
         if (!supported) return false
 
-        lastAttachment = Attachment(webView, jsObjectName, allowedOriginRules.toSet())
+        lastAttachment = attachment
         this.onMessage = onMessage
         return true
     }

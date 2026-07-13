@@ -180,6 +180,29 @@ public class InteropTest {
     }
 
     @Test
+    public void canCreateAndDestroyCheckoutViewFromJava() {
+        try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
+            ComponentActivity activity = controller.get();
+            DefaultCheckoutListener listener = new DefaultCheckoutListener() {
+                @Override
+                public void onCheckoutFailed(@NonNull CheckoutException error) {
+                    // do nothing
+                }
+
+                @Override
+                public void onCheckoutCanceled() {
+                    // do nothing
+                }
+            };
+
+            CheckoutView checkoutView = new CheckoutView(activity, "https://shopify.dev", listener);
+            checkoutView.destroy();
+
+            assertThat(checkoutView).isNotNull();
+        }
+    }
+
+    @Test
     public void canCustomizeColorSchemeWithSingleBlock() {
         ColorScheme.Light lightScheme = new ColorScheme.Light();
         Color tintColor = new Color.ResourceId(android.R.color.holo_red_dark);

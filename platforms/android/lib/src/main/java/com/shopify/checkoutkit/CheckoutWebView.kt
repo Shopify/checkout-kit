@@ -11,6 +11,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
+import androidx.annotation.MainThread
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import java.util.concurrent.CountDownLatch
 
@@ -36,7 +37,12 @@ internal class CheckoutWebView private constructor(
 
     init {
         webViewClient = CheckoutWebViewClient()
-        embeddedCheckoutProtocol.attach()
+        try {
+            embeddedCheckoutProtocol.attach()
+        } catch (error: UnsupportedWebViewException) {
+            destroy()
+            throw error
+        }
         settings.userAgentString = "${settings.userAgentString} ${userAgentSuffix()}"
     }
 
@@ -174,7 +180,7 @@ internal class CheckoutWebView private constructor(
             try {
                 runOnUiThreadBlocking(activity) {
                     invalidate()
-                    val view = CheckoutWebView(activity as Context, webMessageTransport).apply {
+                    val view = CheckoutWebView(activity, webMessageTransport).apply {
                         loadCheckout(url, isPreload = true)
                         log.d(LOG_TAG, "Pausing preloaded WebView.")
                         onPause()
@@ -186,28 +192,27 @@ internal class CheckoutWebView private constructor(
             }
         }
 
-        fun checkoutViewFor(
+        @MainThread
+        internal fun takePreloadedOrCreate(
             url: String,
-            activity: ComponentActivity,
+            context: Context,
             webMessageTransport: WebMessageTransport = WebMessageListenerTransport,
         ): CheckoutWebView {
-            var checkoutWebView: CheckoutWebView? = null
-            runOnUiThreadBlocking(activity) {
-                val cachedView = if (ShopifyCheckoutKit.configuration.preloading.enabled) {
-                    preloadCache.take(PreloadKey.forUrl(url))
-                } else {
-                    preloadCache.invalidate()
-                    null
-                }
-
-                checkoutWebView = cachedView ?: run {
-                    CheckoutWebView(activity as Context, webMessageTransport).apply {
-                        loadCheckout(url)
-                    }
-                }
+            check(Looper.myLooper() == Looper.getMainLooper()) {
+                "Checkout views must be created on the main thread."
+            }
+            val cachedView = if (ShopifyCheckoutKit.configuration.preloading.enabled) {
+                preloadCache.take(PreloadKey.forUrl(url))
+            } else {
+                preloadCache.invalidate()
+                null
             }
 
-            return checkoutWebView!!
+            return cachedView ?: run {
+                CheckoutWebView(context, webMessageTransport).apply {
+                    loadCheckout(url)
+                }
+            }
         }
 
         fun invalidate() {

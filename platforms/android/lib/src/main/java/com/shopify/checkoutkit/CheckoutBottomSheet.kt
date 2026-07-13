@@ -1,34 +1,24 @@
 package com.shopify.checkoutkit
 
-import android.content.res.ColorStateList
 import android.content.res.Configuration.UI_MODE_NIGHT_MASK
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Color
 import android.os.Build
 import android.view.Gravity
-import android.view.MenuItem
 import android.view.View
-import android.view.View.INVISIBLE
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.Window
 import android.view.WindowManager
-import android.widget.ProgressBar
-import android.widget.RelativeLayout
-import android.widget.TextView
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.ComponentDialog
-import androidx.activity.OnBackPressedCallback
 import androidx.annotation.ColorInt
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.appcompat.widget.Toolbar
 import androidx.core.graphics.ColorUtils
-import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.children
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 
 internal class CheckoutBottomSheet(
@@ -39,32 +29,21 @@ internal class CheckoutBottomSheet(
     private val webMessageTransport: WebMessageTransport = WebMessageListenerTransport,
 ) : ComponentDialog(activity, R.style.CheckoutKitBottomSheetDialog) {
 
-    private var presentedCheckoutWebView: CheckoutWebView? = null
+    private var presentedCheckoutView: CheckoutView? = null
     private var cancelNotified = false
     private var dismissing = false
     private var dismissFinalized = false
-    private val progressBar: ProgressBar?
-        get() = findViewById(R.id.progressBar)
-
-    private val backNavigationCallback = object : OnBackPressedCallback(enabled = true) {
-        override fun handleOnBackPressed() {
-            val webView = findViewById<RelativeLayout>(R.id.checkoutKitContainer)
-                ?.children?.firstOrNull { it is BaseWebView } as? BaseWebView
-            if (webView?.handleBackPressed() != true) {
-                log.d(LOG_TAG, "Back press not handled by WebView, cancelling checkout.")
-                cancel()
-            }
-        }
-    }
 
     /**
-     * Inflates, configures, and shows the bottom sheet around the retained checkout WebView.
+     * Inflates, configures, and shows the bottom sheet around shared checkout content.
+     *
+     * @return `true` when the sheet is showing; `false` when checkout could not be initialized.
      */
-    fun start() {
+    fun start(): Boolean {
         log.d(LOG_TAG, "Start called.")
         if (isShowing) {
             log.d(LOG_TAG, "Already showing, ignoring start.")
-            return
+            return true
         }
 
         cancelNotified = false
@@ -76,109 +55,51 @@ internal class CheckoutBottomSheet(
         val colorScheme = appearance.colorScheme
         val sheet = ShopifyCheckoutKit.configuration.sheet
         window?.configureCheckoutBottomSheetWindow()
-        configureSheet(sheet)
+        configureSheet(sheet, colorScheme)
 
         log.d(LOG_TAG, "Configured appearance $appearance")
-        val sheetColors = applySheetColors(colorScheme, sheet)
-
-        onBackPressedDispatcher.addCallback(backNavigationCallback)
-
-        log.d(LOG_TAG, "Finding or creating WebView.")
-        val checkoutWebView = CheckoutWebView.checkoutViewFor(checkoutUrl, activity, webMessageTransport)
-        presentedCheckoutWebView = checkoutWebView
-
-        checkoutWebView.onResume()
-        checkoutWebView.markPresented()
-        log.d(LOG_TAG, "Setting listener on WebView.")
-        checkoutWebView.setListener(webViewListener())
-        log.d(LOG_TAG, "Setting protocol client on WebView.")
-        checkoutWebView.setClient(protocolClient)
-
-        progressBar?.apply {
-            log.d(LOG_TAG, "Setting progress tint.")
-            progressTintList = ColorStateList.valueOf(sheetColors.progressIndicatorColor)
-            if (checkoutWebView.hasFinishedLoading()) {
-                log.d(LOG_TAG, "Page has finished loading, hiding progress bar.")
-                this.visibility = INVISIBLE
-                hideLoadingBackground()
-            }
-        }
-
-        addWebViewToContainer(sheetColors.webViewBackgroundColor, checkoutWebView)
-        show()
-        // Dialog.show() can apply default window sizing and decor flags after the initial configuration.
-        window?.setCheckoutBottomSheetWindowLayout()
-        window?.setTransparentSystemBars(navigationBackgroundColor = sheetColors.webViewBackgroundColor)
-        findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.animateIn()
-        focusCloseButtonForAccessibility(activity)
-        log.d(LOG_TAG, "Shown.")
-    }
-
-    /**
-     * Applies configured colors to native sheet chrome and returns colors needed by WebView-owned surfaces.
-     */
-    private fun applySheetColors(
-        colorScheme: ColorScheme,
-        sheet: CheckoutSheetOptions,
-    ): SheetColors {
-        val isDarkTheme = activity.isDarkTheme()
-        val headerBackgroundColor = colorScheme.headerBackgroundColor(isDarkTheme).getValue(activity)
-        val headerFontColor = colorScheme.headerFontColor(isDarkTheme).getValue(activity)
-        val webViewBackgroundColor = colorScheme.webViewBackgroundColor(isDarkTheme).getValue(activity)
-
-        findViewById<Toolbar>(R.id.checkoutKitHeader)?.apply {
-            log.d(LOG_TAG, "Applying configured header colors and inflating menu.")
-            title = ""
-            background = roundedTopCornerDrawable(activity, headerBackgroundColor, sheet.cornerRadiusDp)
-            elevation = sheet.toolbarElevationDp.dpToPx(activity)
-            setTitleTextColor(headerFontColor)
-            inflateMenu(R.menu.checkout_menu)
-            menu.findItem(R.id.shopify_checkout_kit_close_button).setupCloseButton(activity, colorScheme, sheet) {
-                cancel()
-            }
-        }
-
-        findViewById<View>(R.id.checkoutKitDragHandle)?.applyCheckoutSheetDragHandleStyle(
-            color = colorScheme.dragHandleColor(isDarkTheme).getValue(activity),
-            sheet = sheet,
+        log.d(LOG_TAG, "Finding or creating checkout view.")
+        val checkoutView = CheckoutView(
+            context = activity,
+            checkoutUrl = checkoutUrl,
+            webMessageTransport = webMessageTransport,
+            presentation = CheckoutViewPresentation(
+                listener = checkoutListener,
+                protocolClient = protocolClient,
+                onCancelRequest = ::cancel,
+                onFailure = ::closeCheckoutWithError,
+                reportInitializationFailure = false,
+            ),
         )
-
-        findViewById<TextView>(R.id.checkoutKitHeaderTitle)?.apply {
-            setTextColor(headerFontColor)
-            (layoutParams as? Toolbar.LayoutParams)?.let { params ->
-                params.topMargin = if (sheet.showsDragHandle) {
-                    resources.getDimensionPixelSize(R.dimen.checkout_sheet_drag_handle_title_top_margin)
-                } else {
-                    0
-                }
-                params.gravity = when (sheet.titleAlignment) {
-                    CheckoutSheetTitleAlignment.START -> Gravity.START or Gravity.CENTER_VERTICAL
-                    CheckoutSheetTitleAlignment.CENTER -> Gravity.CENTER
-                }
-                layoutParams = params
-            }
+        presentedCheckoutView = checkoutView
+        val initializationError = checkoutView.initializationError
+        if (initializationError != null) {
+            log.w(LOG_TAG, "WebView is not supported, failing checkout presentation.")
+            checkoutListener.onCheckoutFailed(initializationError)
+            checkoutView.destroy()
+            presentedCheckoutView = null
+        } else {
+            checkoutView.configureForBottomSheet(sheet)
+            addCheckoutViewToContainer(checkoutView)
+            checkoutView.resumeForPresentation()
+            show()
+            // Dialog.show() can apply default window sizing and decor flags after the initial configuration.
+            window?.setCheckoutBottomSheetWindowLayout()
+            window?.setTransparentSystemBars(navigationBackgroundColor = checkoutView.webViewBackgroundColor)
+            findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.animateIn()
+            focusCloseButtonForAccessibility(activity)
+            log.d(LOG_TAG, "Shown.")
         }
 
-        findViewById<RelativeLayout>(R.id.checkoutKitContainer)
-            ?.setBackgroundColor(webViewBackgroundColor)
-
-        findViewById<View>(R.id.checkoutKitLoadingBackground)
-            ?.setBackgroundColor(webViewBackgroundColor)
-
-        findViewById<View>(R.id.checkoutKitOutsideTouchTarget)
-            ?.setBackgroundColor(sheet.scrimColor.getValue(activity))
-
-        return SheetColors(
-            webViewBackgroundColor = webViewBackgroundColor,
-            progressIndicatorColor = colorScheme.progressIndicatorColor(isDarkTheme).getValue(activity),
-        )
+        return initializationError == null
     }
 
     /**
      * Wires native sheet dismissal affordances after the layout has been inflated.
      */
-    private fun configureSheet(sheet: CheckoutSheetOptions) {
+    private fun configureSheet(sheet: CheckoutSheetOptions, colorScheme: ColorScheme) {
         findViewById<View>(R.id.checkoutKitOutsideTouchTarget)?.apply {
+            setBackgroundColor(sheet.scrimColor.getValue(activity))
             setOnClickListener(
                 if (sheet.dismissal.tapAwayToDismissEnabled) {
                     View.OnClickListener {
@@ -191,6 +112,11 @@ internal class CheckoutBottomSheet(
             )
             isClickable = sheet.dismissal.tapAwayToDismissEnabled
         }
+
+        findViewById<View>(R.id.checkoutKitDragHandle)?.applyCheckoutSheetDragHandleStyle(
+            color = colorScheme.dragHandleColor(activity.isDarkTheme()).getValue(activity),
+            sheet = sheet,
+        )
 
         findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.apply {
             dragToDismissEnabled = sheet.dismissal.dragToDismissEnabled
@@ -265,8 +191,7 @@ internal class CheckoutBottomSheet(
         if (dismissFinalized) return
 
         dismissFinalized = true
-        backNavigationCallback.remove()
-        destroyPresentedWebView()
+        destroyPresentedCheckoutView()
         findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.onDismissRequested = null
         if (!isShowing) return
 
@@ -289,59 +214,27 @@ internal class CheckoutBottomSheet(
     }
 
     /**
-     * Destroys the WebView retained for this presentation so it cannot outlive the host activity.
+     * Destroys checkout content retained for this presentation so it cannot outlive the host activity.
      */
-    private fun destroyPresentedWebView() {
-        presentedCheckoutWebView?.let { webView ->
-            log.d(LOG_TAG, "Destroying presented WebView.")
-            webView.removeFromParent()
-            webView.destroy()
-            presentedCheckoutWebView = null
+    private fun destroyPresentedCheckoutView() {
+        presentedCheckoutView?.let { checkoutView ->
+            log.d(LOG_TAG, "Destroying presented checkout view.")
+            checkoutView.destroy()
+            presentedCheckoutView = null
         }
     }
 
     /**
-     * Attaches the checkout WebView below native chrome and connects scroll handoff to the sheet container.
+     * Attaches checkout content and connects its WebView to sheet scroll handoff.
      */
-    private fun addWebViewToContainer(
-        @ColorInt webViewBackgroundColor: Int,
-        checkoutWebView: BaseWebView,
-    ) {
-        findViewById<RelativeLayout>(R.id.checkoutKitContainer)?.apply {
-            log.d(LOG_TAG, "Found parent view, setting its colors and layout params.")
-            setBackgroundColor(webViewBackgroundColor)
-            applyBottomInsetPadding()
-            val layoutParams = RelativeLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-            checkoutWebView.removeFromParent()
-            checkoutWebView.setBackgroundColor(webViewBackgroundColor)
-            this@CheckoutBottomSheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.let { sheet ->
-                sheet.bindScrollableChild(checkoutWebView)
-                checkoutWebView.installBottomSheetScrollHandoff(sheet)
-            }
-            log.d(LOG_TAG, "Adding WebView behind the progress bar.")
-            addView(checkoutWebView, 0, layoutParams)
-            progressBar?.bringToFront()
+    private fun addCheckoutViewToContainer(checkoutView: CheckoutView) {
+        findViewById<FrameLayout>(R.id.checkoutKitViewContainer)?.apply {
+            addView(checkoutView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         }
-    }
-
-    /**
-     * Updates checkout load progress, using animated platform progress updates when available.
-     */
-    private fun updateProgressBarPercentage(percentage: Int) {
-        log.d(LOG_TAG, "Updating progress bar percentage, $percentage.")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            progressBar?.setProgress(percentage, true)
-        } else {
-            progressBar?.progress = percentage
+        checkoutView.applyBottomInsetPadding()
+        findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.let { sheet ->
+            checkoutView.bindToBottomSheet(sheet)
         }
-    }
-
-    /**
-     * Shows or hides the horizontal loading indicator as WebView load state changes.
-     */
-    private fun setProgressBarVisibility(visibility: Int) {
-        log.d(LOG_TAG, "Setting progress bar visibility $visibility.")
-        progressBar?.visibility = visibility
     }
 
     /**
@@ -352,19 +245,6 @@ internal class CheckoutBottomSheet(
         checkoutListener.onCheckoutFailed(exception)
         dismiss()
     }
-
-    /**
-     * Creates the listener adapter that separates consumer callbacks from presentation behavior.
-     */
-    private fun webViewListener(): CheckoutWebViewListener {
-        return CheckoutWebViewListener(
-            listener = checkoutListener,
-            closeCheckoutWithError = ::closeCheckoutWithError,
-            setProgressBarVisibility = ::setProgressBarVisibility,
-            hideLoadingBackground = ::hideLoadingBackground,
-            updateProgressBarPercentage = ::updateProgressBarPercentage,
-        )
-    }
 }
 
 /**
@@ -372,50 +252,6 @@ internal class CheckoutBottomSheet(
  */
 private fun ComponentActivity.isDarkTheme() =
     resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES
-
-/**
- * Applies the configured close icon/tint and routes close button clicks through the sheet cancel path.
- */
-private fun MenuItem.setupCloseButton(
-    activity: ComponentActivity,
-    colorScheme: ColorScheme,
-    sheet: CheckoutSheetOptions,
-    onClick: () -> Unit,
-) {
-    val isDarkTheme = activity.isDarkTheme()
-    val customCloseIcon = sheet.closeIcon ?: colorScheme.closeIcon(isDarkTheme)
-    if (customCloseIcon != null) {
-        log.d(LOG_TAG, "Setting custom menu item drawable.")
-        icon = AppCompatResources.getDrawable(activity, customCloseIcon.id)
-    } else {
-        val customTint = sheet.closeIconTint ?: colorScheme.closeIconTint(isDarkTheme)
-        val closeIcon = icon
-        if (customTint != null && closeIcon != null) {
-            log.d(LOG_TAG, "Setting menu item tint.")
-            val wrappedDrawable = DrawableCompat.wrap(closeIcon)
-            DrawableCompat.setTint(wrappedDrawable.mutate(), customTint.getValue(activity))
-        }
-    }
-
-    setOnMenuItemClickListener {
-        log.d(LOG_TAG, "Menu click cancel invoked.")
-        onClick()
-        true
-    }
-}
-
-/**
- * Pads checkout content above system bars and the keyboard while the dialog window draws edge-to-edge.
- */
-private fun View.applyBottomInsetPadding() {
-    ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
-        val systemBarsBottomInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
-        val imeBottomInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-        updateBottomPadding(maxOf(systemBarsBottomInset, imeBottomInset))
-        insets
-    }
-    ViewCompat.requestApplyInsets(this)
-}
 
 /**
  * Keeps the requested window top margin while preventing the sheet from overlapping the status bar.
@@ -436,15 +272,6 @@ private fun View.applySystemBarTopMargin(snapPoint: CheckoutSheetSnapPoint) {
 }
 
 /**
- * Updates bottom padding only when it changes to avoid redundant layout passes during inset redispatch.
- */
-private fun View.updateBottomPadding(bottomPadding: Int) {
-    if (paddingBottom == bottomPadding) return
-
-    setPadding(paddingLeft, paddingTop, paddingRight, bottomPadding)
-}
-
-/**
  * Updates vertical margins only when they change, preserving configured sheet margins around inset updates.
  */
 private fun View.updateVerticalMargins(topMargin: Int, bottomMargin: Int) {
@@ -454,18 +281,6 @@ private fun View.updateVerticalMargins(topMargin: Int, bottomMargin: Int) {
     marginLayoutParams.topMargin = topMargin
     marginLayoutParams.bottomMargin = bottomMargin
     layoutParams = marginLayoutParams
-}
-
-private data class SheetColors(
-    @ColorInt val webViewBackgroundColor: Int,
-    @ColorInt val progressIndicatorColor: Int,
-)
-
-/**
- * Removes the loading cover once checkout has content ready to display.
- */
-private fun CheckoutBottomSheet.hideLoadingBackground() {
-    findViewById<View>(R.id.checkoutKitLoadingBackground)?.visibility = INVISIBLE
 }
 
 /**

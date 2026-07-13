@@ -22,6 +22,7 @@ import com.shopify.checkout_kit_android_demo.settings.authentication.data.Custom
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.CheckoutException
+import com.shopify.checkoutkit.CheckoutPresentation
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.ucp.embedded.checkout.Checkout
 import com.shopify.ucp.embedded.checkout.windowOpenRejected
@@ -105,27 +106,43 @@ class CartViewModel(
         navController: NavController,
     ) {
         Timber.i("Presenting checkout")
+        ShopifyCheckoutKit.present(
+            checkoutUrl = url,
+            context = activity,
+            configure = checkoutConfiguration(activity, navController),
+        )
+    }
+
+    fun checkoutConfiguration(
+        activity: ComponentActivity,
+        navController: NavController,
+        onCheckoutClosed: () -> Unit = {},
+    ): CheckoutPresentation.() -> Unit = {
         val sampleActivity = activity as? MainActivity
-        ShopifyCheckoutKit.present(url, activity) {
-            onFail { error ->
-                handleCheckoutFailed(error, activity)
-            }
-            onCancel {
-                handleCheckoutCanceled()
-            }
-            sampleActivity?.let { mainActivity ->
-                onShowFileChooser { _, filePathCallback, fileChooserParams ->
-                    mainActivity.onShowFileChooser(filePathCallback, fileChooserParams)
-                }
-                onGeolocationPermissionsShowPrompt { origin, callback ->
-                    mainActivity.onGeolocationPermissionsShowPrompt(origin, callback)
-                }
-                onGeolocationPermissionsHidePrompt {
-                    mainActivity.onGeolocationPermissionsHidePrompt()
-                }
-            }
-            connect(buildProtocolClient(navController, activity, windowOpenHandler))
+        onFail { error ->
+            onCheckoutClosed()
+            handleCheckoutFailed(error, activity)
         }
+        onCancel {
+            onCheckoutClosed()
+            handleCheckoutCanceled()
+        }
+        sampleActivity?.let { mainActivity ->
+            onShowFileChooser { _, filePathCallback, fileChooserParams ->
+                mainActivity.onShowFileChooser(filePathCallback, fileChooserParams)
+            }
+            onGeolocationPermissionsShowPrompt { origin, callback ->
+                mainActivity.onGeolocationPermissionsShowPrompt(origin, callback)
+            }
+            onGeolocationPermissionsHidePrompt {
+                mainActivity.onGeolocationPermissionsHidePrompt()
+            }
+        }
+        connect(buildProtocolClient(navController, activity, windowOpenHandler))
+    }
+
+    fun checkoutDismissedByHost() {
+        handleCheckoutCanceled()
     }
 
     fun preloadCheckout(url: String, activity: ComponentActivity) {

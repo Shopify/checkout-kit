@@ -1,5 +1,4 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/checkoutKitRoot"
     android:layout_width="match_parent"
@@ -25,35 +24,16 @@
         android:visibility="invisible"
         tools:ignore="KeyboardInaccessibleWidget">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/checkoutKitHeader"
+        <FrameLayout
+            android:id="@+id/checkoutKitViewContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:elevation="0dp"
-            android:minHeight="?attr/actionBarSize"
-            android:paddingEnd="4dp"
-            android:theme="@style/Theme.AppCompat.DayNight"
-            app:contentInsetStart="22dp"
-            app:title="">
-
-            <TextView
-                android:id="@+id/checkoutKitHeaderTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
-                android:maxLines="1"
-                android:text="@string/checkout_web_view_title"
-                android:textAppearance="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"
-                android:textSize="@dimen/checkout_sheet_title_text_size" />
-        </androidx.appcompat.widget.Toolbar>
+            android:layout_height="match_parent" />
 
         <View
             android:id="@+id/checkoutKitDragHandle"
             android:layout_width="@dimen/checkout_sheet_drag_handle_width"
             android:layout_height="@dimen/checkout_sheet_drag_handle_height"
-            android:layout_alignTop="@id/checkoutKitHeader"
+            android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="@dimen/checkout_sheet_drag_handle_top_margin"
             android:background="@android:color/transparent"
@@ -62,31 +42,5 @@
             android:importantForAccessibility="no"
             android:visibility="gone" />
 
-        <RelativeLayout
-            android:id="@+id/checkoutKitContainer"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_below="@id/checkoutKitHeader"
-            android:background="@android:color/transparent"
-            android:visibility="visible">
-
-            <View
-                android:id="@+id/checkoutKitLoadingBackground"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@android:color/transparent"
-                android:importantForAccessibility="no" />
-
-            <ProgressBar
-                android:id="@+id/progressBar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:layout_alignParentTop="true"
-                android:indeterminate="false"
-                android:importantForAccessibility="no"
-                android:max="100" />
-
-        </RelativeLayout>
     </com.shopify.checkoutkit.CheckoutBottomSheetLayout>
 </FrameLayout>

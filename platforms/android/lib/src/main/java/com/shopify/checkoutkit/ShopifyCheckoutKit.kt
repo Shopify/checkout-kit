@@ -213,16 +213,9 @@ public object ShopifyCheckoutKit {
         context.lifecycle.addObserver(lifecycleObserver)
 
         log.d("ShopifyCheckoutKit", "Starting bottom sheet.")
-        val checkoutStarted = try {
-            checkout.start()
-            true
-        } catch (error: UnsupportedWebViewException) {
+        val checkoutStarted = checkout.start()
+        if (!checkoutStarted) {
             context.lifecycle.removeObserver(lifecycleObserver)
-            checkout.dismiss(animate = false)
-
-            log.e("ShopifyCheckoutKit", "WebView is not supported, failing checkout presentation.")
-            checkoutListener.onCheckoutFailed(error.checkoutError)
-            false
         }
         return if (checkoutStarted) CheckoutHandle { checkout.dismiss() } else null
     }
