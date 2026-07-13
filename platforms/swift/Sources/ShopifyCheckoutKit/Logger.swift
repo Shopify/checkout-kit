@@ -4,8 +4,8 @@ import os.log
 private let subsystem = "com.shopify.checkoutkit"
 
 public enum LogLevel: String, CaseIterable, Sendable {
-    case all
     case debug
+    case warn
     case error
     case none
 }
@@ -66,6 +66,12 @@ public final class OSLogger: Sendable {
         sendToOSLog("[\(prefix)] (Info) - \(message)", type: .info)
     }
 
+    public func warn(_ message: String) {
+        guard shouldEmit(.warn) else { return }
+
+        sendToOSLog("[\(prefix)] (Warning) - \(message)", type: .default)
+    }
+
     public func error(_ message: String) {
         guard shouldEmit(.error) else { return }
 
@@ -88,14 +94,24 @@ public final class OSLogger: Sendable {
         }
     }
 
-    private func shouldEmit(_ choice: LogLevel) -> Bool {
+    private func shouldEmit(_ threshold: LogLevel) -> Bool {
         let currentLogLevel = logLevel
 
-        if currentLogLevel == .none {
-            return false
-        }
+        guard currentLogLevel != .none else { return false }
 
-        return currentLogLevel == .all || currentLogLevel == choice
+        return currentLogLevel.severityRank <= threshold.severityRank
+    }
+}
+
+extension LogLevel {
+    /// Ascending verbosity: `debug` shows everything, `none` shows nothing.
+    fileprivate var severityRank: Int {
+        switch self {
+        case .debug: return 0
+        case .warn: return 1
+        case .error: return 2
+        case .none: return 3
+        }
     }
 }
 

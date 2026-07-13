@@ -94,9 +94,9 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testDirectConfigurationMutationUpdatesLogger() {
-        ShopifyCheckoutKit.configuration.logLevel = .all
+        ShopifyCheckoutKit.configuration.logLevel = .debug
 
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, .all)
-        XCTAssertEqual(OSLogger.shared.logLevel, .all)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, .debug)
+        XCTAssertEqual(OSLogger.shared.logLevel, .debug)
     }
 }

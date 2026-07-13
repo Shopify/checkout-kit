@@ -5209,43 +5209,6 @@
         "children": [
           {
             "kind": "Var",
-            "name": "all",
-            "printedName": "all",
-            "children": [
-              {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.LogLevel.Type) -> ShopifyCheckoutKit.LogLevel",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "LogLevel",
-                    "printedName": "ShopifyCheckoutKit.LogLevel",
-                    "usr": "s:18ShopifyCheckoutKit8LogLevelO"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyCheckoutKit.LogLevel.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "LogLevel",
-                        "printedName": "ShopifyCheckoutKit.LogLevel",
-                        "usr": "s:18ShopifyCheckoutKit8LogLevelO"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ],
-            "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit8LogLevelO3allyA2CmF",
-            "mangledName": "$s18ShopifyCheckoutKit8LogLevelO3allyA2CmF",
-            "moduleName": "ShopifyCheckoutKit"
-          },
-          {
-            "kind": "Var",
             "name": "debug",
             "printedName": "debug",
             "children": [
@@ -5279,6 +5242,43 @@
             "declKind": "EnumElement",
             "usr": "s:18ShopifyCheckoutKit8LogLevelO5debugyA2CmF",
             "mangledName": "$s18ShopifyCheckoutKit8LogLevelO5debugyA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
+            "name": "warn",
+            "printedName": "warn",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.LogLevel.Type) -> ShopifyCheckoutKit.LogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LogLevel",
+                    "printedName": "ShopifyCheckoutKit.LogLevel",
+                    "usr": "s:18ShopifyCheckoutKit8LogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.LogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "LogLevel",
+                        "printedName": "ShopifyCheckoutKit.LogLevel",
+                        "usr": "s:18ShopifyCheckoutKit8LogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit8LogLevelO4warnyA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit8LogLevelO4warnyA2CmF",
             "moduleName": "ShopifyCheckoutKit"
           },
           {
@@ -5884,6 +5884,32 @@
             "declKind": "Func",
             "usr": "s:18ShopifyCheckoutKit8OSLoggerC4infoyySSF",
             "mangledName": "$s18ShopifyCheckoutKit8OSLoggerC4infoyySSF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Final"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "warn",
+            "printedName": "warn(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit8OSLoggerC4warnyySSF",
+            "mangledName": "$s18ShopifyCheckoutKit8OSLoggerC4warnyySSF",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "Final"

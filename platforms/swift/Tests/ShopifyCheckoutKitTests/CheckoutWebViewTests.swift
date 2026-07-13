@@ -433,7 +433,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testCheckoutURLLogsRedactSensitiveValues() throws {
         let originalLogger = OSLogger.shared
-        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .all)
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
         OSLogger.shared = logger.logger
         defer { OSLogger.shared = originalLogger }
 
@@ -456,7 +456,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testCheckoutURLLogsRedactKnownSensitiveQueryItemsAndKeepBenignItems() throws {
         let originalLogger = OSLogger.shared
-        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .all)
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
         OSLogger.shared = logger.logger
         defer { OSLogger.shared = originalLogger }
 
@@ -763,7 +763,7 @@ class CheckoutWebViewTests: XCTestCase {
     @MainActor
     func testDefaultsClientLogsDecodeErrorForMalformedSupportedMessage() async {
         let originalLogger = OSLogger.shared
-        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .all)
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
         OSLogger.shared = logger.logger
         defer { OSLogger.shared = originalLogger }
 

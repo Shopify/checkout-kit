@@ -40,9 +40,9 @@ public struct Configuration: Sendable {
     /// Custom enum for identifying traffic from alternative platforms
     public var platform: Platform?
 
-    /// Levels: all, debug, error, none
-    /// Default: .error - which will emit "error" and "fault" logs
-    public var logLevel: LogLevel = .error
+    /// Levels: debug, warn, error, none (ordered threshold, most to least verbose)
+    /// Default: .warn - which emits warnings and errors
+    public var logLevel: LogLevel = .warn
 }
 
 extension Configuration {

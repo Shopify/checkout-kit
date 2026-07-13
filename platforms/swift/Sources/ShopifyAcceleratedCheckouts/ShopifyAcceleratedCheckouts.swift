@@ -7,7 +7,7 @@ public enum ShopifyAcceleratedCheckouts {
     internal static let name = "ShopifyAcceleratedCheckouts"
 
     /// The logging level for Accelerated Checkouts operations
-    /// Default: .error - which will emit "error" and "fault" logs
+    /// Default: .warn - which emits warnings and errors
     public static var logLevel: LogLevel {
         get {
             logger.logLevel
@@ -19,5 +19,5 @@ public enum ShopifyAcceleratedCheckouts {
 
     /// Shared logger for ShopifyAcceleratedCheckouts
     /// To modify the logLevel
-    internal static let logger = OSLogger(prefix: name, logLevel: .error)
+    internal static let logger = OSLogger(prefix: name, logLevel: .warn)
 }

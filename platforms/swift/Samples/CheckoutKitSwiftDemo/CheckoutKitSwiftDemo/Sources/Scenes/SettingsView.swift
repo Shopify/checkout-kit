@@ -28,7 +28,7 @@ struct SettingsView: View {
     @ObservedObject var config: AppConfiguration = appConfiguration
 
     @AppStorage(AppStorageKeys.checkoutKitLogLevel.rawValue)
-    var checkoutKitLogLevel: LogLevel = .all {
+    var checkoutKitLogLevel: LogLevel = .debug {
         didSet {
             ShopifyCheckoutKit.configure {
                 $0.logLevel = checkoutKitLogLevel
