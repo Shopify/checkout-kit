@@ -34,7 +34,10 @@ public func configure(_ block: (inout Configuration) -> Void) {
 private func applyConfigurationChange(configuration: Configuration, previousConfiguration: Configuration) {
     OSLogger.shared.logLevel = configuration.logLevel
 
-    if configuration.preloading.enabled != previousConfiguration.preloading.enabled {
+    let preloadingChanged = configuration.preloading.enabled != previousConfiguration.preloading.enabled
+    let cookieStoreChanged = configuration.cookieStore.invalidationToken != previousConfiguration.cookieStore.invalidationToken
+
+    if preloadingChanged || cookieStoreChanged {
         Task { @MainActor in
             CheckoutWebView.invalidate()
         }

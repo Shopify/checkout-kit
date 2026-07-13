@@ -23,6 +23,10 @@ public struct Configuration: Sendable {
 
     public var preloading = Configuration.Preloading()
 
+    /// Controls the cookie/website-data store backing the checkout web view.
+    /// Defaults to the persistent store shared across the app's web views.
+    public var cookieStore: CheckoutCookieStore = .shared
+
     public var tintColor: UIColor = .init(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
 
     @available(*, renamed: "tintColor", message: "spinnerColor has been superseded by tintColor")
