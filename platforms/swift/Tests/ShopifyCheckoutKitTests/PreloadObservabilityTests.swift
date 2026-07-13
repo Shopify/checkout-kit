@@ -262,4 +262,31 @@ class PreloadObservabilityTests: XCTestCase {
             XCTAssertEqual(preload?.state, .idle(reason: .invalidated))
         }
     }
+
+    func testMemoryPressureEvictsIdlePreload() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        CheckoutWebView.preloadCache.evict()
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload?.state, .evicted)
+            XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        }
+    }
+
+    func testMemoryPressureSparesPresentedCheckout() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        view.isPresented = true
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        CheckoutWebView.preloadCache.evict()
+
+        withExtendedLifetime(preload) {
+            XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+            XCTAssertNotEqual(preload?.state, .evicted)
+        }
+    }
 }

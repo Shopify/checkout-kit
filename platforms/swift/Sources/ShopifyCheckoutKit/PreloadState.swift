@@ -18,6 +18,8 @@ public enum PreloadState: Equatable {
     /// The cached checkout is ready for a matching presentation.
     case ready
 
+    /// The cached checkout was evicted under memory pressure.
+    case evicted
     /// The cached checkout could not be retained for the associated reason.
     ///
     /// The message contains best-effort diagnostic context. It is not a stable, machine-readable

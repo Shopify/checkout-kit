@@ -68,6 +68,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         self.client = client
 
         let checkoutView = CheckoutWebView.for(checkout: url, entryPoint: entryPoint)
+        checkoutView.isPresented = true
         checkoutView.translatesAutoresizingMaskIntoConstraints = false
         checkoutView.scrollView.contentInsetAdjustmentBehavior = .automatic
         checkoutView.client = client
@@ -177,6 +178,8 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     func cleanUpCheckoutView() {
         progressObserver?.invalidate()
         progressObserver = nil
+
+        checkoutView?.isPresented = false
 
         if let checkoutView, CheckoutWebView.preloadCache.retainAfterPresentation(checkoutView) {
             checkoutView.viewDelegate = nil
