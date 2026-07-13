@@ -18,6 +18,9 @@ public enum PreloadState: Equatable {
     /// The cached checkout passed its time-to-live and was evicted.
     case expired
 
+    /// The cached checkout was evicted under memory pressure.
+    case evicted
+
     /// The cached checkout could not be retained for the associated reason.
     ///
     /// The message contains best-effort diagnostic context. It is not a stable, machine-readable

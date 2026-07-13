@@ -7431,6 +7431,43 @@
           },
           {
             "kind": "Var",
+            "name": "evicted",
+            "printedName": "evicted",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.PreloadState.Type) -> ShopifyCheckoutKit.PreloadState",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "PreloadState",
+                    "printedName": "ShopifyCheckoutKit.PreloadState",
+                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.PreloadState.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "PreloadState",
+                        "printedName": "ShopifyCheckoutKit.PreloadState",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit12PreloadStateO7evictedyA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO7evictedyA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
             "name": "failed",
             "printedName": "failed",
             "children": [

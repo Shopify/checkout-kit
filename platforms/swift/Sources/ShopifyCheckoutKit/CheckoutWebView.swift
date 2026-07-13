@@ -48,6 +48,16 @@ final class PreloadCache {
     /// receives state updates; earlier handles stop observing.
     private weak var observer: CheckoutPreload?
 
+    private var memoryPressureSource: DispatchSourceMemoryPressure?
+
+    init() {
+        startMemoryPressureMonitoring()
+    }
+
+    deinit {
+        memoryPressureSource?.cancel()
+    }
+
     func setObserver(_ observer: CheckoutPreload) {
         self.observer = observer
     }
@@ -205,6 +215,25 @@ final class PreloadCache {
 
     func expire() {
         evict(with: .expired)
+    }
+
+    func evict() {
+        guard let entry, !entry.view.isPresented else {
+            return
+        }
+
+        evict(with: .evicted)
+    }
+
+    private func startMemoryPressureMonitoring() {
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        source.setEventHandler { [weak self] in
+            MainActor.assumeIsolated {
+                self?.evict()
+            }
+        }
+        source.resume()
+        memoryPressureSource = source
     }
 
     func keepAliveDidFail() {
@@ -445,6 +474,10 @@ class CheckoutWebView: WKWebView {
     /// The checkout URL passed to `load(checkout:)`. Used to derive the trusted
     /// cart-url origin for incoming message validation.
     var loadedCheckoutURL: URL?
+
+    /// Tracks whether the view is currently presented so memory pressure does
+    /// not evict an active checkout.
+    var isPresented = false
     private var entryPoint: MetaData.EntryPoint?
 
     // MARK: Initializers
