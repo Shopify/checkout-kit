@@ -155,9 +155,10 @@ public object CheckoutProtocol {
             val payload = try {
                 handler.decode(request.params)
             } catch (e: SerializationException) {
-                log.d(
+                log.e(
                     LOG_TAG,
-                    "Failed to decode ${request.method} notification params: $e raw=${request.params}",
+                    "Failed to decode ${request.method} notification params: raw=${request.params}",
+                    e,
                 )
                 null
             }
@@ -185,9 +186,10 @@ public object CheckoutProtocol {
                 val payload = try {
                     descriptor.decode(request.params)
                 } catch (e: SerializationException) {
-                    log.d(
+                    log.e(
                         LOG_TAG,
-                        "Failed to decode ${request.method} delegation params: $e raw=${request.params}",
+                        "Failed to decode ${request.method} delegation params: raw=${request.params}",
+                        e,
                     )
                     null
                 } ?: return encodeJsonRpcError(
