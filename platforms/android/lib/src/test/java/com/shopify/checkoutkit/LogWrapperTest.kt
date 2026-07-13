@@ -153,4 +153,60 @@ class LogWrapperTest {
             }
         ).isTrue()
     }
+
+    @Test
+    fun `should suppress warn logs when LogLevel is NONE`() {
+        ShopifyCheckoutKit.configure {
+            it.logLevel = LogLevel.NONE
+        }
+
+        log.w("TAG", "Warn message")
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.WARN && it.tag == "TAG" && it.msg == "Warn message"
+            }
+        ).isFalse()
+    }
+
+    @Test
+    fun `should suppress error logs when LogLevel is NONE`() {
+        ShopifyCheckoutKit.configure {
+            it.logLevel = LogLevel.NONE
+        }
+
+        log.e("TAG", "Error message")
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.ERROR && it.tag == "TAG" && it.msg == "Error message"
+            }
+        ).isFalse()
+    }
+
+    @Test
+    fun `should suppress error logs with throwable when LogLevel is NONE`() {
+        ShopifyCheckoutKit.configure {
+            it.logLevel = LogLevel.NONE
+        }
+
+        log.e("TAG", "Error message", RuntimeException("boom"))
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.ERROR && it.tag == "TAG" && it.msg == "Error message"
+            }
+        ).isFalse()
+    }
+
+    @Test
+    fun `should emit error logs with throwable when LogLevel is ERROR`() {
+        ShopifyCheckoutKit.configure {
+            it.logLevel = LogLevel.ERROR
+        }
+
+        log.e("TAG", "Error message", RuntimeException("boom"))
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.ERROR && it.tag == "TAG" && it.msg == "Error message"
+            }
+        ).isTrue()
+    }
 }

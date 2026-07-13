@@ -19,7 +19,7 @@ public data class Preloading(
 )
 
 public enum class LogLevel {
-    DEBUG, WARN, ERROR
+    DEBUG, WARN, ERROR, NONE
 }
 
 public sealed class Platform(
