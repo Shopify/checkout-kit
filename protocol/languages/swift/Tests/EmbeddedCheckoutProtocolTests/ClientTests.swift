@@ -130,20 +130,20 @@ struct ClientTests {
         #expect(response == nil)
     }
 
-    @Test @MainActor func notificationDecodeFailureReportsOnDecodeError() async throws {
+    @Test @MainActor func notificationDecodeFailureReportsOnDecodeError() async {
         let recorder = DecodeErrorRecorder()
         let client = EmbeddedCheckoutProtocol.Client()
             .onDecodeError { method, error in recorder.record(method: method, error: error) }
             .on(EmbeddedCheckoutProtocol.Event.start) { _ in }
 
         let bad = #"{"jsonrpc":"2.0","method":"ec.start","params":{}}"#
-        _ = try await client.process(bad)
+        _ = await client.process(bad)
 
         #expect(recorder.method == "ec.start")
         #expect(recorder.error != nil)
     }
 
-    @Test @MainActor func requestDecodeFailureReportsOnDecodeError() async throws {
+    @Test @MainActor func requestDecodeFailureReportsOnDecodeError() async {
         let recorder = DecodeErrorRecorder()
         let client = EmbeddedCheckoutProtocol.Client()
             .onDecodeError { method, error in recorder.record(method: method, error: error) }
@@ -152,7 +152,35 @@ struct ClientTests {
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":null}}
         """#
 
-        _ = try await client.process(request)
+        _ = await client.process(request)
+
+        #expect(recorder.method == "ec.window.open_request")
+        #expect(recorder.error != nil)
+    }
+
+    @Test @MainActor func notificationDecodeFailureReportsOnDecodeErrorRegisteredAfterOn() async {
+        let recorder = DecodeErrorRecorder()
+        let client = EmbeddedCheckoutProtocol.Client()
+            .on(EmbeddedCheckoutProtocol.Event.start) { _ in }
+            .onDecodeError { method, error in recorder.record(method: method, error: error) }
+
+        let bad = #"{"jsonrpc":"2.0","method":"ec.start","params":{}}"#
+        _ = await client.process(bad)
+
+        #expect(recorder.method == "ec.start")
+        #expect(recorder.error != nil)
+    }
+
+    @Test @MainActor func requestDecodeFailureReportsOnDecodeErrorRegisteredAfterOn() async {
+        let recorder = DecodeErrorRecorder()
+        let client = EmbeddedCheckoutProtocol.Client()
+            .on(windowOpenDescriptor) { _ in .success }
+            .onDecodeError { method, error in recorder.record(method: method, error: error) }
+        let request = #"""
+        {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":null}}
+        """#
+
+        _ = await client.process(request)
 
         #expect(recorder.method == "ec.window.open_request")
         #expect(recorder.error != nil)

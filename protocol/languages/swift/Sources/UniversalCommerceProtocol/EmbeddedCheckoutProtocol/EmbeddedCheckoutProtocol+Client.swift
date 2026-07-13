@@ -1,10 +1,10 @@
 import Foundation
 
 extension EmbeddedCheckoutProtocol {
-    package typealias DecodeErrorHandler = @Sendable (_ method: String, _ error: Error) -> Void
+    public typealias DecodeErrorHandler = @Sendable (_ method: String, _ error: Error) -> Void
 
     public struct Client: Sendable, MutableCopyable {
-        private var notificationHandlers: [String: @MainActor @Sendable (Data) -> Void]
+        private var notificationHandlers: [String: @MainActor @Sendable (Data, DecodeErrorHandler?) -> Void]
         private var requestEntries: [String: RequestEntry]
         private var decodeErrorHandler: DecodeErrorHandler?
 
@@ -21,7 +21,7 @@ extension EmbeddedCheckoutProtocol {
         }
 
         @discardableResult
-        package func onDecodeError(_ handler: @escaping DecodeErrorHandler) -> Client {
+        public func onDecodeError(_ handler: @escaping DecodeErrorHandler) -> Client {
             return copy {
                 $0.decodeErrorHandler = handler
             }
@@ -33,8 +33,7 @@ extension EmbeddedCheckoutProtocol {
             perform: @escaping @MainActor (Handler) -> Void
         ) -> Client {
             return copy {
-                let onDecodeError = $0.decodeErrorHandler
-                $0.notificationHandlers[descriptor.method] = { params in
+                $0.notificationHandlers[descriptor.method] = { params, onDecodeError in
                     let payload: P
                     do {
                         payload = try descriptor.decode(params)
@@ -54,10 +53,9 @@ extension EmbeddedCheckoutProtocol {
             perform: @escaping @MainActor @Sendable (Handler) async -> R
         ) -> Client {
             return copy {
-                let onDecodeError = $0.decodeErrorHandler
                 $0.requestEntries[descriptor.method] = RequestEntry(
                     delegation: descriptor.delegation,
-                    handler: { id, params in
+                    handler: { id, params, onDecodeError in
                         let payload: P
                         do {
                             payload = try descriptor.decode(params)
@@ -82,12 +80,12 @@ extension EmbeddedCheckoutProtocol {
 
             switch decoded {
             case let .notification(method, params):
-                await notificationHandlers[method]?(params)
+                await notificationHandlers[method]?(params, decodeErrorHandler)
                 return nil
 
             case let .request(id, method, params):
                 guard let entry = requestEntries[method] else { return nil }
-                return await entry.handler(id, params)
+                return await entry.handler(id, params, decodeErrorHandler)
 
             case .unknown:
                 return nil
@@ -97,6 +95,6 @@ extension EmbeddedCheckoutProtocol {
 
     struct RequestEntry {
         let delegation: String?
-        let handler: @MainActor @Sendable (JSONRPCID, Data) async -> String?
+        let handler: @MainActor @Sendable (JSONRPCID, Data, DecodeErrorHandler?) async -> String?
     }
 }

@@ -1327,7 +1327,6 @@
             "usr": "s:24EmbeddedCheckoutProtocolAAO18DecodeErrorHandlera",
             "mangledName": "$s24EmbeddedCheckoutProtocolAAO18DecodeErrorHandlera",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "isInternal": true,
             "isFromExtension": true
           },
           {
@@ -1414,7 +1413,6 @@
                 "usr": "s:24EmbeddedCheckoutProtocolAAO6ClientV13onDecodeErroryADySS_s0G0_ptYbcF",
                 "mangledName": "$s24EmbeddedCheckoutProtocolAAO6ClientV13onDecodeErroryADySS_s0G0_ptYbcF",
                 "moduleName": "EmbeddedCheckoutProtocol",
-                "isInternal": true,
                 "declAttributes": [
                   "DiscardableResult"
                 ],

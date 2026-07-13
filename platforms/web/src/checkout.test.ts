@@ -985,7 +985,7 @@ describe("<shopify-checkout>", () => {
         },
       );
 
-      it("warns with the decode error when a notification payload fails to decode even without debug mode", () => {
+      it("logs an error with the decode error when a notification payload fails to decode even without debug mode", () => {
         const checkout = renderCheckout({ target: "popup" });
         const mockCheckoutWindow = createMockWindow();
         vi.spyOn(window, "open").mockReturnValue(mockCheckoutWindow);
@@ -993,7 +993,7 @@ describe("<shopify-checkout>", () => {
         vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
         checkout.open();
 
-        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
         simulateRawMessageEvent(
           checkout,
@@ -1001,8 +1001,8 @@ describe("<shopify-checkout>", () => {
           { source: mockCheckoutWindow },
         );
 
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-          expect.stringContaining("ec.start"),
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "<shopify-checkout>: dropped ec.start: failed to decode payload",
           expect.any(Error),
         );
       });

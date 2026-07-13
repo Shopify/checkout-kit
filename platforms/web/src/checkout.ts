@@ -185,13 +185,14 @@ export class ShopifyCheckout
    */
   #debugWarn(message: string, ...args: unknown[]) {
     if (this.debug) {
-      this.#warn(message, ...args);
+      // eslint-disable-next-line no-console
+      console.warn(`<shopify-checkout>: ${message}`, ...args);
     }
   }
 
-  #warn(message: string, ...args: unknown[]) {
+  #logError(message: string, ...args: unknown[]) {
     // eslint-disable-next-line no-console
-    console.warn(`<shopify-checkout>: ${message}`, ...args);
+    console.error(`<shopify-checkout>: ${message}`, ...args);
   }
 
   get target(): CheckoutTarget | string {
@@ -577,7 +578,7 @@ export class ShopifyCheckout
 
     return new EmbeddedCheckoutProtocol.Client()
       .onDecodeError(({ method, error }) => {
-        this.#warn(`dropped ${method}: failed to decode payload`, error);
+        this.#logError(`dropped ${method}: failed to decode payload`, error);
       })
       .on(Event.ready, () => ({
         ucp: {

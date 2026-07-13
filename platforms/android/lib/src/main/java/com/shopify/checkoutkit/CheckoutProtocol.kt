@@ -155,11 +155,13 @@ public object CheckoutProtocol {
             val payload = try {
                 handler.decode(request.params)
             } catch (e: SerializationException) {
-                log.e(
-                    LOG_TAG,
-                    "Failed to decode ${request.method} notification params: raw=${request.params}",
-                    e,
-                )
+                val message = "Failed to decode ${request.method} notification params"
+                val details = if (ShopifyCheckoutKit.configuration.logLevel == LogLevel.DEBUG) {
+                    "$message raw=${request.params}"
+                } else {
+                    message
+                }
+                log.e(LOG_TAG, details, e)
                 null
             }
             log.d(
