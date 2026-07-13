@@ -168,7 +168,7 @@ describe("<shopify-checkout>", () => {
         },
       );
 
-      it("logs an error with the decode error when a notification payload fails to decode even without debug mode", () => {
+      it("logs an error with the decode error when a notification payload fails to decode at the default log level", () => {
         const checkout = renderCheckout({ target: "popup" });
         const mockCheckoutWindow = createMockWindow();
         vi.spyOn(window, "open").mockReturnValue(mockCheckoutWindow);
@@ -590,7 +590,7 @@ describe("<shopify-checkout>", () => {
       });
 
       it("posts JSON-RPC errors when params are missing or malformed", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         simulateProtocolMessageEvent(
@@ -649,7 +649,7 @@ describe("<shopify-checkout>", () => {
       });
 
       it("rejects the request when the url string cannot be parsed", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         simulateProtocolMessageEvent(
@@ -678,7 +678,7 @@ describe("<shopify-checkout>", () => {
       });
 
       it("rejects the request when the url uses a non-https scheme", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
         const windowOpenSpy = vi.spyOn(window, "open");
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -713,7 +713,7 @@ describe("<shopify-checkout>", () => {
       });
 
       it("does not warn about an invalid url when the handler throws internally", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
         vi.spyOn(window, "open").mockImplementation(() => {
           throw new Error("popup blocked");
@@ -842,7 +842,7 @@ describe("<shopify-checkout>", () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
         checkout.addEventListener("ec.start", onStartSpy);
-        const debugWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         window.dispatchEvent(
           new MessageEvent("message", {
@@ -854,7 +854,7 @@ describe("<shopify-checkout>", () => {
         await flushProtocolDispatch();
 
         expect(onStartSpy).not.toHaveBeenCalled();
-        expect(debugWarnSpy).not.toHaveBeenCalled();
+        expect(consoleWarnSpy).not.toHaveBeenCalled();
       });
     });
 
@@ -868,10 +868,9 @@ describe("<shopify-checkout>", () => {
     });
   });
 
-  describe("debug attribute", () => {
-    it("logs a console warning for dropped messages when the debug attribute is set", async () => {
-      const { checkout, mockCheckoutWindow } = openPopupCheckout();
-      checkout.setAttribute("debug", "");
+  describe("log-level attribute", () => {
+    it("logs a console warning for dropped messages when log-level is warn", async () => {
+      const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
@@ -885,8 +884,8 @@ describe("<shopify-checkout>", () => {
       );
     });
 
-    it("does not log warnings for dropped messages when debug is not set", async () => {
-      const { checkout, mockCheckoutWindow } = openPopupCheckout();
+    it("does not log warnings for dropped messages when log-level is error", async () => {
+      const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "error" });
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
@@ -899,8 +898,7 @@ describe("<shopify-checkout>", () => {
     });
 
     it("drops non-serializable messages without throwing", async () => {
-      const { checkout, mockCheckoutWindow } = openPopupCheckout();
-      checkout.setAttribute("debug", "");
+      const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const circularMessage: Record<string, unknown> = {
         jsonrpc: "2.0",
@@ -1130,11 +1128,11 @@ function createMockWindow() {
  * `simulateProtocolMessageEvent` and the spy target for response
  * `postMessage` calls), and the `window.open` spy already set up.
  */
-function openPopupCheckout(): {
+function openPopupCheckout(attributes: Record<string, string | undefined> = {}): {
   checkout: ShopifyCheckout;
   mockCheckoutWindow: Window;
 } {
-  const checkout = renderCheckout({ target: "popup" });
+  const checkout = renderCheckout({ target: "popup", ...attributes });
   const mockCheckoutWindow = createMockWindow();
   vi.spyOn(window, "open").mockReturnValue(mockCheckoutWindow);
   // showModal/close throw in jsdom unless the dialog is in the DOM and

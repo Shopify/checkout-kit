@@ -53,9 +53,14 @@
             </select>
           </label>
 
-          <label class="checkbox">
-            <input type="checkbox" name="debug" />
-            <span>debug</span>
+          <label>
+            <span>log-level</span>
+            <select name="log-level">
+              <option value="debug">debug</option>
+              <option value="warn" selected>warn</option>
+              <option value="error">error</option>
+              <option value="none">none</option>
+            </select>
           </label>
 
           <fieldset>
@@ -133,8 +138,8 @@
             <dd id="state-target">—</dd>
             <dt>appearance</dt>
             <dd id="state-appearance">—</dd>
-            <dt>debug</dt>
-            <dd id="state-debug">—</dd>
+            <dt>log-level</dt>
+            <dd id="state-log-level">—</dd>
           </dl>
         </details>
       </section>

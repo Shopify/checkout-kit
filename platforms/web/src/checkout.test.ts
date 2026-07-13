@@ -90,32 +90,34 @@ describe("<shopify-checkout>", () => {
       });
     });
 
-    describe("debug", () => {
-      it("sets the debug attribute when assigned true", () => {
+    describe("logLevel", () => {
+      it("defaults to 'warn' when the attribute is absent", () => {
         const checkout = renderCheckout();
-        checkout.debug = true;
-        expect(checkout.hasAttribute("debug")).toBe(true);
-        expect(checkout.getAttribute("debug")).toBe("");
+        expect(checkout.hasAttribute("log-level")).toBe(false);
+        expect(checkout.logLevel).toBe("warn");
       });
 
-      it("sets the debug attribute to a string value when assigned a string", () => {
+      it("reflects the log-level attribute to the property", () => {
+        const checkout = renderCheckout({ "log-level": "error" });
+        expect(checkout.logLevel).toBe("error");
+      });
+
+      it("sets the log-level attribute when assigned", () => {
         const checkout = renderCheckout();
-        checkout.debug = "verbose";
-        expect(checkout.getAttribute("debug")).toBe("verbose");
+        checkout.logLevel = "debug";
+        expect(checkout.getAttribute("log-level")).toBe("debug");
       });
 
-      it("removes the debug attribute when assigned undefined", () => {
-        const checkout = renderCheckout({ debug: "" });
-        expect(checkout.hasAttribute("debug")).toBe(true);
-        checkout.debug = undefined;
-        expect(checkout.hasAttribute("debug")).toBe(false);
+      it("falls back to 'warn' when the attribute holds an invalid value", () => {
+        const checkout = renderCheckout({ "log-level": "verbose" });
+        expect(checkout.logLevel).toBe("warn");
       });
 
-      it("removes the debug attribute when assigned false", () => {
-        const checkout = renderCheckout({ debug: "" });
-        expect(checkout.hasAttribute("debug")).toBe(true);
-        checkout.debug = false;
-        expect(checkout.hasAttribute("debug")).toBe(false);
+      it("removes the log-level attribute when assigned undefined", () => {
+        const checkout = renderCheckout({ "log-level": "warn" });
+        expect(checkout.hasAttribute("log-level")).toBe(true);
+        checkout.logLevel = undefined;
+        expect(checkout.hasAttribute("log-level")).toBe(false);
       });
     });
   });
@@ -207,10 +209,11 @@ describe("<shopify-checkout>", () => {
       expect(url.searchParams.get("keep")).toBe("1");
     });
 
-    it("omits invalid appearance values and does not warn when debug is disabled", () => {
+    it("omits invalid appearance values and does not warn when log-level is error", () => {
       const checkout = renderCheckout({
         src: "https://example.com/checkout?ec_color_scheme=dark&ck_branding=shop&keep=1",
         appearance: "sepia",
+        "log-level": "error",
       });
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -224,12 +227,12 @@ describe("<shopify-checkout>", () => {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it("omits invalid appearance values and warns when debug is enabled", () => {
+    it("omits invalid appearance values and warns when log-level is warn", () => {
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const checkout = renderCheckout({
         src: "https://example.com/checkout?ec_color_scheme=dark&ck_branding=shop&keep=1",
         appearance: "sepia",
-        debug: "",
+        "log-level": "warn",
       });
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
 
@@ -245,7 +248,7 @@ describe("<shopify-checkout>", () => {
     });
 
     it("handles invalid src URL gracefully", () => {
-      const checkout = renderCheckout();
+      const checkout = renderCheckout({ "log-level": "warn" });
       checkout.src = "invalid-url";
 
       const windowOpenSpy = vi.spyOn(window, "open");
@@ -254,7 +257,7 @@ describe("<shopify-checkout>", () => {
       checkout.open();
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "`<shopify-checkout>`: src property is empty or invalid, cannot open checkout",
+        "<shopify-checkout>: src property is empty or invalid, cannot open checkout",
       );
       expect(windowOpenSpy).not.toHaveBeenCalled();
     });

@@ -42,7 +42,7 @@ const stateNodes = {
   error: $<HTMLElement>("#state-error"),
   target: $<HTMLElement>("#state-target"),
   appearance: $<HTMLElement>("#state-appearance"),
-  debug: $<HTMLElement>("#state-debug"),
+  logLevel: $<HTMLElement>("#state-log-level"),
 };
 
 // ───── Mount the component (off-layout) ───────────────────────────────────
@@ -73,11 +73,7 @@ function syncAttributes(): void {
   setStringAttribute(checkout, "src", data.get("src"));
   setStringAttribute(checkout, "target", data.get("target"));
   setStringAttribute(checkout, "appearance", data.get("appearance"));
-  if (data.has("debug")) {
-    checkout.setAttribute("debug", "");
-  } else {
-    checkout.removeAttribute("debug");
-  }
+  setStringAttribute(checkout, "log-level", data.get("log-level"));
 
   refreshBuyButton(data.get("src"));
 }
@@ -157,7 +153,7 @@ function snapshotState(): Record<string, unknown> {
     error: checkout.error,
     target: checkout.target,
     appearance: checkout.appearance,
-    debug: checkout.debug,
+    logLevel: checkout.logLevel,
   };
 }
 
@@ -166,7 +162,7 @@ function refreshState(): void {
   stateNodes.error.textContent = formatValue(checkout.error);
   stateNodes.target.textContent = formatValue(checkout.target);
   stateNodes.appearance.textContent = formatValue(checkout.appearance);
-  stateNodes.debug.textContent = formatValue(checkout.debug);
+  stateNodes.logLevel.textContent = formatValue(checkout.logLevel);
 }
 
 function appendLog(type: string): void {
