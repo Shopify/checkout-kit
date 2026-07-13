@@ -1,5 +1,8 @@
 package com.shopify.checkoutkit
 
+import android.content.ComponentCallbacks2
+import android.content.Context
+import android.content.res.Configuration
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -15,6 +18,7 @@ internal data class PreloadKey(val url: String) {
     }
 }
 
+@Suppress("TooManyFunctions")
 internal class PreloadCache(
     private val expiryScheduler: PreloadExpiryScheduler = HandlerPreloadExpiryScheduler(),
 ) : DefaultLifecycleObserver {
@@ -41,6 +45,10 @@ internal class PreloadCache(
     var clock: Clock = Clock()
     private var entry: Entry? = null
     private var observer: CheckoutPreload? = null
+    private var memoryCallbacksRegistered = false
+
+    /** True while the system reports low running memory. */
+    var isUnderMemoryPressure = false
 
     var state: PreloadState = PreloadState.Idle
         private set
@@ -50,6 +58,12 @@ internal class PreloadCache(
 
     fun setObserver(observer: CheckoutPreload) {
         this.observer = observer
+    }
+
+    fun clearObserver(observer: CheckoutPreload) {
+        if (this.observer === observer) {
+            this.observer = null
+        }
     }
 
     fun transition(view: CheckoutWebView, state: PreloadState) {
@@ -83,7 +97,8 @@ internal class PreloadCache(
         }
     }
 
-    fun store(key: PreloadKey, view: CheckoutWebView, lifecycleOwner: LifecycleOwner) {
+    fun store(key: PreloadKey, view: CheckoutWebView, lifecycleOwner: LifecycleOwner): Boolean {
+        if (isUnderMemoryPressure) return false
         invalidate()
         val newEntry = Entry(
             key = key,
@@ -92,13 +107,15 @@ internal class PreloadCache(
             createdAt = clock.elapsedRealtime(),
         )
         entry = newEntry
-        if (lifecycleOwner.lifecycle.currentState == Lifecycle.State.DESTROYED) {
+        return if (lifecycleOwner.lifecycle.currentState == Lifecycle.State.DESTROYED) {
             evict(PreloadState.Idle)
-            return
+            false
+        } else {
+            lifecycleOwner.lifecycle.addObserver(this)
+            scheduleExpiry(newEntry)
+            transition(PreloadState.Loading)
+            true
         }
-        lifecycleOwner.lifecycle.addObserver(this)
-        scheduleExpiry(newEntry)
-        transition(PreloadState.Loading)
     }
 
     fun take(key: PreloadKey): CheckoutWebView? = entry?.let { cached ->
@@ -141,6 +158,10 @@ internal class PreloadCache(
                 clearEntry()
                 false
             }
+            isUnderMemoryPressure -> {
+                evict(PreloadState.Evicted(PreloadState.EvictionReason.MemoryPressure), view)
+                false
+            }
             else -> {
                 scheduleExpiry(cached)
                 true
@@ -153,6 +174,43 @@ internal class PreloadCache(
         val cached = entry
         if (cached?.view === view) {
             clearEntry()
+        }
+    }
+
+    fun evictForMemoryPressure() {
+        val cached = entry
+        if (cached == null || cached.view.isPresented) return
+        evict(PreloadState.Evicted(PreloadState.EvictionReason.MemoryPressure))
+    }
+
+    fun invalidatePreload() {
+        val cached = entry ?: return
+        if (cached.view.isPresented) return
+        evict(PreloadState.Idle)
+    }
+
+    fun startMemoryPressureMonitoring(context: Context) {
+        if (memoryCallbacksRegistered) return
+        memoryCallbacksRegistered = true
+        context.registerComponentCallbacks(object : ComponentCallbacks2 {
+            override fun onTrimMemory(level: Int) {
+                handleTrimMemory(level)
+            }
+
+            override fun onConfigurationChanged(newConfig: Configuration): Unit = Unit
+
+            @Suppress("OVERRIDE_DEPRECATION")
+            override fun onLowMemory(): Unit = Unit
+        })
+    }
+
+    @Suppress("DEPRECATION")
+    internal fun handleTrimMemory(level: Int) {
+        // Android 14+ no longer reports running-low/critical callbacks, so preload calls also
+        // probe ActivityManager.MemoryInfo before warming a WebView.
+        if (level in ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW..ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
+            isUnderMemoryPressure = true
+            evictForMemoryPressure()
         }
     }
 
@@ -261,4 +319,7 @@ private class HandlerPreloadExpiryScheduler : PreloadExpiryScheduler {
 }
 
 private val PreloadState.isTerminal: Boolean
-    get() = this == PreloadState.Idle || this == PreloadState.Expired || this is PreloadState.Failed
+    get() = this == PreloadState.Idle ||
+        this == PreloadState.Expired ||
+        this is PreloadState.Evicted ||
+        this is PreloadState.Failed

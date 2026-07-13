@@ -638,6 +638,20 @@ class CheckoutWebViewTest {
     }
 
     @Test
+    fun `preload does not navigate when invalidated before queued load runs`() {
+        val transport = FakeWebMessageTransport()
+
+        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity, transport)
+        val createdView = transport.lastAttachAttempt!!.webView
+        ShopifyCheckoutKit.invalidate()
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+        assertThat(shadowOf(createdView).wasDestroyCalled()).isTrue()
+        assertThat(shadowOf(createdView).lastLoadedUrl).isNull()
+    }
+
+    @Test
     fun `invalidate does not destroy presented checkout view`() {
         preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().idle()

@@ -589,6 +589,27 @@ public final class com/shopify/checkoutkit/Platform$ReactNative : com/shopify/ch
 public abstract class com/shopify/checkoutkit/PreloadState {
 }
 
+public final class com/shopify/checkoutkit/PreloadState$Evicted : com/shopify/checkoutkit/PreloadState {
+	public fun <init> (Lcom/shopify/checkoutkit/PreloadState$EvictionReason;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/PreloadState$EvictionReason;
+	public final fun copy (Lcom/shopify/checkoutkit/PreloadState$EvictionReason;)Lcom/shopify/checkoutkit/PreloadState$Evicted;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PreloadState$Evicted;Lcom/shopify/checkoutkit/PreloadState$EvictionReason;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PreloadState$Evicted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Lcom/shopify/checkoutkit/PreloadState$EvictionReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/shopify/checkoutkit/PreloadState$EvictionReason {
+}
+
+public final class com/shopify/checkoutkit/PreloadState$EvictionReason$MemoryPressure : com/shopify/checkoutkit/PreloadState$EvictionReason {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$EvictionReason$MemoryPressure;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/shopify/checkoutkit/PreloadState$Expired : com/shopify/checkoutkit/PreloadState {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$Expired;
 	public fun equals (Ljava/lang/Object;)Z
