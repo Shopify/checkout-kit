@@ -377,6 +377,7 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
 
     @objc private func resetCart() {
         CartManager.shared.resetCart()
+        ShopifyCheckoutKit.invalidate()
     }
 
     private func node(at indexPath: IndexPath) -> CartLineNode {

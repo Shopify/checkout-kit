@@ -40,6 +40,13 @@ final class PreloadCache {
     private var keepAliveTimer: Timer?
     private var expiryTimer: Timer?
 
+    private(set) var state: PreloadState = .idle
+    private weak var observer: CheckoutPreload?
+
+    func setObserver(_ observer: CheckoutPreload) {
+        self.observer = observer
+    }
+
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
         if let entry, entry.key == key, !entry.isStale {
             return true
@@ -56,7 +63,13 @@ final class PreloadCache {
         self.entry = entry
         startKeepAlive(for: view)
         startExpiryTimer(after: entry.remainingTTL)
+        transition(to: .loading)
         return true
+    }
+
+    func transition(to newState: PreloadState) {
+        state = newState
+        observer?.receive(newState)
     }
 
     func view(for key: PreloadKey) -> CheckoutWebView? {
@@ -124,7 +137,7 @@ final class PreloadCache {
                     _ = try await view?.evaluateJavaScript("void 0")
                 } catch {
                     OSLogger.shared.debug("Preload keep-alive failed; invalidating preload cache")
-                    self?.invalidate()
+                    self?.keepAliveDidFail()
                 }
             }
         }
@@ -136,11 +149,21 @@ final class PreloadCache {
         stopExpiryTimer()
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor in
-                self?.invalidate()
+                self?.expire()
             }
         }
         timer.tolerance = min(interval / 2, 1)
         expiryTimer = timer
+    }
+
+    func expire() {
+        transition(to: .expired)
+        invalidate()
+    }
+
+    func keepAliveDidFail() {
+        transition(to: .failed(reason: .keepAliveLost))
+        invalidate()
     }
 
     private func stopKeepAlive() {
@@ -532,6 +555,9 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         if statusCode >= 400 {
+            if CheckoutWebView.preloadCache.contains(self) {
+                CheckoutWebView.preloadCache.transition(to: .failed(reason: .httpError(statusCode: statusCode)))
+            }
             CheckoutWebView.invalidate()
             OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
 
@@ -569,6 +595,10 @@ extension CheckoutWebView: WKNavigationDelegate {
     }
 
     func webView(_: WKWebView, didFinish _: WKNavigation!) {
+        if CheckoutWebView.preloadCache.contains(self) {
+            CheckoutWebView.preloadCache.transition(to: .ready)
+        }
+
         viewDelegate?.checkoutViewDidFinishNavigation()
 
         if let startTime = timer {
@@ -593,6 +623,9 @@ extension CheckoutWebView: WKNavigationDelegate {
             return
         }
 
+        if CheckoutWebView.preloadCache.contains(self) {
+            CheckoutWebView.preloadCache.transition(to: .failed(reason: .navigationFailed))
+        }
         CheckoutWebView.invalidate()
         viewDelegate?.checkoutViewDidFailWithError(error: .sdkError(underlying: error))
     }
