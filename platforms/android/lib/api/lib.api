@@ -632,6 +632,18 @@ public final class com/shopify/checkoutkit/Preloading {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/shopify/checkoutkit/ShopifyCheckout : android/widget/FrameLayout {
+	public static final field Companion Lcom/shopify/checkoutkit/ShopifyCheckout$Companion;
+	public fun <init> (Landroid/content/Context;Ljava/lang/String;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)V
+	public fun <init> (Landroid/content/Context;Ljava/lang/String;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;)V
+	public synthetic fun <init> (Landroid/content/Context;Ljava/lang/String;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun destroy ()V
+}
+
+public final class com/shopify/checkoutkit/ShopifyCheckout$Companion {
+	public final synthetic fun create (Landroid/content/Context;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/ShopifyCheckout;
+}
+
 public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/ShopifyCheckoutKit;
 	public static final field VERSION Ljava/lang/String;

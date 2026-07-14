@@ -21,6 +21,7 @@
   - [Maven](#maven)
 - [Get a checkout URL](#get-a-checkout-url)
 - [Present checkout](#present-checkout)
+- [Embed checkout](#embed-checkout)
 - [Preload checkout](#preload-checkout)
 - [Configure checkout](#configure-checkout)
   - [Color schemes](#color-schemes)
@@ -43,7 +44,7 @@
 - Android `compileSdk` 35+ for consuming apps. This repository currently builds the library with `compileSdk` 36.
 - WebMessageListener support in the WebView installed on the buyer's device. This is available in Android System WebView
   or Chrome version 83 or newer (released May 2020). If unsupported, `present` invokes the failure callback with
-  `web_view_not_supported` and returns `null`.
+  `web_view_not_supported` and returns `null`; an embedded `ShopifyCheckout` invokes `onFail` and remains inert.
 
 ## Install
 
@@ -126,6 +127,72 @@ val checkout = ShopifyCheckoutKit.present(checkoutUrl, activity) {
 
 checkout?.dismiss()
 ```
+
+## Embed checkout
+
+Use `ShopifyCheckout` when your app owns the presentation container. The view owns the checkout header, close control,
+loading indicator, WebView, browser/system callbacks, and checkout protocol connection. Your app owns the surrounding
+sheet or navigation state, including its shape, scrim, drag handle, snap points, and dismissal gestures.
+
+Jetpack Compose apps can host `ShopifyCheckout` with `AndroidView`; Checkout Kit does not add a Compose dependency:
+
+```kotlin
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CartScreen(checkoutUrl: String) {
+    var isCheckoutPresented by remember { mutableStateOf(false) }
+    val dismissAsCancel = {
+        isCheckoutPresented = false
+        resetCheckoutUi()
+    }
+
+    Button(onClick = { isCheckoutPresented = true }) {
+        Text("Checkout")
+    }
+
+    if (!isCheckoutPresented) return
+
+    ModalBottomSheet(
+        onDismissRequest = dismissAsCancel,
+    ) {
+        AndroidView(
+            factory = { context ->
+                ShopifyCheckout.create(context, checkoutUrl) {
+                    connect(protocolClient)
+
+                    onCancel { dismissAsCancel() }
+
+                    onFail { error ->
+                        isCheckoutPresented = false
+                        handleCheckoutError(error)
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+            onRelease = ShopifyCheckout::destroy,
+        )
+    }
+}
+```
+
+View-system and Java hosts can construct `ShopifyCheckout(context, checkoutUrl, listener, protocolClient)` directly and
+must follow the same `destroy()` contract when removing it from their hierarchy.
+
+The close control and system back invoke `onCancel`; back navigates WebView history first when possible. Sheet gestures
+and tap-away belong to the host, so route `ModalBottomSheet.onDismissRequest` through the same app cancellation logic.
+`onFail` likewise asks the host to remove its presentation rather than attempting to dismiss an unknown parent.
+
+`ShopifyCheckout` callbacks and protocol client are fixed when the view is created. Create a new view for a new checkout
+URL. If a Compose adapter accepts callbacks that can change during recomposition, forward them through stable delegates
+such as `rememberUpdatedState` rather than recreating an active checkout.
+
+Always call the idempotent `destroy()` method when a view is permanently removed. `AndroidView.onRelease` is the
+preferred Compose integration point. Checkout Kit pauses temporary detachments and also destroys the view when its
+nearest lifecycle owner is destroyed, but cannot infer that every detachment is permanent.
+
+The embedded header uses the configured checkout appearance, title alignment, toolbar elevation, and close icon styles.
+Sheet-specific configuration such as corner radius, scrim, drag handle, snap points, and gesture policy remains the
+host's responsibility. The imperative `present` API continues to apply all `CheckoutSheetOptions` itself.
 
 ## Preload checkout
 

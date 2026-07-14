@@ -684,7 +684,7 @@ class CheckoutBottomSheetTest {
         val titleLayoutParams = title.layoutParams as Toolbar.LayoutParams
 
         assertThat(header.elevation).isEqualTo(0f)
-        assertThat(header.title).isEmpty()
+        assertThat(header.title).isNullOrEmpty()
         assertThat(title.text).isEqualTo(activity.getString(R.string.checkout_web_view_title))
         assertThat(title.currentTextColor).isEqualTo(customColors.headerFont.getValue(activity))
         assertThat(title.textSize).isEqualTo(activity.resources.getDimension(R.dimen.checkout_sheet_title_text_size))

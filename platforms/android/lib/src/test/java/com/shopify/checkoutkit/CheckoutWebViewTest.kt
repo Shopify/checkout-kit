@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import android.os.Looper
+import android.view.MotionEvent
 import android.view.View.VISIBLE
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
@@ -76,6 +77,55 @@ class CheckoutWebViewTest {
     }
 
     @Test
+    fun `touch down keeps gesture with WebView after it is parented`() {
+        val parent = InterceptTrackingLayout(activity)
+        val view = checkoutWebView(activity)
+        parent.addView(view)
+
+        view.sendTouchEvent(MotionEvent.ACTION_DOWN, y = 20f)
+
+        assertThat(parent.disallowInterceptRequested).isTrue()
+    }
+
+    @Test
+    fun `gesture that starts upward stays with WebView`() {
+        val parent = InterceptTrackingLayout(activity)
+        val view = checkoutWebView(activity)
+        parent.addView(view)
+
+        view.sendTouchEvent(MotionEvent.ACTION_DOWN, y = 20f)
+        view.sendTouchEvent(MotionEvent.ACTION_MOVE, y = 10f)
+        view.sendTouchEvent(MotionEvent.ACTION_MOVE, y = 30f)
+
+        assertThat(parent.disallowInterceptRequested).isTrue()
+    }
+
+    @Test
+    fun `downward drag stays with WebView when checkout can scroll up`() {
+        val parent = InterceptTrackingLayout(activity)
+        val view = GestureTestWebView(activity, canScrollUp = true)
+        parent.addView(view)
+
+        view.sendTouchEvent(MotionEvent.ACTION_DOWN, y = 20f)
+        view.sendTouchEvent(MotionEvent.ACTION_MOVE, y = 30f)
+
+        assertThat(view.canScrollVertically(SCROLL_UP_DIRECTION)).isTrue()
+        assertThat(parent.disallowInterceptRequested).isTrue()
+    }
+
+    @Test
+    fun `downward drag at scroll top releases gesture to parent`() {
+        val parent = InterceptTrackingLayout(activity)
+        val view = checkoutWebView(activity)
+        parent.addView(view)
+
+        view.sendTouchEvent(MotionEvent.ACTION_DOWN, y = 20f)
+        view.sendTouchEvent(MotionEvent.ACTION_MOVE, y = 30f)
+
+        assertThat(parent.disallowInterceptRequested).isFalse()
+    }
+
+    @Test
     fun `detaches and reattaches WebMessage transport with view lifecycle`() {
         val view = checkoutWebView(activity)
         val shadow = shadowOf(view)
@@ -129,6 +179,7 @@ class CheckoutWebViewTest {
         }
             .isInstanceOf(UnsupportedWebViewException::class.java)
             .hasMessage("This Android WebView does not support Shopify Checkout Kit.")
+        assertThat(shadowOf(webMessageTransport.lastAttachAttempt!!.webView).wasDestroyCalled()).isTrue
     }
 
     @Test
@@ -455,6 +506,36 @@ class CheckoutWebViewTest {
 
     private fun checkoutViewFor(url: String): CheckoutWebView =
         CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+
+    private fun BaseWebView.sendTouchEvent(action: Int, y: Float) {
+        val event = MotionEvent.obtain(0, 0, action, 0f, y, 0)
+        try {
+            onTouchEvent(event)
+        } finally {
+            event.recycle()
+        }
+    }
+
+    private class GestureTestWebView(
+        context: Context,
+        private val canScrollUp: Boolean,
+    ) : BaseWebView(context) {
+        private val listener = CheckoutWebViewListener(NoopCheckoutListener())
+
+        override fun getListener(): CheckoutWebViewListener = listener
+
+        override fun canScrollVertically(direction: Int): Boolean =
+            direction == SCROLL_UP_DIRECTION && canScrollUp
+    }
+
+    private class InterceptTrackingLayout(context: Context) : FrameLayout(context) {
+        var disallowInterceptRequested = false
+
+        override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+            disallowInterceptRequested = disallowIntercept
+            super.requestDisallowInterceptTouchEvent(disallowIntercept)
+        }
+    }
 
     /**
      * Verifies a WebMessage is ignored after a valid sentinel drains earlier protocol work.

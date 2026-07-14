@@ -99,5 +99,3 @@ private fun View.cancelWebViewGesture(event: MotionEvent) {
         cancelEvent.recycle()
     }
 }
-
-private const val SCROLL_UP_DIRECTION = -1
