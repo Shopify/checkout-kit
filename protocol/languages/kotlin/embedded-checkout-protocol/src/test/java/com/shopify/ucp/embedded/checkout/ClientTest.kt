@@ -2,6 +2,8 @@ package com.shopify.ucp.embedded.checkout
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.buildJsonObject
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
@@ -32,9 +34,9 @@ class ClientTest {
 
     @Test
     fun `process invokes onDecodeError for malformed notification params`() {
-        var captured: Pair<String, Throwable>? = null
+        var captured: Triple<String, Throwable, JsonElement?>? = null
         val client = Client()
-            .onDecodeError { method, error -> captured = method to error }
+            .onDecodeError { method, error, params -> captured = Triple(method, error, params) }
             .on(ping) { throw AssertionError("handler should not run for undecodable params") }
 
         val response = client.process(
@@ -44,13 +46,14 @@ class ClientTest {
         assertThat(response).isNull()
         assertThat(captured?.first).isEqualTo("ec.test.ping")
         assertThat(captured?.second).isInstanceOf(SerializationException::class.java)
+        assertThat(captured?.third).isEqualTo(buildJsonObject {})
     }
 
     @Test
     fun `process invokes onDecodeError and returns invalid params error for malformed request params`() {
-        var captured: Pair<String, Throwable>? = null
+        var captured: Triple<String, Throwable, JsonElement?>? = null
         val client = Client()
-            .onDecodeError { method, error -> captured = method to error }
+            .onDecodeError { method, error, params -> captured = Triple(method, error, params) }
             .on(echo) { throw AssertionError("handler should not run for undecodable params") }
 
         val response = client.process(

@@ -105,8 +105,9 @@ public object CheckoutProtocol {
         private val delegate: ProtocolClient,
     ) {
         public constructor() : this(
-            ProtocolClient().onDecodeError { method, error ->
+            ProtocolClient().onDecodeError { method, error, params ->
                 log.e(LOG_TAG, "Failed to decode $method params", error)
+                log.d(LOG_TAG, "Raw $method params: $params")
             },
         )
 

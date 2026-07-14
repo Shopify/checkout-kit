@@ -75,7 +75,7 @@ public class Client private constructor(
         val payload = try {
             entry.decode(request.params)
         } catch (e: SerializationException) {
-            decodeErrorHandler?.invoke(request.method, e)
+            decodeErrorHandler?.invoke(request.method, e, request.params)
             return
         }
         payload?.let { entry.invoke(it) }
@@ -85,7 +85,7 @@ public class Client private constructor(
         val payload = try {
             entry.decode(request.params)
         } catch (e: SerializationException) {
-            decodeErrorHandler?.invoke(request.method, e)
+            decodeErrorHandler?.invoke(request.method, e, request.params)
             null
         } ?: return encodeJsonRpcError(request.id, CODE_INVALID_PARAMS, "Invalid params for ${request.method}")
         return encodeJsonRpcResult(request.id, entry.invokeAndEncode(payload))
@@ -106,4 +106,4 @@ public class Client private constructor(
     }
 }
 
-public typealias DecodeErrorHandler = (method: String, error: Throwable) -> Unit
+public typealias DecodeErrorHandler = (method: String, error: Throwable, params: JsonElement?) -> Unit
