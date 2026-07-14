@@ -8,6 +8,9 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -18,10 +21,12 @@ import org.robolectric.shadows.ShadowLooper
 class ShopifyCheckoutKitTest {
 
     private lateinit var initialConfiguration: Configuration
+    private lateinit var webMessageTransport: FakeWebMessageTransport
 
     @Before
     fun setUp() {
         initialConfiguration = ShopifyCheckoutKit.getConfiguration()
+        webMessageTransport = FakeWebMessageTransport()
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
     }
@@ -40,6 +45,29 @@ class ShopifyCheckoutKitTest {
     }
 
     @Test
+    fun `present emits unsupported WebView error and returns null`() {
+        webMessageTransport.supported = false
+        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
+            val activity = activityController.get()
+            val listener = mock<DefaultCheckoutListener>()
+
+            val checkout = ShopifyCheckoutKit.present(
+                "https://shopify.dev",
+                activity,
+                listener,
+                webMessageTransport = webMessageTransport,
+            )
+
+            val captor = argumentCaptor<CheckoutException>()
+            assertThat(checkout).isNull()
+            verify(listener).onCheckoutFailed(captor.capture())
+            CheckoutExceptionAssert.assertThat(captor.firstValue)
+                .hasDescription("This Android WebView does not support Shopify Checkout Kit.")
+                .hasErrorCode(CheckoutKitException.WEB_VIEW_NOT_SUPPORTED)
+        }
+    }
+
+    @Test
     fun `present returns null when activity is finishing`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
@@ -48,7 +76,8 @@ class ShopifyCheckoutKitTest {
             val checkout = ShopifyCheckoutKit.present(
                 "https://shopify.dev",
                 activity,
-                noopDefaultCheckoutListener()
+                noopDefaultCheckoutListener(),
+                webMessageTransport = webMessageTransport,
             )
 
             assertThat(checkout).isNull()
@@ -63,7 +92,8 @@ class ShopifyCheckoutKitTest {
             ShopifyCheckoutKit.present(
                 "https://shopify.dev",
                 activity,
-                noopDefaultCheckoutListener()
+                noopDefaultCheckoutListener(),
+                webMessageTransport = webMessageTransport,
             )
             val sheet = ShadowDialog.getLatestDialog() as CheckoutBottomSheet
             val checkoutWebView = sheet.findViewById<RelativeLayout>(R.id.checkoutKitContainer)!!
@@ -83,7 +113,7 @@ class ShopifyCheckoutKitTest {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
 
-            ShopifyCheckoutKit.preload("https://shopify.dev/cart/123", activity)
+            preload("https://shopify.dev/cart/123", activity)
             ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()
@@ -94,12 +124,25 @@ class ShopifyCheckoutKitTest {
     }
 
     @Test
+    fun `preload does nothing when WebView is unsupported`() {
+        webMessageTransport.supported = false
+        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
+            val activity = activityController.get()
+
+            preload("https://shopify.dev/cart/123", activity)
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+            assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        }
+    }
+
+    @Test
     fun `preload does nothing when activity is finishing`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
             activity.finish()
 
-            ShopifyCheckoutKit.preload("https://shopify.dev/cart/123", activity)
+            preload("https://shopify.dev/cart/123", activity)
             ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
@@ -114,7 +157,7 @@ class ShopifyCheckoutKitTest {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
 
-            ShopifyCheckoutKit.preload("https://shopify.dev/cart/123", activity)
+            preload("https://shopify.dev/cart/123", activity)
             ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
@@ -125,7 +168,7 @@ class ShopifyCheckoutKitTest {
     fun `configure clears cached checkout view`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
-            ShopifyCheckoutKit.preload("https://shopify.dev/cart/123", activity)
+            preload("https://shopify.dev/cart/123", activity)
             ShadowLooper.shadowMainLooper().runToEndOfTasks()
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
@@ -143,7 +186,7 @@ class ShopifyCheckoutKitTest {
     fun `invalidate clears cached checkout view`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
-            ShopifyCheckoutKit.preload("https://shopify.dev/cart/123", activity)
+            preload("https://shopify.dev/cart/123", activity)
             ShadowLooper.shadowMainLooper().runToEndOfTasks()
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
@@ -153,6 +196,10 @@ class ShopifyCheckoutKitTest {
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
             assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
         }
+    }
+
+    private fun preload(url: String, activity: ComponentActivity) {
+        ShopifyCheckoutKit.preload(url, activity, webMessageTransport)
     }
 
     private companion object {

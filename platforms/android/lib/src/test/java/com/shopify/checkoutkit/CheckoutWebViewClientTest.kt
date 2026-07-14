@@ -12,6 +12,7 @@ import android.webkit.WebViewClient.ERROR_BAD_URL
 import androidx.activity.ComponentActivity
 import com.shopify.checkoutkit.CheckoutExceptionAssert.Companion.assertThat
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,6 +36,7 @@ class CheckoutWebViewClientTest {
     private lateinit var activity: ComponentActivity
     private val mockListener = mock<CheckoutListener>()
     private val checkoutWebViewListener = spy(CheckoutWebViewListener(mockListener))
+    private val webMessageTransport = FakeWebMessageTransport()
 
     @Before
     fun setUp() {
@@ -43,6 +45,12 @@ class CheckoutWebViewClientTest {
         // no activity resolves the intent. Robolectric defaults to silently recording the
         // intent instead — turning on checkActivities aligns the shadow with production.
         shadowOf(activity.application).checkActivities(true)
+    }
+
+    @After
+    fun tearDown() {
+        CheckoutWebView.clearCache()
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
     }
 
     @Test
@@ -381,7 +389,7 @@ class CheckoutWebViewClientTest {
     private fun viewWithProcessor(
         activity: ComponentActivity,
     ): CheckoutWebView {
-        val view = CheckoutWebView(activity)
+        val view = CheckoutWebView(activity, webMessageTransport)
         view.setListener(checkoutWebViewListener)
         return view
     }

@@ -1,6 +1,5 @@
 package com.shopify.checkoutkit
 
-import android.webkit.JavascriptInterface
 import androidx.core.net.toUri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp
@@ -14,18 +13,32 @@ import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonElement
 import java.net.URI
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+
+private object ProtocolMessageExecutor {
+    // WebMessageListener invokes callbacks on the UI thread; keep protocol parsing off it
+    // to prevent potentially freezing the application UI with an "app not responding" (ANR) error.
+    val executor: Executor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "ShopifyCheckoutKit-ECP").apply {
+            isDaemon = true
+        }
+    }
+}
 
 /**
- * Handles the Embedded Checkout Protocol (ECP) JS bridge.
+ * Connects the checkout WebView to an Embedded Checkout Protocol (ECP) client.
  *
- * Registered on the WebView as [INTERFACE_NAME] so checkout can call
- * `window.EmbeddedCheckoutProtocolConsumer.postMessage(jsonRpcString)`.
- * Responses are sent back via `window.EmbeddedCheckoutProtocol.postMessage(responseString)`.
+ * Messages arrive through [webMessageTransport] and responses are sent back via
+ * `window.EmbeddedCheckoutProtocol.postMessage(responseString)`.
  */
 internal class EmbeddedCheckoutProtocolBridge(
     private val view: CheckoutWebView,
+    private val webMessageTransport: WebMessageTransport,
     @Volatile private var client: CheckoutProtocol.Client? = null,
+    private val protocolMessageExecutor: Executor = ProtocolMessageExecutor.executor,
 ) {
+    private var isTransportAttached = false
     private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
     private val defaultClientBindings: Map<String, DefaultClientBinding> = mapOf(
         CheckoutProtocol.ready.method to DefaultClientBinding(
@@ -51,12 +64,48 @@ internal class EmbeddedCheckoutProtocolBridge(
             defaults = defaultClientBindings,
         )
 
+    internal fun attach() {
+        if (isTransportAttached) return
+
+        log.d(LOG_TAG, "Attaching ECP message transport.")
+        val attached = webMessageTransport.attach(
+            webView = view,
+            jsObjectName = INTERFACE_NAME,
+            allowedOriginRules = ALLOWED_MESSAGE_ORIGIN_RULES,
+        ) { message, isMainFrame ->
+            receiveWebMessage(message, isMainFrame)
+        }
+        if (!attached) throw UnsupportedWebViewException()
+        isTransportAttached = true
+    }
+
+    internal fun detach() {
+        if (!isTransportAttached) return
+
+        webMessageTransport.detach(view, INTERFACE_NAME)
+        isTransportAttached = false
+    }
+
     internal fun setClient(client: CheckoutProtocol.Client?) {
         this.client = client
     }
 
-    @JavascriptInterface
-    fun postMessage(message: String) {
+    private fun receiveWebMessage(message: String, isMainFrame: Boolean) {
+        if (!isMainFrame) {
+            log.d(LOG_TAG, "Ignoring ECP WebMessage from a child frame.")
+            return
+        }
+
+        receiveMessage(message)
+    }
+
+    internal fun receiveMessage(message: String) {
+        protocolMessageExecutor.execute {
+            processMessage(message)
+        }
+    }
+
+    private fun processMessage(message: String) {
         try {
             val request = decodeProtocolRequest(message)
             val method = CheckoutProtocol.supportedProtocolMethod(request)
@@ -85,15 +134,13 @@ internal class EmbeddedCheckoutProtocolBridge(
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.start.method}: hiding progress bar and bubbling up.")
         onMainThread {
             view.getListener().onCheckoutViewLoadComplete()
-            composedClient.process(message)
         }
+        composedClient.process(message)
     }
 
     private fun handleComplete(message: String) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.complete.method}: bubbling up.")
-        onMainThread {
-            composedClient.process(message)
-        }
+        composedClient.process(message)
     }
 
     /**
@@ -106,9 +153,7 @@ internal class EmbeddedCheckoutProtocolBridge(
      */
     private fun handleWindowOpenRequest(message: String) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.windowOpen.method}")
-        onMainThread {
-            composedClient.process(message)?.let { sendRaw(it) }
-        }
+        composedClient.process(message)?.let { sendRaw(it) }
     }
 
     /**
@@ -119,11 +164,9 @@ internal class EmbeddedCheckoutProtocolBridge(
      */
     private fun handleClientMessage(method: String, message: String) {
         log.d(LOG_TAG, "Delegating $method to client.")
-        onMainThread {
-            val response = composedClient.process(message)
-            log.d(LOG_TAG, "  client response: $response")
-            response?.let { sendRaw(it) }
-        }
+        val response = composedClient.process(message)
+        log.d(LOG_TAG, "  client response: $response")
+        response?.let { sendRaw(it) }
     }
 
     private fun sendError(id: JsonElement?, code: Int, message: String) {
@@ -132,19 +175,7 @@ internal class EmbeddedCheckoutProtocolBridge(
 
     private fun sendRaw(responseJson: String) {
         log.d(LOG_TAG, "Sending bridge response: $responseJson")
-        val escaped = responseJson
-            .replace("\\", "\\\\")
-            .replace("'", "\\'")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-        val script = """
-            |if (window.$ECP_RESPONSE_GLOBAL && window.$ECP_RESPONSE_GLOBAL.postMessage) {
-            |    window.$ECP_RESPONSE_GLOBAL.postMessage(JSON.parse('$escaped'));
-            |}
-        """.trimMargin()
-        onMainThread {
-            view.evaluateJavascript(script, null)
-        }
+        webMessageTransport.send(view, ECP_RESPONSE_GLOBAL, responseJson)
     }
 
     /**
@@ -206,11 +237,13 @@ internal class EmbeddedCheckoutProtocolBridge(
     companion object {
         private const val LOG_TAG = BaseWebView.ECP_LOG_TAG
 
-        /** Name under which this handler is registered as a JS interface on the WebView. */
+        /** Name of the JavaScript object registered to receive messages from checkout. */
         internal const val INTERFACE_NAME = "EmbeddedCheckoutProtocolConsumer"
 
         /** Global JS object the checkout uses to receive responses. */
         private const val ECP_RESPONSE_GLOBAL = "EmbeddedCheckoutProtocol"
+
+        private val ALLOWED_MESSAGE_ORIGIN_RULES = setOf("*")
 
         private const val CODE_PARSE_ERROR = -32700
         private const val CODE_METHOD_NOT_FOUND = -32601

@@ -1,5 +1,6 @@
 package com.shopify.checkoutkit
 
+import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import android.os.Looper
@@ -11,6 +12,8 @@ import android.webkit.WebChromeClient.FileChooserParams
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.awaitility.Awaitility.await
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -22,16 +25,19 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLooper
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 class CheckoutWebViewTest {
 
     private lateinit var activity: ComponentActivity
     private lateinit var initialConfiguration: Configuration
+    private lateinit var webMessageTransport: FakeWebMessageTransport
 
     @Before
     fun setUp() {
         initialConfiguration = ShopifyCheckoutKit.getConfiguration()
+        webMessageTransport = FakeWebMessageTransport()
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
@@ -53,7 +59,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `configures web view on initialization`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
 
         assertThat(view.visibility).isEqualTo(VISIBLE)
         assertThat(view.settings.javaScriptEnabled).isTrue
@@ -61,13 +67,32 @@ class CheckoutWebViewTest {
         assertThat(view.id).isNotNull
         assertThat(shadowOf(view).webViewClient.javaClass).isEqualTo(CheckoutWebView.CheckoutWebViewClient::class.java)
         assertThat(shadowOf(view).backgroundColor).isEqualTo(Color.TRANSPARENT)
-        assertThat(shadowOf(view).getJavascriptInterface(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME).javaClass)
-            .isEqualTo(EmbeddedCheckoutProtocolBridge::class.java)
+        assertThat(shadowOf(view).getJavascriptInterface(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)).isNull()
+        assertThat(webMessageTransport.attachCount).isEqualTo(1)
+        assertThat(webMessageTransport.lastAttachment?.webView).isSameAs(view)
+        assertThat(webMessageTransport.lastAttachment?.jsObjectName)
+            .isEqualTo(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)
+        assertThat(webMessageTransport.lastAttachment?.allowedOriginRules).containsExactly("*")
+    }
+
+    @Test
+    fun `detaches and reattaches WebMessage transport with view lifecycle`() {
+        val view = checkoutWebView(activity)
+        val shadow = shadowOf(view)
+
+        shadow.callOnDetachedFromWindow()
+        shadow.callOnAttachedToWindow()
+
+        assertThat(webMessageTransport.detachCount).isEqualTo(1)
+        assertThat(webMessageTransport.attachCount).isEqualTo(2)
+        assertThat(webMessageTransport.lastDetachment?.webView).isSameAs(view)
+        assertThat(webMessageTransport.lastDetachment?.jsObjectName)
+            .isEqualTo(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)
     }
 
     @Test
     fun `user agent suffix contains ShopifyCheckoutKit version and android platform`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
 
         assertThat(view.settings.userAgentString).contains("ShopifyCheckoutKit/")
         assertThat(view.settings.userAgentString).contains("(Android;")
@@ -76,7 +101,7 @@ class CheckoutWebViewTest {
     @Test
     fun `user agent suffix appends platform identifier and version when set`() {
         ShopifyCheckoutKit.configuration.platform = Platform.ReactNative("0.80.0")
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
 
         val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
         assertThat(view.settings.userAgentString)
@@ -88,7 +113,7 @@ class CheckoutWebViewTest {
     @Test
     fun `user agent suffix omits version when platform version is null`() {
         ShopifyCheckoutKit.configuration.platform = Platform.ReactNative()
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
 
         val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
         assertThat(view.settings.userAgentString)
@@ -96,29 +121,19 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `attaches javascript interface onAttachedToWindow`() {
-        val view = CheckoutWebView(activity)
+    fun `throws unsupported WebView exception when WebMessageListener is unsupported`() {
+        webMessageTransport.supported = false
 
-        val shadow = shadowOf(view)
-        shadow.callOnAttachedToWindow()
-
-        assertThat(shadow.getJavascriptInterface(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME).javaClass)
-            .isEqualTo(EmbeddedCheckoutProtocolBridge::class.java)
-    }
-
-    @Test
-    fun `removes javascript interface onDetachedFromWindow`() {
-        val view = CheckoutWebView(activity)
-
-        val shadow = shadowOf(view)
-        shadow.callOnDetachedFromWindow()
-
-        assertThat(shadow.getJavascriptInterface(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)).isNull()
+        assertThatThrownBy {
+            checkoutWebView(activity)
+        }
+            .isInstanceOf(UnsupportedWebViewException::class.java)
+            .hasMessage("This Android WebView does not support Shopify Checkout Kit.")
     }
 
     @Test
     fun `calls update progress when new progress is reported by WebChromeClient`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         val webViewListener = mock<CheckoutWebViewListener>()
         view.setListener(webViewListener)
 
@@ -133,7 +148,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `calls processors onPermissionRequest when resource permission requested`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         val webViewListener = mock<CheckoutWebViewListener>()
         view.setListener(webViewListener)
 
@@ -149,7 +164,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `calls processors onShowFileChooser when called on webChromeClient`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         val webViewListener = mock<CheckoutWebViewListener>()
         view.setListener(webViewListener)
 
@@ -164,7 +179,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `calls processors onGeolocationPermissionsShowPrompt when called on webChromeClient`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         val webViewListener = mock<CheckoutWebViewListener>()
         view.setListener(webViewListener)
 
@@ -178,11 +193,39 @@ class CheckoutWebViewTest {
         verify(webViewListener).onGeolocationPermissionsShowPrompt(origin, callback)
     }
 
+    // region ECP WebMessage transport
+
+    @Test
+    fun `web message is received by protocol bridge`() {
+        val view = checkoutWebView(activity)
+        var received = false
+        view.setClient(
+            CheckoutProtocol.Client()
+                .on(CheckoutProtocol.messagesChange) { received = true },
+        )
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage())
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(received).isTrue()
+        }
+    }
+
+    @Test
+    fun `web message from child frame is ignored`() {
+        assertWebMessageIgnored {
+            webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), isMainFrame = false)
+        }
+    }
+
+    // endregion
+
     @Test
     fun `removeFromParent() should remove parent if a parent exists but not destroy WebView`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val ctx = activityController.get()
-            val webView = CheckoutWebView(ctx)
+            val webView = checkoutWebView(ctx)
             val container = FrameLayout(ctx)
             container.addView(webView)
             assertThat(webView.parent).isNotNull()
@@ -200,7 +243,7 @@ class CheckoutWebViewTest {
     fun `removeFromParent() should do nothing if no parent exists`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val ctx = activityController.get()
-            val webView = CheckoutWebView(ctx)
+            val webView = checkoutWebView(ctx)
             webView.removeFromParent()
             shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
@@ -214,7 +257,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `loadCheckout appends ec_version to URL when absent`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
@@ -223,7 +266,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `loadCheckout preserves existing query params alongside ec_version`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123?foo=bar")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
@@ -234,7 +277,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `loadCheckout replaces ec_version when already present`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         val callerSuppliedVersion = "2026-01-23"
         val urlWithVersion = "https://checkout.shopify.com/cart/123?ec_version=$callerSuppliedVersion"
 
@@ -253,7 +296,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `preload creates cached checkout view with prefetch header`() {
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
@@ -266,11 +309,11 @@ class CheckoutWebViewTest {
 
     @Test
     fun `present consumes cached checkout view for matching URL`() {
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        val presentedView = CheckoutWebView.checkoutViewFor("https://checkout.shopify.com/cart/123", activity)
+        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isSameAs(cachedView)
@@ -281,11 +324,11 @@ class CheckoutWebViewTest {
 
     @Test
     fun `present discards cached checkout view for mismatched URL`() {
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        val presentedView = CheckoutWebView.checkoutViewFor("https://checkout.shopify.com/cart/456", activity)
+        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/456")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isNotSameAs(cachedView)
@@ -295,14 +338,11 @@ class CheckoutWebViewTest {
 
     @Test
     fun `present discards cached checkout view for mismatched query params`() {
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123?cart=first", activity)
+        preload("https://checkout.shopify.com/cart/123?cart=first")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        val presentedView = CheckoutWebView.checkoutViewFor(
-            "https://checkout.shopify.com/cart/123?cart=second",
-            activity,
-        )
+        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/123?cart=second")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isNotSameAs(cachedView)
@@ -316,12 +356,12 @@ class CheckoutWebViewTest {
         CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
             override fun currentTimeMillis(): Long = now
         }
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         now += 5 * 60 * 1000L
-        val presentedView = CheckoutWebView.checkoutViewFor("https://checkout.shopify.com/cart/123", activity)
+        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isNotSameAs(cachedView)
@@ -330,7 +370,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `invalidate destroys unpresented cached checkout view`() {
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
@@ -343,9 +383,9 @@ class CheckoutWebViewTest {
 
     @Test
     fun `invalidate does not destroy presented checkout view`() {
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
-        val presentedView = CheckoutWebView.checkoutViewFor("https://checkout.shopify.com/cart/123", activity)
+        val presentedView = checkoutViewFor("https://checkout.shopify.com/cart/123")
         presentedView.markPresented()
 
         CheckoutWebView.invalidate()
@@ -360,7 +400,7 @@ class CheckoutWebViewTest {
             it.preloading = Preloading(enabled = false)
         }
 
-        CheckoutWebView.preload("https://checkout.shopify.com/cart/123", activity)
+        preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
@@ -368,7 +408,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `loadCheckout does not send prefetch header for normal loads`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
@@ -382,7 +422,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `loadCheckout appends ec_delegate=window_open to URL`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
@@ -391,7 +431,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `loadCheckout replaces ec_delegate when already present`() {
-        val view = CheckoutWebView(activity)
+        val view = checkoutWebView(activity)
         val callerSuppliedDelegate = "custom"
         val urlWithDelegate = "https://checkout.shopify.com/cart/123?ec_delegate=$callerSuppliedDelegate"
 
@@ -405,4 +445,50 @@ class CheckoutWebViewTest {
     }
 
     // endregion
+
+    private fun checkoutWebView(context: Context): CheckoutWebView =
+        CheckoutWebView(context, webMessageTransport)
+
+    private fun preload(url: String) {
+        CheckoutWebView.preload(url, activity, webMessageTransport)
+    }
+
+    private fun checkoutViewFor(url: String): CheckoutWebView =
+        CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+
+    /**
+     * Verifies a WebMessage is ignored after a valid sentinel drains earlier protocol work.
+     * Because protocol processing is serial, receiving the sentinel rules out an async false positive.
+     */
+    private fun assertWebMessageIgnored(dispatchMessage: () -> Unit) {
+        val view = checkoutWebView(activity)
+        var ignoredMessageReceived = false
+        var sentinelReceived = false
+        view.setClient(
+            CheckoutProtocol.Client()
+                .on(CheckoutProtocol.messagesChange) { ignoredMessageReceived = true }
+                .on(CheckoutProtocol.start) { sentinelReceived = true },
+        )
+
+        dispatchMessage()
+        webMessageTransport.dispatchMessage(ecStartMessage())
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(sentinelReceived).isTrue()
+        }
+        assertThat(ignoredMessageReceived).isFalse()
+        assertThat(webMessageTransport.sentMessages).isEmpty()
+    }
+
+    private fun ecStartMessage(): String =
+        """{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":${checkoutJson()}}}"""
+
+    private fun ecMessagesChangeMessage(): String =
+        """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":${checkoutJson()}}}"""
+
+    private fun checkoutJson(): String {
+        val ucp = """{"payment_handlers":{},"version":"1.0"}"""
+        return """{"id":"chk1","currency":"USD","status":"incomplete","line_items":[],"totals":[],"links":[],"ucp":$ucp}"""
+    }
 }

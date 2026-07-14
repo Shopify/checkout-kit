@@ -36,6 +36,7 @@ internal class CheckoutBottomSheet(
     private val checkoutListener: CheckoutListener,
     private val activity: ComponentActivity,
     private val protocolClient: CheckoutProtocol.Client? = null,
+    private val webMessageTransport: WebMessageTransport = WebMessageListenerTransport,
 ) : ComponentDialog(activity, R.style.CheckoutKitBottomSheetDialog) {
 
     private var presentedCheckoutWebView: CheckoutWebView? = null
@@ -83,7 +84,7 @@ internal class CheckoutBottomSheet(
         onBackPressedDispatcher.addCallback(backNavigationCallback)
 
         log.d(LOG_TAG, "Finding or creating WebView.")
-        val checkoutWebView = CheckoutWebView.checkoutViewFor(checkoutUrl, activity)
+        val checkoutWebView = CheckoutWebView.checkoutViewFor(checkoutUrl, activity, webMessageTransport)
         presentedCheckoutWebView = checkoutWebView
 
         checkoutWebView.onResume()

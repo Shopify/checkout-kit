@@ -14,11 +14,20 @@ import androidx.activity.ComponentActivity
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import java.util.concurrent.CountDownLatch
 
-internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = null) :
-    BaseWebView(context, attributeSet) {
+internal class CheckoutWebView private constructor(
+    context: Context,
+    attributeSet: AttributeSet?,
+    webMessageTransport: WebMessageTransport,
+) : BaseWebView(context, attributeSet) {
+
+    constructor(context: Context, attributeSet: AttributeSet? = null) :
+        this(context, attributeSet, WebMessageListenerTransport)
+
+    internal constructor(context: Context, webMessageTransport: WebMessageTransport) :
+        this(context, null, webMessageTransport)
 
     private var listener = CheckoutWebViewListener(NoopCheckoutListener())
-    private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocolBridge(this)
+    private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocolBridge(this, webMessageTransport)
     private var loadComplete = false
     internal var isPresented = false
         private set
@@ -27,7 +36,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
     init {
         webViewClient = CheckoutWebViewClient()
-        addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)
+        embeddedCheckoutProtocol.attach()
         settings.userAgentString = "${settings.userAgentString} ${userAgentSuffix()}"
     }
 
@@ -53,14 +62,14 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        log.d(LOG_TAG, "Attached to window. Adding JavaScript interfaces.")
-        addJavascriptInterface(embeddedCheckoutProtocol, EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)
+        log.d(LOG_TAG, "Attached to window. Adding protocol bridge.")
+        embeddedCheckoutProtocol.attach()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        log.d(LOG_TAG, "Detached from window. Removing JavaScript interfaces.")
-        removeJavascriptInterface(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)
+        log.d(LOG_TAG, "Detached from window. Removing protocol bridge.")
+        embeddedCheckoutProtocol.detach()
     }
 
     fun loadCheckout(url: String, isPreload: Boolean = false) {
@@ -145,31 +154,43 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         private const val LOG_TAG = "CheckoutWebView"
         private const val SHOPIFY_PURPOSE_HEADER = "Shopify-Purpose"
         private const val PREFETCH_PURPOSE = "prefetch"
-
         private val preloadCache = PreloadCache()
+
         internal var cacheClock: PreloadCache.Clock
             get() = preloadCache.clock
             set(value) {
                 preloadCache.clock = value
             }
 
-        fun preload(url: String, activity: ComponentActivity) {
+        fun preload(
+            url: String,
+            activity: ComponentActivity,
+            webMessageTransport: WebMessageTransport = WebMessageListenerTransport,
+        ) {
             if (!ShopifyCheckoutKit.configuration.preloading.enabled) {
                 return
             }
 
-            runOnUiThreadBlocking(activity) {
-                invalidate()
-                val view = CheckoutWebView(activity as Context).apply {
-                    loadCheckout(url, isPreload = true)
-                    log.d(LOG_TAG, "Pausing preloaded WebView.")
-                    onPause()
+            try {
+                runOnUiThreadBlocking(activity) {
+                    invalidate()
+                    val view = CheckoutWebView(activity as Context, webMessageTransport).apply {
+                        loadCheckout(url, isPreload = true)
+                        log.d(LOG_TAG, "Pausing preloaded WebView.")
+                        onPause()
+                    }
+                    preloadCache.store(PreloadKey.forUrl(url), view)
                 }
-                preloadCache.store(PreloadKey.forUrl(url), view)
+            } catch (_: UnsupportedWebViewException) {
+                return
             }
         }
 
-        fun checkoutViewFor(url: String, activity: ComponentActivity): CheckoutWebView {
+        fun checkoutViewFor(
+            url: String,
+            activity: ComponentActivity,
+            webMessageTransport: WebMessageTransport = WebMessageListenerTransport,
+        ): CheckoutWebView {
             var checkoutWebView: CheckoutWebView? = null
             runOnUiThreadBlocking(activity) {
                 val cachedView = if (ShopifyCheckoutKit.configuration.preloading.enabled) {
@@ -180,7 +201,7 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
                 }
 
                 checkoutWebView = cachedView ?: run {
-                    CheckoutWebView(activity as Context).apply {
+                    CheckoutWebView(activity as Context, webMessageTransport).apply {
                         loadCheckout(url)
                     }
                 }
@@ -206,12 +227,14 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
                 return
             }
 
+            var result: Result<Unit>? = null
             val countDownLatch = CountDownLatch(1)
             activity.runOnUiThread {
-                action()
+                result = runCatching { action() }
                 countDownLatch.countDown()
             }
             countDownLatch.await()
+            result?.getOrThrow()
         }
 
         private fun runOnMainThread(action: () -> Unit) {
@@ -223,7 +246,5 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         }
 
         internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedViewForTesting()
-
-        internal fun hasCacheEntryForTesting(): Boolean = preloadCache.hasEntry
     }
 }

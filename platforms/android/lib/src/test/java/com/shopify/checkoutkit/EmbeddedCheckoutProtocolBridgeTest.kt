@@ -10,6 +10,7 @@ import com.shopify.ucp.embedded.checkout.WindowOpenRequest
 import com.shopify.ucp.embedded.checkout.windowOpenRejected
 import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -18,7 +19,6 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -26,14 +26,18 @@ import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import java.util.concurrent.Executor
 
 @RunWith(RobolectricTestRunner::class)
+@Suppress("LargeClass")
 class EmbeddedCheckoutProtocolBridgeTest {
 
     private lateinit var activity: ComponentActivity
     private lateinit var viewSpy: CheckoutWebView
     private lateinit var mockListener: CheckoutWebViewListener
     private lateinit var ecp: EmbeddedCheckoutProtocolBridge
+    private val directExecutor = Executor { it.run() }
+    private val webMessageTransport = FakeWebMessageTransport()
 
     @Before
     fun setUp() {
@@ -44,49 +48,82 @@ class EmbeddedCheckoutProtocolBridgeTest {
         // no activity resolves the intent. Robolectric defaults to silently recording the
         // intent instead — turning on checkActivities aligns the shadow with production.
         shadowOf(activity.application).checkActivities(true)
-        viewSpy = Mockito.spy(CheckoutWebView(activity))
+        viewSpy = Mockito.spy(CheckoutWebView(activity, webMessageTransport))
         mockListener = mock()
         whenever(viewSpy.getListener()).thenReturn(mockListener)
-        ecp = EmbeddedCheckoutProtocolBridge(viewSpy)
+        ecp = EmbeddedCheckoutProtocolBridge(
+            viewSpy,
+            webMessageTransport,
+            protocolMessageExecutor = directExecutor,
+        )
+    }
+
+    @After
+    fun tearDown() {
+        CheckoutWebView.clearCache()
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+    }
+
+    @Test
+    fun `receive message queues protocol processing on protocol message executor`() {
+        var queuedCommand: Runnable? = null
+        val deferredExecutor = Executor { command ->
+            queuedCommand = command
+        }
+        val asyncBridge = EmbeddedCheckoutProtocolBridge(
+            viewSpy,
+            webMessageTransport,
+            protocolMessageExecutor = deferredExecutor,
+        )
+
+        asyncBridge.receiveMessage(ecReadyMessage())
+
+        assertThat(queuedCommand).isNotNull()
+        assertThat(webMessageTransport.sentMessages).isEmpty()
+
+        queuedCommand!!.run()
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(webMessageTransport.sentMessages).hasSize(1)
     }
 
     // region ec.ready
 
     @Test
     fun `ec ready returns a ucp success result without a delegate echo`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(ecReadyMessage())
+        val response = captureSentMessage {
+            ecp.receiveMessage(ecReadyMessage())
         }
-        assertThat(js).contains("\"result\"")
-        assertThat(js).contains("\"ucp\"")
-        assertThat(js).contains("\"status\":\"success\"")
-        assertThat(js).contains("\"version\":\"${CheckoutProtocol.SPEC_VERSION}\"")
-        assertThat(js).doesNotContain("\"delegate\"")
-        assertThat(js).doesNotContain("\"error\"")
+        assertThat(response).contains("\"result\"")
+        assertThat(response).contains("\"ucp\"")
+        assertThat(response).contains("\"status\":\"success\"")
+        assertThat(response).contains("\"version\":\"${CheckoutProtocol.SPEC_VERSION}\"")
+        assertThat(response).doesNotContain("\"delegate\"")
+        assertThat(response).doesNotContain("\"error\"")
     }
 
     @Test
     fun `ec ready ACK echoes string request id`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(ecReadyMessage(id = "\"req-42\""))
+        val response = captureSentMessage {
+            ecp.receiveMessage(ecReadyMessage(id = "\"req-42\""))
         }
-        assertThat(js).contains("\"id\":\"req-42\"")
+        assertThat(response).contains("\"id\":\"req-42\"")
     }
 
     @Test
     fun `ec ready ACK echoes numeric id`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":7,"params":{"delegate":[]}}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":7,"params":{"delegate":[]}}""")
         }
-        assertThat(js).contains("\"id\":7")
+        assertThat(response).contains("\"id\":7")
     }
 
     @Test
     fun `ec ready ACK echoes null request id`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":null,"params":{"delegate":[]}}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":null,"params":{"delegate":[]}}""")
         }
-        assertThat(js).contains("\"id\":null")
+        assertThat(response).contains("\"id\":null")
     }
 
     @Test
@@ -100,54 +137,54 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `ec ready response dispatches via window EmbeddedCheckoutProtocol`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(ecReadyMessage())
+    fun `ec ready response targets EmbeddedCheckoutProtocol`() {
+        captureSentMessage {
+            ecp.receiveMessage(ecReadyMessage())
         }
-        assertThat(js).contains("window.EmbeddedCheckoutProtocol")
-        assertThat(js).contains(".postMessage(")
+        assertThat(webMessageTransport.sentMessages.single().targetObjectName)
+            .isEqualTo("EmbeddedCheckoutProtocol")
     }
 
     @Test
     fun `ec ready with non-string delegate values sends invalid params`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
+        val response = captureSentMessage {
+            ecp.receiveMessage(
                 """{"jsonrpc":"2.0","method":"ec.ready","id":"r2","params":{"delegate":["window.open",null,{}]}}"""
             )
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
-        assertThat(js).contains(""""id":"r2"""")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32602")
+        assertThat(response).contains(""""id":"r2"""")
     }
 
     @Test
     fun `ec ready omits delegate field when no supported delegations requested`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
+        val response = captureSentMessage {
+            ecp.receiveMessage(
                 """{"jsonrpc":"2.0","method":"ec.ready","id":"r3","params":{"delegate":["fulfillment.address_change"]}}"""
             )
         }
-        assertThat(js).doesNotContain("\"delegate\"")
-        assertThat(js).contains("\"status\":\"success\"")
+        assertThat(response).doesNotContain("\"delegate\"")
+        assertThat(response).contains("\"status\":\"success\"")
     }
 
     @Test
     fun `ec ready omits delegate field when delegate array is empty`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"r4","params":{"delegate":[]}}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"r4","params":{"delegate":[]}}""")
         }
-        assertThat(js).doesNotContain("\"delegate\"")
-        assertThat(js).contains("\"status\":\"success\"")
+        assertThat(response).doesNotContain("\"delegate\"")
+        assertThat(response).contains("\"status\":\"success\"")
     }
 
     @Test
     fun `ec ready without a delegate key sends invalid params`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"r5","params":{}}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"r5","params":{}}""")
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
-        assertThat(js).contains(""""id":"r5"""")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32602")
+        assertThat(response).contains(""""id":"r5"""")
     }
 
     // endregion
@@ -214,12 +251,12 @@ class EmbeddedCheckoutProtocolBridgeTest {
     fun `window open launches intent when activity resolves the uri`() {
         registerFakeBrowserFor("https://example.com")
 
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "\"7\"", url = "https://example.com"))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"7\"", url = "https://example.com"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"status\":\"success\"")
+        assertThat(response).contains("\"status\":\"success\"")
         val launched = shadowOf(activity).nextStartedActivity
         assertThat(launched).isNotNull()
         assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)
@@ -228,13 +265,13 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @Test
     fun `window open emits UCP rejection when no activity resolves the uri`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "\"42\"", url = "https://nothing-resolves.invalid"))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"42\"", url = "https://nothing-resolves.invalid"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
-        assertThat(js).contains("\"severity\":\"unrecoverable\"")
+        assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(response).contains("\"severity\":\"unrecoverable\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
 
@@ -244,12 +281,12 @@ class EmbeddedCheckoutProtocolBridgeTest {
         // Empty typed client — no .on(CheckoutProtocol.windowOpen) registered.
         ecp.setClient(CheckoutProtocol.Client())
 
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"status\":\"success\"")
+        assertThat(response).contains("\"status\":\"success\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNotNull()
     }
 
@@ -262,13 +299,13 @@ class EmbeddedCheckoutProtocolBridgeTest {
             }
         ecp.setClient(merchantClient)
 
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
-        assertThat(js).contains("merchant says no")
+        assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(response).contains("merchant says no")
         // Kit default never ran — no intent launched.
         assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
@@ -283,7 +320,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
             }
         ecp.setClient(merchantClient)
 
-        ecp.postMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com/promo?id=42"))
+        ecp.receiveMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com/promo?id=42"))
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(captured).isNotNull()
@@ -292,44 +329,44 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @Test
     fun `window open emits invalid params when params url is missing`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"9","params":{}}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"9","params":{}}""")
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32602")
     }
 
     @Test
     fun `window open emits invalid params when params url is null`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
+        val response = captureSentMessage {
+            ecp.receiveMessage(
                 """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"10","params":{"url":null}}"""
             )
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32602")
     }
 
     @Test
     fun `window open emits invalid params when params url is not a string`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(
+        val response = captureSentMessage {
+            ecp.receiveMessage(
                 """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"11","params":{"url":{}}}"""
             )
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32602")
     }
 
     @Test
     fun `window open emits UCP rejection when url does not resolve to an activity`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "\"13\"", url = "https://example.com/a b"))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"13\"", url = "https://example.com/a b"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
-        assertThat(js).contains("\"severity\":\"unrecoverable\"")
+        assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(response).contains("\"severity\":\"unrecoverable\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
 
@@ -337,34 +374,34 @@ class EmbeddedCheckoutProtocolBridgeTest {
     fun `window open rejects a malformed url before launching even when an activity resolves it`() {
         registerFakeBrowserFor("https://example.com/a b")
 
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "\"14\"", url = "https://example.com/a b"))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"14\"", url = "https://example.com/a b"))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
-        assertThat(js).contains("\"severity\":\"unrecoverable\"")
+        assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(response).contains("\"severity\":\"unrecoverable\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
 
     @Test
     fun `window open rejects a blank url before launching`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "\"15\"", url = "   "))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"15\"", url = "   "))
         }
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"code\":\"window_open_rejected_error\"")
+        assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNull()
     }
 
     @Test
     fun `window open emits invalid params when params is not an object`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"12","params":[]}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.window.open_request","id":"12","params":[]}""")
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32602")
     }
 
     @Test
@@ -373,12 +410,12 @@ class EmbeddedCheckoutProtocolBridgeTest {
             .on(CheckoutProtocol.windowOpen) { windowOpenSuccess() }
         ecp.setClient(merchantClient)
 
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "null", url = "https://example.com"))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "null", url = "https://example.com"))
         }
 
-        assertThat(js).contains("\"id\":null")
-        assertThat(js).contains("\"status\":\"success\"")
+        assertThat(response).contains("\"id\":null")
+        assertThat(response).contains("\"status\":\"success\"")
     }
 
     @Test
@@ -399,7 +436,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @Test
     fun `ec start hides progress bar`() {
-        ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}""")
+        ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}""")
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         verify(mockListener).onCheckoutViewLoadComplete()
     }
@@ -411,7 +448,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
             .on(CheckoutProtocol.start) { received = true }
         ecp.setClient(client)
 
-        ecp.postMessage(ecStartMessage())
+        ecp.receiveMessage(ecStartMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received).isTrue()
@@ -421,10 +458,10 @@ class EmbeddedCheckoutProtocolBridgeTest {
     fun `ec start sends no response to checkout`() {
         ecp.setClient(CheckoutProtocol.Client())
 
-        ecp.postMessage(ecStartMessage())
+        ecp.receiveMessage(ecStartMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(viewSpy, never()).evaluateJavascript(any(), any())
+        assertThat(webMessageTransport.sentMessages).isEmpty()
     }
 
     // endregion
@@ -439,7 +476,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
             .on(CheckoutProtocol.error) { received = true }
         ecp.setClient(client)
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received).isTrue()
@@ -453,7 +490,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
             .on(CheckoutProtocol.error) { received = true }
         ecp.setClient(client)
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received).isTrue()
@@ -466,11 +503,11 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @Test
     fun `ec error with unrecoverable severity invalidates cached preload`() {
-        CheckoutWebView.preload("https://shopify.dev/cart/123", activity)
+        CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        ecp.postMessage(ecErrorMessage(severity = "unrecoverable"))
+        ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
@@ -485,7 +522,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
             .on(CheckoutProtocol.error) { received = true }
         ecp.setClient(client)
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received).isTrue()
@@ -499,7 +536,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val rawMessage = ecErrorMessage(severity = "recoverable")
         ecp.setClient(CheckoutProtocol.Client())
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(mockListener, never()).onCheckoutViewFailedWithError(any())
@@ -510,7 +547,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val rawMessage = ecErrorMessage(severity = "requires_buyer_input")
         ecp.setClient(CheckoutProtocol.Client())
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(mockListener, never()).onCheckoutViewFailedWithError(any())
@@ -521,7 +558,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val rawMessage = ecErrorMessage(severity = "requires_buyer_review")
         ecp.setClient(CheckoutProtocol.Client())
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(mockListener, never()).onCheckoutViewFailedWithError(any())
@@ -537,7 +574,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val rawMessage = ecErrorMessageWithMessages(messages)
         ecp.setClient(CheckoutProtocol.Client())
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(mockListener).onCheckoutViewFailedWithError(
@@ -552,7 +589,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
             .on(CheckoutProtocol.error) { fail("Malformed ec.error should not dispatch") }
         ecp.setClient(client)
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         verify(mockListener, never()).onCheckoutViewFailedWithError(any())
@@ -569,7 +606,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
             .on(CheckoutProtocol.complete) { received = true }
         ecp.setClient(client)
 
-        ecp.postMessage(ecCompleteMessage())
+        ecp.receiveMessage(ecCompleteMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(received).isTrue()
@@ -577,11 +614,11 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @Test
     fun `ec complete invalidates cached preload`() {
-        CheckoutWebView.preload("https://shopify.dev/cart/123", activity)
+        CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        ecp.postMessage(ecCompleteMessage())
+        ecp.receiveMessage(ecCompleteMessage())
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
@@ -607,11 +644,11 @@ class EmbeddedCheckoutProtocolBridgeTest {
             }
         ecp.setClient(client)
 
-        val js = captureEvaluatedJs { ecp.postMessage(rawMessage) }
+        val response = captureSentMessage { ecp.receiveMessage(rawMessage) }
 
-        assertThat(js).contains("window.EmbeddedCheckoutProtocol")
-        assertThat(js).contains(".postMessage(")
-        assertThat(js).contains("merchant says no")
+        assertThat(webMessageTransport.sentMessages.single().targetObjectName)
+            .isEqualTo("EmbeddedCheckoutProtocol")
+        assertThat(response).contains("merchant says no")
     }
 
     @Test
@@ -621,10 +658,10 @@ class EmbeddedCheckoutProtocolBridgeTest {
             .on(CheckoutProtocol.messagesChange) { /* no-op */ }
         ecp.setClient(client)
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(viewSpy, never()).evaluateJavascript(any(), any())
+        assertThat(webMessageTransport.sentMessages).isEmpty()
     }
 
     @Test
@@ -634,26 +671,26 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @Test
     fun `unknown request with no client returns method not found`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"unknownMethod","id":"11"}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"unknownMethod","id":"11"}""")
         }
 
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32601")
-        assertThat(js).contains("Method not found")
-        assertThat(js).contains(""""id":"11"""")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32601")
+        assertThat(response).contains("Method not found")
+        assertThat(response).contains(""""id":"11"""")
     }
 
     @Test
     fun `unknown request with null id returns method not found`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"unknownMethod","id":null}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"unknownMethod","id":null}""")
         }
 
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32601")
-        assertThat(js).contains("Method not found")
-        assertThat(js).contains("\"id\":null")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32601")
+        assertThat(response).contains("Method not found")
+        assertThat(response).contains("\"id\":null")
     }
 
     @Test
@@ -669,40 +706,40 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @Test
     fun `malformed JSON sends parse error`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("not valid json {{{")
+        val response = captureSentMessage {
+            ecp.receiveMessage("not valid json {{{")
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32700")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32700")
     }
 
     @Test
     fun `message missing method field sends parse error`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","id":"12"}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","id":"12"}""")
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32700")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32700")
     }
 
     @Test
     fun `ec ready with non-object params sends invalid params`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"13","params":[]}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"13","params":[]}""")
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
-        assertThat(js).contains(""""id":"13"""")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32602")
+        assertThat(response).contains(""""id":"13"""")
     }
 
     @Test
     fun `ec ready with non-array delegate sends invalid params`() {
-        val js = captureEvaluatedJs {
-            ecp.postMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"14","params":{"delegate":{}}}""")
+        val response = captureSentMessage {
+            ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.ready","id":"14","params":{"delegate":{}}}""")
         }
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32602")
-        assertThat(js).contains(""""id":"14"""")
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32602")
+        assertThat(response).contains(""""id":"14"""")
     }
 
     // endregion
@@ -720,23 +757,23 @@ class EmbeddedCheckoutProtocolBridgeTest {
     private fun assertIgnoredByBridge(rawMessage: String) {
         ecp.setClient(CheckoutProtocol.Client())
 
-        ecp.postMessage(rawMessage)
+        ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(viewSpy, never()).evaluateJavascript(any(), any())
+        assertThat(webMessageTransport.sentMessages).isEmpty()
     }
 
     private fun assertMethodNotFoundByBridge(rawMessage: String, expectedId: String) {
         ecp.setClient(CheckoutProtocol.Client())
 
-        val js = captureEvaluatedJs {
-            ecp.postMessage(rawMessage)
+        val response = captureSentMessage {
+            ecp.receiveMessage(rawMessage)
         }
 
-        assertThat(js).contains("\"error\"")
-        assertThat(js).contains("-32601")
-        assertThat(js).contains("Method not found")
-        assertThat(js).contains(expectedId)
+        assertThat(response).contains("\"error\"")
+        assertThat(response).contains("-32601")
+        assertThat(response).contains("Method not found")
+        assertThat(response).contains(expectedId)
     }
 
     private fun ecErrorMessage(severity: String): String {
@@ -772,16 +809,13 @@ class EmbeddedCheckoutProtocolBridgeTest {
         private const val ERROR_RESPONSE_UCP = """"ucp":{"version":"2026-04-08","status":"error"}"""
     }
 
-    /**
-     * Runs [block], drains the main-thread queue, captures the first JS string
-     * passed to [CheckoutWebView.evaluateJavascript].
-     */
-    private fun captureEvaluatedJs(block: () -> Unit): String {
+    /** Runs [block], drains the main-thread queue, and captures the raw response message. */
+    private fun captureSentMessage(block: () -> Unit): String {
+        val initialMessageCount = webMessageTransport.sentMessages.size
         block()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-        val captor = argumentCaptor<String>()
-        verify(viewSpy).evaluateJavascript(captor.capture(), isNull())
-        return captor.firstValue
+        assertThat(webMessageTransport.sentMessages).hasSize(initialMessageCount + 1)
+        return webMessageTransport.sentMessages.last().message
     }
 
     /**

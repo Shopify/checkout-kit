@@ -110,6 +110,7 @@ public final class com/shopify/checkoutkit/CheckoutKitException : com/shopify/ch
 	public static final field ERROR_SENDING_MESSAGE_TO_CHECKOUT Ljava/lang/String;
 	public static final field RENDER_PROCESS_GONE Ljava/lang/String;
 	public static final field UNKNOWN Ljava/lang/String;
+	public static final field WEB_VIEW_NOT_SUPPORTED Ljava/lang/String;
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
