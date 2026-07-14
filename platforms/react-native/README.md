@@ -989,3 +989,5 @@ See the [contributing documentation](CONTRIBUTING.md) for details on how to get 
 ## License
 
 Shopify's Checkout Kit is provided under an [MIT License](LICENSE).
+
+<!-- e2e skip check -->
