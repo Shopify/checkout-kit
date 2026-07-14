@@ -1,5 +1,7 @@
 package com.shopify.checkoutkit
 
+import android.app.Activity
+
 internal data class PreloadKey(val url: String) {
     companion object {
         fun forUrl(url: String): PreloadKey {
@@ -40,10 +42,14 @@ internal class PreloadCache {
         )
     }
 
-    fun take(key: PreloadKey): CheckoutWebView? = when (val cached = entry) {
+    fun take(key: PreloadKey, activity: Activity?): CheckoutWebView? = when (val cached = entry) {
         null -> null
         else -> if (!cached.isValid(key, clock.currentTimeMillis())) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
+            invalidate()
+            null
+        } else if (activity == null || cached.view.context.findActivity() !== activity) {
+            ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding preloaded WebView created for a different Activity.")
             invalidate()
             null
         } else {

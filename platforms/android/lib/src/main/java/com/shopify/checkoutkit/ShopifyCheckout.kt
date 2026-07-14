@@ -42,6 +42,9 @@ import com.shopify.checkoutkit.ShopifyCheckoutKit.log
  * The view owns checkout chrome, WebView navigation, loading UI, callbacks, and protocol
  * connectivity. Its parent owns presentation state, geometry, and dismissal gestures. Call
  * [destroy] when the view is permanently removed so the underlying WebView is released promptly.
+ * A matching checkout preloaded with [ShopifyCheckoutKit.preload] is reused only when its [Context]
+ * resolves to the same activity instance passed to `preload`; activity-backed context wrappers are
+ * supported. Otherwise the cached preload is discarded and checkout loads normally.
  */
 @SuppressLint("ViewConstructor")
 public class ShopifyCheckout @MainThread internal constructor(
