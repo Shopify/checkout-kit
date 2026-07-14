@@ -133,7 +133,7 @@ struct ClientTests {
     @Test @MainActor func notificationDecodeFailureReportsOnDecodeError() async {
         let recorder = DecodeErrorRecorder()
         let client = EmbeddedCheckoutProtocol.Client()
-            .onDecodeError { method, error in recorder.record(method: method, error: error) }
+            .onDecodeError { method, error, _ in recorder.record(method: method, error: error) }
             .on(EmbeddedCheckoutProtocol.Event.start) { _ in }
 
         let bad = #"{"jsonrpc":"2.0","method":"ec.start","params":{}}"#
@@ -146,7 +146,7 @@ struct ClientTests {
     @Test @MainActor func requestDecodeFailureReportsOnDecodeError() async {
         let recorder = DecodeErrorRecorder()
         let client = EmbeddedCheckoutProtocol.Client()
-            .onDecodeError { method, error in recorder.record(method: method, error: error) }
+            .onDecodeError { method, error, _ in recorder.record(method: method, error: error) }
             .on(windowOpenDescriptor) { _ in .success }
         let request = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":null}}
@@ -162,7 +162,7 @@ struct ClientTests {
         let recorder = DecodeErrorRecorder()
         let client = EmbeddedCheckoutProtocol.Client()
             .on(EmbeddedCheckoutProtocol.Event.start) { _ in }
-            .onDecodeError { method, error in recorder.record(method: method, error: error) }
+            .onDecodeError { method, error, _ in recorder.record(method: method, error: error) }
 
         let bad = #"{"jsonrpc":"2.0","method":"ec.start","params":{}}"#
         _ = await client.process(bad)
@@ -175,7 +175,7 @@ struct ClientTests {
         let recorder = DecodeErrorRecorder()
         let client = EmbeddedCheckoutProtocol.Client()
             .on(windowOpenDescriptor) { _ in .success }
-            .onDecodeError { method, error in recorder.record(method: method, error: error) }
+            .onDecodeError { method, error, _ in recorder.record(method: method, error: error) }
         let request = #"""
         {"jsonrpc":"2.0","id":"req-window-1","method":"ec.window.open_request","params":{"url":null}}
         """#

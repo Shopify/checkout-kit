@@ -1,7 +1,7 @@
 import Foundation
 
 extension EmbeddedCheckoutProtocol {
-    public typealias DecodeErrorHandler = @Sendable (_ method: String, _ error: Error) -> Void
+    public typealias DecodeErrorHandler = @Sendable (_ method: String, _ error: Error, _ params: Data) -> Void
 
     public struct Client: Sendable, MutableCopyable {
         private var notificationHandlers: [String: @MainActor @Sendable (Data, DecodeErrorHandler?) -> Void]
@@ -38,7 +38,7 @@ extension EmbeddedCheckoutProtocol {
                     do {
                         payload = try descriptor.decode(params)
                     } catch {
-                        onDecodeError?(descriptor.method, error)
+                        onDecodeError?(descriptor.method, error, params)
                         return
                     }
                     let message = NotificationMessage(method: descriptor.method, params: payload)
@@ -60,7 +60,7 @@ extension EmbeddedCheckoutProtocol {
                         do {
                             payload = try descriptor.decode(params)
                         } catch {
-                            onDecodeError?(descriptor.method, error)
+                            onDecodeError?(descriptor.method, error, params)
                             return EmbeddedCheckoutProtocol.encodeErrorResponse(
                                 id: id,
                                 code: EmbeddedCheckoutProtocol.invalidParamsCode,
