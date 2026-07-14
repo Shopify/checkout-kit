@@ -626,6 +626,14 @@ public final class com/shopify/ucp/embedded/checkout/CheckoutTotal$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class com/shopify/ucp/embedded/checkout/Client {
+	public fun <init> ()V
+	public final fun on (Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/ucp/embedded/checkout/Client;
+	public final fun on (Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/ucp/embedded/checkout/Client;
+	public final fun onDecodeError (Lkotlin/jvm/functions/Function3;)Lcom/shopify/ucp/embedded/checkout/Client;
+	public final fun process (Ljava/lang/String;)Ljava/lang/String;
+}
+
 public final class com/shopify/ucp/embedded/checkout/ContentType : java/lang/Enum {
 	public static final field Companion Lcom/shopify/ucp/embedded/checkout/ContentType$Companion;
 	public static final field Markdown Lcom/shopify/ucp/embedded/checkout/ContentType;
@@ -898,6 +906,7 @@ public final class com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocolKt 
 	public static final fun decodeProtocolRequest (Ljava/lang/String;)Lcom/shopify/ucp/embedded/checkout/EcpRequest;
 	public static final fun encodeJsonRpcError (Lkotlinx/serialization/json/JsonElement;ILjava/lang/String;)Ljava/lang/String;
 	public static final fun encodeJsonRpcResult (Lkotlinx/serialization/json/JsonElement;Lkotlinx/serialization/json/JsonElement;)Ljava/lang/String;
+	public static final fun hasValidJsonRpcRequestId (Lcom/shopify/ucp/embedded/checkout/EcpRequest;)Z
 	public static final fun jsonRpcRequestId (Lkotlinx/serialization/json/JsonElement;)Lkotlinx/serialization/json/JsonElement;
 }
 

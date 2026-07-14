@@ -402,6 +402,38 @@ class CheckoutProtocolTest {
     }
 
     @Test
+    fun `process logs raw decode failure params at debug level in debug mode`() {
+        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.DEBUG }
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.error) {}
+
+        val malformed = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
+            """{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":"not-an-array"}}}"""
+        client.process(malformed)
+
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.DEBUG && it.msg.contains("not-an-array")
+            }
+        ).isTrue()
+    }
+
+    @Test
+    fun `process omits raw decode failure params when not in debug mode`() {
+        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.WARN }
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.error) {}
+
+        val malformed = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
+            """{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":"not-an-array"}}}"""
+        client.process(malformed)
+
+        assertThat(
+            ShadowLog.getLogs().none { it.msg.contains("not-an-array") }
+        ).isTrue()
+    }
+
+    @Test
     fun `message model decodes all message types`() {
         val cases = listOf(
             "error" to MessageType.Error,
