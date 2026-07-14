@@ -16,40 +16,44 @@ internal class PreloadCache {
         open fun currentTimeMillis(): Long = System.currentTimeMillis()
     }
 
-    private data class Entry(
+    private class Entry(
         val key: PreloadKey,
         val view: CheckoutWebView,
         val createdAt: Long,
         val ttl: Long = PRELOAD_TTL_MS,
     ) {
+        var observer: WeakReference<CheckoutPreload>? = null
+        var state: PreloadState = PreloadState.Idle
+            private set
+
         fun isValid(key: PreloadKey, now: Long): Boolean {
             return this.key == key && now - createdAt < ttl
+        }
+
+        fun transition(state: PreloadState) {
+            if (this.state == state) return
+            this.state = state
+            observer?.get()?.receive(state)
         }
     }
 
     var clock: Clock = Clock()
     private var entry: Entry? = null
-    private var observer: WeakReference<CheckoutPreload>? = null
-
-    var state: PreloadState = PreloadState.Idle
-        private set
+    private val handles = mutableMapOf<PreloadKey, WeakReference<CheckoutPreload>>()
 
     val hasEntry: Boolean
         get() = entry != null
 
-    fun setObserver(observer: CheckoutPreload) {
-        this.observer = WeakReference(observer)
+    fun register(handle: CheckoutPreload, key: PreloadKey) {
+        handles[key] = WeakReference(handle)
+        entry?.takeIf { it.key == key && it.isValid(key, clock.currentTimeMillis()) }?.let {
+            it.observer = WeakReference(handle)
+            handle.receive(it.state)
+        }
     }
 
     fun transition(view: CheckoutWebView, state: PreloadState) {
-        if (entry?.view !== view) return
-        if (this.state == state) return
-        transition(state)
-    }
-
-    private fun transition(state: PreloadState) {
-        this.state = state
-        observer?.get()?.receive(state)
+        entry?.takeIf { it.view === view }?.transition(state)
     }
 
     fun store(key: PreloadKey, view: CheckoutWebView) {
@@ -58,8 +62,10 @@ internal class PreloadCache {
             key = key,
             view = view,
             createdAt = clock.currentTimeMillis(),
-        )
-        transition(PreloadState.Loading)
+        ).apply {
+            observer = handles[key]
+            transition(PreloadState.Loading)
+        }
     }
 
     fun take(key: PreloadKey): CheckoutWebView? = when (val cached = entry) {
@@ -86,8 +92,9 @@ internal class PreloadCache {
     }
 
     fun evict(state: PreloadState) {
+        val cached = entry ?: return
         invalidate()
-        transition(state)
+        cached.transition(state)
     }
 
     fun cachedViewForTesting(): CheckoutWebView? = entry?.view

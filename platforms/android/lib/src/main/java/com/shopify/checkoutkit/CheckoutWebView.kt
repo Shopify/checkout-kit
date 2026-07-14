@@ -266,7 +266,7 @@ internal class CheckoutWebView private constructor(
             }
         }
 
-        internal fun newPreloadHandle(): CheckoutPreload = CheckoutPreload(preloadCache)
+        internal fun newPreloadHandle(key: PreloadKey): CheckoutPreload = CheckoutPreload(key, preloadCache)
 
         internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedViewForTesting()
 

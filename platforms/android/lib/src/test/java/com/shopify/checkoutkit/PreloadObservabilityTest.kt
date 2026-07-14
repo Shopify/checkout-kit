@@ -99,19 +99,24 @@ class PreloadObservabilityTest {
     }
 
     @Test
-    fun `new observer replaces previous`() {
+    fun `distinct keys observe independently`() {
+        val secondUrl = "https://checkout.shopify.com/cart/456"
+
         val firstStates = mutableListOf<PreloadState>()
+        val first = ShopifyCheckoutKit.preload(url, activity, webMessageTransport) { firstStates.add(it) }!!
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val firstView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        shadowOf(firstView).webViewClient.onPageFinished(firstView, url)
+
         val secondStates = mutableListOf<PreloadState>()
-
-        ShopifyCheckoutKit.preload(url, activity, webMessageTransport) { firstStates.add(it) }
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
-        ShopifyCheckoutKit.preload(url, activity, webMessageTransport) { secondStates.add(it) }
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
-        ShopifyCheckoutKit.invalidate()
+        val second = ShopifyCheckoutKit.preload(secondUrl, activity, webMessageTransport) { secondStates.add(it) }!!
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
-        assertThat(firstStates).containsExactly(PreloadState.Loading)
-        assertThat(secondStates).containsExactly(PreloadState.Loading, PreloadState.Idle)
+        assertThat(firstStates).containsExactly(PreloadState.Loading, PreloadState.Ready)
+        assertThat(first.state).isEqualTo(PreloadState.Ready)
+        assertThat(secondStates).containsExactly(PreloadState.Loading)
+        assertThat(second.state).isEqualTo(PreloadState.Loading)
     }
 
     @Test
