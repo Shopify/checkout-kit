@@ -208,7 +208,7 @@ ShopifyCheckoutKit.configure {
   $0.tintColor = .systemBlue
   $0.backgroundColor = .systemBackground
   $0.closeButtonTintColor = nil
-  $0.logLevel = .error
+  $0.logLevel = .debug
 }
 ```
 
@@ -219,7 +219,7 @@ ShopifyCheckoutKit.configure {
 | `backgroundColor` | `.systemBackground` | Background behind the web view while checkout initializes. |
 | `title` | Localized `shopify_checkout_kit_title` or `Checkout` | Navigation title for the checkout sheet. |
 | `closeButtonTintColor` | `nil` | Optional tint for the close button. |
-| `logLevel` | `.error` | SDK logging verbosity. Use `.debug` or `.all` during integration. |
+| `logLevel` | `.warn` | SDK logging verbosity. Threshold-ordered `.debug` → `.warn` → `.error` → `.none`; use `.debug` during integration. |
 | `preloading.enabled` | `true` | Enables best-effort checkout preloading before presentation. |
 
 To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.

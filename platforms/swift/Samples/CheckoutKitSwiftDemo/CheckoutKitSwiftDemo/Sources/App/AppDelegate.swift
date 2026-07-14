@@ -7,7 +7,7 @@ func getLogLevel(key: String) -> LogLevel {
             forKey: key
         ),
         let logLevel = LogLevel(rawValue: rawLogLevel)
-    else { return .all }
+    else { return .debug }
 
     return logLevel
 }
