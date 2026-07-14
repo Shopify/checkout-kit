@@ -595,6 +595,7 @@ public final class com/shopify/checkoutkit/HttpException : com/shopify/checkoutk
 public final class com/shopify/checkoutkit/LogLevel : java/lang/Enum {
 	public static final field DEBUG Lcom/shopify/checkoutkit/LogLevel;
 	public static final field ERROR Lcom/shopify/checkoutkit/LogLevel;
+	public static final field NONE Lcom/shopify/checkoutkit/LogLevel;
 	public static final field WARN Lcom/shopify/checkoutkit/LogLevel;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/shopify/checkoutkit/LogLevel;
