@@ -87,3 +87,5 @@ export interface Spec extends TurboModule {
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('ShopifyCheckoutKit');
+
+// e2e trigger check
