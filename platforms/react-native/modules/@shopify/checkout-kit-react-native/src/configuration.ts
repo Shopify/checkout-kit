@@ -48,8 +48,8 @@ function coerceColorScheme(value: string): ColorScheme {
 
 /**
  * Narrows a raw string from the native bridge to the LogLevel enum.
- * Falls back to `error` (the safest default) on unrecognised values.
+ * Falls back to `warn` (the default level) on unrecognised values.
  */
 function coerceLogLevel(value: string): LogLevel {
-  return logLevelValues.has(value) ? (value as LogLevel) : LogLevel.error;
+  return logLevelValues.has(value) ? (value as LogLevel) : LogLevel.warn;
 }

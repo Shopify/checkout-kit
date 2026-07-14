@@ -98,9 +98,11 @@ interface CommonConfiguration {
   title?: string;
   /**
    * Sets the log level for Checkout Kit.
-   * Controls the verbosity of logs emitted by the native SDK.
+   * Controls the verbosity of logs emitted by the native SDK. Levels are an
+   * ordered threshold from most to least verbose: selecting a level emits that
+   * level and every more-severe level.
    *
-   * @default LogLevel.error
+   * @default LogLevel.warn
    */
   logLevel?: LogLevel;
   /**
