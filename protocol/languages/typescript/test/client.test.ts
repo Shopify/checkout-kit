@@ -119,6 +119,44 @@ describe('Client', () => {
     expect(received).toHaveLength(0);
   });
 
+  test('reports onDecodeError when a notification payload fails to decode', async () => {
+    const errors: {method: string; error: unknown; params: unknown}[] = [];
+    const client = new Client()
+      .onDecodeError(context => errors.push(context))
+      .on(notificationDescriptors.start, () => {});
+
+    await client.process(
+      JSON.stringify({jsonrpc: '2.0', method: 'ec.start', params: {}}),
+    );
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].method).toBe('ec.start');
+    expect(errors[0].error).toBeInstanceOf(Error);
+    expect(errors[0].params).toEqual({});
+  });
+
+  test('reports onDecodeError when a request payload fails to decode', async () => {
+    const errors: {method: string; error: unknown; params: unknown}[] = [];
+    const client = new Client()
+      .onDecodeError(context => errors.push(context))
+      .on(requestDescriptors.paymentInstrumentsChange, () => {
+        throw new Error('handler should not run');
+      });
+
+    await client.process(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'ec.payment.instruments_change_request',
+        id: 3,
+        params: {checkout: {}},
+      }),
+    );
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].method).toBe('ec.payment.instruments_change_request');
+    expect(errors[0].error).toBeInstanceOf(Error);
+  });
+
   test('routes a request whose optional params are absent', async () => {
     const client = new Client().on(requestDescriptors.auth, () =>
       Convert.toAuthResult(JSON.stringify(RESULT_FIXTURE)),

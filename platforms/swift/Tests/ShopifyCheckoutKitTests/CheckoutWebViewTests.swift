@@ -760,6 +760,24 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(error["message"] as? String, "Invalid params")
     }
 
+    @MainActor
+    func testDefaultsClientLogsDecodeErrorForMalformedSupportedMessage() async {
+        let originalLogger = OSLogger.shared
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .all)
+        OSLogger.shared = logger.logger
+        defer { OSLogger.shared = originalLogger }
+
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"req-window-1","params":{}}"#
+
+        _ = await view.defaultsClient.process(body)
+
+        let errorLogs = logger.capturedMessages
+            .filter { $0.type == .error }
+            .map(\.message)
+            .joined(separator: "\n")
+        XCTAssertTrue(errorLogs.contains("ec.window.open_request"))
+    }
+
     // MARK: - ec.error severity-based dismissal
 
     /// Builds a minimal valid `ec.error` payload with the given severity. `ErrorResponse`

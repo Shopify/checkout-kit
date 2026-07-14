@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit
 
 import android.os.Looper
+import android.util.Log
 import com.shopify.ucp.embedded.checkout.Checkout
 import com.shopify.ucp.embedded.checkout.DiscountMethod
 import com.shopify.ucp.embedded.checkout.EmbeddedColorScheme
@@ -26,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowLog
 
 @RunWith(RobolectricTestRunner::class)
 class CheckoutProtocolTest {
@@ -364,6 +366,39 @@ class CheckoutProtocolTest {
         assertThat(received?.messages?.get(1)?.code).isEqualTo("session_expired")
         assertThat(received?.messages?.get(1)?.severity).isEqualTo(Severity.Recoverable)
         assertThat(received?.continueURL).isEqualTo("https://example.com/retry")
+    }
+
+    @Test
+    fun `process logs decode failure for notification params at error level`() {
+        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.WARN }
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.error) {}
+
+        val malformed = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
+            """{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":"not-an-array"}}}"""
+        client.process(malformed)
+
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.ERROR && it.msg.contains("ec.error")
+            }
+        ).isTrue()
+    }
+
+    @Test
+    fun `process logs decode failure for delegation params at error level`() {
+        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.WARN }
+        val client = CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { windowOpenSuccess() }
+
+        val malformed = """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"req-1","params":{}}"""
+        client.process(malformed)
+
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.ERROR && it.msg.contains("ec.window.open_request")
+            }
+        ).isTrue()
     }
 
     @Test

@@ -19,7 +19,7 @@ public protocol ResponsePayload: Encodable, Sendable {}
 /// narrower value (a kit facade uses this to hand consumers a bare payload).
 public struct NotificationDescriptor<Payload: EventPayload, Handler>: Sendable {
     public let method: String
-    let decode: @Sendable (Data) -> Payload?
+    let decode: @Sendable (Data) throws -> Payload
     let project: @Sendable (NotificationMessage<Payload>) -> Handler
 
     /// Returns a descriptor that transforms the handler input, leaving the wire
@@ -39,7 +39,7 @@ public struct NotificationDescriptor<Payload: EventPayload, Handler>: Sendable {
 extension NotificationDescriptor where Handler == NotificationMessage<Payload> {
     public init(
         method: String,
-        decode: @escaping @Sendable (Data) -> Payload?
+        decode: @escaping @Sendable (Data) throws -> Payload
     ) {
         self.init(method: method, decode: decode, project: { $0 })
     }
@@ -59,7 +59,7 @@ extension NotificationDescriptor where Handler == NotificationMessage<Payload> {
 public struct RequestDescriptor<Payload: EventPayload, Handler, Result: ResponsePayload>: Sendable {
     public let method: String
     public let delegation: String?
-    let decode: @Sendable (Data) -> Payload?
+    let decode: @Sendable (Data) throws -> Payload
     let project: @Sendable (RequestMessage<Payload>) -> Handler
 
     /// Returns a descriptor that transforms the handler input, leaving the wire
@@ -81,7 +81,7 @@ extension RequestDescriptor where Handler == RequestMessage<Payload> {
     public init(
         method: String,
         delegation: String? = nil,
-        decode: @escaping @Sendable (Data) -> Payload?
+        decode: @escaping @Sendable (Data) throws -> Payload
     ) {
         self.init(method: method, delegation: delegation, decode: decode, project: { $0 })
     }

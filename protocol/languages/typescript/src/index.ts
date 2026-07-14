@@ -33,6 +33,6 @@ export {
   type CheckoutProtocolRequestMessage,
   type Delegation,
 } from './generated/ProtocolNotifications';
-export {Client} from './client';
+export {Client, type DecodeErrorContext} from './client';
 export {windowOpenSuccess, windowOpenRejected} from './window_open';
 export {EmbeddedCheckoutProtocol} from './embedded_checkout_protocol';

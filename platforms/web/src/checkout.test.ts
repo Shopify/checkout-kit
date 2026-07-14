@@ -984,6 +984,28 @@ describe("<shopify-checkout>", () => {
           expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
         },
       );
+
+      it("logs an error with the decode error when a notification payload fails to decode even without debug mode", () => {
+        const checkout = renderCheckout({ target: "popup" });
+        const mockCheckoutWindow = createMockWindow();
+        vi.spyOn(window, "open").mockReturnValue(mockCheckoutWindow);
+        vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+        vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+        checkout.open();
+
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        simulateRawMessageEvent(
+          checkout,
+          { jsonrpc: "2.0", method: "ec.start", params: {} },
+          { source: mockCheckoutWindow },
+        );
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "<shopify-checkout>: dropped ec.start: failed to decode payload",
+          expect.any(Error),
+        );
+      });
     });
 
     describe("ec.start", () => {
