@@ -238,7 +238,7 @@ class CheckoutWebView: WKWebView {
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
         .onDecodeError { method, error, params in
             OSLogger.shared.error("Failed to decode \(method) payload: \(error)")
-            OSLogger.shared.debug("Raw \(method) params: \(String(decoding: params, as: UTF8.self))")
+            OSLogger.shared.debug("Raw \(method) params: \(String(bytes: params, encoding: .utf8) ?? "")")
         }
         .on(CheckoutProtocol.ready) { _ in
             ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
