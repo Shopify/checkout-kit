@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require_relative "lib/changed_file_filters"
+
+options = {
+  filters: ".ci/changed-file-filters.yml"
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: scripts/changed_file_filters match|list [FILTER ...] [options]"
+  opts.on("--filters PATH") { |path| options[:filters] = path }
+  opts.on("--changed-files-file PATH") { |path| options[:changed_files_file] = path }
+  opts.on("--changed-file PATH") { |path| (options[:changed_files] ||= []) << path }
+end
+
+command = ARGV.shift
+parser.parse!(ARGV)
+
+unless ["match", "list"].include?(command)
+  warn parser
+  exit 1
+end
+
+changed_files = []
+changed_files.concat(File.readlines(options.fetch(:changed_files_file), chomp: true)) if options.key?(:changed_files_file)
+changed_files.concat(options.fetch(:changed_files, []))
+filters = ChangedFileFilters.load(options.fetch(:filters))
+errors = filters.validation_errors
+unless errors.empty?
+  warn errors.join("\n")
+  exit 1
+end
+
+case command
+when "match"
+  exit(filters.match?(ARGV, changed_files) ? 0 : 1)
+when "list"
+  puts filters.matching_filters(changed_files)
+end

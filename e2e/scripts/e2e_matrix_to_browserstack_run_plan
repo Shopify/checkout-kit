@@ -10,20 +10,27 @@ options = {
 }
 
 parser = OptionParser.new do |opts|
-  opts.banner = "Usage: e2e/scripts/e2e_matrix_to_browserstack_run_plan validate|expand|count [options]"
+  opts.banner = "Usage: e2e/scripts/e2e_matrix_to_browserstack_run_plan validate|expand|count|bitrise-env [options]"
   opts.on("--config PATH") { |path| options[:config] = path }
   opts.on("--index INDEX", Integer) { |index| options[:index] = index }
+  opts.on("--changed-files-file PATH") { |path| options[:changed_files_file] = path }
+  opts.on("--changed-file PATH") { |path| (options[:changed_files] ||= []) << path }
 end
 
 command = ARGV.shift
 parser.parse!(ARGV)
 
-unless ["validate", "expand", "count"].include?(command)
+unless ["validate", "expand", "count", "bitrise-env"].include?(command)
   warn parser
   exit 1
 end
 
-run_plan = E2EMatrixToBrowserStackRunPlan.load(options.fetch(:config))
+changed_files = []
+changed_files.concat(File.readlines(options.fetch(:changed_files_file), chomp: true)) if options.key?(:changed_files_file)
+changed_files.concat(options.fetch(:changed_files, []))
+changed_files = nil unless options.key?(:changed_files_file) || options.key?(:changed_files)
+
+run_plan = E2EMatrixToBrowserStackRunPlan.load(options.fetch(:config), changed_files: changed_files)
 
 case command
 when "validate"
@@ -56,4 +63,14 @@ when "count"
   end
 
   puts run_plan.count
+when "bitrise-env"
+  errors = run_plan.validation_errors
+  unless errors.empty?
+    warn errors.join("\n")
+    exit 1
+  end
+
+  run_plan.bitrise_env.each do |key, value|
+    puts "#{key}=#{value}"
+  end
 end
