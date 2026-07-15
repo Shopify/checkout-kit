@@ -4314,26 +4314,13 @@
                   {
                     "kind": "TypeFunc",
                     "name": "Function",
-                    "printedName": "(ShopifyCheckoutKit.Configuration.Appearance.Type) -> (ShopifyCheckoutKit.Configuration.ColorScheme) -> ShopifyCheckoutKit.Configuration.Appearance",
+                    "printedName": "(ShopifyCheckoutKit.Configuration.Appearance.Type) -> ShopifyCheckoutKit.Configuration.Appearance",
                     "children": [
                       {
-                        "kind": "TypeFunc",
-                        "name": "Function",
-                        "printedName": "(ShopifyCheckoutKit.Configuration.ColorScheme) -> ShopifyCheckoutKit.Configuration.Appearance",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "Appearance",
-                            "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
-                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
-                          },
-                          {
-                            "kind": "TypeNominal",
-                            "name": "ColorScheme",
-                            "printedName": "ShopifyCheckoutKit.Configuration.ColorScheme",
-                            "usr": "s:18ShopifyCheckoutKit13ConfigurationV11ColorSchemeO"
-                          }
-                        ]
+                        "kind": "TypeNominal",
+                        "name": "Appearance",
+                        "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                        "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
                       },
                       {
                         "kind": "TypeNominal",
@@ -4352,8 +4339,8 @@
                   }
                 ],
                 "declKind": "EnumElement",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO10storefrontyAeC11ColorSchemeOcAEmF",
-                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10AppearanceO10storefrontyAeC11ColorSchemeOcAEmF",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO10storefrontyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV10AppearanceO10storefrontyA2EmF",
                 "moduleName": "ShopifyCheckoutKit"
               },
               {

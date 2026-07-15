@@ -96,10 +96,10 @@ class CheckoutConfigurableTests: XCTestCase {
     }
 
     func testAppearanceDecoratesCheckoutURLAfterModifierRuns() throws {
-        let sheet = shopifyCheckout.appearance(.storefront())
+        let sheet = shopifyCheckout.appearance(.storefront)
         let items = try XCTUnwrap(URLComponents(url: sheet.decoratedCheckoutURL, resolvingAgainstBaseURL: false)?.queryItems)
 
-        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "automatic")
+        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "light")
         XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "shop")
     }
 

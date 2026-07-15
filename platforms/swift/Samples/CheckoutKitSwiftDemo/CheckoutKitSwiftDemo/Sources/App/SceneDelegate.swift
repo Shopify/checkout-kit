@@ -323,7 +323,7 @@ extension Configuration.Appearance {
         case let .app(colorScheme):
             return colorScheme.userInterfaceStyle
         case .storefront:
-            return Configuration.ColorScheme.automatic.userInterfaceStyle
+            return Configuration.ColorScheme.light.userInterfaceStyle
         }
     }
 }

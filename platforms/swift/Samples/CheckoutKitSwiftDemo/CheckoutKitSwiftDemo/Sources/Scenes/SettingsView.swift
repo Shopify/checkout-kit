@@ -272,7 +272,7 @@ struct AppearanceOptionView: View {
 }
 
 enum AppearanceOption: CaseIterable, Identifiable {
-    case storefrontAutomatic
+    case storefront
     case appAutomatic
     case appLight
     case appDark
@@ -283,8 +283,8 @@ enum AppearanceOption: CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .storefrontAutomatic:
-            return "Storefront automatic"
+        case .storefront:
+            return "Storefront"
         case .appAutomatic:
             return "App automatic"
         case .appLight:
@@ -296,8 +296,8 @@ enum AppearanceOption: CaseIterable, Identifiable {
 
     var appearance: Configuration.Appearance {
         switch self {
-        case .storefrontAutomatic:
-            return .storefront(.automatic)
+        case .storefront:
+            return .storefront
         case .appAutomatic:
             return .app(.automatic)
         case .appLight:
@@ -324,7 +324,7 @@ extension Configuration.Appearance {
         case let .app(colorScheme):
             return colorScheme
         case .storefront:
-            return .automatic
+            return .light
         }
     }
 }

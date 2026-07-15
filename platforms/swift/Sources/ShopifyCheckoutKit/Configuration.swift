@@ -17,7 +17,7 @@ public struct Configuration: Sendable {
     /// By default, checkout uses the storefront's web checkout branding.
     /// Use `.app(.automatic)`, `.app(.light)`, or `.app(.dark)` to use the
     /// Checkout Kit style instead.
-    public var appearance = Appearance.storefront()
+    public var appearance = Appearance.storefront
 
     public var confetti = Configuration.Confetti()
 
@@ -60,8 +60,8 @@ extension Configuration {
     public enum Appearance: Equatable, Sendable {
         /// Uses the Checkout Kit style with the provided color scheme.
         case app(ColorScheme = .automatic)
-        /// Uses the storefront's web checkout branding with the automatic color scheme.
-        case storefront(ColorScheme = .automatic)
+        /// Uses the storefront's web checkout branding with a light color scheme.
+        case storefront
     }
 }
 
