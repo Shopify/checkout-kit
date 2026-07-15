@@ -743,7 +743,7 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("message routing", () => {
-      it("handles protocol messages from any HTTPS origin when the source matches", async () => {
+      it("accepts protocol messages from the cart URL origin by default", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
         const payload = makeCheckoutPayload();
@@ -751,7 +751,125 @@ describe("<shopify-checkout>", () => {
 
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
+          origin: new URL(checkout.src).origin,
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
+      });
+
+      it("accepts protocol messages from shop.app by default", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onStartSpy = vi.fn();
+        const payload = makeCheckoutPayload();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: mockCheckoutWindow,
+          origin: "https://shop.app",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
+      });
+
+      it("drops protocol messages from an untrusted HTTPS origin by default", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
           origin: "https://other.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
+      });
+
+      it("accepts protocol messages from a configured allowed origin", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          "allowed-origins": "https://other.example.com",
+        });
+        const onStartSpy = vi.fn();
+        const payload = makeCheckoutPayload();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: mockCheckoutWindow,
+          origin: "https://other.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
+      });
+
+      it("accepts protocol messages from a shop.app subdomain by default", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onStartSpy = vi.fn();
+        const payload = makeCheckoutPayload();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: mockCheckoutWindow,
+          origin: "https://checkout.shop.app",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
+      });
+
+      it("accepts protocol messages matching a configured wildcard subdomain", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          "allowed-origins": "https://*.example.com",
+        });
+        const onStartSpy = vi.fn();
+        const payload = makeCheckoutPayload();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: mockCheckoutWindow,
+          origin: "https://fr.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
+      });
+
+      it("does not match the apex origin for a wildcard subdomain pattern", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          "allowed-origins": "https://*.example.com",
+        });
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: "https://example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
+      });
+
+      it("accepts protocol messages from any origin when allowedOrigins includes '*'", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          "allowed-origins": "*",
+        });
+        const onStartSpy = vi.fn();
+        const payload = makeCheckoutPayload();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: mockCheckoutWindow,
+          origin: "https://anything.example.com",
         });
         await flushProtocolDispatch();
 
@@ -855,6 +973,59 @@ describe("<shopify-checkout>", () => {
 
         expect(onStartSpy).not.toHaveBeenCalled();
         expect(consoleWarnSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("onMessageRejected callback", () => {
+      it("invokes onMessageRejected with origin, data, and reason for dropped messages", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onMessageRejected = vi.fn();
+        checkout.onMessageRejected = onMessageRejected;
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: "https://other.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).not.toHaveBeenCalled();
+        expect(onMessageRejected).toHaveBeenCalledOnce();
+        expect(onMessageRejected).toHaveBeenCalledWith(
+          expect.objectContaining({
+            origin: "https://other.example.com",
+            reason: expect.stringContaining("not in allowlist"),
+            data: expect.objectContaining({ method: "ec.start" }),
+          }),
+        );
+      });
+
+      it("falls back to a warning when onMessageRejected is not set", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: "https://other.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("not in allowlist"));
+      });
+
+      it("does not invoke onMessageRejected for trusted origins", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onMessageRejected = vi.fn();
+        checkout.onMessageRejected = onMessageRejected;
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: new URL(checkout.src).origin,
+        });
+        await flushProtocolDispatch();
+
+        expect(onMessageRejected).not.toHaveBeenCalled();
       });
     });
 
