@@ -153,6 +153,7 @@ class BrowserStackRunExecutor
     loop do
       response = @client.get("/app-automate/maestro/v2/builds/#{build_id}")
       write_json("build-status.json", response)
+      update_network_profile(response)
       return response if TERMINAL_STATUSES.include?(response.fetch("status").to_s.downcase)
       if Time.now >= deadline
         stop_build(build_id)
@@ -161,6 +162,78 @@ class BrowserStackRunExecutor
 
       sleep ENV.fetch("E2E_BROWSERSTACK_POLL_SECONDS", "30").to_i
     end
+  end
+
+  def update_network_profile(build_status)
+    profile = @run["network_profile"]
+    return if profile.to_s.empty?
+
+    session_ids(build_status).each do |session_id|
+      first_seen_at = network_session_first_seen_at[session_id] ||= Time.now
+      delay_seconds = @run.fetch("network_profile_after_session_seconds", 0).to_i
+      next if Time.now < first_seen_at + delay_seconds
+      next if updated_network_sessions.include?(session_id)
+
+      maestro_session_path = "/app-automate/maestro/v2/builds/#{build_status.fetch("id")}/sessions/#{session_id}"
+      network_update_path = "/app-automate/sessions/#{session_id}/update_network.json"
+      attempt = {
+        "session_id" => session_id,
+        "network_profile" => profile,
+        "maestro_session_endpoint" => maestro_session_path,
+        "network_update_endpoint" => network_update_path
+      }
+      network_update_attempts << attempt
+
+      begin
+        maestro_session = @client.get(maestro_session_path)
+        attempt["maestro_session_response"] = {
+          "id" => maestro_session["id"],
+          "status" => maestro_session["status"]
+        }
+        write_json("network-update-attempts.json", network_update_attempts)
+
+        puts "Applying BrowserStack network profile #{profile} to validated Maestro session #{session_id}"
+        response = @client.put_json(network_update_path, {networkProfile: profile})
+        attempt["network_update_response"] = response
+      rescue StandardError => error
+        attempt["error"] = {
+          "class" => error.class.name,
+          "message" => error.message
+        }
+        write_json("network-update-attempts.json", network_update_attempts)
+        raise
+      end
+
+      updated_network_sessions << session_id
+      network_updates << {
+        "session_id" => session_id,
+        "network_profile" => profile,
+        "response" => response
+      }
+      write_json("network-updates.json", network_updates)
+    end
+  end
+
+  def session_ids(build_status)
+    build_status.fetch("devices", []).flat_map do |device|
+      device.fetch("sessions", []).filter_map { |session| session["id"] }
+    end
+  end
+
+  def updated_network_sessions
+    @updated_network_sessions ||= []
+  end
+
+  def network_session_first_seen_at
+    @network_session_first_seen_at ||= {}
+  end
+
+  def network_updates
+    @network_updates ||= []
+  end
+
+  def network_update_attempts
+    @network_update_attempts ||= []
   end
 
   # BrowserStack's Maestro stop endpoint omits the "/v2/" segment that the

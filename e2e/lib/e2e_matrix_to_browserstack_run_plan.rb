@@ -100,7 +100,7 @@ class E2EMatrixToBrowserStackRunPlan
     suite_id = suite.fetch("id")
     application_id = application.fetch("id")
 
-    {
+    run = {
       "id" => "#{application_id}-#{os_version_tag_id}-#{suite_id}",
       "application_id" => application_id,
       "target" => application.fetch("target"),
@@ -113,6 +113,11 @@ class E2EMatrixToBrowserStackRunPlan
       "ready_marker" => application.fetch("ready_marker"),
       "status_context" => "checkout-kit/e2e/#{application_id}/#{os_version_tag_id}/#{suite_id}"
     }
+    run["network_profile"] = suite.fetch("network_profile") if suite.key?("network_profile")
+    if suite.key?("network_profile_after_session_seconds")
+      run["network_profile_after_session_seconds"] = suite.fetch("network_profile_after_session_seconds")
+    end
+    run
   end
 
   def application_matches_changed_files?(application)

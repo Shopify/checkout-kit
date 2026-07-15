@@ -47,6 +47,10 @@ class JsonHttpClient
     execute(with_json_body(Net::HTTP::Patch.new(path), body))
   end
 
+  def put_json(path, body)
+    execute(with_json_body(Net::HTTP::Put.new(path), body))
+  end
+
   def execute(request)
     @default_headers.each { |name, value| request[name] = value }
     attempts = 0

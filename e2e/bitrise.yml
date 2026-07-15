@@ -141,12 +141,12 @@ workflows:
                 else
                   git diff --name-only "${BITRISE_GIT_BRANCH_DEST:-origin/main}...HEAD" > "$changed_files"
                 fi
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate --changed-files-file "$changed_files"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate --config e2e/config/preload-offline-probe-matrix.yml --changed-files-file "$changed_files"
                 e2e_log "Producing BrowserStack run plan"
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand --changed-files-file "$changed_files" > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand --config e2e/config/preload-offline-probe-matrix.yml --changed-files-file "$changed_files" > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
                 e2e_log "Publishing BrowserStack run plan environment"
                 bitrise_env_file="$(e2e_deploy_dir)/bitrise-env.txt"
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan bitrise-env --changed-files-file "$changed_files" > "$bitrise_env_file"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan bitrise-env --config e2e/config/preload-offline-probe-matrix.yml --changed-files-file "$changed_files" > "$bitrise_env_file"
                 while IFS='=' read -r key value; do
                   envman add --key "$key" --value "$value"
                 done < "$bitrise_env_file"

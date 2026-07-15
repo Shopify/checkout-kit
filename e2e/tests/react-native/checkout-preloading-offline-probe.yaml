@@ -1,0 +1,38 @@
+appId: ${E2E_APP_ID}
+name: Disposable iOS checkout preload offline probe
+
+env:
+  BUYER_IDENTITY_MODE: "guest"
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+    arguments:
+      AppleLocale: en_US
+      AppleLanguages: "(en)"
+- extendedWaitUntil:
+    visible:
+      id: ${E2E_READY_MARKER}
+    timeout: 10000
+- stopApp
+- openLink: "${E2E_APP_ID}://cart?productIndex=0&quantity=1&buyerIdentityMode=${BUYER_IDENTITY_MODE}"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: cart-checkout-ready
+    timeout: 10000
+
+# Disposable synchronization window for the capability probe. The external
+# runner changes this live BrowserStack session to no-network during this pause.
+- tapOn:
+    point: "50%,5%"
+    repeat: 90
+    delay: 1000
+
+- tapOn:
+    id: checkout-button
+    enabled: true
+- extendedWaitUntil:
+    visible:
+      text: "^(Email( or mobile phone number)?|Delivery|Card number)$"
+    timeout: 10000
