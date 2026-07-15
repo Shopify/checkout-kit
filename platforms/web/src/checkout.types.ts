@@ -4,6 +4,10 @@
 
 import type { Checkout, ReadyRequest, ErrorResponse } from "@shopify/checkout-kit-protocol";
 
+import type { LogLevel } from "./logger";
+
+export type { LogLevel };
+
 // This component should follow the custom element conventions set out here:
 // https://github.com/Shopify/ui-api-design/tree/main/codex. In particular,
 // take note of the following:
@@ -29,7 +33,7 @@ export interface CheckoutAttributes {
   src?: string;
   target?: CheckoutTarget | string;
   appearance?: CheckoutAppearance | string;
-  debug?: boolean | string;
+  "log-level"?: LogLevel;
 }
 
 export interface CheckoutMethods {
@@ -78,14 +82,19 @@ export interface CheckoutProperties {
   appearance?: CheckoutAppearance | string;
 
   /**
-   * Whether the component should log diagnostic warnings to the console.
+   * Console logging verbosity. Ordered as a threshold — `debug` is the most
+   * verbose and `none` silences everything; `warn` and `error` sit between.
+   * Defaults to `'warn'`.
+   *
+   * This property is automatically reflected to the `log-level` attribute, so
+   * you can use the `log-level` attribute or this property interchangeably.
    *
    * @example
    * ```html
-   * <shopify-checkout debug src="..."></shopify-checkout>
+   * <shopify-checkout log-level="debug" src="..."></shopify-checkout>
    * ```
    */
-  debug?: boolean | string;
+  logLevel?: LogLevel;
 }
 
 export type TypedEventListener<Event> =

@@ -9,6 +9,7 @@ import {
 } from "@shopify/checkout-kit-protocol";
 
 import stylesText from "./checkout.css?inline";
+import { Logger, coerceLogLevel } from "./logger";
 import { createTemplate, html, safe } from "./utils";
 import type {
   CheckoutAttributes,
@@ -19,14 +20,14 @@ import type {
   Checkout,
   CheckoutAppearance,
   ErrorResponse,
+  LogLevel,
 } from "./checkout.types";
 
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
 export const CK_VERSION = "4.0.0";
 
-const WINDOW_OPEN_INVALID_URL_WARNING =
-  "<shopify-checkout>: ec.window.open_request received without a valid url";
+const WINDOW_OPEN_INVALID_URL_WARNING = "ec.window.open_request received without a valid url";
 
 const EMBED_DELEGATIONS = [EmbeddedCheckoutProtocol.Delegations.windowOpen] as const;
 const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: string }>([
@@ -152,7 +153,7 @@ export class ShopifyCheckout
     const appearance = this.appearance;
     const queryParams = CHECKOUT_APPEARANCES.get(appearance);
     if (!queryParams && appearance !== "" && warnInvalidAppearance) {
-      this.#debugWarn(`appearance="${appearance}" is not supported and will be ignored`);
+      this.#logger.warn(`appearance="${appearance}" is not supported and will be ignored`);
     }
 
     const negotiatedUrl = EmbeddedCheckoutProtocol.url(url.toString(), {
@@ -168,32 +169,18 @@ export class ShopifyCheckout
   }
 
   /**
-   * Whether the component should log diagnostic messages to the console.
+   * Console logging verbosity. Ordered as a threshold — `debug` is the most
+   * verbose and `none` silences everything. Defaults to `'warn'`.
    */
-  get debug(): boolean {
-    return this.getAttribute("debug") !== null;
+  get logLevel(): LogLevel {
+    return coerceLogLevel(this.getAttribute("log-level"));
   }
 
-  set debug(value: boolean | string | undefined) {
-    this.#setAttribute("debug", value);
+  set logLevel(value: LogLevel | undefined) {
+    this.#setAttribute("log-level", value);
   }
 
-  /**
-   * Logs a warning to the console only when `debug` is enabled. Use this
-   * for messages that are useful while integrating but noise once a
-   * partner has shipped (e.g., dropped messages, invalid `src`).
-   */
-  #debugWarn(message: string, ...args: unknown[]) {
-    if (this.debug) {
-      // eslint-disable-next-line no-console
-      console.warn(`<shopify-checkout>: ${message}`, ...args);
-    }
-  }
-
-  #logError(message: string, ...args: unknown[]) {
-    // eslint-disable-next-line no-console
-    console.error(`<shopify-checkout>: ${message}`, ...args);
-  }
+  #logger = new Logger("<shopify-checkout>", () => this.logLevel);
 
   get target(): CheckoutTarget | string {
     return this.getAttribute("target") ?? "auto";
@@ -288,8 +275,7 @@ export class ShopifyCheckout
     const src = this.#srcAsURL({ warnInvalidAppearance: true })?.href;
 
     if (!src) {
-      // eslint-disable-next-line no-console
-      console.warn("`<shopify-checkout>`: src property is empty or invalid, cannot open checkout");
+      this.#logger.warn("src property is empty or invalid, cannot open checkout");
       return;
     }
 
@@ -311,7 +297,7 @@ export class ShopifyCheckout
       case "_blank":
       default: {
         if (target === "_self" || target === "_parent" || target === "_top") {
-          this.#debugWarn(
+          this.#logger.warn(
             `target="${target}" would navigate the current page; falling back to "auto"`,
           );
           checkoutWindow = window.open(src, "auto");
@@ -547,7 +533,7 @@ export class ShopifyCheckout
     try {
       this.#validateMessageOrigin(event);
     } catch (error) {
-      this.#debugWarn(error instanceof Error ? error.message : String(error));
+      this.#logger.warn(error instanceof Error ? error.message : String(error));
       return;
     }
 
@@ -555,7 +541,7 @@ export class ShopifyCheckout
     try {
       serialized = JSON.stringify(event.data);
     } catch (error) {
-      this.#debugWarn(
+      this.#logger.warn(
         `Dropped message because it could not be serialized: ${
           error instanceof Error ? error.message : String(error)
         }`,
@@ -578,7 +564,10 @@ export class ShopifyCheckout
 
     return new EmbeddedCheckoutProtocol.Client()
       .onDecodeError(({ method, error }) => {
-        this.#logError(`dropped ${method}: failed to decode payload`, error);
+        this.#logger.error(
+          `dropped ${method}: failed to decode payload`,
+          error instanceof Error ? error.message : String(error),
+        );
       })
       .on(Event.ready, () => ({
         ucp: {
@@ -641,8 +630,7 @@ export class ShopifyCheckout
       parsed.error?.code === INVALID_PARAMS_CODE &&
       decodeProtocolMessage(serialized)?.method === EmbeddedCheckoutProtocol.Event.windowOpen.method
     ) {
-      // eslint-disable-next-line no-console
-      console.warn(WINDOW_OPEN_INVALID_URL_WARNING, event.data);
+      this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, event.data);
     }
 
     const { source } = event;
@@ -661,14 +649,12 @@ export class ShopifyCheckout
     try {
       targetUrl = new URL(request.url);
     } catch {
-      // eslint-disable-next-line no-console
-      console.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
+      this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
       return windowOpenRejected("url is not a valid URL");
     }
 
     if (targetUrl.protocol !== "https:") {
-      // eslint-disable-next-line no-console
-      console.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
+      this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
       return windowOpenRejected("url must use https scheme");
     }
 

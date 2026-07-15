@@ -35,7 +35,7 @@ Check out our blog to
   - [`src`](#src)
   - [`target`](#target)
   - [`appearance`](#appearance)
-  - [`debug`](#debug)
+  - [`log-level`](#log-level)
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
 - [Checkout lifecycle](#checkout-lifecycle)
@@ -221,7 +221,7 @@ declare module 'react' {
         src?: string;
         target?: string;
         appearance?: string;
-        debug?: boolean;
+        'log-level'?: 'debug' | 'warn' | 'error' | 'none';
       };
     }
   }
@@ -302,8 +302,8 @@ discount codes, delivery preferences, etc.).
 
 > [!IMPORTANT]
 > `src` must be an `https:` URL. The component drops invalid or non-HTTPS
-> values and refuses to open. When `debug` is enabled, a warning is logged
-> to the console.
+> values and refuses to open. At `log-level="warn"` or more verbose, a
+> warning is logged to the console.
 
 ## Configuration
 
@@ -347,7 +347,7 @@ Where the checkout is presented. Defaults to `"auto"`.
 > [!NOTE]
 > `"_self"`, `"_parent"`, and `"_top"` are not allowed — they would navigate
 > the host page away. The component falls back to `"auto"` if you set one,
-> and logs a warning when `debug` is enabled.
+> and logs a warning at `log-level="warn"` or more verbose.
 
 ### `appearance`
 
@@ -370,16 +370,31 @@ checkout.appearance = 'app:dark';
 checkout.appearance = undefined;
 ```
 
-Invalid values are ignored. When `debug` is enabled, the component logs a
-warning for invalid values.
+Invalid values are ignored. At `log-level="warn"` or more verbose, the
+component logs a warning for invalid values.
 
-### `debug`
+### `log-level`
 
-Enables console diagnostics during integration. Useful while wiring up `src`
-and event handlers; turn it off in production.
+Controls console logging verbosity. Defaults to `"error"`. The levels form a
+threshold ordered from most to least verbose — selecting one emits that level
+and every more-severe level:
+
+| Value     | Emits                          |
+| --------- | ------------------------------ |
+| `"debug"` | debug, warnings, and errors    |
+| `"warn"`  | warnings and errors            |
+| `"error"` | errors only (default)          |
+| `"none"`  | nothing                        |
+
+Use `"debug"` while wiring up `src` and event handlers during integration, or
+`"error"` / `"none"` to quiet the integration warnings in production.
 
 ```html
-<shopify-checkout src="..." debug />
+<shopify-checkout src="..." log-level="debug" />
+```
+
+```ts
+checkout.logLevel = 'debug';
 ```
 
 ### Popup dimensions

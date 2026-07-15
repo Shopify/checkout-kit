@@ -161,7 +161,7 @@ describe("<shopify-checkout>", () => {
 
         it("returns early when src is empty and shows a console warning for the developer", () => {
           POPUP_TARGETS.forEach((target) => {
-            const checkout = renderCheckout({ target });
+            const checkout = renderCheckout({ target, "log-level": "warn" });
             checkout.src = "";
             const windowOpenSpy = vi.spyOn(window, "open");
             const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -169,7 +169,7 @@ describe("<shopify-checkout>", () => {
             checkout.open();
 
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-              "`<shopify-checkout>`: src property is empty or invalid, cannot open checkout",
+              "<shopify-checkout>: src property is empty or invalid, cannot open checkout",
             );
             expect(windowOpenSpy).not.toHaveBeenCalled();
           });
@@ -314,9 +314,9 @@ describe("<shopify-checkout>", () => {
 
       describe('when target is "_self", "_parent", or "_top"', () => {
         it.each(["_self", "_parent", "_top"] as const)(
-          "falls back to 'auto' when target=%s and warns in debug mode",
+          "falls back to 'auto' when target=%s and warns when log-level is warn",
           (target) => {
-            const checkout = renderCheckout({ target, debug: "" });
+            const checkout = renderCheckout({ target, "log-level": "warn" });
             const mockWindow = createMockWindow();
             const openSpy = vi.spyOn(window, "open").mockReturnValue(mockWindow);
             const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -332,8 +332,8 @@ describe("<shopify-checkout>", () => {
           },
         );
 
-        it("does not warn when debug is disabled", () => {
-          const checkout = renderCheckout({ target: "_self" });
+        it("does not warn when log-level is error", () => {
+          const checkout = renderCheckout({ target: "_self", "log-level": "error" });
           vi.spyOn(window, "open").mockReturnValue(createMockWindow());
           const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
           vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
