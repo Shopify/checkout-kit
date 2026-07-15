@@ -999,6 +999,138 @@ class CheckoutWebViewTests: XCTestCase {
         await fulfillment(of: [failed], timeout: 2.0)
         XCTAssertEqual(mockDelegate.failureCount, 1)
     }
+
+    // MARK: - Incoming message origin validation
+
+    private static let readyBody = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
+
+    private func resetOriginValidationConfig() {
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
+        ShopifyCheckoutKit.configuration.onMessageRejected = nil
+    }
+
+    private func stubMessageOrigin(_ origin: String) {
+        let parsed = URL(string: origin)!
+        view.messageOrigin = { _ in
+            MessageOrigin(scheme: parsed.scheme!, host: parsed.host!, port: parsed.port)
+        }
+    }
+
+    @MainActor
+    func testOriginValidationAllowsAnyOriginByDefault() async {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        stubMessageOrigin("https://evil.example.com")
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let message = MockScriptMessage(body: Self.readyBody)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
+    func testOriginValidationRejectsUntrustedOriginWhenAllowlistSet() {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        view.loadedCheckoutURL = url
+        stubMessageOrigin("https://evil.example.com")
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        let rejection = LockedValue<MessageRejection?>(nil)
+        ShopifyCheckoutKit.configuration.onMessageRejected = { rejection.set($0) }
+        let message = MockScriptMessage(body: Self.readyBody)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+        XCTAssertEqual(rejection.get()?.origin, "https://evil.example.com")
+        XCTAssertEqual(rejection.get()?.body, Self.readyBody)
+    }
+
+    @MainActor
+    func testOriginValidationAllowsConfiguredOrigin() async {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        view.loadedCheckoutURL = url
+        stubMessageOrigin("https://trusted.example.com")
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let message = MockScriptMessage(body: Self.readyBody)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
+    func testOriginValidationAllowsCheckoutOriginWhenAllowlistSet() async {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        view.loadedCheckoutURL = url
+        // url is http://shopify1.shopify.com/checkouts/cn/123
+        stubMessageOrigin("http://shopify1.shopify.com")
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let message = MockScriptMessage(body: Self.readyBody)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
+    func testOriginValidationAllowsShopAppSubdomainWhenAllowlistSet() async {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        view.loadedCheckoutURL = url
+        stubMessageOrigin("https://checkout.shop.app")
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let message = MockScriptMessage(body: Self.readyBody)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
+    func testOriginValidationStarEscapeHatchAllowsAllOrigins() async {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        view.loadedCheckoutURL = url
+        stubMessageOrigin("https://evil.example.com")
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["*"]
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let message = MockScriptMessage(body: Self.readyBody)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
+    func testOriginValidationDefaultRejectionLogsWithoutCrashing() {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        view.loadedCheckoutURL = url
+        stubMessageOrigin("https://evil.example.com")
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        let message = MockScriptMessage(body: Self.readyBody)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+    }
 }
 
 private actor RecordingBridgeClient: CheckoutCommunicationProtocol {

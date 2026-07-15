@@ -272,6 +272,12 @@ class CheckoutWebView: WKWebView {
 
     var openExternalURL: (URL) -> Void = { UIApplication.shared.open($0) }
 
+    /// Resolves the origin an incoming message was sent from. Overridable in
+    /// tests since `WKSecurityOrigin` cannot be constructed directly.
+    var messageOrigin: (WKScriptMessage) -> MessageOrigin = { message in
+        MessageOrigin(securityOrigin: message.frameInfo.securityOrigin)
+    }
+
     /// Kit-owned client that handles delegations and kit-mandated notifications. Currently:
     ///   - `ec.ready` - kit-owned handshake. Supported delegations are announced up
     ///     front via the `ec_delegate` URL query param; acceptance is implicit, so the
@@ -373,6 +379,10 @@ class CheckoutWebView: WKWebView {
     /// Ensures one terminal failure is handled per checkout session, regardless
     /// of whether it originated from `ec.error` or WebKit process termination.
     private var hasHandledTerminalFailure = false
+
+    /// The checkout URL passed to `load(checkout:)`. Used to derive the trusted
+    /// cart-url origin for incoming message validation.
+    var loadedCheckoutURL: URL?
     private var entryPoint: MetaData.EntryPoint?
 
     // MARK: Initializers
@@ -451,6 +461,7 @@ class CheckoutWebView: WKWebView {
 
     func load(checkout url: URL, isPreload: Bool = false) {
         OSLogger.shared.info("Loading checkout URL: \(LogSafeURL.string(url)), isPreload: \(isPreload)")
+        loadedCheckoutURL = url
         var request = URLRequest(url: url)
 
         if isPreload, ShopifyCheckoutKit.configuration.preloading.enabled {
@@ -525,6 +536,15 @@ private final class ScriptMessageHandlerRegistration {
 extension CheckoutWebView: WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? String else {
+            return
+        }
+
+        guard isMessageOriginAllowed(message) else {
+            let rejection = MessageRejection(origin: messageOrigin(message).description, body: body)
+            let onRejected = ShopifyCheckoutKit.configuration.onMessageRejected ?? { rejection in
+                OSLogger.shared.debug("Rejected checkout message from untrusted origin \(rejection.origin)")
+            }
+            onRejected(rejection)
             return
         }
 
@@ -609,6 +629,21 @@ extension CheckoutWebView: WKScriptMessageHandler {
 
 private struct TerminalErrorNotification: Decodable {
     let params: JSONRPCErrorParams
+}
+
+extension CheckoutWebView {
+    /// Validates the origin of an incoming checkout message against the effective
+    /// allowlist. When validation is disabled (native default with no configured
+    /// allowlist, or the `"*"` escape hatch) the message origin is not inspected.
+    func isMessageOriginAllowed(_ message: WKScriptMessage) -> Bool {
+        let patterns = MessageOriginValidator.effectiveAllowlist(
+            configuredOrigins: ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            checkoutURL: loadedCheckoutURL
+        )
+        guard let patterns else { return true }
+
+        return MessageOriginValidator.isAllowed(origin: messageOrigin(message), patterns: patterns)
+    }
 }
 
 extension CheckoutWebView: WKNavigationDelegate {

@@ -43,6 +43,25 @@ public struct Configuration: Sendable {
     /// Levels: debug, warn, error, none (ordered threshold, most to least verbose)
     /// Default: .warn - which emits warnings and errors
     public var logLevel: LogLevel = .warn
+
+    /// Origins that are trusted to send incoming checkout messages, in addition
+    /// to the loaded checkout origin and shop.app.
+    ///
+    /// The native surface is open by default: when this is empty, messages from
+    /// any origin are accepted. Provide one or more origins to restrict which
+    /// origins are trusted; the loaded checkout origin and shop.app are always
+    /// appended. Use `"*"` to explicitly disable origin validation.
+    ///
+    /// Entries are origin patterns:
+    /// - `"https://example.com"` — an exact origin.
+    /// - `"https://*.example.com"` — any subdomain of `example.com`.
+    /// - `"*"` — allow all origins (escape hatch).
+    public var allowedMessageOrigins: [String] = []
+
+    /// Invoked when an incoming checkout message is rejected during origin
+    /// validation. Defaults to logging a debug message; rejected messages are
+    /// never silently dropped.
+    public var onMessageRejected: (@Sendable (MessageRejection) -> Void)?
 }
 
 extension Configuration {
