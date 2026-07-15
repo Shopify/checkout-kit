@@ -14,6 +14,7 @@ import com.shopify.checkout_kit_android_demo.common.logs.LogDatabase
 import com.shopify.checkout_kit_android_demo.common.logs.Logger
 import com.shopify.checkout_kit_android_demo.common.logs.MIGRATION_1_2
 import com.shopify.checkout_kit_android_demo.common.logs.MIGRATION_2_3
+import com.shopify.checkout_kit_android_demo.common.logs.MIGRATION_3_4
 import com.shopify.checkout_kit_android_demo.home.HomeViewModel
 import com.shopify.checkout_kit_android_demo.logs.LogsViewModel
 import com.shopify.checkout_kit_android_demo.products.ProductsViewModel
@@ -69,7 +70,7 @@ val appModules = module {
     single { Logger(logDb = get(), coroutineScope = CoroutineScope(Dispatchers.IO)) }
     single {
         Room.databaseBuilder(get(), LogDatabase::class.java, "log-db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
 

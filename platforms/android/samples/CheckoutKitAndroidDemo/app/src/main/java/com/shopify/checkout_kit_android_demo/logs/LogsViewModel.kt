@@ -19,8 +19,13 @@ class LogsViewModel(private val logDb: LogDatabase): ViewModel() {
 
     fun readLogs(last: Int) {
         viewModelScope.launch(Dispatchers.IO) {
+            val logLines = logDb.logDao().getLast(last)
+            val checkoutContexts = logLines.asReversed().checkoutContextsByLogId()
+            val logs = logLines.map { logLine ->
+                logLine.toPrettyLog(checkoutContexts[logLine.id])
+            }
             _logState.value = LogState.Populated(
-                logs = logDb.logDao().getLast(last).map { it.toPrettyLog() }
+                groups = logs.groupByCheckout(),
             )
         }
     }
@@ -32,10 +37,12 @@ class LogsViewModel(private val logDb: LogDatabase): ViewModel() {
         }
     }
 
-    private fun LogLine.toPrettyLog() = PrettyLog(
+    private fun LogLine.toPrettyLog(checkoutContext: CheckoutLogContext?) = PrettyLog(
         formattedDate = DateFormat.format(Logs.DATE_FORMAT, Date(createdAt)).toString(),
         message = message,
         data = this,
+        checkoutId = checkoutContext?.checkoutId,
+        previousCheckoutPayload = checkoutContext?.previousCheckoutPayload,
     )
 
 }
@@ -43,12 +50,25 @@ class LogsViewModel(private val logDb: LogDatabase): ViewModel() {
 sealed class LogState {
     data object Loading: LogState()
     data class Populated(
-        val logs: List<PrettyLog>
+        val groups: List<CheckoutLogGroup>
     ): LogState()
 }
+
+data class CheckoutLogGroup(
+    val checkoutId: String?,
+    val logs: List<PrettyLog>,
+)
 
 data class PrettyLog(
     val formattedDate: String,
     val message: String,
     val data: LogLine,
+    val checkoutId: String?,
+    val previousCheckoutPayload: String?,
 )
+
+/** Groups newest-first logs by checkout, then restores chronological order within each group. */
+internal fun List<PrettyLog>.groupByCheckout(): List<CheckoutLogGroup> =
+    groupBy(PrettyLog::checkoutId).map { (checkoutId, logs) ->
+        CheckoutLogGroup(checkoutId, logs.asReversed())
+    }

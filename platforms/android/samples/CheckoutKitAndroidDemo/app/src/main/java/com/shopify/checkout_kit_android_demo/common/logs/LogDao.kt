@@ -6,7 +6,7 @@ import androidx.room.Query
 
 @Dao
 interface LogDao {
-    @Query("SELECT * FROM logline ORDER BY createdAt DESC LIMIT :n")
+    @Query("SELECT * FROM logline ORDER BY createdAt DESC, rowid DESC LIMIT :n")
     fun getLast(n: Int): List<LogLine>
 
     @Insert
