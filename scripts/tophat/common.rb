@@ -31,20 +31,24 @@ module CheckoutKitTophat
 
   def install_options(manifest)
     manifest.fetch("targets").flat_map do |target|
+      aliases_by_platform = target.fetch("aliases", {})
       platforms = target.fetch("recipes").map { |recipe| recipe.fetch("platform") }.uniq
       platforms.map do |platform|
         {
           "id" => "#{target.fetch("id")}-#{platform}",
           "label" => "#{target.fetch("label")} (#{PLATFORM_LABELS.fetch(platform, platform)})",
           "target" => target,
-          "platform" => platform
+          "platform" => platform,
+          "aliases" => aliases_by_platform.fetch(platform, [])
         }
       end
     end
   end
 
-  def available_target_ids(manifest)
-    install_options(manifest).map { |option| option.fetch("id") }
+  def find_option(options, requested_id)
+    options.find do |option|
+      option.fetch("id") == requested_id || option.fetch("aliases").include?(requested_id)
+    end
   end
 
   def artifact_provider_parameters(recipe, app_slug, branch)

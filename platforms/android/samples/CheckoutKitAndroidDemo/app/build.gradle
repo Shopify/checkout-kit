@@ -85,6 +85,15 @@ android {
         buildConfigField "String", "prefillPhone", "\"$prefillPhone\""
     }
 
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled = false
@@ -92,6 +101,7 @@ android {
         }
         debug {
             debuggable = true
+            signingConfig signingConfigs.debug
         }
     }
     compileOptions {
