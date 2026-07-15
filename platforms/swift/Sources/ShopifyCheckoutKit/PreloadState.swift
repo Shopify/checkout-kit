@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// Observable lifecycle state of a preloaded checkout.
@@ -15,29 +16,29 @@ public enum PreloadState: Equatable {
     }
 }
 
-/// Returned by `preload(checkout:onStateChange:)` exposing the current preload
-/// state. Because the preload cache is single-slot, every instance reflects the
-/// same shared state.
+/// Returned by `preload(checkout:)` to expose the current preload state.
 ///
 /// Retain the returned instance for as long as you want to observe state
 /// changes; the cache holds it weakly.
 @MainActor
-public final class CheckoutPreload {
-    private let cache: PreloadCache
+public final class CheckoutPreload: ObservableObject {
+    /// The latest observed preload state.
+    @Published public private(set) var state: PreloadState
 
     init(cache: PreloadCache) {
-        self.cache = cache
+        state = cache.state
         cache.setObserver(self)
     }
 
-    /// Called on the main actor whenever the preload state changes.
-    public var onStateChange: ((PreloadState) -> Void)?
-
-    public var state: PreloadState {
-        cache.state
+    /// Called immediately with the current state and whenever it changes.
+    public var onStateChange: ((PreloadState) -> Void)? {
+        didSet {
+            onStateChange?(state)
+        }
     }
 
     func receive(_ state: PreloadState) {
+        self.state = state
         onStateChange?(state)
     }
 }

@@ -41,7 +41,8 @@ class PreloadObservabilityTests: XCTestCase {
     func testOnStateChangeReceivesTransitions() {
         var states: [PreloadState] = []
 
-        let preload = ShopifyCheckoutKit.preload(checkout: url) { states.append($0) }
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        preload.onStateChange = { states.append($0) }
         ShopifyCheckoutKit.invalidate()
 
         withExtendedLifetime(preload) {
@@ -53,14 +54,28 @@ class PreloadObservabilityTests: XCTestCase {
         var firstStates: [PreloadState] = []
         var secondStates: [PreloadState] = []
 
-        let first = ShopifyCheckoutKit.preload(checkout: url) { firstStates.append($0) }
-        let second = ShopifyCheckoutKit.preload(checkout: url) { secondStates.append($0) }
+        let first = ShopifyCheckoutKit.preload(checkout: url)
+        first.onStateChange = { firstStates.append($0) }
+        let second = ShopifyCheckoutKit.preload(checkout: url)
+        second.onStateChange = { secondStates.append($0) }
 
         ShopifyCheckoutKit.invalidate()
 
         withExtendedLifetime((first, second)) {
             XCTAssertEqual(firstStates, [.loading])
-            XCTAssertEqual(secondStates, [.idle])
+            XCTAssertEqual(secondStates, [.loading, .idle])
+        }
+    }
+
+    func testPublishedStateReceivesTransitions() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        var states: [PreloadState] = []
+        let cancellable = preload.$state.sink { states.append($0) }
+
+        ShopifyCheckoutKit.invalidate()
+
+        withExtendedLifetime((preload, cancellable)) {
+            XCTAssertEqual(states, [.loading, .idle])
         }
     }
 
@@ -121,6 +136,79 @@ class PreloadObservabilityTests: XCTestCase {
 
         withExtendedLifetime(preload) {
             XCTAssertEqual(preload.state, .failed(reason: .navigationFailed))
+        }
+    }
+
+    func testProvisionalNavigationFailureTransitionsToFailed() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        view.webView(view, didFailProvisionalNavigation: nil, withError: error)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload.state, .failed(reason: .navigationFailed))
+        }
+    }
+
+    func testProvisionalNavigationCancelledDoesNotTransition() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
+        view.webView(view, didFailProvisionalNavigation: nil, withError: error)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload.state, .loading)
+        }
+    }
+
+    func testViewLookupWithDifferentKeyTransitionsHandleToIdle() throws {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        _ = CheckoutWebView.preloadCache.store(
+            CheckoutWebView(entryPoint: nil),
+            for: PreloadKey(url: url, entryPoint: nil)
+        )
+
+        let otherURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/other"))
+        _ = CheckoutWebView.preloadCache.view(for: PreloadKey(url: otherURL, entryPoint: nil))
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload.state, .idle)
+        }
+    }
+
+    func testExpireClearsCacheBeforeNotifyingSoReentrantPreloadSurvives() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        preload.onStateChange = { state in
+            if case .expired = state {
+                _ = CheckoutWebView.preloadCache.store(
+                    CheckoutWebView(entryPoint: nil),
+                    for: PreloadKey(url: self.url, entryPoint: nil)
+                )
+            }
+        }
+
+        CheckoutWebView.preloadCache.expire()
+
+        withExtendedLifetime(preload) {
+            XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+        }
+    }
+
+    func testDisablingPreloadViaConfigTransitionsToIdle() async {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+
+        ShopifyCheckoutKit.configuration.preloading.enabled = false
+
+        for _ in 0 ..< 20 where preload.state != .idle {
+            await Task.yield()
+        }
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload.state, .idle)
         }
     }
 }

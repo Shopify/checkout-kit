@@ -156,7 +156,8 @@ struct CartView: View {
         guard checkoutPreloadingEnabled, let url = cartManager.cart?.checkoutURL else { return }
 
         ShopifyCheckoutKit.invalidate()
-        checkoutPreload = ShopifyCheckoutKit.preload(checkout: url) { state in
+        checkoutPreload = ShopifyCheckoutKit.preload(checkout: url)
+        checkoutPreload?.onStateChange = { state in
             print("[Preload] state changed to \(state)")
             ShopifyCheckoutKit.configuration.logger.log("Preload state changed to \(state)")
         }

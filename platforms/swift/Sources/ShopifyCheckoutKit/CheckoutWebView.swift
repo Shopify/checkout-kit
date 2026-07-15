@@ -72,15 +72,27 @@ final class PreloadCache {
         observer?.receive(newState)
     }
 
+    /// Clears the cache, then notifies observers of the terminal `state`.
+    /// Clearing before notifying ensures a preload started re-entrantly from the
+    /// callback is not wiped by this invalidation.
+    func terminate(with state: PreloadState, disconnect: Bool = true) {
+        invalidate(disconnect: disconnect)
+        transition(to: state)
+    }
+
     func view(for key: PreloadKey) -> CheckoutWebView? {
-        guard let entry, entry.key == key, !entry.isStale else {
+        guard let cached = entry, cached.key == key, !cached.isStale else {
+            let missed = entry
             invalidate()
+            if let missed {
+                transition(to: missed.isStale ? .expired : .idle)
+            }
             return nil
         }
 
         stopKeepAlive()
         stopExpiryTimer()
-        return entry.view
+        return cached.view
     }
 
     func invalidate(disconnect: Bool = true) {
@@ -157,13 +169,11 @@ final class PreloadCache {
     }
 
     func expire() {
-        transition(to: .expired)
-        invalidate()
+        terminate(with: .expired)
     }
 
     func keepAliveDidFail() {
-        transition(to: .failed(reason: .keepAliveLost))
-        invalidate()
+        terminate(with: .failed(reason: .keepAliveLost))
     }
 
     private func stopKeepAlive() {
@@ -556,9 +566,10 @@ extension CheckoutWebView: WKNavigationDelegate {
 
         if statusCode >= 400 {
             if CheckoutWebView.preloadCache.contains(self) {
-                CheckoutWebView.preloadCache.transition(to: .failed(reason: .httpError(statusCode: statusCode)))
+                CheckoutWebView.preloadCache.terminate(with: .failed(reason: .httpError(statusCode: statusCode)))
+            } else {
+                CheckoutWebView.invalidate()
             }
-            CheckoutWebView.invalidate()
             OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
 
             switch statusCode {
@@ -592,6 +603,16 @@ extension CheckoutWebView: WKNavigationDelegate {
         let url = LogSafeURL.string(webView.url)
         OSLogger.shared.debug("Failed provisional navigation with error: \(error.localizedDescription) url:\(url)")
         timer = nil
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
+            OSLogger.shared.debug("Ignoring cancelled provisional navigation. code:NSURLErrorCancelled")
+            return
+        }
+
+        if CheckoutWebView.preloadCache.contains(self) {
+            CheckoutWebView.preloadCache.terminate(with: .failed(reason: .navigationFailed))
+        }
     }
 
     func webView(_: WKWebView, didFinish _: WKNavigation!) {
@@ -624,9 +645,10 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         if CheckoutWebView.preloadCache.contains(self) {
-            CheckoutWebView.preloadCache.transition(to: .failed(reason: .navigationFailed))
+            CheckoutWebView.preloadCache.terminate(with: .failed(reason: .navigationFailed))
+        } else {
+            CheckoutWebView.invalidate()
         }
-        CheckoutWebView.invalidate()
         viewDelegate?.checkoutViewDidFailWithError(error: .sdkError(underlying: error))
     }
 

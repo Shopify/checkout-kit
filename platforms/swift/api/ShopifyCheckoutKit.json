@@ -6,6 +6,13 @@
     "children": [
       {
         "kind": "Import",
+        "name": "Combine",
+        "printedName": "Combine",
+        "declKind": "Import",
+        "moduleName": "ShopifyCheckoutKit"
+      },
+      {
+        "kind": "Import",
         "name": "DeveloperToolsSupport",
         "printedName": "DeveloperToolsSupport",
         "declKind": "Import",
@@ -7015,6 +7022,101 @@
         "children": [
           {
             "kind": "Var",
+            "name": "state",
+            "printedName": "state",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "PreloadState",
+                "printedName": "ShopifyCheckoutKit.PreloadState",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B7PreloadC5stateAA0D5StateOvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B7PreloadC5stateAA0D5StateOvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Final",
+              "ProjectedValueProperty",
+              "SetterAccess",
+              "Custom",
+              "Custom"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "PreloadState",
+                    "printedName": "ShopifyCheckoutKit.PreloadState",
+                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B7PreloadC5stateAA0D5StateOvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B7PreloadC5stateAA0D5StateOvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "$state",
+            "printedName": "$state",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Publisher",
+                "printedName": "Combine.Published<ShopifyCheckoutKit.PreloadState>.Publisher",
+                "usr": "s:7Combine9PublishedV9PublisherV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B7PreloadC6$state7Combine9PublishedV9PublisherVyAA0D5StateO_Gvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B7PreloadC6$state7Combine9PublishedV9PublisherVyAA0D5StateO_Gvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "implicit": true,
+            "declAttributes": [
+              "Final",
+              "SetterAccess",
+              "Custom"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Publisher",
+                    "printedName": "Combine.Published<ShopifyCheckoutKit.PreloadState>.Publisher",
+                    "usr": "s:7Combine9PublishedV9PublisherV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B7PreloadC6$state7Combine9PublishedV9PublisherVyAA0D5StateO_Gvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B7PreloadC6$state7Combine9PublishedV9PublisherVyAA0D5StateO_Gvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "onStateChange",
             "printedName": "onStateChange",
             "children": [
@@ -7109,8 +7211,7 @@
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
-                  "Final",
-                  "Transparent"
+                  "Final"
                 ],
                 "accessorKind": "get"
               },
@@ -7164,56 +7265,29 @@
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
-                  "Final",
-                  "Transparent"
+                  "Final"
                 ],
                 "accessorKind": "set"
               }
             ]
           },
           {
-            "kind": "Var",
-            "name": "state",
-            "printedName": "state",
+            "kind": "TypeAlias",
+            "name": "ObjectWillChangePublisher",
+            "printedName": "ObjectWillChangePublisher",
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "PreloadState",
-                "printedName": "ShopifyCheckoutKit.PreloadState",
-                "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+                "name": "ObservableObjectPublisher",
+                "printedName": "Combine.ObservableObjectPublisher",
+                "usr": "s:7Combine25ObservableObjectPublisherC"
               }
             ],
-            "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B7PreloadC5stateAA0D5StateOvp",
-            "mangledName": "$s18ShopifyCheckoutKit0B7PreloadC5stateAA0D5StateOvp",
+            "declKind": "TypeAlias",
+            "usr": "s:18ShopifyCheckoutKit0B7PreloadC25ObjectWillChangePublishera",
+            "mangledName": "$s18ShopifyCheckoutKit0B7PreloadC25ObjectWillChangePublishera",
             "moduleName": "ShopifyCheckoutKit",
-            "declAttributes": [
-              "Final",
-              "Custom"
-            ],
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "PreloadState",
-                    "printedName": "ShopifyCheckoutKit.PreloadState",
-                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B7PreloadC5stateAA0D5StateOvg",
-                "mangledName": "$s18ShopifyCheckoutKit0B7PreloadC5stateAA0D5StateOvg",
-                "moduleName": "ShopifyCheckoutKit",
-                "declAttributes": [
-                  "Final"
-                ],
-                "accessorKind": "get"
-              }
-            ]
+            "implicit": true
           }
         ],
         "declKind": "Class",
@@ -7226,6 +7300,28 @@
         ],
         "hasMissingDesignatedInitializers": true,
         "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "ObservableObject",
+            "printedName": "ObservableObject",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "ObjectWillChangePublisher",
+                "printedName": "ObjectWillChangePublisher",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ObservableObjectPublisher",
+                    "printedName": "Combine.ObservableObjectPublisher",
+                    "usr": "s:7Combine25ObservableObjectPublisherC"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:7Combine16ObservableObjectP",
+            "mangledName": "$s7Combine16ObservableObjectP"
+          },
           {
             "kind": "Conformance",
             "name": "Sendable",
@@ -7387,7 +7483,7 @@
       {
         "kind": "Function",
         "name": "preload",
-        "printedName": "preload(checkout:onStateChange:)",
+        "printedName": "preload(checkout:)",
         "children": [
           {
             "kind": "TypeNominal",
@@ -7400,45 +7496,11 @@
             "name": "URL",
             "printedName": "Foundation.URL",
             "usr": "s:10Foundation3URLV"
-          },
-          {
-            "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "((ShopifyCheckoutKit.PreloadState) -> Swift.Void)?",
-            "children": [
-              {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.PreloadState) -> Swift.Void",
-                "children": [
-                  {
-                    "kind": "TypeNameAlias",
-                    "name": "Void",
-                    "printedName": "Swift.Void",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Void",
-                        "printedName": "()"
-                      }
-                    ]
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "PreloadState",
-                    "printedName": "ShopifyCheckoutKit.PreloadState",
-                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
-                  }
-                ]
-              }
-            ],
-            "hasDefaultArg": true,
-            "usr": "s:Sq"
           }
         ],
         "declKind": "Func",
-        "usr": "s:18ShopifyCheckoutKit7preload8checkout13onStateChangeAA0B7PreloadC10Foundation3URLV_yAA0iG0OcSgtF",
-        "mangledName": "$s18ShopifyCheckoutKit7preload8checkout13onStateChangeAA0B7PreloadC10Foundation3URLV_yAA0iG0OcSgtF",
+        "usr": "s:18ShopifyCheckoutKit7preload8checkoutAA0B7PreloadC10Foundation3URLV_tF",
+        "mangledName": "$s18ShopifyCheckoutKit7preload8checkoutAA0B7PreloadC10Foundation3URLV_tF",
         "moduleName": "ShopifyCheckoutKit",
         "declAttributes": [
           "DiscardableResult",
