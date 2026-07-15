@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.shopify.checkout_kit_android_demo.R
 import com.shopify.checkout_kit_android_demo.common.components.BodyMedium
 import com.shopify.checkout_kit_android_demo.common.components.Header3
+import com.shopify.checkout_kit_android_demo.common.sampleStorefrontAppearance
 import com.shopify.checkout_kit_android_demo.common.ui.theme.verticalPadding
 import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.ColorScheme
@@ -46,8 +47,8 @@ fun ColorSchemeSection(
                 .fillMaxWidth()
 
             AppearanceOption(
-                appearance = CheckoutAppearance.Storefront(ColorScheme.Automatic()),
-                description = "Uses the storefront checkout branding based on device preferences",
+                appearance = sampleStorefrontAppearance(),
+                description = "Uses the storefront checkout branding with customized native colors",
                 selected = selected,
                 setSelected = setSelected,
                 modifier = optionModifier,
@@ -114,7 +115,7 @@ fun AppearanceOption(
 
 private val CheckoutAppearance.name: Int
     get() = when (this) {
-        is CheckoutAppearance.Storefront -> R.string.color_scheme_storefront_automatic
+        is CheckoutAppearance.Storefront -> R.string.color_scheme_storefront
         is CheckoutAppearance.App -> when (colorScheme) {
             is ColorScheme.Light -> R.string.color_scheme_app_light
             is ColorScheme.Dark -> R.string.color_scheme_app_dark
@@ -124,6 +125,6 @@ private val CheckoutAppearance.name: Int
 
 private val CheckoutAppearance.optionKey: String
     get() = when (this) {
-        is CheckoutAppearance.Storefront -> "storefront:${colorScheme.id}"
+        is CheckoutAppearance.Storefront -> "storefront"
         is CheckoutAppearance.App -> "app:${colorScheme.id}"
     }

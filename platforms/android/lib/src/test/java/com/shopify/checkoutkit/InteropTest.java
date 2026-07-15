@@ -78,6 +78,17 @@ public class InteropTest {
     }
 
     @Test
+    public void canCustomizeStorefrontAppearance() {
+        Color headerBackground = new Color.SRGB(0xFF008060);
+
+        CheckoutAppearance.Storefront appearance = new CheckoutAppearance.Storefront().customize(
+                builder -> builder.setHeaderBackground(headerBackground)
+        );
+
+        assertThat(appearance).isNotEqualTo(new CheckoutAppearance.Storefront());
+    }
+
+    @Test
     public void canConfigurePreloading() {
         ShopifyCheckoutKit.configure(configuration -> {
             configuration.setPreloading(new Preloading(false));

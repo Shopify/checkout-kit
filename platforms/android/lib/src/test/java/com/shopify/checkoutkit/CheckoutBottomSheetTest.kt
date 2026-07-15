@@ -635,9 +635,11 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `sets header background color based on current configuration`() {
+    fun `storefront appearance applies customized native colors`() {
         val customColors = customColors()
-        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
+        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.Storefront().customize {
+            headerBackground = customColors.headerBackground
+        }
 
         val sheet = presentBottomSheet()
 

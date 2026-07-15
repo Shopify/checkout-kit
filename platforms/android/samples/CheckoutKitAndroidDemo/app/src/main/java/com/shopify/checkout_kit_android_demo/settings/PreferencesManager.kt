@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.shopify.checkout_kit_android_demo.common.sampleStorefrontAppearance
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutSheetPreset
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.CheckoutAppearance
@@ -31,7 +32,7 @@ class PreferencesManager(private val context: Context) {
                     decoder.decodeFromString<ColorScheme>(value)
                 )
             }.getOrNull()
-        } ?: CheckoutAppearance.Storefront()
+        } ?: sampleStorefrontAppearance()
         val buyerIdentityDemoEnabled = preferences[BUYER_IDENTITY] ?: false
         val checkoutPreloadingEnabled = preferences[CHECKOUT_PRELOADING] ?: true
         val dragToDismissEnabled = preferences[DRAG_TO_DISMISS] ?: true

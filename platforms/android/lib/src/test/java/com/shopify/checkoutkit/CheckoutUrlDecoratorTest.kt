@@ -79,10 +79,12 @@ class CheckoutUrlDecoratorTest {
 
     @Test
     fun `decorate derives shop branding for storefront appearance`() {
-        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(), "automatic", "shop")
-        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(ColorScheme.Light()), "automatic", "shop")
-        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(ColorScheme.Dark()), "automatic", "shop")
-        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(ColorScheme.Automatic()), "automatic", "shop")
+        val customized = CheckoutAppearance.Storefront().customize {
+            headerBackground = Color.SRGB(0xFF008060.toInt())
+        }
+
+        assertAppearanceDecoratesWith(CheckoutAppearance.Storefront(), "light", "shop")
+        assertAppearanceDecoratesWith(customized, "light", "shop")
     }
 
     private fun assertAppearanceDecoratesWith(
