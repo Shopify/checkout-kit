@@ -209,6 +209,18 @@ describe('ShopifyCheckoutKit', () => {
       instance.setConfig(configWithTitle);
       expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithTitle);
     });
+
+    it('calls `setConfig` with allowedMessageOrigins configuration', () => {
+      const instance = new ShopifyCheckout();
+      const configWithAllowedOrigins: Configuration = {
+        colorScheme: ColorScheme.automatic,
+        allowedMessageOrigins: ['https://example.com', 'https://*.example.com'],
+      };
+      instance.setConfig(configWithAllowedOrigins);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(
+        configWithAllowedOrigins,
+      );
+    });
   });
 
   describe('preload', () => {

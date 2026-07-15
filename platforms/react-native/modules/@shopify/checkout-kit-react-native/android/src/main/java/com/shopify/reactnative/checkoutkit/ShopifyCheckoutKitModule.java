@@ -13,10 +13,12 @@ import com.shopify.checkoutkit.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
@@ -138,6 +140,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
       if (config.hasKey("preloading")) {
         configuration.setPreloading(new Preloading(config.getBoolean("preloading")));
+      }
+
+      if (config.hasKey("allowedMessageOrigins")) {
+        configuration.setAllowedMessageOrigins(toStringSet(config.getArray("allowedMessageOrigins")));
       }
 
       if (config.hasKey("logLevel")) {
@@ -273,6 +279,20 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
       return ((CheckoutAppearance.App) appearance).getColorScheme().getId();
     }
     return STOREFRONT_COLOR_SCHEME;
+  }
+
+  private static Set<String> toStringSet(ReadableArray array) {
+    Set<String> values = new HashSet<>();
+    if (array == null) {
+      return values;
+    }
+    for (int i = 0; i < array.size(); i++) {
+      String value = array.getString(i);
+      if (value != null) {
+        values.add(value);
+      }
+    }
+    return values;
   }
 
   static LogLevel logLevelFor(String logLevel) {
