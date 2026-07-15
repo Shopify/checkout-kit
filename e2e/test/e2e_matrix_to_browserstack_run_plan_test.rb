@@ -19,7 +19,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_nil_changed_files_selects_all_applications
-    assert_equal ["react-native-ios", "react-native-android"], selected_ids(nil)
+    assert_equal ["react-native-ios", "react-native-android", "kotlin-android"], selected_ids(nil)
   end
 
   def test_empty_changed_files_selects_no_applications
@@ -30,12 +30,20 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal ["react-native-ios", "react-native-android"], selected_ids(["platforms/react-native/src/index.ts"])
   end
 
+  def test_android_change_selects_kotlin_android_application
+    assert_equal ["kotlin-android"], selected_ids(["platforms/android/lib/src/main/java/com/shopify/checkoutkit/Foo.kt"])
+  end
+
+  def test_kotlin_protocol_change_selects_kotlin_android_application
+    assert_equal ["kotlin-android"], selected_ids(["protocol/languages/kotlin/embedded-checkout-protocol/src/main/Foo.kt"])
+  end
+
   def test_nested_docs_only_change_selects_no_applications
     assert_empty selected_ids(["platforms/react-native/docs/assets/screenshot.png"])
   end
 
   def test_shared_ci_filter_change_selects_applications_carrying_ci_filters
-    assert_equal ["react-native-ios", "react-native-android"], selected_ids([".ci/changed-file-filters.yml"])
+    assert_equal ["react-native-ios", "react-native-android", "kotlin-android"], selected_ids([".ci/changed-file-filters.yml"])
   end
 
   def test_bitrise_env_reports_runs_present_when_applications_selected
@@ -46,6 +54,18 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
     assert_equal "true", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
     assert_equal "true", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
+    assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
+  end
+
+  def test_bitrise_env_reports_kotlin_android_build_on_android_change
+    env = plan(changed_files: ["platforms/android/lib/src/main/java/com/shopify/checkoutkit/Foo.kt"]).bitrise_env
+
+    assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
+    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
+    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
+    assert_equal "true", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
+    assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
+    assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
   end
 
   def test_bitrise_env_reports_no_runs_when_nothing_selected
@@ -56,6 +76,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
     assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
     assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
+    assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
   end
 
   def test_load_reads_configuration_from_disk
@@ -67,6 +88,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   def test_build_env_key_sanitizes_application_id
     assert_equal "E2E_BUILD_REACT_NATIVE_IOS", plan.send(:build_env_key, "react-native-ios")
     assert_equal "E2E_BUILD_REACT_NATIVE_ANDROID", plan.send(:build_env_key, "react-native-android")
+    assert_equal "E2E_BUILD_KOTLIN_ANDROID", plan.send(:build_env_key, "kotlin-android")
   end
 
   def test_application_changed_file_filter_names_prefers_plural
