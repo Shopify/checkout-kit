@@ -73,7 +73,7 @@ internal class CheckoutBottomSheet(
 
         setContentView(R.layout.checkout_sheet_content)
         val appearance = ShopifyCheckoutKit.configuration.appearance
-        val colorScheme = appearance.colorScheme
+        val colorScheme = appearance.effectiveColorScheme
         val sheet = ShopifyCheckoutKit.configuration.sheet
         window?.configureCheckoutBottomSheetWindow()
         configureSheet(sheet)

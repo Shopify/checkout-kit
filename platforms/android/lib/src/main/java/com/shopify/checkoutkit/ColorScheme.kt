@@ -161,14 +161,15 @@ public sealed class ColorScheme(public val id: String) {
 /**
  * Specifies the colors for native elements within a ColorScheme.
  *
- * A Colors instance can be passed into a ColorScheme constructor to override its default colors. Colors
- * that can be overridden are:
+ * A Colors instance can be passed into a ColorScheme to override its defaults. Storefront appearance
+ * colors can be overridden through [CheckoutAppearance.Storefront.customize]. Colors that can be overridden are:
  * - The WebView background color,
  * - The native header background and font color,
  * - The progress/loading indicator,
  * - The optional drag handle.
  *
  * @see ColorScheme
+ * @see CheckoutAppearance.Storefront
  */
 @Serializable
 public data class Colors(

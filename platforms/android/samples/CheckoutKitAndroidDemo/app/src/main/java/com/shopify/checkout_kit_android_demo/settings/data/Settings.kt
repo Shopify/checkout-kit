@@ -15,6 +15,6 @@ data class Settings(
     val colorScheme: ColorScheme
         get() = when (appearance) {
             is CheckoutAppearance.App -> appearance.colorScheme
-            is CheckoutAppearance.Storefront -> appearance.colorScheme
+            is CheckoutAppearance.Storefront -> ColorScheme.Light()
         }
 }

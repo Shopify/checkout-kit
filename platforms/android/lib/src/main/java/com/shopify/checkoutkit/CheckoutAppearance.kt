@@ -16,16 +16,53 @@ public sealed interface CheckoutAppearance {
     ) : CheckoutAppearance
 
     /**
-     * Uses the storefront's web checkout branding with the automatic color scheme.
+     * Uses the storefront's web checkout branding.
+     *
+     * Storefront checkout currently uses a light color scheme. The surrounding native sheet colors
+     * can be customized to match the merchant's branding.
      */
     @Serializable
-    public data class Storefront(
-        public val colorScheme: ColorScheme = ColorScheme.Automatic(),
-    ) : CheckoutAppearance
+    public class Storefront private constructor(
+        private val colors: Colors,
+    ) : CheckoutAppearance {
+        public constructor() : this(ColorScheme.Light().colors)
+
+        /**
+         * Creates a customized storefront appearance for native sheet elements.
+         *
+         * Storefront Web content continues to use the merchant's checkout branding.
+         */
+        public fun customize(customizer: StorefrontCustomizer): Storefront {
+            val builder = ColorsBuilder(colors)
+            with(customizer) {
+                builder.customize()
+            }
+            return Storefront(builder.build())
+        }
+
+        internal val nativeColorScheme: ColorScheme.Light
+            get() = ColorScheme.Light(colors)
+
+        override fun equals(other: Any?): Boolean = other is Storefront && colors == other.colors
+
+        override fun hashCode(): Int = colors.hashCode()
+
+        override fun toString(): String = "Storefront(colors=$colors)"
+    }
 }
 
-internal val CheckoutAppearance.colorScheme: ColorScheme
+/**
+ * Customizes the native sheet colors surrounding storefront checkout.
+ */
+public fun interface StorefrontCustomizer {
+    /**
+     * Applies storefront color overrides to this builder.
+     */
+    public fun ColorsBuilder.customize(): Unit
+}
+
+internal val CheckoutAppearance.effectiveColorScheme: ColorScheme
     get() = when (this) {
         is CheckoutAppearance.App -> colorScheme
-        is CheckoutAppearance.Storefront -> ColorScheme.Automatic()
+        is CheckoutAppearance.Storefront -> nativeColorScheme
     }

@@ -183,7 +183,7 @@ ShopifyCheckoutKit.configure {
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `appearance` | `CheckoutAppearance.Storefront()` | Use the storefront's web checkout branding with automatic color scheme, or use the Checkout Kit style with `App(Automatic)`, `App(Light)`, or `App(Dark)`. |
+| `appearance` | `CheckoutAppearance.Storefront()` | Use the storefront's web checkout branding, or use the Checkout Kit style with `App(Automatic)`, `App(Light)`, or `App(Dark)`. |
 | `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
@@ -196,11 +196,25 @@ ShopifyCheckoutKit.configure {
     it.appearance = CheckoutAppearance.App(ColorScheme.Dark())
     it.appearance = CheckoutAppearance.App(ColorScheme.Automatic())
     it.appearance = CheckoutAppearance.Storefront()
-    it.appearance = CheckoutAppearance.Storefront(ColorScheme.Automatic())
 }
 ```
 
-Customize native colors with resource IDs or sRGB integers:
+Storefront checkout currently uses a light color scheme. Customize the surrounding native sheet
+colors to match the merchant's storefront branding:
+
+```kotlin
+ShopifyCheckoutKit.configure {
+    it.appearance = CheckoutAppearance.Storefront().customize {
+        headerBackground = Color.ResourceId(R.color.storefront_header)
+        headerFont = Color.ResourceId(R.color.storefront_header_text)
+        webViewBackground = Color.ResourceId(R.color.storefront_background)
+        progressIndicator = Color.ResourceId(R.color.storefront_progress)
+        dragHandleColor = Color.ResourceId(R.color.storefront_drag_handle)
+    }
+}
+```
+
+Customize automatic app colors with separate light and dark palettes:
 
 ```kotlin
 ShopifyCheckoutKit.configure {

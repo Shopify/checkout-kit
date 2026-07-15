@@ -13,7 +13,7 @@ internal object CheckoutUrlDecorator {
             checkoutUrl,
             options = EmbeddedCheckoutProtocol.Options(
                 delegations = CheckoutProtocol.defaultDelegations,
-                colorScheme = configuration.appearance.colorSchemeId,
+                colorScheme = configuration.appearance.effectiveColorScheme.id,
             ),
         )
 
@@ -27,12 +27,6 @@ internal object CheckoutUrlDecorator {
 
     private const val CK_BRANDING_PARAM = "ck_branding"
 }
-
-private val CheckoutAppearance.colorSchemeId: String
-    get() = when (this) {
-        is CheckoutAppearance.App -> colorScheme.id
-        is CheckoutAppearance.Storefront -> ColorScheme.Automatic().id
-    }
 
 private val CheckoutAppearance.brandingId: String
     get() = when (this) {
