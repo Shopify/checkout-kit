@@ -47,6 +47,11 @@ pipelines:
           expression: '{{ enveq "E2E_BUILD_KOTLIN_ANDROID" "true" }}'
         depends_on:
           - e2e-produce-browserstack-run-plan
+      e2e-build-swift-ios:
+        run_if:
+          expression: '{{ enveq "E2E_BUILD_SWIFT_IOS" "true" }}'
+        depends_on:
+          - e2e-produce-browserstack-run-plan
       e2e-execute-browserstack-run:
         run_if:
           expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
@@ -55,6 +60,7 @@ pipelines:
           - e2e-build-react-native-ios
           - e2e-build-react-native-android
           - e2e-build-kotlin-android
+          - e2e-build-swift-ios
         parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
       e2e-report:
         run_if:
@@ -117,6 +123,29 @@ step_bundles:
           inputs:
             - key: *rn_cocoapods_cache_key
             - paths: platforms/react-native/sample/ios/Pods
+  bootstrap-mint:
+    inputs:
+      - mintfile_dir: ""
+    steps:
+      - restore-cache@3:
+          inputs:
+            - key: &mint_cache_key |-
+                mint-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/swift/Mintfile" }}
+      - script@1:
+          title: Bootstrap Mint dependencies
+          inputs:
+            - content: |-
+                set -euo pipefail
+                : "${mintfile_dir:?mintfile_dir input is required}"
+                if ! command -v mint >/dev/null 2>&1; then
+                  brew install mint
+                fi
+                cd "$mintfile_dir"
+                mint bootstrap
+      - save-cache@1:
+          inputs:
+            - key: *mint_cache_key
+            - paths: ~/.mint
 
 workflows:
   e2e-produce-browserstack-run-plan:
@@ -164,6 +193,7 @@ workflows:
                 E2E_BUILD_REACT_NATIVE_IOS
                 E2E_BUILD_REACT_NATIVE_ANDROID
                 E2E_BUILD_KOTLIN_ANDROID
+                E2E_BUILD_SWIFT_IOS
       - deploy-to-bitrise-io@2:
           is_always_run: false
           inputs:
@@ -266,6 +296,36 @@ workflows:
             - paths: |-
                 ~/.gradle/caches
                 ~/.gradle/wrapper
+
+  e2e-build-swift-ios:
+    tools:
+      ruby: 3.3.6
+    meta:
+      bitrise.io:
+        # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
+        # only receive Xcode patch updates, so this pins Xcode 26.2 / iOS 26.2
+        # (23C54) to match local development.
+        stack: osx-xcode-26.2.x
+        machine_type_id: g2.mac.4large
+    steps:
+      - git-clone@8: {}
+      - certificate-and-profile-installer@1: {}
+      - bundle::bootstrap-mint:
+          inputs:
+            - mintfile_dir: platforms/swift
+      - script@1:
+          title: Build Swift iOS IPA artifact
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                e2e/scripts/build_swift_ios
+      - deploy-to-bitrise-io@2:
+          is_always_run: false
+          inputs:
+            - pipeline_intermediate_files: |-
+                $E2E_SWIFT_IOS_APP_PATH:E2E_SWIFT_IOS_APP_PATH
 
   e2e-execute-browserstack-run:
     steps:

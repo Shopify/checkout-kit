@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+e2e_build_ios_device_ipa() {
+  local workspace=""
+  local project=""
+  local scheme=""
+  local app_name=""
+  local bundle_id=""
+  local development_team=""
+  local code_sign_identity=""
+  local profile_specifier=""
+  local export_method=""
+  local archive_path=""
+  local export_path=""
+  local export_options=""
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --workspace) workspace="$2"; shift 2 ;;
+      --project) project="$2"; shift 2 ;;
+      --scheme) scheme="$2"; shift 2 ;;
+      --app-name) app_name="$2"; shift 2 ;;
+      --bundle-id) bundle_id="$2"; shift 2 ;;
+      --development-team) development_team="$2"; shift 2 ;;
+      --code-sign-identity) code_sign_identity="$2"; shift 2 ;;
+      --profile-specifier) profile_specifier="$2"; shift 2 ;;
+      --export-method) export_method="$2"; shift 2 ;;
+      --archive-path) archive_path="$2"; shift 2 ;;
+      --export-path) export_path="$2"; shift 2 ;;
+      --export-options) export_options="$2"; shift 2 ;;
+      *) echo "e2e_build_ios_device_ipa: unknown argument $1" >&2; return 1 ;;
+    esac
+  done
+
+  if [ -n "$workspace" ] && [ -n "$project" ]; then
+    echo "e2e_build_ios_device_ipa: pass either --workspace or --project, not both" >&2
+    return 1
+  fi
+  if [ -z "$workspace" ] && [ -z "$project" ]; then
+    echo "e2e_build_ios_device_ipa: --workspace or --project is required" >&2
+    return 1
+  fi
+  if [ -z "$scheme" ]; then
+    echo "e2e_build_ios_device_ipa: --scheme is required" >&2
+    return 1
+  fi
+  if [ -z "$bundle_id" ]; then
+    echo "e2e_build_ios_device_ipa: --bundle-id is required" >&2
+    return 1
+  fi
+  if [ -z "$profile_specifier" ]; then
+    echo "e2e_build_ios_device_ipa: --profile-specifier is required" >&2
+    return 1
+  fi
+
+  app_name="${app_name:-$scheme}"
+  bundle_id="${E2E_IOS_BUNDLE_ID:-$bundle_id}"
+  profile_specifier="${E2E_IOS_PROVISIONING_PROFILE_SPECIFIER:-$profile_specifier}"
+  development_team="${E2E_IOS_DEVELOPMENT_TEAM:-${development_team:-A7XGC83MZE}}"
+  code_sign_identity="${E2E_IOS_CODE_SIGN_IDENTITY:-${code_sign_identity:-Apple Development}}"
+  export_method="${E2E_IOS_EXPORT_METHOD:-${export_method:-development}}"
+
+  local e2e_dir
+  e2e_dir="$(e2e_deploy_dir)"
+  archive_path="${archive_path:-$e2e_dir/${app_name}.xcarchive}"
+  export_path="${export_path:-$e2e_dir/${app_name}-ios-export}"
+  export_options="${export_options:-$e2e_dir/${app_name}-ExportOptions.plist}"
+  local provisioned_ipa="$export_path/${app_name}-Provisioned.ipa"
+
+  local project_selector=()
+  if [ -n "$workspace" ]; then
+    project_selector=(-workspace "$workspace")
+  else
+    project_selector=(-project "$project")
+  fi
+
+  local common_args=(
+    "${project_selector[@]}"
+    -scheme "$scheme"
+    -configuration Release
+    -skipPackagePluginValidation
+    -disableAutomaticPackageResolution
+  )
+
+  cat > "$export_options" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>$export_method</string>
+  <key>signingStyle</key>
+  <string>manual</string>
+  <key>teamID</key>
+  <string>$development_team</string>
+  <key>signingCertificate</key>
+  <string>$code_sign_identity</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>$bundle_id</key>
+    <string>$profile_specifier</string>
+  </dict>
+  <key>stripSwiftSymbols</key>
+  <true/>
+  <key>compileBitcode</key>
+  <false/>
+</dict>
+</plist>
+PLIST
+
+  e2e_log "Archiving iOS app $app_name"
+  if ! xcodebuild archive \
+    "${common_args[@]}" \
+    -sdk iphoneos \
+    -destination generic/platform=iOS \
+    -archivePath "$archive_path" \
+    "CODE_SIGNING_ALLOWED=NO" \
+    "CODE_SIGNING_REQUIRED=NO"; then
+    e2e_log "iOS archive failed"
+    echo "Check Bitrise code signing assets for bundle id ${bundle_id} and team ${development_team}." >&2
+    echo "Expected provisioning profile specifier: ${profile_specifier}." >&2
+    echo "Upload an Apple Development certificate and matching development provisioning profile at https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/code_signing." >&2
+    echo "The iOS build workflow runs certificate-and-profile-installer before xcodebuild." >&2
+    return 1
+  fi
+
+  e2e_log "Exporting iOS IPA $app_name"
+  if ! xcodebuild -exportArchive \
+    -archivePath "$archive_path" \
+    -exportPath "$export_path" \
+    -exportOptionsPlist "$export_options"; then
+    e2e_log "iOS IPA export failed"
+    echo "Check that the installed provisioning profile matches export method ${export_method}." >&2
+    echo "Export options plist: ${export_options}" >&2
+    return 1
+  fi
+
+  local exported_ipa
+  exported_ipa="$(find "$export_path" -name "*.ipa" -print -quit)"
+  if [ -z "$exported_ipa" ] || [ ! -f "$exported_ipa" ]; then
+    e2e_log "iOS IPA export did not create an IPA"
+    find "$export_path" -maxdepth 3 -print >&2 || true
+    return 1
+  fi
+  mv "$exported_ipa" "$provisioned_ipa"
+
+  E2E_IOS_PROVISIONED_IPA="$provisioned_ipa"
+}

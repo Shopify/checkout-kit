@@ -4,6 +4,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/bitrise_ci_helpers"
+source "$script_dir/ios_build_helpers"
 
 e2e_configure_storefront
 
@@ -13,53 +14,27 @@ app_name="CheckoutKitReactNativeDemo"
 workspace="${app_name}.xcworkspace"
 scheme="$app_name"
 
+e2e_build_ios_device_ipa \
+  --workspace "$workspace" \
+  --scheme "$scheme" \
+  --app-name "$app_name" \
+  --bundle-id com.shopify.checkoutkit.reactnativedemo \
+  --profile-specifier bitrise-checkout-kit-e2e
+
+e2e_log "Publishing iOS IPA path"
+envman add --key E2E_REACT_NATIVE_IOS_APP_PATH --value "$E2E_IOS_PROVISIONED_IPA"
+
 e2e_dir="$(e2e_deploy_dir)"
-archive_path="$e2e_dir/${app_name}.xcarchive"
-export_path="$e2e_dir/react-native-ios-export"
-export_options="$e2e_dir/ExportOptions.plist"
-provisioned_ipa="$export_path/${app_name}-Provisioned.ipa"
 simulator_derived_data="$PWD/build/e2e-simulator"
 simulator_app_zip="$e2e_dir/${app_name}-Simulator.zip"
-
-export_method="${E2E_IOS_EXPORT_METHOD:-development}"
-ios_bundle_id="${E2E_IOS_BUNDLE_ID:-com.shopify.checkoutkit.reactnativedemo}"
-ios_development_team="${E2E_IOS_DEVELOPMENT_TEAM:-A7XGC83MZE}"
-ios_code_sign_identity="${E2E_IOS_CODE_SIGN_IDENTITY:-Apple Development}"
-ios_profile_specifier="${E2E_IOS_PROVISIONING_PROFILE_SPECIFIER:-bitrise-checkout-kit-e2e}"
-
-xcodebuild_common_args=(
-  -workspace "$workspace"
-  -scheme "$scheme"
-  -configuration Release
-  -skipPackagePluginValidation
-)
-
-# Builds the device archive that export_device_ipa packages into the provisioned IPA.
-archive_device_app() {
-  xcodebuild archive \
-    "${xcodebuild_common_args[@]}" \
-    -disableAutomaticPackageResolution \
-    -sdk iphoneos \
-    -destination generic/platform=iOS \
-    -archivePath "$archive_path" \
-    "CODE_SIGN_STYLE=Manual" \
-    "DEVELOPMENT_TEAM=$ios_development_team" \
-    "CODE_SIGN_IDENTITY=$ios_code_sign_identity" \
-    "PROVISIONING_PROFILE_SPECIFIER=$ios_profile_specifier"
-}
-
-# Packages the device archive into the signed IPA uploaded to Bitrise.
-export_device_ipa() {
-  xcodebuild -exportArchive \
-    -archivePath "$archive_path" \
-    -exportPath "$export_path" \
-    -exportOptionsPlist "$export_options"
-}
 
 # Builds the simulator app bundle that is zipped for BrowserStack.
 build_simulator_app() {
   xcodebuild build \
-    "${xcodebuild_common_args[@]}" \
+    -workspace "$workspace" \
+    -scheme "$scheme" \
+    -configuration Release \
+    -skipPackagePluginValidation \
     -disableAutomaticPackageResolution \
     -sdk iphonesimulator \
     -destination 'generic/platform=iOS Simulator' \
@@ -68,61 +43,6 @@ build_simulator_app() {
     ONLY_ACTIVE_ARCH=NO \
     CODE_SIGNING_ALLOWED=NO
 }
-
-cat > "$export_options" <<PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>method</key>
-  <string>$export_method</string>
-  <key>signingStyle</key>
-  <string>manual</string>
-  <key>teamID</key>
-  <string>$ios_development_team</string>
-  <key>signingCertificate</key>
-  <string>$ios_code_sign_identity</string>
-  <key>provisioningProfiles</key>
-  <dict>
-    <key>$ios_bundle_id</key>
-    <string>$ios_profile_specifier</string>
-  </dict>
-  <key>stripSwiftSymbols</key>
-  <true/>
-  <key>compileBitcode</key>
-  <false/>
-</dict>
-</plist>
-PLIST
-
-e2e_log "Archiving React Native iOS app"
-if ! archive_device_app; then
-  e2e_log "iOS archive failed"
-  echo "Check Bitrise code signing assets for bundle id ${ios_bundle_id} and team ${ios_development_team}." >&2
-  echo "Expected provisioning profile specifier: ${ios_profile_specifier}." >&2
-  echo "Upload an Apple Development certificate and matching development provisioning profile at https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/code_signing." >&2
-  echo "The e2e-build-react-native-ios workflow runs certificate-and-profile-installer before xcodebuild." >&2
-  exit 1
-fi
-
-e2e_log "Exporting React Native iOS IPA"
-if ! export_device_ipa; then
-  e2e_log "iOS IPA export failed"
-  echo "Check that the installed provisioning profile matches export method ${export_method}." >&2
-  echo "Export options plist: ${export_options}" >&2
-  exit 1
-fi
-
-ios_ipa="$(find "$export_path" -name "*.ipa" -print -quit)"
-if [ -z "$ios_ipa" ] || [ ! -f "$ios_ipa" ]; then
-  e2e_log "iOS IPA export did not create an IPA"
-  find "$export_path" -maxdepth 3 -print >&2 || true
-  exit 1
-fi
-mv "$ios_ipa" "$provisioned_ipa"
-
-e2e_log "Publishing iOS IPA path"
-envman add --key E2E_REACT_NATIVE_IOS_APP_PATH --value "$provisioned_ipa"
 
 e2e_log "Building React Native iOS simulator app"
 # Restrict the simulator build to arm64: react-native-quick-crypto@1.0.9

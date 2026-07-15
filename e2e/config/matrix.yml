@@ -34,6 +34,18 @@ applications:
       - protocolKotlin
       - e2e
       - ciFilters
+  - id: swift-ios
+    target: swift
+    platform: ios
+    app_id: com.shopify.checkoutkit.swiftdemo
+    artifact_env: E2E_SWIFT_IOS_APP_PATH
+    ready_marker: checkout-kit-sample-ready
+    changed_files_filters:
+      - swift
+      - protocolSwift
+      - packageSwift
+      - e2e
+      - ciFilters
 os_version_tags:
   - latest
 suites:

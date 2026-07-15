@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/bitrise_ci_helpers"
+source "$script_dir/ios_build_helpers"
+
+e2e_configure_storefront
+
+e2e_log "Generating Swift sample Xcode projects"
+platforms/swift/Scripts/generate_xcode_projects
+
+cd platforms/swift/Samples
+
+app_name="CheckoutKitSwiftDemo"
+workspace="Samples.xcworkspace"
+scheme="$app_name"
+
+e2e_build_ios_device_ipa \
+  --workspace "$workspace" \
+  --scheme "$scheme" \
+  --app-name "$app_name" \
+  --bundle-id com.shopify.checkoutkit.swiftdemo \
+  --profile-specifier bitrise-checkout-kit-e2e-swift
+
+e2e_log "Publishing iOS IPA path"
+envman add --key E2E_SWIFT_IOS_APP_PATH --value "$E2E_IOS_PROVISIONED_IPA"
