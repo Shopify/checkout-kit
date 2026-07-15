@@ -73,8 +73,8 @@ internal class EmbeddedCheckoutProtocolBridge(
             webView = view,
             jsObjectName = INTERFACE_NAME,
             allowedOriginRules = ALLOWED_MESSAGE_ORIGIN_RULES,
-        ) { message, isMainFrame ->
-            receiveWebMessage(message, isMainFrame)
+        ) { message, sourceOrigin, isMainFrame ->
+            receiveWebMessage(message, sourceOrigin, isMainFrame)
         }
         if (!attached) throw UnsupportedWebViewException()
         isTransportAttached = true
@@ -91,13 +91,43 @@ internal class EmbeddedCheckoutProtocolBridge(
         this.client = client
     }
 
-    private fun receiveWebMessage(message: String, isMainFrame: Boolean) {
+    private fun receiveWebMessage(message: String, sourceOrigin: String, isMainFrame: Boolean) {
         if (!isMainFrame) {
             log.d(LOG_TAG, "Ignoring ECP WebMessage from a child frame.")
             return
         }
 
+        if (!isOriginAllowed(sourceOrigin)) {
+            rejectMessage(sourceOrigin, message)
+            return
+        }
+
         receiveMessage(message)
+    }
+
+    /**
+     * Origin validation runs here (not at the WebView layer) so [ALLOWED_MESSAGE_ORIGIN_RULES] can
+     * stay `"*"` and deliver every message with its verified origin. That lets the kit surface
+     * drops through [Configuration.onMessageRejected] instead of the WebView silently discarding
+     * them.
+     */
+    private fun isOriginAllowed(sourceOrigin: String): Boolean {
+        val configuration = ShopifyCheckoutKit.configuration
+        val patterns = OriginAllowlist.effectivePatterns(
+            checkoutOrigin = view.checkoutOrigin,
+            configured = configuration.allowedMessageOrigins,
+        )
+        return OriginAllowlist.isAllowed(sourceOrigin, patterns)
+    }
+
+    private fun rejectMessage(sourceOrigin: String, message: String) {
+        val reason = "origin \"$sourceOrigin\" is not in the allowlist"
+        val callback = ShopifyCheckoutKit.configuration.onMessageRejected
+        if (callback != null) {
+            callback(RejectedMessage(origin = sourceOrigin, message = message, reason = reason))
+        } else {
+            log.d(LOG_TAG, "Dropped ECP WebMessage: $reason")
+        }
     }
 
     internal fun receiveMessage(message: String) {

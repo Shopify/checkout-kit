@@ -56,6 +56,8 @@ class CheckoutWebViewTest {
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel
+            it.allowedMessageOrigins = initialConfiguration.allowedMessageOrigins
+            it.onMessageRejected = initialConfiguration.onMessageRejected
         }
     }
 
@@ -271,6 +273,74 @@ class CheckoutWebViewTest {
         assertWebMessageIgnored {
             webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), isMainFrame = false)
         }
+    }
+
+    @Test
+    fun `web message from any origin is accepted when no allowlist is configured`() {
+        val view = checkoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        var received = false
+        view.setClient(
+            CheckoutProtocol.Client().on(CheckoutProtocol.messagesChange) { received = true },
+        )
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = "https://evil.example.com")
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(received).isTrue()
+        }
+    }
+
+    @Test
+    fun `web message from the cart URL origin is accepted when an allowlist is configured`() {
+        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        assertWebMessageReceivedFrom("https://checkout.shopify.com")
+    }
+
+    @Test
+    fun `web message from a shop app subdomain is accepted when an allowlist is configured`() {
+        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        assertWebMessageReceivedFrom("https://checkout.shop.app")
+    }
+
+    @Test
+    fun `web message from a configured origin is accepted`() {
+        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        assertWebMessageReceivedFrom("https://allowed.example.com")
+    }
+
+    @Test
+    fun `web message from an untrusted origin is dropped and reported when an allowlist is configured`() {
+        val rejected = mutableListOf<RejectedMessage>()
+        ShopifyCheckoutKit.configure {
+            it.allowedMessageOrigins = setOf("https://allowed.example.com")
+            it.onMessageRejected = { rejected.add(it) }
+        }
+        val view = checkoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        var received = false
+        var sentinelReceived = false
+        view.setClient(
+            CheckoutProtocol.Client()
+                .on(CheckoutProtocol.messagesChange) { received = true }
+                .on(CheckoutProtocol.start) { sentinelReceived = true },
+        )
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = "https://evil.example.com")
+        webMessageTransport.dispatchMessage(ecStartMessage(), sourceOrigin = "https://checkout.shopify.com")
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(sentinelReceived).isTrue()
+        }
+        assertThat(received).isFalse()
+        assertThat(rejected).singleElement().satisfies({
+            assertThat(it.origin).isEqualTo("https://evil.example.com")
+            assertThat(it.reason).contains("not in the allowlist")
+        })
     }
 
     // endregion
@@ -604,6 +674,27 @@ class CheckoutWebViewTest {
         }
         assertThat(ignoredMessageReceived).isFalse()
         assertThat(webMessageTransport.sentMessages).isEmpty()
+    }
+
+    /**
+     * Loads a checkout (so its cart origin becomes a trusted default), dispatches a protocol message
+     * from [origin], and asserts it reaches the client.
+     */
+    private fun assertWebMessageReceivedFrom(origin: String) {
+        val view = checkoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        var received = false
+        view.setClient(
+            CheckoutProtocol.Client().on(CheckoutProtocol.messagesChange) { received = true },
+        )
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = origin)
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(received).isTrue()
+        }
     }
 
     private fun ecStartMessage(): String =

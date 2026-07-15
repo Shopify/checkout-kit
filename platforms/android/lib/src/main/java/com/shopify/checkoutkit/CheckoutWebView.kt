@@ -61,6 +61,10 @@ internal class CheckoutWebView private constructor(
     private var didRetryCheckoutRequest = false
     private val touchHandler = CheckoutWebViewTouchHandler()
 
+    /** Origin of the loaded checkout URL, trusted as a safe default for incoming-message validation. */
+    internal var checkoutOrigin: String? = null
+        private set
+
     init {
         configureWebView(::listener)
         webViewClient = CheckoutWebViewClient()
@@ -122,6 +126,7 @@ internal class CheckoutWebView private constructor(
         )
         loadComplete = false
         isPreloadRequest = isPreload
+        checkoutOrigin = OriginAllowlist.originFromUrl(url)
         Handler(Looper.getMainLooper()).post {
             val request = CheckoutRequest(
                 url = CheckoutUrlDecorator.decorate(url),
