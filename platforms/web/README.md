@@ -36,6 +36,8 @@ Check out our blog to
   - [`target`](#target)
   - [`appearance`](#appearance)
   - [`log-level`](#log-level)
+  - [`allowed-origins`](#allowed-origins)
+  - [`onMessageRejected`](#onmessagerejected)
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
 - [Checkout lifecycle](#checkout-lifecycle)
@@ -396,6 +398,54 @@ Use `"debug"` while wiring up `src` and event handlers during integration, or
 ```ts
 checkout.logLevel = 'debug';
 ```
+
+### `allowed-origins`
+
+Controls which origins are trusted to post incoming checkout-protocol messages
+to the component. On web, checkout is **closed by default**: with no configured
+origins, only the cart URL origin (from `src`) and `shop.app` (including its
+subdomains) are trusted. Messages from any other origin are dropped.
+
+Provide extra origins as a space- or comma-separated list. Each entry may be:
+
+| Entry                     | Matches                                                        |
+| ------------------------- | -------------------------------------------------------------- |
+| `https://example.com`     | That exact origin.                                             |
+| `https://*.example.com`   | Any subdomain of `example.com` (not the apex `example.com`).   |
+| `*`                       | Every origin — disables origin validation entirely.            |
+
+```html
+<shopify-checkout src="..." allowed-origins="https://checkout.example.com https://*.example.com" />
+```
+
+```ts
+checkout.allowedOrigins = ['https://checkout.example.com', 'https://*.example.com'];
+```
+
+> [!NOTE]
+> Incoming messages are advisory (lifecycle/UI signals) and are never treated
+> as an authoritative source of checkout state, so origin validation is defense
+> in depth. Use `*` only when you understand the trade-off — in the shared
+> browser, other pages and extensions can post to the component.
+
+Invalid entries are ignored, and a warning is logged at `log-level="warn"` or
+more verbose.
+
+### `onMessageRejected`
+
+A property-only callback invoked whenever an incoming message is dropped by
+origin validation. The smart default logs a warning; assign a function to
+observe rejected messages instead (for example, to report them).
+
+```ts
+checkout.onMessageRejected = ({ origin, data, reason }) => {
+  console.warn(`Dropped message from ${origin}: ${reason}`, data);
+};
+```
+
+> [!WARNING]
+> The payload is untrusted — it was dropped precisely because its origin was
+> not in the allowlist. Do not derive checkout state from it.
 
 ### Popup dimensions
 

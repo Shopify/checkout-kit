@@ -25,6 +25,7 @@
 - [Preload checkout](#preload-checkout)
 - [Configure checkout](#configure-checkout)
   - [Color schemes](#color-schemes)
+  - [Incoming message origin validation](#incoming-message-origin-validation)
   - [Title localization](#title-localization)
   - [Current configuration](#current-configuration)
 - [Checkout lifecycle](#checkout-lifecycle)
@@ -258,8 +259,8 @@ ShopifyCheckoutKit.configure {
 | `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
-| `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
-| `onMessageRejected` | `null` | Observes messages rejected by origin validation. |
+| `allowedMessageOrigins` | `emptySet()` | Origins trusted to send incoming checkout messages. Empty trusts every origin (open by default). See [Incoming message origin validation](#incoming-message-origin-validation). |
+| `onMessageRejected` | `null` | Callback invoked when a message is dropped by origin validation. Defaults to logging at debug level. |
 
 ### Color schemes
 
@@ -347,6 +348,43 @@ Use `closeIcon = DrawableResource(R.drawable.ic_checkout_close)` to provide a cu
 Set `dragHandle.visible = true` to show a fixed, visual-only drag handle at the top of the sheet. The handle is hidden
 when `dismissal.dragToDismissEnabled = false` so disabled drag gestures are not presented as available. Configure
 `dragHandleColor` in `ColorScheme` to override the default header-font-derived handle color.
+
+### Incoming message origin validation
+
+The native WebView is a private, app-controlled runtime, so Checkout Kit is
+**open by default**: with an empty `allowedMessageOrigins`, incoming
+checkout-protocol messages from any origin are accepted. Provide one or more
+origins to restrict which origins are trusted; the loaded checkout origin and
+`shop.app` (including its subdomains) are always trusted as well.
+
+```kotlin
+ShopifyCheckoutKit.configure {
+    it.allowedMessageOrigins = setOf(
+        "https://checkout.example.com",
+        "https://*.example.com",
+    )
+}
+```
+
+Each entry may be an exact origin (`https://example.com`), a wildcard subdomain
+(`https://*.example.com`, matching subdomains but not the apex), or `"*"` to
+explicitly trust every origin.
+
+Messages dropped by origin validation are logged at debug level. To observe
+them instead, set `onMessageRejected`:
+
+```kotlin
+ShopifyCheckoutKit.configure {
+    it.onMessageRejected = { rejected ->
+        Log.w("Checkout", "Dropped ${rejected.origin}: ${rejected.reason}")
+    }
+}
+```
+
+> [!WARNING]
+> The `RejectedMessage` payload is untrusted — it was dropped precisely because
+> its origin was not in the allowlist. Incoming messages are advisory and are
+> never treated as an authoritative source of checkout state.
 
 ### Title localization
 

@@ -37,6 +37,7 @@ experiences.
 - [Usage with the Shopify Storefront API](#usage-with-the-shopify-storefront-api)
 - [Configuration](#configuration)
   - [Colors](#colors)
+  - [Incoming message origin validation](#incoming-message-origin-validation)
   - [Localization](#localization)
     - [Checkout Sheet title](#checkout-sheet-title)
       - [iOS - Localization](#ios---localization)
@@ -345,6 +346,7 @@ instance of the `ShopifyCheckout` class.
 | `preloading`  |          | `true`      | Enable/disable [preloading](#preloading).                                                                                                                      |
 | `colors`      |          | `{}`        | An object with `ios` and `android` properties to override the colors for iOS and Android platforms individually. See [`colors`](#colors) for more information. |
 | `logLevel`    |          | `error`     | Sets the log level for the native SDK. Use `LogLevel.debug` for verbose logging during development, or `LogLevel.error` for production.                        |
+| `allowedMessageOrigins` |  | `[]`        | Origins trusted to send incoming checkout messages. Empty trusts every origin (open by default). See [Incoming message origin validation](#incoming-message-origin-validation). |
 
 Here's an example of how a fully customized configuration object might look:
 
@@ -386,6 +388,34 @@ function AppWithContext() {
 // If using ShopifyCheckout directly
 const shopifyCheckout = new ShopifyCheckout(config);
 ```
+
+### Incoming message origin validation
+
+Checkout Kit runs on the native iOS and Android web views, which are private,
+app-controlled runtimes. It is therefore **open by default**: with an empty
+`allowedMessageOrigins`, incoming checkout-protocol messages from any origin are
+accepted. Provide one or more origins to restrict which origins are trusted; the
+loaded checkout origin and `shop.app` (including its subdomains) are always
+trusted as well.
+
+```tsx
+const config: Configuration = {
+  allowedMessageOrigins: [
+    'https://checkout.example.com',
+    'https://*.example.com',
+  ],
+};
+```
+
+Each entry may be an exact origin (`https://example.com`), a wildcard subdomain
+(`https://*.example.com`, matching subdomains but not the apex), or `'*'` to
+explicitly trust every origin. Messages dropped by origin validation are logged
+by the native SDK at debug level.
+
+> [!NOTE]
+> Incoming messages are advisory (lifecycle/UI signals) and are never treated as
+> an authoritative source of checkout state, so origin validation is defense in
+> depth.
 
 ### Colors
 
