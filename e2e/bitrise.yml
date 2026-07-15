@@ -4,6 +4,10 @@ project_type: other
 
 meta:
   bitrise.io:
+    # Keep this stack, the macOS stack, and the Ruby line (see tools: below)
+    # aligned. Bump them together — android -> 2026 edition, macOS -> Xcode 27,
+    # Ruby -> the next line both stacks preinstall — so every workflow keeps
+    # pulling a preinstalled Ruby and builds stay fast.
     stack: &android_stack ubuntu-noble-24.04-bitrise-2025-android
     machine_type_id: g2.linux.medium
 
@@ -14,6 +18,12 @@ app:
     - E2E_BROWSERSTACK_POLL_SECONDS: "30"
 
 tools:
+  # "3.4:installed" tells each pinned stack to use its own preinstalled 3.4.x
+  # (no ~3-min source compile): 3.4.8 on the linux android stack, 3.4.5 on
+  # osx-xcode-26.2.x. Deterministic because the stacks are pinned. Local dev and
+  # GitHub Actions pin the exact patch via the repo-root .ruby-version (3.4.8).
+  # When bumping stacks (see meta.bitrise.io above), move this line to the next
+  # Ruby both stacks preinstall so all workflows stay on a preinstalled version.
   ruby: 3.4:installed
   nodejs: 22.14.0
 
@@ -202,8 +212,6 @@ workflows:
                 $BITRISE_DEPLOY_DIR/browserstack-run-plan.json:E2E_BROWSERSTACK_RUN_PLAN_JSON
 
   e2e-build-react-native-ios:
-    tools:
-      ruby: 3.3.6
     meta:
       bitrise.io:
         # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
@@ -233,8 +241,6 @@ workflows:
                 $E2E_REACT_NATIVE_IOS_SIMULATOR_APP_PATH:E2E_REACT_NATIVE_IOS_SIMULATOR_APP_PATH
 
   e2e-build-react-native-android:
-    tools:
-      ruby: 3.3.6
     meta:
       bitrise.io:
         stack: *android_stack
@@ -266,8 +272,6 @@ workflows:
                 ~/.gradle/wrapper
 
   e2e-build-kotlin-android:
-    tools:
-      ruby: 3.3.6
     meta:
       bitrise.io:
         stack: *android_stack
@@ -298,8 +302,6 @@ workflows:
                 ~/.gradle/wrapper
 
   e2e-build-swift-ios:
-    tools:
-      ruby: 3.3.6
     meta:
       bitrise.io:
         # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
