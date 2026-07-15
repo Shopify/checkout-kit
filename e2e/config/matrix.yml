@@ -23,6 +23,17 @@ applications:
       - protocolTypescript
       - e2e
       - ciFilters
+  - id: kotlin-android
+    target: kotlin
+    platform: android
+    app_id: com.shopify.checkoutkit.androiddemo
+    artifact_env: E2E_KOTLIN_ANDROID_APP_PATH
+    ready_marker: checkout-kit-sample-ready
+    changed_files_filters:
+      - android
+      - protocolKotlin
+      - e2e
+      - ciFilters
 os_version_tags:
   - latest
 suites:

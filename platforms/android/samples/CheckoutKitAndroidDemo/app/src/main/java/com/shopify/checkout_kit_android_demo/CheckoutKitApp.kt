@@ -29,11 +29,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.shopify.checkout_kit_android_demo.cart.CartViewModel
@@ -44,6 +48,7 @@ import com.shopify.checkout_kit_android_demo.common.navigation.BottomAppBarWithN
 import com.shopify.checkout_kit_android_demo.common.navigation.CheckoutKitNavHost
 import com.shopify.checkout_kit_android_demo.common.navigation.Screen
 import com.shopify.checkout_kit_android_demo.common.ui.theme.CheckoutKitSampleTheme
+import com.shopify.checkout_kit_android_demo.e2e.E2ETestIds
 import com.shopify.checkout_kit_android_demo.logs.LogsViewModel
 import com.shopify.checkout_kit_android_demo.settings.SettingsUiState
 import com.shopify.checkout_kit_android_demo.settings.SettingsViewModel
@@ -60,7 +65,7 @@ fun CheckoutKitApp() {
     CheckoutKitAppRoot(settingsViewModel, cartViewModel, logsViewModel)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun CheckoutKitAppRoot(
     settingsViewModel: SettingsViewModel,
@@ -76,7 +81,10 @@ fun CheckoutKitAppRoot(
 
     CheckoutKitSampleTheme(darkTheme = useDarkTheme) {
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .semantics { testTagsAsResourceId = true }
+                .testTag(E2ETestIds.APP_READY),
         ) {
             val navController = rememberNavController()
             var currentScreen by remember { mutableStateOf<Screen>(Screen.Product) }

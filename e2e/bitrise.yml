@@ -42,6 +42,11 @@ pipelines:
           expression: '{{ enveq "E2E_BUILD_REACT_NATIVE_ANDROID" "true" }}'
         depends_on:
           - e2e-produce-browserstack-run-plan
+      e2e-build-kotlin-android:
+        run_if:
+          expression: '{{ enveq "E2E_BUILD_KOTLIN_ANDROID" "true" }}'
+        depends_on:
+          - e2e-produce-browserstack-run-plan
       e2e-execute-browserstack-run:
         run_if:
           expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
@@ -49,6 +54,7 @@ pipelines:
           - e2e-produce-browserstack-run-plan
           - e2e-build-react-native-ios
           - e2e-build-react-native-android
+          - e2e-build-kotlin-android
         parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
       e2e-report:
         run_if:
@@ -157,6 +163,7 @@ workflows:
                 E2E_HAS_E2E_RUNS
                 E2E_BUILD_REACT_NATIVE_IOS
                 E2E_BUILD_REACT_NATIVE_ANDROID
+                E2E_BUILD_KOTLIN_ANDROID
       - deploy-to-bitrise-io@2:
           is_always_run: false
           inputs:
@@ -224,6 +231,38 @@ workflows:
       - save-cache@1:
           inputs:
             - key: *rn_gradle_cache_key
+            - paths: |-
+                ~/.gradle/caches
+                ~/.gradle/wrapper
+
+  e2e-build-kotlin-android:
+    tools:
+      ruby: 3.3.6
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
+    steps:
+      - git-clone@8: {}
+      - restore-cache@3:
+          inputs:
+            - key: &kotlin_gradle_cache_key |-
+                kotlin-gradle-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/android/samples/CheckoutKitAndroidDemo/**/*.gradle*" }}
+      - script@1:
+          title: Build Kotlin Android APK artifact
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                e2e/scripts/build_kotlin_android
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - pipeline_intermediate_files: |-
+                $E2E_KOTLIN_ANDROID_APP_PATH:E2E_KOTLIN_ANDROID_APP_PATH
+      - save-cache@1:
+          inputs:
+            - key: *kotlin_gradle_cache_key
             - paths: |-
                 ~/.gradle/caches
                 ~/.gradle/wrapper
