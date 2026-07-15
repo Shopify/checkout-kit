@@ -5,6 +5,10 @@
     {
       "id": "react-native",
       "label": "React Native",
+      "aliases": {
+        "ios": ["rn-ios", "rni"],
+        "android": ["rn-android", "rna"]
+      },
       "recipes": [
         {
           "platform": "ios",
@@ -23,6 +27,42 @@
           "destination": "any",
           "workflow": "e2e-build-react-native-android",
           "artifact_name": "app-e2e.apk"
+        }
+      ]
+    },
+    {
+      "id": "swift",
+      "label": "Swift",
+      "aliases": {
+        "ios": ["swift", "s", "i"]
+      },
+      "recipes": [
+        {
+          "platform": "ios",
+          "destination": "device",
+          "workflow": "e2e-build-swift-ios",
+          "artifact_name": "CheckoutKitSwiftDemo-Provisioned.ipa"
+        },
+        {
+          "platform": "ios",
+          "destination": "simulator",
+          "workflow": "e2e-build-swift-ios",
+          "artifact_name": "CheckoutKitSwiftDemo-Simulator.zip"
+        }
+      ]
+    },
+    {
+      "id": "kotlin",
+      "label": "Kotlin",
+      "aliases": {
+        "android": ["kotlin", "k", "a"]
+      },
+      "recipes": [
+        {
+          "platform": "android",
+          "destination": "any",
+          "workflow": "e2e-build-kotlin-android",
+          "artifact_name": "app-debug.apk"
         }
       ]
     }
