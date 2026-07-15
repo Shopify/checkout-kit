@@ -15,6 +15,7 @@ import com.shopify.checkout_kit_android_demo.cart.data.CartState
 import com.shopify.checkout_kit_android_demo.common.ID
 import com.shopify.checkout_kit_android_demo.common.SnackbarController
 import com.shopify.checkout_kit_android_demo.common.SnackbarEvent
+import com.shopify.checkout_kit_android_demo.common.logs.LogLevel
 import com.shopify.checkout_kit_android_demo.common.logs.Logger
 import com.shopify.checkout_kit_android_demo.common.navigation.Screen
 import com.shopify.checkout_kit_android_demo.settings.PreferencesManager
@@ -24,6 +25,7 @@ import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.CheckoutException
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.ucp.embedded.checkout.Checkout
+import com.shopify.ucp.embedded.checkout.WindowOpenResult
 import com.shopify.ucp.embedded.checkout.windowOpenRejected
 import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +33,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import timber.log.Timber
 
 typealias OnComplete = (Result<CartState.Cart>) -> Unit
@@ -140,11 +144,7 @@ class CartViewModel(
         navController.navigate(Screen.Products.route)
     }
 
-    private fun handleCheckoutCompleted(
-        checkout: Checkout,
-        navController: NavController,
-    ) {
-        logger.log(checkout)
+    private fun handleCheckoutCompleted(navController: NavController) {
         clearCart()
         viewModelScope.launch(Dispatchers.Main.immediate) {
             navController.popBackStack(Screen.Product.route, false)
@@ -155,7 +155,7 @@ class CartViewModel(
         error: CheckoutException,
         activity: ComponentActivity,
     ) {
-        logger.log("Checkout failed", error)
+        logger.logSdkError("Checkout failed", error)
         clearCart()
         viewModelScope.launch(Dispatchers.Main.immediate) {
             Toast.makeText(
@@ -167,7 +167,7 @@ class CartViewModel(
     }
 
     private fun handleCheckoutCanceled() {
-        logger.log("Checkout canceled")
+        logger.logSdkEvent("Checkout canceled")
     }
 
     private fun buildProtocolClient(
@@ -176,35 +176,84 @@ class CartViewModel(
         windowOpenHandler: WindowOpenHandler,
     ): CheckoutProtocol.Client {
         val base = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.start) { Timber.i("ECP ec.start: $it") }
-            .on(CheckoutProtocol.complete) { checkout ->
-                Timber.i("ECP ec.complete: $checkout")
-                handleCheckoutCompleted(checkout, navController)
+            .on(CheckoutProtocol.start) { checkout ->
+                recordReceivedProtocolMessage(CheckoutProtocol.start.method, checkout)
             }
-            .on(CheckoutProtocol.error) { Timber.i("ECP ec.error: $it") }
-            .on(CheckoutProtocol.totalsChange) { Timber.i("ECP ec.totals.change: $it") }
-            .on(CheckoutProtocol.lineItemsChange) { Timber.i("ECP ec.line_items.change: $it") }
-            .on(CheckoutProtocol.messagesChange) { Timber.i("ECP ec.messages.change: $it") }
-            .on(CheckoutProtocol.fulfillmentChange) { Timber.i("ECP ec.fulfillment.change: $it") }
+            .on(CheckoutProtocol.complete) { checkout ->
+                recordReceivedProtocolMessage(CheckoutProtocol.complete.method, checkout)
+                handleCheckoutCompleted(navController)
+            }
+            .on(CheckoutProtocol.error) { error ->
+                recordReceivedProtocolMessage(CheckoutProtocol.error.method, error, LogLevel.ERROR)
+            }
+            .on(CheckoutProtocol.totalsChange) { checkout ->
+                recordReceivedProtocolMessage(CheckoutProtocol.totalsChange.method, checkout)
+            }
+            .on(CheckoutProtocol.lineItemsChange) { checkout ->
+                recordReceivedProtocolMessage(CheckoutProtocol.lineItemsChange.method, checkout)
+            }
+            .on(CheckoutProtocol.messagesChange) { checkout ->
+                recordReceivedProtocolMessage(CheckoutProtocol.messagesChange.method, checkout)
+            }
+            .on(CheckoutProtocol.fulfillmentChange) { checkout ->
+                recordReceivedProtocolMessage(CheckoutProtocol.fulfillmentChange.method, checkout)
+            }
 
         return when (windowOpenHandler) {
+            // With no sample handler registered, Checkout Kit retains its default ACTION_VIEW handling.
             WindowOpenHandler.Default -> base
             WindowOpenHandler.CustomTabs -> base.on(CheckoutProtocol.windowOpen) { request ->
+                recordReceivedProtocolMessage(CheckoutProtocol.windowOpen.method, request)
                 val uri = request.url.toUri()
                 val scheme = uri.scheme?.lowercase()
-                Timber.i("ECP ec.window.open_request ($scheme)")
                 if (scheme != "http" && scheme != "https") {
-                    windowOpenRejected(reason = "unsupported URL scheme: $scheme")
+                    windowOpenRejected(reason = "unsupported URL scheme: $scheme").also {
+                        recordWindowOpenResponse("rejected", it)
+                    }
                 } else {
                     try {
                         CustomTabsIntent.Builder().build().launchUrl(activity, uri)
-                        windowOpenSuccess()
+                        windowOpenSuccess().also {
+                            recordWindowOpenResponse("success", it)
+                        }
                     } catch (e: ActivityNotFoundException) {
                         Timber.w(e, "No activity resolved URL")
-                        windowOpenRejected(reason = "no activity resolved URL")
+                        windowOpenRejected(reason = "no activity resolved URL").also {
+                            recordWindowOpenResponse("rejected", it)
+                        }
                     }
                 }
             }
+        }
+    }
+
+    private inline fun <reified T> recordReceivedProtocolMessage(
+        method: String,
+        payload: T,
+        level: LogLevel = LogLevel.INFO,
+    ) {
+        recordProtocolMessage("Received: $method", payload, level)
+    }
+
+    private fun recordWindowOpenResponse(outcome: String, payload: WindowOpenResult) {
+        val level = if (outcome == "success") LogLevel.INFO else LogLevel.ERROR
+        recordProtocolMessage("Sent: ${CheckoutProtocol.windowOpen.method} response ($outcome)", payload, level)
+    }
+
+    private inline fun <reified T> recordProtocolMessage(
+        message: String,
+        payload: T,
+        level: LogLevel,
+    ) {
+        val serializedPayload = runCatching { Json.encodeToString(payload) }
+            .getOrElse {
+                Timber.w(it, "Couldn't serialize $message payload")
+                payload.toString()
+            }
+        logger.logProtocolMessage(message, serializedPayload, level)
+        when (level) {
+            LogLevel.INFO -> Timber.i("ECP $message: $serializedPayload")
+            LogLevel.ERROR -> Timber.e("ECP $message: $serializedPayload")
         }
     }
 

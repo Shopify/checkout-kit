@@ -33,9 +33,16 @@ private val secondaryColor = Color(
     alpha = 1.0f
 )
 
+private val lightTertiaryColor = Color(0xFF7A4E00)
+private val darkTertiaryColor = Color(0xFFFFB95C)
+
 private val DarkColorPalette = darkColorScheme(
     primary = primaryColor,
     onPrimary = Color.White,
+    tertiary = darkTertiaryColor,
+    onTertiary = Color(0xFF442B00),
+    tertiaryContainer = Color(0xFF5D3A00),
+    onTertiaryContainer = Color(0xFFFFE0B2),
     onBackground = Color.White,
 )
 
@@ -44,7 +51,11 @@ private val LightColorPalette = lightColorScheme(
     onBackground = Color.Black,
     primary = primaryColor,
     onPrimary = Color.White,
-    secondary = secondaryColor
+    secondary = secondaryColor,
+    tertiary = lightTertiaryColor,
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFFE0B2),
+    onTertiaryContainer = Color(0xFF281800),
 )
 
 @Composable

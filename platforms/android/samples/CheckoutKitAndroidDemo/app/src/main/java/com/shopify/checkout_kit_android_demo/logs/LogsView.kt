@@ -37,10 +37,14 @@ fun LogsView(logsViewModel: LogsViewModel) {
     }
 
     if (logDetailsDialogOpen.value) {
-        LogDetailModal(logLine = logDetails.value?.data, onDismissRequest = {
-            logDetails.value = null
-            logDetailsDialogOpen.value = false
-        })
+        LogDetailModal(
+            logLine = logDetails.value?.data,
+            previousCheckoutPayload = logDetails.value?.previousCheckoutPayload,
+            onDismissRequest = {
+                logDetails.value = null
+                logDetailsDialogOpen.value = false
+            },
+        )
     }
 
     when (val logState = logsViewModel.logState.collectAsState().value) {
@@ -72,20 +76,38 @@ fun LogsView(logsViewModel: LogsViewModel) {
                                 .padding(horizontal = 8.dp, vertical = 8.dp)
                         )
                     }
-                    itemsIndexed(logState.logs) { index, line ->
-                        LogOverview(
-                            log = line,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    if (index % 2 == 0) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.background
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            onClick = {
-                                logDetails.value = line
-                                logDetailsDialogOpen.value = true
-                            }
-                        )
+                    logState.groups.forEach { group ->
+                        item(key = "checkout-${group.checkoutId}") {
+                            CheckoutLogGroupHeader(
+                                checkoutId = group.checkoutId,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                            )
+                        }
+                        itemsIndexed(
+                            items = group.logs,
+                            key = { _, line -> line.data.id },
+                        ) { index, line ->
+                            LogOverview(
+                                log = line,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        if (index % 2 == 0) {
+                                            MaterialTheme.colorScheme.surface
+                                        } else {
+                                            MaterialTheme.colorScheme.background
+                                        }
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                onClick = {
+                                    logDetails.value = line
+                                    logDetailsDialogOpen.value = true
+                                },
+                            )
+                        }
                     }
                 }
             }

@@ -15,7 +15,7 @@ fun LogOverviewHeader(modifier: Modifier) {
             modifier = Modifier.weight(Logs.DATE_COLUMN_WEIGHT),
         )
         Header3(
-            text = "Type",
+            text = "Event",
             fontSize = MaterialTheme.typography.bodyMedium.fontSize,
             modifier = Modifier.weight(Logs.MESSAGE_COLUMN_WEIGHT),
         )

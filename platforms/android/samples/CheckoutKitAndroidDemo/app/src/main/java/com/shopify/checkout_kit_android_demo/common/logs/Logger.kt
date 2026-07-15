@@ -1,48 +1,45 @@
 package com.shopify.checkout_kit_android_demo.common.logs
 
 import com.shopify.checkoutkit.CheckoutException
-import com.shopify.ucp.embedded.checkout.Checkout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.Date
-import java.util.UUID
 
 class Logger(
     private val logDb: LogDatabase,
     private val coroutineScope: CoroutineScope,
 ) {
-    fun log(message: String) {
-        insert(
-            LogLine(
-                type = LogType.STANDARD,
-                message = message,
-            )
-        )
+    fun logSdkEvent(message: String) {
+        log(LogSource.SDK, LogLevel.INFO, message)
     }
 
-    fun log(checkout: Checkout) {
-        insert(
-            LogLine(
-                type = LogType.CHECKOUT_COMPLETED,
-                message = "Checkout completed: ${checkout.order?.id ?: "unknown"}",
-                checkoutCompletedPayload = Json.encodeToString(checkout),
+    fun logSdkError(message: String, error: CheckoutException) {
+        val payload = Json.encodeToString(
+            mapOf(
+                "type" to error::class.java.name,
+                "message" to (error.message ?: "No message on error"),
             )
         )
+        log(LogSource.SDK, LogLevel.ERROR, message, payload)
     }
 
-    fun log(message: String, e: CheckoutException) {
+    fun logProtocolMessage(message: String, payload: String, level: LogLevel) {
+        log(LogSource.PROTOCOL, level, message, payload)
+    }
+
+    private fun log(
+        source: LogSource,
+        level: LogLevel,
+        message: String,
+        payload: String? = null,
+    ) {
         insert(
             LogLine(
-                id = UUID.randomUUID(),
-                type = LogType.ERROR,
-                createdAt = Date().time,
+                source = source,
+                level = level,
                 message = message,
-                errorDetails = ErrorDetails(
-                    message = e.message ?: "No message on error",
-                    type = "${e::class.java}"
-                ),
+                payload = payload,
             )
         )
     }
