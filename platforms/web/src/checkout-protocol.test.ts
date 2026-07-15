@@ -186,7 +186,7 @@ describe("<shopify-checkout>", () => {
 
         expect(consoleErrorSpy).toHaveBeenCalledWith(
           "<shopify-checkout>: dropped ec.start: failed to decode payload",
-          expect.any(Error),
+          expect.stringContaining("Invalid"),
         );
       });
     });

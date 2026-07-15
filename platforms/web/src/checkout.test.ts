@@ -91,10 +91,10 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("logLevel", () => {
-      it("defaults to 'warn' when the attribute is absent", () => {
+      it("defaults to 'error' when the attribute is absent", () => {
         const checkout = renderCheckout();
         expect(checkout.hasAttribute("log-level")).toBe(false);
-        expect(checkout.logLevel).toBe("warn");
+        expect(checkout.logLevel).toBe("error");
       });
 
       it("reflects the log-level attribute to the property", () => {
@@ -108,9 +108,9 @@ describe("<shopify-checkout>", () => {
         expect(checkout.getAttribute("log-level")).toBe("debug");
       });
 
-      it("falls back to 'warn' when the attribute holds an invalid value", () => {
+      it("falls back to 'error' when the attribute holds an invalid value", () => {
         const checkout = renderCheckout({ "log-level": "verbose" });
-        expect(checkout.logLevel).toBe("warn");
+        expect(checkout.logLevel).toBe("error");
       });
 
       it("removes the log-level attribute when assigned undefined", () => {

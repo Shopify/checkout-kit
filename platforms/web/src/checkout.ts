@@ -564,7 +564,10 @@ export class ShopifyCheckout
 
     return new EmbeddedCheckoutProtocol.Client()
       .onDecodeError(({ method, error }) => {
-        this.#logger.error(`dropped ${method}: failed to decode payload`, error);
+        this.#logger.error(
+          `dropped ${method}: failed to decode payload`,
+          error instanceof Error ? error.message : String(error),
+        );
       })
       .on(Event.ready, () => ({
         ucp: {

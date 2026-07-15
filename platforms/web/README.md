@@ -375,15 +375,15 @@ component logs a warning for invalid values.
 
 ### `log-level`
 
-Controls console logging verbosity. Defaults to `"warn"`. The levels form a
+Controls console logging verbosity. Defaults to `"error"`. The levels form a
 threshold ordered from most to least verbose — selecting one emits that level
 and every more-severe level:
 
 | Value     | Emits                          |
 | --------- | ------------------------------ |
 | `"debug"` | debug, warnings, and errors    |
-| `"warn"`  | warnings and errors (default)  |
-| `"error"` | errors only                    |
+| `"warn"`  | warnings and errors            |
+| `"error"` | errors only (default)          |
 | `"none"`  | nothing                        |
 
 Use `"debug"` while wiring up `src` and event handlers during integration, or

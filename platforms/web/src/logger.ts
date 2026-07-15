@@ -12,7 +12,13 @@ const LOG_LEVEL_RANK: Record<LogLevel, number> = {
   none: 3,
 };
 
-export const DEFAULT_LOG_LEVEL: LogLevel = "warn";
+/**
+ * Web intentionally defaults to `error` rather than `warn` like the other
+ * platforms. Web logs are emitted to the browser console, which is inherently
+ * more public than a native device log, so we default to the quietest level
+ * that still surfaces failures during integration.
+ */
+export const DEFAULT_LOG_LEVEL: LogLevel = "error";
 
 export function coerceLogLevel(value: string | null): LogLevel {
   if (value !== null && LOG_LEVEL_RANK[value as LogLevel] !== undefined) {
