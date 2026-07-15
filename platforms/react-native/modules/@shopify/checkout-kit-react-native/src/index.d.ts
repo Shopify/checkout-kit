@@ -109,6 +109,22 @@ interface CommonConfiguration {
    * @default true
    */
   preloading?: boolean;
+  /**
+   * Origins trusted to send incoming checkout messages, in addition to the
+   * loaded checkout origin and `shop.app` (including its subdomains).
+   *
+   * The native surface is open by default: when this is empty (the default),
+   * messages from any origin are accepted. Provide one or more origins to
+   * restrict which origins are trusted. Entries may be exact origins
+   * (`https://example.com`), wildcard subdomains (`https://*.example.com`), or
+   * `'*'` to explicitly disable origin validation.
+   *
+   * Rejected messages are logged by the native SDK at debug level; they are
+   * never silently dropped.
+   *
+   * @default [] (all origins trusted)
+   */
+  allowedMessageOrigins?: string[];
 }
 
 export type Configuration = CommonConfiguration & {

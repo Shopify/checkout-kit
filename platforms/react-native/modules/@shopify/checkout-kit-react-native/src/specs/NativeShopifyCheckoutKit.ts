@@ -35,6 +35,7 @@ type ConfigurationSpec = {
   colorScheme?: string;
   logLevel?: string;
   preloading?: boolean;
+  allowedMessageOrigins?: string[];
   colors?: ColorsSpec;
 };
 
