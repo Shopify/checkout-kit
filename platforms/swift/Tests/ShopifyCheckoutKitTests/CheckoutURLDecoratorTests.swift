@@ -33,10 +33,7 @@ struct CheckoutURLDecoratorTests {
         try assertAppearanceDecoratesWith(.app(.light), colorScheme: "light", branding: "app")
         try assertAppearanceDecoratesWith(.app(.dark), colorScheme: "dark", branding: "app")
         try assertAppearanceDecoratesWith(.app(.automatic), colorScheme: "automatic", branding: "app")
-        try assertAppearanceDecoratesWith(.storefront(), colorScheme: "automatic", branding: "shop")
-        try assertAppearanceDecoratesWith(.storefront(.light), colorScheme: "automatic", branding: "shop")
-        try assertAppearanceDecoratesWith(.storefront(.dark), colorScheme: "automatic", branding: "shop")
-        try assertAppearanceDecoratesWith(.storefront(.automatic), colorScheme: "automatic", branding: "shop")
+        try assertAppearanceDecoratesWith(.storefront, colorScheme: "light", branding: "shop")
     }
 
     private func assertAppearanceDecoratesWith(

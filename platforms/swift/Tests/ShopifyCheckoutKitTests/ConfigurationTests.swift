@@ -43,7 +43,7 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testAppearanceDefaultsToStorefront() {
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront())
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
     }
 
     func testPreloadingCanBeDisabled() async throws {

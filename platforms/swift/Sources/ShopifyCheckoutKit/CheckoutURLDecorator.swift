@@ -37,7 +37,7 @@ extension Configuration.Appearance {
         case let .app(colorScheme):
             return colorScheme.rawValue
         case .storefront:
-            return Configuration.ColorScheme.automatic.rawValue
+            return Configuration.ColorScheme.light.rawValue
         }
     }
 
