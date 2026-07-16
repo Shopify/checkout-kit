@@ -8,6 +8,11 @@ require_relative "../../scripts/lib/json_http_client"
 # parsing; callers assemble request payloads and orchestrate build lifecycles.
 class BrowserStackClient
   API_HOST = "api-cloud.browserstack.com"
+  DASHBOARD_BASE = "https://app-automate.browserstack.com/dashboard/v2/builds"
+
+  def self.build_url(build_id)
+    build_id.to_s.empty? ? DASHBOARD_BASE : "#{DASHBOARD_BASE}/#{build_id}"
+  end
 
   def initialize(username:, access_key:, retries: 0)
     @client = JsonHttpClient.new(
