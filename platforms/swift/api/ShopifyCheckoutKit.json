@@ -7487,9 +7487,17 @@
         "children": [
           {
             "kind": "TypeNominal",
-            "name": "CheckoutPreload",
-            "printedName": "ShopifyCheckoutKit.CheckoutPreload",
-            "usr": "s:18ShopifyCheckoutKit0B7PreloadC"
+            "name": "Optional",
+            "printedName": "ShopifyCheckoutKit.CheckoutPreload?",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutPreload",
+                "printedName": "ShopifyCheckoutKit.CheckoutPreload",
+                "usr": "s:18ShopifyCheckoutKit0B7PreloadC"
+              }
+            ],
+            "usr": "s:Sq"
           },
           {
             "kind": "TypeNominal",
@@ -7499,8 +7507,8 @@
           }
         ],
         "declKind": "Func",
-        "usr": "s:18ShopifyCheckoutKit7preload8checkoutAA0B7PreloadC10Foundation3URLV_tF",
-        "mangledName": "$s18ShopifyCheckoutKit7preload8checkoutAA0B7PreloadC10Foundation3URLV_tF",
+        "usr": "s:18ShopifyCheckoutKit7preload8checkoutAA0B7PreloadCSg10Foundation3URLV_tF",
+        "mangledName": "$s18ShopifyCheckoutKit7preload8checkoutAA0B7PreloadCSg10Foundation3URLV_tF",
         "moduleName": "ShopifyCheckoutKit",
         "declAttributes": [
           "DiscardableResult",
