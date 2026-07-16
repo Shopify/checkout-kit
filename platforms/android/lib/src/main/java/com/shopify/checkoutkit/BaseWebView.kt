@@ -6,6 +6,7 @@ import android.graphics.Color.TRANSPARENT
 import android.net.Uri
 import android.os.Build
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -28,11 +29,44 @@ import java.net.HttpURLConnection.HTTP_GONE
 internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet? = null) :
     WebView(context, attributeSet) {
 
+    private var lastTouchRawY = 0f
+    private var touchGestureOwnerResolved = false
+
     init {
         configureWebView()
     }
 
     abstract fun getListener(): CheckoutWebViewListener
+
+    /**
+     * Keeps checkout scrolling in the WebView, but lets a parent container intercept a downward
+     * gesture that starts while checkout is already at scroll-top.
+     */
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                lastTouchRawY = event.rawY
+                touchGestureOwnerResolved = false
+                requestDisallowInterceptTouchEvent(true)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dragDistance = event.rawY - lastTouchRawY
+                lastTouchRawY = event.rawY
+                if (!touchGestureOwnerResolved && dragDistance != 0f) {
+                    touchGestureOwnerResolved = true
+                    if (dragDistance > 0f && !canScrollVertically(SCROLL_UP_DIRECTION)) {
+                        requestDisallowInterceptTouchEvent(false)
+                    }
+                }
+            }
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_CANCEL -> {
+                requestDisallowInterceptTouchEvent(false)
+                touchGestureOwnerResolved = false
+            }
+        }
+        return super.onTouchEvent(event)
+    }
 
     private fun configureWebView() {
         visibility = VISIBLE
@@ -81,7 +115,6 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
             }
         }
         isHorizontalScrollBarEnabled = false
-        requestDisallowInterceptTouchEvent(true)
         setBackgroundColor(TRANSPARENT)
         layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
         id = generateViewId()
@@ -204,6 +237,8 @@ internal abstract class BaseWebView(context: Context, attributeSet: AttributeSet
         internal const val ECP_LOG_TAG = "CheckoutECP"
     }
 }
+
+internal const val SCROLL_UP_DIRECTION: Int = -1
 
 /**
  * Removes the WebView from its parent if a parent exists

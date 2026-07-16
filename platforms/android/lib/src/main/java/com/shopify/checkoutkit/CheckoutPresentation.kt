@@ -10,7 +10,7 @@ import android.webkit.WebView
 /**
  * Kotlin-first builder for per-presentation checkout callbacks.
  *
- * Use through [ShopifyCheckoutKit.present].
+ * Use through [ShopifyCheckoutKit.present] or [ShopifyCheckout.create].
  */
 public class CheckoutPresentation internal constructor() {
     internal var onFail: ((CheckoutException) -> Unit)? = null

@@ -62,9 +62,9 @@ public object ShopifyCheckoutKit {
     /**
      * Preloads a Shopify checkout in a background WebView as a best-effort performance hint.
      *
-     * Preloaded checkouts are reused only when [present] is later called with the same fully
-     * parameterized checkout URL. Otherwise the cached checkout is discarded and checkout loads
-     * normally.
+     * Preloaded checkouts are reused only when [present] is later called or a [ShopifyCheckout] is
+     * created with the same fully parameterized checkout URL. Otherwise the cached checkout is
+     * discarded and checkout loads normally.
      *
      * @param checkoutUrl The URL of the checkout to preload, obtained via the Storefront API.
      * @param context The activity used to create the background WebView.
@@ -213,16 +213,9 @@ public object ShopifyCheckoutKit {
         context.lifecycle.addObserver(lifecycleObserver)
 
         log.d("ShopifyCheckoutKit", "Starting bottom sheet.")
-        val checkoutStarted = try {
-            checkout.start()
-            true
-        } catch (error: UnsupportedWebViewException) {
+        val checkoutStarted = checkout.start()
+        if (!checkoutStarted) {
             context.lifecycle.removeObserver(lifecycleObserver)
-            checkout.dismiss(animate = false)
-
-            log.e("ShopifyCheckoutKit", "WebView is not supported, failing checkout presentation.")
-            checkoutListener.onCheckoutFailed(error.checkoutError)
-            false
         }
         return if (checkoutStarted) CheckoutHandle { checkout.dismiss() } else null
     }
