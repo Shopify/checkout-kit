@@ -8,7 +8,7 @@ require "net/http"
 require "optparse"
 require "securerandom"
 require_relative "../lib/browserstack_device_resolver"
-require_relative "../lib/json_http_client"
+require_relative "../../scripts/lib/json_http_client"
 
 # Executes one row from the BrowserStack run plan, from artifact upload through
 # build polling and normalized result persistence.

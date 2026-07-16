@@ -23,7 +23,9 @@ end
 puts <<~REMINDER
 
   ==> Tophat Quick Launch items configured for Checkout Kit.
-      Installs need a Bitrise Personal Access Token:
+      Installs need a Bitrise Personal Access Token. The first run of
+      'dev tophat' sets one up for you (it prompts for a token and saves it
+      into Tophat). To configure it manually instead:
         1. Create a PAT at #{CheckoutKitTophat::BITRISE_PAT_URL}
         2. Add it to Tophat -> Settings -> Extensions -> Bitrise
 REMINDER

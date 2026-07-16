@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "json_http_client"
+require_relative "../../scripts/lib/json_http_client"
 
 class PullRequestChangedFiles
   PER_PAGE = 100

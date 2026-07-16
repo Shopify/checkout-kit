@@ -76,10 +76,14 @@ the device your Mac controls, install links must be opened on that Mac —
 scanning a QR code with a phone does not work with Tophat.
 
 **First-time setup.** `dev up` installs Tophat and seeds Quick Launch entries.
-Tophat needs a Bitrise Personal Access Token to download build artifacts:
-
-1. Create a PAT at https://app.bitrise.io/me/account/security
-2. Add it in Tophat -> Settings -> Extensions -> Bitrise
+Installs need a Bitrise Personal Access Token to download build artifacts. The
+first time you run `dev tophat` and no token is stored, it opens the Bitrise
+token page, prompts you to paste a token (input hidden), stores it in your
+login keychain, and saves it into Tophat for you (macOS may ask to let
+`security` update Tophat's keychain entry — choose Always Allow). If you would
+rather configure it yourself, create a PAT at
+https://app.bitrise.io/me/account/security and add it in
+Tophat -> Settings -> Extensions -> Bitrise.
 
 There are three ways to install a build:
 
@@ -101,10 +105,18 @@ There are three ways to install a build:
    dev tophat https://github.com/Shopify/checkout-kit/pull/382
    ```
 
-   It resolves the PR's branch, asks what to test (e.g. React Native iOS /
-   Android), reuses a running device that matches or lets you pick one with
-   `fzf`, then installs the matching artifact. Set `TOPHAT_DRY_RUN=1` to print
-   the generated install config without installing.
+   It resolves the PR's branch, then queries Bitrise for that branch and only
+   offers targets whose latest build succeeded and produced the expected
+   artifact, so you cannot pick a target that has no installable build. If no
+   target is ready it explains why (draft PRs do not trigger the pipeline, a
+   build is still running, or a build failed) and exits. Pass `--wait` to block
+   until in-progress builds finish, then install. It then asks what to test
+   (e.g. React Native iOS / Android), reuses a running device that matches or
+   lets you pick one with `fzf`, and installs the matching artifact.
+
+   Set `TOPHAT_DRY_RUN=1` to print the generated install config without
+   installing, or `TOPHAT_SKIP_ARTIFACT_CHECK=1` to skip the Bitrise artifact
+   filtering and offer every target.
 
 **Adding a new SDK target.** Add an entry to `scripts/tophat/targets.json` with
 an `id`, `label`, and `recipes` (each a `platform`, `destination`, Bitrise
