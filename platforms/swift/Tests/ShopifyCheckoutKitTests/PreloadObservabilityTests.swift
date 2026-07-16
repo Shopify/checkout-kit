@@ -92,13 +92,12 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testRepeatDidFinishDoesNotReNotifyReadyState() {
+    func testRepeatDidFinishDoesNotReNotifyReadyState() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
         var states: [PreloadState] = []
         preload?.onStateChange = { states.append($0) }
 
-        let view = CheckoutWebView(entryPoint: nil)
-        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let view = try XCTUnwrap(CheckoutWebView.preloadCache.preloadedView)
 
         view.webView(view, didFinish: nil)
         view.webView(view, didFinish: nil)
