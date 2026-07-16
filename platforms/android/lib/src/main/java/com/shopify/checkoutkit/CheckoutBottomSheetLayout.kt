@@ -23,6 +23,8 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     defStyleAttr: Int = 0,
 ) : RelativeLayout(context, attrs, defStyleAttr) {
 
+    var maxWidthPx: Int = DEFAULT_SHEET_MAX_WIDTH_DP.dpToPx(context).roundToInt()
+
     var onDismissRequested: (() -> Unit)? = null
     var dragToDismissEnabled = true
 
@@ -46,6 +48,21 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     private var gestureStartedOutsideScrollableChild = false
     private var dismissAnimationRunning = false
     private var dismissAnimationEndAction: (() -> Unit)? = null
+
+    /**
+     * Uses the available width on compact windows and caps wide sheets at 640dp.
+     */
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val widthMode = View.MeasureSpec.getMode(widthMeasureSpec)
+        val widthSize = View.MeasureSpec.getSize(widthMeasureSpec)
+        val constrainedWidthMeasureSpec =
+            View.MeasureSpec.makeMeasureSpec(
+                if (widthMode == View.MeasureSpec.UNSPECIFIED) maxWidthPx else minOf(widthSize, maxWidthPx),
+                if (widthMode == View.MeasureSpec.UNSPECIFIED) View.MeasureSpec.AT_MOST else widthMode,
+            )
+
+        super.onMeasure(constrainedWidthMeasureSpec, heightMeasureSpec)
+    }
 
     /**
      * Registers the content view whose downward scroll should be consumed before the sheet can drag.

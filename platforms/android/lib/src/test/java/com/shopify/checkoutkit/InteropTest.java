@@ -122,7 +122,8 @@ public class InteropTest {
                 new Color.SRGB(0x52000000),
                 new CheckoutSheetDismissal(false, false),
                 new CheckoutSheetDragHandle(true),
-                Collections.singletonList(new CheckoutSheetSnapPoint.Expanded(12f))
+                Collections.singletonList(new CheckoutSheetSnapPoint.Expanded(12f)),
+                480f
         );
 
         ShopifyCheckoutKit.configure(configuration -> configuration.setSheet(sheet));

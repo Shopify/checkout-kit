@@ -1,9 +1,13 @@
 package com.shopify.checkoutkit
 
+import android.content.Context
+
 /**
  * Presentation options for the native checkout sheet.
  *
  * @property cornerRadiusDp Radius applied to the sheet's top corners. Must be finite and non-negative.
+ * @property maxWidthDp Maximum sheet width. Defaults to 640dp. Invalid or unrepresentable numeric values fall back
+ * to the default. Very narrow widths are not recommended.
  * @property toolbarElevationDp Elevation applied to the native toolbar. Must be finite and non-negative.
  * @property scrimColor Color drawn behind the sheet. Include alpha in the value when using [Color.SRGB]. The default
  * matches Material Components' `mtrl_scrim_color`.
@@ -21,6 +25,7 @@ public data class CheckoutSheetOptions @JvmOverloads constructor(
     public val dismissal: CheckoutSheetDismissal = CheckoutSheetDismissal(),
     public val dragHandle: CheckoutSheetDragHandle = CheckoutSheetDragHandle(),
     public val snapPoints: List<CheckoutSheetSnapPoint> = listOf(CheckoutSheetSnapPoint.MaterialExpanded),
+    public val maxWidthDp: Float = DEFAULT_SHEET_MAX_WIDTH_DP,
 ) {
     init {
         requireValidDimension(name = "cornerRadiusDp", value = cornerRadiusDp)
@@ -89,6 +94,19 @@ public sealed class CheckoutSheetSnapPoint private constructor() {
 }
 
 private const val MATERIAL_COMPONENTS_SCRIM_COLOR = 0x52000000
+internal const val DEFAULT_SHEET_MAX_WIDTH_DP = 640f
+
+internal fun CheckoutSheetOptions.resolveMaxWidthDp(context: Context): Float =
+    maxWidthDp.takeIf { it.isRepresentableSheetWidth(context) } ?: DEFAULT_SHEET_MAX_WIDTH_DP
+
+private fun Float.isRepresentableSheetWidth(context: Context): Boolean {
+    val widthPx = dpToPx(context)
+    return widthPx.isFinite() && widthPx >= 1f && widthPx <= MAX_SHEET_WIDTH_PX
+}
+
+// A View.MeasureSpec reserves its two highest bits for the measurement mode, leaving 30 bits for its size.
+// Shifting 1 left by 30 and subtracting 1 sets each of those 30 size bits, producing the largest valid size.
+private const val MAX_SHEET_WIDTH_PX = (1 shl 30) - 1
 
 private fun requireValidDimension(name: String, value: Float) {
     require(value.isFinite() && value >= 0f) {

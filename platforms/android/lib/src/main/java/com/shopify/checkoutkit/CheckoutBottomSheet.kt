@@ -20,6 +20,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
+import kotlin.math.roundToInt
 
 internal class CheckoutBottomSheet(
     private val checkoutUrl: String,
@@ -119,6 +120,11 @@ internal class CheckoutBottomSheet(
         )
 
         findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.apply {
+            val maxWidthDp = sheet.resolveMaxWidthDp(activity)
+            if (sheet.maxWidthDp != maxWidthDp) {
+                log.w(LOG_TAG, "Invalid maximum sheet width; using the default.")
+            }
+            maxWidthPx = maxWidthDp.dpToPx(activity).roundToInt()
             dragToDismissEnabled = sheet.dismissal.dragToDismissEnabled
             applySystemBarTopMargin(sheet.snapPoints.single())
             onDismissRequested = {
