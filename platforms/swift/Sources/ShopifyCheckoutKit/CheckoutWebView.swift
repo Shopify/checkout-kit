@@ -117,7 +117,7 @@ final class PreloadCache {
 
     func hasEntry() -> Bool {
         if entry?.isStale == true {
-            evict(with: .expired)
+            expire()
             return false
         }
 
@@ -125,7 +125,12 @@ final class PreloadCache {
     }
 
     func hasEntry(for key: PreloadKey) -> Bool {
-        guard let entry, entry.key == key, !entry.isStale else {
+        guard let entry, entry.key == key else {
+            return false
+        }
+
+        if entry.isStale {
+            expire()
             return false
         }
 
