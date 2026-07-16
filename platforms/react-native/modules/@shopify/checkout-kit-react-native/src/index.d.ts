@@ -100,7 +100,8 @@ interface CommonConfiguration {
    * Sets the log level for Checkout Kit.
    * Controls the verbosity of logs emitted by the native SDK.
    *
-   * @default LogLevel.error
+   * Omit this field to keep the native SDK default. Read the value back with
+   * `getConfig()` instead of assuming a default here.
    */
   logLevel?: LogLevel;
   /**
@@ -118,7 +119,10 @@ export type Configuration = CommonConfiguration & {
         /**
          * The selected color scheme for the checkout. See README.md for more details.
          */
-        colorScheme?: ColorScheme.web | ColorScheme.light | ColorScheme.dark;
+        colorScheme?:
+          | ColorScheme.storefront
+          | ColorScheme.light
+          | ColorScheme.dark;
         /**
          * Platform-specific color overrides
          */
@@ -169,14 +173,14 @@ export interface GeolocationRequestEvent {
 export interface PresentCallbacks {
   /**
    * Fires when the checkout sheet is dismissed without a terminal error.
-   * Mirrors `DefaultCheckoutEventProcessor.onCheckoutCanceled` on Android
-   * and the iOS Swift SDK's `onClose` callback.
+   * Mirrors `CheckoutListener.onCheckoutDismissed` on Android
+   * and `CheckoutDelegate.checkoutDidDismiss` on iOS.
    */
   onClose?: () => void;
   /**
    * Fires when the checkout sheet terminates with an error.
-   * Mirrors `DefaultCheckoutEventProcessor.onCheckoutFailed` on Android
-   * and the iOS Swift SDK's `onFail` callback.
+   * Mirrors `CheckoutListener.onCheckoutFailed` on Android
+   * and `CheckoutDelegate.checkoutDidFail` on iOS.
    */
   onFail?: (error: CheckoutException) => void;
   /**

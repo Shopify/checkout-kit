@@ -357,7 +357,7 @@ import {
 } from '@shopify/checkout-kit-react-native';
 
 const config: Configuration = {
-  colorScheme: ColorScheme.web,
+  colorScheme: ColorScheme.storefront,
   preloading: true,
   logLevel: LogLevel.error,
   colors: {
@@ -398,7 +398,7 @@ behavior can be customized via the `colorScheme` property:
 | `automatic` | ✔      | Alternates between an idiomatic light and dark theme - depending on the users device preference. |
 | `light`     |         | Force the idomatic light theme.                                                                  |
 | `dark`      |         | Force the idomatic dark theme.                                                                   |
-| `web`       |         | Force your storefront web theme, as rendered by a mobile browser.                                |
+| `storefront` |        | Force your storefront web checkout branding.                                                     |
 
 The `colors` configuration property can be used to provide overrides for iOS and
 Android applications separately.

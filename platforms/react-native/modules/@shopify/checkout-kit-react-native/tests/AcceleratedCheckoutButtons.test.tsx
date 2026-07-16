@@ -5,6 +5,8 @@ import {
   AcceleratedCheckoutButtons,
   AcceleratedCheckoutWallet,
   ApplePayStyle,
+  CheckoutErrorCode,
+  CheckoutException,
   CheckoutProtocol,
   RenderState,
 } from '../src';
@@ -297,7 +299,7 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(nativeComponent.props.wallets).toEqual(customWallets);
     });
 
-    it('forwards native fail event to onFail prop', () => {
+    it('parses the native fail event into a CheckoutException', () => {
       const onFail = jest.fn();
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons
@@ -307,9 +309,35 @@ describe('AcceleratedCheckoutButtons', () => {
       );
 
       const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      const error = {message: 'boom'} as any;
-      nativeComponent.props.onFail({nativeEvent: error});
-      expect(onFail).toHaveBeenCalledWith(error);
+      nativeComponent.props.onFail({
+        nativeEvent: {code: 'http_error', message: 'boom', statusCode: 503},
+      });
+
+      const error = onFail.mock.calls[0][0];
+      expect(error).toBeInstanceOf(CheckoutException);
+      expect(error.code).toBe(CheckoutErrorCode.httpError);
+      expect(error.message).toBe('boom');
+      expect(error.statusCode).toBe(503);
+    });
+
+    it('coerces an unrecognised native fail code to unknown', () => {
+      const onFail = jest.fn();
+      const {getByTestId} = render(
+        <AcceleratedCheckoutButtons
+          cartId="gid://shopify/Cart/123"
+          onFail={onFail}
+        />,
+      );
+
+      const nativeComponent = getByTestId('accelerated-checkout-buttons');
+      nativeComponent.props.onFail({
+        nativeEvent: {code: 'a_code_from_a_newer_sdk', message: 'boom'},
+      });
+
+      const error = onFail.mock.calls[0][0];
+      expect(error).toBeInstanceOf(CheckoutException);
+      expect(error.code).toBe(CheckoutErrorCode.unknown);
+      expect(error.statusCode).toBeUndefined();
     });
 
     it('calls onCancel when native cancel is invoked', () => {

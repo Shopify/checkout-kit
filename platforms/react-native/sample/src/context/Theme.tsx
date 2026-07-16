@@ -147,7 +147,7 @@ export function getNavigationTheme(
       return preference === 'dark' ? dark : light;
     case ColorScheme.dark:
       return dark;
-    case ColorScheme.web:
+    case ColorScheme.storefront:
       return web;
     default:
       return light;
@@ -163,7 +163,7 @@ export function getColors(
       return preference === 'dark' ? darkColors : lightColors;
     case ColorScheme.dark:
       return darkColors;
-    case ColorScheme.web:
+    case ColorScheme.storefront:
       return webColors;
     default:
       return lightColors;

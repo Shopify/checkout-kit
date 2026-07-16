@@ -175,10 +175,10 @@ function SettingsScreen() {
         selected: appConfig.colorScheme === ColorScheme.dark,
       },
       {
-        title: 'Web',
+        title: 'Storefront',
         type: SectionType.SingleSelect,
-        value: ColorScheme.web,
-        selected: appConfig.colorScheme === ColorScheme.web,
+        value: ColorScheme.storefront,
+        selected: appConfig.colorScheme === ColorScheme.storefront,
       },
     ],
     [appConfig.colorScheme],

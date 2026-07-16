@@ -2,23 +2,33 @@ export enum ColorScheme {
   automatic = 'automatic',
   light = 'light',
   dark = 'dark',
-  web = 'web_default',
+  storefront = 'storefront',
 }
 
 /**
  * Log level for Checkout Kit.
  * Controls the verbosity of logs emitted by the native SDK.
- * @defaults to error
+ *
+ * The levels are an ordered threshold, from most to least verbose. Omit
+ * `logLevel` to keep the native SDK default rather than a value chosen here.
  */
 export enum LogLevel {
   /**
-   * Show debug logs.
+   * Show debug logs, warnings, and errors.
    */
   debug = 'debug',
+  /**
+   * Show warnings and errors.
+   */
+  warn = 'warn',
   /**
    * Show only error logs.
    */
   error = 'error',
+  /**
+   * Show no logs.
+   */
+  none = 'none',
 }
 
 /**

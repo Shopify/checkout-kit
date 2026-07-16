@@ -17,8 +17,8 @@ describe('E2ETestIds', () => {
     expect(E2ETestIds.settings.buyerIdentityOption('customerAccount')).toBe(
       'settings-buyer-identity-option-customer-account',
     );
-    expect(E2ETestIds.settings.themeOption('web_default')).toBe(
-      'settings-theme-option-web-default',
+    expect(E2ETestIds.settings.themeOption('storefront')).toBe(
+      'settings-theme-option-storefront',
     );
     expect(E2ETestIds.settings.applePayStyleOption('whiteOutline')).toBe(
       'settings-apple-pay-style-option-white-outline',

@@ -42,48 +42,23 @@ internal enum ShopifyEventSerialization {
 
     /**
      * Converts a CheckoutError to a React Native compatible dictionary.
-     * Handles all specific error types with proper type information.
+     *
+     * Field names match Android's
+     * `CustomCheckoutListener.populateErrorDetails`, so the JS-side
+     * `parseCheckoutError` behaves identically on both platforms.
+     * `statusCode` is present only when an HTTP response caused the failure.
      */
     static func serialize(checkoutError error: CheckoutError) -> [String: Any] {
-        switch error {
-        case let .checkoutExpired(message, code):
-            return [
-                "__typename": "CheckoutExpiredError",
-                "message": message,
-                "code": code.rawValue
-            ]
+        var payload: [String: Any] = [
+            "message": error.message,
+            "code": error.code.rawValue
+        ]
 
-        case let .checkoutUnavailable(message, code):
-            switch code {
-            case let .clientError(clientErrorCode):
-                return [
-                    "__typename": "CheckoutClientError",
-                    "message": message,
-                    "code": clientErrorCode.rawValue
-                ]
-            case let .httpError(statusCode):
-                return [
-                    "__typename": "CheckoutHTTPError",
-                    "message": message,
-                    "code": "http_error",
-                    "statusCode": statusCode
-                ]
-            }
-
-        case let .sdkError(underlying):
-            return [
-                "__typename": "InternalError",
-                "code": "unknown",
-                "message": underlying.localizedDescription
-            ]
-
-        @unknown default:
-            return [
-                "__typename": "UnknownError",
-                "code": "unknown",
-                "message": error.localizedDescription
-            ]
+        if let statusCode = error.httpStatusCode {
+            payload["statusCode"] = statusCode
         }
+
+        return payload
     }
 
     /**

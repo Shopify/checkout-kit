@@ -20,10 +20,12 @@ enum DispatchEventType: String, CaseIterable {
 
 @objc(RCTShopifyCheckoutKit)
 class RCTShopifyCheckoutKit: NSObject {
+    /// The JavaScript name for `Configuration.Appearance.storefront`, which has no native raw value.
+    private static let storefrontColorScheme = "storefront"
+
     internal var checkoutSheet: UIViewController?
     private var acceleratedCheckoutsConfiguration: Any?
     private var acceleratedCheckoutsApplePayConfiguration: Any?
-    private var defaultLogLevel: LogLevel = .error
 
     @objc var methodQueue: DispatchQueue {
         return DispatchQueue.main
@@ -129,18 +131,24 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    private func getColorScheme(_ colorScheme: String) -> Configuration.ColorScheme {
-        switch colorScheme {
-        case "web_default":
-            return Configuration.ColorScheme.web
-        case "automatic":
-            return Configuration.ColorScheme.automatic
-        case "light":
-            return Configuration.ColorScheme.light
-        case "dark":
-            return Configuration.ColorScheme.dark
-        default:
-            return Configuration.ColorScheme.automatic
+    private func appearanceFor(_ colorScheme: String) -> Configuration.Appearance? {
+        if colorScheme == Self.storefrontColorScheme {
+            return .storefront
+        }
+
+        guard let scheme = Configuration.ColorScheme(rawValue: colorScheme) else {
+            return nil
+        }
+
+        return .app(scheme)
+    }
+
+    private func colorSchemeStringFor(_ appearance: Configuration.Appearance) -> String {
+        switch appearance {
+        case let .app(colorScheme):
+            return colorScheme.rawValue
+        case .storefront:
+            return Self.storefrontColorScheme
         }
     }
 
@@ -156,8 +164,10 @@ class RCTShopifyCheckoutKit: NSObject {
             ShopifyCheckoutKit.configuration.preloading.enabled = preloading
         }
 
-        if let colorScheme = configuration["colorScheme"] as? String {
-            ShopifyCheckoutKit.configuration.colorScheme = getColorScheme(colorScheme)
+        if let colorScheme = configuration["colorScheme"] as? String,
+           let appearance = appearanceFor(colorScheme)
+        {
+            ShopifyCheckoutKit.configuration.appearance = appearance
         }
 
         if let tintColorHex = iosConfig?["tintColor"] as? String {
@@ -172,10 +182,10 @@ class RCTShopifyCheckoutKit: NSObject {
             ShopifyCheckoutKit.configuration.closeButtonTintColor = UIColor(hex: closeButtonColorHex)
         }
 
-        if let logLevel = configuration["logLevel"] as? String {
-            ShopifyCheckoutKit.configuration.logLevel = LogLevel(rawValue: logLevel.lowercased()) ?? defaultLogLevel
-        } else {
-            ShopifyCheckoutKit.configuration.logLevel = defaultLogLevel
+        if let logLevel = configuration["logLevel"] as? String,
+           let parsedLogLevel = LogLevel(rawValue: logLevel.lowercased())
+        {
+            ShopifyCheckoutKit.configuration.logLevel = parsedLogLevel
         }
 
         NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
@@ -184,7 +194,7 @@ class RCTShopifyCheckoutKit: NSObject {
     @objc func getConfig() -> NSDictionary {
         return [
             "title": ShopifyCheckoutKit.configuration.title,
-            "colorScheme": ShopifyCheckoutKit.configuration.colorScheme.rawValue,
+            "colorScheme": colorSchemeStringFor(ShopifyCheckoutKit.configuration.appearance),
             "preloading": ShopifyCheckoutKit.configuration.preloading.enabled,
             "tintColor": ShopifyCheckoutKit.configuration.tintColor,
             "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
@@ -281,14 +291,7 @@ class RCTShopifyCheckoutKit: NSObject {
     }
 
     private func logLevelToString(_ logLevel: LogLevel) -> String {
-        switch logLevel {
-        case .all, .debug:
-            return "debug"
-        case .error:
-            return "error"
-        default:
-            return "error"
-        }
+        return logLevel.rawValue
     }
 }
 
@@ -297,12 +300,12 @@ class RCTShopifyCheckoutKit: NSObject {
 extension RCTShopifyCheckoutKit: CheckoutDelegate {
     /// Fired by the iOS SDK when the buyer dismisses the checkout sheet
     /// without a terminal error. Mirrors
-    /// `CustomCheckoutListener.onCheckoutCanceled()` on Android.
+    /// `CustomCheckoutListener.onCheckoutDismissed()` on Android.
     ///
     /// The iOS SDK dismisses the presented checkout when the buyer taps
     /// the close button; this wrapper also clears its local reference so
     /// future presentations start from a clean state.
-    func checkoutDidCancel() {
+    func checkoutDidDismiss() {
         emitDispatchEnvelope(type: .close, payload: nil)
         dismissCheckoutSheet()
     }
@@ -310,9 +313,8 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
     /// Fired by the iOS SDK when checkout terminates with an error.
     /// Mirrors `CustomCheckoutListener.onCheckoutFailed()` on Android.
     /// The error is serialised into the JS-side `CheckoutNativeError`
-    /// shape (`__typename` / `message` / `code` / optional
-    /// `statusCode`) so it can be coerced into the matching
-    /// `CheckoutException` subclass on the JS side.
+    /// shape (`message` / `code` / optional `statusCode`) so it can be
+    /// coerced into a `CheckoutException` on the JS side.
     ///
     /// The sheet is left visible — consumers may want to render a
     /// recovery UI on top of the still-presented checkout, or decide to
@@ -320,7 +322,7 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
     /// their `onFail` handler. Mirrors the Android behaviour where
     /// `onCheckoutFailed` also does not auto-dismiss the dialog.
     func checkoutDidFail(error: CheckoutError) {
-        emitDispatchEnvelope(type: .fail, payload: Self.errorPayload(from: error))
+        emitDispatchEnvelope(type: .fail, payload: ShopifyEventSerialization.serialize(checkoutError: error))
     }
 
     /// Dismisses the currently-presented checkout sheet on the main
@@ -358,47 +360,6 @@ extension RCTShopifyCheckoutKit {
             emitDispatchEvent(json)
         } catch {
             NSLog("[ShopifyCheckoutKit] Failed to serialize dispatch envelope for \(type.rawValue): \(error)")
-        }
-    }
-
-    /// Maps an iOS `CheckoutError` into the JSON-friendly dictionary
-    /// shape the JS dispatcher expects. Field names match Android's
-    /// `CustomCheckoutListener.populateErrorDetails` so the JS-side
-    /// `parseCheckoutError` works identically on both platforms.
-    fileprivate static func errorPayload(from error: CheckoutError) -> [String: Any] {
-        switch error {
-        case let .sdkError(underlying):
-            return [
-                "__typename": "InternalError",
-                "message": underlying.localizedDescription,
-                "code": CheckoutErrorCode.unknown.rawValue
-            ]
-
-        case let .checkoutUnavailable(message, code):
-            switch code {
-            case let .clientError(clientCode):
-                return [
-                    "__typename": "CheckoutClientError",
-                    "message": message,
-                    "code": clientCode.rawValue
-                ]
-            case let .httpError(statusCode):
-                return [
-                    "__typename": "CheckoutHTTPError",
-                    "message": message,
-                    // Matches the JS-side `CheckoutErrorCode.httpError`
-                    // string and Android's HttpException code value.
-                    "code": "http_error",
-                    "statusCode": statusCode
-                ]
-            }
-
-        case let .checkoutExpired(message, code):
-            return [
-                "__typename": "CheckoutExpiredError",
-                "message": message,
-                "code": code.rawValue
-            ]
         }
     }
 }
