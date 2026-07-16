@@ -47,12 +47,16 @@ internal class PreloadCache : DefaultLifecycleObserver {
         this.observer = WeakReference(observer)
     }
 
-    fun transition(state: PreloadState) {
+    fun transition(view: CheckoutWebView, state: PreloadState) {
+        if (entry?.view !== view) return
+        if (this.state == state) return
+        transition(state)
+    }
+
+    private fun transition(state: PreloadState) {
         this.state = state
         observer?.get()?.receive(state)
     }
-
-    fun contains(view: CheckoutWebView): Boolean = entry?.view === view
 
     fun store(key: PreloadKey, view: CheckoutWebView, lifecycleOwner: LifecycleOwner) {
         invalidate()
@@ -74,7 +78,7 @@ internal class PreloadCache : DefaultLifecycleObserver {
         null -> null
         else -> if (!cached.isValid(key, clock.currentTimeMillis())) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
-            terminate(if (cached.key == key) PreloadState.Expired else PreloadState.Idle)
+            evict(if (cached.key == key) PreloadState.Expired else PreloadState.Idle)
             null
         } else if (cached.view.isPresented) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Preloaded WebView is already presented; creating a new WebView.")
@@ -126,7 +130,7 @@ internal class PreloadCache : DefaultLifecycleObserver {
         }
     }
 
-    private fun terminate(state: PreloadState) {
+    fun evict(state: PreloadState) {
         invalidate()
         transition(state)
     }

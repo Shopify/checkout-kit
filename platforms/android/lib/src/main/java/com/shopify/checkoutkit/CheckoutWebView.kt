@@ -199,9 +199,7 @@ internal class CheckoutWebView private constructor(
             super.onPageFinished(view, url)
             log.d(LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
             loadComplete = true
-            if (preloadCache.contains(this@CheckoutWebView)) {
-                preloadCache.transition(PreloadState.Ready)
-            }
+            preloadCache.transition(this@CheckoutWebView, PreloadState.Ready)
             listener.onCheckoutViewLoadComplete()
             resetCheckoutRequestRetryState()
         }
@@ -225,9 +223,10 @@ internal class CheckoutWebView private constructor(
 
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
-                if (preloadCache.contains(this@CheckoutWebView)) {
-                    preloadCache.transition(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
-                }
+                preloadCache.transition(
+                    this@CheckoutWebView,
+                    PreloadState.Failed(PreloadState.FailureReason.NavigationFailed),
+                )
                 invalidatePreload(this@CheckoutWebView)
             }
             super.onReceivedError(view, request, error)
@@ -246,10 +245,11 @@ internal class CheckoutWebView private constructor(
         ) {
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
-                if (preloadCache.contains(this@CheckoutWebView)) {
-                    val statusCode = errorResponse?.statusCode ?: 0
-                    preloadCache.transition(PreloadState.Failed(PreloadState.FailureReason.HttpError(statusCode)))
-                }
+                val statusCode = errorResponse?.statusCode ?: 0
+                preloadCache.transition(
+                    this@CheckoutWebView,
+                    PreloadState.Failed(PreloadState.FailureReason.HttpError(statusCode)),
+                )
                 invalidatePreload(this@CheckoutWebView)
             }
             super.onReceivedHttpError(view, request, errorResponse)
@@ -411,8 +411,7 @@ internal class CheckoutWebView private constructor(
 
         fun invalidateAndResetState() {
             runOnMainThread {
-                preloadCache.invalidate()
-                preloadCache.transition(PreloadState.Idle)
+                preloadCache.evict(PreloadState.Idle)
             }
         }
 
