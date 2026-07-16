@@ -34,7 +34,8 @@ class CheckoutKitAndroidDemo : Application() {
             ShopifyCheckoutKit.configure {
                 it.logLevel = LogLevel.DEBUG
                 it.appearance = settings.appearance.withCustomCloseIcon()
-                it.sheet = settings.checkoutSheetPreset.toCheckoutSheetOptions(
+                it.sheet = settings.checkoutPresentationMode.toCheckoutSheetOptions(
+                    preset = settings.checkoutSheetPreset,
                     dragToDismissEnabled = settings.dragToDismissEnabled,
                     tapAwayToDismissEnabled = settings.tapAwayToDismissEnabled,
                 )

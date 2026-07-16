@@ -20,9 +20,11 @@ import com.shopify.checkout_kit_android_demo.common.logs.Logger
 import com.shopify.checkout_kit_android_demo.common.navigation.Screen
 import com.shopify.checkout_kit_android_demo.settings.PreferencesManager
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.CustomerRepository
+import com.shopify.checkout_kit_android_demo.settings.data.CheckoutPresentationMode
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.CheckoutException
+import com.shopify.checkoutkit.CheckoutPresentation
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.ucp.embedded.checkout.Checkout
 import com.shopify.ucp.embedded.checkout.WindowOpenResult
@@ -52,6 +54,9 @@ class CartViewModel(
     private val _loadingState = MutableStateFlow(false)
     val loadingState: StateFlow<Boolean> = _loadingState
 
+    private val _checkoutPresentationMode = MutableStateFlow(CheckoutPresentationMode.CheckoutKitSheet)
+    val checkoutPresentationMode: StateFlow<CheckoutPresentationMode> = _checkoutPresentationMode.asStateFlow()
+
     private var demoBuyerIdentityEnabled = false
     private var checkoutPreloadingEnabled = true
     private var windowOpenHandler = WindowOpenHandler.Default
@@ -65,6 +70,7 @@ class CartViewModel(
                     demoBuyerIdentityEnabled = it.buyerIdentityDemoEnabled
                 }
                 checkoutPreloadingEnabled = it.checkoutPreloadingEnabled
+                _checkoutPresentationMode.value = it.checkoutPresentationMode
                 windowOpenHandler = it.windowOpenHandler
             }
         }
@@ -109,27 +115,41 @@ class CartViewModel(
         navController: NavController,
     ) {
         Timber.i("Presenting checkout")
-        val sampleActivity = activity as? MainActivity
-        ShopifyCheckoutKit.present(url, activity) {
-            onFail { error ->
-                handleCheckoutFailed(error, activity)
-            }
-            onCancel {
-                handleCheckoutCanceled()
-            }
-            sampleActivity?.let { mainActivity ->
-                onShowFileChooser { _, filePathCallback, fileChooserParams ->
-                    mainActivity.onShowFileChooser(filePathCallback, fileChooserParams)
-                }
-                onGeolocationPermissionsShowPrompt { origin, callback ->
-                    mainActivity.onGeolocationPermissionsShowPrompt(origin, callback)
-                }
-                onGeolocationPermissionsHidePrompt {
-                    mainActivity.onGeolocationPermissionsHidePrompt()
-                }
-            }
-            connect(buildProtocolClient(navController, activity, windowOpenHandler))
+        ShopifyCheckoutKit.present(
+            checkoutUrl = url,
+            context = activity,
+        ) {
+            configureCheckout(activity, navController)
         }
+    }
+
+    private fun CheckoutPresentation.configureCheckout(
+        activity: ComponentActivity,
+        navController: NavController,
+    ) {
+        val sampleActivity = activity as? MainActivity
+        onFail { error ->
+            handleCheckoutFailed(error, activity)
+        }
+        onCancel {
+            handleCheckoutCanceled()
+        }
+        sampleActivity?.let { mainActivity ->
+            onShowFileChooser { _, filePathCallback, fileChooserParams ->
+                mainActivity.onShowFileChooser(filePathCallback, fileChooserParams)
+            }
+            onGeolocationPermissionsShowPrompt { origin, callback ->
+                mainActivity.onGeolocationPermissionsShowPrompt(origin, callback)
+            }
+            onGeolocationPermissionsHidePrompt {
+                mainActivity.onGeolocationPermissionsHidePrompt()
+            }
+        }
+        connect(buildProtocolClient(navController, activity))
+    }
+
+    fun checkoutDismissedByHost() {
+        handleCheckoutCanceled()
     }
 
     fun preloadCheckout(url: String, activity: ComponentActivity) {
@@ -151,7 +171,7 @@ class CartViewModel(
         }
     }
 
-    private fun handleCheckoutFailed(
+    internal fun handleCheckoutFailed(
         error: CheckoutException,
         activity: ComponentActivity,
     ) {
@@ -166,14 +186,13 @@ class CartViewModel(
         }
     }
 
-    private fun handleCheckoutCanceled() {
+    internal fun handleCheckoutCanceled() {
         logger.logSdkEvent("Checkout canceled")
     }
 
-    private fun buildProtocolClient(
+    internal fun buildProtocolClient(
         navController: NavController,
         activity: ComponentActivity,
-        windowOpenHandler: WindowOpenHandler,
     ): CheckoutProtocol.Client {
         val base = CheckoutProtocol.Client()
             .on(CheckoutProtocol.start) { checkout ->

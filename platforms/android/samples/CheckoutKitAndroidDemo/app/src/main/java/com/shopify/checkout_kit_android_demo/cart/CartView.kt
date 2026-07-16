@@ -49,15 +49,18 @@ import com.shopify.checkout_kit_android_demo.common.components.MoneyText
 import com.shopify.checkout_kit_android_demo.common.components.ProgressIndicator
 import com.shopify.checkout_kit_android_demo.common.ui.theme.horizontalPadding
 import com.shopify.checkout_kit_android_demo.common.ui.theme.verticalPadding
+import com.shopify.checkout_kit_android_demo.settings.data.CheckoutPresentationMode
 
 @Composable
 fun CartView(
     navController: NavController,
     cartViewModel: CartViewModel,
+    onPresentAppOwnedCheckout: (String) -> Unit,
 ) {
 
     val state = cartViewModel.cartState.collectAsState().value
     val loading = cartViewModel.loadingState.collectAsState().value
+    val checkoutPresentationMode = cartViewModel.checkoutPresentationMode.collectAsState().value
 
     val activity = LocalActivity.current as ComponentActivity
     var mutableQuantity by remember { mutableStateOf<Map<String, Int>>(mutableMapOf()) }
@@ -93,11 +96,15 @@ fun CartView(
                         modifyLineItem = cartViewModel::modifyLineItem,
                         continueShopping = { cartViewModel.continueShopping(navController) },
                         checkout = {
-                            cartViewModel.presentCheckout(
-                                state.checkoutUrl,
-                                activity,
-                                navController,
-                            )
+                            when (checkoutPresentationMode) {
+                                CheckoutPresentationMode.CheckoutKitSheet -> cartViewModel.presentCheckout(
+                                    url = state.checkoutUrl,
+                                    activity = activity,
+                                    navController = navController,
+                                )
+                                CheckoutPresentationMode.AppOwnedComposeSheet ->
+                                    onPresentAppOwnedCheckout(state.checkoutUrl)
+                            }
                         },
                         totalAmount = state.cartTotals.totalAmount,
                         totalAmountEstimated = state.cartTotals.totalAmountEstimated,

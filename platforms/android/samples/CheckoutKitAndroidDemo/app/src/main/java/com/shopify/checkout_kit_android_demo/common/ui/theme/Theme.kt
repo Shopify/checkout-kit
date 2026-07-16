@@ -35,8 +35,10 @@ private val secondaryColor = Color(
 
 private val lightTertiaryColor = Color(0xFF7A4E00)
 private val darkTertiaryColor = Color(0xFFFFB95C)
+private val darkBackgroundColor = Color(0xFF1D1D1F)
 
 private val DarkColorPalette = darkColorScheme(
+    background = darkBackgroundColor,
     primary = primaryColor,
     onPrimary = Color.White,
     tertiary = darkTertiaryColor,

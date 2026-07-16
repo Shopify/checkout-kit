@@ -75,6 +75,7 @@ fun CheckoutKitNavHost(
     cartViewModel: CartViewModel,
     settingsViewModel: SettingsViewModel,
     logsViewModel: LogsViewModel,
+    onPresentAppOwnedCheckout: (String) -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -101,6 +102,7 @@ fun CheckoutKitNavHost(
             CartView(
                 cartViewModel = cartViewModel,
                 navController = navController,
+                onPresentAppOwnedCheckout = onPresentAppOwnedCheckout,
             )
         }
 
