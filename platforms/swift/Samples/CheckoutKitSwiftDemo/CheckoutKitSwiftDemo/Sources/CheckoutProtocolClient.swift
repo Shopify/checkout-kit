@@ -13,7 +13,7 @@ extension CheckoutProtocol.Client {
             .on(CheckoutProtocol.complete) { checkout in
                 // Do NOT reset the cart here — the cart drives a SwiftUI `if let` in CartView,
                 // and nil-ing it auto-collapses the .sheet, hiding the order confirmation page.
-                // Reset on user dismiss instead (see CartView .onCancel + isCompleted).
+                // Reset on user dismissal instead (see CartView .onDismiss + isCompleted).
                 print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
             }
             .on(CheckoutProtocol.lineItemsChange) { checkout in

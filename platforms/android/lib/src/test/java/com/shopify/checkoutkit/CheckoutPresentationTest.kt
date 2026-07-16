@@ -32,15 +32,15 @@ class CheckoutPresentationTest {
     }
 
     @Test
-    fun `present builder invokes onCancel callback`() {
-        var canceled = false
+    fun `present builder invokes onDismiss callback`() {
+        var dismissed = false
 
         val listener = listener {
-            onCancel { canceled = true }
+            onDismiss { dismissed = true }
         }
-        listener.onCheckoutCanceled()
+        listener.onCheckoutDismissed()
 
-        assertThat(canceled).isTrue()
+        assertThat(dismissed).isTrue()
     }
 
     @Test
@@ -140,7 +140,7 @@ class CheckoutPresentationTest {
         val listener = listener {}
 
         listener.onCheckoutFailed(CheckoutKitException("boom"))
-        listener.onCheckoutCanceled()
+        listener.onCheckoutDismissed()
         listener.onPermissionRequest(mock())
         listener.onGeolocationPermissionsShowPrompt("origin", mock())
         listener.onGeolocationPermissionsHidePrompt()

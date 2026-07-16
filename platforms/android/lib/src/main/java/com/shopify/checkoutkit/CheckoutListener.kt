@@ -27,9 +27,9 @@ public interface CheckoutListener {
     public fun onCheckoutFailed(error: CheckoutException)
 
     /**
-     * Event representing the cancellation/closing of checkout by the buyer.
+     * Event representing dismissal of checkout by the buyer.
      */
-    public fun onCheckoutCanceled()
+    public fun onCheckoutDismissed()
 
     /**
      * A permission has been requested by the web chrome client, e.g. to access the camera.
@@ -63,7 +63,7 @@ internal class NoopCheckoutListener : CheckoutListener {
         /* noop */
     }
 
-    override fun onCheckoutCanceled() {
+    override fun onCheckoutDismissed() {
         /* noop */
     }
 

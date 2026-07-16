@@ -34,14 +34,14 @@ class ShopifyCheckoutTests: XCTestCase {
         try await super.tearDown()
     }
 
-    func testOnCancel() {
-        var cancelActionCalled = false
+    func testOnDismiss() {
+        var dismissActionCalled = false
 
-        let sheet = shopifyCheckout.onCancel {
-            cancelActionCalled = true
+        let sheet = shopifyCheckout.onDismiss {
+            dismissActionCalled = true
         }
-        sheet.onCancelAction?()
-        XCTAssertTrue(cancelActionCalled)
+        sheet.onDismissAction?()
+        XCTAssertTrue(dismissActionCalled)
     }
 
     func testOnFail() {

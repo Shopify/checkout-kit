@@ -36,7 +36,7 @@ The sample is a separate Gradle composite (`samples/CheckoutKitAndroidDemo/setti
 - **`../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/Descriptors.kt`** — reusable protocol descriptor and codec types.
 - **`Configuration.kt`** — runtime config container (color scheme, log level).
 - **`CheckoutListener.kt`** + **`DefaultCheckoutListener`** — consumer-implemented lifecycle interface (failure, cancellation, permission prompts, file chooser). Changes here are consumer API changes.
-- **`CheckoutPresentation.kt`** — Kotlin-first builder for per-presentation callbacks (`onFail`, `onCancel`, browser/system hooks, ECP `connect(...)`). Builds a `DefaultCheckoutListener` internally.
+- **`CheckoutPresentation.kt`** — Kotlin-first builder for per-presentation callbacks (`onFail`, `onDismiss`, browser/system hooks, ECP `connect(...)`). Builds a `DefaultCheckoutListener` internally.
 
 ## Testing patterns
 

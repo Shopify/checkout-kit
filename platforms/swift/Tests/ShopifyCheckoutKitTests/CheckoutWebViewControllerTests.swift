@@ -69,7 +69,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
 
         viewController.presentationControllerDidDismiss(UIPresentationController(presentedViewController: viewController, presenting: nil))
 
-        XCTAssertEqual(delegate.didCancelCount, 1)
+        XCTAssertEqual(delegate.didDismissCount, 1)
     }
 
     func test_presentationControllerDidDismiss_doesNotCleanUpBeforeViewDisappears() throws {

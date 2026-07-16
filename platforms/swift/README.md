@@ -115,8 +115,8 @@ final class CartViewController: UIViewController, CheckoutDelegate {
     )
   }
 
-  func checkoutDidCancel() {
-    // The buyer closed checkout.
+  func checkoutDidDismiss() {
+    // The buyer dismissed checkout.
   }
 
   func checkoutDidFail(error: CheckoutError) {
@@ -146,7 +146,7 @@ struct CartView: View {
         .tintColor(.systemBlue)
         .backgroundColor(.systemBackground)
         .closeButtonTintColor(nil)
-        .onCancel {
+        .onDismiss {
           isPresented = false
         }
         .onFail { error in
@@ -234,7 +234,7 @@ let configuration = ShopifyCheckoutKit.configuration
 
 `CheckoutDelegate` reports native presentation outcomes:
 
-- `checkoutDidCancel()` fires when the buyer closes the checkout sheet.
+- `checkoutDidDismiss()` fires when the buyer dismisses the checkout sheet.
 - `checkoutDidFail(error:)` fires when checkout cannot continue.
 
 Typed checkout state, including completion, flows through `EmbeddedCheckoutProtocol`.

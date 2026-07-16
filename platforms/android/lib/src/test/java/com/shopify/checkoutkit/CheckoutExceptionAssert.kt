@@ -56,7 +56,7 @@ fun noopDefaultCheckoutListener(): DefaultCheckoutListener {
             // no-op
         }
 
-        override fun onCheckoutCanceled() {
+        override fun onCheckoutDismissed() {
             // no-op
         }
     }

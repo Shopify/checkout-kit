@@ -14,7 +14,7 @@ import android.webkit.WebView
  */
 public class CheckoutPresentation internal constructor() {
     internal var onFail: ((CheckoutException) -> Unit)? = null
-    internal var onCancel: (() -> Unit)? = null
+    internal var onDismiss: (() -> Unit)? = null
     internal var onPermissionRequest: ((PermissionRequest) -> Unit)? = null
     internal var onShowFileChooser:
         ((WebView, ValueCallback<Array<Uri>>, WebChromeClient.FileChooserParams) -> Boolean)? = null
@@ -31,10 +31,10 @@ public class CheckoutPresentation internal constructor() {
     }
 
     /**
-     * Called when checkout is canceled by the buyer.
+     * Called when the buyer dismisses checkout.
      */
-    public fun onCancel(handler: () -> Unit) {
-        onCancel = handler
+    public fun onDismiss(handler: () -> Unit) {
+        onDismiss = handler
     }
 
     /**
@@ -86,8 +86,8 @@ public class CheckoutPresentation internal constructor() {
                 onFail?.invoke(error)
             }
 
-            override fun onCheckoutCanceled() {
-                onCancel?.invoke()
+            override fun onCheckoutDismissed() {
+                onDismiss?.invoke()
             }
 
             override fun onPermissionRequest(permissionRequest: PermissionRequest) {

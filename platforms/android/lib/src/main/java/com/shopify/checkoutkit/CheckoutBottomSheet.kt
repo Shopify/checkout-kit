@@ -31,7 +31,7 @@ internal class CheckoutBottomSheet(
 ) : ComponentDialog(activity, R.style.CheckoutKitBottomSheetDialog) {
 
     private var presentedCheckoutView: ShopifyCheckout? = null
-    private var cancelNotified = false
+    private var dismissNotified = false
     private var dismissing = false
     private var dismissFinalized = false
 
@@ -47,7 +47,7 @@ internal class CheckoutBottomSheet(
             return true
         }
 
-        cancelNotified = false
+        dismissNotified = false
         dismissing = false
         dismissFinalized = false
 
@@ -67,7 +67,7 @@ internal class CheckoutBottomSheet(
             hostConfiguration = CheckoutHostConfiguration(
                 listener = checkoutListener,
                 protocolClient = protocolClient,
-                onCancelRequest = ::cancel,
+                onDismissRequest = ::dismissedByBuyer,
                 onFailure = ::closeCheckoutWithError,
                 reportInitializationFailure = false,
             ),
@@ -104,8 +104,8 @@ internal class CheckoutBottomSheet(
             setOnClickListener(
                 if (sheet.dismissal.tapAwayToDismissEnabled) {
                     View.OnClickListener {
-                        log.d(LOG_TAG, "Outside touch cancel invoked.")
-                        cancel()
+                        log.d(LOG_TAG, "Outside touch dismissal invoked.")
+                        dismissedByBuyer()
                     }
                 } else {
                     null
@@ -129,20 +129,25 @@ internal class CheckoutBottomSheet(
             applySystemBarTopMargin(sheet.snapPoints.single())
             onDismissRequested = {
                 if (!dismissing) {
-                    log.d(LOG_TAG, "Dismissed by gesture, cancelling checkout.")
-                    cancelAfterSheetDismissAnimation()
+                    log.d(LOG_TAG, "Dismissed by gesture.")
+                    dismissAfterSheetDismissAnimation()
                 }
             }
         }
     }
 
-    /**
-     * Cancels checkout, notifies the listener once, and dismisses with the normal sheet animation.
-     */
     override fun cancel() {
+        dismissedByBuyer()
+    }
+
+    /**
+     * Dismisses checkout in response to a buyer action, notifies the listener once, and uses the
+     * normal sheet animation.
+     */
+    private fun dismissedByBuyer() {
         if (dismissing) return
 
-        notifyCheckoutCanceled()
+        notifyCheckoutDismissed()
         dismiss(animate = true)
     }
 
@@ -182,10 +187,10 @@ internal class CheckoutBottomSheet(
     /**
      * Completes a gesture dismissal after the sheet view has already animated off screen.
      */
-    private fun cancelAfterSheetDismissAnimation() {
+    private fun dismissAfterSheetDismissAnimation() {
         if (dismissing) return
 
-        notifyCheckoutCanceled()
+        notifyCheckoutDismissed()
         dismissing = true
         finishDismiss()
     }
@@ -209,13 +214,13 @@ internal class CheckoutBottomSheet(
     }
 
     /**
-     * Sends the cancellation callback once across close button, back, outside touch, and gesture paths.
+     * Sends the dismissal callback once across close button, back, outside touch, and gesture paths.
      */
-    private fun notifyCheckoutCanceled() {
-        if (!cancelNotified) {
-            log.d(LOG_TAG, "Cancel invoked, invoking onCheckoutCanceled.")
-            cancelNotified = true
-            checkoutListener.onCheckoutCanceled()
+    private fun notifyCheckoutDismissed() {
+        if (!dismissNotified) {
+            log.d(LOG_TAG, "Dismissal invoked, invoking onCheckoutDismissed.")
+            dismissNotified = true
+            checkoutListener.onCheckoutDismissed()
         }
     }
 

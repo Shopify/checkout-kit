@@ -93,7 +93,7 @@ fun presentCheckout(checkoutUrl: String, activity: ComponentActivity) {
             handleCheckoutError(error)
         }
 
-        onCancel {
+        onDismiss {
             resetCheckoutUi()
         }
     }
@@ -110,7 +110,7 @@ val listener = object : DefaultCheckoutListener() {
         handleCheckoutError(error)
     }
 
-    override fun onCheckoutCanceled() {
+    override fun onCheckoutDismissed() {
         resetCheckoutUi()
     }
 }
@@ -122,7 +122,7 @@ The `present` call returns a `CheckoutHandle?`. Keep it if you need to dismiss c
 
 ```kotlin
 val checkout = ShopifyCheckoutKit.present(checkoutUrl, activity) {
-    onCancel { resetCheckoutUi() }
+    onDismiss { resetCheckoutUi() }
 }
 
 checkout?.dismiss()
@@ -141,7 +141,7 @@ Jetpack Compose apps can host `ShopifyCheckout` with `AndroidView`; Checkout Kit
 @Composable
 fun CartScreen(checkoutUrl: String) {
     var isCheckoutPresented by remember { mutableStateOf(false) }
-    val dismissAsCancel = {
+    val dismissCheckout = {
         isCheckoutPresented = false
         resetCheckoutUi()
     }
@@ -153,14 +153,14 @@ fun CartScreen(checkoutUrl: String) {
     if (!isCheckoutPresented) return
 
     ModalBottomSheet(
-        onDismissRequest = dismissAsCancel,
+        onDismissRequest = dismissCheckout,
     ) {
         AndroidView(
             factory = { context ->
                 ShopifyCheckout.create(context, checkoutUrl) {
                     connect(protocolClient)
 
-                    onCancel { dismissAsCancel() }
+                    onDismiss { dismissCheckout() }
 
                     onFail { error ->
                         isCheckoutPresented = false
@@ -178,8 +178,8 @@ fun CartScreen(checkoutUrl: String) {
 View-system and Java hosts can construct `ShopifyCheckout(context, checkoutUrl, listener, protocolClient)` directly and
 must follow the same `destroy()` contract when removing it from their hierarchy.
 
-The close control and system back invoke `onCancel`; back navigates WebView history first when possible. Sheet gestures
-and tap-away belong to the host, so route `ModalBottomSheet.onDismissRequest` through the same app cancellation logic.
+The close control and system back invoke `onDismiss`; back navigates WebView history first when possible. Sheet gestures
+and tap-away belong to the host, so route `ModalBottomSheet.onDismissRequest` through the same app dismissal logic.
 `onFail` likewise asks the host to remove its presentation rather than attempting to dismiss an unknown parent.
 
 `ShopifyCheckout` callbacks and protocol client are fixed when the view is created. Create a new view for a new checkout
@@ -207,7 +207,7 @@ Checkout Kit can reuse a matching preloaded checkout when `present` is called la
 ```kotlin
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
     onFail { error -> handleCheckoutError(error) }
-    onCancel { resetCheckoutUi() }
+    onDismiss { resetCheckoutUi() }
 }
 ```
 
@@ -360,7 +360,7 @@ val configuration = ShopifyCheckoutKit.getConfiguration()
 
 ## Checkout lifecycle
 
-Use `onFail` and `onCancel` for checkout outcomes handled by your app. Use `CheckoutProtocol.Client` for typed checkout state, including completion. These descriptors wrap checkout protocol messages defined in the [protocol schema](../../protocol/services/shopping/embedded.openrpc.json).
+Use `onFail` and `onDismiss` for checkout outcomes handled by your app. Use `CheckoutProtocol.Client` for typed checkout state, including completion. These descriptors wrap checkout protocol messages defined in the [protocol schema](../../protocol/services/shopping/embedded.openrpc.json).
 
 ```kotlin
 import com.shopify.checkoutkit.CheckoutProtocol
@@ -385,7 +385,7 @@ val protocolClient = CheckoutProtocol.Client()
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
     connect(protocolClient)
     onFail { error -> handleCheckoutError(error) }
-    onCancel { resetCheckoutUi() }
+    onDismiss { resetCheckoutUi() }
 }
 ```
 

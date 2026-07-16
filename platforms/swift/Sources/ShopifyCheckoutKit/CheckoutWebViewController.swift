@@ -7,7 +7,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     /// Keep this value in sync with the checkout close selector used by E2E flows.
     private static let closeButtonAccessibilityIdentifier = "shopify_checkout_kit_close_button"
 
-    var onCancel: (() -> Void)?
+    var onDismiss: (() -> Void)?
     var onFail: ((CheckoutError) -> Void)?
     weak var delegate: (any CheckoutDelegate)?
     var client: (any CheckoutCommunicationProtocol)?
@@ -161,17 +161,17 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     }
 
     @IBAction func close() {
-        didCancel()
+        didDismiss()
         dismiss(animated: true)
     }
 
     public func presentationControllerDidDismiss(_: UIPresentationController) {
-        didCancel()
+        didDismiss()
     }
 
-    private func didCancel() {
-        onCancel?()
-        delegate?.checkoutDidCancel()
+    private func didDismiss() {
+        onDismiss?()
+        delegate?.checkoutDidDismiss()
     }
 
     func cleanUpCheckoutView() {

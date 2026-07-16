@@ -104,7 +104,7 @@ public object ShopifyCheckoutKit {
      *
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
-     * @param configure a Kotlin-first builder for fail/cancel callbacks, browser/system hooks,
+     * @param configure a Kotlin-first builder for fail/dismiss callbacks, browser/system hooks,
      * and an optional typed protocol client
      * @return A [CheckoutHandle] if the sheet was successfully created and displayed.
      */
@@ -152,7 +152,7 @@ public object ShopifyCheckoutKit {
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
      * @param checkoutListener provides callbacks to allow clients to listen for and respond to checkout lifecycle events
-     * (failure, cancellation, permission prompts, file chooser).
+     * (failure, dismissal, permission prompts, file chooser).
      * @param protocolClient optional typed handler for supported Embedded Checkout Protocol (ECP)
      * callbacks from the checkout web page. Built-in messages
      * (`ec.ready` and [ec.start][CheckoutProtocol.start])

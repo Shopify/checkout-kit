@@ -62,9 +62,9 @@ internal fun AppOwnedCheckoutSheet(
                         currentOnDismiss()
                         cartViewModel.handleCheckoutFailed(error, activity)
                     }
-                    onCancel {
+                    onDismiss {
                         currentOnDismiss()
-                        cartViewModel.handleCheckoutCanceled()
+                        cartViewModel.handleCheckoutDismissed()
                     }
                     sampleActivity?.let { mainActivity ->
                         onShowFileChooser { _, filePathCallback, fileChooserParams ->

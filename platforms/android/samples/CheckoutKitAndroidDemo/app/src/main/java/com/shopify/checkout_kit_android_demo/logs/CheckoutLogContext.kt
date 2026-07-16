@@ -19,18 +19,18 @@ internal data class CheckoutLogContext(
 internal fun List<LogLine>.checkoutContextsByLogId(): Map<UUID, CheckoutLogContext> {
     val latestPayloadByCheckoutId = mutableMapOf<String, String>()
     var activeCheckoutId: String? = null
-    var completedCheckoutIdForFollowUpCancellation: String? = null
+    var completedCheckoutIdForFollowUpDismissal: String? = null
 
     return buildMap {
         for (logLine in this@checkoutContextsByLogId) {
-            val recentlyCompletedCheckoutId = completedCheckoutIdForFollowUpCancellation
-            completedCheckoutIdForFollowUpCancellation = null
+            val recentlyCompletedCheckoutId = completedCheckoutIdForFollowUpDismissal
+            completedCheckoutIdForFollowUpDismissal = null
             val checkoutPayload = logLine.checkoutPayload()
             if (checkoutPayload != null) activeCheckoutId = checkoutPayload.checkoutId
 
             val checkoutId = checkoutPayload?.checkoutId
                 ?: activeCheckoutId
-                ?: recentlyCompletedCheckoutId?.takeIf { logLine.isCheckoutCancellation() }
+                ?: recentlyCompletedCheckoutId?.takeIf { logLine.isCheckoutDismissal() }
             if (checkoutId != null) {
                 put(
                     logLine.id,
@@ -49,7 +49,7 @@ internal fun List<LogLine>.checkoutContextsByLogId(): Map<UUID, CheckoutLogConte
             when {
                 logLine.isCheckoutCompletion() -> {
                     activeCheckoutId = null
-                    completedCheckoutIdForFollowUpCancellation = checkoutId
+                    completedCheckoutIdForFollowUpDismissal = checkoutId
                 }
                 logLine.isTerminalSdkEvent() -> activeCheckoutId = null
             }
@@ -77,8 +77,8 @@ private fun LogLine.checkoutPayload(): CheckoutPayload? {
 private fun LogLine.isCheckoutCompletion(): Boolean =
     message == "Received: ${CheckoutProtocol.complete.method}"
 
-private fun LogLine.isCheckoutCancellation(): Boolean =
-    source == LogSource.SDK && message == "Checkout canceled"
+private fun LogLine.isCheckoutDismissal(): Boolean =
+    source == LogSource.SDK && message == "Checkout dismissed"
 
 private fun LogLine.isTerminalSdkEvent(): Boolean =
     source == LogSource.SDK && message in terminalSdkMessages
@@ -88,4 +88,4 @@ private data class CheckoutPayload(
     val payload: String,
 )
 
-private val terminalSdkMessages = setOf("Checkout canceled", "Checkout failed")
+private val terminalSdkMessages = setOf("Checkout dismissed", "Checkout failed")

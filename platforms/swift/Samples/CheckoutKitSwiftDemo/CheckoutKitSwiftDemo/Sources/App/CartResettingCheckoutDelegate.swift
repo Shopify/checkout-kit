@@ -8,7 +8,7 @@ final class CartResettingCheckoutDelegate: CheckoutDelegate {
         completed = true
     }
 
-    nonisolated func checkoutDidCancel() {
+    nonisolated func checkoutDidDismiss() {
         MainActor.assumeIsolated {
             guard completed else { return }
             completed = false

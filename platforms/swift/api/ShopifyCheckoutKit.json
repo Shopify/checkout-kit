@@ -207,8 +207,8 @@
         "children": [
           {
             "kind": "Function",
-            "name": "checkoutDidCancel",
-            "printedName": "checkoutDidCancel()",
+            "name": "checkoutDidDismiss",
+            "printedName": "checkoutDidDismiss()",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -217,8 +217,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0B8DelegateP17checkoutDidCancelyyF",
-            "mangledName": "$s18ShopifyCheckoutKit0B8DelegateP17checkoutDidCancelyyF",
+            "usr": "s:18ShopifyCheckoutKit0B8DelegateP18checkoutDidDismissyyF",
+            "mangledName": "$s18ShopifyCheckoutKit0B8DelegateP18checkoutDidDismissyyF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
@@ -2548,8 +2548,8 @@
           },
           {
             "kind": "Function",
-            "name": "onCancel",
-            "printedName": "onCancel(_:)",
+            "name": "onDismiss",
+            "printedName": "onDismiss(_:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -2583,8 +2583,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0aB0V8onCancelyACyycF",
-            "mangledName": "$s18ShopifyCheckoutKit0aB0V8onCancelyACyycF",
+            "usr": "s:18ShopifyCheckoutKit0aB0V9onDismissyACyycF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V9onDismissyACyycF",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "Preconcurrency",

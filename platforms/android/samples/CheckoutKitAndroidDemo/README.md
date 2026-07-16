@@ -8,14 +8,14 @@ This sample demonstrates how to integrate Checkout Kit with the Shopify Storefro
 - Cart create, add, update, remove, and fetch operations
 - `cart.checkoutUrl` presentation with `ShopifyCheckoutKit`
 - Typed checkout lifecycle events through `CheckoutProtocol.Client`
-- Checkout fail/cancel callbacks through the presentation builder
+- Checkout fail/dismiss callbacks through the presentation builder
 - File chooser, geolocation, and web permission host callbacks
 - Buyer identity demo data for checkout prefill
 - Customer Account API sign-in and customer access token cart identity
 
 ## Checkout flow
 
-The sample's cart flow demonstrates the Kotlin-first `ShopifyCheckoutKit.present(checkoutUrl, activity) { ... }` API. It connects a typed `CheckoutProtocol.Client` to observe checkout state changes, including completion, and uses the presentation builder for fail/cancel plus the sample's file chooser, geolocation, and web permission host callbacks.
+The sample's cart flow demonstrates the Kotlin-first `ShopifyCheckoutKit.present(checkoutUrl, activity) { ... }` API. It connects a typed `CheckoutProtocol.Client` to observe checkout state changes, including completion, and uses the presentation builder for fail/dismiss plus the sample's file chooser, geolocation, and web permission host callbacks.
 
 ## Architecture
 
@@ -148,6 +148,6 @@ Open the project in Android Studio, sync Gradle, then build and run.
 | `products/collection/data/ProductCollectionRepository.kt` | Collection Storefront API calls. |
 | `settings/authentication/data/CustomerRepository.kt` | Customer Account API token exchange and customer lookup. |
 | `common/navigation/CheckoutKitNavHost.kt` | App navigation. |
-| `cart/CartViewModel.kt` | Checkout presentation, fail/cancel callbacks, and protocol lifecycle handlers. |
+| `cart/CartViewModel.kt` | Checkout presentation, fail/dismiss callbacks, and protocol lifecycle handlers. |
 | `MainActivity.kt` | File chooser and geolocation permission callbacks. |
 | `settings/authentication/` | Customer Account API sign-in screens and WebView flow. |
