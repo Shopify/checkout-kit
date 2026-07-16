@@ -23,8 +23,8 @@ class PreloadObservabilityTests: XCTestCase {
     func testPreloadReturnsHandleInLoadingState() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
 
-        guard case .loading = preload.state else {
-            return XCTFail("expected .loading, got \(preload.state)")
+        guard case .loading = preload?.state else {
+            return XCTFail("expected .loading, got \(String(describing: preload?.state))")
         }
     }
 
@@ -33,8 +33,8 @@ class PreloadObservabilityTests: XCTestCase {
 
         ShopifyCheckoutKit.invalidate()
 
-        guard case .idle = preload.state else {
-            return XCTFail("expected .idle, got \(preload.state)")
+        guard case .idle = preload?.state else {
+            return XCTFail("expected .idle, got \(String(describing: preload?.state))")
         }
     }
 
@@ -42,7 +42,7 @@ class PreloadObservabilityTests: XCTestCase {
         var states: [PreloadState] = []
 
         let preload = ShopifyCheckoutKit.preload(checkout: url)
-        preload.onStateChange = { states.append($0) }
+        preload?.onStateChange = { states.append($0) }
         ShopifyCheckoutKit.invalidate()
 
         withExtendedLifetime(preload) {
@@ -55,9 +55,9 @@ class PreloadObservabilityTests: XCTestCase {
         var secondStates: [PreloadState] = []
 
         let first = ShopifyCheckoutKit.preload(checkout: url)
-        first.onStateChange = { firstStates.append($0) }
+        first?.onStateChange = { firstStates.append($0) }
         let second = ShopifyCheckoutKit.preload(checkout: url)
-        second.onStateChange = { secondStates.append($0) }
+        second?.onStateChange = { secondStates.append($0) }
 
         ShopifyCheckoutKit.invalidate()
 
@@ -70,7 +70,7 @@ class PreloadObservabilityTests: XCTestCase {
     func testPublishedStateReceivesTransitions() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
         var states: [PreloadState] = []
-        let cancellable = preload.$state.sink { states.append($0) }
+        let cancellable = preload?.$state.sink { states.append($0) }
 
         ShopifyCheckoutKit.invalidate()
 
@@ -87,7 +87,23 @@ class PreloadObservabilityTests: XCTestCase {
         view.webView(view, didFinish: nil)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .ready)
+            XCTAssertEqual(preload?.state, .ready)
+        }
+    }
+
+    func testRepeatDidFinishDoesNotReNotifyReadyState() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        var states: [PreloadState] = []
+        preload?.onStateChange = { states.append($0) }
+
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        view.webView(view, didFinish: nil)
+        view.webView(view, didFinish: nil)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(states, [.loading, .ready])
         }
     }
 
@@ -97,7 +113,7 @@ class PreloadObservabilityTests: XCTestCase {
         CheckoutWebView.preloadCache.expire()
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .expired)
+            XCTAssertEqual(preload?.state, .expired)
         }
     }
 
@@ -107,7 +123,7 @@ class PreloadObservabilityTests: XCTestCase {
         CheckoutWebView.preloadCache.keepAliveDidFail()
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .failed(reason: .keepAliveLost))
+            XCTAssertEqual(preload?.state, .failed(reason: .keepAliveLost))
         }
     }
 
@@ -122,7 +138,7 @@ class PreloadObservabilityTests: XCTestCase {
         _ = view.handleResponse(response)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .failed(reason: .httpError(statusCode: 500)))
+            XCTAssertEqual(preload?.state, .failed(reason: .httpError(statusCode: 500)))
         }
     }
 
@@ -135,7 +151,7 @@ class PreloadObservabilityTests: XCTestCase {
         view.webView(view, didFail: nil, withError: error)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .failed(reason: .navigationFailed))
+            XCTAssertEqual(preload?.state, .failed(reason: .navigationFailed))
         }
     }
 
@@ -148,7 +164,7 @@ class PreloadObservabilityTests: XCTestCase {
         view.webView(view, didFailProvisionalNavigation: nil, withError: error)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .failed(reason: .navigationFailed))
+            XCTAssertEqual(preload?.state, .failed(reason: .navigationFailed))
         }
     }
 
@@ -161,7 +177,7 @@ class PreloadObservabilityTests: XCTestCase {
         view.webView(view, didFailProvisionalNavigation: nil, withError: error)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .loading)
+            XCTAssertEqual(preload?.state, .loading)
         }
     }
 
@@ -176,13 +192,13 @@ class PreloadObservabilityTests: XCTestCase {
         _ = CheckoutWebView.preloadCache.view(for: PreloadKey(url: otherURL, entryPoint: nil))
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .idle)
+            XCTAssertEqual(preload?.state, .idle)
         }
     }
 
     func testExpireClearsCacheBeforeNotifyingSoReentrantPreloadSurvives() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
-        preload.onStateChange = { state in
+        preload?.onStateChange = { state in
             if case .expired = state {
                 _ = CheckoutWebView.preloadCache.store(
                     CheckoutWebView(entryPoint: nil),
@@ -203,12 +219,12 @@ class PreloadObservabilityTests: XCTestCase {
 
         ShopifyCheckoutKit.configuration.preloading.enabled = false
 
-        for _ in 0 ..< 20 where preload.state != .idle {
+        for _ in 0 ..< 20 where preload?.state != .idle {
             await Task.yield()
         }
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload.state, .idle)
+            XCTAssertEqual(preload?.state, .idle)
         }
     }
 }

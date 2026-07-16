@@ -3,6 +3,22 @@ import XCTest
 
 @MainActor
 class ShopifyCheckoutKitTests: XCTestCase {
+    let checkoutURL = URL(string: "https://shop.example/checkouts/cn/123")!
+
+    private var originalConfiguration: Configuration!
+
+    override func setUp() async throws {
+        try await super.setUp()
+        originalConfiguration = ShopifyCheckoutKit.configuration
+        CheckoutWebView.invalidate()
+    }
+
+    override func tearDown() async throws {
+        CheckoutWebView.invalidate()
+        ShopifyCheckoutKit.configuration = originalConfiguration
+        try await super.tearDown()
+    }
+
     func test_version_whenAccessed_shouldExist() {
         XCTAssertFalse(ShopifyCheckoutKit.version.isEmpty)
     }
@@ -45,7 +61,6 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let delegate = MockCheckoutDelegate()
         let client = MockBridgeClient()
         let presenter = UIViewController()
-        let checkoutURL = try XCTUnwrap(URL(string: "https://shop.example/checkouts/cn/123"))
 
         let viewController = ShopifyCheckoutKit.present(
             checkout: checkoutURL,
@@ -89,6 +104,28 @@ class ShopifyCheckoutKitTests: XCTestCase {
             OSLogger.shared.logLevel,
             .none,
             "Logger should have .none log level"
+        )
+    }
+
+    func test_preload_returnsNilWhenDisabled() {
+        ShopifyCheckoutKit.configuration.preloading.enabled = false
+        XCTAssertNil(ShopifyCheckoutKit.preload(checkout: checkoutURL))
+    }
+
+    func test_preload_returnsPreloadWhenEnabled() {
+        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        var states: [PreloadState] = []
+
+        preload?.onStateChange = { state in
+            states.append(state)
+        }
+
+        XCTAssertNotNil(preload)
+        XCTAssertEqual(preload?.state, .loading)
+        XCTAssertTrue(
+            states.contains(PreloadState.loading),
+            "States should include .loading after starting preload"
         )
     }
 }

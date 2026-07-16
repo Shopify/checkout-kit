@@ -45,13 +45,12 @@ private func applyConfigurationChange(configuration: Configuration, previousConf
 /// observing preload state. Retain the handle to keep observing.
 @MainActor
 @discardableResult
-public func preload(checkout url: URL) -> CheckoutPreload {
-    let checkoutPreload = CheckoutPreload(cache: CheckoutWebView.preloadCache)
-
+public func preload(checkout url: URL) -> CheckoutPreload? {
     guard configuration.preloading.enabled else {
-        return checkoutPreload
+        return nil
     }
 
+    let checkoutPreload = CheckoutPreload(cache: CheckoutWebView.preloadCache)
     let decorated = CheckoutURLDecorator.decorate(url)
     CheckoutWebView.preload(checkout: decorated)
     return checkoutPreload
@@ -60,7 +59,7 @@ public func preload(checkout url: URL) -> CheckoutPreload {
 /// Invalidates any cached checkout created by preload calls.
 @MainActor
 public func invalidate() {
-    CheckoutWebView.preloadCache.terminate(with: .idle, disconnect: true)
+    CheckoutWebView.preloadCache.evict(with: .idle, disconnect: true)
 }
 
 @MainActor
