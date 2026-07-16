@@ -169,7 +169,7 @@ export interface GeolocationRequestEvent {
 export interface PresentCallbacks {
   /**
    * Fires when the checkout sheet is dismissed without a terminal error.
-   * Mirrors `DefaultCheckoutEventProcessor.onCheckoutCanceled` on Android
+   * Mirrors `DefaultCheckoutListener.onCheckoutDismissed` on Android
    * and the iOS Swift SDK's `onClose` callback.
    */
   onClose?: () => void;

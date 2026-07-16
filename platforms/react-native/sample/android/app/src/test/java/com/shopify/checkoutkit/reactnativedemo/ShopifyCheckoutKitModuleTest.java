@@ -173,7 +173,7 @@ public class ShopifyCheckoutKitModuleTest {
     DispatchCallback dispatch = mock(DispatchCallback.class);
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
-    processor.onCheckoutCanceled();
+    processor.onCheckoutDismissed();
 
     verify(dispatch).invoke(stringCaptor.capture());
     assertThat(stringCaptor.getValue()).contains("\"type\":\"close\"");
@@ -184,8 +184,8 @@ public class ShopifyCheckoutKitModuleTest {
     DispatchCallback dispatch = mock(DispatchCallback.class);
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
-    processor.onCheckoutCanceled();
-    processor.onCheckoutCanceled();
+    processor.onCheckoutDismissed();
+    processor.onCheckoutDismissed();
 
     verify(dispatch, times(1)).invoke(anyString());
   }
@@ -196,7 +196,7 @@ public class ShopifyCheckoutKitModuleTest {
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     processor.release();
-    processor.onCheckoutCanceled();
+    processor.onCheckoutDismissed();
 
     verify(dispatch, never()).invoke(anyString());
   }
@@ -221,7 +221,7 @@ public class ShopifyCheckoutKitModuleTest {
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     processor.onGeolocationPermissionsShowPrompt("https://shopify.com", permissionsCallback);
-    processor.onCheckoutCanceled();
+    processor.onCheckoutDismissed();
     processor.invokeGeolocationCallback(true);
 
     verify(permissionsCallback, never()).invoke(anyString(), anyBoolean(), anyBoolean());

@@ -108,14 +108,14 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   }
 
   @Override
-  public void onCheckoutCanceled() {
+  public void onCheckoutDismissed() {
     if (dispatch.isReleased()) {
       return;
     }
     try {
       dispatch.invoke(buildEnvelope(DispatchEventTypes.CLOSE, null));
     } catch (IOException e) {
-      Log.e(TAG, "Error processing checkout canceled event", e);
+      Log.e(TAG, "Error processing checkout dismissal event", e);
     } finally {
       release();
     }

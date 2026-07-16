@@ -297,12 +297,12 @@ class RCTShopifyCheckoutKit: NSObject {
 extension RCTShopifyCheckoutKit: CheckoutDelegate {
     /// Fired by the iOS SDK when the buyer dismisses the checkout sheet
     /// without a terminal error. Mirrors
-    /// `CustomCheckoutListener.onCheckoutCanceled()` on Android.
+    /// `CustomCheckoutListener.onCheckoutDismissed()` on Android.
     ///
     /// The iOS SDK dismisses the presented checkout when the buyer taps
     /// the close button; this wrapper also clears its local reference so
     /// future presentations start from a clean state.
-    func checkoutDidCancel() {
+    func checkoutDidDismiss() {
         emitDispatchEnvelope(type: .close, payload: nil)
         dismissCheckoutSheet()
     }
