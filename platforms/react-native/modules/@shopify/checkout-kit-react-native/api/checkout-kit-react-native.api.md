@@ -126,64 +126,51 @@ export enum ApplePayStyle {
 
 export { Checkout }
 
-// Warning: (ae-forgotten-export) The symbol "GenericErrorWithCode" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export class CheckoutClientError extends GenericErrorWithCode {
-}
-
-// @public (undocumented)
+// @public
 export enum CheckoutErrorCode {
     // (undocumented)
     cartCompleted = "cart_completed",
     // (undocumented)
     cartExpired = "cart_expired",
     // (undocumented)
-    clientError = "client_error",
+    customerAccountRequired = "customer_account_required",
     // (undocumented)
     httpError = "http_error",
     // (undocumented)
     invalidCart = "invalid_cart",
     // (undocumented)
-    receivingBridgeEventError = "error_receiving_message",
+    networkError = "network_error",
     // (undocumented)
-    renderProcessGone = "render_process_gone",
-    // (undocumented)
-    sendingBridgeEventError = "error_sending_message",
+    sdkError = "sdk_error",
     // (undocumented)
     storefrontPasswordRequired = "storefront_password_required",
     // (undocumented)
-    unknown = "unknown"
+    unknown = "unknown",
+    // (undocumented)
+    webContentProcessTerminated = "web_content_process_terminated",
+    // (undocumented)
+    webViewNotSupported = "web_view_not_supported"
 }
 
-// @public (undocumented)
-export type CheckoutException = CheckoutClientError | CheckoutExpiredError | CheckoutHTTPError | ConfigurationError | GenericError | InternalError;
-
-// @public (undocumented)
-export class CheckoutExpiredError extends GenericErrorWithCode {
+// @public
+export class CheckoutException {
+    constructor(exception?: CheckoutNativeError);
+    // (undocumented)
+    code: CheckoutErrorCode;
+    // (undocumented)
+    message: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    statusCode?: number;
 }
 
-// Warning: (ae-forgotten-export) The symbol "GenericNetworkError" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export class CheckoutHTTPError extends GenericNetworkError {
-}
-
-// @public (undocumented)
-export enum CheckoutNativeErrorType {
-    // (undocumented)
-    CheckoutClientError = "CheckoutClientError",
-    // (undocumented)
-    CheckoutExpiredError = "CheckoutExpiredError",
-    // (undocumented)
-    CheckoutHTTPError = "CheckoutHTTPError",
-    // (undocumented)
-    ConfigurationError = "ConfigurationError",
-    // (undocumented)
-    InternalError = "InternalError",
-    // (undocumented)
-    UnknownError = "UnknownError"
-}
+// @public
+export type CheckoutNativeError = {
+    code: CheckoutErrorCode;
+    message: string;
+    statusCode?: number;
+};
 
 // @public (undocumented)
 export const CheckoutProtocol: {
@@ -236,10 +223,6 @@ export type Configuration = CommonConfiguration & {
 }
 );
 
-// @public (undocumented)
-export class ConfigurationError extends GenericErrorWithCode {
-}
-
 // @public
 export class DispatchEventParityError extends Error {
     constructor(message: string);
@@ -253,32 +236,9 @@ export interface Features {
 }
 
 // @public (undocumented)
-export class GenericError {
-    // Warning: (ae-forgotten-export) The symbol "CheckoutNativeError" needs to be exported by the entry point index.d.ts
-    constructor(exception?: CheckoutNativeError);
-    // (undocumented)
-    code: CheckoutErrorCode;
-    // (undocumented)
-    message?: string;
-    // (undocumented)
-    name: string;
-    // (undocumented)
-    statusCode?: number;
-}
-
-// @public (undocumented)
 export interface GeolocationRequestEvent {
     origin: string;
     respond: (allow: boolean) => void;
-}
-
-// @public (undocumented)
-export class InternalError {
-    constructor(exception: CheckoutNativeError);
-    // (undocumented)
-    code: CheckoutErrorCode;
-    // (undocumented)
-    message: string;
 }
 
 // @public (undocumented)

@@ -21,7 +21,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   public static Configuration checkoutConfig = new Configuration();
 
-  private CheckoutKitDialog checkoutSheet;
+  private CheckoutHandle checkoutSheet;
 
   private CustomCheckoutListener checkoutListener;
 
@@ -117,7 +117,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   public WritableMap getConfig() {
     WritableMap resultConfig = Arguments.createMap();
 
-    resultConfig.putString("colorScheme", colorSchemeToString(checkoutConfig.getColorScheme()));
+    resultConfig.putString("colorScheme", colorSchemeStringFor(checkoutConfig.getAppearance()));
     resultConfig.putString("logLevel", logLevelToString(checkoutConfig.getLogLevel()));
     resultConfig.putBoolean("preloading", checkoutConfig.getPreloading().getEnabled());
 
@@ -139,7 +139,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
       }
 
       if (config.hasKey("colorScheme")) {
-        ColorScheme colorScheme = getColorScheme(Objects.requireNonNull(config.getString("colorScheme")));
+        String colorScheme = Objects.requireNonNull(config.getString("colorScheme"));
         ReadableMap colorsConfig = config.hasKey("colors") ? config.getMap("colors") : null;
         ReadableMap androidConfig = null;
 
@@ -147,16 +147,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
           androidConfig = colorsConfig.getMap("android");
         }
 
-        if (this.isValidColorConfig(androidConfig)) {
-          ColorScheme colorSchemeWithOverrides = getColors(colorScheme, androidConfig);
-          if (colorSchemeWithOverrides != null) {
-            configuration.setColorScheme(colorSchemeWithOverrides);
-            checkoutConfig = configuration;
-            return;
-          }
-        }
-
-        configuration.setColorScheme(colorScheme);
+        configuration.setAppearance(appearanceFor(colorScheme, androidConfig));
       }
 
       checkoutConfig = configuration;
@@ -198,10 +189,45 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   // Private
 
-  private ColorScheme getColorScheme(String colorScheme) {
+  static CheckoutAppearance appearanceFor(String colorScheme, ReadableMap androidConfig) {
+    if ("web_default".equals(colorScheme)) {
+      return getStorefrontAppearance(androidConfig);
+    }
+
+    ColorScheme scheme = getColorScheme(colorScheme);
+
+    if (isValidColorConfig(androidConfig)) {
+      ColorScheme schemeWithOverrides = getColors(scheme, androidConfig);
+      if (schemeWithOverrides != null) {
+        return new CheckoutAppearance.App(schemeWithOverrides);
+      }
+    }
+
+    return new CheckoutAppearance.App(scheme);
+  }
+
+  private static CheckoutAppearance getStorefrontAppearance(ReadableMap androidConfig) {
+    CheckoutAppearance.Storefront storefront = new CheckoutAppearance.Storefront();
+
+    Colors colors = createColorsFromConfig(androidConfig);
+    if (colors == null) {
+      return storefront;
+    }
+
+    return storefront.customize(builder -> {
+      builder.withWebViewBackground(colors.getWebViewBackground());
+      builder.withHeaderBackground(colors.getHeaderBackground());
+      builder.withHeaderFont(colors.getHeaderFont());
+      builder.withProgressIndicator(colors.getProgressIndicator());
+      Color closeButtonColor = colors.getCloseIconTint();
+      if (closeButtonColor != null) {
+        builder.withCloseIconTint(closeButtonColor);
+      }
+    });
+  }
+
+  private static ColorScheme getColorScheme(String colorScheme) {
     switch (colorScheme) {
-      case "web_default":
-        return new ColorScheme.Web();
       case "light":
         return new ColorScheme.Light();
       case "dark":
@@ -212,8 +238,11 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     }
   }
 
-  private String colorSchemeToString(ColorScheme colorScheme) {
-    return colorScheme.getId();
+  static String colorSchemeStringFor(CheckoutAppearance appearance) {
+    if (appearance instanceof CheckoutAppearance.App) {
+      return ((CheckoutAppearance.App) appearance).getColorScheme().getId();
+    }
+    return "web_default";
   }
 
   private LogLevel getLogLevel(String logLevel) {
@@ -236,7 +265,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     return "error";
   }
 
-  private boolean isValidColorConfig(ReadableMap config) {
+  private static boolean isValidColorConfig(ReadableMap config) {
     if (config == null) {
       return false;
     }
@@ -259,7 +288,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     return true;
   }
 
-  private boolean isValidColorScheme(ColorScheme colorScheme, ReadableMap colorConfig) {
+  private static boolean isValidColorScheme(ColorScheme colorScheme, ReadableMap colorConfig) {
     if (colorConfig == null) {
       return false;
     }
@@ -269,16 +298,16 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
         return false;
       }
 
-      boolean validLight = this.isValidColorConfig(colorConfig.getMap("light"));
-      boolean validDark = this.isValidColorConfig(colorConfig.getMap("dark"));
+      boolean validLight = isValidColorConfig(colorConfig.getMap("light"));
+      boolean validDark = isValidColorConfig(colorConfig.getMap("dark"));
 
       return validLight && validDark;
     }
 
-    return this.isValidColorConfig(colorConfig);
+    return isValidColorConfig(colorConfig);
   }
 
-  private Color parseColorFromConfig(ReadableMap config, String colorKey) {
+  private static Color parseColorFromConfig(ReadableMap config, String colorKey) {
     if (config.hasKey(colorKey)) {
       String colorStr = config.getString(colorKey);
       return parseColor(colorStr);
@@ -287,7 +316,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     return null;
   }
 
-  private Colors createColorsFromConfig(ReadableMap config) {
+  private static Colors createColorsFromConfig(ReadableMap config) {
     if (config == null) {
       return null;
     }
@@ -307,18 +336,19 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
           // Parameter allows passing a custom drawable, we'll just support custom color
           // for now
           null,
-          closeButtonColor);
+          closeButtonColor,
+          null);
     }
 
     return null;
   }
 
-  private ColorScheme getColors(ColorScheme colorScheme, ReadableMap config) {
-    if (!this.isValidColorScheme(colorScheme, config)) {
+  private static ColorScheme getColors(ColorScheme colorScheme, ReadableMap config) {
+    if (!isValidColorScheme(colorScheme, config)) {
       return null;
     }
 
-    if (colorScheme instanceof ColorScheme.Automatic && this.isValidColorScheme(colorScheme, config)) {
+    if (colorScheme instanceof ColorScheme.Automatic && isValidColorScheme(colorScheme, config)) {
       Colors lightColors = createColorsFromConfig(config.getMap("light"));
       Colors darkColors = createColorsFromConfig(config.getMap("dark"));
 
@@ -337,8 +367,6 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
         ((ColorScheme.Light) colorScheme).setColors(colors);
       } else if (colorScheme instanceof ColorScheme.Dark) {
         ((ColorScheme.Dark) colorScheme).setColors(colors);
-      } else if (colorScheme instanceof ColorScheme.Web) {
-        ((ColorScheme.Web) colorScheme).setColors(colors);
       }
       return colorScheme;
     }
@@ -346,7 +374,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     return null;
   }
 
-  private Color parseColor(String colorStr) {
+  private static Color parseColor(String colorStr) {
     try {
       colorStr = colorStr.replace("#", "");
 

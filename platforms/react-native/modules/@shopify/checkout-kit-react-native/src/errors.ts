@@ -1,23 +1,22 @@
+/**
+ * Stable, consumer-facing reason for a terminal checkout failure.
+ *
+ * The string values are the wire format shared by both native SDKs:
+ * `CheckoutErrorCode` on iOS sends its `rawValue`, and Android sends
+ * the lower-snake-case enum constant name.
+ */
 export enum CheckoutErrorCode {
   storefrontPasswordRequired = 'storefront_password_required',
+  customerAccountRequired = 'customer_account_required',
   cartExpired = 'cart_expired',
   cartCompleted = 'cart_completed',
   invalidCart = 'invalid_cart',
-  clientError = 'client_error',
   httpError = 'http_error',
-  sendingBridgeEventError = 'error_sending_message',
-  receivingBridgeEventError = 'error_receiving_message',
-  renderProcessGone = 'render_process_gone',
+  networkError = 'network_error',
+  webViewNotSupported = 'web_view_not_supported',
+  webContentProcessTerminated = 'web_content_process_terminated',
+  sdkError = 'sdk_error',
   unknown = 'unknown',
-}
-
-export enum CheckoutNativeErrorType {
-  InternalError = 'InternalError',
-  ConfigurationError = 'ConfigurationError',
-  CheckoutClientError = 'CheckoutClientError',
-  CheckoutHTTPError = 'CheckoutHTTPError',
-  CheckoutExpiredError = 'CheckoutExpiredError',
-  UnknownError = 'UnknownError',
 }
 
 function getCheckoutErrorCode(code: string | undefined): CheckoutErrorCode {
@@ -26,93 +25,40 @@ function getCheckoutErrorCode(code: string | undefined): CheckoutErrorCode {
     : CheckoutErrorCode.unknown;
 }
 
-type BridgeError = {
-  __typename: CheckoutNativeErrorType;
+/**
+ * The raw `fail` envelope payload emitted by both native SDKs.
+ *
+ * Produced by `CustomCheckoutListener.populateErrorDetails` on Android and
+ * `ShopifyEventSerialization.serialize(checkoutError:)` on iOS.
+ */
+export type CheckoutNativeError = {
   code: CheckoutErrorCode;
   message: string;
   statusCode?: number;
 };
 
-export type CheckoutNativeError = BridgeError;
-
-class GenericErrorWithCode {
-  message: string;
-  code: CheckoutErrorCode;
-  name: string;
-
-  constructor(exception: CheckoutNativeError) {
-    this.code = getCheckoutErrorCode(exception.code);
-    this.message = exception.message;
-    this.name = this.constructor.name;
-  }
-}
-
-class GenericNetworkError {
+/**
+ * A terminal checkout failure.
+ *
+ * Use `code` for application behaviour and `message` for diagnostics.
+ * `statusCode` is present only when an HTTP response caused the failure.
+ */
+export class CheckoutException {
   code: CheckoutErrorCode;
   message: string;
-  statusCode: number;
-  name: string;
-
-  constructor(exception: CheckoutNativeError) {
-    this.code = getCheckoutErrorCode(exception.code);
-    this.statusCode = exception.statusCode as number;
-    this.message = exception.message;
-    this.name = this.constructor.name;
-  }
-}
-
-export class ConfigurationError extends GenericErrorWithCode {}
-export class CheckoutClientError extends GenericErrorWithCode {}
-export class CheckoutExpiredError extends GenericErrorWithCode {}
-export class CheckoutHTTPError extends GenericNetworkError {}
-
-export class GenericError {
-  code: CheckoutErrorCode;
-  message?: string;
   statusCode?: number;
   name: string;
 
   constructor(exception?: CheckoutNativeError) {
     this.code = getCheckoutErrorCode(exception?.code);
-    this.message = exception?.message;
-    this.name = this.constructor.name;
+    this.message = exception?.message ?? '';
     this.statusCode = exception?.statusCode;
+    this.name = this.constructor.name;
   }
 }
-
-export class InternalError {
-  code: CheckoutErrorCode;
-  message: string;
-
-  constructor(exception: CheckoutNativeError) {
-    this.code = getCheckoutErrorCode(exception.code);
-    this.message = exception.message;
-  }
-}
-
-export type CheckoutException =
-  | CheckoutClientError
-  | CheckoutExpiredError
-  | CheckoutHTTPError
-  | ConfigurationError
-  | GenericError
-  | InternalError;
 
 export function parseCheckoutError(
   exception: CheckoutNativeError,
 ): CheckoutException {
-  switch (exception?.__typename) {
-    case CheckoutNativeErrorType.InternalError:
-      return new InternalError(exception);
-    case CheckoutNativeErrorType.ConfigurationError:
-      return new ConfigurationError(exception);
-    case CheckoutNativeErrorType.CheckoutClientError:
-      return new CheckoutClientError(exception);
-    case CheckoutNativeErrorType.CheckoutHTTPError:
-      return new CheckoutHTTPError(exception);
-    case CheckoutNativeErrorType.CheckoutExpiredError:
-      return new CheckoutExpiredError(exception);
-    default:
-      return new GenericError(exception);
-  }
+  return new CheckoutException(exception);
 }
