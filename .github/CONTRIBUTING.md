@@ -87,10 +87,10 @@ Tophat -> Settings -> Extensions -> Bitrise.
 
 There are three ways to install a build:
 
-1. **Quick Launch (latest `main`)** — `dev up` seeds a `Checkout Kit (React
-   Native)` entry (from `scripts/tophat/targets.json`) that installs the latest
-   successful `main` build. Select a device in Tophat's menu, then pick the
-   entry.
+1. **Quick Launch (latest `main`)** — `dev up` seeds a `Checkout Kit` entry per
+   SDK target (React Native, Swift, Kotlin) from `scripts/tophat/targets.json`,
+   each installing the latest successful `main` build. Select a device in
+   Tophat's menu, then pick the entry.
 2. **Per-PR comment** — each PR gets a sticky comment with an `Install with
    Tophat` link per SDK target for that PR's branch. Open Tophat, select your
    target device, then click the link on the Mac running Tophat.

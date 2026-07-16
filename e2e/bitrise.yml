@@ -328,6 +328,7 @@ workflows:
           inputs:
             - pipeline_intermediate_files: |-
                 $E2E_SWIFT_IOS_APP_PATH:E2E_SWIFT_IOS_APP_PATH
+                $E2E_SWIFT_IOS_SIMULATOR_APP_PATH:E2E_SWIFT_IOS_SIMULATOR_APP_PATH
 
   e2e-execute-browserstack-run:
     steps:

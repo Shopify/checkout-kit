@@ -26,3 +26,41 @@ e2e_build_ios_device_ipa \
 
 e2e_log "Publishing iOS IPA path"
 envman add --key E2E_SWIFT_IOS_APP_PATH --value "$E2E_IOS_PROVISIONED_IPA"
+
+e2e_dir="$(e2e_deploy_dir)"
+simulator_derived_data="$PWD/build/e2e-simulator"
+simulator_app_zip="$e2e_dir/${app_name}-Simulator.zip"
+
+# Builds the simulator app bundle that is zipped for Tophat simulator installs.
+build_simulator_app() {
+  xcodebuild build \
+    -workspace "$workspace" \
+    -scheme "$scheme" \
+    -configuration Release \
+    -skipPackagePluginValidation \
+    -disableAutomaticPackageResolution \
+    -sdk iphonesimulator \
+    -destination 'generic/platform=iOS Simulator' \
+    -derivedDataPath "$simulator_derived_data" \
+    CODE_SIGNING_ALLOWED=NO
+}
+
+e2e_log "Building Swift iOS simulator app"
+if ! build_simulator_app; then
+  e2e_log "iOS simulator build failed"
+  exit 1
+fi
+
+simulator_app="$(find "$simulator_derived_data/Build/Products" -maxdepth 2 -name "${app_name}.app" -print -quit)"
+if [ -z "$simulator_app" ] || [ ! -d "$simulator_app" ]; then
+  e2e_log "iOS simulator build did not create an app bundle"
+  find "$simulator_derived_data/Build/Products" -maxdepth 2 -print >&2 || true
+  exit 1
+fi
+
+e2e_log "Packaging iOS simulator app"
+rm -f "$simulator_app_zip"
+ditto -c -k --keepParent "$simulator_app" "$simulator_app_zip"
+
+e2e_log "Publishing iOS simulator app path"
+envman add --key E2E_SWIFT_IOS_SIMULATOR_APP_PATH --value "$simulator_app_zip"
