@@ -12,122 +12,178 @@
         <h1>Checkout Kit</h1>
         <p class="subtitle">Web Component Playground</p>
       </div>
-      <p class="status" role="status">
-        Loads the real <code>&lt;shopify-checkout&gt;</code> from
-        <code>@shopify/checkout-kit</code> (dev alias). Use a valid checkout URL to try
-        <strong>Buy&nbsp;now</strong>.
-      </p>
     </header>
 
-    <main>
-      <!-- ────── Options ─────────────────────────────────────── -->
-      <section class="panel" aria-labelledby="options-heading">
-        <h2 id="options-heading">Options</h2>
+    <main id="layout">
+      <section class="panel settings-panel" aria-labelledby="settings-heading">
+        <div class="panel-header settings-header">
+          <h2 id="settings-heading">Settings</h2>
+          <button
+            type="button"
+            id="toggle-settings"
+            class="panel-toggle"
+            aria-expanded="true"
+            aria-controls="options-form"
+          >
+            Hide
+          </button>
+        </div>
 
         <form id="options-form" autocomplete="off">
-          <label>
-            <span>src</span>
-            <input
-              type="url"
-              name="src"
-              placeholder="https://your-store.myshopify.com/checkouts/..."
-            />
-          </label>
+          <fieldset class="source-group source-switcher">
+            <legend>Flow</legend>
+            <label class="radio-card">
+              <input type="radio" name="source-mode" value="build" checked />
+              <span>
+                <strong>Build cart permalink</strong>
+                <small>Load storefront products and add multiple items to cart</small>
+              </span>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="source-mode" value="manual" />
+              <span>
+                <strong>Use existing checkout source</strong>
+                <small>Paste a checkout URL or cart permalink</small>
+              </span>
+            </label>
+          </fieldset>
 
-          <label>
-            <span>target</span>
-            <select name="target">
-              <option value="popup" selected>popup (window)</option>
-              <option value="auto">auto (new tab)</option>
-            </select>
-          </label>
+          <fieldset id="storefront-source-fields" class="source-group source-fields">
+            <legend>Storefront</legend>
+            <label>
+              <span>Storefront domain</span>
+              <input
+                id="storefront-domain"
+                type="text"
+                name="storefront-domain"
+                placeholder="your-store.myshopify.com"
+                inputmode="url"
+              />
+            </label>
+          </fieldset>
 
-          <label>
-            <span>appearance</span>
-            <select name="appearance">
-              <option value="" selected>default (storefront)</option>
-              <option value="app:light">app:light</option>
-              <option value="app:dark">app:dark</option>
-              <option value="app:automatic">app:automatic</option>
-              <option value="storefront">storefront</option>
-            </select>
-          </label>
+          <fieldset class="source-group source-fields">
+            <legend>Presentation</legend>
+            <label>
+              <span>target</span>
+              <select id="checkout-target" name="target">
+                <option value="popup" selected>popup (window)</option>
+                <option value="auto">auto (new tab)</option>
+              </select>
+            </label>
 
-          <label>
-            <span>log-level</span>
-            <select name="log-level">
-              <option value="debug">debug</option>
-              <option value="warn" selected>warn</option>
-              <option value="error">error</option>
-              <option value="none">none</option>
-            </select>
-          </label>
+            <label>
+              <span>appearance</span>
+              <select id="checkout-appearance" name="appearance">
+                <option value="" selected>default (storefront)</option>
+                <option value="app:light">app:light</option>
+                <option value="app:dark">app:dark</option>
+                <option value="app:automatic">app:automatic</option>
+                <option value="storefront">storefront</option>
+              </select>
+            </label>
 
-          <fieldset>
-            <legend>Methods</legend>
-            <div class="button-row">
-              <button type="button" data-method="open">open()</button>
-              <button type="button" data-method="close">close()</button>
-              <button type="button" data-method="focus">focus()</button>
-            </div>
+            <label>
+              <span>log-level</span>
+              <select id="checkout-log-level" name="log-level">
+                <option value="debug">debug</option>
+                <option value="warn" selected>warn</option>
+                <option value="error">error</option>
+                <option value="none">none</option>
+              </select>
+            </label>
           </fieldset>
         </form>
       </section>
 
-      <!-- ────── Demo Storefront ────────────────────────────── -->
-      <section class="panel storefront" aria-labelledby="storefront-heading">
-        <h2 id="storefront-heading">Demo Storefront</h2>
-
-        <article class="product-card">
-          <div class="product-image" aria-hidden="true">
-            <span class="product-emoji">🪴</span>
-          </div>
-
-          <div class="product-info">
-            <p class="product-vendor">Acme Goods</p>
-            <h3 class="product-title">Studio Plant Pot</h3>
-            <p class="product-price">$29.00 USD</p>
-
-            <p class="product-description">
-              A hand-thrown ceramic pot for your favorite green friend. Glazed inside, raw outside.
-              Fits a 4″ nursery pot.
-            </p>
-
-            <div class="product-variants" role="group" aria-label="Color">
-              <button
-                type="button"
-                class="swatch swatch--clay"
-                aria-label="Clay"
-                aria-pressed="true"
-              ></button>
-              <button
-                type="button"
-                class="swatch swatch--moss"
-                aria-label="Moss"
-                aria-pressed="false"
-              ></button>
-              <button
-                type="button"
-                class="swatch swatch--sand"
-                aria-label="Sand"
-                aria-pressed="false"
-              ></button>
+      <section class="panel storefront" aria-label="Storefront workspace">
+        <div id="build-workspace" class="workspace">
+          <section class="cart-banner" aria-labelledby="cart-heading">
+            <div class="cart-banner-header">
+              <div>
+                <h2 id="cart-heading">Cart</h2>
+                <p id="cart-summary-text" class="muted">Add products to start a multi-item cart.</p>
+              </div>
+              <span id="cart-count" class="pill">0 items</span>
             </div>
 
-            <div class="product-actions">
-              <button type="button" id="buy-now" class="primary" disabled data-method="open">
-                Buy now
+            <ol id="selected-lines" class="cart-lines"></ol>
+
+            <div class="computed-source">
+              <span>Derived cart permalink</span>
+              <a
+                id="generated-src"
+                class="permalink-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Add products to derive a cart permalink
+              </a>
+            </div>
+
+            <div class="cart-actions">
+              <button type="button" id="cart-checkout" class="primary-action" disabled>
+                Open checkout
               </button>
-              <button type="button" class="secondary" disabled>Add to cart</button>
+              <p id="cart-checkout-hint" class="muted">
+                Add at least one product to enable checkout.
+              </p>
             </div>
+          </section>
 
-            <p id="buy-hint" class="muted">
-              Set a checkout URL in the Options panel to enable Buy now.
+          <div class="panel-header storefront-header">
+            <span id="load-state" class="status-pill">Waiting for domain</span>
+          </div>
+
+          <p id="cart-status" class="notice" role="status">
+            Enter a storefront domain to load products automatically.
+          </p>
+
+          <div id="product-empty" class="empty-state">
+            <div aria-hidden="true">🛍️</div>
+            <h3>No products loaded yet</h3>
+            <p>
+              Enter a storefront domain in Settings and products will load automatically once the
+              domain looks complete.
             </p>
           </div>
-        </article>
 
-        <details id="component-state">
+          <div class="product-scroll" aria-label="Product variants">
+            <ul id="product-list" class="product-grid"></ul>
+          </div>
+        </div>
+
+        <div id="manual-workspace" class="workspace manual-checkout" hidden>
+          <div class="panel-header">
+            <div>
+              <h2>Existing checkout source</h2>
+            </div>
+          </div>
+
+          <section class="manual-card">
+            <label>
+              <span>Checkout URL or cart permalink</span>
+              <input
+                id="manual-src"
+                type="url"
+                name="manual-src"
+                placeholder="https://your-store.myshopify.com/cart/123:1,456:2"
+              />
+            </label>
+            <p class="field-help">
+              A storefront homepage URL is not enough. Use a full checkout URL
+              (<code>https://your-store.myshopify.com/checkouts/cn/…</code>) or a cart permalink
+              (<code>https://your-store.myshopify.com/cart/123:1,456:2</code>).
+            </p>
+            <button type="button" id="manual-checkout" class="primary-action" disabled>
+              Open checkout
+            </button>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel runtime-panel" aria-labelledby="events-heading">
+        <details id="component-state" open>
           <summary>Component state</summary>
           <dl>
             <dt>checkout</dt>
@@ -142,11 +198,8 @@
             <dd id="state-log-level">—</dd>
           </dl>
         </details>
-      </section>
 
-      <!-- ────── Events ─────────────────────────────────────── -->
-      <section class="panel" aria-labelledby="events-heading">
-        <div class="panel-header">
+        <div class="panel-header events-header">
           <h2 id="events-heading">Events</h2>
           <button type="button" id="clear-log">Clear</button>
         </div>
