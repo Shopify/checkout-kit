@@ -61,7 +61,7 @@ if (!storefrontDomain || !accessToken) {
 
 android {
     namespace = 'com.shopify.checkout_kit_android_demo'
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId "com.shopify.checkoutkit.androiddemo"
