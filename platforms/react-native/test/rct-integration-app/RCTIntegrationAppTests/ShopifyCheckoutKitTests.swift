@@ -18,7 +18,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     private func resetShopifyCheckoutKitDefaults() {
-        ShopifyCheckoutKit.configuration.colorScheme = .automatic
+        ShopifyCheckoutKit.configuration.appearance = .storefront
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
         ShopifyCheckoutKit.configuration.logLevel = LogLevel.error
         ShopifyCheckoutKit.configuration.preloading.enabled = true
@@ -34,7 +34,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
         // Verify that getConfig returned the expected result
-        XCTAssertEqual(result?["colorScheme"] as? String, "automatic")
+        XCTAssertEqual(result?["colorScheme"] as? String, "web_default")
         XCTAssertEqual(result?["preloading"] as? Bool, true)
     }
 
@@ -52,9 +52,30 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
         shopifyCheckoutKit.setConfig(configuration)
 
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.colorScheme, .dark)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark))
         XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, UIColor(hex: "#FF0000"))
         XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, UIColor(hex: "#0000FF"))
+    }
+
+    func testConfigureWithWebDefaultUsesStorefrontAppearance() {
+        let configuration: [AnyHashable: Any] = [
+            "colorScheme": "web_default"
+        ]
+
+        shopifyCheckoutKit.setConfig(configuration)
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
+    }
+
+    func testGetConfigReturnsColorSchemeIdForAppAppearance() {
+        let configuration: [AnyHashable: Any] = [
+            "colorScheme": "light"
+        ]
+        shopifyCheckoutKit.setConfig(configuration)
+
+        let result = shopifyCheckoutKit.getConfig() as? [String: Any]
+
+        XCTAssertEqual(result?["colorScheme"] as? String, "light")
     }
 
     func testConfigureWithInvalidColors() {
@@ -343,12 +364,12 @@ class ShopifyCheckoutKitTests: XCTestCase {
     wait(for: [presentAttemptCompleted], timeout: 1)
   }
 
-  func testCheckoutDidCancelDismissesCheckoutSheetFromRCTWrapper() {
+  func testCheckoutDidDismissDismissesCheckoutSheetFromRCTWrapper() {
     let dismissCompleted = expectation(description: "checkout sheet dismissed")
     let checkoutSheet = DismissTrackingViewController()
     shopifyCheckoutKit.checkoutSheet = checkoutSheet
 
-    shopifyCheckoutKit.checkoutDidCancel()
+    shopifyCheckoutKit.checkoutDidDismiss()
 
     DispatchQueue.main.async {
       XCTAssertTrue(checkoutSheet.dismissCalled)

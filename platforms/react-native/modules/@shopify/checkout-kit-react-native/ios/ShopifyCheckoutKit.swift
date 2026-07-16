@@ -129,18 +129,27 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    private func getColorScheme(_ colorScheme: String) -> Configuration.ColorScheme {
+    private func appearanceFor(_ colorScheme: String) -> Configuration.Appearance {
         switch colorScheme {
         case "web_default":
-            return Configuration.ColorScheme.web
-        case "automatic":
-            return Configuration.ColorScheme.automatic
+            return .storefront
         case "light":
-            return Configuration.ColorScheme.light
+            return .app(.light)
         case "dark":
-            return Configuration.ColorScheme.dark
+            return .app(.dark)
+        case "automatic":
+            return .app(.automatic)
         default:
-            return Configuration.ColorScheme.automatic
+            return .app(.automatic)
+        }
+    }
+
+    private func colorSchemeStringFor(_ appearance: Configuration.Appearance) -> String {
+        switch appearance {
+        case let .app(colorScheme):
+            return colorScheme.rawValue
+        case .storefront:
+            return "web_default"
         }
     }
 
@@ -157,7 +166,7 @@ class RCTShopifyCheckoutKit: NSObject {
         }
 
         if let colorScheme = configuration["colorScheme"] as? String {
-            ShopifyCheckoutKit.configuration.colorScheme = getColorScheme(colorScheme)
+            ShopifyCheckoutKit.configuration.appearance = appearanceFor(colorScheme)
         }
 
         if let tintColorHex = iosConfig?["tintColor"] as? String {
@@ -184,7 +193,7 @@ class RCTShopifyCheckoutKit: NSObject {
     @objc func getConfig() -> NSDictionary {
         return [
             "title": ShopifyCheckoutKit.configuration.title,
-            "colorScheme": ShopifyCheckoutKit.configuration.colorScheme.rawValue,
+            "colorScheme": colorSchemeStringFor(ShopifyCheckoutKit.configuration.appearance),
             "preloading": ShopifyCheckoutKit.configuration.preloading.enabled,
             "tintColor": ShopifyCheckoutKit.configuration.tintColor,
             "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
@@ -282,7 +291,7 @@ class RCTShopifyCheckoutKit: NSObject {
 
     private func logLevelToString(_ logLevel: LogLevel) -> String {
         switch logLevel {
-        case .all, .debug:
+        case .debug:
             return "debug"
         case .error:
             return "error"
@@ -297,12 +306,12 @@ class RCTShopifyCheckoutKit: NSObject {
 extension RCTShopifyCheckoutKit: CheckoutDelegate {
     /// Fired by the iOS SDK when the buyer dismisses the checkout sheet
     /// without a terminal error. Mirrors
-    /// `CustomCheckoutListener.onCheckoutCanceled()` on Android.
+    /// `CustomCheckoutListener.onCheckoutDismissed()` on Android.
     ///
     /// The iOS SDK dismisses the presented checkout when the buyer taps
     /// the close button; this wrapper also clears its local reference so
     /// future presentations start from a clean state.
-    func checkoutDidCancel() {
+    func checkoutDidDismiss() {
         emitDispatchEnvelope(type: .close, payload: nil)
         dismissCheckoutSheet()
     }
@@ -310,9 +319,8 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
     /// Fired by the iOS SDK when checkout terminates with an error.
     /// Mirrors `CustomCheckoutListener.onCheckoutFailed()` on Android.
     /// The error is serialised into the JS-side `CheckoutNativeError`
-    /// shape (`__typename` / `message` / `code` / optional
-    /// `statusCode`) so it can be coerced into the matching
-    /// `CheckoutException` subclass on the JS side.
+    /// shape (`message` / `code` / optional `statusCode`) so it can be
+    /// coerced into a `CheckoutException` on the JS side.
     ///
     /// The sheet is left visible — consumers may want to render a
     /// recovery UI on top of the still-presented checkout, or decide to
@@ -320,7 +328,7 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
     /// their `onFail` handler. Mirrors the Android behaviour where
     /// `onCheckoutFailed` also does not auto-dismiss the dialog.
     func checkoutDidFail(error: CheckoutError) {
-        emitDispatchEnvelope(type: .fail, payload: Self.errorPayload(from: error))
+        emitDispatchEnvelope(type: .fail, payload: ShopifyEventSerialization.serialize(checkoutError: error))
     }
 
     /// Dismisses the currently-presented checkout sheet on the main
@@ -358,47 +366,6 @@ extension RCTShopifyCheckoutKit {
             emitDispatchEvent(json)
         } catch {
             NSLog("[ShopifyCheckoutKit] Failed to serialize dispatch envelope for \(type.rawValue): \(error)")
-        }
-    }
-
-    /// Maps an iOS `CheckoutError` into the JSON-friendly dictionary
-    /// shape the JS dispatcher expects. Field names match Android's
-    /// `CustomCheckoutListener.populateErrorDetails` so the JS-side
-    /// `parseCheckoutError` works identically on both platforms.
-    fileprivate static func errorPayload(from error: CheckoutError) -> [String: Any] {
-        switch error {
-        case let .sdkError(underlying):
-            return [
-                "__typename": "InternalError",
-                "message": underlying.localizedDescription,
-                "code": CheckoutErrorCode.unknown.rawValue
-            ]
-
-        case let .checkoutUnavailable(message, code):
-            switch code {
-            case let .clientError(clientCode):
-                return [
-                    "__typename": "CheckoutClientError",
-                    "message": message,
-                    "code": clientCode.rawValue
-                ]
-            case let .httpError(statusCode):
-                return [
-                    "__typename": "CheckoutHTTPError",
-                    "message": message,
-                    // Matches the JS-side `CheckoutErrorCode.httpError`
-                    // string and Android's HttpException code value.
-                    "code": "http_error",
-                    "statusCode": statusCode
-                ]
-            }
-
-        case let .checkoutExpired(message, code):
-            return [
-                "__typename": "CheckoutExpiredError",
-                "message": message,
-                "code": code.rawValue
-            ]
         }
     }
 }

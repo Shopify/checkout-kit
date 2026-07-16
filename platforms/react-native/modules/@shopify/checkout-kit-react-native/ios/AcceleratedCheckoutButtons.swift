@@ -232,8 +232,8 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
             .onFail { [weak self] error in
                 self?.handleCheckoutFailed(error)
             }
-            .onCancel { [weak self] in
-                self?.handleCheckoutCancelled()
+            .onDismiss { [weak self] in
+                self?.handleCheckoutDismissed()
             }
             .onRenderStateChange { [weak self] state in
                 self?.handleRenderStateChange(state)
@@ -338,7 +338,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         onFail?(ShopifyEventSerialization.serialize(checkoutError: error))
     }
 
-    private func handleCheckoutCancelled() {
+    private func handleCheckoutDismissed() {
         onCancel?([:])
     }
 

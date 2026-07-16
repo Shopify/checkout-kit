@@ -6,17 +6,11 @@ import {
   LifecycleEventParseError,
   ShopifyCheckout,
   CheckoutErrorCode,
-  InternalError,
-  ConfigurationError,
-  CheckoutHTTPError,
-  CheckoutClientError,
-  CheckoutExpiredError,
-  GenericError,
+  CheckoutException,
   AcceleratedCheckoutWallet,
   RenderState,
   LogLevel,
   ColorScheme,
-  CheckoutNativeErrorType,
   CheckoutProtocol,
   type Configuration,
   type AcceleratedCheckoutConfiguration,
@@ -265,78 +259,72 @@ describe('ShopifyCheckoutKit', () => {
     });
 
     describe('onFail callback', () => {
-      const internalError = {
-        __typename: CheckoutNativeErrorType.InternalError,
+      const sdkError = {
         message: 'Something went wrong',
-        code: CheckoutErrorCode.unknown,
-      };
-
-      const configError = {
-        __typename: CheckoutNativeErrorType.ConfigurationError,
-        message: 'Storefront Password Required',
-        code: CheckoutErrorCode.storefrontPasswordRequired,
-      };
-
-      const clientError = {
-        __typename: CheckoutNativeErrorType.CheckoutClientError,
-        message: 'Storefront Password Required',
-        code: CheckoutErrorCode.storefrontPasswordRequired,
-      };
-
-      const networkError = {
-        __typename: CheckoutNativeErrorType.CheckoutHTTPError,
-        message: 'Checkout not found',
-        code: CheckoutErrorCode.httpError,
-        statusCode: 400,
-      };
-
-      const expiredError = {
-        __typename: CheckoutNativeErrorType.CheckoutExpiredError,
-        message: 'Customer Account Required',
-        code: CheckoutErrorCode.cartExpired,
+        code: CheckoutErrorCode.sdkError,
       };
 
       it.each([
-        {error: internalError, constructor: InternalError},
-        {error: configError, constructor: ConfigurationError},
-        {error: clientError, constructor: CheckoutClientError},
-        {error: networkError, constructor: CheckoutHTTPError},
-        {error: expiredError, constructor: CheckoutExpiredError},
+        {name: 'an sdk failure', error: sdkError, statusCode: undefined},
+        {
+          name: 'a storefront password requirement',
+          error: {
+            message: 'Storefront Password Required',
+            code: CheckoutErrorCode.storefrontPasswordRequired,
+          },
+          statusCode: undefined,
+        },
+        {
+          name: 'an http failure',
+          error: {
+            message: 'Checkout not found',
+            code: CheckoutErrorCode.httpError,
+            statusCode: 400,
+          },
+          statusCode: 400,
+        },
+        {
+          name: 'an expired cart',
+          error: {message: 'Cart expired', code: CheckoutErrorCode.cartExpired},
+          statusCode: undefined,
+        },
+        {
+          name: 'an android-only web view failure',
+          error: {
+            message: 'WebView not supported',
+            code: CheckoutErrorCode.webViewNotSupported,
+          },
+          statusCode: undefined,
+        },
       ])(
-        `parses the fail envelope payload into a typed CheckoutException ($error.__typename)`,
-        ({
-          error,
-          constructor,
-        }: {
-          error: any;
-          constructor: new (...args: any[]) => any;
-        }) => {
+        'parses the fail envelope payload for $name',
+        ({error, statusCode}: {error: any; statusCode: number | undefined}) => {
           const instance = new ShopifyCheckout();
           const onFail = jest.fn();
           instance.present(checkoutUrl, {onFail});
           lastDispatch()(JSON.stringify({type: 'fail', payload: error}));
           const calledWith = onFail.mock.calls[0][0];
-          expect(calledWith).toBeInstanceOf(constructor);
+          expect(calledWith).toBeInstanceOf(CheckoutException);
           expect(calledWith).not.toHaveProperty('__typename');
-          expect(calledWith).toHaveProperty('code');
-          expect(calledWith).toHaveProperty('message');
+          expect(calledWith.code).toBe(error.code);
+          expect(calledWith.message).toBe(error.message);
+          expect(calledWith.statusCode).toBe(statusCode);
         },
       );
 
-      it('falls back to GenericError when the payload has an unrecognised __typename', () => {
+      it('coerces an unrecognised code to unknown', () => {
         const instance = new ShopifyCheckout();
         const onFail = jest.fn();
         instance.present(checkoutUrl, {onFail});
-        // Native always emits the three core fields; an unfamiliar
-        // `__typename` should still flow through as GenericError.
         const error = {
-          __typename: 'SomeNewErrorType',
           message: 'Something went wrong',
-          code: CheckoutErrorCode.unknown,
+          code: 'some_future_code',
         };
         lastDispatch()(JSON.stringify({type: 'fail', payload: error}));
         const calledWith = onFail.mock.calls[0][0];
-        expect(calledWith).toBeInstanceOf(GenericError);
+        expect(calledWith).toBeInstanceOf(CheckoutException);
+        expect(calledWith.code).toBe(CheckoutErrorCode.unknown);
+        expect(calledWith.message).toBe('Something went wrong');
       });
 
       it('ignores a fail envelope when no `onFail` handler was provided', () => {
@@ -345,7 +333,7 @@ describe('ShopifyCheckoutKit', () => {
         instance.present(checkoutUrl, {onClose});
         expect(() =>
           lastDispatch()(
-            JSON.stringify({type: 'fail', payload: internalError}),
+            JSON.stringify({type: 'fail', payload: sdkError}),
           ),
         ).not.toThrow();
       });
@@ -459,7 +447,6 @@ describe('ShopifyCheckoutKit', () => {
           JSON.stringify({
             type: 'fail',
             payload: {
-              __typename: CheckoutNativeErrorType.InternalError,
               message: 'boom',
               code: CheckoutErrorCode.unknown,
               recoverable: true,
@@ -474,7 +461,7 @@ describe('ShopifyCheckoutKit', () => {
         );
         expect(onClose).toHaveBeenCalledTimes(1);
         expect(onFail).toHaveBeenCalledTimes(1);
-        expect(onFail.mock.calls[0][0]).toBeInstanceOf(InternalError);
+        expect(onFail.mock.calls[0][0]).toBeInstanceOf(CheckoutException);
         expect(onGeolocationRequest).toHaveBeenCalledWith({
           origin: 'https://shopify.com',
           respond: expect.any(Function),
@@ -526,7 +513,7 @@ describe('ShopifyCheckoutKit', () => {
         const onFail = jest.fn();
         instance.present(checkoutUrl, {onFail});
         lastDispatch()(
-          JSON.stringify({type: 'fail', payload: {message: 'no typename'}}),
+          JSON.stringify({type: 'fail', payload: {message: 'no code'}}),
         );
         expect(onFail).not.toHaveBeenCalled();
         expect(console.error).toHaveBeenCalledWith(

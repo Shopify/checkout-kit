@@ -235,7 +235,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  */
 function validateFailPayload(payload: unknown): CheckoutNativeError | null {
   if (!isPlainObject(payload)) return null;
-  if (typeof payload.__typename !== 'string') return null;
   if (typeof payload.message !== 'string') return null;
   if (typeof payload.code !== 'string') return null;
   if ('statusCode' in payload && typeof payload.statusCode !== 'number') {

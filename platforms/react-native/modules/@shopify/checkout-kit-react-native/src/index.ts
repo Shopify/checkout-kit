@@ -25,16 +25,7 @@ import type {
   ShopifyCheckoutKit,
 } from './index.d';
 import {AcceleratedCheckoutWallet} from './enums';
-import type {CheckoutException} from './errors';
-import {
-  CheckoutExpiredError,
-  CheckoutClientError,
-  CheckoutHTTPError,
-  ConfigurationError,
-  InternalError,
-  CheckoutNativeErrorType,
-  GenericError,
-} from './errors';
+import {CheckoutException} from './errors';
 import {CheckoutErrorCode} from './errors';
 import {
   ApplePayLabel,
@@ -403,16 +394,8 @@ export {
 };
 
 // Error classes
-export {
-  CheckoutClientError,
-  CheckoutErrorCode,
-  CheckoutExpiredError,
-  CheckoutHTTPError,
-  CheckoutNativeErrorType,
-  ConfigurationError,
-  GenericError,
-  InternalError,
-};
+export {CheckoutErrorCode, CheckoutException};
+export type {CheckoutNativeError} from './errors';
 
 // Types
 export type {
@@ -422,7 +405,6 @@ export type {
   AndroidAutomaticColors,
   AndroidColors,
   Checkout,
-  CheckoutException,
   CheckoutProtocolMethod,
   CheckoutProtocolPayloads,
   Configuration,

@@ -10,19 +10,17 @@ import com.facebook.react.bridge.JavaOnlyMap;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.WritableMap;
+import com.shopify.checkoutkit.CheckoutAppearance;
+import com.shopify.checkoutkit.CheckoutErrorCode;
 import com.shopify.checkoutkit.CheckoutException;
-import com.shopify.checkoutkit.CheckoutExpiredException;
-import com.shopify.checkoutkit.CheckoutKitException;
-import com.shopify.checkoutkit.ClientException;
-import com.shopify.checkoutkit.ConfigurationException;
-import com.shopify.checkoutkit.HttpException;
 import com.shopify.checkoutkit.ShopifyCheckoutKit;
-import com.shopify.checkoutkit.ColorScheme;
 import com.shopify.checkoutkit.LogLevel;
 import com.shopify.checkoutkit.Preloading;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
 import com.shopify.reactnative.checkoutkit.CustomCheckoutListener;
 import com.shopify.reactnative.checkoutkit.DispatchCallback;
+
+import java.util.Locale;
 
 import org.junit.After;
 import org.junit.Before;
@@ -56,7 +54,7 @@ public class ShopifyCheckoutKitModuleTest {
   private AutoCloseable mocks;
 
   // Store initial configuration to restore after each test
-  private ColorScheme initialColorScheme;
+  private CheckoutAppearance initialAppearance;
   private LogLevel initialLogLevel;
   private Preloading initialPreloading;
 
@@ -85,7 +83,7 @@ public class ShopifyCheckoutKitModuleTest {
     shopifyCheckoutKitModule = new ShopifyCheckoutKitModule(mockReactContext);
 
     // Capture initial configuration state to restore after each test
-    initialColorScheme = ShopifyCheckoutKitModule.checkoutConfig.getColorScheme();
+    initialAppearance = ShopifyCheckoutKitModule.checkoutConfig.getAppearance();
     initialLogLevel = ShopifyCheckoutKitModule.checkoutConfig.getLogLevel();
     initialPreloading = ShopifyCheckoutKitModule.checkoutConfig.getPreloading();
   }
@@ -102,7 +100,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     // Reset configuration to initial state after each test
     ShopifyCheckoutKit.configure(configuration -> {
-      configuration.setColorScheme(initialColorScheme);
+      configuration.setAppearance(initialAppearance);
       configuration.setLogLevel(initialLogLevel);
       configuration.setPreloading(initialPreloading);
       ShopifyCheckoutKitModule.checkoutConfig = configuration;
@@ -173,7 +171,7 @@ public class ShopifyCheckoutKitModuleTest {
     DispatchCallback dispatch = mock(DispatchCallback.class);
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
-    processor.onCheckoutCanceled();
+    processor.onCheckoutDismissed();
 
     verify(dispatch).invoke(stringCaptor.capture());
     assertThat(stringCaptor.getValue()).contains("\"type\":\"close\"");
@@ -184,8 +182,8 @@ public class ShopifyCheckoutKitModuleTest {
     DispatchCallback dispatch = mock(DispatchCallback.class);
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
-    processor.onCheckoutCanceled();
-    processor.onCheckoutCanceled();
+    processor.onCheckoutDismissed();
+    processor.onCheckoutDismissed();
 
     verify(dispatch, times(1)).invoke(anyString());
   }
@@ -196,7 +194,7 @@ public class ShopifyCheckoutKitModuleTest {
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     processor.release();
-    processor.onCheckoutCanceled();
+    processor.onCheckoutDismissed();
 
     verify(dispatch, never()).invoke(anyString());
   }
@@ -221,7 +219,7 @@ public class ShopifyCheckoutKitModuleTest {
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
     processor.onGeolocationPermissionsShowPrompt("https://shopify.com", permissionsCallback);
-    processor.onCheckoutCanceled();
+    processor.onCheckoutDismissed();
     processor.invokeGeolocationCallback(true);
 
     verify(permissionsCallback, never()).invoke(anyString(), anyBoolean(), anyBoolean());
@@ -276,8 +274,8 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testHasCorrectDefaultConfiguration() {
     // Test that the module starts with sensible defaults
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
-        .isEqualTo("automatic");
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
+        .isEqualTo("web_default");
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getPreloading().getEnabled())
         .isTrue();
   }
@@ -289,7 +287,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     shopifyCheckoutKitModule.setConfig(config);
 
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("dark");
   }
 
@@ -300,7 +298,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     shopifyCheckoutKitModule.setConfig(config);
 
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("light");
   }
 
@@ -311,7 +309,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     shopifyCheckoutKitModule.setConfig(config);
 
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("dark");
   }
 
@@ -333,7 +331,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     shopifyCheckoutKitModule.setConfig(config);
 
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("automatic");
   }
 
@@ -351,7 +349,7 @@ public class ShopifyCheckoutKitModuleTest {
     shopifyCheckoutKitModule.setConfig(config);
 
     // Should fall back to basic light scheme without custom colors
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("light");
   }
 
@@ -366,7 +364,7 @@ public class ShopifyCheckoutKitModuleTest {
     shopifyCheckoutKitModule.setConfig(config);
 
     // Should fall back to basic scheme since colors are incomplete
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("light");
   }
 
@@ -379,7 +377,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     shopifyCheckoutKitModule.setConfig(config);
 
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("light");
   }
 
@@ -391,7 +389,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     shopifyCheckoutKitModule.setConfig(config);
 
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("light");
   }
 
@@ -406,7 +404,7 @@ public class ShopifyCheckoutKitModuleTest {
     shopifyCheckoutKitModule.setConfig(config);
 
     // Verify the color scheme was set correctly despite invalid close button color
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("light");
   }
 
@@ -599,16 +597,13 @@ public class ShopifyCheckoutKitModuleTest {
     DispatchCallback dispatch = mock(DispatchCallback.class);
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
-    CheckoutExpiredException mockException = mock(CheckoutExpiredException.class);
-    when(mockException.getErrorDescription()).thenReturn("Cart has expired");
-    when(mockException.getErrorCode()).thenReturn("cart_expired");
-
-    processor.onCheckoutFailed(mockException);
+    processor.onCheckoutFailed(cartExpired());
 
     verify(dispatch).invoke(stringCaptor.capture());
 
     assertThat(stringCaptor.getValue())
-        .contains("\"type\":\"fail\"", "CheckoutExpiredError", "Cart has expired", "cart_expired");
+        .contains("\"type\":\"fail\"", "\"code\":\"cart_expired\"", "\"message\":\"Cart has expired\"")
+        .doesNotContain("__typename", "statusCode");
   }
 
   @Test
@@ -616,16 +611,15 @@ public class ShopifyCheckoutKitModuleTest {
     DispatchCallback dispatch = mock(DispatchCallback.class);
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
-    ClientException mockException = mock(ClientException.class);
-    when(mockException.getErrorDescription()).thenReturn("Customer account required");
-    when(mockException.getErrorCode()).thenReturn("customer_account_required");
-
-    processor.onCheckoutFailed(mockException);
+    processor.onCheckoutFailed(new CheckoutException(
+        CheckoutErrorCode.CUSTOMER_ACCOUNT_REQUIRED, "Customer account required"));
 
     verify(dispatch).invoke(stringCaptor.capture());
 
     assertThat(stringCaptor.getValue())
-        .contains("\"type\":\"fail\"", "CheckoutClientError", "Customer account required", "customer_account_required");
+        .contains("\"type\":\"fail\"", "\"code\":\"customer_account_required\"",
+            "\"message\":\"Customer account required\"")
+        .doesNotContain("__typename", "statusCode");
   }
 
   @Test
@@ -633,17 +627,30 @@ public class ShopifyCheckoutKitModuleTest {
     DispatchCallback dispatch = mock(DispatchCallback.class);
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
-    HttpException mockException = mock(HttpException.class);
-    when(mockException.getErrorDescription()).thenReturn("Not Found");
-    when(mockException.getErrorCode()).thenReturn("http_error");
-    when(mockException.getStatusCode()).thenReturn(404);
-
-    processor.onCheckoutFailed(mockException);
+    processor.onCheckoutFailed(new CheckoutException(
+        CheckoutErrorCode.HTTP_ERROR, "Not Found", 404));
 
     verify(dispatch).invoke(stringCaptor.capture());
 
     assertThat(stringCaptor.getValue())
-        .contains("\"type\":\"fail\"", "CheckoutHTTPError", "Not Found", "http_error", "\"statusCode\":404");
+        .contains("\"type\":\"fail\"", "\"code\":\"http_error\"", "\"message\":\"Not Found\"",
+            "\"statusCode\":404")
+        .doesNotContain("__typename");
+  }
+
+  @Test
+  public void testEveryErrorCodeSerialisesAsLowerSnakeCase() {
+    for (CheckoutErrorCode code : CheckoutErrorCode.values()) {
+      DispatchCallback dispatch = mock(DispatchCallback.class);
+      CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
+      ArgumentCaptor<String> envelopeCaptor = ArgumentCaptor.forClass(String.class);
+
+      processor.onCheckoutFailed(new CheckoutException(code, "failed"));
+
+      verify(dispatch).invoke(envelopeCaptor.capture());
+      assertThat(envelopeCaptor.getValue())
+          .contains("\"code\":\"" + code.name().toLowerCase(Locale.ROOT) + "\"");
+    }
   }
 
   @Test
@@ -651,12 +658,8 @@ public class ShopifyCheckoutKitModuleTest {
     DispatchCallback dispatch = mock(DispatchCallback.class);
     CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
 
-    CheckoutExpiredException mockException = mock(CheckoutExpiredException.class);
-    when(mockException.getErrorDescription()).thenReturn("Cart has expired");
-    when(mockException.getErrorCode()).thenReturn("cart_expired");
-
-    processor.onCheckoutFailed(mockException);
-    processor.onCheckoutFailed(mockException);
+    processor.onCheckoutFailed(cartExpired());
+    processor.onCheckoutFailed(cartExpired());
 
     verify(dispatch, times(1)).invoke(anyString());
   }
@@ -674,13 +677,24 @@ public class ShopifyCheckoutKitModuleTest {
     shopifyCheckoutKitModule.setConfig(config);
 
     // Verify configuration was applied
-    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getColorScheme().getId())
+    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("dark");
   }
 
   /**
    * Helpers
    */
+
+  private static CheckoutException cartExpired() {
+    return new CheckoutException(CheckoutErrorCode.CART_EXPIRED, "Cart has expired");
+  }
+
+  private static String colorSchemeIdOf(CheckoutAppearance appearance) {
+    if (appearance instanceof CheckoutAppearance.App) {
+      return ((CheckoutAppearance.App) appearance).getColorScheme().getId();
+    }
+    return "web_default";
+  }
 
   private JavaOnlyMap createValidLightColors() {
     JavaOnlyMap colors = new JavaOnlyMap();

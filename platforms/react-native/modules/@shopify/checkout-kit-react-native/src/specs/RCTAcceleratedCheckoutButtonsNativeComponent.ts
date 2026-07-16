@@ -8,9 +8,9 @@ import type {
 } from 'react-native/Libraries/Types/CodegenTypes';
 
 type FailEvent = Readonly<{
-  __typename: string;
   message: string;
   code?: string;
+  statusCode?: Double;
 }>;
 
 type RenderStateChangeEvent = Readonly<{
