@@ -115,7 +115,7 @@ jobs:
         run: |
           set -euo pipefail
           cd modules/@shopify/checkout-kit-react-native
-          pnpm dlx npm@11.5.1 publish --no-git-checks --access public --tag "$NPM_TAG" --provenance
+          pnpm dlx npm@11.5.1 publish --no-git-checks --ignore-scripts --access public --tag "$NPM_TAG" --provenance
         env:
           NPM_TAG: ${{ steps.release.outputs.npm_tag }}
           NPM_CONFIG_PROVENANCE: "true"
