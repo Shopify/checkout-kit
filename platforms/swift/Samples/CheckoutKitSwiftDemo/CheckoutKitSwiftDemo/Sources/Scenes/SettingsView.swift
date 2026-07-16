@@ -40,13 +40,7 @@ struct SettingsView: View {
     var applePayStyle: ApplePayStyleOption = .automatic
 
     @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
-    var checkoutPreloadingEnabled = true {
-        didSet {
-            ShopifyCheckoutKit.configure {
-                $0.preloading.enabled = checkoutPreloadingEnabled
-            }
-        }
-    }
+    var checkoutPreloadingEnabled = true
 
     @AppStorage(AppStorageKeys.windowOpenHandler.rawValue)
     var windowOpenHandler: WindowOpenHandlerOption = .default
@@ -59,6 +53,11 @@ struct SettingsView: View {
             List {
                 Section(header: Text("Features")) {
                     Toggle("Checkout preloading", isOn: $checkoutPreloadingEnabled)
+                        .onChange(of: checkoutPreloadingEnabled) { _ in
+                            ShopifyCheckoutKit.configure {
+                                $0.preloading.enabled = checkoutPreloadingEnabled
+                            }
+                        }
 
                     Picker("Window open handler", selection: $windowOpenHandler) {
                         ForEach(WindowOpenHandlerOption.allCases, id: \.self) { option in
