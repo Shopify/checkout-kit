@@ -108,6 +108,20 @@ class PreloadObservabilityTest {
     }
 
     @Test
+    fun `repeat page finished does not re-notify ready`() {
+        val states = mutableListOf<PreloadState>()
+
+        ShopifyCheckoutKit.preload(url, activity, webMessageTransport) { states.add(it) }
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        val view = CheckoutWebView.cachedPreloadViewForTesting()!!
+        shadowOf(view).webViewClient.onPageFinished(view, url)
+        shadowOf(view).webViewClient.onPageFinished(view, url)
+
+        assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Ready)
+    }
+
+    @Test
     fun `ttl expiry on take transitions to expired`() {
         var now = 1_000L
         CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
