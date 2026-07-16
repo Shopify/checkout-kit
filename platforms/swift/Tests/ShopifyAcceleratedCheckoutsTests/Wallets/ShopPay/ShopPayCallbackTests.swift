@@ -11,7 +11,7 @@ final class ShopPayCallbackTests: XCTestCase {
     var mockConfiguration: ShopifyAcceleratedCheckouts.Configuration!
     var mockIdentifier: CheckoutIdentifier!
     var errorExpectation: XCTestExpectation!
-    var cancelExpectation: XCTestExpectation!
+    var dismissExpectation: XCTestExpectation!
 
     // MARK: - Setup
 
@@ -36,7 +36,7 @@ final class ShopPayCallbackTests: XCTestCase {
         mockConfiguration = nil
         mockIdentifier = nil
         errorExpectation = nil
-        cancelExpectation = nil
+        dismissExpectation = nil
         try await super.tearDown()
     }
 
@@ -69,29 +69,29 @@ final class ShopPayCallbackTests: XCTestCase {
         XCTAssertTrue(true, "Should not crash when callback is nil")
     }
 
-    // MARK: - Cancel Callback Tests
+    // MARK: - Dismiss Callback Tests
 
     @MainActor
-    func testCancelCallbackInvoked() async {
-        cancelExpectation = expectation(description: "Cancel callback should be invoked")
-        let callbackInvokedExpectation = expectation(description: "Cancel callback invoked")
+    func testDismissCallbackInvoked() async {
+        dismissExpectation = expectation(description: "Dismiss callback should be invoked")
+        let callbackInvokedExpectation = expectation(description: "Dismiss callback invoked")
 
         viewController.eventHandlers = EventHandlers(
-            checkoutDidCancel: { [weak self] in
+            checkoutDidDismiss: { [weak self] in
                 callbackInvokedExpectation.fulfill()
-                self?.cancelExpectation.fulfill()
+                self?.dismissExpectation.fulfill()
             }
         )
 
-        viewController.eventHandlers.checkoutDidCancel?()
+        viewController.eventHandlers.checkoutDidDismiss?()
 
-        await fulfillment(of: [cancelExpectation, callbackInvokedExpectation], timeout: 1.0)
+        await fulfillment(of: [dismissExpectation, callbackInvokedExpectation], timeout: 1.0)
     }
 
-    func testCancelCallbackNotInvokedWhenNil() {
-        XCTAssertNil(viewController.eventHandlers.checkoutDidCancel)
+    func testDismissCallbackNotInvokedWhenNil() {
+        XCTAssertNil(viewController.eventHandlers.checkoutDidDismiss)
 
-        viewController.eventHandlers.checkoutDidCancel?() // Should not crash
+        viewController.eventHandlers.checkoutDidDismiss?() // Should not crash
 
         XCTAssertTrue(true, "Should not crash when callback is nil")
     }
@@ -112,14 +112,14 @@ final class ShopPayCallbackTests: XCTestCase {
     }
 
     @MainActor
-    func testCheckoutCancelCallback() {
-        var cancelInvoked = false
+    func testCheckoutDismissCallback() {
+        var dismissInvoked = false
         viewController.eventHandlers = EventHandlers(
-            checkoutDidCancel: { cancelInvoked = true }
+            checkoutDidDismiss: { dismissInvoked = true }
         )
 
-        viewController.eventHandlers.checkoutDidCancel?()
+        viewController.eventHandlers.checkoutDidDismiss?()
 
-        XCTAssertTrue(cancelInvoked, "Cancel callback should be invoked")
+        XCTAssertTrue(dismissInvoked, "Dismiss callback should be invoked")
     }
 }

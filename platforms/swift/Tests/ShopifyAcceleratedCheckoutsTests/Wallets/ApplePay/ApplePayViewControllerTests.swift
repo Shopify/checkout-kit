@@ -132,13 +132,13 @@ class ApplePayViewControllerTests: XCTestCase {
     // MARK: - Delegate
 
     @MainActor
-    func test_checkoutDidCancel_whenInvoked_invokesOnCancelCallback() async {
-        let cancelCallbackExpectation = XCTestExpectation(description: "Cancel callback should be invoked")
-        viewController.onCheckoutCancel = { cancelCallbackExpectation.fulfill() }
+    func test_checkoutDidDismiss_whenInvoked_invokesOnDismissCallback() async {
+        let dismissCallbackExpectation = XCTestExpectation(description: "Dismiss callback should be invoked")
+        viewController.onCheckoutDismiss = { dismissCallbackExpectation.fulfill() }
 
-        viewController.onCheckoutCancel?()
+        viewController.onCheckoutDismiss?()
 
-        await fulfillment(of: [cancelCallbackExpectation], timeout: 1.0)
+        await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
     }
 
     // MARK: - WalletController Inheritance

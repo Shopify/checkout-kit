@@ -120,7 +120,7 @@ struct Internal_ApplePayButton: View {
         self.buttonStyle = buttonStyle
         self.cornerRadius = cornerRadius
         controller.onCheckoutFail = eventHandlers.checkoutDidFail
-        controller.onCheckoutCancel = eventHandlers.checkoutDidCancel
+        controller.onCheckoutDismiss = eventHandlers.checkoutDidDismiss
     }
 
     var body: some View {

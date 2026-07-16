@@ -120,8 +120,8 @@ struct ProductView: View {
                                     .onFail { error in
                                         print("[AcceleratedCheckout] Failed: \(error)")
                                     }
-                                    .onCancel {
-                                        print("[AcceleratedCheckout] Cancelled")
+                                    .onDismiss {
+                                        print("[AcceleratedCheckout] Dismissed")
                                     }
                                     .environment(
                                         \.shopifyAcceleratedCheckoutsConfiguration,

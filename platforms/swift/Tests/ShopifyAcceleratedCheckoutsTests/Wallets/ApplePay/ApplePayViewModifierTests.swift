@@ -44,33 +44,33 @@ final class ApplePayViewModifierTests: XCTestCase {
         try await super.tearDown()
     }
 
-    // MARK: - onCancel Modifier Tests
+    // MARK: - onDismiss Modifier Tests
 
-    func testOnCancelModifier() {
-        var cancelCallbackInvoked = false
-        let cancelAction = {
-            cancelCallbackInvoked = true
+    func testOnDismissModifier() {
+        var dismissCallbackInvoked = false
+        let dismissAction = {
+            dismissCallbackInvoked = true
         }
 
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
-            .onCancel(cancelAction)
+            .onDismiss(dismissAction)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
 
-        XCTAssertNotNil(view, "View should be created successfully with cancel modifier")
+        XCTAssertNotNil(view, "View should be created successfully with dismiss modifier")
 
-        cancelAction()
-        XCTAssertTrue(cancelCallbackInvoked, "Cancel callback should be invoked when called")
+        dismissAction()
+        XCTAssertTrue(dismissCallbackInvoked, "Dismiss callback should be invoked when called")
     }
 
-    func testOnCancelModifierChaining() {
+    func testOnDismissModifierChaining() {
         var firstCallbackInvoked = false
         var secondCallbackInvoked = false
 
         _ = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
-            .onCancel { firstCallbackInvoked = true }
-            .onCancel { secondCallbackInvoked = true } // Should replace the first
+            .onDismiss { firstCallbackInvoked = true }
+            .onDismiss { secondCallbackInvoked = true } // Should replace the first
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
@@ -103,18 +103,18 @@ final class ApplePayViewModifierTests: XCTestCase {
 
     func testCombinedModifiers() {
         var errorInvoked = false
-        var cancelInvoked = false
+        var dismissInvoked = false
 
         let errorAction = { (_: CheckoutError) in
             errorInvoked = true
         }
-        let cancelAction = {
-            cancelInvoked = true
+        let dismissAction = {
+            dismissInvoked = true
         }
 
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onFail(errorAction)
-            .onCancel(cancelAction)
+            .onDismiss(dismissAction)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
@@ -123,10 +123,10 @@ final class ApplePayViewModifierTests: XCTestCase {
 
         errorAction(CheckoutError.sdkError(underlying: NSError(domain: "Test", code: 0)))
         XCTAssertTrue(errorInvoked, "Error callback should be invoked")
-        XCTAssertFalse(cancelInvoked, "Cancel callback should not be invoked")
+        XCTAssertFalse(dismissInvoked, "Dismiss callback should not be invoked")
 
-        cancelAction()
-        XCTAssertTrue(cancelInvoked, "Cancel callback should be invoked")
+        dismissAction()
+        XCTAssertTrue(dismissInvoked, "Dismiss callback should be invoked")
     }
 
     // MARK: - Environment Propagation Tests
@@ -144,14 +144,14 @@ final class ApplePayViewModifierTests: XCTestCase {
 
     func testAllCallbackModifiersCombined() {
         var errorInvoked = false
-        var cancelInvoked = false
+        var dismissInvoked = false
 
         let errorAction = { (_: CheckoutError) in errorInvoked = true }
-        let cancelAction = { cancelInvoked = true }
+        let dismissAction = { dismissInvoked = true }
 
         let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onFail(errorAction)
-            .onCancel(cancelAction)
+            .onDismiss(dismissAction)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
@@ -160,13 +160,13 @@ final class ApplePayViewModifierTests: XCTestCase {
 
         errorAction(CheckoutError.sdkError(underlying: NSError(domain: "Test", code: 0)))
         XCTAssertTrue(errorInvoked, "Error callback should be invoked")
-        XCTAssertFalse(cancelInvoked, "Cancel callback should not be invoked")
+        XCTAssertFalse(dismissInvoked, "Dismiss callback should not be invoked")
 
         // Reset
         errorInvoked = false
-        cancelAction()
+        dismissAction()
         XCTAssertFalse(errorInvoked, "Error callback should not be invoked")
-        XCTAssertTrue(cancelInvoked, "Cancel callback should be invoked")
+        XCTAssertTrue(dismissInvoked, "Dismiss callback should be invoked")
     }
 
     // MARK: - Integration Tests
