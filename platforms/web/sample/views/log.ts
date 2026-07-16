@@ -36,4 +36,11 @@ export function renderLog(refs: Refs, state: AppState): void {
   for (const entry of state.log) {
     refs.eventLog.append(buildLogEntry(entry));
   }
+
+  refs.layout.classList.toggle("events-collapsed", state.eventsCollapsed);
+  refs.eventsToggle.setAttribute("aria-expanded", String(!state.eventsCollapsed));
+  refs.eventsToggle.setAttribute(
+    "aria-label",
+    state.eventsCollapsed ? "Show events panel" : "Hide events panel",
+  );
 }

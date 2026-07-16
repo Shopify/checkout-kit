@@ -24,6 +24,7 @@ function settings(overrides: Partial<SettingsSlice> = {}): SettingsSlice {
     logLevel: "warn",
     manualSrc: "",
     settingsCollapsed: false,
+    eventsCollapsed: false,
     ...overrides,
   };
 }
@@ -158,7 +159,14 @@ describe("renderSettings", () => {
     const checkout = document.createElement("div");
     renderSettings(refs, state({ settingsCollapsed: true }), checkout);
     expect(refs.layout.classList.contains("settings-collapsed")).toBe(true);
-    expect(refs.settingsToggle.textContent).toBe("Show");
+    expect(refs.settingsToggle.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("expands the settings panel", () => {
+    const checkout = document.createElement("div");
+    renderSettings(refs, state({ settingsCollapsed: false }), checkout);
+    expect(refs.layout.classList.contains("settings-collapsed")).toBe(false);
+    expect(refs.settingsToggle.getAttribute("aria-expanded")).toBe("true");
   });
 });
 
@@ -194,6 +202,18 @@ describe("renderLog", () => {
       (el) => el.textContent,
     );
     expect(names).toEqual(["ec.close", "ec.start"]);
+  });
+
+  it("collapses the events panel", () => {
+    renderLog(refs, state({ eventsCollapsed: true }));
+    expect(refs.layout.classList.contains("events-collapsed")).toBe(true);
+    expect(refs.eventsToggle.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("expands the events panel", () => {
+    renderLog(refs, state({ eventsCollapsed: false }));
+    expect(refs.layout.classList.contains("events-collapsed")).toBe(false);
+    expect(refs.eventsToggle.getAttribute("aria-expanded")).toBe("true");
   });
 });
 

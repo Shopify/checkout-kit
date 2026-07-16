@@ -2,6 +2,7 @@ import "@shopify/checkout-kit";
 import type { ShopifyCheckout } from "@shopify/checkout-kit";
 
 import { normalizeQuantity, normalizeStorefrontDomain, upsertCartLine } from "./cart";
+import { createColumnResizer } from "./column-resizer";
 import { queryRefs, timestamp } from "./dom";
 import { createProductLoader } from "./product-loader";
 import { renderApp } from "./render";
@@ -38,7 +39,9 @@ document.body.append(checkout);
 const persisted = loadPersistedSettings();
 hydrateSettingsForm(persisted);
 
-const store = createStore(createInitialState(readSettings(persisted.settingsCollapsed)));
+const store = createStore(
+  createInitialState(readSettings(persisted.settingsCollapsed, persisted.eventsCollapsed)),
+);
 const loader = createProductLoader({
   store,
   setDomainInputValue: (domain) => {
@@ -46,10 +49,23 @@ const loader = createProductLoader({
   },
 });
 
-store.subscribe(() => renderApp(refs, store.getState(), checkout));
+const resizer = createColumnResizer({
+  layout: refs.layout,
+  leftPanel: refs.settingsPanel,
+  rightPanel: refs.runtimePanel,
+  leftHandle: refs.resizeLeft,
+  rightHandle: refs.resizeRight,
+});
+
+store.subscribe(() => {
+  renderApp(refs, store.getState(), checkout);
+  resizer.reposition();
+});
 
 attachListeners();
 renderApp(refs, store.getState(), checkout);
+resizer.applyWidths();
+window.addEventListener("resize", resizer.reposition);
 
 if (store.getState().sourceMode === "build" && store.getState().storefrontDomain) {
   loader.schedule(store.getState().storefrontDomain);
@@ -60,7 +76,7 @@ function currentSourceMode(): SourceMode {
   return checked?.value === "manual" ? "manual" : "build";
 }
 
-function readSettings(settingsCollapsed: boolean): SettingsSlice {
+function readSettings(settingsCollapsed: boolean, eventsCollapsed: boolean): SettingsSlice {
   const data = new FormData(refs.form);
   return {
     sourceMode: currentSourceMode(),
@@ -70,6 +86,7 @@ function readSettings(settingsCollapsed: boolean): SettingsSlice {
     logLevel: coerceLogLevel(String(data.get("log-level") ?? "")),
     manualSrc: refs.manualSrcInput.value,
     settingsCollapsed,
+    eventsCollapsed,
   };
 }
 
@@ -86,7 +103,10 @@ function hydrateSettingsForm(settings: PersistedSettings): void {
 }
 
 function captureSettings(): void {
-  const settings = readSettings(store.getState().settingsCollapsed);
+  const settings = readSettings(
+    store.getState().settingsCollapsed,
+    store.getState().eventsCollapsed,
+  );
   store.setState(settings);
   persistSettings({
     sourceMode: settings.sourceMode,
@@ -136,6 +156,11 @@ function attachListeners(): void {
   refs.settingsToggle.addEventListener("click", () => {
     store.setState({ settingsCollapsed: !store.getState().settingsCollapsed });
     persistSettings({ settingsCollapsed: store.getState().settingsCollapsed });
+  });
+
+  refs.eventsToggle.addEventListener("click", () => {
+    store.setState({ eventsCollapsed: !store.getState().eventsCollapsed });
+    persistSettings({ eventsCollapsed: store.getState().eventsCollapsed });
   });
 
   refs.form.addEventListener("submit", (event) => {

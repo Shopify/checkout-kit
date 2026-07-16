@@ -1,9 +1,14 @@
 export type Refs = {
   layout: HTMLElement;
+  settingsPanel: HTMLElement;
+  runtimePanel: HTMLElement;
+  resizeLeft: HTMLElement;
+  resizeRight: HTMLElement;
   form: HTMLFormElement;
   eventLog: HTMLUListElement;
   clearLogButton: HTMLButtonElement;
   settingsToggle: HTMLButtonElement;
+  eventsToggle: HTMLButtonElement;
   storefrontSourceFields: HTMLFieldSetElement;
   buildWorkspace: HTMLDivElement;
   manualWorkspace: HTMLDivElement;
@@ -41,10 +46,15 @@ export function $<T extends Element>(selector: string): T {
 export function queryRefs(): Refs {
   return {
     layout: $<HTMLElement>("#layout"),
+    settingsPanel: $<HTMLElement>(".settings-panel"),
+    runtimePanel: $<HTMLElement>(".runtime-panel"),
+    resizeLeft: $<HTMLElement>("#resize-left"),
+    resizeRight: $<HTMLElement>("#resize-right"),
     form: $<HTMLFormElement>("#options-form"),
     eventLog: $<HTMLUListElement>("#event-log"),
     clearLogButton: $<HTMLButtonElement>("#clear-log"),
     settingsToggle: $<HTMLButtonElement>("#toggle-settings"),
+    eventsToggle: $<HTMLButtonElement>("#toggle-events"),
     storefrontSourceFields: $<HTMLFieldSetElement>("#storefront-source-fields"),
     buildWorkspace: $<HTMLDivElement>("#build-workspace"),
     manualWorkspace: $<HTMLDivElement>("#manual-workspace"),
