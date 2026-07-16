@@ -46,6 +46,14 @@ applications:
       - packageSwift
       - e2e
       - ciFilters
+  - id: phantom-ios
+    target: phantom
+    platform: ios
+    app_id: com.shopify.checkoutkit.phantomdemo
+    artifact_env: E2E_PHANTOM_IOS_APP_PATH
+    ready_marker: checkout-kit-sample-ready
+    changed_files_filters:
+      - e2e
 os_version_tags:
   - latest
 suites:

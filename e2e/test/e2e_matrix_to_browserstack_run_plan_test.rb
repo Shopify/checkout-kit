@@ -19,7 +19,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_nil_changed_files_selects_all_applications
-    assert_equal ["react-native-ios", "react-native-android", "kotlin-android", "swift-ios"], selected_ids(nil)
+    assert_equal ["react-native-ios", "react-native-android", "kotlin-android", "swift-ios", "phantom-ios"], selected_ids(nil)
   end
 
   def test_empty_changed_files_selects_no_applications
