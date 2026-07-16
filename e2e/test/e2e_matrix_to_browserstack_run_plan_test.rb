@@ -196,4 +196,48 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   def test_bitrise_env_raises_on_invalid_config
     assert_raises(RuntimeError) { plan(config: {"version" => 2}).bitrise_env }
   end
+
+  def test_missing_build_workflows_flags_selected_target_absent_from_pipeline
+    available = ["e2e-build-react-native-ios", "e2e-build-react-native-android"]
+    missing = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+      .missing_build_workflows(available)
+
+    assert_equal ["e2e-build-swift-ios"], missing
+  end
+
+  def test_missing_build_workflows_empty_when_all_present
+    available = [
+      "e2e-build-react-native-ios",
+      "e2e-build-react-native-android",
+      "e2e-build-kotlin-android",
+      "e2e-build-swift-ios"
+    ]
+    missing = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+      .missing_build_workflows(available)
+
+    assert_empty missing
+  end
+
+  def test_missing_build_workflows_empty_when_nothing_selected
+    missing = plan(changed_files: ["platforms/react-native/docs/assets/screenshot.png"])
+      .missing_build_workflows([])
+
+    assert_empty missing
+  end
+
+  def test_missing_build_workflow_errors_names_the_missing_target
+    messages = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+      .missing_build_workflow_errors(["e2e-build-react-native-ios"])
+
+    assert_equal 1, messages.length
+    assert_includes messages.first, "no 'e2e-build-swift-ios' workflow."
+    refute_includes messages.first, "Your branch predates"
+  end
+
+  def test_missing_build_workflow_errors_empty_when_all_present
+    messages = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+      .missing_build_workflow_errors(["e2e-build-swift-ios"])
+
+    assert_empty messages
+  end
 end

@@ -12,7 +12,9 @@ options = {
   pr_number: ENV["BITRISE_PULL_REQUEST"],
   token: ENV["GITHUB_TOKEN"],
   branch: ENV["BITRISE_GIT_BRANCH"],
-  expected: ENV["E2E_BROWSERSTACK_RUN_PLAN_COUNT"]
+  expected: ENV["E2E_BROWSERSTACK_RUN_PLAN_COUNT"],
+  run_plan: ENV["E2E_BROWSERSTACK_RUN_PLAN_JSON"],
+  build_url: ENV["BITRISE_BUILD_URL"]
 }
 
 OptionParser.new do |opts|
@@ -22,6 +24,8 @@ OptionParser.new do |opts|
   opts.on("--pr NUMBER") { |number| options[:pr_number] = number }
   opts.on("--branch BRANCH") { |branch| options[:branch] = branch }
   opts.on("--expected COUNT", Integer) { |count| options[:expected] = count }
+  opts.on("--run-plan PATH") { |path| options[:run_plan] = path }
+  opts.on("--build-url URL") { |url| options[:build_url] = url }
 end.parse!
 
 pr_number = options[:pr_number].to_s.strip
@@ -50,6 +54,10 @@ end
 
 results = result_paths.sort.map { |path| JSON.parse(File.read(path)) }
 tophat_manifest = JSON.parse(File.read(File.expand_path("../../scripts/tophat/targets.json", __dir__)))
+
+run_plan_path = options[:run_plan].to_s.strip
+run_plan = run_plan_path.empty? || !File.exist?(run_plan_path) ? [] : JSON.parse(File.read(run_plan_path))
+
 reporter = E2EGitHubReporter.new(
   results,
   repository: options.fetch(:repository),
@@ -59,7 +67,9 @@ reporter = E2EGitHubReporter.new(
   branch: options.fetch(:branch),
   app_slug: tophat_manifest.fetch("app_slug"),
   targets: tophat_manifest.fetch("targets"),
-  expected: expected
+  expected: expected,
+  run_plan: run_plan,
+  build_url: options[:build_url]
 )
 reporter.publish!
 puts reporter.markdown_summary

@@ -74,6 +74,17 @@ class E2EMatrixToBrowserStackRunPlan
     env
   end
 
+  def missing_build_workflows(available_workflow_names)
+    selected_applications.map { |application| "e2e-build-#{application.fetch("id")}" } - available_workflow_names
+  end
+
+  def missing_build_workflow_errors(available_workflow_names)
+    missing_build_workflows(available_workflow_names).map do |workflow|
+      target = workflow.delete_prefix("e2e-build-")
+      "Run plan selected '#{target}' but this branch's e2e/bitrise.yml has no '#{workflow}' workflow."
+    end
+  end
+
   def validation_errors
     errors = []
     errors << "version must be 1" unless @config.fetch("version", nil) == 1

@@ -83,6 +83,7 @@ class BrowserStackRunExecutor
     @app = upload_file("/app-automate/maestro/v2/app", app_path, custom_id(@run, "app"))
     @suite = upload_file("/app-automate/maestro/v2/test-suite", tests_zip, custom_id(@run, "suite"))
     @build = start_build(@run, @app.fetch("app_url"), @suite.fetch("test_suite_url"), @device.fetch("browserstack_device"))
+    puts "BrowserStack build: #{BrowserStackClient.build_url(@build.fetch("build_id"))}"
     build_status = poll_build(@build.fetch("build_id"))
     sessions = fetch_sessions(build_status)
     result = normalize_result(@run, @device, @app, @suite, @build, build_status, sessions)

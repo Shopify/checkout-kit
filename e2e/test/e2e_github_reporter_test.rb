@@ -11,16 +11,30 @@ class E2EGitHubReporterTest < Minitest::Test
     @manifest ||= JSON.parse(File.read(TARGETS_PATH))
   end
 
-  def reporter
+  def reporter(results: [], run_plan: [], build_url: nil, expected: nil)
     E2EGitHubReporter.new(
-      [],
+      results,
       repository: "Shopify/checkout-kit",
       sha: "abc123",
       pr_number: 1,
       branch: "feature-branch",
       app_slug: manifest.fetch("app_slug"),
-      targets: manifest.fetch("targets")
+      targets: manifest.fetch("targets"),
+      run_plan: run_plan,
+      build_url: build_url,
+      expected: expected
     )
+  end
+
+  def swift_ios_run
+    {
+      "id" => "swift-ios-latest-launch-smoke",
+      "application_id" => "swift-ios",
+      "target" => "swift",
+      "platform" => "ios",
+      "os_version_tag" => "latest",
+      "execute" => "tests/shared/launch-smoke.yaml"
+    }
   end
 
   def target(id)
@@ -49,5 +63,29 @@ class E2EGitHubReporterTest < Minitest::Test
 
     assert_includes url, "workflow=e2e-build-kotlin-android"
     assert_includes url, "app-debug.apk"
+  end
+
+  def test_missing_run_is_named_with_build_link
+    summary = reporter(
+      results: [],
+      run_plan: [swift_ios_run],
+      build_url: "https://app.bitrise.io/build/xyz",
+      expected: 1
+    ).markdown_summary
+
+    assert_includes summary, "swift-ios"
+    assert_includes summary, "launch-smoke"
+    assert_includes summary, "https://app.bitrise.io/build/xyz"
+  end
+
+  def test_complete_run_has_no_missing_run_lines
+    result = swift_ios_run.merge("passed" => true, "resolved_device" => "iPhone")
+    summary = reporter(
+      results: [result],
+      run_plan: [swift_ios_run],
+      expected: 1
+    ).markdown_summary
+
+    refute_includes summary, "did not report"
   end
 end

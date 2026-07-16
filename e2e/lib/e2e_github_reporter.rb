@@ -2,6 +2,7 @@
 
 require "json"
 require "uri"
+require_relative "browserstack_client"
 require_relative "../../scripts/lib/json_http_client"
 
 # Publishes normalized E2E run results back to GitHub as a check run and a
@@ -10,7 +11,7 @@ class E2EGitHubReporter
   COMMENT_MARKER = "<!-- checkout-kit-e2e-report -->"
   TOPHAT_INSTALL_BASE = "http://localhost:29070/install/bitrise-branch"
 
-  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil)
+  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], build_url: nil)
     @results = results
     @repository = repository
     @sha = sha
@@ -20,6 +21,8 @@ class E2EGitHubReporter
     @app_slug = app_slug
     @targets = targets
     @expected = expected
+    @run_plan = run_plan || []
+    @build_url = build_url
   end
 
   def publish!
@@ -58,6 +61,10 @@ class E2EGitHubReporter
       lines << ""
       lines << "> [!WARNING]"
       lines << "> Expected #{@expected} run#{@expected == 1 ? "" : "s"}, received #{@results.length} — #{missing_count} did not report. Missing runs count as failures until every run reports."
+      missing_runs.each do |run|
+        lines << "> - #{missing_run_label(run)}"
+      end
+      lines << "> See the failing build: #{@build_url}" unless blank?(@build_url)
     end
     failure_lines = failed_results.flat_map { |result| failure_details(result) }
     unless failure_lines.empty?
@@ -68,7 +75,7 @@ class E2EGitHubReporter
       lines << "> These E2E checks are not yet required, so they do not block merging — but a failure may still indicate a real issue to resolve before merging."
       lines << "> If you believe an assertion is flaky, please raise a ticket in the #checkout-kit-devs channel so it can be addressed."
       lines << ""
-      lines << "> BrowserStack artifacts require BrowserStack access. Sign in to [BrowserStack App Automate](https://app-automate.browserstack.com/dashboard/v2/builds) before opening artifact links."
+      lines << "> BrowserStack artifacts require BrowserStack access. Sign in to [BrowserStack App Automate](#{BrowserStackClient::DASHBOARD_BASE}) before opening artifact links."
       lines.concat(failure_lines)
     end
     lines.join("\n")
@@ -106,6 +113,16 @@ class E2EGitHubReporter
 
   def complete?
     @expected.nil? || @results.length >= @expected
+  end
+
+  def missing_runs
+    reported_ids = @results.map { |result| result["id"] }.compact
+    @run_plan.reject { |run| reported_ids.include?(run["id"]) }
+  end
+
+  def missing_run_label(run)
+    suite = File.basename(run["execute"].to_s, ".*")
+    "`#{run["application_id"] || run["target"]}` · #{suite} (#{run["platform"]})"
   end
 
   def missing_count
@@ -209,9 +226,7 @@ class E2EGitHubReporter
   end
 
   def browserstack_build_url(result)
-    build_id = result["build_id"]
-    base = "https://app-automate.browserstack.com/dashboard/v2/builds"
-    blank?(build_id) ? base : "#{base}/#{build_id}"
+    BrowserStackClient.build_url(result["build_id"])
   end
 
   def issue_comments
