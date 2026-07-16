@@ -11,6 +11,7 @@ struct CartView: View {
     @State var isBusy: Bool = false
     @State var isCompleted: Bool = false
     @State var showCheckoutSheet: Bool = false
+    @State private var checkoutPreload: CheckoutPreload?
 
     @ObservedObject var cartManager: CartManager = .shared
 
@@ -32,7 +33,7 @@ struct CartView: View {
             ZStack(alignment: .bottom) {
                 ScrollView {
                     VStack {
-                        CartLines(lines: lines, isBusy: $isBusy)
+                        CartLines(lines: lines, update: preloadCheckoutIfNeeded, isBusy: $isBusy)
                     }
                     .padding(.bottom, 130)
                 }
@@ -124,6 +125,7 @@ struct CartView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         cartManager.resetCart()
+                        ShopifyCheckoutKit.invalidate()
                     }) {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
@@ -153,7 +155,12 @@ struct CartView: View {
     private func preloadCheckoutIfNeeded() {
         guard checkoutPreloadingEnabled, let url = cartManager.cart?.checkoutURL else { return }
 
-        ShopifyCheckoutKit.preload(checkout: url)
+        ShopifyCheckoutKit.invalidate()
+        checkoutPreload = ShopifyCheckoutKit.preload(checkout: url)
+        checkoutPreload?.onStateChange = { state in
+            print("[Preload] state changed to \(state)")
+            ShopifyCheckoutKit.configuration.logger.log("Preload state changed to \(state)")
+        }
     }
 }
 
@@ -173,6 +180,7 @@ struct EmptyState: View {
 
 struct CartLines: View {
     var lines: [CartLineNode]
+    var update: () -> Void
     @State var updating: String? {
         didSet {
             isBusy = updating != nil
@@ -238,6 +246,7 @@ struct CartLines: View {
                                         let cart = try await CartManager.shared.performCartLinesUpdate(id: node.id, quantity: node.quantity - 1)
                                         CartManager.shared.cart = cart
                                         updating = nil
+                                        update()
                                     }
                                 }, label: {
                                     Image(systemName: "minus")
@@ -272,6 +281,7 @@ struct CartLines: View {
                                             )
                                             CartManager.shared.cart = cart
                                             updating = nil
+                                            update()
                                         }
                                     },
                                     label: {

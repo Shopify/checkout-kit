@@ -40,6 +40,17 @@ final class PreloadCache {
     private var keepAliveTimer: Timer?
     private var expiryTimer: Timer?
 
+    private(set) var state: PreloadState = .idle
+
+    /// The cache notifies a single observer. Each `preload(checkout:)` call
+    /// replaces it, so only the most recently returned `CheckoutPreload` handle
+    /// receives state updates; earlier handles stop observing.
+    private weak var observer: CheckoutPreload?
+
+    func setObserver(_ observer: CheckoutPreload) {
+        self.observer = observer
+    }
+
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
         if let entry, entry.key == key, !entry.isStale {
             return true
@@ -56,18 +67,39 @@ final class PreloadCache {
         self.entry = entry
         startKeepAlive(for: view)
         startExpiryTimer(after: entry.remainingTTL)
+        transition(to: .loading)
         return true
     }
 
+    func transition(to newState: PreloadState) {
+        guard state != newState else { return }
+
+        state = newState
+        observer?.receive(newState)
+    }
+
+    /// Evicts the cached view, then notifies observers of the resulting `state`.
+    /// Clearing before notifying ensures a preload started re-entrantly from the
+    /// callback is not wiped by this invalidation.
+    func evict(with state: PreloadState, disconnect: Bool = true) {
+        invalidate(disconnect: disconnect)
+        transition(to: state)
+    }
+
     func view(for key: PreloadKey) -> CheckoutWebView? {
-        guard let entry, entry.key == key, !entry.isStale else {
+        guard let cached = entry, cached.key == key, !cached.isStale else {
+            let missed = entry
             invalidate()
+            if let missed {
+                transition(to: missed.isStale ? .expired : .idle)
+            }
             return nil
         }
 
         stopKeepAlive()
         stopExpiryTimer()
-        return entry.view
+        cached.view.hasBeenPresented = true
+        return cached.view
     }
 
     func invalidate(disconnect: Bool = true) {
@@ -85,7 +117,7 @@ final class PreloadCache {
 
     func hasEntry() -> Bool {
         if entry?.isStale == true {
-            invalidate()
+            expire()
             return false
         }
 
@@ -93,7 +125,12 @@ final class PreloadCache {
     }
 
     func hasEntry(for key: PreloadKey) -> Bool {
-        guard let entry, entry.key == key, !entry.isStale else {
+        guard let entry, entry.key == key else {
+            return false
+        }
+
+        if entry.isStale {
+            expire()
             return false
         }
 
@@ -124,7 +161,7 @@ final class PreloadCache {
                     _ = try await view?.evaluateJavaScript("void 0")
                 } catch {
                     OSLogger.shared.debug("Preload keep-alive failed; invalidating preload cache")
-                    self?.invalidate()
+                    self?.keepAliveDidFail()
                 }
             }
         }
@@ -136,11 +173,19 @@ final class PreloadCache {
         stopExpiryTimer()
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor in
-                self?.invalidate()
+                self?.expire()
             }
         }
         timer.tolerance = min(interval / 2, 1)
         expiryTimer = timer
+    }
+
+    func expire() {
+        evict(with: .expired)
+    }
+
+    func keepAliveDidFail() {
+        evict(with: .failed(reason: .keepAliveLost))
     }
 
     private func stopKeepAlive() {
@@ -243,8 +288,9 @@ class CheckoutWebView: WKWebView {
         .on(CheckoutProtocol.ready) { _ in
             ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
         }
-        .on(CheckoutProtocol.complete) { _ in
-            CheckoutWebView.invalidate(disconnect: false)
+        .on(CheckoutProtocol.complete) { [weak self] _ in
+            guard let self, CheckoutWebView.preloadCache.contains(self) else { return }
+            CheckoutWebView.preloadCache.evict(with: .idle, disconnect: false)
         }
         .on(CheckoutProtocol.windowOpen) { request in
             guard let target = request.parsedURL, self.canOpenExternalURL(target) else {
@@ -254,9 +300,11 @@ class CheckoutWebView: WKWebView {
             return .success()
         }
         .on(CheckoutProtocol.error) { [weak self] payload in
-            guard payload.messages.contains(where: { $0.severity == .unrecoverable }) else { return }
-            CheckoutWebView.invalidate()
-            self?.viewDelegate?.checkoutViewDidFailWithError(
+            guard let self, payload.messages.contains(where: { $0.severity == .unrecoverable }) else { return }
+            if CheckoutWebView.preloadCache.contains(self) {
+                CheckoutWebView.preloadCache.evict(with: .idle)
+            }
+            self.viewDelegate?.checkoutViewDidFailWithError(
                 error: .checkoutUnavailable(
                     message: "Embedded checkout reported unrecoverable error.",
                     code: .clientError(code: .unknown)
@@ -332,6 +380,11 @@ class CheckoutWebView: WKWebView {
     weak var viewDelegate: CheckoutWebViewDelegate?
 
     var isPreloadRequest = false
+
+    /// Latches true once the cached view is handed off for presentation. A
+    /// presented view is a live session, so its navigation events must no
+    /// longer drive preload state, even after dismissal or reuse.
+    var hasBeenPresented = false
 
     private var entryPoint: MetaData.EntryPoint?
 
@@ -419,6 +472,26 @@ class CheckoutWebView: WKWebView {
         }
 
         load(request)
+    }
+
+    private var isPreloadBackgrounded: Bool {
+        CheckoutWebView.preloadCache.contains(self) && !hasBeenPresented
+    }
+
+    private func handleCachedViewFailure(_ reason: PreloadState.FailureReason) {
+        guard CheckoutWebView.preloadCache.contains(self) else { return }
+
+        if hasBeenPresented {
+            CheckoutWebView.preloadCache.evict(with: .idle)
+        } else {
+            CheckoutWebView.preloadCache.evict(with: .failed(reason: reason))
+        }
+    }
+
+    private func markPreloadReadyIfActive() {
+        guard isPreloadBackgrounded else { return }
+
+        CheckoutWebView.preloadCache.transition(to: .ready)
     }
 }
 
@@ -532,7 +605,8 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         if statusCode >= 400 {
-            CheckoutWebView.invalidate()
+            handleCachedViewFailure(.httpError(statusCode: statusCode))
+
             OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
 
             switch statusCode {
@@ -566,9 +640,19 @@ extension CheckoutWebView: WKNavigationDelegate {
         let url = LogSafeURL.string(webView.url)
         OSLogger.shared.debug("Failed provisional navigation with error: \(error.localizedDescription) url:\(url)")
         timer = nil
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
+            OSLogger.shared.debug("Ignoring cancelled provisional navigation. code:NSURLErrorCancelled")
+            return
+        }
+
+        handleCachedViewFailure(.navigationFailed)
     }
 
     func webView(_: WKWebView, didFinish _: WKNavigation!) {
+        markPreloadReadyIfActive()
+
         viewDelegate?.checkoutViewDidFinishNavigation()
 
         if let startTime = timer {
@@ -593,7 +677,7 @@ extension CheckoutWebView: WKNavigationDelegate {
             return
         }
 
-        CheckoutWebView.invalidate()
+        handleCachedViewFailure(.navigationFailed)
         viewDelegate?.checkoutViewDidFailWithError(error: .sdkError(underlying: error))
     }
 
