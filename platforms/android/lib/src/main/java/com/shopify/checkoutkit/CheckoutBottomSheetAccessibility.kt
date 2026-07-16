@@ -66,7 +66,7 @@ private fun ComponentActivity.isTouchExplorationEnabled(): Boolean {
 
 @Suppress("DEPRECATION")
 private fun View.announceCheckoutTitleForAccessibility(activity: ComponentActivity) {
-    announceForAccessibility(activity.getString(R.string.checkout_web_view_title))
+    announceForAccessibility(ShopifyCheckoutKit.configuration.resolveCheckoutTitle(activity))
 }
 
 private const val LOG_TAG = "CheckoutBottomSheet"

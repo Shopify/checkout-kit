@@ -231,6 +231,7 @@ public class ShopifyCheckout @MainThread internal constructor(
         }
 
         findViewById<TextView>(R.id.checkoutKitHeaderTitle).apply {
+            text = ShopifyCheckoutKit.configuration.resolveCheckoutTitle(context)
             setTextColor(headerFontColor)
             (layoutParams as? Toolbar.LayoutParams)?.let { params ->
                 params.topMargin = 0
