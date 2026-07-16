@@ -65,6 +65,7 @@ class CheckoutBottomSheetTest {
             it.preloading = configuration.preloading
             it.platform = configuration.platform
             it.logLevel = configuration.logLevel
+            it.title = configuration.title
         }
     }
 
@@ -689,6 +690,37 @@ class CheckoutBottomSheetTest {
         assertThat(title.currentTextColor).isEqualTo(customColors.headerFont.getValue(activity))
         assertThat(title.textSize).isEqualTo(activity.resources.getDimension(R.dimen.checkout_sheet_title_text_size))
         assertThat(titleLayoutParams.gravity and Gravity.CENTER).isEqualTo(Gravity.CENTER)
+    }
+
+    @Test
+    fun `uses default checkout title when none configured`() {
+        val sheet = presentBottomSheet()
+
+        val title = sheet.findViewById<TextView>(R.id.checkoutKitHeaderTitle)!!
+
+        assertThat(title.text).isEqualTo(activity.getString(R.string.checkout_web_view_title))
+    }
+
+    @Test
+    fun `applies custom title to header when configured`() {
+        ShopifyCheckoutKit.configure { it.title = "Custom Title" }
+
+        val sheet = presentBottomSheet()
+
+        val title = sheet.findViewById<TextView>(R.id.checkoutKitHeaderTitle)!!
+
+        assertThat(title.text).isEqualTo("Custom Title")
+    }
+
+    @Test
+    fun `resolveCheckoutTitle returns configured title or falls back to default string`() {
+        assertThat(ShopifyCheckoutKit.getConfiguration().resolveCheckoutTitle(activity))
+            .isEqualTo(activity.getString(R.string.checkout_web_view_title))
+
+        ShopifyCheckoutKit.configure { it.title = "Custom Title" }
+
+        assertThat(ShopifyCheckoutKit.getConfiguration().resolveCheckoutTitle(activity))
+            .isEqualTo("Custom Title")
     }
 
     @Test

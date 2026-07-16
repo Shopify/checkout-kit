@@ -35,6 +35,7 @@ public class InteropTest {
             config.setPreloading(initialConfiguration.getPreloading());
             config.setPlatform(initialConfiguration.getPlatform());
             config.setLogLevel(initialConfiguration.getLogLevel());
+            config.setTitle(initialConfiguration.getTitle());
         });
     }
 
@@ -86,6 +87,17 @@ public class InteropTest {
         );
 
         assertThat(appearance).isNotEqualTo(new CheckoutAppearance.Storefront());
+    }
+
+    @Test
+    public void canConfigureTitle() {
+        ShopifyCheckoutKit.configure(configuration -> {
+            configuration.setTitle("Java Title");
+        });
+
+        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+
+        assertThat(configuration.getTitle()).isEqualTo("Java Title");
     }
 
     @Test
