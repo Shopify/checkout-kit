@@ -5,9 +5,11 @@ require "tempfile"
 require_relative "common"
 require_relative "bitrise_client"
 require_relative "bitrise_auth"
+require_relative "build_state"
 
 WAIT_POLL_SECONDS = 30
 WAIT_TIMEOUT_SECONDS = 1800
+BITRISE_API_RETRIES = 3
 
 def abort_with(message)
   CheckoutKitTophat.abort_with(message)
@@ -39,71 +41,247 @@ def recipes_for_option(option)
   option.fetch("target").fetch("recipes").select { |recipe| recipe.fetch("platform") == option.fetch("platform") }
 end
 
-def workflow_state(client, branch, workflow, artifact_names)
-  build = client.latest_build(branch: branch, workflow: workflow)
-  return :missing unless build
-  return :running if build.fetch("status") == 0
-  return :failed unless build.fetch("status") == 1
+def pr_metadata(pr_number)
+  data = JSON.parse(capture("gh", "pr", "view", pr_number.to_s, "--json", "headRefName,headRefOid,isDraft"))
+  {
+    "branch" => data.fetch("headRefName"),
+    "sha" => data.fetch("headRefOid"),
+    "draft" => data.fetch("isDraft")
+  }
+end
+
+def commits_behind_head(build_sha, head_sha)
+  return nil if build_sha.nil? || build_sha.empty? || build_sha == head_sha
+
+  stdout, status = Open3.capture2("gh", "api", "repos/{owner}/{repo}/compare/#{build_sha}...#{head_sha}", "--jq", ".ahead_by", err: File::NULL)
+  return nil unless status.success?
+
+  Integer(stdout.strip)
+rescue ArgumentError
+  nil
+end
+
+def artifacts_ready?(client, build, artifact_names)
+  return false unless build.fetch("status") == TophatBuildState::SUCCESS_STATUS
 
   titles = client.artifact_titles(build.fetch("slug"))
-  artifact_names.all? { |name| titles.include?(name) } ? :ready : :missing
+  artifact_names.all? { |name| titles.include?(name) }
 end
 
-def combine_states(states)
-  return :ready if states.all? { |state| state == :ready }
-  return :running if states.include?(:running)
-  return :failed if states.include?(:failed)
-  :missing
+def latest_installable(client, builds, artifact_names)
+  builds.find { |build| artifacts_ready?(client, build, artifact_names) }
 end
 
-def option_state(client, branch, option)
-  states = recipes_for_option(option).group_by { |recipe| recipe.fetch("workflow") }.map do |workflow, recipes|
-    workflow_state(client, branch, workflow, recipes.map { |recipe| recipe.fetch("artifact_name") })
+def evaluate_option(client, option, pr)
+  recipes_for_option(option).group_by { |recipe| recipe.fetch("workflow") }.map do |workflow, recipes|
+    artifact_names = recipes.map { |recipe| recipe.fetch("artifact_name") }
+    builds = client.builds(branch: pr.fetch("branch"), workflow: workflow, limit: 20)
+    head = TophatBuildState.head_build(builds, pr.fetch("sha"))
+    head_ready = head ? artifacts_ready?(client, head, artifact_names) : false
+    TophatBuildState::Evaluation.new(
+      workflow: workflow,
+      head: head,
+      head_ready: head_ready,
+      current: builds.first,
+      installable: head_ready ? head : latest_installable(client, builds, artifact_names)
+    )
   end
-  combine_states(states)
 end
 
-def evaluate_options(client, branch, options)
-  options.map { |option| {option: option, state: option_state(client, branch, option)} }
+def installable_build(evaluations)
+  evaluations.map(&:installable).compact.first
 end
 
-def wait_for_ready(client, branch, options)
-  deadline = Time.now + WAIT_TIMEOUT_SECONDS
-  loop do
-    evaluated = evaluate_options(client, branch, options)
-    running = evaluated.select { |entry| entry.fetch(:state) == :running }
-    return evaluated if running.empty? || Time.now >= deadline
+def installable_summary(evaluations, pr)
+  build = installable_build(evaluations)
+  behind = commits_behind_head(build.fetch("commit_hash"), pr.fetch("sha"))
+  TophatBuildState.describe_build(build, now: Time.now, behind_by: behind)
+end
 
-    puts "==> Waiting for Bitrise builds to finish: #{running.map { |entry| entry.fetch(:option).fetch("label") }.join(", ")}"
+def announce_state(state, summary, pr)
+  case state
+  when :head_running
+    puts "🟡 A HEAD build is already in progress."
+  when :stale_ready
+    puts "🟡 Newest build is BEHIND HEAD — built #{summary}"
+  when :stale_running
+    puts "🟡 A build is in progress, but for an older commit than HEAD."
+  when :failed
+    puts "🔴 The most recent build failed, so there is no HEAD artifact."
+  when :none
+    if pr.fetch("draft")
+      puts "🟡 No Bitrise builds found. Draft PRs do not automatically trigger CI."
+    else
+      puts "🟡 No Bitrise builds found for this branch yet."
+    end
+  end
+end
+
+def menu_label(choice, evaluations, summary)
+  case choice
+  when :wait_head
+    running = evaluations.map(&:head).compact.find { |build| build.fetch("status") == TophatBuildState::RUNNING_STATUS }
+    number = running && running["build_number"]
+    number ? "Wait for the in-progress build ##{number}" : "Wait for the in-progress HEAD build"
+  when :trigger_head
+    "Trigger HEAD build + wait (~6 min)"
+  when :install_current
+    "Install the last successful build now (#{summary})"
+  when :cancel
+    "Cancel"
+  end
+end
+
+def choose_action(option, state, evaluations, summary, wait:)
+  choices = TophatBuildState.menu_choices(
+    state: state,
+    installable_available: TophatBuildState.installable_available?(evaluations)
+  )
+  return choices.first if wait
+
+  lines = choices.each_with_index.map { |choice, index| "#{index}\t#{menu_label(choice, evaluations, summary)}" }
+  selection = fzf_select(lines, prompt: "#{option.fetch("label")} not built at HEAD — choose")
+  choices.fetch(Integer(selection.split("\t", 2).first))
+end
+
+def bitrise_build_url(slug)
+  "https://app.bitrise.io/build/#{slug}"
+end
+
+def format_elapsed(seconds)
+  minutes, secs = seconds.divmod(60)
+  minutes.positive? ? "#{minutes}m#{secs.to_s.rjust(2, "0")}s" : "#{secs}s"
+end
+
+def trigger_head_builds(client, option, pr)
+  workflows = recipes_for_option(option).map { |recipe| recipe.fetch("workflow") }.uniq
+  workflows.map do |workflow|
+    response = client.trigger_build(branch: pr.fetch("branch"), commit_hash: pr.fetch("sha"), workflow: workflow)
+    slug = response.fetch("build_slug")
+    number = response["build_number"]
+    puts "==> Triggered #{number ? "build ##{number}" : "build"} for #{TophatBuildState.short_sha(pr.fetch("sha"))} (#{workflow})"
+    puts "    #{response["build_url"] || bitrise_build_url(slug)}"
+    slug
+  end
+end
+
+def wait_for_builds(client, slugs)
+  started = Time.now
+  deadline = started + WAIT_TIMEOUT_SECONDS
+  pending = slugs.dup
+  waiting_shown = false
+  until pending.empty?
+    builds = pending.map { |slug| [slug, client.build(slug)] }
+    builds.each do |slug, build|
+      status = build.fetch("status")
+      next if status == TophatBuildState::RUNNING_STATUS
+
+      unless status == TophatBuildState::SUCCESS_STATUS
+        puts if waiting_shown && $stdout.tty?
+        abort_with("The Bitrise build finished unsuccessfully (status #{status}). Check the build in Bitrise and re-run it.")
+      end
+      pending.delete(slug)
+    end
+    break if pending.empty?
+    if Time.now >= deadline
+      puts if waiting_shown && $stdout.tty?
+      abort_with("Timed out after #{WAIT_TIMEOUT_SECONDS / 60} minutes waiting for the Bitrise build.")
+    end
+
+    print_waiting(started, builds.select { |slug, _| pending.include?(slug) }.map(&:last))
+    waiting_shown = true
     sleep WAIT_POLL_SECONDS
   end
+  puts if waiting_shown && $stdout.tty?
+  puts "==> Build finished ✓"
 end
 
-def unavailable_message(evaluated, pr_number, branch)
-  states = evaluated.map { |entry| entry.fetch(:state) }
-  guidance =
-    if states.include?(:running)
-      "Bitrise is still building. Re-run once it finishes, or pass --wait to block until artifacts are ready."
-    elsif states.all? { |state| state == :missing }
-      "No Bitrise builds found for this branch. Draft PRs do not trigger the pipeline; mark the PR ready for review or push a commit to start a build."
+def build_phase(build)
+  return "On hold (waiting for a runner)" if build["is_on_hold"]
+  return "Queued" unless build["started_on_worker_at"]
+
+  machine = build["machine_type_id"]
+  queued = queued_seconds(build)
+  suffix = machine ? " on #{machine}" : ""
+  queued ? "Running#{suffix} (queued #{format_elapsed(queued)})" : "Running#{suffix}"
+end
+
+def queued_seconds(build)
+  started = build["started_on_worker_at"]
+  triggered = build["triggered_at"]
+  return nil unless started && triggered
+
+  (Time.parse(started) - Time.parse(triggered)).to_i
+rescue ArgumentError
+  nil
+end
+
+def print_waiting(started, builds)
+  elapsed = format_elapsed((Time.now - started).to_i)
+  descriptor =
+    if builds.length == 1
+      "Build ##{builds.first["build_number"]} · #{build_phase(builds.first)}"
     else
-      "The build workflow(s) failed, so no artifact was produced. Check the pipeline in Bitrise and re-run it."
+      "#{builds.length} builds · #{builds.map { |build| build_phase(build) }.uniq.join(", ")}"
     end
-  "No installable build artifacts for PR ##{pr_number} (#{branch}).\n#{guidance}"
+  message = "==> #{descriptor} · #{elapsed} elapsed"
+  if $stdout.tty?
+    print "\r#{message} "
+    $stdout.flush
+  else
+    puts message
+  end
 end
 
-def filter_available_options(options, manifest, branch, pr_number, wait:)
-  app_slug = manifest.fetch("app_slug")
-  client = BitriseClient.new(token: BitriseAuth.resolve_token(app_slug), app_slug: app_slug)
-  evaluated = evaluate_options(client, branch, options)
-  evaluated = wait_for_ready(client, branch, options) if wait && evaluated.any? { |entry| entry.fetch(:state) == :running }
-  ready = evaluated.select { |entry| entry.fetch(:state) == :ready }.map { |entry| entry.fetch(:option) }
-  return ready unless ready.empty?
+def reverify_head!(client, option, pr)
+  state = TophatBuildState.combine(evaluate_option(client, option, pr))
+  return if state == :head_ready
 
-  abort_with(unavailable_message(evaluated, pr_number, branch))
-rescue => error
-  warn "Could not verify Bitrise artifacts (#{error.message}). Showing all targets."
-  options
+  abort_with("The build finished but produced no HEAD artifact for #{option.fetch("label")}. Check the Bitrise build logs.")
+end
+
+def ensure_installable(option, manifest, pr, wait:)
+  app_slug = manifest.fetch("app_slug")
+  client = BitriseClient.new(token: BitriseAuth.resolve_token(app_slug), app_slug: app_slug, retries: BITRISE_API_RETRIES)
+
+  puts "==> Checking Bitrise: #{option.fetch("label")} @ HEAD #{TophatBuildState.short_sha(pr.fetch("sha"))}…"
+  evaluations = verify_bitrise_state(client, option, pr)
+  state = TophatBuildState.combine(evaluations)
+
+  if state == :head_ready
+    puts "🟢 HEAD build is ready."
+    return
+  end
+
+  show_summary = state == :stale_ready || (!wait && TophatBuildState.installable_available?(evaluations))
+  summary = installable_summary(evaluations, pr) if show_summary
+  announce_state(state, summary, pr)
+  case choose_action(option, state, evaluations, summary, wait: wait)
+  when :wait_head
+    running = TophatBuildState.running_head_builds(evaluations)
+    running.each { |build| puts "==> Following build ##{build["build_number"]}: #{bitrise_build_url(build.fetch("slug"))}" }
+    await_head_build(client, option, pr) { running.map { |build| build.fetch("slug") } }
+  when :trigger_head
+    await_head_build(client, option, pr) { trigger_head_builds(client, option, pr) }
+  when :install_current
+    puts "==> Installing the last successful build via Tophat's branch provider."
+  when :cancel
+    puts "Cancelled."
+    exit 0
+  end
+end
+
+def verify_bitrise_state(client, option, pr)
+  evaluate_option(client, option, pr)
+rescue StandardError => error
+  abort_with("Could not verify Bitrise artifacts: #{error.message}\nRe-run once Bitrise is reachable, or set TOPHAT_SKIP_ARTIFACT_CHECK=1 to bypass this check.")
+end
+
+def await_head_build(client, option, pr)
+  wait_for_builds(client, yield)
+  reverify_head!(client, option, pr)
+rescue StandardError => error
+  abort_with("Lost contact with Bitrise while waiting for the build: #{error.message}\nCheck the build in Bitrise and re-run.")
 end
 
 def resolve_pr_number(argument)
@@ -113,9 +291,10 @@ def resolve_pr_number(argument)
     return Integer(argument)
   end
 
-  prs = JSON.parse(capture("gh", "pr", "list", "--json", "number,title,author,headRefName", "--limit", "50"))
+  prs = JSON.parse(capture("gh", "pr", "list", "--json", "number,title,author,headRefName,updatedAt", "--limit", "50"))
   abort_with("No open pull requests found.") if prs.empty?
 
+  prs.sort_by! { |pr| pr.fetch("updatedAt") }.reverse!
   lines = prs.map do |pr|
     number = pr.fetch("number")
     display = "##{number}  #{pr.fetch("title")}  @#{pr.dig("author", "login")}  #{pr.fetch("headRefName")}"
@@ -123,10 +302,6 @@ def resolve_pr_number(argument)
   end
   selection = fzf_select(lines, prompt: "Pull request", preview: "gh pr view {1}")
   Integer(selection.split("\t", 2).first)
-end
-
-def branch_for(pr_number)
-  capture("gh", "pr", "view", pr_number.to_s, "--json", "headRefName", "-q", ".headRefName").strip
 end
 
 def select_option(options, requested_id)
@@ -234,13 +409,20 @@ def print_help(manifest)
 
     Install a pull request build to a device via Tophat.
 
+    After you pick a target, dev tophat checks that its newest Bitrise build was
+    built at the PR's HEAD commit. If it was not, it shows what CI currently has
+    and lets you trigger a HEAD build and wait (~6 min), wait for a HEAD build
+    that is already running, or knowingly install the current (older) build.
+
     Arguments:
       <pr-number-or-url>  Optional pull request number or GitHub pull request URL.
                           If omitted, choose from open pull requests with fzf.
       <target>            Optional target ID. If omitted, choose with fzf.
 
     Options:
-      --wait              Wait for in-progress Bitrise builds to finish, then install.
+      --wait              Non-interactively ensure the HEAD build: wait for a HEAD
+                          build that is already running, or trigger one and wait,
+                          then install. Skips the menu.
       --clear-token       Remove dev tophat's saved Bitrise token from your keychain
                           (does not change Tophat's own token) and exit.
       -h, --help          Show this help.
@@ -252,11 +434,13 @@ def print_help(manifest)
       dev tophat
       dev tophat 382
       dev tophat 382 react-native-ios
+      dev tophat --wait 382
       dev tophat https://github.com/Shopify/checkout-kit/pull/382
 
     Environment:
       TOPHAT_DRY_RUN=1              Print the generated Tophat install config without installing.
-      TOPHAT_SKIP_ARTIFACT_CHECK=1 Skip filtering targets by available Bitrise artifacts.
+      TOPHAT_SKIP_ARTIFACT_CHECK=1 Skip the HEAD-build verification and install whatever
+                                   the branch provider resolves.
   HELP
 end
 
@@ -276,20 +460,21 @@ def main
     exit 0
   end
 
-  wait_for_builds = extract_flag("--wait")
+  wait_flag = extract_flag("--wait")
 
   CheckoutKitTophat.require_tophat!
 
   pr_number = resolve_pr_number(ARGV[0])
-  branch = branch_for(pr_number)
+  pr = pr_metadata(pr_number)
   options = CheckoutKitTophat.install_options(manifest)
-  options = filter_available_options(options, manifest, branch, pr_number, wait: wait_for_builds) unless skip_artifact_check?
   option = select_option(options, ARGV[1])
+  ensure_installable(option, manifest, pr, wait: wait_flag) unless skip_artifact_check?
+
   device = select_device(option.fetch("platform"))
   recipe = recipe_for(option.fetch("target"), device)
-  config = CheckoutKitTophat.install_config(recipe, device, manifest.fetch("app_slug"), branch)
+  config = CheckoutKitTophat.install_config(recipe, device, manifest.fetch("app_slug"), pr.fetch("branch"))
 
-  puts "==> Installing #{option.fetch("label")} from PR ##{pr_number} (#{branch})"
+  puts "==> Installing #{option.fetch("label")} from PR ##{pr_number} (#{pr.fetch("branch")})"
   puts "    Device: #{device.fetch("name")} #{device.fetch("runtimeVersion")} (#{device.fetch("type")})"
   puts "    Artifact: #{recipe.fetch("artifact_name")}"
 
