@@ -1,0 +1,30 @@
+{
+  "app_slug": "f51f9054-053e-40f1-81e9-ae727567ae76",
+  "default_branch": "main",
+  "targets": [
+    {
+      "id": "react-native",
+      "label": "React Native",
+      "recipes": [
+        {
+          "platform": "ios",
+          "destination": "device",
+          "workflow": "e2e-build-react-native-ios",
+          "artifact_name": "CheckoutKitReactNativeDemo-Provisioned.ipa"
+        },
+        {
+          "platform": "ios",
+          "destination": "simulator",
+          "workflow": "e2e-build-react-native-ios",
+          "artifact_name": "CheckoutKitReactNativeDemo-Simulator.zip"
+        },
+        {
+          "platform": "android",
+          "destination": "any",
+          "workflow": "e2e-build-react-native-android",
+          "artifact_name": "app-e2e.apk"
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,7 @@ up:
       - mint
       - xcbeautify
       - jq
+      - fzf
       - swiftlint
       - swiftformat
       - sccache
@@ -32,6 +33,10 @@ up:
       name: Run Checkout Kit workspace setup
       met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts
       meet: ./scripts/setup_dev_workspace --skip-optional-prompts
+  - tophat_mobile
+  - run_always:
+      name: Configure Tophat Quick Launch items
+      run: ruby scripts/tophat/configure_quick_launch
 
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
@@ -74,6 +79,11 @@ commands:
   copy-env:
     desc: Copy the root .env into the current worktree so `dev up` can regenerate sample config
     run: ./scripts/copy_worktree_env
+
+  tophat:
+    desc: "Install a PR's build to a device via Tophat. Usage: dev tophat [<pr-number-or-url>] [<target>]"
+    syntax: "[<pr-number-or-url>] [<target>]"
+    run: ruby scripts/tophat/dev_tophat "$@"
 
   format:
     desc: Auto-format and apply safe lint autocorrections across supported workspaces

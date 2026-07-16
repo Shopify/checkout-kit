@@ -66,6 +66,51 @@ React Native sample apps can be run against local in-repo SDK sources with
 `dev rn ios --local` or `dev rn android --local`. The Web sample accepts a
 checkout URL directly and does not use the shared storefront credential files.
 
+### Testing PR builds with Tophat
+
+[Tophat](https://github.com/Shopify/tophat) is a macOS menu-bar app that
+installs testable builds onto a simulator, emulator, or connected device that
+your Mac controls. Checkout Kit's E2E pipeline (Bitrise) produces the
+installable artifacts, and Tophat downloads them. Because Tophat installs onto
+the device your Mac controls, install links must be opened on that Mac —
+scanning a QR code with a phone does not work with Tophat.
+
+**First-time setup.** `dev up` installs Tophat and seeds Quick Launch entries.
+Tophat needs a Bitrise Personal Access Token to download build artifacts:
+
+1. Create a PAT at https://app.bitrise.io/me/account/security
+2. Add it in Tophat -> Settings -> Extensions -> Bitrise
+
+There are three ways to install a build:
+
+1. **Quick Launch (latest `main`)** — `dev up` seeds a `Checkout Kit (React
+   Native)` entry (from `scripts/tophat/targets.json`) that installs the latest
+   successful `main` build. Select a device in Tophat's menu, then pick the
+   entry.
+2. **Per-PR comment** — each PR gets a sticky comment with an `Install with
+   Tophat` link per SDK target for that PR's branch. Open Tophat, select your
+   target device, then click the link on the Mac running Tophat.
+3. **`dev tophat` command** — installs a specific PR's build directly to a
+   device, targeting the device explicitly so you do not need to pre-select one
+   in Tophat:
+
+   ```bash
+   dev tophat                                              # pick a PR, then what to test, then a device
+   dev tophat 382                                          # PR 382
+   dev tophat 382 react-native-ios                         # skip the "what to test" prompt
+   dev tophat https://github.com/Shopify/checkout-kit/pull/382
+   ```
+
+   It resolves the PR's branch, asks what to test (e.g. React Native iOS /
+   Android), reuses a running device that matches or lets you pick one with
+   `fzf`, then installs the matching artifact. Set `TOPHAT_DRY_RUN=1` to print
+   the generated install config without installing.
+
+**Adding a new SDK target.** Add an entry to `scripts/tophat/targets.json` with
+an `id`, `label`, and `recipes` (each a `platform`, `destination`, Bitrise
+`workflow`, and `artifact_name`). It automatically flows into the Quick Launch
+entries, the per-PR comment table, and `dev tophat`.
+
 Sample app storefront configuration is generated from the repo-root `.env`.
 Shopify employees get this through `dev up`. External contributors can copy
 `.env.example` to `.env`, fill in local storefront values, then run

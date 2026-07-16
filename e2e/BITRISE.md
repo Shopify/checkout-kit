@@ -54,7 +54,7 @@ The GitHub checks are kept non-blocking while the suite stabilizes; they become 
 
 ## Duplicate PR build cancellation
 
-Use Bitrise native Rolling builds instead of a repo-owned cancellation script. In Bitrise, open **Project settings > Builds > Build strategy**, enable **Abort builds triggered by pull requests**, and enable **Abort running builds** so duplicate in-progress PR pipelines are cancelled when a newer build starts.
+Duplicate in-progress PR pipelines are cancelled by Bitrise native Rolling builds rather than a repo-owned cancellation script. Under **Project settings > Builds > Build strategy**, **Abort builds triggered by pull requests** and **Abort running builds** are enabled, so a newer PR build cancels the older one.
 
 ## Required app environment variables
 
@@ -121,7 +121,7 @@ The `e2e-report` workflow creates commit statuses, Check Runs, and sticky PR com
 
 The Bitrise project has **Project settings > Repository > Extend GitHub App permissions to builds** enabled. Bitrise exposes the build-scoped GitHub App token as `GIT_HTTP_PASSWORD`; the report workflow maps it to `GITHUB_TOKEN` before running `e2e/scripts/report_e2e_results`.
 
-Green runs update statuses and Check Runs without creating new PR comments. Failing runs update a sticky PR failure comment with direct BrowserStack evidence links.
+Every run maintains a single sticky PR comment (create-or-update via a marker). The comment always includes an "Install with Tophat" link per SDK target and the E2E results table; failing runs add direct BrowserStack evidence links. The install links and Quick Launch entries are driven by `scripts/tophat/targets.json`; see the Tophat section in `.github/CONTRIBUTING.md`.
 
 ## Caching
 

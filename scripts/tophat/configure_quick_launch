@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "tempfile"
+require_relative "common"
+
+def add_quick_launch_entry(entry)
+  Tempfile.create(["tophat-quick-launch", ".json"]) do |file|
+    file.write(JSON.generate(entry))
+    file.flush
+    system(CheckoutKitTophat::TOPHATCTL, "apps", "add", file.path) || CheckoutKitTophat.abort_with("Failed to configure Tophat Quick Launch entry #{entry.fetch("id")}")
+  end
+end
+
+CheckoutKitTophat.require_tophat!
+manifest = CheckoutKitTophat.load_manifest
+
+manifest.fetch("targets").each do |target|
+  entry = CheckoutKitTophat.quick_launch_entry(target, manifest.fetch("app_slug"), manifest.fetch("default_branch"))
+  add_quick_launch_entry(entry)
+end
+
+puts <<~REMINDER
+
+  ==> Tophat Quick Launch items configured for Checkout Kit.
+      Installs need a Bitrise Personal Access Token:
+        1. Create a PAT at #{CheckoutKitTophat::BITRISE_PAT_URL}
+        2. Add it to Tophat -> Settings -> Extensions -> Bitrise
+REMINDER
