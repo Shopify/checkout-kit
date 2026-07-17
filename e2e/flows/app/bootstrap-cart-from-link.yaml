@@ -13,7 +13,12 @@ appId: ${APP_ID}
 # Reset app data before testing the deep-link cold-start path. The app is
 # stopped so openLink is the launch that seeds the cart.
 - stopApp
-- openLink: "${CART_BOOTSTRAP_BASE_LINK}&buyerIdentityMode=${BUYER_IDENTITY_MODE}"
+- openLink: "${CART_BOOTSTRAP_LINK}"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible:

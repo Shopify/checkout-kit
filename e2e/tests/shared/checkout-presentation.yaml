@@ -1,0 +1,5 @@
+appId: ${APP_ID}
+name: Checkout presentation
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- runFlow: ../../flows/checkout/present.yaml

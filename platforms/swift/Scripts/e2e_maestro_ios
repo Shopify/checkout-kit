@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+SAMPLES_DIR="$REPO_ROOT/platforms/swift/Samples"
+APP_NAME="CheckoutKitSwiftDemo"
+APP_ID="com.shopify.checkoutkit.swiftdemo"
+CART_BOOTSTRAP_LINK="${APP_ID}://cart?productIndex=0&quantity=1"
+DERIVED_DATA="${TMPDIR:-/tmp}/checkout-kit-swift-maestro-derived-data"
+FLOW="$REPO_ROOT/e2e/tests/shared/checkout-presentation.yaml"
+
+usage() {
+  cat <<'EOF' >&2
+Usage: dev e2e swift-ios
+
+Builds and installs the Swift iOS sample with cart bootstrap enabled,
+then verifies that a bootstrapped cart can present checkout through Maestro.
+EOF
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "$1 is required to run Swift iOS E2E tests." >&2
+    exit 1
+  fi
+}
+
+resolve_simulator() {
+  if [[ -n "${CURRENT_SIMULATOR_UUID:-}" ]]; then
+    printf '%s\n' "$CURRENT_SIMULATOR_UUID"
+    return
+  fi
+
+  local simulators
+  local simulator_count
+
+  simulators="$(
+    xcrun simctl list devices booted --json |
+      jq -r '.devices[][] | select(.state == "Booted" and .isAvailable != false) | .udid'
+  )"
+  simulator_count="$(printf '%s\n' "$simulators" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+  if [[ "$simulator_count" != "1" ]]; then
+    echo "Expected one booted iOS simulator, found $simulator_count. Set CURRENT_SIMULATOR_UUID to select one." >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$simulators"
+}
+
+if [[ $# -gt 0 ]]; then
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+require_command jq
+require_command maestro
+require_command xcodebuild
+require_command xcrun
+
+if ! "$REPO_ROOT/scripts/setup_storefront_env" --check; then
+  echo "Run dev up from the repo root to sync sample app storefront configuration." >&2
+  exit 1
+fi
+
+SIMULATOR_UUID="$(resolve_simulator)"
+"$SCRIPT_DIR/generate_xcode_projects"
+
+build_command=(
+  xcodebuild build
+  -workspace "$SAMPLES_DIR/Samples.xcworkspace"
+  -scheme "$APP_NAME"
+  -configuration Debug
+  -sdk iphonesimulator
+  -destination "id=$SIMULATOR_UUID"
+  -derivedDataPath "$DERIVED_DATA"
+  -skipPackagePluginValidation
+  -disableAutomaticPackageResolution
+  CART_BOOTSTRAP_ENABLED=YES
+)
+
+if command -v xcbeautify >/dev/null 2>&1; then
+  "${build_command[@]}" | xcbeautify
+else
+  "${build_command[@]}"
+fi
+
+APP_PATH="$DERIVED_DATA/Build/Products/Debug-iphonesimulator/${APP_NAME}.app"
+if [[ ! -d "$APP_PATH" ]]; then
+  echo "Swift iOS build did not create $APP_PATH" >&2
+  exit 1
+fi
+
+xcrun simctl install "$SIMULATOR_UUID" "$APP_PATH"
+
+maestro --platform ios --udid "$SIMULATOR_UUID" test \
+  --config "$REPO_ROOT/e2e/config.yaml" \
+  -e "APP_ID=$APP_ID" \
+  -e "CART_BOOTSTRAP_LINK=$CART_BOOTSTRAP_LINK" \
+  "$FLOW"

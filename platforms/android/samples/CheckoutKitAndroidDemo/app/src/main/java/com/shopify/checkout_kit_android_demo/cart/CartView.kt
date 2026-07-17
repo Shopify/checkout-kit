@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -49,6 +50,7 @@ import com.shopify.checkout_kit_android_demo.common.components.MoneyText
 import com.shopify.checkout_kit_android_demo.common.components.ProgressIndicator
 import com.shopify.checkout_kit_android_demo.common.ui.theme.horizontalPadding
 import com.shopify.checkout_kit_android_demo.common.ui.theme.verticalPadding
+import com.shopify.checkout_kit_android_demo.e2e.E2ETestIds
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutPresentationMode
 
 @Composable
@@ -89,7 +91,11 @@ fun CartView(
                     it.title to it.quantity
                 }
 
-                Column(modifier = Modifier.padding(top = 4.dp)) {
+                Column(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .testTag(E2ETestIds.CART_CHECKOUT_READY)
+                ) {
                     CartLines(
                         lines = state.cartLines,
                         loading = loading,
@@ -240,6 +246,7 @@ private fun CheckoutButton(
         Button(
             shape = RectangleShape,
             onClick = onClick,
+            modifier = Modifier.testTag(E2ETestIds.CHECKOUT_BUTTON),
         ) {
             Column {
                 Text(

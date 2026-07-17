@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+APP_ID="com.shopify.checkoutkit.androiddemo"
+CART_BOOTSTRAP_LINK="${APP_ID}://cart?productIndex=0&quantity=1"
+FLOW="$REPO_ROOT/e2e/tests/shared/checkout-presentation.yaml"
+
+usage() {
+  cat <<'EOF' >&2
+Usage: dev e2e kotlin-android
+
+Builds and installs the Kotlin Android sample with cart bootstrap enabled,
+then verifies that a bootstrapped cart can present checkout through Maestro.
+EOF
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "$1 is required to run Kotlin Android E2E tests." >&2
+    exit 1
+  fi
+}
+
+resolve_device() {
+  if [[ -n "${ANDROID_SERIAL:-}" ]]; then
+    printf '%s\n' "$ANDROID_SERIAL"
+    return
+  fi
+
+  local devices
+  local device_count
+
+  devices="$(adb devices | awk 'NR > 1 && $2 == "device" { print $1 }')"
+  device_count="$(printf '%s\n' "$devices" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+  if [[ "$device_count" != "1" ]]; then
+    echo "Expected one connected Android device, found $device_count. Set ANDROID_SERIAL to select one." >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$devices"
+}
+
+if [[ $# -gt 0 ]]; then
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+require_command adb
+require_command maestro
+
+if ! "$REPO_ROOT/scripts/setup_storefront_env" --check; then
+  echo "Run dev up from the repo root to sync sample app storefront configuration." >&2
+  exit 1
+fi
+
+ANDROID_SERIAL="$(resolve_device)"
+export ANDROID_SERIAL
+
+cd "$REPO_ROOT"
+CART_BOOTSTRAP_ENABLED=true /opt/dev/bin/dev android start
+
+maestro --platform android --udid "$ANDROID_SERIAL" test \
+  --config "$REPO_ROOT/e2e/config.yaml" \
+  -e "APP_ID=$APP_ID" \
+  -e "CART_BOOTSTRAP_LINK=$CART_BOOTSTRAP_LINK" \
+  "$FLOW"

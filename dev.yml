@@ -80,6 +80,19 @@ commands:
     desc: Copy the root .env into the current worktree so `dev up` can regenerate sample config
     run: ./scripts/copy_worktree_env
 
+  e2e:
+    desc: "Run local Maestro end-to-end flows"
+    run: |
+      echo "Usage: dev e2e {swift-ios|kotlin-android}" >&2
+      exit 1
+    subcommands:
+      swift-ios:
+        desc: Build, install, and run the Swift iOS checkout presentation flow
+        run: platforms/swift/Scripts/e2e_maestro_ios "$@"
+      kotlin-android:
+        desc: Build, install, and run the Kotlin Android checkout presentation flow
+        run: platforms/android/scripts/e2e_maestro_android "$@"
+
   tophat:
     desc: "Install a PR's build to a device via Tophat. Usage: dev tophat [<pr-number-or-url>] [<target>]"
     syntax: "[<pr-number-or-url>] [<target>]"

@@ -37,6 +37,7 @@ struct CartView: View {
                     }
                     .padding(.bottom, 130)
                 }
+                .accessibilityIdentifier(E2ETestIds.cartCheckoutReady)
 
                 VStack(spacing: DesignSystem.buttonSpacing) {
                     if let cartID = cartManager.cart?.id {
@@ -89,7 +90,7 @@ struct CartView: View {
                     )
                     .disabled(isBusy)
                     .foregroundColor(.white)
-                    .accessibilityIdentifier("checkoutSheetButton")
+                    .accessibilityIdentifier(E2ETestIds.checkoutButton)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
