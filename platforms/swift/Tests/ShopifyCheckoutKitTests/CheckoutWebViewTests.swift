@@ -514,6 +514,81 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertNil(mockDelegate.errorReceived)
     }
 
+    func testWebViewRetriesRetryableInitialProvisionalFailureOnce() throws {
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: nil)
+        view.load(checkout: url)
+        let initialNavigation = try XCTUnwrap(view.checkoutNavigation)
+
+        view.webView(view, didFailProvisionalNavigation: initialNavigation, withError: error)
+
+        let retryNavigation = try XCTUnwrap(view.checkoutNavigation)
+        XCTAssertFalse(retryNavigation === initialNavigation)
+        XCTAssertNil(mockDelegate.errorReceived)
+
+        let didFailWithErrorExpectation = expectation(description: "checkoutViewDidFailWithError was called")
+        mockDelegate.didFailWithErrorExpectation = didFailWithErrorExpectation
+
+        view.webView(view, didFailProvisionalNavigation: retryNavigation, withError: error)
+
+        wait(for: [didFailWithErrorExpectation], timeout: 5)
+    }
+
+    func testWebViewFailsWhenRetryLoadDoesNotReturnNavigation() throws {
+        let retryView = RetryLoadReturningNilWebView()
+        retryView.viewDelegate = mockDelegate
+        retryView.load(checkout: url)
+        let initialNavigation = try XCTUnwrap(retryView.checkoutNavigation)
+        retryView.shouldReturnNil = true
+
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: nil)
+        let didFailWithErrorExpectation = expectation(description: "checkoutViewDidFailWithError was called")
+        mockDelegate.didFailWithErrorExpectation = didFailWithErrorExpectation
+
+        retryView.webView(retryView, didFailProvisionalNavigation: initialNavigation, withError: error)
+
+        wait(for: [didFailWithErrorExpectation], timeout: 5)
+    }
+
+    func testWebViewDoesNotRetryCancelledProvisionalNavigation() throws {
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled, userInfo: nil)
+        view.load(checkout: url)
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
+
+        view.webView(view, didFailProvisionalNavigation: navigation, withError: error)
+
+        XCTAssertNil(mockDelegate.errorReceived)
+    }
+
+    func testWebViewDoesNotRetryNonTransientProvisionalFailure() throws {
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateHasBadDate, userInfo: nil)
+        view.load(checkout: url)
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
+        let didFailWithErrorExpectation = expectation(description: "checkoutViewDidFailWithError was called")
+        mockDelegate.didFailWithErrorExpectation = didFailWithErrorExpectation
+
+        view.webView(view, didFailProvisionalNavigation: navigation, withError: error)
+
+        wait(for: [didFailWithErrorExpectation], timeout: 5)
+    }
+
+    func testPreloadStaysLoadingDuringRetryThenFailsAfterRetryExhausted() throws {
+        view.load(checkout: url)
+        let initialNavigation = try XCTUnwrap(view.checkoutNavigation)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: EmbeddedCheckoutProtocol.url(for: url), entryPoint: nil))
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .loading)
+
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: nil)
+        view.webView(view, didFailProvisionalNavigation: initialNavigation, withError: error)
+
+        let retryNavigation = try XCTUnwrap(view.checkoutNavigation)
+        XCTAssertFalse(retryNavigation === initialNavigation)
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .loading)
+
+        view.webView(view, didFailProvisionalNavigation: retryNavigation, withError: error)
+
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .failed(reason: .navigationFailed))
+    }
+
     func testClientIsSetOnWebView() {
         let client = MockBridgeClient()
         view.client = client
@@ -910,6 +985,19 @@ class LoadedRequestObservableWebView: CheckoutWebView {
     override func load(_ request: URLRequest) -> WKNavigation? {
         lastLoadedURLRequest = request
         return nil
+    }
+}
+
+@MainActor
+class RetryLoadReturningNilWebView: CheckoutWebView {
+    var shouldReturnNil = false
+
+    override func load(_ request: URLRequest) -> WKNavigation? {
+        if shouldReturnNil {
+            return nil
+        }
+
+        return super.load(request)
     }
 }
 

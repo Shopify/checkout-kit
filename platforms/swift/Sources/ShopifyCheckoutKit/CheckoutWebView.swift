@@ -257,6 +257,10 @@ class CheckoutWebView: WKWebView {
 
     var timer: Date?
 
+    private(set) var checkoutNavigation: WKNavigation?
+    private var didRetryCheckoutNavigation = false
+    private var checkoutRequest: URLRequest?
+
     var checkoutBridge: CheckoutBridgeProtocol.Type = CheckoutBridge.self
 
     var isBridgeAttached = false
@@ -471,7 +475,9 @@ class CheckoutWebView: WKWebView {
             request.setValue(Self.prefetchPurpose, forHTTPHeaderField: Self.purposeHeader)
         }
 
-        load(request)
+        checkoutRequest = request
+        didRetryCheckoutNavigation = false
+        checkoutNavigation = load(request)
     }
 
     private var isPreloadBackgrounded: Bool {
@@ -636,21 +642,40 @@ extension CheckoutWebView: WKNavigationDelegate {
         viewDelegate?.checkoutViewDidStartNavigation()
     }
 
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
-        let url = LogSafeURL.string(webView.url)
-        OSLogger.shared.debug("Failed provisional navigation with error: \(error.localizedDescription) url:\(url)")
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         timer = nil
 
         let nsError = error as NSError
-        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
-            OSLogger.shared.debug("Ignoring cancelled provisional navigation. code:NSURLErrorCancelled")
+        let url = LogSafeURL.string(webView.url)
+
+        if isCancelledNavigationError(nsError) {
+            OSLogger.shared.debug("Ignoring cancelled provisional navigation - url:\(url)")
             return
         }
 
-        handleCachedViewFailure(.navigationFailed)
+        guard navigation === checkoutNavigation,
+              !didRetryCheckoutNavigation,
+              isRetryableProvisionalNavigationError(nsError),
+              let checkoutRequest
+        else {
+            OSLogger.shared.error("Provisional navigation failed - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
+            failNavigation(with: error)
+            return
+        }
+
+        didRetryCheckoutNavigation = true
+        OSLogger.shared.warn("Retrying checkout navigation - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
+
+        guard let retryNavigation = load(checkoutRequest) else {
+            OSLogger.shared.error("Checkout navigation retry failed to start - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
+            failNavigation(with: error)
+            return
+        }
+
+        checkoutNavigation = retryNavigation
     }
 
-    func webView(_: WKWebView, didFinish _: WKNavigation!) {
+    func webView(_: WKWebView, didFinish navigation: WKNavigation!) {
         markPreloadReadyIfActive()
 
         viewDelegate?.checkoutViewDidFinishNavigation()
@@ -663,20 +688,54 @@ extension CheckoutWebView: WKNavigationDelegate {
             ShopifyCheckoutKit.configuration.logger.log(message)
         }
         timer = nil
+
+        if navigation === checkoutNavigation {
+            resetProvisionalNavigationRetryState()
+        }
     }
 
-    func webView(_: WKWebView, didFail _: WKNavigation!, withError error: Error) {
+    func webView(_ webView: WKWebView, didFail _: WKNavigation!, withError error: Error) {
         timer = nil
 
         let nsError = error as NSError
 
-        OSLogger.shared.debug("WebView navigation failed with error: description:\(nsError.localizedDescription) domain:\(nsError.domain) code:\(nsError.code)")
-
-        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
-            OSLogger.shared.debug("Ignoring cancelled URL redirect. code:NSURLErrorCancelled")
+        if isCancelledNavigationError(nsError) {
+            OSLogger.shared.debug("Ignoring cancelled committed navigation - code:NSURLErrorCancelled")
             return
         }
 
+        let url = LogSafeURL.string(webView.url)
+        OSLogger.shared.error("Committed navigation failed - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
+        failNavigation(with: error)
+    }
+
+    private func isRetryableProvisionalNavigationError(_ error: NSError) -> Bool {
+        guard error.domain == NSURLErrorDomain else {
+            return false
+        }
+
+        let retryableErrorCodes = [
+            NSURLErrorTimedOut,
+            NSURLErrorNetworkConnectionLost,
+            NSURLErrorCannotConnectToHost,
+            NSURLErrorDNSLookupFailed
+        ]
+
+        return retryableErrorCodes.contains(error.code)
+    }
+
+    private func isCancelledNavigationError(_ error: NSError) -> Bool {
+        return error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled
+    }
+
+    private func resetProvisionalNavigationRetryState() {
+        checkoutRequest = nil
+        checkoutNavigation = nil
+        didRetryCheckoutNavigation = false
+    }
+
+    private func failNavigation(with error: Error) {
+        resetProvisionalNavigationRetryState()
         handleCachedViewFailure(.navigationFailed)
         viewDelegate?.checkoutViewDidFailWithError(error: .sdkError(underlying: error))
     }
