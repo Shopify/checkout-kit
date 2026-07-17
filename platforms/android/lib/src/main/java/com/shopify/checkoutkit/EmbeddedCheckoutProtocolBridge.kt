@@ -26,6 +26,8 @@ private object ProtocolMessageExecutor {
     }
 }
 
+internal const val ECP_LOG_TAG = "CheckoutECP"
+
 /**
  * Connects the checkout WebView to an Embedded Checkout Protocol (ECP) client.
  *
@@ -235,7 +237,7 @@ internal class EmbeddedCheckoutProtocolBridge(
             }
 
     companion object {
-        private const val LOG_TAG = BaseWebView.ECP_LOG_TAG
+        private const val LOG_TAG = ECP_LOG_TAG
 
         /** Name of the JavaScript object registered to receive messages from checkout. */
         internal const val INTERFACE_NAME = "EmbeddedCheckoutProtocolConsumer"

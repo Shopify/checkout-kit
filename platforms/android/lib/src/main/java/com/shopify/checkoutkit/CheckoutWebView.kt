@@ -1,28 +1,45 @@
 package com.shopify.checkoutkit
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color.TRANSPARENT
+import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.webkit.GeolocationPermissions
+import android.webkit.PermissionRequest
 import android.webkit.RenderProcessGoneDetail
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.webkit.WebViewClient.ERROR_CONNECT
 import android.webkit.WebViewClient.ERROR_HOST_LOOKUP
 import android.webkit.WebViewClient.ERROR_TIMEOUT
 import androidx.activity.ComponentActivity
 import androidx.annotation.MainThread
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
+import java.net.HttpURLConnection.HTTP_GONE
 import java.util.concurrent.CountDownLatch
 
 internal class CheckoutWebView private constructor(
     context: Context,
     attributeSet: AttributeSet?,
     webMessageTransport: WebMessageTransport,
-) : BaseWebView(context, attributeSet) {
+) : WebView(context, attributeSet) {
 
     constructor(context: Context, attributeSet: AttributeSet? = null) :
         this(context, attributeSet, WebMessageListenerTransport)
@@ -39,8 +56,10 @@ internal class CheckoutWebView private constructor(
         private set
     private var checkoutRequest: CheckoutRequest? = null
     private var didRetryCheckoutRequest = false
+    private val touchHandler = CheckoutWebViewTouchHandler()
 
     init {
+        configureWebView(::getListener)
         webViewClient = CheckoutWebViewClient()
         try {
             embeddedCheckoutProtocol.attach()
@@ -48,18 +67,18 @@ internal class CheckoutWebView private constructor(
             destroy()
             throw error
         }
-        settings.userAgentString = "${settings.userAgentString} ${userAgentSuffix()}"
+        settings.userAgentString = "${settings.userAgentString} ${checkoutUserAgentSuffix()}"
     }
 
     fun hasFinishedLoading() = loadComplete
 
     fun setListener(listener: CheckoutWebViewListener) {
-        log.d(LOG_TAG, "Setting listener $listener.")
+        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Setting listener $listener.")
         this.listener = listener
     }
 
     fun setClient(client: CheckoutProtocol.Client?) {
-        log.d(LOG_TAG, "Setting protocol client $client.")
+        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Setting protocol client $client.")
         embeddedCheckoutProtocol.setClient(client)
     }
 
@@ -67,24 +86,37 @@ internal class CheckoutWebView private constructor(
         isPresented = true
     }
 
-    override fun getListener(): CheckoutWebViewListener {
+    internal fun getListener(): CheckoutWebViewListener {
         return listener
+    }
+
+    /**
+     * Keeps checkout scrolling in the WebView, but lets a parent container intercept a downward
+     * gesture that starts while checkout is already at scroll-top.
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        touchHandler.handle(this, event)
+        return super.onTouchEvent(event)
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        log.d(LOG_TAG, "Attached to window. Adding protocol bridge.")
+        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Attached to window. Adding protocol bridge.")
         embeddedCheckoutProtocol.attach()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        log.d(LOG_TAG, "Detached from window. Removing protocol bridge.")
+        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Detached from window. Removing protocol bridge.")
         embeddedCheckoutProtocol.detach()
     }
 
     fun loadCheckout(url: String, isPreload: Boolean = false) {
-        log.d(LOG_TAG, "Loading checkout with url ${url.redactedUrlForLogging()}. IsPreload: $isPreload.")
+        log.d(
+            CHECKOUT_WEB_VIEW_LOG_TAG,
+            "Loading checkout with url ${url.redactedUrlForLogging()}. IsPreload: $isPreload."
+        )
         loadComplete = false
         isPreloadRequest = isPreload
         Handler(Looper.getMainLooper()).post {
@@ -130,22 +162,41 @@ internal class CheckoutWebView private constructor(
         isPreloadRequest = false
     }
 
-    inner class CheckoutWebViewClient : BaseWebViewClient() {
+    inner class CheckoutWebViewClient : WebViewClient() {
+
+        init {
+            if (BuildConfig.DEBUG) {
+                log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Setting web contents debugging enabled.")
+                setWebContentsDebuggingEnabled(true)
+            }
+        }
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
             CheckoutWebView.invalidate()
-            return super.onRenderProcessGone(view, detail)
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !detail.didCrash()) {
+                // Renderer was killed because system ran out of memory.
+                log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
+                getListener().onCheckoutViewFailedWithError(
+                    CheckoutKitException(
+                        errorDescription = "Render process gone.",
+                        errorCode = CheckoutKitException.RENDER_PROCESS_GONE,
+                    )
+                )
+                true
+            } else {
+                false
+            }
         }
 
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
-            log.d(LOG_TAG, "onPageStarted called ${url?.redactedUrlForLogging()}.")
+            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onPageStarted called ${url?.redactedUrlForLogging()}.")
             getListener().onCheckoutViewLoadStarted()
         }
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
-            log.d(LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
+            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
             loadComplete = true
             getListener().onCheckoutViewLoadComplete()
             resetCheckoutRequestRetryState()
@@ -160,7 +211,7 @@ internal class CheckoutWebView private constructor(
                 val checkoutRequest = requireNotNull(checkoutRequest)
                 didRetryCheckoutRequest = true
                 log.w(
-                    LOG_TAG,
+                    CHECKOUT_WEB_VIEW_LOG_TAG,
                     "Retrying checkout navigation. Error code: ${error?.errorCode}, " +
                         "URL: ${request?.url?.redactedForLogging()}"
                 )
@@ -173,6 +224,9 @@ internal class CheckoutWebView private constructor(
                 CheckoutWebView.invalidate()
             }
             super.onReceivedError(view, request, error)
+            error?.let {
+                handleError(request, it.errorCode, it.description.toString())
+            }
             if (isMainFrame) {
                 resetCheckoutRequestRetryState()
             }
@@ -188,6 +242,13 @@ internal class CheckoutWebView private constructor(
                 CheckoutWebView.invalidate()
             }
             super.onReceivedHttpError(view, request, errorResponse)
+            errorResponse?.let {
+                handleError(
+                    request,
+                    it.statusCode,
+                    it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
+                )
+            }
             if (isMainFrame) {
                 resetCheckoutRequestRetryState()
             }
@@ -202,16 +263,57 @@ internal class CheckoutWebView private constructor(
 
             when (val result = ExternalUriLauncher.launch(context, uri)) {
                 is ExternalUriLauncher.Result.Launched ->
-                    log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
+                    log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
                 is ExternalUriLauncher.Result.Rejected ->
-                    log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})")
+                    log.d(
+                        CHECKOUT_WEB_VIEW_LOG_TAG,
+                        "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
+                    )
             }
             return true
         }
+
+        private fun handleError(
+            request: WebResourceRequest?,
+            errorCode: Int,
+            errorDescription: String,
+        ) {
+            if (request?.isForMainFrame != true) return
+
+            log.d(
+                CHECKOUT_WEB_VIEW_LOG_TAG,
+                "Handling error for main frame. URL: ${request.url.redactedForLogging()}, " +
+                    "errorCode: $errorCode, errorDescription: $errorDescription"
+            )
+            when (errorCode) {
+                HTTP_GONE -> {
+                    log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Failing with cart expired.")
+                    getListener().onCheckoutViewFailedWithError(
+                        CheckoutExpiredException(errorCode = CheckoutExpiredException.CART_EXPIRED),
+                    )
+                }
+                else -> {
+                    log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Failing with other error. Code: $errorCode")
+                    getListener().onCheckoutViewFailedWithError(
+                        HttpException(errorDescription = errorDescription, statusCode = errorCode),
+                    )
+                }
+            }
+        }
     }
 
+    internal fun handleBackPressed(): Boolean {
+        if (canGoBack() && !isOnConfirmationPage()) {
+            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Back navigation handled by WebView history.")
+            goBack()
+            return true
+        }
+        return false
+    }
+
+    private fun isOnConfirmationPage(): Boolean = url?.let(Uri::parse).isConfirmationPage()
+
     companion object {
-        private const val LOG_TAG = "CheckoutWebView"
         private const val SHOPIFY_PURPOSE_HEADER = "Shopify-Purpose"
         private const val PREFETCH_PURPOSE = "prefetch"
         private val RETRYABLE_CHECKOUT_ERROR_CODES = setOf(
@@ -241,7 +343,7 @@ internal class CheckoutWebView private constructor(
                     invalidate()
                     val view = CheckoutWebView(activity, webMessageTransport).apply {
                         loadCheckout(url, isPreload = true)
-                        log.d(LOG_TAG, "Pausing preloaded WebView.")
+                        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Pausing preloaded WebView.")
                         onPause()
                     }
                     preloadCache.store(PreloadKey.forUrl(url), view)
@@ -310,5 +412,106 @@ internal class CheckoutWebView private constructor(
         }
 
         internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedViewForTesting()
+    }
+}
+
+private const val CHECKOUT_WEB_VIEW_LOG_TAG = "CheckoutWebView"
+internal const val SCROLL_UP_DIRECTION: Int = -1
+
+internal class CheckoutWebViewTouchHandler {
+    private var lastTouchRawY = 0f
+    private var touchGestureOwnerResolved = false
+
+    fun handle(webView: WebView, event: MotionEvent) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                lastTouchRawY = event.rawY
+                touchGestureOwnerResolved = false
+                webView.requestDisallowInterceptTouchEvent(true)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dragDistance = event.rawY - lastTouchRawY
+                lastTouchRawY = event.rawY
+                if (!touchGestureOwnerResolved && dragDistance != 0f) {
+                    touchGestureOwnerResolved = true
+                    if (dragDistance > 0f && !webView.canScrollVertically(SCROLL_UP_DIRECTION)) {
+                        webView.requestDisallowInterceptTouchEvent(false)
+                    }
+                }
+            }
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_CANCEL -> {
+                webView.requestDisallowInterceptTouchEvent(false)
+                touchGestureOwnerResolved = false
+            }
+        }
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+private fun WebView.configureWebView(listener: () -> CheckoutWebViewListener) {
+    visibility = View.VISIBLE
+    settings.apply {
+        javaScriptEnabled = true
+        domStorageEnabled = true
+        allowContentAccess = true
+    }
+    if (WebViewFeature.isFeatureSupported(WebViewFeature.PAYMENT_REQUEST)) {
+        WebSettingsCompat.setPaymentRequestEnabled(settings, true)
+    }
+
+    webChromeClient = object : WebChromeClient() {
+        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+            super.onProgressChanged(view, newProgress)
+            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "On progress change called. New progress $newProgress.")
+            listener().updateProgressBar(newProgress)
+        }
+
+        override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
+            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onGeolocationPermissionsShowPrompt called, origin $origin, invoking listener callback.")
+            listener().onGeolocationPermissionsShowPrompt(origin, callback)
+        }
+
+        override fun onGeolocationPermissionsHidePrompt() {
+            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onGeolocationPermissionsHidePrompt called, invoking listener callback.")
+            listener().onGeolocationPermissionsHidePrompt()
+        }
+
+        override fun onPermissionRequest(request: PermissionRequest) {
+            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onPermissionRequest called $request, invoking listener callback.")
+            listener().onPermissionRequest(request)
+        }
+
+        override fun onShowFileChooser(
+            webView: WebView,
+            filePathCallback: ValueCallback<Array<Uri>>,
+            fileChooserParams: FileChooserParams,
+        ): Boolean {
+            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onShowFileChooser called, invoking listener callback.")
+            return listener().onShowFileChooser(webView, filePathCallback, fileChooserParams)
+        }
+    }
+    isHorizontalScrollBarEnabled = false
+    setBackgroundColor(TRANSPARENT)
+    layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+    id = View.generateViewId()
+}
+
+private fun checkoutUserAgentSuffix(): String {
+    val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
+    val platformPart = ShopifyCheckoutKit.configuration.platform?.run {
+        " $identifier${version?.let { "/$it" } ?: ""}"
+    } ?: ""
+    val suffix = "ShopifyCheckoutKit/${BuildConfig.SDK_VERSION} (Android; Kotlin $kotlinVersion)$platformPart"
+    log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Setting User-Agent suffix $suffix")
+    return suffix
+}
+
+/** Removes the WebView from its parent if a parent exists. */
+internal fun CheckoutWebView.removeFromParent() {
+    val parent = parent
+    if (parent is ViewGroup) {
+        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Existing parent found for WebView, removing.")
+        parent.removeView(this)
     }
 }

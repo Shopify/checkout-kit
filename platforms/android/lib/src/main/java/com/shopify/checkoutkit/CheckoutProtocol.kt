@@ -130,7 +130,7 @@ public object CheckoutProtocol {
         internal fun process(message: String): String? = delegate.process(message)
     }
 
-    private const val LOG_TAG: String = BaseWebView.ECP_LOG_TAG
+    private const val LOG_TAG: String = ECP_LOG_TAG
 
     private fun <R> invokeOnMainThread(block: () -> R): R {
         if (Looper.myLooper() == Looper.getMainLooper()) return block()

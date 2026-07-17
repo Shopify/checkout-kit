@@ -3,6 +3,7 @@ package com.shopify.checkoutkit
 import android.annotation.SuppressLint
 import android.view.MotionEvent
 import android.view.View
+import android.webkit.WebView
 
 /**
  * Bridges the one interaction the WebView cannot handle: dragging down from checkout scroll-top to dismiss the sheet.
@@ -11,7 +12,7 @@ import android.view.View
  * the sheet only takes over downward gestures while checkout content cannot scroll up.
  */
 @SuppressLint("ClickableViewAccessibility")
-internal fun BaseWebView.installBottomSheetScrollHandoff(sheet: CheckoutBottomSheetLayout) {
+internal fun WebView.installBottomSheetScrollHandoff(sheet: CheckoutBottomSheetLayout) {
     val handoffController = ScrollHandoffController(sheet)
     setOnTouchListener { view, event -> handoffController.onTouch(view, event) }
 }

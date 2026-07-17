@@ -10,6 +10,7 @@ import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient.FileChooserParams
+import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import org.assertj.core.api.Assertions.assertThat
@@ -103,11 +104,13 @@ class CheckoutWebViewTest {
     @Test
     fun `downward drag stays with WebView when checkout can scroll up`() {
         val parent = InterceptTrackingLayout(activity)
-        val view = GestureTestWebView(activity, canScrollUp = true)
+        val view = ScrollableWebView(activity, canScrollUp = true)
+        val touchHandler = CheckoutWebViewTouchHandler()
         parent.addView(view)
 
-        view.sendTouchEvent(MotionEvent.ACTION_DOWN, y = 20f)
-        view.sendTouchEvent(MotionEvent.ACTION_MOVE, y = 30f)
+        // Robolectric's WebView cannot be made to report a scrollable checkout document.
+        touchHandler.sendTouchEvent(view, MotionEvent.ACTION_DOWN, y = 20f)
+        touchHandler.sendTouchEvent(view, MotionEvent.ACTION_MOVE, y = 30f)
 
         assertThat(view.canScrollVertically(SCROLL_UP_DIRECTION)).isTrue()
         assertThat(parent.disallowInterceptRequested).isTrue()
@@ -507,7 +510,7 @@ class CheckoutWebViewTest {
     private fun checkoutViewFor(url: String): CheckoutWebView =
         CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
 
-    private fun BaseWebView.sendTouchEvent(action: Int, y: Float) {
+    private fun WebView.sendTouchEvent(action: Int, y: Float) {
         val event = MotionEvent.obtain(0, 0, action, 0f, y, 0)
         try {
             onTouchEvent(event)
@@ -516,13 +519,19 @@ class CheckoutWebViewTest {
         }
     }
 
-    private class GestureTestWebView(
+    private fun CheckoutWebViewTouchHandler.sendTouchEvent(view: WebView, action: Int, y: Float) {
+        val event = MotionEvent.obtain(0, 0, action, 0f, y, 0)
+        try {
+            handle(view, event)
+        } finally {
+            event.recycle()
+        }
+    }
+
+    private class ScrollableWebView(
         context: Context,
         private val canScrollUp: Boolean,
-    ) : BaseWebView(context) {
-        private val listener = CheckoutWebViewListener(NoopCheckoutListener())
-
-        override fun getListener(): CheckoutWebViewListener = listener
+    ) : WebView(context) {
 
         override fun canScrollVertically(direction: Int): Boolean =
             direction == SCROLL_UP_DIRECTION && canScrollUp
