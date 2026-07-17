@@ -11,9 +11,9 @@ class E2EGitHubReporterTest < Minitest::Test
     @manifest ||= JSON.parse(File.read(TARGETS_PATH))
   end
 
-  def reporter
+  def reporter(results = [])
     E2EGitHubReporter.new(
-      [],
+      results,
       repository: "Shopify/checkout-kit",
       sha: "abc123",
       pr_number: 1,
@@ -27,12 +27,24 @@ class E2EGitHubReporterTest < Minitest::Test
     manifest.fetch("targets").find { |candidate| candidate.fetch("id") == id }
   end
 
-  def test_install_table_lists_every_sdk
-    body = reporter.comment_body
+  def result(target)
+    {"target" => target, "passed" => true, "execute" => "flow.yaml"}
+  end
+
+  def test_install_table_lists_every_produced_target
+    body = reporter([result("react-native"), result("swift"), result("kotlin")]).comment_body
 
     assert_includes body, "| React Native | [Install with Tophat]"
     assert_includes body, "| Swift | [Install with Tophat]"
     assert_includes body, "| Kotlin | [Install with Tophat]"
+  end
+
+  def test_install_table_omits_targets_without_results
+    body = reporter([result("swift")]).comment_body
+
+    assert_includes body, "| Swift | [Install with Tophat]"
+    refute_includes body, "| React Native | [Install with Tophat]"
+    refute_includes body, "| Kotlin | [Install with Tophat]"
   end
 
   def test_swift_install_url_covers_device_and_simulator

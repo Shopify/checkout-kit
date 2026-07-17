@@ -84,10 +84,15 @@ class E2EGitHubReporter
     lines << ""
     lines << "| SDK | Install |"
     lines << "|---|---|"
-    @targets.each do |target|
+    produced_targets.each do |target|
       lines << "| #{target.fetch("label")} | [Install with Tophat](#{tophat_install_url(target)}) |"
     end
     lines.join("\n")
+  end
+
+  def produced_targets
+    produced_ids = @results.map { |result| result["target"] }.compact.uniq
+    @targets.select { |target| produced_ids.include?(target.fetch("id")) }
   end
 
   def check_run_payload
