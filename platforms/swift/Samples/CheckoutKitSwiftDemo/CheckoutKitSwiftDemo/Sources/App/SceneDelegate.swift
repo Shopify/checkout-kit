@@ -27,7 +27,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private var catalogCartButton: UIBarButtonItem?
     private var galleryCartButton: UIBarButtonItem?
 
-    func scene(_ scene: UIScene, willConnectTo _: UISceneSession, options _: UIScene.ConnectionOptions) {
+    func scene(_ scene: UIScene, willConnectTo _: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         let tabBarController = UITabBarController()
@@ -62,6 +62,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         CheckoutCoordinator.shared = CheckoutCoordinator(window: window)
 
         self.window = window
+
+        if let url = connectionOptions.urlContexts.first?.url {
+            handleCartBootstrapURL(url)
+        }
     }
 
     private func subscribeToColorSchemeChanges() {
@@ -239,9 +243,54 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
 
+        if handleCartBootstrapURL(url) {
+            return
+        }
+
         if CustomerAccountManager.shared.handleCallback(url: url) {
             return
         }
+    }
+
+    @discardableResult
+    private func handleCartBootstrapURL(_ url: URL) -> Bool {
+        guard InfoDictionary.shared.cartBootstrapEnabled else {
+            return false
+        }
+
+        do {
+            guard let request = try CartBootstrap.request(from: url) else {
+                return false
+            }
+
+            Task { @MainActor [weak self] in
+                do {
+                    _ = try await CartManager.shared.bootstrapGuestCart(
+                        productIndex: request.productIndex,
+                        quantity: request.quantity
+                    )
+                    self?.navigateTo(.cart)
+                } catch {
+                    self?.presentCartBootstrapError(error)
+                }
+            }
+            return true
+        } catch {
+            Task { @MainActor [weak self] in
+                self?.presentCartBootstrapError(error)
+            }
+            return true
+        }
+    }
+
+    private func presentCartBootstrapError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "Cart bootstrap failed",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        window?.topMostViewController()?.present(alert, animated: true)
     }
 
     func scene(_: UIScene, continue userActivity: NSUserActivity) {

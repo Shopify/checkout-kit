@@ -86,9 +86,13 @@ targets:
         StorefrontAccessToken: $(STOREFRONT_ACCESS_TOKEN)
         CustomerAccountApiClientId: $(CUSTOMER_ACCOUNT_API_CLIENT_ID)
         CustomerAccountApiShopId: $(CUSTOMER_ACCOUNT_API_SHOP_ID)
+        CartBootstrapEnabled: $(CART_BOOTSTRAP_ENABLED)
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - shop.$(CUSTOMER_ACCOUNT_API_SHOP_ID).app
+          - CFBundleURLName: com.shopify.checkoutkit.swiftdemo
+            CFBundleURLSchemes:
+              - com.shopify.checkoutkit.swiftdemo
         Address1: $(ADDRESS_1)
         Address2: $(ADDRESS_2)
         City: $(CITY)

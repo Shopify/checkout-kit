@@ -207,36 +207,31 @@ class ProductCache: ObservableObject {
     }
 
     private func fetchProduct(by _: String?) async -> Product? {
+        guard let products = try? await fetchProducts(limit: 1) else {
+            return nil
+        }
+        return products.first
+    }
+
+    func fetchProducts(limit: Int) async throws -> [Product] {
         let network = Network.shared
 
         let query = Storefront.GetProductsQuery(
-            first: .some(1),
+            first: .some(Int32(limit)),
             country: network.countryCode,
             language: network.languageCode
         )
 
-        do {
-            let response = try await network.apollo.fetch(query: query)
-            return response.data?.products.nodes.first
-        } catch {
-            return nil
-        }
+        let response = try await network.apollo.fetch(query: query)
+        return response.data?.products.nodes ?? []
     }
 
     public func fetchCollection(limit: Int = 20) {
         Task {
-            let network = Network.shared
-
-            let query = Storefront.GetProductsQuery(
-                first: .some(Int32(limit)),
-                country: network.countryCode,
-                language: network.languageCode
-            )
-
             do {
-                let response = try await network.apollo.fetch(query: query)
-                self.collection = response.data?.products.nodes
-                self.cachedProduct = response.data?.products.nodes.first
+                let products = try await fetchProducts(limit: limit)
+                self.collection = products
+                self.cachedProduct = products.first
             } catch {
                 // Fetch failed silently
             }

@@ -54,11 +54,21 @@ class StorefrontInputFactory {
     }
 
     public func createCartInput(_ items: [String] = [], customerAccessToken: String? = nil) -> Storefront.CartInput {
-        let lines: GraphQLNullable<[Storefront.CartLineInput]> = .some(
-            items.map { Storefront.CartLineInput(merchandiseId: $0) }
+        createCartInput(
+            items.map { Storefront.CartLineInput(merchandiseId: $0) },
+            customerAccessToken: customerAccessToken,
+            buyerIdentityMode: appConfiguration.buyerIdentityMode
         )
+    }
 
-        switch appConfiguration.buyerIdentityMode {
+    public func createCartInput(
+        _ cartLines: [Storefront.CartLineInput],
+        customerAccessToken: String? = nil,
+        buyerIdentityMode: BuyerIdentityMode
+    ) -> Storefront.CartInput {
+        let lines: GraphQLNullable<[Storefront.CartLineInput]> = .some(cartLines)
+
+        switch buyerIdentityMode {
         case .guest:
             return Storefront.CartInput(lines: lines)
 

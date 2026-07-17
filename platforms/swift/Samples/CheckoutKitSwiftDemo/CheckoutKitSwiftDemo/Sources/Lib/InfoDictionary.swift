@@ -8,6 +8,7 @@ final class InfoDictionary: Sendable {
     let address1, address2, city, country, firstName, lastName, province, zip,
         email, phone, domain, accessToken, version, buildNumber, merchantIdentifier,
         apiVersion: String
+    let cartBootstrapEnabled: Bool
 
     // Customer Account API (optional)
     let customerAccountApiClientId: String?
@@ -43,8 +44,11 @@ final class InfoDictionary: Sendable {
         }
 
         let apiVersion = infoPlist["API_VERSION"] as? String ?? "2026-04"
+        let cartBootstrapValue = (infoPlist["CartBootstrapEnabled"] as? String)?.lowercased()
+        let cartBootstrapEnabled = cartBootstrapValue.map { ["1", "true", "yes"].contains($0) } ?? false
 
         self.apiVersion = apiVersion
+        self.cartBootstrapEnabled = cartBootstrapEnabled
         self.address1 = address1
         self.address2 = address2
         self.city = city

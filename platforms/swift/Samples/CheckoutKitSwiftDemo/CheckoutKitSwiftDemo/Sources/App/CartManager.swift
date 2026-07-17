@@ -31,12 +31,54 @@ class CartManager: ObservableObject {
 
     // MARK: Cart Actions
 
-    func performCartLinesAdd(variant: String) async throws -> Storefront.CartFragment {
-        guard let cartId = cart?.id else {
-            return try await performCartCreate(items: [variant])
+    func bootstrapGuestCart(productIndex: Int, quantity: Int) async throws -> Storefront.CartFragment {
+        guard productIndex >= 0, productIndex < Int(Int32.max) else {
+            throw Errors.invariant(message: "productIndex must be a non-negative 32-bit integer")
         }
 
-        let lines = [Storefront.CartLineInput(merchandiseId: variant)]
+        guard let storefrontQuantity = Int32(exactly: quantity), storefrontQuantity > 0 else {
+            throw Errors.invariant(message: "quantity must be a positive 32-bit integer")
+        }
+
+        let products = try await ProductCache.shared.fetchProducts(limit: productIndex + 1)
+        guard products.indices.contains(productIndex),
+              let variant = products[productIndex].variants.nodes.first
+        else {
+            throw Errors.invariant(message: "No product variant was found at product index \(productIndex)")
+        }
+
+        ShopifyCheckoutKit.invalidate()
+        resetCart()
+        return try await performCartLinesAdd(
+            variant: variant.id,
+            quantity: quantity,
+            buyerIdentityMode: .guest
+        )
+    }
+
+    func performCartLinesAdd(
+        variant: String,
+        quantity: Int = 1,
+        buyerIdentityMode: BuyerIdentityMode? = nil
+    ) async throws -> Storefront.CartFragment {
+        guard let storefrontQuantity = Int32(exactly: quantity), storefrontQuantity > 0 else {
+            throw Errors.invariant(message: "quantity must be a positive 32-bit integer")
+        }
+
+        let lines = [
+            Storefront.CartLineInput(
+                quantity: .some(storefrontQuantity),
+                merchandiseId: variant
+            )
+        ]
+
+        guard let cartId = cart?.id else {
+            return try await performCartCreate(
+                lines: lines,
+                buyerIdentityMode: buyerIdentityMode ?? appConfiguration.buyerIdentityMode
+            )
+        }
+
         let network = Network.shared
 
         let mutation = Storefront.CartLinesAddMutation(
@@ -121,11 +163,25 @@ class CartManager: ObservableObject {
     }
 
     private func performCartCreate(items: [String] = []) async throws -> Storefront.CartFragment {
+        try await performCartCreate(
+            lines: items.map { Storefront.CartLineInput(merchandiseId: $0) },
+            buyerIdentityMode: appConfiguration.buyerIdentityMode
+        )
+    }
+
+    private func performCartCreate(
+        lines: [Storefront.CartLineInput],
+        buyerIdentityMode: BuyerIdentityMode
+    ) async throws -> Storefront.CartFragment {
         var customerAccessToken: String?
-        if CustomerAccountManager.shared.isAuthenticated {
+        if buyerIdentityMode != .guest, CustomerAccountManager.shared.isAuthenticated {
             customerAccessToken = try? await CustomerAccountManager.shared.getValidAccessToken()
         }
-        let input = StorefrontInputFactory.shared.createCartInput(items, customerAccessToken: customerAccessToken)
+        let input = StorefrontInputFactory.shared.createCartInput(
+            lines,
+            customerAccessToken: customerAccessToken,
+            buyerIdentityMode: buyerIdentityMode
+        )
         let network = Network.shared
 
         let mutation = Storefront.CartCreateMutation(
