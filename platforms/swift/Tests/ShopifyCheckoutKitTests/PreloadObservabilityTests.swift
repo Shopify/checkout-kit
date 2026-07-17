@@ -331,6 +331,39 @@ class PreloadObservabilityTests: XCTestCase {
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
     }
 
+    func testDismissalWithoutMemoryPressurePreservesCachedCheckout() {
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let controller = CheckoutWebViewController(checkoutURL: url)
+
+        controller.cleanUpCheckoutView()
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testDismissalUnderMemoryPressureEvictsCachedCheckout() {
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let controller = CheckoutWebViewController(checkoutURL: url)
+        CheckoutWebView.preloadCache.isUnderMemoryPressure = true
+
+        controller.cleanUpCheckoutView()
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testDismissalAfterWebContentTerminationEvictsCachedCheckout() throws {
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let controller = CheckoutWebViewController(checkoutURL: url)
+        let presented = try XCTUnwrap(controller.checkoutView)
+
+        presented.webViewWebContentProcessDidTerminate(presented)
+        controller.cleanUpCheckoutView()
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
     func testPreloadDeclinedWhileUnderMemoryPressure() {
         CheckoutWebView.preloadCache.isUnderMemoryPressure = true
         let view = CheckoutWebView(entryPoint: nil)

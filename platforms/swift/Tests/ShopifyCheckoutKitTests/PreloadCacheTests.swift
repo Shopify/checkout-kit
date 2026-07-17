@@ -52,10 +52,7 @@ class PreloadCacheTests: XCTestCase {
         entry.webViewWebContentProcessDidTerminate(entry)
 
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
-        XCTAssertEqual(
-            CheckoutWebView.preloadCache.state,
-            .failed(reason: .webContentUnavailable, message: "Web content process terminated.")
-        )
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .evicted(reason: .webContentProcessTerminated))
     }
 
     func test_WebContentProcessTerminationOnBackgroundedPreloadDoesNotDeliverLifecycleFailure() {
