@@ -131,8 +131,8 @@ class CartViewModel(
         onFail { error ->
             handleCheckoutFailed(error, activity)
         }
-        onCancel {
-            handleCheckoutCanceled()
+        onDismiss {
+            handleCheckoutDismissed()
         }
         sampleActivity?.let { mainActivity ->
             onShowFileChooser { _, filePathCallback, fileChooserParams ->
@@ -149,7 +149,7 @@ class CartViewModel(
     }
 
     fun checkoutDismissedByHost() {
-        handleCheckoutCanceled()
+        handleCheckoutDismissed()
     }
 
     fun preloadCheckout(url: String, activity: ComponentActivity) {
@@ -186,8 +186,8 @@ class CartViewModel(
         }
     }
 
-    internal fun handleCheckoutCanceled() {
-        logger.logSdkEvent("Checkout canceled")
+    internal fun handleCheckoutDismissed() {
+        logger.logSdkEvent("Checkout dismissed")
     }
 
     internal fun buildProtocolClient(

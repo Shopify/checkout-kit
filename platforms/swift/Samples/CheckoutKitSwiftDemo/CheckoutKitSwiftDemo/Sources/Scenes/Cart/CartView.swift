@@ -99,14 +99,14 @@ struct CartView: View {
                     ShopifyCheckout(checkout: url)
                         .connect(client.on(CheckoutProtocol.complete) { checkout in
                             // Set the flag here; defer the cart reset until the user dismisses
-                            // the sheet (in .onCancel). Resetting now would nil the cart and
+                            // the sheet (in .onDismiss). Resetting now would nil the cart and
                             // SwiftUI would auto-collapse this sheet, hiding the confirmation page.
                             print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
                             isCompleted = true
                         })
                         .appearance(.app(.automatic))
-                        .onCancel {
-                            print("[ShopifyCheckoutKit] CANCEL")
+                        .onDismiss {
+                            print("[CheckoutKitSwiftDemo] DISMISSED")
                             showCheckoutSheet = false
 
                             if isCompleted {

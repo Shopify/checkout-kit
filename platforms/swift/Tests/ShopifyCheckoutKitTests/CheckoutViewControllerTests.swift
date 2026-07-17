@@ -47,27 +47,27 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertTrue(viewController.dismissCalled)
     }
 
-    func testCloseInvokesCancelDelegate() {
-        var didCancel = false
-        viewController.onCancel = {
-            didCancel = true
+    func testCloseInvokesDismissDelegate() {
+        var didDismiss = false
+        viewController.onDismiss = {
+            didDismiss = true
         }
 
         viewController.close()
 
-        XCTAssertTrue(didCancel)
+        XCTAssertTrue(didDismiss)
     }
 
-    func testPresentationControllerDidDismissInvokesCancelDelegate() throws {
-        var didCancel = false
-        viewController.onCancel = {
-            didCancel = true
+    func testPresentationControllerDidDismissInvokesDismissDelegate() throws {
+        var didDismiss = false
+        viewController.onDismiss = {
+            didDismiss = true
         }
 
         let presentationController = try XCTUnwrap(UIViewController().presentationController)
         viewController.presentationControllerDidDismiss(presentationController)
 
-        XCTAssertTrue(didCancel)
+        XCTAssertTrue(didDismiss)
     }
 
     func testCheckoutViewDidStartNavigationShowsProgressBar() {

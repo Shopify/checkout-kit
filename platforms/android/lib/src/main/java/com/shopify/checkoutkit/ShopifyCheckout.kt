@@ -71,7 +71,7 @@ public class ShopifyCheckout @MainThread internal constructor(
         hostConfiguration = CheckoutHostConfiguration(
             listener = checkoutListener,
             protocolClient = protocolClient,
-            onCancelRequest = checkoutListener::onCheckoutCanceled,
+            onDismissRequest = checkoutListener::onCheckoutDismissed,
             onFailure = checkoutListener::onCheckoutFailed,
             reportInitializationFailure = true,
         ),
@@ -79,7 +79,7 @@ public class ShopifyCheckout @MainThread internal constructor(
 
     private var checkoutWebView: CheckoutWebView? = null
     private var lifecycleOwner: LifecycleOwner? = null
-    private var cancelNotified = false
+    private var dismissNotified = false
     private var destroyed = false
     private var webViewResumed = false
     internal var initializationError: CheckoutException? = null
@@ -102,8 +102,8 @@ public class ShopifyCheckout @MainThread internal constructor(
     private val backNavigationCallback = object : OnBackPressedCallback(enabled = true) {
         override fun handleOnBackPressed() {
             if (checkoutWebView?.handleBackPressed() != true) {
-                log.d(LOG_TAG, "Back press not handled by WebView, requesting cancellation.")
-                notifyCheckoutCanceled()
+                log.d(LOG_TAG, "Back press not handled by WebView, requesting dismissal.")
+                notifyCheckoutDismissed()
             }
         }
     }
@@ -135,7 +135,7 @@ public class ShopifyCheckout @MainThread internal constructor(
     /**
      * Permanently releases this checkout and its underlying WebView.
      *
-     * This method is idempotent and does not report cancellation or failure.
+     * This method is idempotent and does not report dismissal or failure.
      */
     @MainThread
     public fun destroy() {
@@ -162,7 +162,7 @@ public class ShopifyCheckout @MainThread internal constructor(
 
         resumeWebView()
         bindLifecycleOwner()
-        backNavigationCallback.isEnabled = !cancelNotified
+        backNavigationCallback.isEnabled = !dismissNotified
         findViewTreeOnBackPressedDispatcherOwner()
             ?.onBackPressedDispatcher
             ?.addCallback(backNavigationCallback)
@@ -226,7 +226,7 @@ public class ShopifyCheckout @MainThread internal constructor(
                 context = context,
                 colorScheme = colorScheme,
                 sheet = sheet,
-                onClick = ::notifyCheckoutCanceled,
+                onClick = ::notifyCheckoutDismissed,
             )
         }
 
@@ -264,12 +264,12 @@ public class ShopifyCheckout @MainThread internal constructor(
         }
     }
 
-    private fun notifyCheckoutCanceled() {
-        if (cancelNotified || destroyed) return
+    private fun notifyCheckoutDismissed() {
+        if (dismissNotified || destroyed) return
 
-        cancelNotified = true
+        dismissNotified = true
         backNavigationCallback.isEnabled = false
-        hostConfiguration.onCancelRequest()
+        hostConfiguration.onDismissRequest()
     }
 
     private fun webViewListener(): CheckoutWebViewListener = CheckoutWebViewListener(
@@ -352,7 +352,7 @@ private fun Context.isDarkTheme(): Boolean =
 internal data class CheckoutHostConfiguration(
     val listener: CheckoutListener,
     val protocolClient: CheckoutProtocol.Client?,
-    val onCancelRequest: () -> Unit,
+    val onDismissRequest: () -> Unit,
     val onFailure: (CheckoutException) -> Unit,
     val reportInitializationFailure: Boolean,
 )
@@ -365,7 +365,7 @@ private fun buildCheckoutHostConfiguration(
     return CheckoutHostConfiguration(
         listener = listener,
         protocolClient = presentation.protocolClient,
-        onCancelRequest = listener::onCheckoutCanceled,
+        onDismissRequest = listener::onCheckoutDismissed,
         onFailure = listener::onCheckoutFailed,
         reportInitializationFailure = true,
     )

@@ -43,7 +43,7 @@ Swift, Android, and React Native rows show the planned first Checkout Kit alpha 
 | Present checkout from `cart.checkoutUrl` | Yes | Yes | Yes | Yes |
 | Cart permalink support | Yes | Yes | Yes | Yes |
 | Light, dark, and web color schemes | Yes | Yes | Yes | Not applicable |
-| Checkout cancel/fail callbacks | Yes | Yes | Yes | Close/error events |
+| Checkout dismiss/fail callbacks | Yes | Yes | Yes | Close/error events |
 | Typed checkout protocol events | Yes | Yes | Partial/native-dependent | Yes |
 | File chooser and web permissions | iOS system behavior | Host callbacks | Android host callbacks | Browser behavior |
 | Geolocation for pickup points | iOS system prompt | Host callback required | Android default helper or custom handler | Browser behavior |

@@ -48,7 +48,7 @@ public class InteropTest {
             }
 
             @Override
-            public void onCheckoutCanceled() {
+            public void onCheckoutDismissed() {
 
             }
         };
@@ -183,7 +183,7 @@ public class InteropTest {
                         }
 
                         @Override
-                        public void onCheckoutCanceled() {
+                        public void onCheckoutDismissed() {
                             // do nothing
                         }
                     }
@@ -214,7 +214,7 @@ public class InteropTest {
                 }
 
                 @Override
-                public void onCheckoutCanceled() {
+                public void onCheckoutDismissed() {
                     // do nothing
                 }
             };

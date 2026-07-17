@@ -11,11 +11,11 @@ struct MockBridgeClient: CheckoutCommunicationProtocol {
 }
 
 final class MockCheckoutDelegate: CheckoutDelegate {
-    private(set) var didCancelCount = 0
+    private(set) var didDismissCount = 0
     private(set) var didFailErrors: [CheckoutError] = []
 
-    func checkoutDidCancel() {
-        didCancelCount += 1
+    func checkoutDidDismiss() {
+        didDismissCount += 1
     }
 
     func checkoutDidFail(error: CheckoutError) {

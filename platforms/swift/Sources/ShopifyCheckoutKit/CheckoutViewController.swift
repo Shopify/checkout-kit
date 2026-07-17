@@ -29,7 +29,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
     var checkoutURL: URL
     var client: (any CheckoutCommunicationProtocol)?
-    var onCancelAction: (() -> Void)?
+    var onDismissAction: (() -> Void)?
     var onFailAction: ((CheckoutError) -> Void)?
 
     public init(checkout url: URL) {
@@ -62,7 +62,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
         webViewController.client = client
         webViewController.checkoutView?.client = client
-        webViewController.onCancel = onCancelAction
+        webViewController.onDismiss = onDismissAction
         webViewController.onFail = onFailAction
     }
 
@@ -72,9 +72,9 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         return copy
     }
 
-    @discardableResult public func onCancel(_ action: @escaping () -> Void) -> Self {
+    @discardableResult public func onDismiss(_ action: @escaping () -> Void) -> Self {
         var copy = self
-        copy.onCancelAction = action
+        copy.onDismissAction = action
         return copy
     }
 

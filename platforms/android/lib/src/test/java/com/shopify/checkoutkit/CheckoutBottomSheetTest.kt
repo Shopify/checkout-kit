@@ -607,14 +607,14 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `calls onCheckoutCanceled if cancel is called`() {
+    fun `calls onCheckoutDismissed if cancel is called`() {
         val mockListener = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockListener)
 
         sheet.cancel()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockListener).onCheckoutCanceled()
+        verify(mockListener).onCheckoutDismissed()
         verify(mockListener, never()).onCheckoutFailed(any())
     }
 
@@ -629,13 +629,13 @@ class CheckoutBottomSheetTest {
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         runDismissAnimation()
 
-        verify(mockListener, never()).onCheckoutCanceled()
+        verify(mockListener, never()).onCheckoutDismissed()
         verify(mockListener).onCheckoutFailed(error)
         assertThat(checkoutSheet.isShowing).isFalse()
     }
 
     @Test
-    fun `calls onCheckoutCanceled if close menu item is clicked`() {
+    fun `calls onCheckoutDismissed if close menu item is clicked`() {
         val mockListener = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockListener)
 
@@ -646,18 +646,18 @@ class CheckoutBottomSheetTest {
         header.menu.performIdentifierAction(R.id.shopify_checkout_kit_close_button, 0)
         ShadowLooper.runUiThreadTasks()
 
-        verify(mockListener, timeout(2000)).onCheckoutCanceled()
+        verify(mockListener, timeout(2000)).onCheckoutDismissed()
     }
 
     @Test
-    fun `calls onCheckoutCanceled if outside touch target is clicked`() {
+    fun `calls onCheckoutDismissed if outside touch target is clicked`() {
         val mockListener = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockListener)
 
         sheet.findViewById<View>(R.id.checkoutKitOutsideTouchTarget)!!.performClick()
         ShadowLooper.runUiThreadTasks()
 
-        verify(mockListener).onCheckoutCanceled()
+        verify(mockListener).onCheckoutDismissed()
         verify(mockListener, never()).onCheckoutFailed(any())
     }
 
@@ -677,12 +677,12 @@ class CheckoutBottomSheetTest {
 
         assertThat(outsideTouchTarget.isClickable).isFalse()
         assertThat(sheet.isShowing).isTrue()
-        verify(mockListener, never()).onCheckoutCanceled()
+        verify(mockListener, never()).onCheckoutDismissed()
         verify(mockListener, never()).onCheckoutFailed(any())
     }
 
     @Test
-    fun `clicking close invokes cancel(), removing checkoutView from the container`() {
+    fun `clicking close dismisses the sheet, removing checkoutView from the container`() {
         val sheet = presentBottomSheet()
 
         assertThat(sheet.containsChildOfType(CheckoutWebView::class.java)).isTrue()
@@ -912,7 +912,7 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `back press cancels bottom sheet when WebView has no history to navigate`() {
+    fun `back press dismisses bottom sheet when WebView has no history to navigate`() {
         val mockListener = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockListener)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
@@ -920,7 +920,7 @@ class CheckoutBottomSheetTest {
         sheet.onBackPressedDispatcher.onBackPressed()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockListener).onCheckoutCanceled()
+        verify(mockListener).onCheckoutDismissed()
         assertThat(sheet.isShowing).isFalse()
     }
 
@@ -943,13 +943,13 @@ class CheckoutBottomSheetTest {
         sheet.onBackPressedDispatcher.onBackPressed()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockListener, never()).onCheckoutCanceled()
+        verify(mockListener, never()).onCheckoutDismissed()
         assertThat(sheet.isShowing).isTrue()
         assertThat(shadowOf(webView).goBackInvocations).isGreaterThan(0)
     }
 
     @Test
-    fun `back press cancels bottom sheet when on confirmation page even with history`() {
+    fun `back press dismisses bottom sheet when on confirmation page even with history`() {
         val mockListener = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(
             checkoutUrl = "https://shopify.com/checkouts/c/abc",
@@ -966,7 +966,7 @@ class CheckoutBottomSheetTest {
         sheet.onBackPressedDispatcher.onBackPressed()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockListener).onCheckoutCanceled()
+        verify(mockListener).onCheckoutDismissed()
         assertThat(sheet.isShowing).isFalse()
         assertThat(shadowOf(webView).goBackInvocations).isEqualTo(0)
     }

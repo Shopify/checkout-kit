@@ -69,19 +69,19 @@ class ShopifyCheckoutTest {
 
     @Test
     fun `Kotlin factory connects callbacks to checkout chrome`() {
-        var cancelCount = 0
+        var dismissCount = 0
         val view = ShopifyCheckout.create(
             context = activity,
             checkoutUrl = CHECKOUT_URL,
             webMessageTransport = webMessageTransport,
         ) {
-            onCancel { cancelCount += 1 }
+            onDismiss { dismissCount += 1 }
         }
         val toolbar = view.findViewById<Toolbar>(R.id.checkoutKitHeader)
         toolbar.menu.performIdentifierAction(R.id.shopify_checkout_kit_close_button, 0)
         toolbar.menu.performIdentifierAction(R.id.shopify_checkout_kit_close_button, 0)
 
-        assertThat(cancelCount).isEqualTo(1)
+        assertThat(dismissCount).isEqualTo(1)
         assertThat(view.currentWebView().parent).isNotNull
 
         view.destroy()
@@ -156,10 +156,10 @@ class ShopifyCheckoutTest {
 
     @Test
     fun `destroy releases WebView once without reporting an outcome`() {
-        var canceled = false
+        var dismissed = false
         var failed = false
         val view = shopifyCheckout(
-            onCancel = { canceled = true },
+            onDismiss = { dismissed = true },
             onFailure = { failed = true },
         )
         val webView = view.currentWebView()
@@ -170,7 +170,7 @@ class ShopifyCheckoutTest {
 
         assertThat(shadowOf(webView).wasDestroyCalled()).isTrue()
         assertThat(webView.parent).isNull()
-        assertThat(canceled).isFalse()
+        assertThat(dismissed).isFalse()
         assertThat(failed).isFalse()
     }
 
@@ -201,22 +201,22 @@ class ShopifyCheckoutTest {
     }
 
     @Test
-    fun `system back requests cancel when WebView has no history`() {
-        var canceled = false
-        val view = shopifyCheckout(onCancel = { canceled = true })
+    fun `system back requests dismissal when WebView has no history`() {
+        var dismissed = false
+        val view = shopifyCheckout(onDismiss = { dismissed = true })
         activity.setContentView(view)
 
         activity.onBackPressedDispatcher.onBackPressed()
 
-        assertThat(canceled).isTrue()
+        assertThat(dismissed).isTrue()
 
         view.destroy()
     }
 
     @Test
-    fun `system back navigates WebView history before requesting cancel`() {
-        var canceled = false
-        val view = shopifyCheckout(onCancel = { canceled = true })
+    fun `system back navigates WebView history before requesting dismissal`() {
+        var dismissed = false
+        val view = shopifyCheckout(onDismiss = { dismissed = true })
         val webView = view.currentWebView()
         shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc")
         shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc/step2")
@@ -224,14 +224,14 @@ class ShopifyCheckoutTest {
 
         activity.onBackPressedDispatcher.onBackPressed()
 
-        assertThat(canceled).isFalse()
+        assertThat(dismissed).isFalse()
         assertThat(shadowOf(webView).goBackInvocations).isGreaterThan(0)
 
         view.destroy()
     }
 
     private fun shopifyCheckout(
-        onCancel: () -> Unit = {},
+        onDismiss: () -> Unit = {},
         onFailure: (CheckoutException) -> Unit = {},
     ): ShopifyCheckout {
         val listener = noopDefaultCheckoutListener()
@@ -242,7 +242,7 @@ class ShopifyCheckoutTest {
             hostConfiguration = CheckoutHostConfiguration(
                 listener = listener,
                 protocolClient = null,
-                onCancelRequest = onCancel,
+                onDismissRequest = onDismiss,
                 onFailure = onFailure,
                 reportInitializationFailure = false,
             ),

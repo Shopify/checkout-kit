@@ -150,7 +150,7 @@ class CheckoutBottomSheetOptionsTest {
 
         sheet.findViewById<View>(R.id.checkoutKitOutsideTouchTarget)!!.performClick()
 
-        assertThat(listener.canceled).isTrue()
+        assertThat(listener.dismissed).isTrue()
     }
 
     @Test
@@ -294,12 +294,12 @@ class CheckoutBottomSheetOptionsTest {
         get() = WindowCompat.getInsetsController(this, decorView).isAppearanceLightNavigationBars
 
     private class RecordingCheckoutListener : DefaultCheckoutListener() {
-        var canceled = false
+        var dismissed = false
 
         override fun onCheckoutFailed(error: CheckoutException) = Unit
 
-        override fun onCheckoutCanceled() {
-            canceled = true
+        override fun onCheckoutDismissed() {
+            dismissed = true
         }
     }
 
