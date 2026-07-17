@@ -18,6 +18,7 @@ import com.shopify.checkout_kit_android_demo.common.SnackbarEvent
 import com.shopify.checkout_kit_android_demo.common.logs.LogLevel
 import com.shopify.checkout_kit_android_demo.common.logs.Logger
 import com.shopify.checkout_kit_android_demo.common.navigation.Screen
+import com.shopify.checkout_kit_android_demo.products.product.data.ProductRepository
 import com.shopify.checkout_kit_android_demo.settings.PreferencesManager
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.CustomerRepository
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutPresentationMode
@@ -45,6 +46,7 @@ class CartViewModel(
     private val cartRepository: CartRepository,
     private val preferencesManager: PreferencesManager,
     private val customerRepository: CustomerRepository,
+    private val productRepository: ProductRepository,
     private val logger: Logger,
 ) : ViewModel() {
 
@@ -107,6 +109,38 @@ class CartViewModel(
 
     fun clearCart() {
         _cartState.value = CartState.Empty
+    }
+
+    internal suspend fun bootstrapGuestCart(productIndex: Int, quantity: Int): Result<CartState.Cart> {
+        _loadingState.value = true
+
+        return runCatching {
+            require(productIndex >= 0) { "productIndex must be non-negative" }
+            require(quantity > 0) { "quantity must be positive" }
+
+            val products = productRepository.getProducts(
+                numProducts = productIndex + 1,
+                numVariants = 1,
+                cursor = null,
+            )
+            val variant = products.products.getOrNull(productIndex)?.variants?.firstOrNull()
+                ?: error("No product variant was found at product index $productIndex")
+
+            ShopifyCheckoutKit.invalidate()
+            clearCart()
+            cartRepository.createCart(
+                variantId = variant.id,
+                quantity = quantity,
+                demoBuyerIdentityEnabled = false,
+                customerAccessToken = null,
+            ).also { cart ->
+                _cartState.value = cart
+            }
+        }.onFailure { error ->
+            Timber.e(error, "Couldn't bootstrap guest cart")
+        }.also {
+            _loadingState.value = false
+        }
     }
 
     fun presentCheckout(

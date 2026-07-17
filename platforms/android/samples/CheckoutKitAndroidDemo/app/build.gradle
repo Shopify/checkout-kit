@@ -29,6 +29,7 @@ def propertyOrDefault = { String key, String defaultValue ->
 def storefrontDomain = properties.getProperty("STOREFRONT_DOMAIN")
 def accessToken = properties.getProperty("STOREFRONT_ACCESS_TOKEN")
 def apiVersion = properties.getProperty("API_VERSION", "2026-04")
+def cartBootstrapEnabled = (System.getenv("CART_BOOTSTRAP_ENABLED") ?: properties.getProperty("CART_BOOTSTRAP_ENABLED", "false")).toBoolean()
 
 // Customer Account API
 def customerAccountApiClientId = properties.getProperty("CUSTOMER_ACCOUNT_API_CLIENT_ID")
@@ -77,6 +78,7 @@ android {
         buildConfigField "String", "storefrontDomain", "\"$storefrontDomain\""
         buildConfigField "String", "storefrontAccessToken", "\"$accessToken\""
         buildConfigField "String", "storefrontApiVersion", "\"$apiVersion\""
+        buildConfigField "boolean", "cartBootstrapEnabled", "$cartBootstrapEnabled"
         buildConfigField "String", "customerAccountApiClientId", "\"$customerAccountApiClientId\""
         buildConfigField "String", "customerAccountApiRedirectUri", "\"$customerAccountApiRedirectUri\""
         buildConfigField "String", "customerAccountApiAuthBaseUrl", "\"$customerAccountApiAuthBaseUrl\""
@@ -160,6 +162,9 @@ dependencies {
 
     // Serialization
     implementation libs.kotlinx.serialization.json.demo
+
+    testImplementation libs.junit
+    testImplementation libs.robolectric
 
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.androidx.compose.ui.test.manifest

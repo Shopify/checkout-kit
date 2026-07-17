@@ -1,6 +1,7 @@
 package com.shopify.checkout_kit_android_demo
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -13,6 +14,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import timber.log.Timber
 import timber.log.Timber.DebugTree
@@ -27,6 +31,7 @@ class MainActivity : ComponentActivity() {
 
     private var geolocationPermissionCallback: GeolocationPermissions.Callback? = null
     private var geolocationOrigin: String? = null
+    private var incomingUrl by mutableStateOf<Uri?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,8 +46,16 @@ class MainActivity : ComponentActivity() {
             Timber.plant(DebugTree())
         }
 
+        incomingUrl = intent?.data
         setContent {
-            CheckoutKitApp()
+            CheckoutKitApp(
+                incomingUrl = incomingUrl,
+                onIncomingUrlHandled = { handledUrl ->
+                    if (incomingUrl == handledUrl) {
+                        incomingUrl = null
+                    }
+                },
+            )
         }
 
         requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -65,6 +78,12 @@ class MainActivity : ComponentActivity() {
             geolocationPermissionCallback = null
             geolocationOrigin = null
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingUrl = intent.data
     }
 
     fun onShowFileChooser(filePathCallback: ValueCallback<Array<Uri>>, fileChooserParams: FileChooserParams): Boolean {

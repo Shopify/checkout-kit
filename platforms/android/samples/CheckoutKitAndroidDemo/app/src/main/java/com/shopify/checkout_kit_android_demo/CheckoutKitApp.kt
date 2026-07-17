@@ -1,5 +1,7 @@
 package com.shopify.checkout_kit_android_demo
 
+import android.net.Uri
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
@@ -52,6 +54,7 @@ import com.shopify.checkout_kit_android_demo.common.navigation.BottomAppBarWithN
 import com.shopify.checkout_kit_android_demo.common.navigation.CheckoutKitNavHost
 import com.shopify.checkout_kit_android_demo.common.navigation.Screen
 import com.shopify.checkout_kit_android_demo.common.ui.theme.CheckoutKitSampleTheme
+import com.shopify.checkout_kit_android_demo.e2e.CartBootstrap
 import com.shopify.checkout_kit_android_demo.e2e.E2ETestIds
 import com.shopify.checkout_kit_android_demo.logs.LogsViewModel
 import com.shopify.checkout_kit_android_demo.settings.SettingsUiState
@@ -60,14 +63,24 @@ import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.ColorScheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import timber.log.Timber
 
 @Composable
-fun CheckoutKitApp() {
+fun CheckoutKitApp(
+    incomingUrl: Uri? = null,
+    onIncomingUrlHandled: (Uri) -> Unit = {},
+) {
     val settingsViewModel = koinViewModel<SettingsViewModel>()
     val cartViewModel = koinViewModel<CartViewModel>()
     val logsViewModel = koinViewModel<LogsViewModel>()
 
-    CheckoutKitAppRoot(settingsViewModel, cartViewModel, logsViewModel)
+    CheckoutKitAppRoot(
+        settingsViewModel = settingsViewModel,
+        cartViewModel = cartViewModel,
+        logsViewModel = logsViewModel,
+        incomingUrl = incomingUrl,
+        onIncomingUrlHandled = onIncomingUrlHandled,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -76,6 +89,8 @@ fun CheckoutKitAppRoot(
     settingsViewModel: SettingsViewModel,
     cartViewModel: CartViewModel,
     logsViewModel: LogsViewModel,
+    incomingUrl: Uri? = null,
+    onIncomingUrlHandled: (Uri) -> Unit = {},
 ) {
     val settingsUiState = settingsViewModel.uiState.collectAsState().value
     val useDarkTheme = settingsUiState.isDarkTheme(isSystemInDarkTheme())
@@ -103,6 +118,28 @@ fun CheckoutKitAppRoot(
             var presentedCheckoutUrl by remember { mutableStateOf<String?>(null) }
             val scope = rememberCoroutineScope()
             val snackbarHostState = remember { SnackbarHostState() }
+
+            LaunchedEffect(incomingUrl, navController) {
+                val url = incomingUrl ?: return@LaunchedEffect
+
+                try {
+                    if (!BuildConfig.cartBootstrapEnabled) return@LaunchedEffect
+
+                    val request = CartBootstrap.request(url) ?: return@LaunchedEffect
+                    cartViewModel.bootstrapGuestCart(
+                        productIndex = request.productIndex,
+                        quantity = request.quantity,
+                    ).getOrThrow()
+                    navController.navigate(Screen.Cart.route) {
+                        launchSingleTop = true
+                    }
+                } catch (error: Exception) {
+                    Timber.e(error, "Cart bootstrap failed")
+                    Toast.makeText(context, R.string.cart_error_creating, Toast.LENGTH_LONG).show()
+                } finally {
+                    onIncomingUrlHandled(url)
+                }
+            }
 
             ObserveAsEvents(flow = SnackbarController.events) { event ->
                 scope.launch {
