@@ -10,6 +10,9 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import android.webkit.WebViewClient.ERROR_CONNECT
+import android.webkit.WebViewClient.ERROR_HOST_LOOKUP
+import android.webkit.WebViewClient.ERROR_TIMEOUT
 import androidx.activity.ComponentActivity
 import androidx.annotation.MainThread
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
@@ -34,6 +37,8 @@ internal class CheckoutWebView private constructor(
         private set
     internal var isPreloadRequest = false
         private set
+    private var checkoutRequest: CheckoutRequest? = null
+    private var didRetryCheckoutRequest = false
 
     init {
         webViewClient = CheckoutWebViewClient()
@@ -83,15 +88,43 @@ internal class CheckoutWebView private constructor(
         loadComplete = false
         isPreloadRequest = isPreload
         Handler(Looper.getMainLooper()).post {
-            val checkoutUrl = CheckoutUrlDecorator.decorate(url)
-            val headers = if (isPreload) {
-                mutableMapOf(SHOPIFY_PURPOSE_HEADER to PREFETCH_PURPOSE)
-            } else {
-                mutableMapOf()
-            }
-            loadUrl(checkoutUrl, headers)
+            val request = CheckoutRequest(
+                url = CheckoutUrlDecorator.decorate(url),
+                headers = if (isPreload) {
+                    mapOf(SHOPIFY_PURPOSE_HEADER to PREFETCH_PURPOSE)
+                } else {
+                    emptyMap()
+                },
+            )
+            checkoutRequest = request
+            didRetryCheckoutRequest = false
+            loadCheckoutRequest(request)
         }
     }
+
+    private fun loadCheckoutRequest(request: CheckoutRequest) {
+        loadUrl(request.url, request.headers)
+    }
+
+    private fun shouldRetryCheckoutRequest(
+        request: WebResourceRequest?,
+        error: WebResourceError?,
+    ): Boolean {
+        return request?.isForMainFrame == true &&
+            !didRetryCheckoutRequest &&
+            checkoutRequest != null &&
+            error?.errorCode in RETRYABLE_CHECKOUT_ERROR_CODES
+    }
+
+    private fun resetCheckoutRequestRetryState() {
+        checkoutRequest = null
+        didRetryCheckoutRequest = false
+    }
+
+    private data class CheckoutRequest(
+        val url: String,
+        val headers: Map<String, String>,
+    )
 
     internal fun markPreloadConsumed() {
         isPreloadRequest = false
@@ -115,6 +148,7 @@ internal class CheckoutWebView private constructor(
             log.d(LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
             loadComplete = true
             getListener().onCheckoutViewLoadComplete()
+            resetCheckoutRequestRetryState()
         }
 
         override fun onReceivedError(
@@ -122,10 +156,26 @@ internal class CheckoutWebView private constructor(
             request: WebResourceRequest?,
             error: WebResourceError?
         ) {
-            if (request?.isForMainFrame == true) {
+            if (shouldRetryCheckoutRequest(request, error)) {
+                val checkoutRequest = requireNotNull(checkoutRequest)
+                didRetryCheckoutRequest = true
+                log.w(
+                    LOG_TAG,
+                    "Retrying checkout navigation. Error code: ${error?.errorCode}, " +
+                        "URL: ${request?.url?.redactedForLogging()}"
+                )
+                loadCheckoutRequest(checkoutRequest)
+                return
+            }
+
+            val isMainFrame = request?.isForMainFrame == true
+            if (isMainFrame) {
                 CheckoutWebView.invalidate()
             }
             super.onReceivedError(view, request, error)
+            if (isMainFrame) {
+                resetCheckoutRequestRetryState()
+            }
         }
 
         override fun onReceivedHttpError(
@@ -133,10 +183,14 @@ internal class CheckoutWebView private constructor(
             request: WebResourceRequest?,
             errorResponse: WebResourceResponse?
         ) {
-            if (request?.isForMainFrame == true) {
+            val isMainFrame = request?.isForMainFrame == true
+            if (isMainFrame) {
                 CheckoutWebView.invalidate()
             }
             super.onReceivedHttpError(view, request, errorResponse)
+            if (isMainFrame) {
+                resetCheckoutRequestRetryState()
+            }
         }
 
         override fun shouldOverrideUrlLoading(
@@ -160,6 +214,11 @@ internal class CheckoutWebView private constructor(
         private const val LOG_TAG = "CheckoutWebView"
         private const val SHOPIFY_PURPOSE_HEADER = "Shopify-Purpose"
         private const val PREFETCH_PURPOSE = "prefetch"
+        private val RETRYABLE_CHECKOUT_ERROR_CODES = setOf(
+            ERROR_TIMEOUT,
+            ERROR_CONNECT,
+            ERROR_HOST_LOOKUP,
+        )
         private val preloadCache = PreloadCache()
 
         internal var cacheClock: PreloadCache.Clock
