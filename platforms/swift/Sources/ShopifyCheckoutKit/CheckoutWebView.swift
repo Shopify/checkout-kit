@@ -388,10 +388,16 @@ class CheckoutWebView: WKWebView {
 
     private var entryPoint: MetaData.EntryPoint?
 
+    private var cookiesToSeed: [HTTPCookie] = []
+
     // MARK: Initializers
 
     convenience init(frame: CGRect = .zero, entryPoint: MetaData.EntryPoint? = nil) {
-        self.init(frame: frame, configuration: WKWebViewConfiguration(), entryPoint: entryPoint)
+        let cookieStore = ShopifyCheckoutKit.configuration.cookieStore
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = cookieStore.makeDataStore()
+        self.init(frame: frame, configuration: configuration, entryPoint: entryPoint)
+        cookiesToSeed = cookieStore.cookiesToSeed
     }
 
     init(frame: CGRect = .zero, configuration: WKWebViewConfiguration, entryPoint: MetaData.EntryPoint? = nil) {
@@ -471,7 +477,28 @@ class CheckoutWebView: WKWebView {
             request.setValue(Self.prefetchPurpose, forHTTPHeaderField: Self.purposeHeader)
         }
 
-        load(request)
+        seedCookiesThenLoad(request)
+    }
+
+    private func seedCookiesThenLoad(_ request: URLRequest) {
+        guard !cookiesToSeed.isEmpty else {
+            load(request)
+            return
+        }
+
+        let cookieStore = configuration.websiteDataStore.httpCookieStore
+        let cookies = cookiesToSeed
+        cookiesToSeed = []
+
+        let group = DispatchGroup()
+        for cookie in cookies {
+            group.enter()
+            cookieStore.setCookie(cookie) { group.leave() }
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            self?.load(request)
+        }
     }
 
     private var isPreloadBackgrounded: Bool {
