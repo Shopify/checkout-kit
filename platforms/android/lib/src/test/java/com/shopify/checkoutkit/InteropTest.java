@@ -13,7 +13,9 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import kotlin.Unit;
@@ -161,6 +163,21 @@ public class InteropTest {
             ComponentActivity activity = controller.get();
 
             ShopifyCheckoutKit.preload("https://shopify.dev", activity);
+            ShopifyCheckoutKit.invalidate();
+        }
+    }
+
+    @Test
+    public void canPreloadWithListenerFromJava() {
+        try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
+            ComponentActivity activity = controller.get();
+
+            List<PreloadState> states = new ArrayList<>();
+            CheckoutPreload preload = ShopifyCheckoutKit.preload("https://shopify.dev", activity, states::add);
+
+            assertThat(preload).isNotNull();
+            preload.setListener(state -> states.add(state));
+            assertThat(preload.getState()).isNotNull();
             ShopifyCheckoutKit.invalidate();
         }
     }

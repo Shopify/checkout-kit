@@ -124,7 +124,10 @@ internal class CheckoutWebView private constructor(
             error: WebResourceError?
         ) {
             if (request?.isForMainFrame == true) {
-                preloadCache.transition(this@CheckoutWebView, PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+                preloadCache.transition(
+                    this@CheckoutWebView,
+                    PreloadState.Failed(PreloadState.FailureReason.NavigationFailed)
+                )
                 CheckoutWebView.invalidate()
             }
             super.onReceivedError(view, request, error)
@@ -137,7 +140,10 @@ internal class CheckoutWebView private constructor(
         ) {
             if (request?.isForMainFrame == true) {
                 val statusCode = errorResponse?.statusCode ?: 0
-                preloadCache.transition(this@CheckoutWebView, PreloadState.Failed(PreloadState.FailureReason.HttpError(statusCode)))
+                preloadCache.transition(
+                    this@CheckoutWebView,
+                    PreloadState.Failed(PreloadState.FailureReason.HttpError(statusCode))
+                )
                 CheckoutWebView.invalidate()
             }
             super.onReceivedHttpError(view, request, errorResponse)

@@ -17,6 +17,13 @@ public sealed class PreloadState {
 }
 
 /**
+ * Listener invoked on the main thread whenever the preload state changes.
+ */
+public fun interface PreloadStateListener {
+    public fun onStateChanged(state: PreloadState)
+}
+
+/**
  * Returned by [ShopifyCheckoutKit.preload] exposing the current preload state.
  * Because the preload cache is single-slot, every instance reflects the same
  * shared state.
@@ -32,12 +39,12 @@ public class CheckoutPreload internal constructor(private val cache: PreloadCach
     /**
      * Called on the main thread whenever the preload state changes.
      */
-    public var onStateChange: ((PreloadState) -> Unit)? = null
+    public var listener: PreloadStateListener? = null
 
     public val state: PreloadState
         get() = cache.state
 
     internal fun receive(state: PreloadState) {
-        onStateChange?.invoke(state)
+        listener?.onStateChanged(state)
     }
 }
