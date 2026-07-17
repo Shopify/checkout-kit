@@ -34,10 +34,10 @@ up:
       met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts
       meet: ./scripts/setup_dev_workspace --skip-optional-prompts
   - tophat_mobile
-  - run_always:
+  - custom:
       name: Configure Tophat Quick Launch items
-      run: ruby scripts/tophat/configure_quick_launch
-
+      met?: ruby scripts/tophat/configure_quick_launch
+      meet: "true"
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
   "Issues": "https://github.com/Shopify/checkout-kit/issues"
