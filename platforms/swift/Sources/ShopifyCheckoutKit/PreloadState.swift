@@ -18,8 +18,8 @@ public enum PreloadState: Equatable {
     /// The cached checkout is ready for a matching presentation.
     case ready
 
-    /// The cached checkout was evicted under memory pressure.
-    case evicted
+    /// The cached checkout was evicted for the associated reason.
+    case evicted(reason: EvictionReason)
     /// The cached checkout could not be retained for the associated reason.
     ///
     /// The message contains best-effort diagnostic context. It is not a stable, machine-readable
@@ -33,6 +33,15 @@ public enum PreloadState: Equatable {
 
         /// The cached preload passed its time-to-live.
         case expired
+    }
+
+    /// Reason a valid preload cache entry was proactively evicted.
+    public enum EvictionReason: Equatable {
+        /// The system signalled memory pressure.
+        case memoryPressure
+
+        /// WebKit terminated the background WebView's content process.
+        case webContentProcessTerminated
     }
 
     /// Reason a preload cache entry was not available.
