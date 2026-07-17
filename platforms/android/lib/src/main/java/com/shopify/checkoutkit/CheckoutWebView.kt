@@ -173,7 +173,7 @@ internal class CheckoutWebView private constructor(
         }
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-            invalidatePreload(this@CheckoutWebView)
+            preloadCache.evict(this@CheckoutWebView, PreloadState.Idle)
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !detail.didCrash()) {
                 // Renderer was killed because system ran out of memory.
                 log.d(LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
@@ -223,11 +223,10 @@ internal class CheckoutWebView private constructor(
 
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
-                preloadCache.transition(
+                preloadCache.evict(
                     this@CheckoutWebView,
                     PreloadState.Failed(PreloadState.FailureReason.NavigationFailed),
                 )
-                invalidatePreload(this@CheckoutWebView)
             }
             super.onReceivedError(view, request, error)
             error?.let {
@@ -246,11 +245,10 @@ internal class CheckoutWebView private constructor(
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
                 val statusCode = errorResponse?.statusCode ?: 0
-                preloadCache.transition(
+                preloadCache.evict(
                     this@CheckoutWebView,
                     PreloadState.Failed(PreloadState.FailureReason.HttpError(statusCode)),
                 )
-                invalidatePreload(this@CheckoutWebView)
             }
             super.onReceivedHttpError(view, request, errorResponse)
             errorResponse?.let {
@@ -360,23 +358,27 @@ internal class CheckoutWebView private constructor(
             url: String,
             activity: ComponentActivity,
             webMessageTransport: WebMessageTransport = WebMessageListenerTransport,
-        ) {
+            listener: PreloadStateListener? = null,
+        ): CheckoutPreload? {
             if (!ShopifyCheckoutKit.configuration.preloading.enabled) {
-                return
+                return null
             }
 
-            try {
+            return try {
                 runOnUiThreadBlocking(activity) {
-                    invalidate()
-                    val view = CheckoutWebView(activity, webMessageTransport).apply {
+                    val view = CheckoutWebView(activity, webMessageTransport)
+                    val handle = CheckoutPreload(preloadCache)
+                    view.apply {
                         loadCheckout(url, isPreload = true)
                         log.d(LOG_TAG, "Pausing preloaded WebView.")
                         onPause()
                     }
                     preloadCache.store(PreloadKey.forUrl(url), view, activity)
+                    handle.listener = listener
+                    handle
                 }
             } catch (_: UnsupportedWebViewException) {
-                return
+                null
             }
         }
 
@@ -405,7 +407,7 @@ internal class CheckoutWebView private constructor(
 
         fun invalidate() {
             runOnMainThread {
-                preloadCache.invalidate()
+                preloadCache.evict(PreloadState.Idle)
             }
         }
 
@@ -427,24 +429,19 @@ internal class CheckoutWebView private constructor(
             preloadCache.discard(view)
         }
 
-        private fun invalidatePreload(view: CheckoutWebView) {
-            preloadCache.invalidate(view)
-        }
-
-        private fun runOnUiThreadBlocking(activity: ComponentActivity, action: () -> Unit) {
+        private fun <T> runOnUiThreadBlocking(activity: ComponentActivity, action: () -> T): T {
             if (Looper.myLooper() == Looper.getMainLooper()) {
-                action()
-                return
+                return action()
             }
 
-            var result: Result<Unit>? = null
+            var result: Result<T>? = null
             val countDownLatch = CountDownLatch(1)
             activity.runOnUiThread {
                 result = runCatching { action() }
                 countDownLatch.countDown()
             }
             countDownLatch.await()
-            result?.getOrThrow()
+            return requireNotNull(result).getOrThrow()
         }
 
         private fun runOnMainThread(action: () -> Unit) {
@@ -454,8 +451,6 @@ internal class CheckoutWebView private constructor(
                 Handler(Looper.getMainLooper()).post(action)
             }
         }
-
-        internal fun newPreloadHandle(): CheckoutPreload = CheckoutPreload(preloadCache)
 
         internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedViewForTesting()
 

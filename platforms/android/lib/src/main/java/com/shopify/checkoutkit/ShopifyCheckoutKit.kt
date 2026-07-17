@@ -104,10 +104,7 @@ public object ShopifyCheckoutKit {
             return null
         }
 
-        val handle = CheckoutWebView.newPreloadHandle()
-        handle.listener = listener
-        CheckoutWebView.preload(checkoutUrl, context, webMessageTransport)
-        return handle
+        return CheckoutWebView.preload(checkoutUrl, context, webMessageTransport, listener)
     }
 
     /**

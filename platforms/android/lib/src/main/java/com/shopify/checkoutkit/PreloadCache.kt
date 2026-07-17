@@ -3,7 +3,6 @@ package com.shopify.checkoutkit
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import java.lang.ref.WeakReference
 
 internal data class PreloadKey(val url: String) {
     companion object {
@@ -35,7 +34,7 @@ internal class PreloadCache : DefaultLifecycleObserver {
 
     var clock: Clock = Clock()
     private var entry: Entry? = null
-    private var observer: WeakReference<CheckoutPreload>? = null
+    private var observer: CheckoutPreload? = null
 
     var state: PreloadState = PreloadState.Idle
         private set
@@ -44,18 +43,23 @@ internal class PreloadCache : DefaultLifecycleObserver {
         get() = entry != null
 
     fun setObserver(observer: CheckoutPreload) {
-        this.observer = WeakReference(observer)
+        this.observer = observer
     }
 
     fun transition(view: CheckoutWebView, state: PreloadState) {
         if (entry?.view !== view) return
-        if (this.state == state) return
         transition(state)
     }
 
     private fun transition(state: PreloadState) {
+        if (this.state == state) return
+
         this.state = state
-        observer?.get()?.receive(state)
+        val notifiedObserver = observer
+        notifiedObserver?.receive(state)
+        if (state.isTerminal && observer === notifiedObserver) {
+            observer = null
+        }
     }
 
     fun store(key: PreloadKey, view: CheckoutWebView, lifecycleOwner: LifecycleOwner) {
@@ -135,6 +139,11 @@ internal class PreloadCache : DefaultLifecycleObserver {
         transition(state)
     }
 
+    fun evict(view: CheckoutWebView, state: PreloadState) {
+        if (entry?.view !== view) return
+        evict(state)
+    }
+
     fun cachedViewForTesting(): CheckoutWebView? = entry?.view
 
     override fun onDestroy(owner: LifecycleOwner) {
@@ -149,3 +158,6 @@ internal class PreloadCache : DefaultLifecycleObserver {
         private const val PRELOAD_TTL_MS = 5 * 60 * 1000L
     }
 }
+
+private val PreloadState.isTerminal: Boolean
+    get() = this == PreloadState.Idle || this == PreloadState.Expired || this is PreloadState.Failed

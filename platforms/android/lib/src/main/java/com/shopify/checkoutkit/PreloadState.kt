@@ -28,8 +28,9 @@ public fun interface PreloadStateListener {
  * Because the preload cache is single-slot, every instance reflects the same
  * shared state.
  *
- * Retain the returned instance for as long as you want to observe state changes;
- * the cache holds it weakly.
+ * The cache retains the current instance while its preload is active. A subsequent
+ * preload replaces the observer, so retain the returned instance if you need to
+ * inspect its shared [state] after it stops receiving changes.
  */
 public class CheckoutPreload internal constructor(private val cache: PreloadCache) {
     init {
@@ -37,9 +38,16 @@ public class CheckoutPreload internal constructor(private val cache: PreloadCach
     }
 
     /**
-     * Called on the main thread whenever the preload state changes.
+     * Called immediately on the main thread with the current state, then whenever
+     * the preload state changes.
      */
     public var listener: PreloadStateListener? = null
+        set(value) {
+            onMainThread {
+                field = value
+                value?.onStateChanged(cache.state)
+            }
+        }
 
     public val state: PreloadState
         get() = cache.state
