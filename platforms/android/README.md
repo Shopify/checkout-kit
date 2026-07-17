@@ -313,6 +313,7 @@ ShopifyCheckoutKit.configure {
     it.sheet = CheckoutSheetOptions(
         snapPoints = listOf(CheckoutSheetSnapPoint.Expanded(topMarginDp = 72f)),
         cornerRadiusDp = 32f,
+        maxWidthDp = 640f,
         titleAlignment = CheckoutSheetTitleAlignment.CENTER,
         toolbarElevationDp = 0f,
         closeIconTint = Color.ResourceId(R.color.checkout_close),
@@ -328,9 +329,11 @@ ShopifyCheckoutKit.configure {
 ```
 
 `CheckoutSheetOptions()` defaults to `CheckoutSheetSnapPoint.MaterialExpanded`, which resolves to a 72dp top margin
-from the window top, or 56dp when the window width is greater than 640dp. The SDK handles system bar insets
-internally so the sheet does not overlap the status bar. Custom snap points currently support exactly one expanded
-position.
+from the window top, or 56dp when the window width is greater than 640dp. The sheet defaults to a 640dp maximum width
+and is centered on wider windows. Set `maxWidthDp` to another value to customize that cap. A non-positive, non-finite,
+or unrepresentable `maxWidthDp` falls back to the 640dp default. Avoid
+very narrow widths: they can make checkout unusable. The SDK handles system bar insets internally so the sheet does not
+overlap the status bar.
 
 Use `closeIcon = DrawableResource(R.drawable.ic_checkout_close)` to provide a custom close drawable. If both
 `closeIcon` and `closeIconTint` are set, the custom drawable takes precedence.

@@ -107,6 +107,7 @@ class ConfigurationTest {
             cornerRadiusDp = 12f,
             titleAlignment = CheckoutSheetTitleAlignment.START,
             toolbarElevationDp = 4f,
+            maxWidthDp = 480f,
             closeIconTint = Color.SRGB(0xFF0000),
             dismissal = CheckoutSheetDismissal(
                 dragToDismissEnabled = false,

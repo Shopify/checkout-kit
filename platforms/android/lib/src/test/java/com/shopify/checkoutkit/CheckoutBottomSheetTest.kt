@@ -165,6 +165,66 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
+    fun `bottom sheet caps its width and centers it on wide windows`() {
+        val maxWidth = DEFAULT_SHEET_MAX_WIDTH_DP.dpToPx(activity).roundToInt()
+        val parentWidth = maxWidth + 100
+        val root = FrameLayout(activity)
+        val bottomSheet = CheckoutBottomSheetLayout(activity)
+        root.addView(
+            bottomSheet,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                TEST_SHEET_SIZE,
+                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,
+            ),
+        )
+
+        root.measure(
+            View.MeasureSpec.makeMeasureSpec(parentWidth, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(TEST_SHEET_SIZE, View.MeasureSpec.EXACTLY),
+        )
+        root.layout(0, 0, parentWidth, TEST_SHEET_SIZE)
+
+        assertThat(bottomSheet.width).isEqualTo(maxWidth)
+        assertThat(bottomSheet.left).isEqualTo((parentWidth - maxWidth) / 2)
+    }
+
+    @Test
+    fun `bottom sheet applies configured maximum width`() {
+        val configuredMaxWidthDp = 480f
+        ShopifyCheckoutKit.configure {
+            it.sheet = CheckoutSheetOptions(maxWidthDp = configuredMaxWidthDp)
+        }
+
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+
+        assertThat(bottomSheet.maxWidthPx).isEqualTo(configuredMaxWidthDp.dpToPx(activity).roundToInt())
+    }
+
+    @Test
+    fun `bottom sheet uses default maximum width when configured width is invalid`() {
+        ShopifyCheckoutKit.configure {
+            it.sheet = CheckoutSheetOptions(maxWidthDp = 0f)
+        }
+
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+
+        assertThat(bottomSheet.maxWidthPx).isEqualTo(DEFAULT_SHEET_MAX_WIDTH_DP.dpToPx(activity).roundToInt())
+    }
+
+    @Test
+    fun `sheet resolves invalid or unrepresentable maximum widths to the default`() {
+        listOf(0f, -1f, Float.NaN, Float.POSITIVE_INFINITY, 900_000_000_000f).forEach { maxWidthDp ->
+            assertThat(CheckoutSheetOptions(maxWidthDp = maxWidthDp).resolveMaxWidthDp(activity))
+                .isEqualTo(DEFAULT_SHEET_MAX_WIDTH_DP)
+        }
+
+        assertThat(CheckoutSheetOptions(maxWidthDp = 100f).resolveMaxWidthDp(activity)).isEqualTo(100f)
+    }
+
+    @Test
     fun `checkoutView is added to the container when bottom sheet is presented`() {
         val sheet = presentBottomSheet()
 
