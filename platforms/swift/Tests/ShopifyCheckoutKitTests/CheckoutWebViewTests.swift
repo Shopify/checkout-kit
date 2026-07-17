@@ -571,6 +571,24 @@ class CheckoutWebViewTests: XCTestCase {
         wait(for: [didFailWithErrorExpectation], timeout: 5)
     }
 
+    func testPreloadStaysLoadingDuringRetryThenFailsAfterRetryExhausted() throws {
+        view.load(checkout: url)
+        let initialNavigation = try XCTUnwrap(view.checkoutNavigation)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: EmbeddedCheckoutProtocol.url(for: url), entryPoint: nil))
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .loading)
+
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: nil)
+        view.webView(view, didFailProvisionalNavigation: initialNavigation, withError: error)
+
+        let retryNavigation = try XCTUnwrap(view.checkoutNavigation)
+        XCTAssertFalse(retryNavigation === initialNavigation)
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .loading)
+
+        view.webView(view, didFailProvisionalNavigation: retryNavigation, withError: error)
+
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .failed(reason: .navigationFailed))
+    }
+
     func testClientIsSetOnWebView() {
         let client = MockBridgeClient()
         view.client = client

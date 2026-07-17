@@ -653,26 +653,26 @@ extension CheckoutWebView: WKNavigationDelegate {
             return
         }
 
-        if navigation === checkoutNavigation,
-           !didRetryCheckoutNavigation,
-           isRetryableProvisionalNavigationError(nsError),
-           let checkoutRequest
-        {
-            didRetryCheckoutNavigation = true
-            OSLogger.shared.warn("Retrying checkout navigation - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
-
-            guard let retryNavigation = load(checkoutRequest) else {
-                OSLogger.shared.error("Checkout navigation retry failed to start - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
-                failNavigation(with: error)
-                return
-            }
-
-            checkoutNavigation = retryNavigation
+        guard navigation === checkoutNavigation,
+              !didRetryCheckoutNavigation,
+              isRetryableProvisionalNavigationError(nsError),
+              let checkoutRequest
+        else {
+            OSLogger.shared.error("Provisional navigation failed - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
+            failNavigation(with: error)
             return
         }
 
-        OSLogger.shared.error("Provisional navigation failed - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
-        failNavigation(with: error)
+        didRetryCheckoutNavigation = true
+        OSLogger.shared.warn("Retrying checkout navigation - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
+
+        guard let retryNavigation = load(checkoutRequest) else {
+            OSLogger.shared.error("Checkout navigation retry failed to start - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
+            failNavigation(with: error)
+            return
+        }
+
+        checkoutNavigation = retryNavigation
     }
 
     func webView(_: WKWebView, didFinish navigation: WKNavigation!) {

@@ -114,8 +114,9 @@ struct CartView: View {
                                 isCompleted = false
                             }
                         }
-                        .onFail { _ in
+                        .onFail { error in
                             showCheckoutSheet = false
+                            print("[CheckoutKitSwiftDemo] FAIL - Checkout failed: \(error)")
                         }
                         .edgesIgnoringSafeArea(.all)
                 }
