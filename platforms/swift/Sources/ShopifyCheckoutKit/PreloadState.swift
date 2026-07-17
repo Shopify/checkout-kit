@@ -18,14 +18,23 @@ public enum PreloadState: Equatable {
     /// The cached checkout passed its time-to-live and was evicted.
     case expired
 
-    /// The cached checkout was evicted under memory pressure.
-    case evicted
+    /// The cached checkout was evicted for the associated reason.
+    case evicted(reason: EvictionReason)
 
     /// The cached checkout could not be retained for the associated reason.
     ///
     /// The message contains best-effort diagnostic context. It is not a stable, machine-readable
     /// value; use ``FailureReason`` to determine how to handle the failure.
     case failed(reason: FailureReason, message: String)
+
+    /// Reason a valid preload cache entry was proactively evicted.
+    public enum EvictionReason: Equatable {
+        /// The system signalled memory pressure.
+        case memoryPressure
+
+        /// WebKit terminated the background WebView's content process.
+        case webContentProcessTerminated
+    }
 
     /// Reason a preload cache entry was not available.
     public enum FailureReason: Equatable {

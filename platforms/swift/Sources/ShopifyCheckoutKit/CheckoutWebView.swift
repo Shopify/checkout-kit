@@ -50,6 +50,10 @@ final class PreloadCache {
 
     private var memoryPressureSource: DispatchSourceMemoryPressure?
 
+    /// True while the system is signalling memory pressure. Preload warming is
+    /// declined in this window so re-warming can't refill a starved system.
+    var isUnderMemoryPressure = false
+
     init() {
         startMemoryPressureMonitoring()
     }
@@ -65,6 +69,10 @@ final class PreloadCache {
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
         if let entry, entry.key == key, !entry.isStale {
             return true
+        }
+
+        guard !isUnderMemoryPressure else {
+            return false
         }
 
         invalidate()
@@ -129,6 +137,16 @@ final class PreloadCache {
 
         startExpiryTimer(after: cached.remainingTTL)
         return true
+    }
+
+    /// Public invalidation entry point. Leaves a presented checkout untouched so
+    /// callers cannot detach the bridge of a live session.
+    func invalidatePreload() {
+        guard let entry, !entry.view.isPresented else {
+            return
+        }
+
+        evict(with: .idle, disconnect: true)
     }
 
     func invalidate(disconnect: Bool = true) {
@@ -222,14 +240,20 @@ final class PreloadCache {
             return
         }
 
-        evict(with: .evicted)
+        evict(with: .evicted(reason: .memoryPressure))
     }
 
     private func startMemoryPressureMonitoring() {
-        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical, .normal], queue: .main)
         source.setEventHandler { [weak self] in
             MainActor.assumeIsolated {
-                self?.evict()
+                guard let self else { return }
+                if self.memoryPressureSource?.data == .normal {
+                    self.isUnderMemoryPressure = false
+                } else {
+                    self.isUnderMemoryPressure = true
+                    self.evict()
+                }
             }
         }
         source.resume()
@@ -954,11 +978,26 @@ extension CheckoutWebView: WKNavigationDelegate {
         hasHandledTerminalFailure = true
         timer = nil
         resetProvisionalNavigationRetryState()
+
+        if isPresented {
+            OSLogger.shared.error("Web content process terminated - url:\(LogSafeURL.string(webView.url))")
+            viewDelegate?.checkoutViewDidFailWithError(
+                error: CheckoutError.webContentProcessTerminated(
+                    message: "Web content process terminated."
+                )
+            )
+            return
+        }
+
         let wasBackgroundedPreload = isPreloadBackgrounded
-        handleCachedViewFailure(
-            .webContentUnavailable,
-            message: "Web content process terminated."
-        )
+        if wasBackgroundedPreload {
+            CheckoutWebView.preloadCache.evict(with: .evicted(reason: .webContentProcessTerminated))
+        } else {
+            handleCachedViewFailure(
+                .webContentUnavailable,
+                message: "Web content process terminated."
+            )
+        }
 
         guard !wasBackgroundedPreload else { return }
 
