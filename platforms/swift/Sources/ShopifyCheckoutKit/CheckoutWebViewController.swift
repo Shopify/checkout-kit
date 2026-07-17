@@ -181,15 +181,35 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         checkoutView?.isPresented = false
 
-        if let checkoutView, CheckoutWebView.preloadCache.retainAfterPresentation(checkoutView) {
-            checkoutView.viewDelegate = nil
-            checkoutView.client = nil
-            checkoutView.removeFromSuperview()
+        if let checkoutView, CheckoutWebView.preloadCache.contains(checkoutView) {
+            if let reason = evictionReason(for: checkoutView) {
+                CheckoutWebView.preloadCache.evict(with: .evicted(reason: reason))
+                checkoutView.cleanUpForDismissal()
+            } else if CheckoutWebView.preloadCache.retainAfterPresentation(checkoutView) {
+                checkoutView.viewDelegate = nil
+                checkoutView.client = nil
+                checkoutView.removeFromSuperview()
+            } else {
+                checkoutView.cleanUpForDismissal()
+            }
         } else {
             checkoutView?.cleanUpForDismissal()
         }
 
         checkoutView = nil
+    }
+
+    /// A cached checkout is normally preserved on dismissal for re-presentation.
+    /// Return an eviction reason for the exceptions where the cached view is no
+    /// longer safe to reuse.
+    private func evictionReason(for view: CheckoutWebView) -> PreloadState.EvictionReason? {
+        if view.didTerminateWebContent {
+            return .webContentProcessTerminated
+        }
+        if CheckoutWebView.preloadCache.isUnderMemoryPressure {
+            return .memoryPressure
+        }
+        return nil
     }
 }
 

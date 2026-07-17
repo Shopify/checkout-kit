@@ -246,7 +246,7 @@ final class PreloadCache {
     private func startMemoryPressureMonitoring() {
         let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical, .normal], queue: .main)
         source.setEventHandler { [weak self] in
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 guard let self else { return }
                 if self.memoryPressureSource?.data == .normal {
                     self.isUnderMemoryPressure = false
@@ -502,6 +502,11 @@ class CheckoutWebView: WKWebView {
     /// Tracks whether the view is currently presented so memory pressure does
     /// not evict an active checkout.
     var isPresented = false
+
+    /// Latches true when the web content process terminates while presented, so
+    /// dismissal evicts the dead view instead of caching it for re-presentation.
+    private(set) var didTerminateWebContent = false
+
     private var entryPoint: MetaData.EntryPoint?
 
     // MARK: Initializers
@@ -965,26 +970,16 @@ extension CheckoutWebView: WKNavigationDelegate {
         resetProvisionalNavigationRetryState()
 
         if isPresented {
-            OSLogger.shared.error("Web content process terminated - url:\(LogSafeURL.string(webView.url))")
-            viewDelegate?.checkoutViewDidFailWithError(
-                error: CheckoutError.webContentProcessTerminated(
-                    message: "Web content process terminated."
-                )
-            )
-            return
-        }
-
-        let wasBackgroundedPreload = isPreloadBackgrounded
-        if wasBackgroundedPreload {
+            didTerminateWebContent = true
+        } else if isPreloadBackgrounded {
             CheckoutWebView.preloadCache.evict(with: .evicted(reason: .webContentProcessTerminated))
+            return
         } else {
             handleCachedViewFailure(
                 .webContentUnavailable,
                 message: "Web content process terminated."
             )
         }
-
-        guard !wasBackgroundedPreload else { return }
 
         OSLogger.shared.error("Web content process terminated - url:\(LogSafeURL.string(webView.url))")
         viewDelegate?.checkoutViewDidFailWithError(
