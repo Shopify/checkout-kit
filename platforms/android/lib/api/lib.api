@@ -124,9 +124,9 @@ public abstract interface class com/shopify/checkoutkit/CheckoutListener {
 }
 
 public final class com/shopify/checkoutkit/CheckoutPreload {
-	public final fun getOnStateChange ()Lkotlin/jvm/functions/Function1;
+	public final fun getListener ()Lcom/shopify/checkoutkit/PreloadStateListener;
 	public final fun getState ()Lcom/shopify/checkoutkit/PreloadState;
-	public final fun setOnStateChange (Lkotlin/jvm/functions/Function1;)V
+	public final fun setListener (Lcom/shopify/checkoutkit/PreloadStateListener;)V
 }
 
 public final class com/shopify/checkoutkit/CheckoutPresentation {
@@ -679,6 +679,10 @@ public final class com/shopify/checkoutkit/PreloadState$Ready : com/shopify/chec
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$Ready;
 }
 
+public abstract interface class com/shopify/checkoutkit/PreloadStateListener {
+	public abstract fun onStateChanged (Lcom/shopify/checkoutkit/PreloadState;)V
+}
+
 public final class com/shopify/checkoutkit/Preloading {
 	public fun <init> ()V
 	public fun <init> (Z)V
@@ -711,8 +715,8 @@ public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static final fun getConfiguration ()Lcom/shopify/checkoutkit/Configuration;
 	public static final fun invalidate ()V
 	public static final fun preload (Ljava/lang/String;Landroidx/activity/ComponentActivity;)Lcom/shopify/checkoutkit/CheckoutPreload;
-	public static final fun preload (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutPreload;
-	public static synthetic fun preload$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutPreload;
+	public static final fun preload (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/PreloadStateListener;)Lcom/shopify/checkoutkit/CheckoutPreload;
+	public static synthetic fun preload$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/PreloadStateListener;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutPreload;
 	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)Lcom/shopify/checkoutkit/CheckoutHandle;
 	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;)Lcom/shopify/checkoutkit/CheckoutHandle;
 	public static final synthetic fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutHandle;
