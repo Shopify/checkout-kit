@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      visible: "^First name( \\(optional\\))?$"
+    commands:
+      - tapOn:
+          text: "^First name( \\(optional\\))?$"
+      - inputText: "${FIRST_NAME}"
+      - runFlow: dismiss-active-field.yaml
+- runFlow:
+    when:
+      visible: "^Last name$"
+    commands:
+      - tapOn:
+          text: "^Last name$"
+      - inputText: "${LAST_NAME}"
+      - runFlow: dismiss-active-field.yaml
+- runFlow: fill-shipping-address.yaml

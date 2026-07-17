@@ -1,0 +1,50 @@
+appId: ${APP_ID}
+---
+- runFlow: launch.yaml
+- tapOn:
+    id: account-tab
+- extendedWaitUntil:
+    visible:
+      id: account-screen
+    timeout: 10000
+- tapOn:
+    id: account-sign-in-button
+- extendedWaitUntil:
+    visible:
+      text: "^Email$"
+    timeout: 10000
+- tapOn:
+    text: "^Email$"
+- inputText: ${CUSTOMER_ACCOUNT_EMAIL}
+- runFlow: ../checkout/dismiss-active-field.yaml
+- extendedWaitUntil:
+    visible:
+      text: "^Continue$"
+    timeout: 10000
+- tapOn:
+    text: "^Continue$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: customer-authentication-web-code
+          timeout: 10000
+      - tapOn:
+          id: customer-authentication-web-code
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "^6-digit code$"
+          timeout: 10000
+      - tapOn:
+          text: "^6-digit code$"
+- inputText: ${CUSTOMER_ACCOUNT_CODE}
+- extendedWaitUntil:
+    visible:
+      id: account-signed-in-view
+    timeout: 10000

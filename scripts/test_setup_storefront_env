@@ -72,6 +72,7 @@ assert_output_is_sanitized() {
     synthetic-merchant \
     synthetic-client \
     synthetic-shop \
+    synthetic-user-agent \
     migrated-store.example.myshopify.com \
     migrated-token \
     migrated-client \
@@ -92,6 +93,7 @@ test_sync_and_check() {
     STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant \
     CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
     CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
+    CUSTOM_USER_AGENT=synthetic-user-agent \
     "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
@@ -105,6 +107,8 @@ test_sync_and_check() {
   assert_not_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "STOREFRONT_MERCHANT_IDENTIFIER"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
+  assert_contains "$fixture/platforms/react-native/sample/.env" "CUSTOM_USER_AGENT=\"synthetic-user-agent\""
+  assert_not_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOM_USER_AGENT"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "EMAIL"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
@@ -149,6 +153,7 @@ test_required_values_only() {
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$fixture/.env" "CUSTOM_USER_AGENT="
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
   assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
@@ -171,17 +176,21 @@ test_optional_sync_updates_blank_optional_values_after_required_setup() {
   assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
+  assert_contains "$fixture/.env" "CUSTOM_USER_AGENT="
 
   STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant \
     CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
     CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
+    CUSTOM_USER_AGENT=synthetic-user-agent \
     "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
   assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant"
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop"
+  assert_contains "$fixture/.env" "CUSTOM_USER_AGENT=synthetic-user-agent"
   assert_contains "$fixture/platforms/react-native/sample/.env" "STOREFRONT_MERCHANT_IDENTIFIER=\"synthetic-merchant\""
+  assert_contains "$fixture/platforms/react-native/sample/.env" "CUSTOM_USER_AGENT=\"synthetic-user-agent\""
   assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID = synthetic-client"
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.synthetic-shop.app://callback"
 }

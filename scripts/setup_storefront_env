@@ -230,6 +230,7 @@ root_has_canonical_keys() {
     CUSTOMER_ACCOUNT_API_CLIENT_ID \
     CUSTOMER_ACCOUNT_API_SHOP_ID \
     CUSTOMER_ACCOUNT_API_VERSION \
+    CUSTOM_USER_AGENT \
     EMAIL \
     ADDRESS_1 \
     ADDRESS_2 \
@@ -286,6 +287,14 @@ fill_optional_values_from_environment() {
     value="$(env_fallback CUSTOMER_ACCOUNT_API_SHOP_ID)"
     if [[ -n "$value" ]] && ! is_placeholder_value "$value"; then
       CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE="$value"
+      updated="true"
+    fi
+  fi
+
+  if [[ -z "$CUSTOM_USER_AGENT_VALUE" ]]; then
+    value="$(env_fallback CUSTOM_USER_AGENT)"
+    if [[ -n "$value" ]] && ! is_placeholder_value "$value"; then
+      CUSTOM_USER_AGENT_VALUE="$value"
       updated="true"
     fi
   fi
@@ -443,6 +452,10 @@ load_values() {
     "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$SWIFT_ACCELERATED_XCCONFIG")" \
     "$DEFAULT_CUSTOMER_ACCOUNT_API_VERSION")"
 
+  CUSTOM_USER_AGENT_VALUE="$(root_or_source_value CUSTOM_USER_AGENT \
+    "$(env_fallback CUSTOM_USER_AGENT)" \
+    "$(read_env_value CUSTOM_USER_AGENT "$REACT_NATIVE_ENV")")"
+
   EMAIL_VALUE="$(root_or_source_value EMAIL "$(env_fallback EMAIL)" "$(read_env_value EMAIL "$ANDROID_ENV")" "$(read_env_value PREFILL_EMAIL "$ANDROID_ENV")" "$(read_env_value EMAIL "$REACT_NATIVE_ENV")" "$(read_env_value EMAIL "$SWIFT_DEMO_XCCONFIG")" "checkout-kit@example.com")"
   ADDRESS_1_VALUE="$(root_or_source_value ADDRESS_1 "$(env_fallback ADDRESS_1)" "$(read_env_value ADDRESS_1 "$REACT_NATIVE_ENV")" "$(read_env_value ADDRESS_1 "$SWIFT_DEMO_XCCONFIG")" "650 King Street")"
   ADDRESS_2_VALUE="$(root_or_source_value ADDRESS_2 "$(env_fallback ADDRESS_2)" "$(read_env_value ADDRESS_2 "$REACT_NATIVE_ENV")" "$(read_env_value ADDRESS_2 "$SWIFT_DEMO_XCCONFIG")" "Shopify HQ")"
@@ -517,6 +530,7 @@ EOF
   write_env_assignment CUSTOMER_ACCOUNT_API_CLIENT_ID "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE"
   write_env_assignment CUSTOMER_ACCOUNT_API_SHOP_ID "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE"
   write_env_assignment CUSTOMER_ACCOUNT_API_VERSION "$CUSTOMER_ACCOUNT_API_VERSION_VALUE"
+  write_env_assignment CUSTOM_USER_AGENT "$CUSTOM_USER_AGENT_VALUE"
   cat <<EOF
 
 # Buyer identity defaults used by sample apps
@@ -607,6 +621,7 @@ EOF
 EOF
   write_quoted_env_assignment CUSTOMER_ACCOUNT_API_CLIENT_ID "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE"
   write_quoted_env_assignment CUSTOMER_ACCOUNT_API_SHOP_ID "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE"
+  write_quoted_env_assignment CUSTOM_USER_AGENT "$CUSTOM_USER_AGENT_VALUE"
 }
 
 generate_swift_demo_xcconfig() {

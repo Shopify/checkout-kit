@@ -7,6 +7,7 @@ appId: ${APP_ID}
 - runFlow: dismiss-active-field.yaml
 - extendedWaitUntil:
     visible: "^${EMAIL}$"
+    timeout: 10000
 - tapOn:
     text: "^First name( \\(optional\\))?$"
 - waitForAnimationToEnd
@@ -18,6 +19,7 @@ appId: ${APP_ID}
     direction: DOWN
     visibilityPercentage: 100
     centerElement: true
+    timeout: 10000
 - tapOn:
     text: "^Last name$"
 - waitForAnimationToEnd

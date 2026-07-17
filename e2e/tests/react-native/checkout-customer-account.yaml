@@ -1,16 +1,17 @@
 appId: ${APP_ID}
-name: React Native checkout - guest
+name: React Native checkout - customer account
 
 env:
   # Sample app buyer identity configuration
-  BUYER_IDENTITY_MODE: "guest"
+  BUYER_IDENTITY_MODE: "customerAccount"
 
-  # Checkout contact fixture
-  EMAIL: "maestro.e2e@shopify.com"
+  # Benchmark-shop customer account fixture
+  CUSTOMER_ACCOUNT_EMAIL: "checkout-kit-maestro@example.com"
+  CUSTOMER_ACCOUNT_CODE: "${E2E_CUSTOMER_ACCOUNT_CODE}"
+
+  # Checkout delivery fixture used when the account has no saved address
   FIRST_NAME: "Maestro"
   LAST_NAME: "Shopify"
-
-  # Checkout shipping fixture
   COUNTRY_LABEL: "United States"
   ADDRESS_LINE1: "700 S Flower St"
   CITY: "Los Angeles"
@@ -26,10 +27,18 @@ env:
   # Accepted successful checkout states for this smoke test.
   POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
 ---
-- runFlow: ../../flows/app/open-cart-from-link-after-app-reset.yaml
+- runFlow: ../../flows/app/sign-in-customer-account.yaml
+
+# Keep the authenticated app session alive while the deep link creates a fresh
+# cart with the Customer Account access token as its buyer identity.
+- runFlow: ../../flows/app/open-cart-from-link.yaml
+
 - runFlow: ../../flows/checkout/present.yaml
-- runFlow: ../../flows/checkout/fill-contact.yaml
-- runFlow: ../../flows/checkout/fill-shipping-address.yaml
+- runFlow:
+    when:
+      visible: "Country/Region"
+    commands:
+      - runFlow: ../../flows/checkout/fill-customer-account-delivery.yaml
 - runFlow: ../../flows/checkout/fill-payment-card.yaml
 - runFlow: ../../flows/checkout/submit.yaml
 - runFlow: ../../flows/checkout/assert-complete.yaml

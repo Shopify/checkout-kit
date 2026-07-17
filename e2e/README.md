@@ -3,9 +3,10 @@
 This directory contains Maestro end-to-end flows and configuration for Checkout
 Kit sample apps. Two complementary setups live here:
 
-- A **local** React Native checkout smoke suite, run with `dev rn e2e`, that
-  exercises guest and hardcoded buyer identity checkouts from seeded carts
-  through Shopify checkout and back to the app.
+- A **local** benchmark-shop React Native checkout smoke suite, run with
+  `dev rn e2e`, that exercises guest, hardcoded buyer identity, and customer
+  account checkouts from seeded carts through Shopify checkout and back to the
+  app.
 - A **CI matrix** that expands applications, OS version tags, and suites into
   BrowserStack Maestro run rows, starting with a shared launch smoke.
 
@@ -17,6 +18,9 @@ and make sure `maestro --version` succeeds before running these flows.
 ### React Native checkout smoke (`dev rn e2e`)
 
 Run the matching command from the repo root.
+
+The no-argument commands run the full benchmark-shop suite, including customer
+account checkout.
 
 React Native iOS:
 
@@ -35,18 +39,27 @@ Run one or more focused React Native scenarios by passing scenario flags:
 ```bash
 dev rn e2e ios --guest
 dev rn e2e ios --hardcoded-buyer-identity
-dev rn e2e ios --guest --hardcoded-buyer-identity
+dev rn e2e ios --customer-account
+dev rn e2e ios --guest --hardcoded-buyer-identity --customer-account
 dev rn e2e android --guest
 dev rn e2e android --hardcoded-buyer-identity
-dev rn e2e android --guest --hardcoded-buyer-identity
+dev rn e2e android --customer-account
+dev rn e2e android --guest --hardcoded-buyer-identity --customer-account
 ```
 
 The React Native commands start Metro if needed, build and launch the target
 sample app, then run Maestro. They require the standard storefront `.env` setup,
 but the E2E flows seed their own carts through the bootstrap deep link. The
-React Native bootstrap link accepts `buyerIdentityMode`, so guest and hardcoded
-buyer identity scenarios share the same cart setup path. No manual sample cart
-setup is required.
+React Native bootstrap link accepts `buyerIdentityMode`, so all three buyer
+identity scenarios create their carts through the same app-owned path. The
+full suite and focused customer account flow require
+`CUSTOMER_ACCOUNT_API_CLIENT_ID`, `CUSTOMER_ACCOUNT_API_SHOP_ID`, and
+`CUSTOM_USER_AGENT` configured for the benchmark shop. The runner also requires
+`E2E_CUSTOMER_ACCOUNT_CODE` from the private runner environment and fails early
+when any required value is missing. Focused guest and hardcoded buyer identity
+flows can use other storefront configurations. The customer account flow clears
+persisted authentication in E2E mode, signs in, and then bootstraps its cart
+without clearing the new session. No manual sample cart setup is required.
 
 ### Shared launch smoke
 
@@ -125,6 +138,8 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
   checkout smoke test from those subflows.
 - `tests/react-native/checkout-hardcoded-buyer-identity.yaml` verifies checkout
   from a bootstrapped cart with hardcoded buyer identity.
+- `tests/react-native/checkout-customer-account.yaml` verifies the real customer
+  account OAuth flow and checkout with an authenticated buyer identity.
 - `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
   `scripts/` drive the BrowserStack run plan.
 - `tests/shared/launch-smoke.yaml` is the shared launch smoke suite.
