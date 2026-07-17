@@ -75,11 +75,11 @@ final class ApplePayIntegrationTests: XCTestCase {
         }
     }
 
-    func testViewModifierWithButtonIntegrationIncludingCancel() async {
+    func testViewModifierWithButtonIntegrationIncludingDismiss() async {
         let failExpectation = expectation(description: "Fail callback")
         failExpectation.isInverted = true
-        let cancelExpectation = expectation(description: "Cancel callback")
-        cancelExpectation.isInverted = true
+        let dismissExpectation = expectation(description: "Dismiss callback")
+        dismissExpectation.isInverted = true
 
         await MainActor.run {
             let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart")
@@ -87,8 +87,8 @@ final class ApplePayIntegrationTests: XCTestCase {
                 .onFail { _ in
                     failExpectation.fulfill()
                 }
-                .onCancel {
-                    cancelExpectation.fulfill()
+                .onDismiss {
+                    dismissExpectation.fulfill()
                 }
                 .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockCommonConfiguration)
                 .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
@@ -102,7 +102,7 @@ final class ApplePayIntegrationTests: XCTestCase {
             XCTAssertNotNil(hostingController.rootView, "Root view should exist")
         }
 
-        await fulfillment(of: [failExpectation, cancelExpectation], timeout: 0.2)
+        await fulfillment(of: [failExpectation, dismissExpectation], timeout: 0.2)
     }
 
     // MARK: - Edge Case Tests
@@ -148,22 +148,22 @@ final class ApplePayIntegrationTests: XCTestCase {
     // MARK: - Delegate Tests
 
     @MainActor
-    func testCheckoutDelegateCancelCallback() async {
-        var cancelCallbackInvoked = false
+    func testCheckoutDelegateDismissCallback() async {
+        var dismissCallbackInvoked = false
 
         let viewController = ApplePayViewController(
             identifier: .cart(cartID: "gid://Shopify/Cart/test-cart"),
             configuration: mockConfiguration
         )
 
-        viewController.onCheckoutCancel = {
-            cancelCallbackInvoked = true
+        viewController.onCheckoutDismiss = {
+            dismissCallbackInvoked = true
         }
 
-        viewController.onCheckoutCancel?()
+        viewController.onCheckoutDismiss?()
 
         try? await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertTrue(cancelCallbackInvoked, "Cancel callback should be invoked when onCheckoutCancel is called")
+        XCTAssertTrue(dismissCallbackInvoked, "Dismiss callback should be invoked when onCheckoutDismiss is called")
     }
 }

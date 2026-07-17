@@ -2113,8 +2113,8 @@
           },
           {
             "kind": "Function",
-            "name": "onCancel",
-            "printedName": "onCancel(_:)",
+            "name": "onDismiss",
+            "printedName": "onDismiss(_:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -2148,8 +2148,8 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV8onCancelyACyycF",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV8onCancelyACyycF",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV9onDismissyACyycF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV9onDismissyACyycF",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "Preconcurrency",
@@ -2710,8 +2710,8 @@
           },
           {
             "kind": "Var",
-            "name": "checkoutDidCancel",
-            "printedName": "checkoutDidCancel",
+            "name": "checkoutDidDismiss",
+            "printedName": "checkoutDidDismiss",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -2747,8 +2747,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV17checkoutDidCancelyycSgvp",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV17checkoutDidCancelyycSgvp",
+            "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV18checkoutDidDismissyycSgvp",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV18checkoutDidDismissyycSgvp",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "HasInitialValue",
@@ -2795,8 +2795,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV17checkoutDidCancelyycSgvg",
-                "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV17checkoutDidCancelyycSgvg",
+                "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV18checkoutDidDismissyycSgvg",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV18checkoutDidDismissyycSgvg",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "implicit": true,
                 "declAttributes": [
@@ -2848,8 +2848,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV17checkoutDidCancelyycSgvs",
-                "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV17checkoutDidCancelyycSgvs",
+                "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV18checkoutDidDismissyycSgvs",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV18checkoutDidDismissyycSgvs",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "implicit": true,
                 "declAttributes": [
@@ -3016,7 +3016,7 @@
           {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(checkoutDidFail:checkoutDidCancel:renderStateDidChange:)",
+            "printedName": "init(checkoutDidFail:checkoutDidDismiss:renderStateDidChange:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -3127,8 +3127,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFail0fG6Cancel011renderStateG6ChangeACy0A11CheckoutKit0M5ErrorOcSg_yycSgyAA06RenderK0OcSgtcfc",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFail0fG6Cancel011renderStateG6ChangeACy0A11CheckoutKit0M5ErrorOcSg_yycSgyAA06RenderK0OcSgtcfc",
+            "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFail0fG7Dismiss011renderStateG6ChangeACy0A11CheckoutKit0M5ErrorOcSg_yycSgyAA06RenderK0OcSgtcfc",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFail0fG7Dismiss011renderStateG6ChangeACy0A11CheckoutKit0M5ErrorOcSg_yycSgyAA06RenderK0OcSgtcfc",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "init_kind": "Designated"
           }

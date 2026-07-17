@@ -23,8 +23,8 @@ struct ButtonSet: View {
                         .onFail { error in
                             print("❌ Checkout failed: \(error)")
                         }
-                        .onCancel {
-                            print("🚫 Checkout cancelled")
+                        .onDismiss {
+                            print("🚫 Checkout dismissed")
                         }
                         .onRenderStateChange {
                             cartRenderState = $0
@@ -50,8 +50,8 @@ struct ButtonSet: View {
                     .onFail { error in
                         print("❌ Variant checkout failed: \(error)")
                     }
-                    .onCancel {
-                        print("🚫 Variant checkout cancelled")
+                    .onDismiss {
+                        print("🚫 Variant checkout dismissed")
                     }
                     .onRenderStateChange {
                         variantRenderState = $0

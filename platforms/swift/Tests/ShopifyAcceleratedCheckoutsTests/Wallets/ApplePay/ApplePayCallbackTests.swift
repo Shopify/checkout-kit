@@ -11,7 +11,7 @@ final class ApplePayCallbackTests: XCTestCase {
     var mockConfiguration: ApplePayConfigurationWrapper!
     var mockIdentifier: CheckoutIdentifier!
     var errorExpectation: XCTestExpectation!
-    var cancelExpectation: XCTestExpectation!
+    var dismissExpectation: XCTestExpectation!
 
     // MARK: - Setup
 
@@ -58,7 +58,7 @@ final class ApplePayCallbackTests: XCTestCase {
         mockConfiguration = nil
         mockIdentifier = nil
         errorExpectation = nil
-        cancelExpectation = nil
+        dismissExpectation = nil
         try await super.tearDown()
     }
 
@@ -97,34 +97,34 @@ final class ApplePayCallbackTests: XCTestCase {
         XCTAssertTrue(true, "Should not crash when callback is nil")
     }
 
-    // MARK: - Cancel Callback Tests
+    // MARK: - Dismiss Callback Tests
 
-    func testCancelCallbackInvoked() async {
-        cancelExpectation = expectation(description: "Cancel callback should be invoked")
-        let callbackInvokedExpectation = expectation(description: "Cancel callback invoked")
+    func testDismissCallbackInvoked() async {
+        dismissExpectation = expectation(description: "Dismiss callback should be invoked")
+        let callbackInvokedExpectation = expectation(description: "Dismiss callback invoked")
 
         await MainActor.run {
-            viewController.onCheckoutCancel = { [weak self] in
+            viewController.onCheckoutDismiss = { [weak self] in
                 callbackInvokedExpectation.fulfill()
-                self?.cancelExpectation.fulfill()
+                self?.dismissExpectation.fulfill()
             }
         }
 
         await MainActor.run {
-            viewController.onCheckoutCancel?()
+            viewController.onCheckoutDismiss?()
         }
 
-        await fulfillment(of: [cancelExpectation, callbackInvokedExpectation], timeout: 1.0)
+        await fulfillment(of: [dismissExpectation, callbackInvokedExpectation], timeout: 1.0)
     }
 
-    func testCancelCallbackNotInvokedWhenNil() async {
+    func testDismissCallbackNotInvokedWhenNil() async {
         let isNil = await MainActor.run {
-            viewController.onCheckoutCancel == nil
+            viewController.onCheckoutDismiss == nil
         }
-        XCTAssertTrue(isNil, "onCancel should be nil")
+        XCTAssertTrue(isNil, "onDismiss should be nil")
 
         await MainActor.run {
-            viewController.onCheckoutCancel?() // Should not crash
+            viewController.onCheckoutDismiss?() // Should not crash
         }
 
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
@@ -134,34 +134,34 @@ final class ApplePayCallbackTests: XCTestCase {
     // MARK: - No Callback Tests
 
     @MainActor
-    func testNoCallbackWhenCheckoutCancelled() async {
+    func testNoFailCallbackWhenCheckoutIsDismissed() async {
         var errorInvoked = false
-        var cancelInvoked = false
+        var dismissInvoked = false
 
         viewController.onCheckoutFail = { _ in
             errorInvoked = true
         }
-        viewController.onCheckoutCancel = {
-            cancelInvoked = true
+        viewController.onCheckoutDismiss = {
+            dismissInvoked = true
         }
 
-        viewController.onCheckoutCancel?()
+        viewController.onCheckoutDismiss?()
 
         try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         XCTAssertFalse(errorInvoked, "Error callback should not be invoked")
-        XCTAssertTrue(cancelInvoked, "Cancel callback should be invoked")
+        XCTAssertTrue(dismissInvoked, "Dismiss callback should be invoked")
     }
 
     // MARK: - Thread Safety Tests
 
     @MainActor
     func testCallbackThreadSafety() async {
-        let iterations = 10 // Even distribution between error and cancel
+        let iterations = 10 // Even distribution between error and dismissal
         let errorExpectations = (0 ..< iterations / 2).map { _ in expectation(description: "Error") }
-        let cancelExpectations = (0 ..< iterations / 2).map { _ in expectation(description: "Cancel") }
+        let dismissExpectations = (0 ..< iterations / 2).map { _ in expectation(description: "Dismiss") }
 
         var errorIndex = 0
-        var cancelIndex = 0
+        var dismissIndex = 0
 
         viewController.onCheckoutFail = { _ in
             if errorIndex < errorExpectations.count {
@@ -169,10 +169,10 @@ final class ApplePayCallbackTests: XCTestCase {
                 errorIndex += 1
             }
         }
-        viewController.onCheckoutCancel = {
-            if cancelIndex < cancelExpectations.count {
-                cancelExpectations[cancelIndex].fulfill()
-                cancelIndex += 1
+        viewController.onCheckoutDismiss = {
+            if dismissIndex < dismissExpectations.count {
+                dismissExpectations[dismissIndex].fulfill()
+                dismissIndex += 1
             }
         }
 
@@ -181,7 +181,7 @@ final class ApplePayCallbackTests: XCTestCase {
                 let mockError = CheckoutError.sdkError(underlying: NSError(domain: "TestError", code: 0, userInfo: nil))
                 viewController.onCheckoutFail?(mockError)
             } else {
-                viewController.onCheckoutCancel?()
+                viewController.onCheckoutDismiss?()
             }
 
             // Give time for callback to execute
@@ -189,30 +189,30 @@ final class ApplePayCallbackTests: XCTestCase {
         }
 
         // Wait for all expectations
-        await fulfillment(of: errorExpectations + cancelExpectations, timeout: 2.0)
+        await fulfillment(of: errorExpectations + dismissExpectations, timeout: 2.0)
     }
 
     // MARK: - Edge Case Tests
 
-    func testMultipleCancelCallbackAssignments() async {
-        let firstCallbackExpectation = expectation(description: "First cancel callback")
+    func testMultipleDismissCallbackAssignments() async {
+        let firstCallbackExpectation = expectation(description: "First dismiss callback")
         firstCallbackExpectation.isInverted = true
-        let secondCallbackExpectation = expectation(description: "Second cancel callback")
+        let secondCallbackExpectation = expectation(description: "Second dismiss callback")
 
         await MainActor.run {
             // First assignment
-            viewController.onCheckoutCancel = {
+            viewController.onCheckoutDismiss = {
                 firstCallbackExpectation.fulfill()
             }
 
             // Second assignment (should replace first)
-            viewController.onCheckoutCancel = {
+            viewController.onCheckoutDismiss = {
                 secondCallbackExpectation.fulfill()
             }
         }
 
         await MainActor.run {
-            viewController.onCheckoutCancel?()
+            viewController.onCheckoutDismiss?()
         }
 
         await fulfillment(of: [secondCallbackExpectation], timeout: 1.0)

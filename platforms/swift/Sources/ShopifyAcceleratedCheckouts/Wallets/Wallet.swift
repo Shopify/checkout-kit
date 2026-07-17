@@ -10,16 +10,16 @@ public enum Wallet: String {
 /// Event handlers for wallet buttons
 public struct EventHandlers {
     public var checkoutDidFail: ((CheckoutError) -> Void)?
-    public var checkoutDidCancel: (() -> Void)?
+    public var checkoutDidDismiss: (() -> Void)?
     public var renderStateDidChange: ((RenderState) -> Void)?
 
     public init(
         checkoutDidFail: ((CheckoutError) -> Void)? = nil,
-        checkoutDidCancel: (() -> Void)? = nil,
+        checkoutDidDismiss: (() -> Void)? = nil,
         renderStateDidChange: ((RenderState) -> Void)? = nil
     ) {
         self.checkoutDidFail = checkoutDidFail
-        self.checkoutDidCancel = checkoutDidCancel
+        self.checkoutDidDismiss = checkoutDidDismiss
         self.renderStateDidChange = renderStateDidChange
     }
 }

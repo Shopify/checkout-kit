@@ -36,18 +36,18 @@ class ApplePayViewController: WalletController, PayController {
     @MainActor
     public var onCheckoutFail: ((CheckoutError) -> Void)?
 
-    /// Callback invoked when the checkout process is cancelled by the user.
+    /// Callback invoked when the buyer dismisses the checkout experience.
     /// This closure is called on the main thread when the user dismisses the checkout.
     ///
     /// Example usage:
     /// ```swift
-    /// applePayViewController.onCheckoutCancel = { [weak self] in
+    /// applePayViewController.onCheckoutDismiss = { [weak self] in
     ///     self?.resetCheckoutState()
-    ///     self?.logAnalyticsEvent(.checkoutCancelled)
+    ///     self?.logAnalyticsEvent(.checkoutDismissed)
     /// }
     /// ```
     @MainActor
-    public var onCheckoutCancel: (() -> Void)?
+    public var onCheckoutDismiss: (() -> Void)?
 
     /// Initialization workaround for passing self to ApplePayAuthorizationDelegate
     private var __authorizationDelegate: ApplePayAuthorizationDelegate!

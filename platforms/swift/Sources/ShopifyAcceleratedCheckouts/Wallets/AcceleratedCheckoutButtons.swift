@@ -182,23 +182,23 @@ extension AcceleratedCheckoutButtons {
         return newView
     }
 
-    /// Adds an action to perform when the checkout is cancelled by the user.
+    /// Adds an action to perform when the buyer dismisses the checkout experience.
     ///
-    /// Use this modifier to handle checkout cancellation:
+    /// Use this modifier to handle checkout dismissal:
     ///
     /// ```swift
     /// AcceleratedCheckoutButtons(cartID: cartId)
-    ///     .onCancel {
-    ///         // Reset checkout state
+    ///     .onDismiss {
+    ///         // Reset checkout presentation state
     ///         resetCheckoutState()
     ///     }
     /// ```
     ///
-    /// - Parameter action: The action to perform when checkout is cancelled
-    /// - Returns: A view with the checkout cancel handler set
-    public func onCancel(_ action: @escaping () -> Void) -> AcceleratedCheckoutButtons {
+    /// - Parameter action: The action to perform when the buyer dismisses checkout
+    /// - Returns: A view with the checkout dismissal handler set
+    public func onDismiss(_ action: @escaping () -> Void) -> AcceleratedCheckoutButtons {
         var newView = self
-        newView.eventHandlers.checkoutDidCancel = action
+        newView.eventHandlers.checkoutDidDismiss = action
         return newView
     }
 
