@@ -63,8 +63,9 @@ public object ShopifyCheckoutKit {
      * Preloads a Shopify checkout in a background WebView as a best-effort performance hint.
      *
      * Preloaded checkouts are reused only when [present] is later called or a [ShopifyCheckout] is
-     * created with the same fully parameterized checkout URL. Otherwise the cached checkout is
-     * discarded and checkout loads normally.
+     * created with the same fully parameterized checkout URL and a context resolving to the same
+     * activity instance passed to this call. Activity-backed context wrappers are supported.
+     * Otherwise the cached checkout is discarded and checkout loads normally.
      *
      * @param checkoutUrl The URL of the checkout to preload, obtained via the Storefront API.
      * @param context The activity used to create the background WebView.

@@ -1,6 +1,8 @@
 package com.shopify.checkoutkit
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
@@ -202,7 +204,7 @@ internal class CheckoutWebView private constructor(
                 "Checkout views must be created on the main thread."
             }
             val cachedView = if (ShopifyCheckoutKit.configuration.preloading.enabled) {
-                preloadCache.take(PreloadKey.forUrl(url))
+                preloadCache.take(PreloadKey.forUrl(url), context.findActivity())
             } else {
                 preloadCache.invalidate()
                 null
@@ -252,4 +254,10 @@ internal class CheckoutWebView private constructor(
 
         internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedViewForTesting()
     }
+}
+
+internal tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> if (baseContext === this) null else baseContext.findActivity()
+    else -> null
 }

@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.Color
 import android.net.Uri
 import android.os.Looper
@@ -374,6 +375,62 @@ class CheckoutWebViewTest {
     }
 
     @Test
+    fun `checkout view consumes cached preload when context wraps preload activity`() {
+        preload("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val presentedView = checkoutViewFor(
+            url = "https://checkout.shopify.com/cart/123",
+            context = ContextWrapper(activity),
+        )
+
+        assertThat(presentedView).isSameAs(cachedView)
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isFalse()
+    }
+
+    @Test
+    fun `checkout view discards cached preload created by a different activity`() {
+        preload("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
+            val otherActivity = activityController.get()
+            val presentedView = checkoutViewFor(
+                url = "https://checkout.shopify.com/cart/123",
+                context = otherActivity,
+            )
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+            assertThat(presentedView).isNotSameAs(cachedView)
+            assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+            assertThat(presentedView.context).isSameAs(otherActivity)
+            assertThat(presentedView.isPreloadRequest).isFalse()
+        }
+    }
+
+    @Test
+    fun `checkout view discards cached preload when context has no activity`() {
+        preload("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val applicationContext = activity.applicationContext
+
+        val presentedView = checkoutViewFor(
+            url = "https://checkout.shopify.com/cart/123",
+            context = applicationContext,
+        )
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(presentedView).isNotSameAs(cachedView)
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+        assertThat(presentedView.context).isSameAs(applicationContext)
+        assertThat(presentedView.isPreloadRequest).isFalse()
+    }
+
+    @Test
     fun `present discards cached checkout view for mismatched URL`() {
         preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
@@ -504,8 +561,10 @@ class CheckoutWebViewTest {
         CheckoutWebView.preload(url, activity, webMessageTransport)
     }
 
-    private fun checkoutViewFor(url: String): CheckoutWebView =
-        CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+    private fun checkoutViewFor(
+        url: String,
+        context: Context = activity,
+    ): CheckoutWebView = CheckoutWebView.checkoutViewFor(url, context, webMessageTransport)
 
     private fun BaseWebView.sendTouchEvent(action: Int, y: Float) {
         val event = MotionEvent.obtain(0, 0, action, 0f, y, 0)
