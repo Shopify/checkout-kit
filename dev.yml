@@ -215,7 +215,7 @@ commands:
         subcommands:
           samples:
             desc: Build all sample applications
-            run: platforms/android/samples/MobileBuyIntegration/gradlew -p platforms/android/samples/MobileBuyIntegration build
+            run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo build
 
       start:
         desc: Build the android sample app and install it to the booted emulator

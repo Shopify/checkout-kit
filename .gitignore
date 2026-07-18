@@ -36,7 +36,7 @@ platforms/react-native/test/rct-integration-app/**/Info.plist
 
 # Apollo / GraphQL
 *.graphqls
-!platforms/android/samples/MobileBuyIntegration/app/src/main/graphql/schema.graphqls
+!platforms/android/samples/CheckoutKitAndroidDemo/app/src/main/graphql/schema.graphqls
 apollo-ios-cli
 
 # Android / Gradle
