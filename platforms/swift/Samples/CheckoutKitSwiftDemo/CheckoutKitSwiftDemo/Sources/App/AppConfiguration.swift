@@ -25,7 +25,7 @@ public final class AppConfiguration: ObservableObject {
         didSet {
             if oldValue == .customerAccount, buyerIdentityMode != .customerAccount {
                 Task { @MainActor in
-                    CustomerAccountManager.shared.logout()
+                    await CustomerAccountManager.shared.logout()
                 }
             }
             UserDefaults.standard.set(buyerIdentityMode.rawValue, forKey: AppStorageKeys.buyerIdentityMode.rawValue)

@@ -112,7 +112,7 @@ final class KeychainHelper {
             return
         }
         save(key: emailKey, data: data)
-        logger.debug("Saved email to keychain: \(email)")
+        logger.debug("Saved email to keychain")
     }
 
     func getEmail() -> String? {
@@ -120,8 +120,6 @@ final class KeychainHelper {
             logger.debug("No email found in keychain")
             return nil
         }
-        let email = String(data: data, encoding: .utf8)
-        logger.debug("Retrieved email from keychain: \(email ?? "nil")")
-        return email
+        return String(data: data, encoding: .utf8)
     }
 }
