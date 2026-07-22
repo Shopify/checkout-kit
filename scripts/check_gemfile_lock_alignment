@@ -1,0 +1,78 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative "lib/gemfile_lock_alignment"
+
+REPO_ROOT = File.expand_path("..", __dir__)
+FIX_COMMAND = "./scripts/check_gemfile_lock_alignment --fix"
+
+def problems_by_lockfile
+  expected_bundler = GemfileLockAlignment.default_bundler_version
+
+  GemfileLockAlignment.tracked_lockfiles(REPO_ROOT).each_with_object({}) do |path, memo|
+    expected_ruby = GemfileLockAlignment.expected_ruby_version(File.dirname(path))
+    errors = GemfileLockAlignment.load(path, base: REPO_ROOT).alignment_errors(
+      expected_ruby_version: expected_ruby,
+      expected_bundler_version: expected_bundler,
+    )
+    memo[path] = errors unless errors.empty?
+  end
+end
+
+def report_problems(problems)
+  warn "Gemfile.lock alignment problems found:"
+  problems.each do |path, errors|
+    warn ""
+    warn "  #{path.delete_prefix("#{REPO_ROOT}/")}"
+    errors.each { |error| warn "    - #{error}" }
+  end
+  warn ""
+  warn "▶ To fix, run from the repo root:"
+  warn "    #{FIX_COMMAND}"
+end
+
+def regenerate(path)
+  dir = File.dirname(path)
+  relative_dir = dir.delete_prefix("#{REPO_ROOT}/")
+  bundler = GemfileLockAlignment.default_bundler_version
+
+  puts "Regenerating #{path.delete_prefix("#{REPO_ROOT}/")} (Bundler #{bundler})..."
+  File.write(path, GemfileLockAlignment.without_footer(File.read(path)))
+
+  Dir.chdir(dir) do
+    system("bundle", "_#{bundler}_", "update", "--bundler=#{bundler}") ||
+      abort("Failed to regenerate lockfile in #{relative_dir}; run `bundle update --bundler=#{bundler}` there manually.")
+  end
+end
+
+def run_fix
+  problems = problems_by_lockfile
+  if problems.empty?
+    puts "All tracked Gemfile.lock files are already aligned; nothing to fix."
+    return 0
+  end
+
+  problems.each_key { |path| regenerate(path) }
+
+  remaining = problems_by_lockfile
+  if remaining.empty?
+    puts "✅ Regenerated #{problems.size} Gemfile.lock file(s); all are now aligned."
+    0
+  else
+    report_problems(remaining)
+    1
+  end
+end
+
+def run_check
+  problems = problems_by_lockfile
+  if problems.empty?
+    puts "All tracked Gemfile.lock files are aligned with .ruby-version and the Ruby's default Bundler."
+    return 0
+  end
+
+  report_problems(problems)
+  1
+end
+
+exit(ARGV.include?("--fix") ? run_fix : run_check)
