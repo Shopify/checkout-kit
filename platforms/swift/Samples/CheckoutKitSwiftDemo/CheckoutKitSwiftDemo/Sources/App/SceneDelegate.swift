@@ -236,14 +236,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         badgeLabel.isHidden = count <= 0
     }
 
-    func scene(_: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
-        guard let url = URLContexts.first?.url else { return }
-
-        if CustomerAccountManager.shared.handleCallback(url: url) {
-            return
-        }
-    }
-
     func scene(_: UIScene, continue userActivity: NSUserActivity) {
         guard
             userActivity.activityType == NSUserActivityTypeBrowsingWeb,

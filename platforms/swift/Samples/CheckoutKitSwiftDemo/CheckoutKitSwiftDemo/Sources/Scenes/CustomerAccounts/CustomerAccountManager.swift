@@ -1,3 +1,4 @@
+import AuthenticationServices
 import CommonCrypto
 import Foundation
 import ShopifyCheckoutKit
@@ -9,6 +10,10 @@ enum CustomerAccountError: LocalizedError {
     case tokenRefreshFailed(String)
     case notAuthenticated
     case invalidState
+    case invalidCallback
+    case authorizationInProgress
+    case authorizationCancelled
+    case authorizationFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -24,6 +29,14 @@ enum CustomerAccountError: LocalizedError {
             return "User is not authenticated"
         case .invalidState:
             return "Invalid state parameter - possible CSRF attack"
+        case .invalidCallback:
+            return "Invalid authorization callback"
+        case .authorizationInProgress:
+            return "Another authorization request is already in progress"
+        case .authorizationCancelled:
+            return "Authorization was cancelled"
+        case let .authorizationFailed(message):
+            return "Authorization failed: \(message)"
         }
     }
 }
@@ -67,6 +80,8 @@ final class CustomerAccountManager: ObservableObject {
 
     private var codeVerifier: String?
     private var savedState: String?
+    private var authenticationSession: ASWebAuthenticationSession?
+    private var presentationContextProvider: CustomerAccountPresentationContextProvider?
 
     private init() {
         shopId = InfoDictionary.shared.customerAccountApiShopId
@@ -106,7 +121,7 @@ final class CustomerAccountManager: ObservableObject {
         return base64URLEncode(Data(bytes))
     }
 
-    func buildAuthorizationURL() -> URL? {
+    private func buildAuthorizationURL() -> URL? {
         guard let authorizationEndpoint, let clientId, let redirectUri else {
             return nil
         }
@@ -141,7 +156,61 @@ final class CustomerAccountManager: ObservableObject {
         return state == savedState
     }
 
-    func exchangeCodeForTokens(code: String) async throws {
+    func signIn(from presentationAnchor: ASPresentationAnchor) async throws {
+        guard authenticationSession == nil else {
+            throw CustomerAccountError.authorizationInProgress
+        }
+
+        guard let authorizationURL = buildAuthorizationURL(), let callbackScheme else {
+            throw CustomerAccountError.missingConfiguration
+        }
+
+        isLoading = true
+        defer {
+            isLoading = false
+            codeVerifier = nil
+            savedState = nil
+        }
+
+        let callbackURL = try await presentAuthenticationSession(
+            url: authorizationURL,
+            callbackScheme: callbackScheme,
+            from: presentationAnchor
+        )
+        let code = try authorizationCode(from: callbackURL)
+        try await exchangeCodeForTokens(code: code)
+    }
+
+    private func authorizationCode(from callbackURL: URL) throws -> String {
+        guard let callbackScheme,
+              let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
+              components.scheme == callbackScheme,
+              components.host == "callback"
+        else {
+            throw CustomerAccountError.invalidCallback
+        }
+
+        let queryItems = components.queryItems ?? []
+        let parameters = Dictionary(uniqueKeysWithValues: queryItems.compactMap { item -> (String, String)? in
+            guard let value = item.value else { return nil }
+            return (item.name, value)
+        })
+
+        guard let state = parameters["state"], validateState(state) else {
+            throw CustomerAccountError.invalidState
+        }
+
+        if let error = parameters["error"] {
+            throw CustomerAccountError.authorizationFailed(error)
+        }
+
+        guard let code = parameters["code"] else {
+            throw CustomerAccountError.invalidAuthorizationCode
+        }
+        return code
+    }
+
+    private func exchangeCodeForTokens(code: String) async throws {
         logger.debug("Exchanging authorization code for tokens...")
 
         guard let verifier = codeVerifier else {
@@ -153,9 +222,6 @@ final class CustomerAccountManager: ObservableObject {
             logger.error("Missing client ID or redirect URI")
             throw CustomerAccountError.missingConfiguration
         }
-
-        isLoading = true
-        defer { isLoading = false }
 
         let body: [String: String] = [
             "grant_type": "authorization_code",
@@ -173,10 +239,11 @@ final class CustomerAccountManager: ObservableObject {
         extractEmailFromIdToken(tokens.idToken)
 
         CartManager.shared.resetCart()
+        ShopifyCheckoutKit.invalidate()
 
         codeVerifier = nil
         savedState = nil
-        logger.debug("Login complete, authenticated: \(isAuthenticated), email: \(customerEmail ?? "nil")")
+        logger.debug("Login complete")
     }
 
     func refreshAccessToken() async throws {
@@ -196,7 +263,7 @@ final class CustomerAccountManager: ObservableObject {
 
         let existingEmail = KeychainHelper.shared.getEmail()
         let existingIdToken = tokens.idToken
-        logger.debug("Preserved existing email: \(existingEmail ?? "nil"), ID token present: \(existingIdToken != nil)")
+        logger.debug("Preserved existing ID token: \(existingIdToken != nil)")
 
         isLoading = true
         defer { isLoading = false }
@@ -225,7 +292,7 @@ final class CustomerAccountManager: ObservableObject {
             logger.debug("New ID token received, extracting email")
             extractEmailFromIdToken(newIdToken)
         } else if let existingEmail {
-            logger.debug("No new ID token, preserving existing email: \(existingEmail)")
+            logger.debug("No new ID token, preserving existing email")
             customerEmail = existingEmail
         } else if let existingIdToken {
             logger.debug("No stored email but have original ID token, extracting...")
@@ -261,15 +328,7 @@ final class CustomerAccountManager: ObservableObject {
     func logout() {
         logger.debug("Logging out...")
         let idToken = KeychainHelper.shared.getTokens()?.idToken
-
-        KeychainHelper.shared.clearTokens()
-        isAuthenticated = false
-        customerEmail = nil
-        tokenExpiresAt = nil
-        codeVerifier = nil
-        savedState = nil
-
-        CartManager.shared.resetCart()
+        clearLocalSession()
 
         if let idToken {
             logger.debug("Sending logout request to server")
@@ -278,6 +337,44 @@ final class CustomerAccountManager: ObservableObject {
             }
         }
         logger.debug("Logout complete")
+    }
+
+    func logout(from presentationAnchor: ASPresentationAnchor) async throws {
+        let idToken = KeychainHelper.shared.getTokens()?.idToken
+        isLoading = true
+        defer {
+            clearLocalSession()
+            isLoading = false
+        }
+
+        guard let idToken,
+              let logoutURL = buildLogoutURL(idTokenHint: idToken),
+              let callbackScheme
+        else {
+            return
+        }
+
+        do {
+            _ = try await presentAuthenticationSession(
+                url: logoutURL,
+                callbackScheme: callbackScheme,
+                from: presentationAnchor
+            )
+        } catch CustomerAccountError.authorizationCancelled {
+            // The local session is already cleared. Surface cancellation so the
+            // app can explain that the browser session may still be active.
+            throw CustomerAccountError.authorizationCancelled
+        }
+    }
+
+    private func buildLogoutURL(idTokenHint: String) -> URL? {
+        guard let logoutEndpoint, let redirectUri else { return nil }
+        guard var components = URLComponents(string: logoutEndpoint) else { return nil }
+        components.queryItems = [
+            URLQueryItem(name: "id_token_hint", value: idTokenHint),
+            URLQueryItem(name: "post_logout_redirect_uri", value: redirectUri)
+        ]
+        return components.url
     }
 
     private func performLogoutRequest(idTokenHint: String) async {
@@ -295,6 +392,18 @@ final class CustomerAccountManager: ObservableObject {
         _ = try? await URLSession.shared.data(for: request)
     }
 
+    private func clearLocalSession() {
+        KeychainHelper.shared.clearTokens()
+        isAuthenticated = false
+        customerEmail = nil
+        tokenExpiresAt = nil
+        codeVerifier = nil
+        savedState = nil
+
+        CartManager.shared.resetCart()
+        ShopifyCheckoutKit.invalidate()
+    }
+
     func checkExistingSession() {
         logger.debug("Checking existing session...")
 
@@ -304,7 +413,6 @@ final class CustomerAccountManager: ObservableObject {
         }
 
         customerEmail = KeychainHelper.shared.getEmail()
-        logger.debug("Loaded email from keychain: \(customerEmail ?? "nil")")
 
         if !tokens.isExpired {
             logger.debug("Tokens valid, expires at: \(tokens.expiresAt)")
@@ -341,7 +449,8 @@ final class CustomerAccountManager: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
-        let bodyString = body.map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? $0.value)" }
+        let bodyString = body.sorted(by: { $0.key < $1.key })
+            .map { "\(formEncode($0.key))=\(formEncode($0.value))" }
             .joined(separator: "&")
         request.httpBody = bodyString.data(using: .utf8)
 
@@ -378,6 +487,11 @@ final class CustomerAccountManager: ObservableObject {
         )
     }
 
+    private func formEncode(_ value: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+    }
+
     private func extractEmailFromIdToken(_ idToken: String?) {
         guard let idToken else {
             logger.debug("extractEmailFromIdToken called with nil ID token")
@@ -405,55 +519,62 @@ final class CustomerAccountManager: ObservableObject {
             return
         }
 
-        logger.debug("ID Token payload claims:")
-        for (key, value) in json.sorted(by: { $0.key < $1.key }) {
-            logger.debug("  \(key): \(value)")
-        }
-
         guard let email = json["email"] as? String else {
             logger.error("No 'email' claim found in ID token")
             return
         }
 
-        logger.debug("Extracted email from ID token: \(email)")
         customerEmail = email
         KeychainHelper.shared.saveEmail(email)
     }
 
-    func handleCallback(url: URL) -> Bool {
-        guard let callbackScheme,
-              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              components.scheme == callbackScheme,
-              components.host == "callback"
-        else {
-            return false
+    private func presentAuthenticationSession(
+        url: URL,
+        callbackScheme: String,
+        from presentationAnchor: ASPresentationAnchor
+    ) async throws -> URL {
+        guard authenticationSession == nil else {
+            throw CustomerAccountError.authorizationInProgress
         }
 
-        guard let queryItems = components.queryItems else {
-            return false
-        }
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let contextProvider = CustomerAccountPresentationContextProvider(anchor: presentationAnchor)
+                let session = ASWebAuthenticationSession(url: url, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
+                    Task { @MainActor in
+                        self?.authenticationSession = nil
+                        self?.presentationContextProvider = nil
 
-        let queryDict = Dictionary(uniqueKeysWithValues: queryItems.compactMap { item -> (String, String)? in
-            guard let value = item.value else { return nil }
-            return (item.name, value)
-        })
+                        if let authenticationError = error as? ASWebAuthenticationSessionError,
+                           authenticationError.code == .canceledLogin
+                        {
+                            continuation.resume(throwing: CustomerAccountError.authorizationCancelled)
+                        } else if let error {
+                            continuation.resume(throwing: CustomerAccountError.authorizationFailed(error.localizedDescription))
+                        } else if let callbackURL {
+                            continuation.resume(returning: callbackURL)
+                        } else {
+                            continuation.resume(throwing: CustomerAccountError.invalidCallback)
+                        }
+                    }
+                }
+                session.presentationContextProvider = contextProvider
+                session.prefersEphemeralWebBrowserSession = false
 
-        guard let state = queryDict["state"], validateState(state) else {
-            return false
-        }
+                authenticationSession = session
+                presentationContextProvider = contextProvider
 
-        guard let code = queryDict["code"] else {
-            return false
-        }
-
-        Task {
-            do {
-                try await exchangeCodeForTokens(code: code)
-            } catch {
-                logger.error("Failed to exchange code for tokens: \(error)")
+                guard session.start() else {
+                    authenticationSession = nil
+                    presentationContextProvider = nil
+                    continuation.resume(throwing: CustomerAccountError.authorizationFailed("Unable to start the browser session"))
+                    return
+                }
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                self?.authenticationSession?.cancel()
             }
         }
-
-        return true
     }
 }

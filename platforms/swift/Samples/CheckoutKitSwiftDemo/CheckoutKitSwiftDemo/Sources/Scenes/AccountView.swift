@@ -1,28 +1,82 @@
+import AuthenticationServices
 import SwiftUI
+import UIKit
 
 struct AccountView: View {
     @ObservedObject var accountManager = CustomerAccountManager.shared
-    @State private var showingLogin = false
+    @State private var errorMessage = ""
+    @State private var showingError = false
 
     var body: some View {
         NavigationView {
             Group {
                 if accountManager.isAuthenticated {
-                    AuthenticatedAccountView()
+                    AuthenticatedAccountView(logout: logout)
                 } else {
-                    UnauthenticatedAccountView(showingLogin: $showingLogin)
+                    UnauthenticatedAccountView(signIn: signIn)
                 }
             }
             .navigationTitle(accountManager.isAuthenticated ? "Account" : "Sign In")
         }
-        .sheet(isPresented: $showingLogin) {
-            LoginSheetView()
+        .alert("Customer Account", isPresented: $showingError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage)
         }
+    }
+
+    private func signIn() {
+        guard let presentationAnchor = UIApplication.shared.customerAccountPresentationAnchor else {
+            presentError("Unable to find a window for sign in.")
+            return
+        }
+
+        Task {
+            do {
+                try await accountManager.signIn(from: presentationAnchor)
+            } catch CustomerAccountError.authorizationCancelled {
+                return
+            } catch {
+                presentError(error.localizedDescription)
+            }
+        }
+    }
+
+    private func logout() {
+        guard let presentationAnchor = UIApplication.shared.customerAccountPresentationAnchor else {
+            accountManager.logout()
+            return
+        }
+
+        Task {
+            do {
+                try await accountManager.logout(from: presentationAnchor)
+            } catch {
+                presentError(
+                    "You were signed out of this app, but the browser session may still be active. \(error.localizedDescription)"
+                )
+            }
+        }
+    }
+
+    private func presentError(_ message: String) {
+        errorMessage = message
+        showingError = true
+    }
+}
+
+extension UIApplication {
+    fileprivate var customerAccountPresentationAnchor: ASPresentationAnchor? {
+        connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }?
+            .keyWindow
     }
 }
 
 struct AuthenticatedAccountView: View {
     @ObservedObject var accountManager = CustomerAccountManager.shared
+    let logout: () -> Void
 
     var body: some View {
         VStack(spacing: 24) {
@@ -53,15 +107,16 @@ struct AuthenticatedAccountView: View {
 
             Spacer()
 
-            Button(action: { accountManager.logout() }) {
+            Button(action: logout) {
                 HStack {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
-                    Text("Sign Out")
+                    Text(accountManager.isLoading ? "Signing Out…" : "Sign Out")
                 }
                 .foregroundColor(.red)
                 .frame(maxWidth: .infinity)
                 .padding()
             }
+            .disabled(accountManager.isLoading)
             .padding(.bottom, 32)
         }
         .background(Color(.systemGroupedBackground))
@@ -69,7 +124,8 @@ struct AuthenticatedAccountView: View {
 }
 
 struct UnauthenticatedAccountView: View {
-    @Binding var showingLogin: Bool
+    @ObservedObject var accountManager = CustomerAccountManager.shared
+    let signIn: () -> Void
 
     var body: some View {
         VStack(spacing: 24) {
@@ -91,10 +147,8 @@ struct UnauthenticatedAccountView: View {
                     .padding(.horizontal, 32)
             }
 
-            Button(action: {
-                showingLogin = true
-            }) {
-                Text("Sign In")
+            Button(action: signIn) {
+                Text(accountManager.isLoading ? "Signing In…" : "Sign In")
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -102,6 +156,7 @@ struct UnauthenticatedAccountView: View {
                     .background(Color(ColorPalette.primaryColor))
                     .cornerRadius(12)
             }
+            .disabled(accountManager.isLoading)
             .padding(.horizontal, 32)
 
             Spacer()
