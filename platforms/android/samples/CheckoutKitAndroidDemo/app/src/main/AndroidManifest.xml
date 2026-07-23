@@ -24,6 +24,11 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
     <queries>
+        <!-- Allows selecting a browser and checking whether it supports Auth Tab. -->
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+
         <!-- for supporting deep links to the maps app -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -68,6 +73,22 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="${applicationId}" />
+            </intent-filter>
+
+            <!-- Auth Tab returns callbacks directly. This filter handles the Custom Tabs
+                 compatibility fallback. Prefer a verified HTTPS App Link redirect in a
+                 production app so another installed app cannot claim the callback. -->
+            <intent-filter
+                android:autoVerify="true"
+                tools:ignore="AppLinkUrlError">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="${customerAccountRedirectHost}"
+                    android:scheme="${customerAccountRedirectScheme}" />
             </intent-filter>
 
             <meta-data

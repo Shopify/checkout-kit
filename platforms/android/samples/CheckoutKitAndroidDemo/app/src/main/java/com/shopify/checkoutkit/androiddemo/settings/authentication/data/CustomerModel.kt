@@ -4,6 +4,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
 
+private const val ACCESS_TOKEN_EXPIRATION_SKEW_SECONDS = 60L
+
 /**
  * Internal data model for Customer Accounts API
  */
@@ -13,7 +15,7 @@ data class AccessToken(
     val accessToken: String,
 
     @SerialName("refresh_token")
-    val refreshToken: String,
+    val refreshToken: String? = null,
 
     @SerialName("token_type")
     val tokenType: String,
@@ -26,8 +28,8 @@ data class AccessToken(
 
     val expiresAt: Long = Instant.now().plusSeconds(expiresIn).toEpochMilli()
 ) {
-    fun hasExpired(): Boolean {
-        return expiresAt < Instant.now().toEpochMilli()
+    fun hasExpired(now: Instant = Instant.now()): Boolean {
+        return expiresAt <= now.plusSeconds(ACCESS_TOKEN_EXPIRATION_SKEW_SECONDS).toEpochMilli()
     }
 
     override fun toString(): String {

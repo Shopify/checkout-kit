@@ -7,6 +7,8 @@ import com.shopify.checkoutkit.Preloading
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.checkoutkit.androiddemo.BuildConfig
 import com.shopify.checkoutkit.androiddemo.common.withCustomCloseIcon
+import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationRequest
+import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationResult
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.CustomerRepository
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutSheetPreset
@@ -14,10 +16,12 @@ import com.shopify.checkoutkit.androiddemo.settings.data.Settings
 import com.shopify.checkoutkit.androiddemo.settings.data.SettingsRepository
 import com.shopify.checkoutkit.androiddemo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.androiddemo.settings.data.toCheckoutSheetOptions
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
@@ -26,6 +30,8 @@ class SettingsViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<SettingsUiState>(SettingsUiState.Loading)
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+    private val logoutRequestChannel = Channel<BrowserAuthenticationRequest>()
+    val logoutRequests = logoutRequestChannel.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -125,7 +131,11 @@ class SettingsViewModel(
     }
 
     fun logout() = viewModelScope.launch {
-        customerRepository.logout()
+        customerRepository.prepareLogout()?.let { logoutRequestChannel.send(it) }
+    }
+
+    fun browserLogoutCompleted(result: BrowserAuthenticationResult) = viewModelScope.launch {
+        customerRepository.completeLogout(result)
     }
 
     private fun currentSettings(): Settings? =

@@ -1,118 +1,157 @@
 package com.shopify.checkoutkit.androiddemo.settings.authentication.utils
 
+import android.net.Uri
 import android.util.Base64
-import androidx.compose.ui.text.intl.Locale
-import androidx.core.net.toUri
+import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationRequest
 import java.security.MessageDigest
 import java.security.SecureRandom
 
-/**
- * Utility functions for building Authentication related URLs, generating
- * code verifier, code challenge, and state values.
- */
+/** Values that must remain bound to one authorization request. */
+data class AuthorizationContext(
+    val browserRequest: BrowserAuthenticationRequest,
+    val codeVerifier: String,
+    val state: String,
+    val nonce: String,
+)
+
+class AuthenticationException(message: String) : Exception(message)
+
+/** Builds and validates the Customer Account API OAuth authorization flow. */
 class AuthenticationHelper(
     val clientId: String,
     val redirectUri: String,
-    private val baseUrl: String,
+    baseUrl: String,
 ) {
-    /**
-     * Builds an [Authorization URL](https://shopify.dev/docs/api/customer#step-authorization) which
-     * will redirect a customer to a login page
-     */
-    fun buildAuthorizationURL(
-        codeVerifier: String,
-        locale: Locale,
-    ): String {
-        val codeChallenge = codeChallenge(codeVerifier)
-        val url = "$baseUrl/oauth/authorize".toUri().buildUpon()
+    val issuer: String = baseUrl.trimEnd('/')
+
+    fun createAuthorizationContext(locale: String): AuthorizationContext {
+        validateConfiguration()
+        val codeVerifier = randomUrlSafeString()
+        val state = randomUrlSafeString()
+        val nonce = randomUrlSafeString()
+        val authorizationUri = Uri.parse("$issuer/oauth/authorize").buildUpon()
             .appendQueryParameter("scope", "openid email customer-account-api:full")
             .appendQueryParameter("client_id", clientId)
             .appendQueryParameter("response_type", "code")
             .appendQueryParameter("redirect_uri", redirectUri)
-            .appendQueryParameter("state", state())
-            .appendQueryParameter("code_challenge", codeChallenge)
+            .appendQueryParameter("state", state)
+            .appendQueryParameter("nonce", nonce)
+            .appendQueryParameter("code_challenge", codeChallenge(codeVerifier))
             .appendQueryParameter("code_challenge_method", "S256")
             .appendQueryParameter("ui_locales", uiLocale(locale))
             .build()
-            .toString()
-        return url
+
+        return AuthorizationContext(
+            browserRequest = BrowserAuthenticationRequest(authorizationUri, Uri.parse(redirectUri)),
+            codeVerifier = codeVerifier,
+            state = state,
+            nonce = nonce,
+        )
     }
 
-    /**
-     * Builds a token URL used to obtain access tokens
-     */
-    fun buildTokenURL(): String {
-        return "$baseUrl/oauth/token"
+    fun authorizationCode(callbackUri: Uri, expectedState: String): String {
+        if (!callbackUri.matchesRedirect(Uri.parse(redirectUri)) || callbackUri.fragment != null) {
+            throw AuthenticationException("Invalid authorization callback")
+        }
+
+        val parameters = callbackUri.singleValueQueryParameters()
+        if (parameters["state"] != expectedState) {
+            throw AuthenticationException("Authorization state did not match")
+        }
+
+        parameters["error"]?.let { error ->
+            val description = parameters["error_description"]?.takeIf(String::isNotBlank)
+            throw AuthenticationException(description?.let { "$error: $it" } ?: error)
+        }
+
+        return parameters["code"]?.takeIf(String::isNotBlank)
+            ?: throw AuthenticationException("Authorization code is missing")
     }
 
-    /**
-     * Builds a logout URL
-     */
-    fun buildLogoutURL(idToken: String): String {
-        return "$baseUrl/logout?id_token_hint=$idToken"
+    fun tokenUrl(): String = "$issuer/oauth/token"
+
+    fun logoutRequest(idToken: String): BrowserAuthenticationRequest {
+        validateConfiguration()
+        val logoutUri = Uri.parse("$issuer/logout").buildUpon()
+            .appendQueryParameter("id_token_hint", idToken)
+            .appendQueryParameter("post_logout_redirect_uri", redirectUri)
+            .build()
+        return BrowserAuthenticationRequest(logoutUri, Uri.parse(redirectUri))
     }
 
-    /**
-     * Generates a [code verifier](https://shopify.dev/docs/api/customer#publicclient-propertydetail-codeverifier) to be used
-     * in the Authorization request (see PKCE)
-     */
-    fun createCodeVerifier(): String {
-        val buffer = ByteArray(32)
-        SecureRandom().nextBytes(buffer)
-        return buffer.base64UrlEncode()
+    fun validateLogoutCallback(callbackUri: Uri) {
+        if (!callbackUri.matchesRedirect(Uri.parse(redirectUri))) {
+            throw AuthenticationException("Invalid logout callback")
+        }
     }
 
-    /**
-     * Generates a [code challenge](https://shopify.dev/docs/api/customer#publicclient-propertydetail-codechallenge)
-     * based on the code verifier used in the Authorization request (see PCKE)
-     */
+    private fun validateConfiguration() {
+        val issuerUri = Uri.parse(issuer)
+        val callbackUri = Uri.parse(redirectUri)
+        val callbackScheme = callbackUri.scheme.orEmpty()
+        val callbackHasAuthority = !callbackUri.host.isNullOrBlank()
+        if (
+            clientId.isBlank() ||
+            !issuerUri.scheme.equals("https", ignoreCase = true) ||
+            issuerUri.host.isNullOrBlank() ||
+            callbackScheme.isBlank() ||
+            !callbackHasAuthority ||
+            callbackUri.query != null ||
+            callbackUri.fragment != null ||
+            callbackScheme.equals("http", ignoreCase = true)
+        ) {
+            throw AuthenticationException("Invalid Customer Account API configuration")
+        }
+    }
+
+    private fun randomUrlSafeString(): String {
+        val bytes = ByteArray(32)
+        SecureRandom().nextBytes(bytes)
+        return bytes.base64UrlEncode()
+    }
+
     private fun codeChallenge(verifier: String): String {
-        val data = verifier.toByteArray(Charsets.UTF_8)
-        val digest = data.sha256()
+        val digest = MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.UTF_8))
         return digest.base64UrlEncode()
-    }
-
-    /**
-     * Generates a [state value](https://shopify.dev/docs/api/customer#authorization-propertydetail-state)
-     */
-    private fun state(): String {
-        val random = SecureRandom()
-        return (1..36)
-            .map { ALLOWED_RANDOM_CHARS[random.nextInt(ALLOWED_RANDOM_CHARS.length)] }
-            .joinToString("")
-    }
-
-    private fun ByteArray.sha256(): ByteArray {
-        val digest = MessageDigest.getInstance("SHA-256")
-        return digest.digest(this)
     }
 
     private fun ByteArray.base64UrlEncode(): String {
         return Base64.encodeToString(this, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
-    /**
-     * Returns a [ui locale](https://shopify.dev/docs/api/customer#authorization-propertydetail-uilocales) for the login page to use
-     */
-    private fun uiLocale(locale: Locale): String {
-        if (SUPPORTED_LOCALES.contains(locale.toString())) {
-            return locale.toString()
+    private fun Uri.singleValueQueryParameters(): Map<String, String> {
+        return try {
+            queryParameterNames.associateWith { name ->
+                val values = getQueryParameters(name)
+                if (values.size != 1) {
+                    throw AuthenticationException("Duplicate authorization parameter")
+                }
+                values.single()
+            }
+        } catch (error: AuthenticationException) {
+            throw error
+        } catch (error: Exception) {
+            throw AuthenticationException("Invalid authorization callback")
         }
+    }
 
-        if (SUPPORTED_LOCALES.contains(locale.language)) {
-            return locale.language
-        }
+    private fun Uri.matchesRedirect(expected: Uri): Boolean {
+        return scheme.equals(expected.scheme, ignoreCase = true) &&
+            host.equals(expected.host, ignoreCase = true) &&
+            port == expected.port &&
+            path.orEmpty() == expected.path.orEmpty()
+    }
 
-        return DEFAULT_LANGUAGE
+    private fun uiLocale(locale: String): String {
+        if (SUPPORTED_LOCALES.contains(locale)) return locale
+        val language = locale.substringBefore('-').substringBefore('_')
+        return language.takeIf(SUPPORTED_LOCALES::contains) ?: DEFAULT_LANGUAGE
     }
 
     companion object {
-        private const val ALLOWED_RANDOM_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-
-        // Taken from https://shopify.dev/docs/api/customer#authorization-propertydetail-uilocales
-        private val SUPPORTED_LOCALES = listOf(
+        private val SUPPORTED_LOCALES = setOf(
             "en", "fr", "cs", "da", "de", "el", "es", "fi", "hi", "hr", "hu", "id", "it", "ja", "ko", "lt", "ms", "nb",
-            "nl", "pl", "pt-BR", "pt-PT", "ro", "ru", "sk", "sl", "sv", "th", "tr", "vi", "zh-CN", "zh-TW"
+            "nl", "pl", "pt-BR", "pt-PT", "ro", "ru", "sk", "sl", "sv", "th", "tr", "vi", "zh-CN", "zh-TW",
         )
         private const val DEFAULT_LANGUAGE = "en"
     }

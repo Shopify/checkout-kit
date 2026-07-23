@@ -12,7 +12,7 @@ This sample demonstrates how to integrate Checkout Kit with the Shopify Storefro
 - Default intent and custom Chrome Custom Tabs handling for checkout window-open requests
 - File chooser and geolocation host callbacks
 - Buyer identity demo data for checkout prefill
-- Customer Account API sign-in and customer access token cart identity
+- Customer Account API sign-in through Android Auth Tab (with a Custom Tabs fallback), secure token storage, and customer access token cart identity
 
 ## Checkout flow
 
@@ -89,11 +89,14 @@ Optional values enable Customer Account API and buyer identity demo flows:
 CUSTOMER_ACCOUNT_API_CLIENT_ID=your-client-id
 CUSTOMER_ACCOUNT_API_SHOP_ID=your-shop-id
 CUSTOMER_ACCOUNT_API_VERSION=2026-04
+CUSTOMER_ACCOUNT_API_REDIRECT_URI=https://example.com/customer-account/callback
 EMAIL=test.buyer@example.com
 PHONE=+16135550123
 ```
 
 The setup script generates this sample's local `.env`.
+
+Use a verified HTTPS App Link for `CUSTOMER_ACCOUNT_API_REDIRECT_URI` in a production app. A custom URI scheme also works and Auth Tab protects its callback on supported browsers, but an App Link prevents another installed app from claiming the Custom Tabs fallback redirect. Authentication uses the browser's shared session by default so it participates in browser SSO; logout uses the same browser surface and then always clears the local session.
 
 Open the project in Android Studio, sync Gradle, then build and run.
 
@@ -153,6 +156,6 @@ Open the project in Android Studio, sync Gradle, then build and run.
 | `common/navigation/CheckoutKitNavHost.kt` | App navigation. |
 | `cart/CartViewModel.kt` | Checkout Kit sheet presentation, fail/dismiss callbacks, protocol lifecycle handlers, and window-open routing. |
 | `cart/AppOwnedCheckoutSheet.kt` | App-owned Compose sheet containing an embedded `ShopifyCheckout`. |
-| `MainActivity.kt` | File chooser and geolocation permission callbacks. |
+| `MainActivity.kt` | File chooser, geolocation, E2E control-link, and Auth Tab/Custom Tabs result callbacks. |
 | `settings/` | Checkout presentation mode, sheet style and dismissal, and window-open handler controls. |
-| `settings/authentication/` | Customer Account API sign-in screens and WebView flow. |
+| `settings/authentication/` | Customer Account API browser sign-in, OAuth validation, and encrypted credential storage. |

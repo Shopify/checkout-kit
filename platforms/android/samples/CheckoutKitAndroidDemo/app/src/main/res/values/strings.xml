@@ -65,6 +65,7 @@
     <string name="checkout_error_customer_account_required" translatable="false">Sign in with a customer account to continue checkout.</string>
     <string name="checkout_error_storefront_password_required" translatable="false">Checkout is currently unavailable because this storefront is password protected.</string>
     <string name="checkout_error_retry" translatable="false">Checkout was interrupted. Please try again.</string>
+    <string name="login_retry" translatable="false">Try again</string>
     <string name="checkout_error_web_view_not_supported" translatable="false">This device does not support embedded checkout.</string>
     <string name="collection_failed_to_load" translatable="false">Failed to load collection</string>
     <string name="collections_failed_to_load" translatable="false">Failed to load collections</string>

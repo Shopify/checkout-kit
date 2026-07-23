@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -72,6 +73,16 @@ class CartViewModel(
                 _checkoutPresentationMode.value = it.checkoutPresentationMode
                 windowOpenHandler = it.windowOpenHandler
             }
+        }
+        // A cart's buyer identity is fixed when it is created. Discard carts and preloaded
+        // checkout state whenever Customer Account authentication changes.
+        viewModelScope.launch {
+            customerRepository.isAuthenticated
+                .drop(1)
+                .collect {
+                    clearCart()
+                    ShopifyCheckoutKit.invalidate()
+                }
         }
     }
 
