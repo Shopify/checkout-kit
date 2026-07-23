@@ -14,6 +14,7 @@ failure_count=0
 last_status=0
 storefront_ran=0
 storefront_status=0
+gemfile_lock_aligned=1
 
 usage() {
   cat <<EOF
@@ -110,6 +111,25 @@ ensure_storefront_env() {
   return "$storefront_status"
 }
 
+check_gemfile_lock_alignment() {
+  if run_shell "Gemfile.lock alignment" 'ruby scripts/check_gemfile_lock_alignment'; then
+    gemfile_lock_aligned=1
+  else
+    gemfile_lock_aligned=0
+  fi
+}
+
+run_bundle_step() {
+  local name="$1"
+  local command="$2"
+
+  if [[ "$gemfile_lock_aligned" -eq 1 ]]; then
+    run_shell "$name" "$command" || true
+  else
+    run_shell "$name" 'echo "Skipped: run ./scripts/check_gemfile_lock_alignment --fix to realign the lockfile above before installing gems (a diverged lockfile can hang bundle install)." >&2; false' || true
+  fi
+}
+
 # TEMP (added 2026-06-05; safe to delete on/after ~2026-06-12, once everyone
 # has run `dev up` at least once).
 #
@@ -194,7 +214,7 @@ setup_swift() {
     ' || true
     run_shell "XcodeGen projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects --check' || true
   else
-    run_shell "Swift bundle packages" 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check || BUNDLE_GEMFILE=platforms/swift/Gemfile bundle install' || true
+    run_bundle_step "Swift bundle packages" 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check || BUNDLE_GEMFILE=platforms/swift/Gemfile bundle install'
     run_shell "Swift Mint packages" 'cd platforms/swift && mint bootstrap' || true
     run_shell "XcodeGen projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects' || true
   fi
@@ -208,7 +228,7 @@ setup_react_native() {
     run_shell "React Native iOS gems" 'cd platforms/react-native/sample/ios && bundle check' || true
   else
     run_shell "React Native packages" 'test -d platforms/react-native/node_modules || (cd platforms/react-native && pnpm install)' || true
-    run_shell "React Native iOS gems" 'cd platforms/react-native/sample/ios && (bundle check || bundle install)' || true
+    run_bundle_step "React Native iOS gems" 'cd platforms/react-native/sample/ios && (bundle check || bundle install)'
   fi
 }
 
@@ -247,6 +267,7 @@ print_summary() {
 }
 
 cleanup_legacy_samples
+check_gemfile_lock_alignment
 setup_android
 setup_swift
 setup_react_native
