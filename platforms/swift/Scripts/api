@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SWIFT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PACKAGE_ROOT="$(cd "$SWIFT_ROOT/../.." && pwd)"
 BASELINE_DIR="$SWIFT_ROOT/api"
-MODULES=(EmbeddedCheckoutProtocol ShopifyCheckoutKit ShopifyAcceleratedCheckouts)
+MODULES=(EmbeddedCheckoutProtocol ShopifyCheckoutKit ShopifyAcceleratedCheckouts ShopifyCustomerAccounts)
 TARGET="arm64-apple-ios15.0-simulator"
 
 if [[ ! -f "$PACKAGE_ROOT/Package.swift" ]]; then

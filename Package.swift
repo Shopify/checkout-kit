@@ -19,6 +19,10 @@ let package = Package(
             targets: ["ShopifyAcceleratedCheckouts"]
         ),
         .library(
+            name: "ShopifyCustomerAccounts",
+            targets: ["ShopifyCustomerAccounts"]
+        ),
+        .library(
             name: "EmbeddedCheckoutProtocol",
             targets: ["EmbeddedCheckoutProtocol"]
         )
@@ -47,6 +51,15 @@ let package = Package(
             path: "platforms/swift/Sources/ShopifyAcceleratedCheckouts",
             resources: [.process("Localizable.xcstrings"), .process("Media.xcassets")]
         ),
+        .target(
+            name: "CustomerAccountsOAuth",
+            path: "platforms/swift/Sources/CustomerAccountsOAuth"
+        ),
+        .target(
+            name: "ShopifyCustomerAccounts",
+            dependencies: ["CustomerAccountsOAuth"],
+            path: "platforms/swift/Sources/ShopifyCustomerAccounts"
+        ),
         .testTarget(
             name: "EmbeddedCheckoutProtocolTests",
             dependencies: ["EmbeddedCheckoutProtocol"],
@@ -65,6 +78,11 @@ let package = Package(
                 .product(name: "ViewInspector", package: "ViewInspector")
             ],
             path: "platforms/swift/Tests/ShopifyAcceleratedCheckoutsTests"
+        ),
+        .testTarget(
+            name: "ShopifyCustomerAccountsTests",
+            dependencies: ["CustomerAccountsOAuth", "ShopifyCustomerAccounts"],
+            path: "platforms/swift/Tests/ShopifyCustomerAccountsTests"
         )
     ],
     swiftLanguageModes: [.v6]

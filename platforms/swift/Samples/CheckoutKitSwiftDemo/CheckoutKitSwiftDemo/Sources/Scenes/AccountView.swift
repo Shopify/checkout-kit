@@ -1,4 +1,4 @@
-import AuthenticationServices
+import ShopifyCustomerAccounts
 import SwiftUI
 import UIKit
 
@@ -26,14 +26,14 @@ struct AccountView: View {
     }
 
     private func signIn() {
-        guard let presentationAnchor = UIApplication.shared.customerAccountPresentationAnchor else {
-            presentError("Unable to find a window for sign in.")
+        guard let viewController = UIApplication.shared.customerAccountPresentingViewController else {
+            presentError("Unable to find a view controller for sign in.")
             return
         }
 
         Task {
             do {
-                try await accountManager.signIn(from: presentationAnchor)
+                try await accountManager.signIn(from: viewController)
             } catch CustomerAccountError.authorizationCancelled {
                 return
             } catch {
@@ -43,14 +43,14 @@ struct AccountView: View {
     }
 
     private func logout() {
-        guard let presentationAnchor = UIApplication.shared.customerAccountPresentationAnchor else {
+        guard let viewController = UIApplication.shared.customerAccountPresentingViewController else {
             accountManager.logout()
             return
         }
 
         Task {
             do {
-                try await accountManager.logout(from: presentationAnchor)
+                try await accountManager.logout(from: viewController)
             } catch {
                 presentError(
                     "You were signed out of this app, but the browser session may still be active. \(error.localizedDescription)"
@@ -66,11 +66,12 @@ struct AccountView: View {
 }
 
 extension UIApplication {
-    fileprivate var customerAccountPresentationAnchor: ASPresentationAnchor? {
+    fileprivate var customerAccountPresentingViewController: UIViewController? {
         connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive }?
-            .keyWindow
+            .keyWindow?
+            .topMostViewController()
     }
 }
 

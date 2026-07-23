@@ -1,0 +1,1880 @@
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "ShopifyCustomerAccounts",
+    "printedName": "ShopifyCustomerAccounts",
+    "children": [
+      {
+        "kind": "Import",
+        "name": "CustomerAccountsOAuth",
+        "printedName": "CustomerAccountsOAuth",
+        "declKind": "Import",
+        "moduleName": "ShopifyCustomerAccounts"
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "ShopifyCustomerAccounts"
+      },
+      {
+        "kind": "Import",
+        "name": "SwiftOnoneSupport",
+        "printedName": "SwiftOnoneSupport",
+        "declKind": "Import",
+        "moduleName": "ShopifyCustomerAccounts"
+      },
+      {
+        "kind": "Import",
+        "name": "UIKit",
+        "printedName": "UIKit",
+        "declKind": "Import",
+        "moduleName": "ShopifyCustomerAccounts"
+      },
+      {
+        "kind": "Import",
+        "name": "_Concurrency",
+        "printedName": "_Concurrency",
+        "declKind": "Import",
+        "moduleName": "ShopifyCustomerAccounts"
+      },
+      {
+        "kind": "Import",
+        "name": "_StringProcessing",
+        "printedName": "_StringProcessing",
+        "declKind": "Import",
+        "moduleName": "ShopifyCustomerAccounts"
+      },
+      {
+        "kind": "Import",
+        "name": "_SwiftConcurrencyShims",
+        "printedName": "_SwiftConcurrencyShims",
+        "declKind": "Import",
+        "moduleName": "ShopifyCustomerAccounts"
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CustomerAccountClient",
+        "printedName": "CustomerAccountClient",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "configuration",
+            "printedName": "configuration",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountConfiguration",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC13configurationAA0bD13ConfigurationVvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC13configurationAA0bD13ConfigurationVvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "Final",
+              "HasStorage",
+              "Custom"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountConfiguration",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration",
+                    "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC13configurationAA0bD13ConfigurationVvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC13configurationAA0bD13ConfigurationVvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final",
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "session",
+            "printedName": "session",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountSession?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountSession",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountSession",
+                    "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC7sessionAA0bD7SessionVSgvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC7sessionAA0bD7SessionVSgvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "HasInitialValue",
+              "Final",
+              "SetterAccess",
+              "HasStorage",
+              "Custom"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountSession?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountSession",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountSession",
+                        "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC7sessionAA0bD7SessionVSgvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC7sessionAA0bD7SessionVSgvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "declAttributes": [
+                  "Final",
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "isAuthenticated",
+            "printedName": "isAuthenticated",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC15isAuthenticatedSbvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC15isAuthenticatedSbvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "Final",
+              "Custom"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC15isAuthenticatedSbvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC15isAuthenticatedSbvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(configuration:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountClient",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountClient",
+                "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountConfiguration",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC13configurationAcA0bD13ConfigurationV_tcfc",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC13configurationAcA0bD13ConfigurationV_tcfc",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "Custom"
+            ],
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "restoreSession",
+            "printedName": "restoreSession()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountSession?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountSession",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountSession",
+                    "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC14restoreSessionAA0bdG0VSgyYaKF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC14restoreSessionAA0bdG0VSgyYaKF",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "Final",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "signIn",
+            "printedName": "signIn(from:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountSession",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountSession",
+                "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UIViewController",
+                "printedName": "UIKit.UIViewController",
+                "usr": "c:objc(cs)UIViewController"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC6signIn4fromAA0bD7SessionVSo16UIViewControllerC_tYaKF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC6signIn4fromAA0bD7SessionVSo16UIViewControllerC_tYaKF",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "Final",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "accessToken",
+            "printedName": "accessToken()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC11accessTokenSSyYaKF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC11accessTokenSSyYaKF",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "Final",
+              "Custom"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "signOut",
+            "printedName": "signOut(from:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UIViewController",
+                "printedName": "UIKit.UIViewController",
+                "usr": "c:objc(cs)UIViewController"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC7signOut4fromySo16UIViewControllerC_tYaKF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC7signOut4fromySo16UIViewControllerC_tYaKF",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "Final",
+              "Custom"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "clearSession",
+            "printedName": "clearSession()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC12clearSessionyyKF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC12clearSessionyyKF",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "Final",
+              "Custom"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "s:23ShopifyCustomerAccounts0B13AccountClientC",
+        "mangledName": "$s23ShopifyCustomerAccounts0B13AccountClientC",
+        "moduleName": "ShopifyCustomerAccounts",
+        "declAttributes": [
+          "Final",
+          "Custom"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CustomerAccountConfiguration",
+        "printedName": "CustomerAccountConfiguration",
+        "children": [
+          {
+            "kind": "TypeDecl",
+            "name": "BrowserSession",
+            "printedName": "BrowserSession",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "shared",
+                "printedName": "shared",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession.Type) -> ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "BrowserSession",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                        "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "BrowserSession",
+                            "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO6sharedyA2EmF",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO6sharedyA2EmF",
+                "moduleName": "ShopifyCustomerAccounts"
+              },
+              {
+                "kind": "Var",
+                "name": "ephemeral",
+                "printedName": "ephemeral",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession.Type) -> ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "BrowserSession",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                        "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "BrowserSession",
+                            "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO9ephemeralyA2EmF",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO9ephemeralyA2EmF",
+                "moduleName": "ShopifyCustomerAccounts"
+              },
+              {
+                "kind": "Function",
+                "name": "__derived_enum_equals",
+                "printedName": "__derived_enum_equals(_:_:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "BrowserSession",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                    "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "BrowserSession",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                    "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO21__derived_enum_equalsySbAE_AEtFZ",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO21__derived_enum_equalsySbAE_AEtFZ",
+                "moduleName": "ShopifyCustomerAccounts",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Implements"
+                ],
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Function",
+                "name": "hash",
+                "printedName": "hash(into:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Hasher",
+                    "printedName": "Swift.Hasher",
+                    "paramValueOwnership": "InOut",
+                    "usr": "s:s6HasherV"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO4hash4intoys6HasherVz_tF",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO4hash4intoys6HasherVz_tF",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Var",
+                "name": "hashValue",
+                "printedName": "hashValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO9hashValueSivp",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO9hashValueSivp",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO9hashValueSivg",
+                    "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO9hashValueSivg",
+                    "moduleName": "ShopifyCustomerAccounts",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO",
+            "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO",
+            "moduleName": "ShopifyCustomerAccounts",
+            "isEnumExhaustive": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Hashable",
+                "printedName": "Hashable",
+                "usr": "s:SH",
+                "mangledName": "$sSH"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "shopID",
+            "printedName": "shopID",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV6shopIDSSvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV6shopIDSSvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV6shopIDSSvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV6shopIDSSvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "clientID",
+            "printedName": "clientID",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV8clientIDSSvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV8clientIDSSvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV8clientIDSSvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV8clientIDSSvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "redirectURI",
+            "printedName": "redirectURI",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV11redirectURI10Foundation3URLVvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV11redirectURI10Foundation3URLVvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "URL",
+                    "printedName": "Foundation.URL",
+                    "usr": "s:10Foundation3URLV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV11redirectURI10Foundation3URLVvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV11redirectURI10Foundation3URLVvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "browserSession",
+            "printedName": "browserSession",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "BrowserSession",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14browserSessionAC07BrowserG0Ovp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14browserSessionAC07BrowserG0Ovp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "BrowserSession",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                    "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14browserSessionAC07BrowserG0Ovg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV14browserSessionAC07BrowserG0Ovg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(shopID:clientID:redirectURI:browserSession:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountConfiguration",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "BrowserSession",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration.BrowserSession",
+                "hasDefaultArg": true,
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV14BrowserSessionO"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV6shopID06clientG011redirectURI14browserSessionACSS_SS10Foundation3URLVAC07BrowserL0Otcfc",
+            "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV6shopID06clientG011redirectURI14browserSessionACSS_SS10Foundation3URLVAC07BrowserL0Otcfc",
+            "moduleName": "ShopifyCustomerAccounts",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "__derived_struct_equals",
+            "printedName": "__derived_struct_equals(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountConfiguration",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountConfiguration",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountConfiguration",
+                "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV23__derived_struct_equalsySbAC_ACtFZ",
+            "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV23__derived_struct_equalsySbAC_ACtFZ",
+            "moduleName": "ShopifyCustomerAccounts",
+            "static": true,
+            "implicit": true,
+            "declAttributes": [
+              "Implements"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:23ShopifyCustomerAccounts0B20AccountConfigurationV",
+        "mangledName": "$s23ShopifyCustomerAccounts0B20AccountConfigurationV",
+        "moduleName": "ShopifyCustomerAccounts",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CustomerAccountError",
+        "printedName": "CustomerAccountError",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "invalidConfiguration",
+            "printedName": "invalidConfiguration",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO20invalidConfigurationyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO20invalidConfigurationyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "authorizationInProgress",
+            "printedName": "authorizationInProgress",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO23authorizationInProgressyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO23authorizationInProgressyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "authorizationCancelled",
+            "printedName": "authorizationCancelled",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO22authorizationCancelledyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO22authorizationCancelledyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "authorizationFailed",
+            "printedName": "authorizationFailed",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> (Swift.String, Swift.String?) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(Swift.String, Swift.String?) -> ShopifyCustomerAccounts.CustomerAccountError",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Tuple",
+                        "printedName": "(code: Swift.String, description: Swift.String?)",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Optional",
+                            "printedName": "Swift.String?",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "String",
+                                "printedName": "Swift.String",
+                                "usr": "s:SS"
+                              }
+                            ],
+                            "usr": "s:Sq"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO19authorizationFailedyACSS_SSSgtcACmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO19authorizationFailedyACSS_SSSgtcACmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "browserPresentationFailed",
+            "printedName": "browserPresentationFailed",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO25browserPresentationFailedyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO25browserPresentationFailedyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "invalidCallback",
+            "printedName": "invalidCallback",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO15invalidCallbackyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO15invalidCallbackyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "invalidState",
+            "printedName": "invalidState",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO12invalidStateyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO12invalidStateyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "invalidTokenResponse",
+            "printedName": "invalidTokenResponse",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO20invalidTokenResponseyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO20invalidTokenResponseyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "networkRequestFailed",
+            "printedName": "networkRequestFailed",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO20networkRequestFailedyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO20networkRequestFailedyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "tokenRequestFailed",
+            "printedName": "tokenRequestFailed",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> (Swift.String, Swift.String?) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(Swift.String, Swift.String?) -> ShopifyCustomerAccounts.CustomerAccountError",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Tuple",
+                        "printedName": "(code: Swift.String, description: Swift.String?)",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Optional",
+                            "printedName": "Swift.String?",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "String",
+                                "printedName": "Swift.String",
+                                "usr": "s:SS"
+                              }
+                            ],
+                            "usr": "s:Sq"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO18tokenRequestFailedyACSS_SSSgtcACmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO18tokenRequestFailedyACSS_SSSgtcACmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "invalidIDToken",
+            "printedName": "invalidIDToken",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO14invalidIDTokenyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO14invalidIDTokenyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "notAuthenticated",
+            "printedName": "notAuthenticated",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO16notAuthenticatedyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO16notAuthenticatedyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "storageFailed",
+            "printedName": "storageFailed",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCustomerAccounts.CustomerAccountError.Type) -> ShopifyCustomerAccounts.CustomerAccountError",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CustomerAccountError",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                    "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCustomerAccounts.CustomerAccountError.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CustomerAccountError",
+                        "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO13storageFailedyA2CmF",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO13storageFailedyA2CmF",
+            "moduleName": "ShopifyCustomerAccounts"
+          },
+          {
+            "kind": "Var",
+            "name": "errorDescription",
+            "printedName": "errorDescription",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO16errorDescriptionSSSgvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO16errorDescriptionSSSgvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO16errorDescriptionSSSgvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO16errorDescriptionSSSgvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountError",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Error",
+                "printedName": "any Swift.Error",
+                "usr": "s:s5ErrorP"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorOyACs0E0_pcfc",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorOyACs0E0_pcfc",
+            "moduleName": "ShopifyCustomerAccounts",
+            "isInternal": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "__derived_enum_equals",
+            "printedName": "__derived_enum_equals(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountError",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountError",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountError",
+                "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO21__derived_enum_equalsySbAC_ACtFZ",
+            "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO21__derived_enum_equalsySbAC_ACtFZ",
+            "moduleName": "ShopifyCustomerAccounts",
+            "static": true,
+            "implicit": true,
+            "declAttributes": [
+              "Implements"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "s:23ShopifyCustomerAccounts0B12AccountErrorO",
+        "mangledName": "$s23ShopifyCustomerAccounts0B12AccountErrorO",
+        "moduleName": "ShopifyCustomerAccounts",
+        "isEnumExhaustive": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "LocalizedError",
+            "printedName": "LocalizedError",
+            "usr": "s:10Foundation14LocalizedErrorP",
+            "mangledName": "$s10Foundation14LocalizedErrorP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Error",
+            "printedName": "Error",
+            "usr": "s:s5ErrorP",
+            "mangledName": "$ss5ErrorP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CustomerAccountSession",
+        "printedName": "CustomerAccountSession",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "email",
+            "printedName": "email",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV5emailSSSgvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B14AccountSessionV5emailSSSgvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV5emailSSSgvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B14AccountSessionV5emailSSSgvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "accessTokenExpiresAt",
+            "printedName": "accessTokenExpiresAt",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Date",
+                "printedName": "Foundation.Date",
+                "usr": "s:10Foundation4DateV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV20accessTokenExpiresAt10Foundation4DateVvp",
+            "mangledName": "$s23ShopifyCustomerAccounts0B14AccountSessionV20accessTokenExpiresAt10Foundation4DateVvp",
+            "moduleName": "ShopifyCustomerAccounts",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Date",
+                    "printedName": "Foundation.Date",
+                    "usr": "s:10Foundation4DateV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV20accessTokenExpiresAt10Foundation4DateVvg",
+                "mangledName": "$s23ShopifyCustomerAccounts0B14AccountSessionV20accessTokenExpiresAt10Foundation4DateVvg",
+                "moduleName": "ShopifyCustomerAccounts",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Function",
+            "name": "__derived_struct_equals",
+            "printedName": "__derived_struct_equals(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountSession",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountSession",
+                "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CustomerAccountSession",
+                "printedName": "ShopifyCustomerAccounts.CustomerAccountSession",
+                "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV23__derived_struct_equalsySbAC_ACtFZ",
+            "mangledName": "$s23ShopifyCustomerAccounts0B14AccountSessionV23__derived_struct_equalsySbAC_ACtFZ",
+            "moduleName": "ShopifyCustomerAccounts",
+            "static": true,
+            "implicit": true,
+            "declAttributes": [
+              "Implements"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:23ShopifyCustomerAccounts0B14AccountSessionV",
+        "mangledName": "$s23ShopifyCustomerAccounts0B14AccountSessionV",
+        "moduleName": "ShopifyCustomerAccounts",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      }
+    ],
+    "json_format_version": 8
+  }
+}
