@@ -22,8 +22,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.LocalActivity
 import androidx.navigation.NavHostController
 import com.shopify.checkout_kit_android_demo.R
+import com.shopify.checkout_kit_android_demo.MainActivity
+import com.shopify.checkout_kit_android_demo.common.ObserveAsEvents
 import com.shopify.checkout_kit_android_demo.common.components.BodyMedium
 import com.shopify.checkout_kit_android_demo.common.components.Header2
 import com.shopify.checkout_kit_android_demo.common.components.ProgressIndicator
@@ -36,6 +39,10 @@ fun SettingsView(
     settingsViewModel: SettingsViewModel,
     navController: NavHostController,
 ) {
+    val activity = LocalActivity.current as MainActivity
+    ObserveAsEvents(settingsViewModel.logoutRequests) { request ->
+        activity.launchCustomerAccountAuthentication(request, settingsViewModel::browserLogoutCompleted)
+    }
 
     when (val uiState = settingsViewModel.uiState.collectAsState().value) {
         is SettingsUiState.Loading -> {

@@ -37,7 +37,7 @@ class CustomerAccountsApiRestClient(
             .build()
 
         val request = Request.Builder()
-            .url(helper.buildTokenURL())
+            .url(helper.tokenUrl())
             .post(requestBody)
             .addHeader("Content-Type", "application/x-www-form-urlencoded")
             .build()
@@ -48,41 +48,20 @@ class CustomerAccountsApiRestClient(
     /**
      * Executes a [refresh token request](https://shopify.dev/docs/api/customer#step-using-refresh-token)
      */
-    suspend fun refreshAccessToken(accessToken: AccessToken): OAuthTokenResult {
+    suspend fun refreshAccessToken(refreshToken: String): OAuthTokenResult {
         Timber.i("Refreshing access token")
         val requestBody = FormBody.Builder()
             .add("grant_type", "refresh_token")
             .add("client_id", clientId)
-            .add("refresh_token", accessToken.refreshToken)
+            .add("refresh_token", refreshToken)
             .build()
 
         val request = Request.Builder()
-            .url(helper.buildTokenURL())
+            .url(helper.tokenUrl())
             .post(requestBody)
             .addHeader("Content-Type", "application/x-www-form-urlencoded")
             .build()
         return executeOAuthTokenRequest(request)
-    }
-
-    /**
-     * Executes a [logout request](https://shopify.dev/docs/api/customer#step-logging-out)
-     */
-    suspend fun logout(idToken: String) {
-        Timber.i("Logging out")
-        val request = Request.Builder()
-            .url(helper.buildLogoutURL(idToken))
-            .get()
-            .build()
-
-        return withContext(Dispatchers.IO) {
-            try {
-                client.newCall(request).execute().use { response ->
-                    Timber.i("Logout request successful? ${response.isSuccessful}")
-                }
-            } catch (e: IOException) {
-                Timber.e("Logout request failed $e")
-            }
-        }
     }
 
     private suspend fun executeOAuthTokenRequest(request: Request): OAuthTokenResult {
@@ -93,8 +72,7 @@ class CustomerAccountsApiRestClient(
                         val token = json.decodeFromString<AccessToken>(response.bodyOrThrow())
                         OAuthTokenResult.Success(token)
                     } else {
-                        val responseBody = response.bodyOrThrow()
-                        OAuthTokenResult.Error(responseBody)
+                        OAuthTokenResult.Error("HTTP ${response.code}")
                     }
                 }
             } catch (e: IOException) {

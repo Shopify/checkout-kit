@@ -6,8 +6,6 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Credentials are encrypted by a device-bound Keystore key and must not be restored. -->
+    <exclude domain="file" path="datastore/customer_access_tokens.preferences_pb" />
 </full-backup-content>

@@ -1,10 +1,10 @@
 package com.shopify.checkout_kit_android_demo.settings.authentication
 
-import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.CustomerRepository
 import com.shopify.checkout_kit_android_demo.settings.authentication.utils.AuthenticationHelper
+import com.shopify.checkout_kit_android_demo.settings.authentication.utils.AuthorizationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,39 +16,27 @@ class LoginViewModel(
     private val customerRepository: CustomerRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(
-        LoginUIState(
-            status = Status.Loading,
-            codeVerifier = authenticationHelper.createCodeVerifier()
-        )
-    )
+    private val _uiState = MutableStateFlow(LoginUIState())
     val uiState: StateFlow<LoginUIState> = _uiState.asStateFlow()
 
     /**
      * Updates state (e.g. from Loading) to LoggedOut if the customer has not yet authenticated
      * or LoggedIn if already authenticated
      */
-    fun checkLoginState(locale: Locale) = viewModelScope.launch {
+    fun checkLoginState(locale: String) = viewModelScope.launch {
         Timber.i("Checking logged in state")
         val token = customerRepository.getCustomerAccessToken()
         if (token == null) {
             Timber.i("Not yet logged in")
-            val codeVerifier = authenticationHelper.createCodeVerifier()
-            _uiState.value = _uiState.value.copy(
-                status = Status.LoggedOut(
-                    redirectUri = authenticationHelper.redirectUri,
-                    loginUrl = authenticationHelper.buildAuthorizationURL(
-                        codeVerifier = codeVerifier,
-                        locale = locale
-                    )
-                ),
-                codeVerifier = codeVerifier,
-            )
+            _uiState.value = try {
+                LoginUIState(Status.LoggedOut(authenticationHelper.createAuthorizationContext(locale)))
+            } catch (error: Exception) {
+                Timber.w(error, "Unable to create Customer Account authorization request")
+                LoginUIState(Status.Error(error.message.orEmpty()))
+            }
         } else {
             Timber.i("Logged in")
-            _uiState.value = _uiState.value.copy(
-                status = Status.LoggedIn,
-            )
+            _uiState.value = LoginUIState(Status.LoggedIn)
         }
     }
 
@@ -56,29 +44,45 @@ class LoginViewModel(
      * When the customer completes login, an authorization code param is intercepted on the redirect
      * and must be exchanged for an access token along with the code verifier
      */
-    fun codeParamIntercepted(code: String) = viewModelScope.launch {
-        Timber.i("Code intercepted")
-        val customerAccessTokens = customerRepository.createCustomerAccessToken(code, _uiState.value.codeVerifier)
-        if (customerAccessTokens != null) {
-            _uiState.value = _uiState.value.copy(status = Status.LoggedIn)
-        } else {
-            _uiState.value = _uiState.value.copy(status = Status.Error("Failed to create token"))
+    fun browserAuthenticationCompleted(result: BrowserAuthenticationResult) = viewModelScope.launch {
+        val authorizationContext = (_uiState.value.status as? Status.LoggedOut)?.authorizationContext ?: return@launch
+        when (result) {
+            BrowserAuthenticationResult.Cancelled -> Unit
+            is BrowserAuthenticationResult.Failed -> {
+                _uiState.value = LoginUIState(Status.Error(result.reason))
+            }
+
+            is BrowserAuthenticationResult.Redirect -> {
+                _uiState.value = LoginUIState(Status.Loading)
+                try {
+                    val code = authenticationHelper.authorizationCode(result.uri, authorizationContext.state)
+                    val token = customerRepository.createCustomerAccessToken(
+                        code = code,
+                        codeVerifier = authorizationContext.codeVerifier,
+                        expectedNonce = authorizationContext.nonce,
+                    )
+                    _uiState.value = if (token != null) {
+                        LoginUIState(Status.LoggedIn)
+                    } else {
+                        LoginUIState(Status.Error("Failed to create token"))
+                    }
+                } catch (error: Exception) {
+                    Timber.w(error, "Customer Account authorization failed")
+                    _uiState.value = LoginUIState(Status.Error(error.message.orEmpty()))
+                }
+            }
         }
     }
 }
 
 data class LoginUIState(
     val status: Status = Status.Loading,
-    val codeVerifier: String = "",
 )
 
 sealed class Status {
     data object Loading : Status()
     data object LoggedIn : Status()
-    data class LoggedOut(
-        val loginUrl: String,
-        val redirectUri: String,
-    ) : Status()
+    data class LoggedOut(val authorizationContext: AuthorizationContext) : Status()
 
     data class Error(val message: String) : Status()
 }

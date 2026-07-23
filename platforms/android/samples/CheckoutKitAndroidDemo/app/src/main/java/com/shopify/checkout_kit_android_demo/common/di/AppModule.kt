@@ -31,6 +31,7 @@ import com.shopify.checkout_kit_android_demo.settings.authentication.data.source
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.source.network.CustomerAccountsApiGraphQLClient
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.source.network.CustomerAccountsApiRestClient
 import com.shopify.checkout_kit_android_demo.settings.authentication.utils.AuthenticationHelper
+import com.shopify.checkout_kit_android_demo.settings.authentication.utils.IDTokenValidator
 import com.shopify.checkout_kit_android_demo.settings.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -108,6 +109,13 @@ val appModules = module {
             baseUrl = BuildConfig.customerAccountApiAuthBaseUrl,
             redirectUri = BuildConfig.customerAccountApiRedirectUri,
             clientId = BuildConfig.customerAccountApiClientId
+        )
+    }
+    single {
+        IDTokenValidator(
+            issuer = get<AuthenticationHelper>().issuer,
+            clientId = BuildConfig.customerAccountApiClientId,
+            json = get(),
         )
     }
 
