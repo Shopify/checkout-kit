@@ -5,6 +5,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebView
 
+internal const val SCROLL_UP_DIRECTION: Int = -1
+
 /**
  * Bridges the one interaction the WebView cannot handle: dragging down from checkout scroll-top to dismiss the sheet.
  *

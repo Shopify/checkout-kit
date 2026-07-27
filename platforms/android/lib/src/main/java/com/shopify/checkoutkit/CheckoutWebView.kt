@@ -73,12 +73,12 @@ internal class CheckoutWebView private constructor(
     fun hasFinishedLoading() = loadComplete
 
     fun setListener(listener: CheckoutWebViewListener) {
-        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Setting listener $listener.")
+        log.d(LOG_TAG, "Setting listener $listener.")
         this.listener = listener
     }
 
     fun setClient(client: CheckoutProtocol.Client?) {
-        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Setting protocol client $client.")
+        log.d(LOG_TAG, "Setting protocol client $client.")
         embeddedCheckoutProtocol.setClient(client)
     }
 
@@ -102,19 +102,19 @@ internal class CheckoutWebView private constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Attached to window. Adding protocol bridge.")
+        log.d(LOG_TAG, "Attached to window. Adding protocol bridge.")
         embeddedCheckoutProtocol.attach()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Detached from window. Removing protocol bridge.")
+        log.d(LOG_TAG, "Detached from window. Removing protocol bridge.")
         embeddedCheckoutProtocol.detach()
     }
 
     fun loadCheckout(url: String, isPreload: Boolean = false) {
         log.d(
-            CHECKOUT_WEB_VIEW_LOG_TAG,
+            LOG_TAG,
             "Loading checkout with url ${url.redactedUrlForLogging()}. IsPreload: $isPreload."
         )
         loadComplete = false
@@ -166,7 +166,7 @@ internal class CheckoutWebView private constructor(
 
         init {
             if (BuildConfig.DEBUG) {
-                log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Setting web contents debugging enabled.")
+                log.d(LOG_TAG, "Setting web contents debugging enabled.")
                 setWebContentsDebuggingEnabled(true)
             }
         }
@@ -175,7 +175,7 @@ internal class CheckoutWebView private constructor(
             CheckoutWebView.invalidate()
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !detail.didCrash()) {
                 // Renderer was killed because system ran out of memory.
-                log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
+                log.d(LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
                 getListener().onCheckoutViewFailedWithError(
                     CheckoutKitException(
                         errorDescription = "Render process gone.",
@@ -190,13 +190,13 @@ internal class CheckoutWebView private constructor(
 
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
-            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onPageStarted called ${url?.redactedUrlForLogging()}.")
+            log.d(LOG_TAG, "onPageStarted called ${url?.redactedUrlForLogging()}.")
             getListener().onCheckoutViewLoadStarted()
         }
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
-            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
+            log.d(LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
             loadComplete = true
             getListener().onCheckoutViewLoadComplete()
             resetCheckoutRequestRetryState()
@@ -211,7 +211,7 @@ internal class CheckoutWebView private constructor(
                 val checkoutRequest = requireNotNull(checkoutRequest)
                 didRetryCheckoutRequest = true
                 log.w(
-                    CHECKOUT_WEB_VIEW_LOG_TAG,
+                    LOG_TAG,
                     "Retrying checkout navigation. Error code: ${error?.errorCode}, " +
                         "URL: ${request?.url?.redactedForLogging()}"
                 )
@@ -225,7 +225,7 @@ internal class CheckoutWebView private constructor(
             }
             super.onReceivedError(view, request, error)
             error?.let {
-                handleError(request, it.errorCode, it.description.toString())
+                handleClientError(request, it.description.toString())
             }
             if (isMainFrame) {
                 resetCheckoutRequestRetryState()
@@ -243,7 +243,7 @@ internal class CheckoutWebView private constructor(
             }
             super.onReceivedHttpError(view, request, errorResponse)
             errorResponse?.let {
-                handleError(
+                handleHttpError(
                     request,
                     it.statusCode,
                     it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
@@ -263,39 +263,55 @@ internal class CheckoutWebView private constructor(
 
             when (val result = ExternalUriLauncher.launch(context, uri)) {
                 is ExternalUriLauncher.Result.Launched ->
-                    log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
+                    log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
                 is ExternalUriLauncher.Result.Rejected ->
                     log.d(
-                        CHECKOUT_WEB_VIEW_LOG_TAG,
+                        LOG_TAG,
                         "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
                     )
             }
             return true
         }
 
-        private fun handleError(
+        private fun handleClientError(
             request: WebResourceRequest?,
-            errorCode: Int,
             errorDescription: String,
         ) {
             if (request?.isForMainFrame != true) return
 
             log.d(
-                CHECKOUT_WEB_VIEW_LOG_TAG,
-                "Handling error for main frame. URL: ${request.url.redactedForLogging()}, " +
-                    "errorCode: $errorCode, errorDescription: $errorDescription"
+                LOG_TAG,
+                "Handling client error for main frame. URL: ${request.url.redactedForLogging()}, " +
+                    "errorDescription: $errorDescription"
             )
-            when (errorCode) {
+            getListener().onCheckoutViewFailedWithError(
+                ClientException(errorDescription = errorDescription),
+            )
+        }
+
+        private fun handleHttpError(
+            request: WebResourceRequest?,
+            statusCode: Int,
+            errorDescription: String,
+        ) {
+            if (request?.isForMainFrame != true) return
+
+            log.d(
+                LOG_TAG,
+                "Handling HTTP error for main frame. URL: ${request.url.redactedForLogging()}, " +
+                    "statusCode: $statusCode, errorDescription: $errorDescription"
+            )
+            when (statusCode) {
                 HTTP_GONE -> {
-                    log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Failing with cart expired.")
+                    log.d(LOG_TAG, "Failing with cart expired.")
                     getListener().onCheckoutViewFailedWithError(
                         CheckoutExpiredException(errorCode = CheckoutExpiredException.CART_EXPIRED),
                     )
                 }
                 else -> {
-                    log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Failing with other error. Code: $errorCode")
+                    log.d(LOG_TAG, "Failing with HTTP error. Status code: $statusCode")
                     getListener().onCheckoutViewFailedWithError(
-                        HttpException(errorDescription = errorDescription, statusCode = errorCode),
+                        HttpException(errorDescription = errorDescription, statusCode = statusCode),
                     )
                 }
             }
@@ -304,7 +320,7 @@ internal class CheckoutWebView private constructor(
 
     internal fun handleBackPressed(): Boolean {
         if (canGoBack() && !isOnConfirmationPage()) {
-            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Back navigation handled by WebView history.")
+            log.d(LOG_TAG, "Back navigation handled by WebView history.")
             goBack()
             return true
         }
@@ -343,7 +359,7 @@ internal class CheckoutWebView private constructor(
                     invalidate()
                     val view = CheckoutWebView(activity, webMessageTransport).apply {
                         loadCheckout(url, isPreload = true)
-                        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Pausing preloaded WebView.")
+                        log.d(LOG_TAG, "Pausing preloaded WebView.")
                         onPause()
                     }
                     preloadCache.store(PreloadKey.forUrl(url), view)
@@ -415,8 +431,7 @@ internal class CheckoutWebView private constructor(
     }
 }
 
-private const val CHECKOUT_WEB_VIEW_LOG_TAG = "CheckoutWebView"
-internal const val SCROLL_UP_DIRECTION: Int = -1
+private const val LOG_TAG = "CheckoutWebView"
 
 internal class CheckoutWebViewTouchHandler {
     private var lastTouchRawY = 0f
@@ -463,22 +478,22 @@ private fun WebView.configureWebView(listener: () -> CheckoutWebViewListener) {
     webChromeClient = object : WebChromeClient() {
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
             super.onProgressChanged(view, newProgress)
-            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "On progress change called. New progress $newProgress.")
+            log.d(LOG_TAG, "On progress change called. New progress $newProgress.")
             listener().updateProgressBar(newProgress)
         }
 
         override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
-            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onGeolocationPermissionsShowPrompt called, origin $origin, invoking listener callback.")
+            log.d(LOG_TAG, "onGeolocationPermissionsShowPrompt called, origin $origin, invoking listener callback.")
             listener().onGeolocationPermissionsShowPrompt(origin, callback)
         }
 
         override fun onGeolocationPermissionsHidePrompt() {
-            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onGeolocationPermissionsHidePrompt called, invoking listener callback.")
+            log.d(LOG_TAG, "onGeolocationPermissionsHidePrompt called, invoking listener callback.")
             listener().onGeolocationPermissionsHidePrompt()
         }
 
         override fun onPermissionRequest(request: PermissionRequest) {
-            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onPermissionRequest called $request, invoking listener callback.")
+            log.d(LOG_TAG, "onPermissionRequest called $request, invoking listener callback.")
             listener().onPermissionRequest(request)
         }
 
@@ -487,7 +502,7 @@ private fun WebView.configureWebView(listener: () -> CheckoutWebViewListener) {
             filePathCallback: ValueCallback<Array<Uri>>,
             fileChooserParams: FileChooserParams,
         ): Boolean {
-            log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "onShowFileChooser called, invoking listener callback.")
+            log.d(LOG_TAG, "onShowFileChooser called, invoking listener callback.")
             return listener().onShowFileChooser(webView, filePathCallback, fileChooserParams)
         }
     }
@@ -503,7 +518,7 @@ private fun checkoutUserAgentSuffix(): String {
         " $identifier${version?.let { "/$it" } ?: ""}"
     } ?: ""
     val suffix = "ShopifyCheckoutKit/${BuildConfig.SDK_VERSION} (Android; Kotlin $kotlinVersion)$platformPart"
-    log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Setting User-Agent suffix $suffix")
+    log.d(LOG_TAG, "Setting User-Agent suffix $suffix")
     return suffix
 }
 
@@ -511,7 +526,7 @@ private fun checkoutUserAgentSuffix(): String {
 internal fun CheckoutWebView.removeFromParent() {
     val parent = parent
     if (parent is ViewGroup) {
-        log.d(CHECKOUT_WEB_VIEW_LOG_TAG, "Existing parent found for WebView, removing.")
+        log.d(LOG_TAG, "Existing parent found for WebView, removing.")
         parent.removeView(this)
     }
 }
