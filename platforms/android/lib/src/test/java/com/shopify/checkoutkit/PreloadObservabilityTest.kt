@@ -185,6 +185,21 @@ class PreloadObservabilityTest {
     }
 
     @Test
+    fun `consuming preload releases observer`() {
+        val states = mutableListOf<PreloadState>()
+        ShopifyCheckoutKit.preload(url, activity, webMessageTransport) { states.add(it) }
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val view = CheckoutWebView.cachedPreloadViewForTesting()!!
+        shadowOf(view).webViewClient.onPageFinished(view, url)
+
+        CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        ShopifyCheckoutKit.invalidate()
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Ready)
+    }
+
+    @Test
     fun `page finished transitions cached preload to ready`() {
         val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
         ShadowLooper.shadowMainLooper().runToEndOfTasks()

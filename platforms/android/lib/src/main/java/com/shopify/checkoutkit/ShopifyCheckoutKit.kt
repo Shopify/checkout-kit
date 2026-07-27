@@ -56,7 +56,7 @@ public object ShopifyCheckoutKit {
     @JvmStatic
     public fun invalidate() {
         log.d("ShopifyCheckoutKit", "Invalidate called.")
-        CheckoutWebView.invalidateAndResetState()
+        CheckoutWebView.invalidate()
     }
 
     /**

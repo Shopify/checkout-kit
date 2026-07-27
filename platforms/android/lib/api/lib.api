@@ -636,6 +636,9 @@ public abstract class com/shopify/checkoutkit/PreloadState {
 
 public final class com/shopify/checkoutkit/PreloadState$Expired : com/shopify/checkoutkit/PreloadState {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$Expired;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/shopify/checkoutkit/PreloadState$Failed : com/shopify/checkoutkit/PreloadState {
@@ -665,18 +668,30 @@ public final class com/shopify/checkoutkit/PreloadState$FailureReason$HttpError 
 
 public final class com/shopify/checkoutkit/PreloadState$FailureReason$NavigationFailed : com/shopify/checkoutkit/PreloadState$FailureReason {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$FailureReason$NavigationFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/shopify/checkoutkit/PreloadState$Idle : com/shopify/checkoutkit/PreloadState {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$Idle;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/shopify/checkoutkit/PreloadState$Loading : com/shopify/checkoutkit/PreloadState {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$Loading;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/shopify/checkoutkit/PreloadState$Ready : com/shopify/checkoutkit/PreloadState {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class com/shopify/checkoutkit/PreloadStateListener {

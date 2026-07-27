@@ -4,15 +4,15 @@ package com.shopify.checkoutkit
  * Observable lifecycle state of a preloaded checkout.
  */
 public sealed class PreloadState {
-    public object Idle : PreloadState()
-    public object Loading : PreloadState()
-    public object Ready : PreloadState()
-    public object Expired : PreloadState()
+    public data object Idle : PreloadState()
+    public data object Loading : PreloadState()
+    public data object Ready : PreloadState()
+    public data object Expired : PreloadState()
     public data class Failed(public val reason: FailureReason) : PreloadState()
 
     public sealed class FailureReason {
         public data class HttpError(public val statusCode: Int) : FailureReason()
-        public object NavigationFailed : FailureReason()
+        public data object NavigationFailed : FailureReason()
     }
 }
 

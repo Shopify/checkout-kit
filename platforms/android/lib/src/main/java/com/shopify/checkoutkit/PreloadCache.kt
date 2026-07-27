@@ -89,6 +89,7 @@ internal class PreloadCache : DefaultLifecycleObserver {
             null
         } else {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Returning cached preloaded WebView.")
+            observer = null
             cached.view.markPreloadConsumed()
             cached.view
         }

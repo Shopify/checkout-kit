@@ -411,12 +411,6 @@ internal class CheckoutWebView private constructor(
             }
         }
 
-        fun invalidateAndResetState() {
-            runOnMainThread {
-                preloadCache.evict(PreloadState.Idle)
-            }
-        }
-
         fun clearCache() {
             if (!preloadCache.hasEntry) return
             invalidate()
