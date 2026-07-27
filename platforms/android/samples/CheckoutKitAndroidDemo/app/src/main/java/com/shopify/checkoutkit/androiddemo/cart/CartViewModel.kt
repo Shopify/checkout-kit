@@ -262,7 +262,7 @@ class CartViewModel(
             }
 
         return when (windowOpenHandler) {
-            // With no sample handler registered, Checkout Kit retains its default ACTION_VIEW handling.
+            // With no sample handler registered, Checkout Kit retains its default Custom Tab handling.
             WindowOpenHandler.Default -> base
             WindowOpenHandler.ExternalApp -> base.on(CheckoutProtocol.windowOpen) { request ->
                 recordReceivedProtocolMessage(CheckoutProtocol.windowOpen.method, request)

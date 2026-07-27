@@ -27,7 +27,6 @@ import org.robolectric.Shadows.shadowOf
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
-@Suppress("LargeClass")
 @RunWith(RobolectricTestRunner::class)
 @Suppress("LargeClass")
 class EmbeddedCheckoutProtocolBridgeTest {
@@ -297,12 +296,11 @@ class EmbeddedCheckoutProtocolBridgeTest {
     fun `window open default launches non-web URLs with native app controller`() {
         registerFakeBrowserFor("mailto:help@example.com")
 
-        val js = captureEvaluatedJs {
-            ecp.postMessage(windowOpenRequest(id = "\"43\"", url = "mailto:help@example.com"))
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"43\"", url = "mailto:help@example.com"))
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(js).contains("\"status\":\"success\"")
+        assertThat(response).contains("\"status\":\"success\"")
         val launched = shadowOf(activity).nextStartedActivity
         assertThat(launched).isNotNull()
         assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)

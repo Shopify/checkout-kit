@@ -4,7 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
+import android.os.Bundle
 
 /**
  * Single point of entry for launching URLs outside the checkout WebView.
@@ -26,24 +26,24 @@ internal object ExternalUriLauncher {
     }
 
     fun launchExternalApp(context: Context, uri: Uri): Result {
-        return launchIntent(context, uri)
+        return launchIntent(
+            context = context,
+            intent = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            uri = uri,
+        )
     }
 
     private fun launchCustomTab(context: Context, uri: Uri): Result {
-        return try {
-            val customTabsIntent = CustomTabsIntent.Builder().build()
-            customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            customTabsIntent.launchUrl(context, uri)
-            Result.Launched
-        } catch (e: ActivityNotFoundException) {
-            Result.Rejected(reason = e.message ?: "No activity resolves $uri")
-        } catch (e: SecurityException) {
-            Result.Rejected(reason = e.message)
+        val customTabsExtras = Bundle().apply {
+            putBinder(CUSTOM_TABS_SESSION_EXTRA, null)
         }
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+            .putExtras(customTabsExtras)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchIntent(context, intent, uri)
     }
 
-    private fun launchIntent(context: Context, uri: Uri): Result {
-        val intent = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    private fun launchIntent(context: Context, intent: Intent, uri: Uri): Result {
         return try {
             context.startActivity(intent)
             Result.Launched
@@ -53,4 +53,6 @@ internal object ExternalUriLauncher {
             Result.Rejected(reason = e.message)
         }
     }
+
+    private const val CUSTOM_TABS_SESSION_EXTRA = "android.support.customtabs.extra.SESSION"
 }
