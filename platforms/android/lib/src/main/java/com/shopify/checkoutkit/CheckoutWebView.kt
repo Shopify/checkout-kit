@@ -47,7 +47,8 @@ internal class CheckoutWebView private constructor(
     internal constructor(context: Context, webMessageTransport: WebMessageTransport) :
         this(context, null, webMessageTransport)
 
-    private var listener = CheckoutWebViewListener(NoopCheckoutListener())
+    internal var listener = CheckoutWebViewListener(NoopCheckoutListener())
+        private set
     private val embeddedCheckoutProtocol = EmbeddedCheckoutProtocolBridge(this, webMessageTransport)
     private var loadComplete = false
     internal var isPresented = false
@@ -59,7 +60,7 @@ internal class CheckoutWebView private constructor(
     private val touchHandler = CheckoutWebViewTouchHandler()
 
     init {
-        configureWebView(::getListener)
+        configureWebView(::listener)
         webViewClient = CheckoutWebViewClient()
         try {
             embeddedCheckoutProtocol.attach()
@@ -84,10 +85,6 @@ internal class CheckoutWebView private constructor(
 
     fun markPresented() {
         isPresented = true
-    }
-
-    internal fun getListener(): CheckoutWebViewListener {
-        return listener
     }
 
     /**
@@ -176,7 +173,7 @@ internal class CheckoutWebView private constructor(
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !detail.didCrash()) {
                 // Renderer was killed because system ran out of memory.
                 log.d(LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
-                getListener().onCheckoutViewFailedWithError(
+                listener.onCheckoutViewFailedWithError(
                     CheckoutKitException(
                         errorDescription = "Render process gone.",
                         errorCode = CheckoutKitException.RENDER_PROCESS_GONE,
@@ -191,14 +188,14 @@ internal class CheckoutWebView private constructor(
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
             log.d(LOG_TAG, "onPageStarted called ${url?.redactedUrlForLogging()}.")
-            getListener().onCheckoutViewLoadStarted()
+            listener.onCheckoutViewLoadStarted()
         }
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
             log.d(LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
             loadComplete = true
-            getListener().onCheckoutViewLoadComplete()
+            listener.onCheckoutViewLoadComplete()
             resetCheckoutRequestRetryState()
         }
 
@@ -284,7 +281,7 @@ internal class CheckoutWebView private constructor(
                 "Handling client error for main frame. URL: ${request.url.redactedForLogging()}, " +
                     "errorDescription: $errorDescription"
             )
-            getListener().onCheckoutViewFailedWithError(
+            listener.onCheckoutViewFailedWithError(
                 ClientException(errorDescription = errorDescription),
             )
         }
@@ -304,13 +301,13 @@ internal class CheckoutWebView private constructor(
             when (statusCode) {
                 HTTP_GONE -> {
                     log.d(LOG_TAG, "Failing with cart expired.")
-                    getListener().onCheckoutViewFailedWithError(
+                    listener.onCheckoutViewFailedWithError(
                         CheckoutExpiredException(errorCode = CheckoutExpiredException.CART_EXPIRED),
                     )
                 }
                 else -> {
                     log.d(LOG_TAG, "Failing with HTTP error. Status code: $statusCode")
-                    getListener().onCheckoutViewFailedWithError(
+                    listener.onCheckoutViewFailedWithError(
                         HttpException(errorDescription = errorDescription, statusCode = statusCode),
                     )
                 }

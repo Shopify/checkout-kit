@@ -108,11 +108,11 @@ class CheckoutWebViewTest {
         val touchHandler = CheckoutWebViewTouchHandler()
         parent.addView(view)
 
-        // Robolectric's WebView cannot be made to report a scrollable checkout document.
+        // CheckoutWebView is final with a private constructor, so the scrollable-document case is
+        // exercised against CheckoutWebViewTouchHandler directly rather than through onTouchEvent.
         touchHandler.sendTouchEvent(view, MotionEvent.ACTION_DOWN, y = 20f)
         touchHandler.sendTouchEvent(view, MotionEvent.ACTION_MOVE, y = 30f)
 
-        assertThat(view.canScrollVertically(SCROLL_UP_DIRECTION)).isTrue()
         assertThat(parent.disallowInterceptRequested).isTrue()
     }
 

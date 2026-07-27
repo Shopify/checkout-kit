@@ -5,8 +5,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebView
 
-internal const val SCROLL_UP_DIRECTION: Int = -1
-
 /**
  * Bridges the one interaction the WebView cannot handle: dragging down from checkout scroll-top to dismiss the sheet.
  *
@@ -14,6 +12,8 @@ internal const val SCROLL_UP_DIRECTION: Int = -1
  * the sheet only takes over downward gestures while checkout content cannot scroll up.
  */
 @SuppressLint("ClickableViewAccessibility")
+// This intentionally accepts WebView so a scrollability test double can exercise the handoff.
+// Production installs it only on CheckoutWebView.
 internal fun WebView.installBottomSheetScrollHandoff(sheet: CheckoutBottomSheetLayout) {
     val handoffController = ScrollHandoffController(sheet)
     setOnTouchListener { view, event -> handoffController.onTouch(view, event) }

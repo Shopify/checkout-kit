@@ -135,7 +135,7 @@ internal class EmbeddedCheckoutProtocolBridge(
     private fun handleStart(message: String) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.start.method}: hiding progress bar and bubbling up.")
         onMainThread {
-            view.getListener().onCheckoutViewLoadComplete()
+            view.listener.onCheckoutViewLoadComplete()
         }
         composedClient.process(message)
     }
@@ -229,7 +229,7 @@ internal class EmbeddedCheckoutProtocolBridge(
                 if (payload.messages.none { it.severity == Severity.Unrecoverable }) return@on
                 log.d(LOG_TAG, "ec.error unrecoverable; dismissing checkout via event processor")
                 CheckoutWebView.invalidate()
-                view.getListener().onCheckoutViewFailedWithError(
+                view.listener.onCheckoutViewFailedWithError(
                     ClientException(
                         errorDescription = "Embedded checkout reported unrecoverable error.",
                     ),
