@@ -24,7 +24,7 @@ class TestableCheckoutWebViewController: CheckoutWebViewController {
 class CheckoutWebViewControllerTests: XCTestCase {
     private let url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
 
-    private let sampleError = CheckoutError.checkoutExpired(message: "Test", code: .cartExpired)
+    private let sampleError = CheckoutError(code: .cartExpired, message: "Test")
 
     func test_init_withNilEntryPoint_shouldSetCorrectUserAgent() {
         let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)

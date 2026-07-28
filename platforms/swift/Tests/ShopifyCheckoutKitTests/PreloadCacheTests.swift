@@ -54,11 +54,54 @@ class PreloadCacheTests: XCTestCase {
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
     }
 
-    func test_UnrecoverableErrorOnSlotOccupantClearsSlot() async {
+    func test_TerminalErrorOnSlotOccupantClearsSlot() async {
         let entry = storeCacheEntry()
+        let preload = CheckoutPreload(cache: CheckoutWebView.preloadCache)
+        let failed = preloadFailureExpectation(for: preload)
 
-        _ = await entry.defaultsClient.process(ecErrorBody(severity: "unrecoverable"))
+        entry.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecErrorBody(severity: "unrecoverable"))
+        )
 
+        await fulfillment(of: [failed], timeout: 2.0)
+        XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
+    }
+
+    func test_TerminalErrorOnBackgroundedPreloadDoesNotDeliverLifecycleFailure() async {
+        let entry = storeCacheEntry()
+        let preload = CheckoutPreload(cache: CheckoutWebView.preloadCache)
+        let preloadFailed = preloadFailureExpectation(for: preload)
+        let delegate = MockCheckoutWebViewDelegate()
+        let didFail = expectation(description: "view delegate does not receive failure")
+        didFail.isInverted = true
+        delegate.didFailWithErrorExpectation = didFail
+        entry.viewDelegate = delegate
+
+        entry.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecErrorBody(severity: "unrecoverable"))
+        )
+
+        await fulfillment(of: [preloadFailed], timeout: 2.0)
+        await fulfillment(of: [didFail], timeout: 0.1)
+        XCTAssertEqual(delegate.failureCount, 0)
+    }
+
+    func test_TerminalErrorOnPresentedSlotOccupantClearsSlot() async {
+        let entry = storeCacheEntry()
+        entry.hasBeenPresented = true
+        let delegate = MockCheckoutWebViewDelegate()
+        let didFail = expectation(description: "view delegate receives failure")
+        delegate.didFailWithErrorExpectation = didFail
+        entry.viewDelegate = delegate
+
+        entry.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecErrorBody(severity: "unrecoverable"))
+        )
+
+        await fulfillment(of: [didFail], timeout: 2.0)
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
     }
 
@@ -92,12 +135,20 @@ class PreloadCacheTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.contains(entry))
     }
 
-    func test_UnrecoverableErrorOnForeignViewPreservesSlot() async {
+    func test_TerminalErrorOnForeignViewPreservesSlot() async {
         let entry = storeCacheEntry()
         let foreign = CheckoutWebView(entryPoint: nil)
+        let delegate = MockCheckoutWebViewDelegate()
+        let didFail = expectation(description: "foreign view delegate receives failure")
+        delegate.didFailWithErrorExpectation = didFail
+        foreign.viewDelegate = delegate
 
-        _ = await foreign.defaultsClient.process(ecErrorBody(severity: "unrecoverable"))
+        foreign.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecErrorBody(severity: "unrecoverable"))
+        )
 
+        await fulfillment(of: [didFail], timeout: 2.0)
         XCTAssertTrue(CheckoutWebView.preloadCache.contains(entry))
     }
 
@@ -139,6 +190,16 @@ class PreloadCacheTests: XCTestCase {
         """
         {"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":{"currency":"USD","id":"c-1","line_items":[],"links":[],"status":"completed","totals":[],"ucp":{"payment_handlers":{},"version":"\(EmbeddedCheckoutProtocol.specVersion)"}}}}
         """
+    }
+
+    private func preloadFailureExpectation(for preload: CheckoutPreload) -> XCTestExpectation {
+        let failed = expectation(description: "preload transitions to protocol failure")
+        preload.onStateChange = { state in
+            if state == .failed(reason: .protocolError) {
+                failed.fulfill()
+            }
+        }
+        return failed
     }
 
     private func ecErrorBody(severity: String) -> String {

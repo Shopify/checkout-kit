@@ -3,6 +3,7 @@ import XCTest
 
 class MockCheckoutWebViewDelegate: CheckoutWebViewDelegate {
     var errorReceived: CheckoutError?
+    var failureCount = 0
 
     var didStartNavigationExpectation: XCTestExpectation?
     var didFinishNavigationExpectation: XCTestExpectation?
@@ -17,6 +18,7 @@ class MockCheckoutWebViewDelegate: CheckoutWebViewDelegate {
     }
 
     func checkoutViewDidFailWithError(error: CheckoutError) {
+        failureCount += 1
         errorReceived = error
         didFailWithErrorExpectation?.fulfill()
     }

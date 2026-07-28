@@ -115,12 +115,10 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(policy, .cancel)
 
         wait(for: [didFailWithErrorExpectation], timeout: 5)
-        switch mockDelegate.errorReceived {
-        case let .some(.checkoutUnavailable(message, _)):
-            XCTAssertEqual(message, "forbidden")
-        default:
-            XCTFail("Unhandled error case received")
-        }
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .httpError)
+        XCTAssertEqual(error.message, "forbidden")
+        XCTAssertEqual(error.httpStatusCode, 403)
     }
 
     func test401responseOnCheckoutURLCodeDelegation() throws {
@@ -137,12 +135,10 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(policy, .cancel)
 
         wait(for: [didFailWithErrorExpectation], timeout: 5)
-        switch mockDelegate.errorReceived {
-        case let .some(.checkoutUnavailable(message, _)):
-            XCTAssertEqual(message, "unauthorized")
-        default:
-            XCTFail("Unhandled error case received")
-        }
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .httpError)
+        XCTAssertEqual(error.message, "unauthorized")
+        XCTAssertEqual(error.httpStatusCode, 401)
     }
 
     func test404responseOnCheckoutURLCodeDelegation() throws {
@@ -159,12 +155,10 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(policy, .cancel)
 
         wait(for: [didFailWithErrorExpectation], timeout: 5)
-        switch mockDelegate.errorReceived {
-        case let .some(.checkoutUnavailable(message, _)):
-            XCTAssertEqual(message, "not found")
-        default:
-            XCTFail("Unhandled error case received")
-        }
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .httpError)
+        XCTAssertEqual(error.message, "not found")
+        XCTAssertEqual(error.httpStatusCode, 404)
     }
 
     func test410responseOnCheckoutURLCodeDelegation() throws {
@@ -181,15 +175,13 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(policy, .cancel)
 
         wait(for: [didFailWithErrorExpectation], timeout: 5)
-        switch mockDelegate.errorReceived {
-        case let .some(.checkoutExpired(message, _)):
-            XCTAssertEqual(message, "Checkout has expired.")
-        default:
-            XCTFail("Unhandled error case received")
-        }
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .cartExpired)
+        XCTAssertEqual(error.message, HTTPURLResponse.localizedString(forStatusCode: 410))
+        XCTAssertEqual(error.httpStatusCode, 410)
     }
 
-    func test5XXResponsesEmitCheckoutUnavailable() throws {
+    func test5XXResponsesEmitHTTPError() throws {
         try view.load(checkout: XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123")))
         let link = try XCTUnwrap(view.url)
         view.viewDelegate = mockDelegate
@@ -209,16 +201,8 @@ class CheckoutWebViewTests: XCTestCase {
                 return
             }
 
-            switch receivedError {
-            case let .checkoutUnavailable(_, code):
-                if case let .httpError(received) = code {
-                    XCTAssertEqual(received, statusCode)
-                } else {
-                    XCTFail("Expected httpError code for status \(statusCode)")
-                }
-            default:
-                XCTFail("Received incorrect `CheckoutError` case for status code \(statusCode)")
-            }
+            XCTAssertEqual(receivedError.code, .httpError)
+            XCTAssertEqual(receivedError.httpStatusCode, statusCode)
 
             mockDelegate.didFailWithErrorExpectation = nil
             mockDelegate.errorReceived = nil
@@ -493,14 +477,28 @@ class CheckoutWebViewTests: XCTestCase {
         view.webView(view, didFail: nil, withError: error)
 
         wait(for: [didFailWithErrorExpectation], timeout: 5)
-        switch mockDelegate.errorReceived {
-        case let .some(.sdkError(underlying)):
-            let nsError = underlying as NSError
-            XCTAssertEqual(nsError.domain, NSURLErrorDomain)
-            XCTAssertEqual(nsError.code, NSURLErrorTimedOut)
-        default:
-            XCTFail("checkoutDidFail(.sdkError) expected to throw")
-        }
+        let receivedError = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(receivedError.code, .networkError)
+        let nsError = try XCTUnwrap(receivedError.underlyingError as NSError?)
+        XCTAssertEqual(nsError.domain, NSURLErrorDomain)
+        XCTAssertEqual(nsError.code, NSURLErrorTimedOut)
+    }
+
+    func testWebViewDidFailWithNonretryableError() throws {
+        let url = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
+        let view = CheckoutWebView.for(checkout: url)
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorBadURL, userInfo: nil)
+
+        let didFailWithErrorExpectation = expectation(description: "checkoutViewDidFailWithError was called")
+        mockDelegate.didFailWithErrorExpectation = didFailWithErrorExpectation
+        view.viewDelegate = mockDelegate
+
+        view.webView(view, didFail: nil, withError: error)
+
+        wait(for: [didFailWithErrorExpectation], timeout: 5)
+        let receivedError = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(receivedError.code, .unknown)
+        XCTAssertEqual(receivedError.underlyingError as NSError?, error)
     }
 
     func testWebViewDoesNotEmitDidFailForCancelledRedirect() throws {
@@ -853,110 +851,144 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(errorLogs.contains("ec.window.open_request"))
     }
 
-    // MARK: - ec.error severity-based dismissal
+    // MARK: - ec.error lifecycle failure
 
-    /// Builds a minimal valid `ec.error` payload with the given severity. `ErrorResponse`
-    /// requires both `messages` and `ucp` to decode — Codec routes it via the typed
-    /// `params.error` field, so missing fields would make the message decode to `.unknown`
-    /// and bypass the handler entirely.
-    private func ecErrorBody(severity: String) -> String {
-        return """
-        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"status":"error","version":"\(EmbeddedCheckoutProtocol.specVersion)"},"messages":[{"type":"error","code":"session_failed","content":"Session failed","severity":"\(severity)"}]}}}
+    private func ecErrorBody(messages: String = #"[{"type":"error","code":"invalid_cart","content":"Cart is invalid","severity":"unrecoverable"}]"#) -> String {
+        """
+        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"status":"error","version":"\(EmbeddedCheckoutProtocol.specVersion)"},"messages":\(messages)}}}
         """
     }
 
-    @MainActor
-    func testEcErrorWithUnrecoverableSeverityDismissesViaDelegate() async {
-        let dismissed = expectation(description: "viewDelegate received failure")
-        mockDelegate.didFailWithErrorExpectation = dismissed
-        view.client = nil
-        let message = MockScriptMessage(body: ecErrorBody(severity: "unrecoverable"))
+    func testEcErrorDeliversMappedLifecycleFailure() async throws {
+        let failed = expectation(description: "viewDelegate received failure")
+        mockDelegate.didFailWithErrorExpectation = failed
 
-        view.userContentController(WKUserContentController(), didReceive: message)
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: ecErrorBody()))
 
-        await fulfillment(of: [dismissed], timeout: 2.0)
-        let error = try? XCTUnwrap(mockDelegate.errorReceived)
-        guard case let .checkoutUnavailable(message, _) = error else {
-            return XCTFail("Expected checkoutUnavailable error")
-        }
-        XCTAssertEqual(message, "Embedded checkout reported unrecoverable error.")
+        await fulfillment(of: [failed], timeout: 2.0)
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .invalidCart)
+        XCTAssertEqual(error.message, "Cart is invalid")
     }
 
-    @MainActor
-    func testEcErrorWithRecoverableSeverityDoesNotDismiss() async {
-        let notDismissed = expectation(description: "viewDelegate must not receive failure")
-        notDismissed.isInverted = true
-        mockDelegate.didFailWithErrorExpectation = notDismissed
-        view.client = nil
-        let message = MockScriptMessage(body: ecErrorBody(severity: "recoverable"))
+    func testMalformedEcErrorEnvelopeDeliversSDKError() async throws {
+        let failed = expectation(description: "viewDelegate received failure")
+        mockDelegate.didFailWithErrorExpectation = failed
+        let body = """
+        {"jsonrpc":2,"method":"ec.error","params":{"error":{"ucp":{"status":"error","version":"\(EmbeddedCheckoutProtocol.specVersion)"},"messages":[]}}}
+        """
 
-        view.userContentController(WKUserContentController(), didReceive: message)
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
 
-        await fulfillment(of: [notDismissed], timeout: 1.0)
-        XCTAssertNil(mockDelegate.errorReceived)
+        await fulfillment(of: [failed], timeout: 2.0)
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .sdkError)
+        XCTAssertEqual(error.message, "Embedded checkout sent an invalid terminal error.")
     }
 
-    @MainActor
-    func testEcErrorWithRequiresBuyerInputSeverityDoesNotDismiss() async {
-        let notDismissed = expectation(description: "viewDelegate must not receive failure")
-        notDismissed.isInverted = true
-        mockDelegate.didFailWithErrorExpectation = notDismissed
-        view.client = nil
-        let message = MockScriptMessage(body: ecErrorBody(severity: "requires_buyer_input"))
+    func testMalformedEcErrorPayloadDeliversSDKError() async throws {
+        let failed = expectation(description: "viewDelegate received failure")
+        mockDelegate.didFailWithErrorExpectation = failed
+        let body = """
+        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"status":"error","version":"\(EmbeddedCheckoutProtocol.specVersion)"},"messages":{}}}}
+        """
 
-        view.userContentController(WKUserContentController(), didReceive: message)
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
 
-        await fulfillment(of: [notDismissed], timeout: 1.0)
-        XCTAssertNil(mockDelegate.errorReceived)
+        await fulfillment(of: [failed], timeout: 2.0)
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .sdkError)
+        XCTAssertEqual(error.message, "Embedded checkout sent an invalid terminal error.")
     }
 
-    @MainActor
-    func testEcErrorWithRequiresBuyerReviewSeverityDoesNotDismiss() async {
-        let notDismissed = expectation(description: "viewDelegate must not receive failure")
-        notDismissed.isInverted = true
-        mockDelegate.didFailWithErrorExpectation = notDismissed
-        view.client = nil
-        let message = MockScriptMessage(body: ecErrorBody(severity: "requires_buyer_review"))
+    func testEcErrorSendsMerchantProtocolResponseBeforeLifecycleFailure() async {
+        let response = #"{"jsonrpc":"2.0","id":"merchant-response","result":{}}"#
+        let responseSent = expectation(description: "bridge response sent")
+        let failed = expectation(description: "viewDelegate received failure")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        mockDelegate.didFailWithErrorExpectation = failed
+        view.client = RecordingBridgeClient(response: response)
 
-        view.userContentController(WKUserContentController(), didReceive: message)
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: ecErrorBody()))
 
-        await fulfillment(of: [notDismissed], timeout: 1.0)
-        XCTAssertNil(mockDelegate.errorReceived)
+        await fulfillment(of: [responseSent, failed], timeout: 2.0, enforceOrder: true)
+        XCTAssertEqual(MockCheckoutBridge.lastResponseBody, response)
     }
 
-    @MainActor
-    func testEcErrorStillForwardsToConsumerClient() async {
-        let consumerHandlerFired = expectation(description: "consumer handler fired")
-        let dismissed = expectation(description: "viewDelegate received failure")
-        mockDelegate.didFailWithErrorExpectation = dismissed
+    func testEcErrorForwardsFullPayloadToConsumerProtocolClientBeforeLifecycleFailure() async throws {
+        let consumerHandlerFired = expectation(description: "consumer protocol handler fired")
+        let failed = expectation(description: "viewDelegate received failure")
+        var receivedMessages: [Message] = []
+        mockDelegate.didFailWithErrorExpectation = failed
         view.client = EmbeddedCheckoutProtocol.Client()
-            .on(CheckoutProtocol.error) { _ in
+            .on(CheckoutProtocol.error) { error in
+                receivedMessages = error.messages
                 consumerHandlerFired.fulfill()
             }
-        let message = MockScriptMessage(body: ecErrorBody(severity: "unrecoverable"))
 
-        view.userContentController(WKUserContentController(), didReceive: message)
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: ecErrorBody()))
 
-        // Consumer handler runs first (via `view.client?.process(body)`), then the
-        // defaultsClient handler runs and dismisses. Both must fire.
-        await fulfillment(of: [consumerHandlerFired, dismissed], timeout: 2.0, enforceOrder: true)
+        await fulfillment(of: [consumerHandlerFired, failed], timeout: 2.0, enforceOrder: true)
+        let received = try XCTUnwrap(receivedMessages.first)
+        XCTAssertEqual(received.code, "invalid_cart")
+        XCTAssertEqual(received.content, "Cart is invalid")
+        XCTAssertEqual(received.severity, .unrecoverable)
     }
 
-    @MainActor
-    func testEcErrorDismissesEvenWhenConsumerClientReturnsResponse() async {
-        let responseSent = expectation(description: "consumer response sent")
-        let dismissed = expectation(description: "viewDelegate received failure")
-        MockCheckoutBridge.sendResponseExpectation = responseSent
-        mockDelegate.didFailWithErrorExpectation = dismissed
-        view.client = MockBridgeClient(responseMessage: #"{"jsonrpc":"2.0","id":"consumer","result":{}}"#)
-        let message = MockScriptMessage(body: ecErrorBody(severity: "unrecoverable"))
+    func testEcErrorSelectsFirstWireOrderUnrecoverableError() async throws {
+        let failed = expectation(description: "viewDelegate received failure")
+        mockDelegate.didFailWithErrorExpectation = failed
+        let messages = #"[{"type":"error","code":"invalid_cart","content":"Invalid","severity":"recoverable"},{"type":"error","code":"cart_completed","content":"Complete","severity":"unrecoverable"},{"type":"error","code":"invalid_cart","content":"Invalid again","severity":"unrecoverable"}]"#
+
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: ecErrorBody(messages: messages)))
+
+        await fulfillment(of: [failed], timeout: 2.0)
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .cartCompleted)
+        XCTAssertEqual(error.message, "Complete")
+    }
+
+    func testEcErrorWithTransportCodeMapsToUnknown() async throws {
+        let failed = expectation(description: "viewDelegate received failure")
+        mockDelegate.didFailWithErrorExpectation = failed
+
+        let messages = #"[{"type":"error","code":"http_error","content":"HTTP request failed","severity":"unrecoverable"}]"#
+        view.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecErrorBody(messages: messages))
+        )
+
+        await fulfillment(of: [failed], timeout: 2.0)
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .unknown)
+        XCTAssertEqual(error.message, "HTTP request failed")
+    }
+
+    func testEcErrorWithoutUnrecoverableErrorMapsToUnknown() async throws {
+        let failed = expectation(description: "viewDelegate received failure")
+        mockDelegate.didFailWithErrorExpectation = failed
+
+        view.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecErrorBody(messages: #"[{"type":"error","code":"invalid_cart","content":"Invalid","severity":"recoverable"}]"#))
+        )
+
+        await fulfillment(of: [failed], timeout: 2.0)
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .unknown)
+        XCTAssertEqual(error.message, "Embedded checkout reported a terminal error.")
+    }
+
+    func testDuplicateEcErrorsDeliverLifecycleFailureOnce() async {
+        let failed = expectation(description: "viewDelegate received failure")
+        mockDelegate.didFailWithErrorExpectation = failed
+        let message = MockScriptMessage(body: ecErrorBody())
 
         view.userContentController(WKUserContentController(), didReceive: message)
+        view.userContentController(WKUserContentController(), didReceive: message)
 
-        await fulfillment(of: [responseSent, dismissed], timeout: 5.0)
-        guard case .checkoutUnavailable = mockDelegate.errorReceived else {
-            return XCTFail("Expected checkoutUnavailable error")
-        }
+        await fulfillment(of: [failed], timeout: 2.0)
+        XCTAssertEqual(mockDelegate.failureCount, 1)
     }
 }
 

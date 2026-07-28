@@ -10,7 +10,7 @@ import Foundation
 /// kit default and never reach the merchant client; request delegations such as
 /// `CheckoutProtocol.windowOpen` only fall back to the kit default when the merchant
 /// does not return a response; and mandatory kit notifications such as
-/// `CheckoutProtocol.error` always run after the merchant client.
+/// `CheckoutProtocol.complete` always run after the merchant client.
 struct ComposedCheckoutCommunicationClient: CheckoutCommunicationProtocol {
     let merchant: (any CheckoutCommunicationProtocol)?
     let defaults: [String: DefaultClientBinding]

@@ -2095,14 +2095,14 @@
                     "kind": "TypeNominal",
                     "name": "CheckoutError",
                     "printedName": "ShopifyCheckoutKit.CheckoutError",
-                    "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
+                    "usr": "s:18ShopifyCheckoutKit0B5ErrorV"
                   }
                 ]
               }
             ],
             "declKind": "Func",
-            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV6onFailyACy0aD3Kit0D5ErrorOcF",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV6onFailyACy0aD3Kit0D5ErrorOcF",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV6onFailyACy0aD3Kit0D5ErrorVcF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV6onFailyACy0aD3Kit0D5ErrorVcF",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "Preconcurrency",
@@ -2585,7 +2585,7 @@
                         "kind": "TypeNominal",
                         "name": "CheckoutError",
                         "printedName": "ShopifyCheckoutKit.CheckoutError",
-                        "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
+                        "usr": "s:18ShopifyCheckoutKit0B5ErrorV"
                       }
                     ]
                   }
@@ -2594,8 +2594,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorOcSgvp",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorOcSgvp",
+            "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorVcSgvp",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorVcSgvp",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "HasInitialValue",
@@ -2634,7 +2634,7 @@
                             "kind": "TypeNominal",
                             "name": "CheckoutError",
                             "printedName": "ShopifyCheckoutKit.CheckoutError",
-                            "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
+                            "usr": "s:18ShopifyCheckoutKit0B5ErrorV"
                           }
                         ]
                       }
@@ -2643,8 +2643,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorOcSgvg",
-                "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorOcSgvg",
+                "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorVcSgvg",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorVcSgvg",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "implicit": true,
                 "declAttributes": [
@@ -2688,7 +2688,7 @@
                             "kind": "TypeNominal",
                             "name": "CheckoutError",
                             "printedName": "ShopifyCheckoutKit.CheckoutError",
-                            "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
+                            "usr": "s:18ShopifyCheckoutKit0B5ErrorV"
                           }
                         ]
                       }
@@ -2697,8 +2697,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorOcSgvs",
-                "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorOcSgvs",
+                "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorVcSgvs",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFaily0A11CheckoutKit0I5ErrorVcSgvs",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "implicit": true,
                 "declAttributes": [
@@ -3050,7 +3050,7 @@
                         "kind": "TypeNominal",
                         "name": "CheckoutError",
                         "printedName": "ShopifyCheckoutKit.CheckoutError",
-                        "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
+                        "usr": "s:18ShopifyCheckoutKit0B5ErrorV"
                       }
                     ]
                   }
@@ -3127,8 +3127,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFail0fG7Dismiss011renderStateG6ChangeACy0A11CheckoutKit0M5ErrorOcSg_yycSgyAA06RenderK0OcSgtcfc",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFail0fG7Dismiss011renderStateG6ChangeACy0A11CheckoutKit0M5ErrorOcSg_yycSgyAA06RenderK0OcSgtcfc",
+            "usr": "s:27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFail0fG7Dismiss011renderStateG6ChangeACy0A11CheckoutKit0M5ErrorVcSg_yycSgyAA06RenderK0OcSgtcfc",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts13EventHandlersV15checkoutDidFail0fG7Dismiss011renderStateG6ChangeACy0A11CheckoutKit0M5ErrorVcSg_yycSgyAA06RenderK0OcSgtcfc",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "init_kind": "Designated"
           }
