@@ -59,6 +59,7 @@ class CheckoutBottomSheetTest {
     fun tearDown() {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        CheckoutWebView.cacheClock = PreloadCache.Clock()
         ShopifyCheckoutKit.configure {
             it.appearance = configuration.appearance
             it.sheet = configuration.sheet
@@ -505,7 +506,7 @@ class CheckoutBottomSheetTest {
             ?.children?.firstOrNull { it is WebView } as WebView? ?: fail("No WebView found in bottom sheet")
 
         assertThat(webView).isSameAs(cachedWebView)
-        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
         assertThat(shadowOf(webView).wasOnResumeCalled()).isTrue()
     }
 
@@ -526,7 +527,7 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `dismiss() destroys consumed preloaded checkoutView`() {
+    fun `dismiss() retains preloaded checkoutView for another presentation`() {
         CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
@@ -541,6 +542,79 @@ class CheckoutBottomSheetTest {
         runDismissAnimation()
 
         assertThat(sheet.containsChildOfType(CheckoutWebView::class.java)).isFalse()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isFalse()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
+        assertThat(shadowOf(cachedWebView).getOnTouchListener()).isNull()
+
+        val nextSheet = presentBottomSheet("https://shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(nextSheet.currentCheckoutWebView()).isSameAs(cachedWebView)
+        assertThat(cachedWebView.isPresented).isTrue()
+        assertThat(shadowOf(cachedWebView).getOnTouchListener()).isNotNull
+
+        nextSheet.dismiss()
+        runDismissAnimation()
+
+        assertThat(cachedWebView.isPresented).isFalse()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
+    }
+
+    @Test
+    fun `dismissed preload reused as embedded checkout has no sheet touch listener`() {
+        val checkoutUrl = "https://shopify.com/cart/123"
+        CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val sheet = presentBottomSheet(checkoutUrl)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        sheet.dismiss()
+        runDismissAnimation()
+        val embeddedCheckout = ShopifyCheckout.create(activity, checkoutUrl, webMessageTransport) {}
+        val embeddedWebView = embeddedCheckout.findViewById<RelativeLayout>(R.id.checkoutKitContainer)!!
+            .children.first { it is CheckoutWebView } as CheckoutWebView
+
+        assertThat(embeddedWebView).isSameAs(cachedWebView)
+        assertThat(shadowOf(embeddedWebView).getOnTouchListener()).isNull()
+
+        embeddedCheckout.destroy()
+    }
+
+    @Test
+    fun `dismiss() destroys a presented preload that was invalidated`() {
+        CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val sheet = presentBottomSheet("https://shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        CheckoutWebView.invalidate()
+
+        sheet.dismiss()
+        runDismissAnimation()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
+    fun `dismiss() destroys a presented preload that expired`() {
+        var now = 1_000L
+        CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
+            override fun currentTimeMillis(): Long = now
+        }
+        CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val sheet = presentBottomSheet("https://shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        now += 5 * 60 * 1000L
+        sheet.dismiss()
+        runDismissAnimation()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
         assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
     }
 

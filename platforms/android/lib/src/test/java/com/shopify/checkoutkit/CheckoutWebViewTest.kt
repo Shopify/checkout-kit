@@ -362,7 +362,7 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `present consumes cached checkout view for matching URL`() {
+    fun `present retains cached checkout view for matching URL`() {
         preload("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
@@ -371,7 +371,7 @@ class CheckoutWebViewTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(presentedView).isSameAs(cachedView)
-        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedView)
         assertThat(shadowOf(cachedView).wasDestroyCalled()).isFalse()
         assertThat(presentedView.isPreloadRequest).isFalse()
     }
@@ -446,6 +446,41 @@ class CheckoutWebViewTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(shadowOf(presentedView).wasDestroyCalled()).isFalse()
+    }
+
+    @Test
+    fun `destroying preload activity destroys cached checkout view`() {
+        val activityController = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        val preloadActivity = activityController.get()
+        CheckoutWebView.preload(
+            "https://checkout.shopify.com/cart/123",
+            preloadActivity,
+            webMessageTransport,
+        )
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        activityController.destroy()
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
+    fun `preload is discarded when activity is already destroyed`() {
+        val activityController = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        val preloadActivity = activityController.get()
+        activityController.destroy()
+
+        CheckoutWebView.preload(
+            "https://checkout.shopify.com/cart/123",
+            preloadActivity,
+            webMessageTransport,
+        )
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
     }
 
     @Test
