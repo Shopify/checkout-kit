@@ -24,8 +24,10 @@ struct CartView: View {
     @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
     var checkoutPreloadingEnabled = true
 
-    private var client: CheckoutProtocol.Client {
-        .with(windowOpen: windowOpenHandler)
+    /// Advanced client used only to override the window-opening delegation.
+    /// Checkout lifecycle observation uses the idiomatic modifiers below.
+    private var advancedClient: CheckoutProtocol.Client {
+        .handling(windowOpen: windowOpenHandler)
     }
 
     var body: some View {
@@ -49,7 +51,7 @@ struct CartView: View {
                                 .onDismiss {
                                     print("[AcceleratedCheckout] Dismissed")
                                 }
-                                .connect(client)
+                                .connect(advancedClient)
                                 .environment(
                                     \.shopifyAcceleratedCheckoutsConfiguration,
                                     ShopifyAcceleratedCheckouts.Configuration(
@@ -104,7 +106,7 @@ struct CartView: View {
                             print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
                             isCompleted = true
                         }
-                        .connect(client)
+                        .connect(advancedClient)
                         .appearance(.app(.automatic))
                         .onDismiss {
                             print("[CheckoutKitSwiftDemo] DISMISSED")
