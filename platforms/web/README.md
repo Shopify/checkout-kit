@@ -142,15 +142,16 @@ checkout.open();
 checkout.close();
 ```
 
-The `ShopifyCheckout` class is also exported directly if you want to import
-the constructor without registering the element globally:
+The `ShopifyCheckout` class is also exported directly when you need the
+constructor. The package has a single entry point, so this named import also
+registers `<shopify-checkout>` with `customElements`:
 
 ```ts
 import {ShopifyCheckout} from '@shopify/checkout-kit';
 
-if (!customElements.get('shopify-checkout')) {
-  customElements.define('shopify-checkout', ShopifyCheckout);
-}
+const checkout = new ShopifyCheckout();
+checkout.src = 'https://your-store.myshopify.com/checkouts/cn/abc123';
+document.body.append(checkout);
 ```
 
 ## Usage with other frameworks
@@ -209,6 +210,7 @@ TypeScript doesn't know about the `<shopify-checkout>` tag in JSX out of the
 box. Declare it once, anywhere in your project's type definitions:
 
 ```ts
+import type {DetailedHTMLProps, HTMLAttributes} from 'react';
 import type {ShopifyCheckout} from '@shopify/checkout-kit';
 
 declare module 'react' {
@@ -317,7 +319,7 @@ The URL of the checkout to load. Typically `cart.checkoutUrl` from the
 Storefront API.
 
 ```html
-<shopify-checkout src="https://your-store.myshopify.com/checkouts/cn/abc123" />
+<shopify-checkout src="https://your-store.myshopify.com/checkouts/cn/abc123"></shopify-checkout>
 ```
 
 ```ts
@@ -341,7 +343,7 @@ Where the checkout is presented. Defaults to `"auto"`.
 | _(string)_ | Any other value is treated as a named window target, the same as the [`target` parameter of `window.open()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/open#target). |
 
 ```html
-<shopify-checkout target="popup" />
+<shopify-checkout target="popup"></shopify-checkout>
 ```
 
 > [!NOTE]
@@ -362,7 +364,7 @@ Sets the checkout appearance preference. Defaults to `"storefront"`.
 | `"storefront"`    | Uses the storefront's configured checkout branding. |
 
 ```html
-<shopify-checkout appearance="app:dark" />
+<shopify-checkout appearance="app:dark"></shopify-checkout>
 ```
 
 ```ts
@@ -390,7 +392,7 @@ Use `"debug"` while wiring up `src` and event handlers during integration, or
 `"error"` / `"none"` to quiet the integration warnings in production.
 
 ```html
-<shopify-checkout src="..." log-level="debug" />
+<shopify-checkout src="..." log-level="debug"></shopify-checkout>
 ```
 
 ```ts
@@ -437,8 +439,8 @@ exactly the fields relevant to that moment.
 | ---------------------- | -------------- | -------------------------------------------------------------------------- |
 | `ec.start`             | `{checkout}`   | Checkout has loaded and is interactive.                                    |
 | `ec.complete`          | `{checkout}`   | The buyer completed the order successfully.                                |
-| `ec.close`             | _(none)_       | The popup was dismissed (by the buyer, by `close()`, or by `focus` loss).  |
-| `ec.error`             | `{error}`      | Session-level fatal error — tear down the embedded context.                |
+| `ec.close`             | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. |
+| `ec.error`             | `{error}`      | Checkout reported an error. The component closes automatically only when a message has `unrecoverable` severity. |
 | `ec.line_items.change` | `{checkout}`   | The cart's line items changed (item added/removed/quantity updated).       |
 | `ec.totals.change`     | `{checkout}`   | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
 | `ec.messages.change`   | `{checkout}`   | Checkout-level warnings/errors/info shown inside the checkout changed.     |

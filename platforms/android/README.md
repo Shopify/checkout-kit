@@ -383,6 +383,9 @@ val protocolClient = CheckoutProtocol.Client()
     .on(CheckoutProtocol.messagesChange) { checkout ->
         // React to checkout messages.
     }
+    .on(CheckoutProtocol.fulfillmentChange) { checkout ->
+        // React to fulfillment option or delivery changes.
+    }
 
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
     connect(protocolClient)
