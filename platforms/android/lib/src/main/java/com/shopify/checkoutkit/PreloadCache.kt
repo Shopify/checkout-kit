@@ -34,9 +34,33 @@ internal class PreloadCache : DefaultLifecycleObserver {
 
     var clock: Clock = Clock()
     private var entry: Entry? = null
+    private var observer: CheckoutPreload? = null
+
+    var state: PreloadState = PreloadState.Idle
+        private set
 
     val hasEntry: Boolean
         get() = entry != null
+
+    fun setObserver(observer: CheckoutPreload) {
+        this.observer = observer
+    }
+
+    fun transition(view: CheckoutWebView, state: PreloadState) {
+        if (entry?.view !== view) return
+        transition(state)
+    }
+
+    private fun transition(state: PreloadState) {
+        if (this.state == state) return
+
+        this.state = state
+        val notifiedObserver = observer
+        notifiedObserver?.receive(state)
+        if (state.isTerminal && observer === notifiedObserver) {
+            observer = null
+        }
+    }
 
     fun store(key: PreloadKey, view: CheckoutWebView, lifecycleOwner: LifecycleOwner) {
         invalidate()
@@ -51,19 +75,21 @@ internal class PreloadCache : DefaultLifecycleObserver {
             return
         }
         lifecycleOwner.lifecycle.addObserver(this)
+        transition(PreloadState.Loading)
     }
 
     fun take(key: PreloadKey): CheckoutWebView? = when (val cached = entry) {
         null -> null
         else -> if (!cached.isValid(key, clock.currentTimeMillis())) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
-            invalidate()
+            evict(if (cached.key == key) PreloadState.Expired else PreloadState.Idle)
             null
         } else if (cached.view.isPresented) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Preloaded WebView is already presented; creating a new WebView.")
             null
         } else {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Returning cached preloaded WebView.")
+            observer = null
             cached.view.markPreloadConsumed()
             cached.view
         }
@@ -109,6 +135,16 @@ internal class PreloadCache : DefaultLifecycleObserver {
         }
     }
 
+    fun evict(state: PreloadState) {
+        invalidate()
+        transition(state)
+    }
+
+    fun evict(view: CheckoutWebView, state: PreloadState) {
+        if (entry?.view !== view) return
+        evict(state)
+    }
+
     fun cachedViewForTesting(): CheckoutWebView? = entry?.view
 
     override fun onDestroy(owner: LifecycleOwner) {
@@ -123,3 +159,6 @@ internal class PreloadCache : DefaultLifecycleObserver {
         private const val PRELOAD_TTL_MS = 5 * 60 * 1000L
     }
 }
+
+private val PreloadState.isTerminal: Boolean
+    get() = this == PreloadState.Idle || this == PreloadState.Expired || this is PreloadState.Failed
