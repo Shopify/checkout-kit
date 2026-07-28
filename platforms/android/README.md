@@ -216,7 +216,38 @@ checkoutPreload = ShopifyCheckoutKit.preload(checkoutUrl, activity) { state ->
 }
 ```
 
-The states are `Idle` when no preload is active, `Loading` while checkout loads, `Ready` when it can be reused, `Expired` when the cached checkout is stale, and `Failed(reason)` when preloading fails. The returned `CheckoutPreload` also exposes the latest `state` and a replaceable `listener`. A subsequent `preload` call replaces the current listener.
+You can also attach or replace the listener on the returned handle. Assigning a listener immediately delivers the current state:
+
+```kotlin
+checkoutPreload?.listener = PreloadStateListener { state ->
+    println("Preload state changed to $state")
+}
+```
+
+Read `state` directly when only the latest snapshot is needed; this does not subscribe to future changes:
+
+```kotlin
+if (checkoutPreload?.state == PreloadState.Ready) {
+    println("Checkout is ready")
+}
+```
+
+`PreloadState` has the following types:
+
+| State | Meaning |
+| --- | --- |
+| `PreloadState.Idle` | No preload is active or available. |
+| `PreloadState.Loading` | Checkout is loading into the preload cache. |
+| `PreloadState.Ready` | The preloaded checkout is ready to be reused. |
+| `PreloadState.Expired` | The cached checkout expired before it could be reused. |
+| `PreloadState.Failed(reason)` | Preloading failed for one of the reasons below. |
+
+| Failure reason | Meaning |
+| --- | --- |
+| `PreloadState.FailureReason.HttpError(statusCode)` | Checkout returned an unsuccessful HTTP status code. |
+| `PreloadState.FailureReason.NavigationFailed` | The checkout web view could not complete navigation. |
+
+The returned `CheckoutPreload` also exposes the latest `state` and a replaceable `listener`. A subsequent `preload` call replaces the current listener.
 
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 

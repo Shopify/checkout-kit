@@ -186,7 +186,39 @@ checkoutPreload?.onStateChange = { state in
 }
 ```
 
-The states are `.idle` when no preload is active, `.loading` while checkout loads, `.ready` when it can be reused, `.expired` when the cached checkout is stale, and `.failed(reason:)` when preloading fails. `CheckoutPreload` is also an `ObservableObject`, so Combine and SwiftUI integrations can subscribe to its `@Published` `state` property. Retain the handle for as long as state changes should be observed; a subsequent `preload` call replaces the current observer.
+For Combine, subscribe to the published `$state` value and retain the cancellable alongside the preload handle:
+
+```swift
+import Combine
+
+private var checkoutPreload: CheckoutPreload?
+private var preloadStateCancellable: AnyCancellable?
+
+checkoutPreload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+preloadStateCancellable = checkoutPreload?.$state.sink { state in
+  print("Preload state changed to \(state)")
+}
+```
+
+Reading `checkoutPreload?.state` returns the latest state without subscribing to future changes. SwiftUI views can observe `CheckoutPreload` as an `ObservableObject` and update when its published `state` changes.
+
+`PreloadState` has the following values:
+
+| State | Meaning |
+| --- | --- |
+| `.idle` | No preload is active or available. |
+| `.loading` | Checkout is loading into the preload cache. |
+| `.ready` | The preloaded checkout is ready to be reused. |
+| `.expired` | The cached checkout expired before it could be reused. |
+| `.failed(reason:)` | Preloading failed for one of the reasons below. |
+
+| Failure reason | Meaning |
+| --- | --- |
+| `.httpError(statusCode:)` | Checkout returned an unsuccessful HTTP status code. |
+| `.navigationFailed` | The checkout web view could not complete navigation. |
+| `.keepAliveLost` | The preloaded checkout lost its keep-alive connection. |
+
+Retain the handle for as long as state changes should be observed; a subsequent `preload` call replaces the current observer.
 
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
