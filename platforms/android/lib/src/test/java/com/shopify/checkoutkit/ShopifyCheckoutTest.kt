@@ -53,7 +53,7 @@ class ShopifyCheckoutTest {
     }
 
     @Test
-    fun `consumes matching preloaded checkout`() {
+    fun `destroy discards matching preloaded checkout`() {
         CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val preloadedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
@@ -61,10 +61,28 @@ class ShopifyCheckoutTest {
         val view = shopifyCheckout()
 
         assertThat(view.currentWebView()).isSameAs(preloadedWebView)
-        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(preloadedWebView)
 
         view.destroy()
         assertThat(shadowOf(preloadedWebView).wasDestroyCalled()).isTrue()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+    }
+
+    @Test
+    fun `concurrent presentation does not reuse active preloaded checkout`() {
+        CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val preloadedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val firstView = shopifyCheckout()
+        val secondView = shopifyCheckout()
+
+        assertThat(firstView.currentWebView()).isSameAs(preloadedWebView)
+        assertThat(secondView.currentWebView()).isNotSameAs(preloadedWebView)
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(preloadedWebView)
+
+        secondView.destroy()
+        firstView.destroy()
     }
 
     @Test

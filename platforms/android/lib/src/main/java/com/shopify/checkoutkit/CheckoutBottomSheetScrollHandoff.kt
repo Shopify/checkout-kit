@@ -19,6 +19,11 @@ internal fun WebView.installBottomSheetScrollHandoff(sheet: CheckoutBottomSheetL
     setOnTouchListener { view, event -> handoffController.onTouch(view, event) }
 }
 
+@SuppressLint("ClickableViewAccessibility")
+internal fun WebView.clearBottomSheetScrollHandoff() {
+    setOnTouchListener(null)
+}
+
 private class ScrollHandoffController(
     private val sheet: CheckoutBottomSheetLayout,
 ) {

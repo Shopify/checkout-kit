@@ -87,6 +87,10 @@ internal class CheckoutWebView private constructor(
         isPresented = true
     }
 
+    internal fun markDismissed() {
+        isPresented = false
+    }
+
     /**
      * Keeps checkout scrolling in the WebView, but lets a parent container intercept a downward
      * gesture that starts while checkout is already at scroll-top.
@@ -169,7 +173,7 @@ internal class CheckoutWebView private constructor(
         }
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-            CheckoutWebView.invalidate()
+            invalidatePreload(this@CheckoutWebView)
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !detail.didCrash()) {
                 // Renderer was killed because system ran out of memory.
                 log.d(LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
@@ -218,7 +222,7 @@ internal class CheckoutWebView private constructor(
 
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
-                CheckoutWebView.invalidate()
+                invalidatePreload(this@CheckoutWebView)
             }
             super.onReceivedError(view, request, error)
             error?.let {
@@ -236,7 +240,7 @@ internal class CheckoutWebView private constructor(
         ) {
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
-                CheckoutWebView.invalidate()
+                invalidatePreload(this@CheckoutWebView)
             }
             super.onReceivedHttpError(view, request, errorResponse)
             errorResponse?.let {
@@ -359,7 +363,7 @@ internal class CheckoutWebView private constructor(
                         log.d(LOG_TAG, "Pausing preloaded WebView.")
                         onPause()
                     }
-                    preloadCache.store(PreloadKey.forUrl(url), view)
+                    preloadCache.store(PreloadKey.forUrl(url), view, activity)
                 }
             } catch (_: UnsupportedWebViewException) {
                 return
@@ -398,6 +402,17 @@ internal class CheckoutWebView private constructor(
         fun clearCache() {
             if (!preloadCache.hasEntry) return
             invalidate()
+        }
+
+        internal fun releaseAfterPresentation(view: CheckoutWebView): Boolean =
+            preloadCache.release(view)
+
+        internal fun discardAfterPresentation(view: CheckoutWebView) {
+            preloadCache.discard(view)
+        }
+
+        private fun invalidatePreload(view: CheckoutWebView) {
+            preloadCache.invalidate(view)
         }
 
         private fun runOnUiThreadBlocking(activity: ComponentActivity, action: () -> Unit) {

@@ -225,11 +225,12 @@ internal class CheckoutBottomSheet(
     }
 
     /**
-     * Destroys checkout content retained for this presentation so it cannot outlive the host activity.
+     * Releases checkout content retained for this presentation.
      */
     private fun destroyPresentedCheckoutView() {
         presentedCheckoutView?.let { checkoutView ->
-            log.d(LOG_TAG, "Destroying presented checkout view.")
+            log.d(LOG_TAG, "Releasing presented checkout view.")
+            checkoutView.retainPreloadOnDestroy = true
             checkoutView.destroy()
             presentedCheckoutView = null
         }

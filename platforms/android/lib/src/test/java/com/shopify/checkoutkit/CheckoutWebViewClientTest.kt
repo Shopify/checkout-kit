@@ -433,6 +433,23 @@ class CheckoutWebViewClientTest {
             .hasErrorCode(CheckoutKitException.RENDER_PROCESS_GONE)
     }
 
+    @Config(sdk = [26])
+    @Test
+    fun `fallback renderer failure does not evict active preloaded checkout`() {
+        val checkoutUrl = "https://checkout.shopify.com/cart/123"
+        CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val preloadedView = CheckoutWebView.checkoutViewFor(checkoutUrl, activity, webMessageTransport)
+        preloadedView.markPresented()
+        val fallbackView = CheckoutWebView.checkoutViewFor(checkoutUrl, activity, webMessageTransport)
+        val detail = mock<RenderProcessGoneDetail>()
+        whenever(detail.didCrash()).thenReturn(false)
+
+        fallbackView.CheckoutWebViewClient().onRenderProcessGone(fallbackView, detail)
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(preloadedView)
+    }
+
     private fun triggerOnReceivedHttpError(mockRequest: WebResourceRequest, checkoutExpiredResponse: WebResourceResponse) {
         val view = viewWithProcessor(activity)
         val webViewClient = view.CheckoutWebViewClient()

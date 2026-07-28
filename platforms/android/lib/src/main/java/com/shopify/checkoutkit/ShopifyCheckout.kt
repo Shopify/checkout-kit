@@ -82,6 +82,7 @@ public class ShopifyCheckout @MainThread internal constructor(
     private var dismissNotified = false
     private var destroyed = false
     private var webViewResumed = false
+    internal var retainPreloadOnDestroy = false
     internal var initializationError: CheckoutException? = null
         private set
 
@@ -146,12 +147,18 @@ public class ShopifyCheckout @MainThread internal constructor(
         lifecycleOwner?.lifecycle?.removeObserver(lifecycleObserver)
         lifecycleOwner = null
         checkoutWebView?.let { webView ->
-            log.d(LOG_TAG, "Destroying checkout WebView.")
             webView.setClient(null)
             webView.setListener(CheckoutWebViewListener(NoopCheckoutListener()))
             pauseWebView()
+            webView.clearBottomSheetScrollHandoff()
             webView.removeFromParent()
-            webView.destroy()
+            if (retainPreloadOnDestroy && CheckoutWebView.releaseAfterPresentation(webView)) {
+                log.d(LOG_TAG, "Retaining preloaded checkout WebView after dismissal.")
+            } else {
+                CheckoutWebView.discardAfterPresentation(webView)
+                log.d(LOG_TAG, "Destroying checkout WebView.")
+                webView.destroy()
+            }
         }
         checkoutWebView = null
     }
