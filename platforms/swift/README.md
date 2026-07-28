@@ -232,12 +232,50 @@ let configuration = ShopifyCheckoutKit.configuration
 
 ## Checkout lifecycle
 
-`CheckoutDelegate` reports native presentation outcomes:
+For SwiftUI, use callback modifiers for checkout lifecycle and state:
+
+```swift
+ShopifyCheckout(checkout: checkoutURL)
+  .onStart { checkout in
+    // Checkout is loaded and interactive.
+  }
+  .onComplete { checkout in
+    // The order was completed. Clear or refresh the local cart.
+  }
+  .onTotalsChange { checkout in
+    // React to updated totals.
+  }
+  .onLineItemsChange { checkout in
+    // React to line item changes.
+  }
+  .onFulfillmentChange { checkout in
+    // React to fulfillment changes.
+  }
+  .onMessagesChange { checkout in
+    // React to checkout messages.
+  }
+  .onError { error in
+    // Observe a checkout protocol error. Recoverable errors do not call onFail.
+  }
+  .onFail { error in
+    // Checkout terminated because of an SDK or presentation failure.
+  }
+  .onDismiss {
+    // The buyer dismissed checkout.
+  }
+```
+
+`CheckoutDelegate` reports native presentation outcomes for UIKit:
 
 - `checkoutDidDismiss()` fires when the buyer dismisses the checkout sheet.
 - `checkoutDidFail(error:)` fires when checkout cannot continue.
 
-Typed checkout state, including completion, flows through `EmbeddedCheckoutProtocol`.
+### Advanced protocol client
+
+Use `CheckoutProtocol.Client` when you need protocol request handling or lower-level
+access. Lifecycle callbacks and a connected client compose: both receive notifications.
+Checkout Kit offers `ec.ready` to the connected client first and supplies its standard
+success response when the client does not handle it.
 
 ```swift
 import ShopifyCheckoutKit
@@ -271,7 +309,7 @@ ShopifyCheckoutKit.present(
 )
 ```
 
-For SwiftUI, attach the same client with `.connect(client)`.
+Attach the advanced client to SwiftUI with `.connect(client)`.
 
 ```swift
 ShopifyCheckout(checkout: checkoutURL)
@@ -280,7 +318,8 @@ ShopifyCheckout(checkout: checkoutURL)
 
 The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed checkout messages.
 See the [UCP shopping embedded protocol schema](../../protocol/services/shopping/embedded.openrpc.json) for method and payload definitions.
-Kit-owned link delegations such as `window.open` are offered to your connected protocol client first and fall back to Checkout Kit's default handler if unhandled.
+Protocol requests such as `ec.ready` and `window.open` are offered to your connected
+client first and fall back to Checkout Kit's default handlers if unhandled.
 
 ### Error handling
 
@@ -404,10 +443,12 @@ AcceleratedCheckoutButtons(cartID: cartID)
   .onFail { error in
     // Handle checkout failure.
   }
-  .onCancel {
+  .onComplete { checkout in
+    // Clear or refresh the completed cart after the sheet is dismissed.
+  }
+  .onDismiss {
     // The buyer canceled the accelerated checkout flow.
   }
-  .connect(client)
 ```
 
 You can also render buttons for a single product variant:
@@ -419,7 +460,10 @@ AcceleratedCheckoutButtons(
 )
 ```
 
-Use `CheckoutProtocol.Client` through `.connect(client)` to observe checkout completion and state changes. Clear or refresh the cart when `CheckoutProtocol.complete` fires to avoid reusing an expired cart ID.
+The same lifecycle modifiers available on `ShopifyCheckout` are available on
+`AcceleratedCheckoutButtons`. Use `.connect(client)` only when the buttons need an
+advanced protocol client. Clear or refresh the cart after completion to avoid reusing
+an expired cart ID.
 
 ## Troubleshooting
 

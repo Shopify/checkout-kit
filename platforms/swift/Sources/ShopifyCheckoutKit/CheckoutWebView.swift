@@ -273,11 +273,9 @@ class CheckoutWebView: WKWebView {
     var openExternalURL: (URL) -> Void = { UIApplication.shared.open($0) }
 
     /// Kit-owned client that handles delegations and kit-mandated notifications. Currently:
-    ///   - `ec.ready` - kit-owned handshake. Supported delegations are announced up
-    ///     front via the `ec_delegate` URL query param; acceptance is implicit, so the
-    ///     ready result carries only the UCP envelope and the kit simply answers the
-    ///     delegated calls it supports. It is abstracted from consumers and cannot be
-    ///     overridden by a merchant-supplied client.
+    ///   - `ec.ready` - handshake fallback. Supported delegations are announced up
+    ///     front via the `ec_delegate` URL query param. An advanced consumer may answer
+    ///     the request; otherwise the kit returns the standard successful handshake.
     ///   - `window.open` - falls back to `UIApplication.shared.open(...)` after a
     ///     `canOpenURL` check (consumers may still override via their own client).
     ///   - `ec.error` - when the payload carries `severity: "unrecoverable"`, dismiss
@@ -320,7 +318,7 @@ class CheckoutWebView: WKWebView {
         [
             CheckoutProtocol.ready.method: DefaultClientBinding(
                 client: defaultsClient,
-                policy: .kitOwned
+                policy: .runIfUnhandled
             ),
             CheckoutProtocol.complete.method: DefaultClientBinding(
                 client: defaultsClient,

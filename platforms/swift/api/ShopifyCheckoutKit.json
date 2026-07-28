@@ -1118,6 +1118,95 @@
           },
           {
             "kind": "Var",
+            "name": "ready",
+            "printedName": "ready",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "RequestDescriptor",
+                "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.ReadyResult>",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ReadyRequest",
+                    "printedName": "EmbeddedCheckoutProtocol.ReadyRequest",
+                    "usr": "s:24EmbeddedCheckoutProtocol12ReadyRequestV"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ReadyRequest",
+                    "printedName": "EmbeddedCheckoutProtocol.ReadyRequest",
+                    "usr": "s:24EmbeddedCheckoutProtocol12ReadyRequestV"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ReadyResult",
+                    "printedName": "EmbeddedCheckoutProtocol.ReadyResult",
+                    "usr": "s:24EmbeddedCheckoutProtocol11ReadyResultV"
+                  }
+                ],
+                "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5ready08EmbeddedbD017RequestDescriptorVyAE05ReadyG0VAiE0I6ResultVGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5ready08EmbeddedbD017RequestDescriptorVyAE05ReadyG0VAiE0I6ResultVGvpZ",
+            "moduleName": "ShopifyCheckoutKit",
+            "static": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "RequestDescriptor",
+                    "printedName": "EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.ReadyResult>",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "ReadyRequest",
+                        "printedName": "EmbeddedCheckoutProtocol.ReadyRequest",
+                        "usr": "s:24EmbeddedCheckoutProtocol12ReadyRequestV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "ReadyRequest",
+                        "printedName": "EmbeddedCheckoutProtocol.ReadyRequest",
+                        "usr": "s:24EmbeddedCheckoutProtocol12ReadyRequestV"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "ReadyResult",
+                        "printedName": "EmbeddedCheckoutProtocol.ReadyResult",
+                        "usr": "s:24EmbeddedCheckoutProtocol11ReadyResultV"
+                      }
+                    ],
+                    "usr": "s:24EmbeddedCheckoutProtocol17RequestDescriptorV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B8ProtocolO5ready08EmbeddedbD017RequestDescriptorVyAE05ReadyG0VAiE0I6ResultVGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B8ProtocolO5ready08EmbeddedbD017RequestDescriptorVyAE05ReadyG0VAiE0I6ResultVGvgZ",
+                "moduleName": "ShopifyCheckoutKit",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "complete",
             "printedName": "complete",
             "children": [
@@ -2538,6 +2627,342 @@
             "declKind": "Func",
             "usr": "s:18ShopifyCheckoutKit0aB0V7connectyAcA0B21CommunicationProtocol_pF",
             "mangledName": "$s18ShopifyCheckoutKit0aB0V7connectyAcA0B21CommunicationProtocol_pF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onStart",
+            "printedName": "onStart(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V7onStartyACy08EmbeddedB8Protocol0B0VcF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V7onStartyACy08EmbeddedB8Protocol0B0VcF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onComplete",
+            "printedName": "onComplete(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V10onCompleteyACy08EmbeddedB8Protocol0B0VcF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V10onCompleteyACy08EmbeddedB8Protocol0B0VcF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onError",
+            "printedName": "onError(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.ErrorResponse) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ErrorResponse",
+                    "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
+                    "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V7onErroryACy08EmbeddedB8Protocol0E8ResponseVcF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V7onErroryACy08EmbeddedB8Protocol0E8ResponseVcF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onFulfillmentChange",
+            "printedName": "onFulfillmentChange(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V19onFulfillmentChangeyACy08EmbeddedB8Protocol0B0VcF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V19onFulfillmentChangeyACy08EmbeddedB8Protocol0B0VcF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onLineItemsChange",
+            "printedName": "onLineItemsChange(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V17onLineItemsChangeyACy08EmbeddedB8Protocol0B0VcF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V17onLineItemsChangeyACy08EmbeddedB8Protocol0B0VcF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onMessagesChange",
+            "printedName": "onMessagesChange(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V16onMessagesChangeyACy08EmbeddedB8Protocol0B0VcF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V16onMessagesChangeyACy08EmbeddedB8Protocol0B0VcF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onTotalsChange",
+            "printedName": "onTotalsChange(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V14onTotalsChangeyACy08EmbeddedB8Protocol0B0VcF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V14onTotalsChangeyACy08EmbeddedB8Protocol0B0VcF",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "Preconcurrency",

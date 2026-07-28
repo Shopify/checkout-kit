@@ -625,9 +625,9 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
-    func testReadyIsNotOverridableByMerchantClient() async throws {
+    func testReadyUsesMerchantClientResponseWhenHandled() async throws {
         view.client = MockBridgeClient(
-            responseMessage: #"{"jsonrpc":"2.0","id":"r1","result":{"hijacked":true}}"#
+            responseMessage: #"{"jsonrpc":"2.0","id":"r1","result":{"custom":true}}"#
         )
         let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
         let responseSent = expectation(description: "response sent")
@@ -642,9 +642,7 @@ class CheckoutWebViewTests: XCTestCase {
         let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
         XCTAssertEqual(parsed["id"] as? String, "r1")
         let result = try XCTUnwrap(parsed["result"] as? [String: Any])
-        XCTAssertNil(result["hijacked"], "Merchant client must not be able to answer ec.ready")
-        let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
-        XCTAssertEqual(ucp["status"] as? String, "success")
+        XCTAssertEqual(result["custom"] as? Bool, true)
     }
 
     func testNonReadyMessageDoesNotTriggerReadyAck() {
@@ -732,6 +730,27 @@ class CheckoutWebViewTests: XCTestCase {
         await fulfillment(of: [responseSent], timeout: 5.0)
 
         XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
+    func testReadyFallsBackToKitResponseWhenClientDoesNotHandleIt() async throws {
+        view.client = CheckoutProtocol.Client()
+        let body = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+
+        view.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: body)
+        )
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+
+        let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        let result = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "success")
     }
 
     @MainActor

@@ -1,3 +1,6 @@
+#if !COCOAPODS
+    import EmbeddedCheckoutProtocol
+#endif
 import ShopifyCheckoutKit
 import SwiftUI
 
@@ -27,10 +30,29 @@ public struct EventHandlers {
 /// Keeps bridge client storage behind a reference so SwiftUI view values do not
 /// embed optional existential storage while they are repeatedly copied.
 final class CheckoutProtocolClientContainer: Sendable {
-    let client: (any CheckoutCommunicationProtocol)?
+    let advancedClient: (any CheckoutCommunicationProtocol)?
+    let callbackClient: CheckoutProtocol.Client
 
-    init(_ client: (any CheckoutCommunicationProtocol)? = nil) {
-        self.client = client
+    var client: any CheckoutCommunicationProtocol {
+        AcceleratedCheckoutEventCallbackClient(callbacks: callbackClient, advanced: advancedClient)
+    }
+
+    init(
+        _ advancedClient: (any CheckoutCommunicationProtocol)? = nil,
+        callbacks: CheckoutProtocol.Client = .init()
+    ) {
+        self.advancedClient = advancedClient
+        callbackClient = callbacks
+    }
+}
+
+private struct AcceleratedCheckoutEventCallbackClient: CheckoutCommunicationProtocol {
+    let callbacks: CheckoutProtocol.Client
+    let advanced: (any CheckoutCommunicationProtocol)?
+
+    func process(_ message: String) async -> String? {
+        _ = await callbacks.process(message)
+        return await advanced?.process(message)
     }
 }
 

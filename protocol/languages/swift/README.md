@@ -51,7 +51,9 @@ let client = CheckoutProtocol.Client()
 
 ## Connect to Checkout Kit
 
-Checkout Kit's Swift SDK accepts `CheckoutProtocol.Client` anywhere it accepts `CheckoutCommunicationProtocol`.
+Most SwiftUI apps should use Checkout Kit's `.onStart`, `.onComplete`,
+`.onTotalsChange`, and related callback modifiers. Connect a `CheckoutProtocol.Client`
+when you need advanced protocol request handling or lower-level access.
 
 ### UIKit
 
@@ -74,6 +76,10 @@ ShopifyCheckout(checkout: checkoutURL)
   .connect(client)
 ```
 
+The callback modifiers and connected client compose, so both receive notifications.
+For `ec.ready`, a response from the connected client wins; when it has no ready handler,
+Checkout Kit supplies its standard successful handshake.
+
 ### Accelerated checkout buttons
 
 ```swift
@@ -81,7 +87,8 @@ AcceleratedCheckoutButtons(cartID: cartID)
   .connect(client)
 ```
 
-The button-specific `onFail`, `onCancel`, and `onRenderStateChange` handlers remain on `AcceleratedCheckoutButtons`.
+The same lifecycle callback modifiers are available on `AcceleratedCheckoutButtons`,
+alongside its button-specific `onFail`, `onDismiss`, and `onRenderStateChange` handlers.
 
 ## Supported notifications
 
@@ -90,6 +97,7 @@ Public notification descriptors include:
 - `CheckoutProtocol.start`
 - `CheckoutProtocol.complete`
 - `CheckoutProtocol.error`
+- `CheckoutProtocol.fulfillmentChange`
 - `CheckoutProtocol.lineItemsChange`
 - `CheckoutProtocol.messagesChange`
 - `CheckoutProtocol.totalsChange`
@@ -103,3 +111,10 @@ Public delegation descriptors include:
 - `CheckoutProtocol.windowOpen`
 
 Use this to handle `ec.window.open_request` when your app needs custom routing for checkout link requests.
+
+## Advanced requests
+
+- `CheckoutProtocol.ready`
+
+Register a ready handler only when the host needs to supply a custom handshake result.
+Checkout Kit responds automatically when the connected client leaves it unhandled.
