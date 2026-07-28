@@ -31,12 +31,32 @@ final class AcceleratedCheckoutButtonsCallbackTests: XCTestCase {
         XCTAssertEqual(response, expectedResponse)
     }
 
+    func testWindowOpenCallbackHandlesRequest() async throws {
+        var receivedURL: String?
+        let buttons = AcceleratedCheckoutButtons(cartID: "gid://shopify/Cart/test")
+            .onWindowOpen { request in
+                receivedURL = request.url
+                return .success()
+            }
+
+        let response = await buttons.clientContainer.client.process(Self.windowOpenRequest)
+        let responseData = try XCTUnwrap(response?.data(using: .utf8))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: responseData) as? [String: Any])
+        let result = try XCTUnwrap(object["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
+
+        XCTAssertEqual(receivedURL, "https://example.com/terms")
+        XCTAssertEqual(ucp["status"] as? String, "success")
+    }
+
     private static let checkout =
         #"{"currency":"USD","id":"c-1","line_items":[],"links":[],"status":"incomplete","totals":[],"ucp":{"payment_handlers":{},"version":"2026-04-08"}}"#
     private static let startNotification =
         #"{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":\#(checkout)}}"#
     private static let completeNotification =
         #"{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":\#(checkout)}}"#
+    private static let windowOpenRequest =
+        #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"window-1","params":{"url":"https://example.com/terms"}}"#
 }
 
 private struct ResponseClient: CheckoutCommunicationProtocol {

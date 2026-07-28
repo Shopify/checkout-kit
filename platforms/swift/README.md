@@ -257,6 +257,10 @@ ShopifyCheckout(checkout: checkoutURL)
   .onError { error in
     // Observe a checkout protocol error. Recoverable errors do not call onFail.
   }
+  .onWindowOpen { request in
+    // Present request.parsedURL using your preferred in-app experience.
+    return .success()
+  }
   .onFail { error in
     // Checkout terminated because of an SDK or presentation failure.
   }
@@ -272,10 +276,12 @@ ShopifyCheckout(checkout: checkoutURL)
 
 ### Advanced protocol client
 
-Use `CheckoutProtocol.Client` when you need protocol request handling or lower-level
-access. Lifecycle callbacks and a connected client compose: both receive notifications.
-Checkout Kit offers `ec.ready` to the connected client first and supplies its standard
-success response when the client does not handle it.
+Use `CheckoutProtocol.Client` when you need lower-level protocol access or request
+handling beyond the first-class callbacks. Lifecycle callbacks and a connected client
+compose: both receive notifications. A first-class request callback such as
+`onWindowOpen` handles its request before the connected client. Checkout Kit offers
+`ec.ready` to the connected client and supplies its standard success response when the
+client does not handle it.
 
 ```swift
 import ShopifyCheckoutKit

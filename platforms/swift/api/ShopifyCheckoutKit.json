@@ -2973,6 +2973,48 @@
           },
           {
             "kind": "Function",
+            "name": "onWindowOpen",
+            "printedName": "onWindowOpen(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.WindowOpenRequest) async -> EmbeddedCheckoutProtocol.WindowOpenResult",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "WindowOpenResult",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                    "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "WindowOpenRequest",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                    "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V12onWindowOpenyAC08EmbeddedB8Protocol0eF6ResultVAE0eF7RequestVYacF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V12onWindowOpenyAC08EmbeddedB8Protocol0eF6ResultVAE0eF7RequestVYacF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
             "name": "onDismiss",
             "printedName": "onDismiss(_:)",
             "children": [

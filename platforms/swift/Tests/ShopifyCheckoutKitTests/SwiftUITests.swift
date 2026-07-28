@@ -105,6 +105,34 @@ class ShopifyCheckoutTests: XCTestCase {
         XCTAssertEqual(callbackMethods, receivedMethods)
         XCTAssertEqual(callbackMethods.count, messages.count)
     }
+
+    func testWindowOpenCallbackHandlesRequestBeforeConnectedClient() async throws {
+        var receivedURL: String?
+        var advancedClientCalled = false
+        let advanced = TestCommunicationClient(response: nil) { _ in
+            advancedClientCalled = true
+        }
+        let sheet = shopifyCheckout
+            .connect(advanced)
+            .onWindowOpen { request in
+                receivedURL = request.url
+                return .success()
+            }
+
+        let response = await sheet.connectedClient.process(Self.windowOpenRequest)
+        let responseData = try XCTUnwrap(response?.data(using: .utf8))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: responseData) as? [String: Any])
+        let result = try XCTUnwrap(object["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
+
+        XCTAssertEqual(receivedURL, "https://example.com/terms")
+        XCTAssertEqual(object["id"] as? String, "window-1")
+        XCTAssertEqual(ucp["status"] as? String, "success")
+        XCTAssertFalse(advancedClientCalled)
+    }
+
+    private static let windowOpenRequest =
+        #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"window-1","params":{"url":"https://example.com/terms"}}"#
 }
 
 private struct TestCommunicationClient: CheckoutCommunicationProtocol {

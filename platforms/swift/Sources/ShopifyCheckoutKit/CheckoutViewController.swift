@@ -135,6 +135,19 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         return copy
     }
 
+    /// Adds an action that can handle requests to open an external window.
+    ///
+    /// Return `.success()` after presenting the requested URL, or `.rejected()`
+    /// when the request cannot be handled. When this callback is absent, Checkout
+    /// Kit uses its standard external URL handling.
+    @discardableResult public func onWindowOpen(
+        _ action: @escaping @MainActor @Sendable (WindowOpenRequest) async -> WindowOpenResult
+    ) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.windowOpen, perform: action)
+        return copy
+    }
+
     @discardableResult public func onDismiss(_ action: @escaping () -> Void) -> Self {
         var copy = self
         copy.onDismissAction = action

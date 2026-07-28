@@ -2585,6 +2585,48 @@
             ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onWindowOpen",
+            "printedName": "onWindowOpen(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.WindowOpenRequest) async -> EmbeddedCheckoutProtocol.WindowOpenResult",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "WindowOpenResult",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                    "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "WindowOpenRequest",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                    "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV12onWindowOpenyAC08EmbeddedD8Protocol0gH6ResultVAE0gH7RequestVYacF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV12onWindowOpenyAC08EmbeddedD8Protocol0gH6ResultVAE0gH7RequestVYacF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
           }
         ],
         "declKind": "Struct",

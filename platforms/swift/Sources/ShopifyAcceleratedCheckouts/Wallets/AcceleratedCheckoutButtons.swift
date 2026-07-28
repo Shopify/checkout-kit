@@ -324,4 +324,21 @@ extension AcceleratedCheckoutButtons {
         )
         return newView
     }
+
+    /// Adds an action that can handle requests to open an external window.
+    ///
+    /// Return `.success()` after presenting the requested URL, or `.rejected()`
+    /// when the request cannot be handled. When this callback is absent, Checkout
+    /// Kit uses its standard external URL handling.
+    public func onWindowOpen(
+        _ action: @escaping @MainActor @Sendable (WindowOpenRequest) async -> WindowOpenResult
+    ) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.windowOpen, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
+        return newView
+    }
 }

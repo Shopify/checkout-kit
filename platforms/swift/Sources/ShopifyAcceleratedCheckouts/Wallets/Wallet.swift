@@ -51,7 +51,9 @@ private struct AcceleratedCheckoutEventCallbackClient: CheckoutCommunicationProt
     let advanced: (any CheckoutCommunicationProtocol)?
 
     func process(_ message: String) async -> String? {
-        _ = await callbacks.process(message)
+        if let response = await callbacks.process(message) {
+            return response
+        }
         return await advanced?.process(message)
     }
 }
