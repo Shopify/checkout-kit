@@ -94,7 +94,7 @@ class ShopifyCheckoutTest {
         activity.setContentView(view)
         val error = CheckoutKitException("boom")
 
-        view.currentWebView().getListener().onCheckoutViewFailedWithError(error)
+        view.currentWebView().listener.onCheckoutViewFailedWithError(error)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(receivedError).isSameAs(error)

@@ -138,9 +138,9 @@ class CheckoutWebViewClientTest {
     }
 
     @Test
-    fun `should call event processor on web resource load error for main frame`() {
+    fun `reports a client exception for a web resource load error in the main frame`() {
         val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com"), true)
-        val mockResponse = mockWebResourceError()
+        val mockResponse = mockWebResourceError(status = ERROR_BAD_URL)
 
         val view = viewWithProcessor(activity)
         val webViewClient = view.CheckoutWebViewClient()
@@ -151,8 +151,8 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(CheckoutExpiredException::class.java)
-            .hasErrorCode(CheckoutExpiredException.CART_EXPIRED)
+            .isInstanceOf(ClientException::class.java)
+            .hasErrorCode(CheckoutUnavailableException.CLIENT_ERROR)
     }
 
     @Test
@@ -465,8 +465,8 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(listener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(HttpException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
+            .isInstanceOf(ClientException::class.java)
+            .hasErrorCode(CheckoutUnavailableException.CLIENT_ERROR)
     }
 
     private fun registerResolverFor(uri: Uri) {
@@ -496,8 +496,8 @@ class CheckoutWebViewClientTest {
     }
 
     private fun mockWebResourceError(
-        status: Int = 410,
-        description: String = "Checkout expired"
+        status: Int = ERROR_BAD_URL,
+        description: String = "Invalid URL"
     ): WebResourceError {
         val mock = mock<WebResourceError>()
         whenever(mock.errorCode).thenReturn(status)

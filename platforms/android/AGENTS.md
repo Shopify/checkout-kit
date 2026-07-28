@@ -26,8 +26,7 @@ The sample is a separate Gradle composite (`samples/CheckoutKitAndroidDemo/setti
 
 - **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, present).
 - **`CheckoutBottomSheet.kt`** — the bottom sheet that hosts the WebView, including the progress indicator, gesture coordination, and checkout error coordination.
-- **`CheckoutWebView.kt`** — primary WebView. Instruments page loads and owns the ECP bridge.
-- **`BaseWebView.kt`** — abstract base class. Any new WebView variant must extend this so shared configuration (user agent suffix, WebChromeClient hooks, navigation error handling) is consistent.
+- **`CheckoutWebView.kt`** — the Checkout WebView. Configures WebView behavior, instruments page loads, and owns the ECP bridge.
 - **`CheckoutProtocol.kt`** — the curated consumer-facing Checkout Kit protocol API. This is where supported events/delegations are intentionally exposed.
 - **`EmbeddedCheckoutProtocolBridge.kt`** — connects the WebView message transport to the ECP client. Owns transport attachment, message filtering, protocol execution, and default-client composition.
 - **`WebMessageTransport.kt`** — the WebView messaging boundary. Its production implementation receives messages through AndroidX WebMessageListener and sends responses through JavaScript evaluation; tests inject a fake implementation.

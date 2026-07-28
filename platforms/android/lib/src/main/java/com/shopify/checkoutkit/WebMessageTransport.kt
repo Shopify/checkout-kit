@@ -48,13 +48,13 @@ internal class WebMessageListenerAdapter(
         replyProxy: JavaScriptReplyProxy,
     ) {
         if (message.type != WebMessageCompat.TYPE_STRING) {
-            log.d(BaseWebView.ECP_LOG_TAG, "Ignoring WebMessage with non-string payload.")
+            log.d(ECP_LOG_TAG, "Ignoring WebMessage with non-string payload.")
             return
         }
 
         val data = message.data
         if (data == null) {
-            log.d(BaseWebView.ECP_LOG_TAG, "Ignoring WebMessage with null payload.")
+            log.d(ECP_LOG_TAG, "Ignoring WebMessage with null payload.")
             return
         }
 

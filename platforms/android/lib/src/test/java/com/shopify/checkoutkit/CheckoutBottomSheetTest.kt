@@ -971,9 +971,9 @@ class CheckoutBottomSheetTest {
         assertThat(shadowOf(webView).goBackInvocations).isEqualTo(0)
     }
 
-    private fun CheckoutBottomSheet.currentWebView(): BaseWebView =
+    private fun CheckoutBottomSheet.currentWebView(): CheckoutWebView =
         findViewById<RelativeLayout>(R.id.checkoutKitContainer)!!
-            .children.first { it is BaseWebView } as BaseWebView
+            .children.first { it is CheckoutWebView } as CheckoutWebView
 
     private fun presentBottomSheet(
         checkoutUrl: String = "https://shopify.com",
@@ -1047,9 +1047,9 @@ class CheckoutBottomSheetTest {
     private fun scrollHandoffWebView(
         canScrollUp: Boolean,
         scrollY: Int = 0,
-    ): Pair<CheckoutBottomSheetLayout, ScrollableBaseWebView> {
+    ): Pair<CheckoutBottomSheetLayout, ScrollableWebView> {
         val sheet = CheckoutBottomSheetLayout(activity)
-        val webView = ScrollableBaseWebView(activity).apply {
+        val webView = ScrollableWebView(activity).apply {
             this.canScrollUp = canScrollUp
             scrollTo(0, scrollY)
         }
@@ -1093,13 +1093,9 @@ class CheckoutBottomSheetTest {
         }
     }
 
-    private class ScrollableBaseWebView(context: Context) : BaseWebView(context) {
+    private class ScrollableWebView(context: Context) : WebView(context) {
         var canScrollUp = false
         val touchActions = mutableListOf<Int>()
-
-        override fun getListener(): CheckoutWebViewListener {
-            return CheckoutWebViewListener(NoopCheckoutListener())
-        }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             touchActions += event.actionMasked
