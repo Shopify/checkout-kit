@@ -202,6 +202,22 @@ Call `preload` when your app has a strong signal that the buyer is likely to che
 ShopifyCheckoutKit.preload(checkoutUrl, activity)
 ```
 
+To observe the preload lifecycle, pass a listener to `preload`. The listener runs immediately with the current state, then again after each state change, always on the main thread:
+
+```kotlin
+private var checkoutPreload: CheckoutPreload? = null
+
+checkoutPreload = ShopifyCheckoutKit.preload(checkoutUrl, activity) { state ->
+    when (state) {
+        PreloadState.Ready -> println("Checkout is ready")
+        is PreloadState.Failed -> println("Preload failed: ${state.reason}")
+        else -> Unit
+    }
+}
+```
+
+The states are `Idle` when no preload is active, `Loading` while checkout loads, `Ready` when it can be reused, `Expired` when the cached checkout is stale, and `Failed(reason)` when preloading fails. The returned `CheckoutPreload` also exposes the latest `state` and a replaceable `listener`. A subsequent `preload` call replaces the current listener.
+
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
 ```kotlin

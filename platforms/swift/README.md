@@ -168,6 +168,26 @@ Call `preload` when your app has a strong signal that the buyer is likely to che
 ShopifyCheckoutKit.preload(checkout: checkoutURL)
 ```
 
+To observe the preload lifecycle, retain the returned `CheckoutPreload` and assign its `onStateChange` callback. The callback runs immediately on the main actor with the current state, then again after each state change:
+
+```swift
+private var checkoutPreload: CheckoutPreload?
+
+checkoutPreload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+checkoutPreload?.onStateChange = { state in
+  switch state {
+  case .ready:
+    print("Checkout is ready")
+  case let .failed(reason):
+    print("Preload failed: \(reason)")
+  default:
+    break
+  }
+}
+```
+
+The states are `.idle` when no preload is active, `.loading` while checkout loads, `.ready` when it can be reused, `.expired` when the cached checkout is stale, and `.failed(reason:)` when preloading fails. `CheckoutPreload` is also an `ObservableObject`, so Combine and SwiftUI integrations can subscribe to its `@Published` `state` property. Retain the handle for as long as state changes should be observed; a subsequent `preload` call replaces the current observer.
+
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
 ```swift
