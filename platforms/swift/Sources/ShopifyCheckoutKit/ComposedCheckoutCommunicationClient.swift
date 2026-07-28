@@ -6,11 +6,10 @@ import Foundation
 /// Composes a merchant-supplied protocol client with kit-owned default handlers.
 ///
 /// The default bindings make the dispatch policy explicit in one place:
-/// kit-owned requests such as `CheckoutProtocol.ready` are answered solely by the
-/// kit default and never reach the merchant client; request delegations such as
-/// `CheckoutProtocol.windowOpen` only fall back to the kit default when the merchant
-/// does not return a response; and mandatory kit notifications such as
-/// `CheckoutProtocol.error` always run after the merchant client.
+/// requests such as `CheckoutProtocol.ready` and `CheckoutProtocol.windowOpen` fall
+/// back to kit defaults when the merchant does not return a response, while mandatory
+/// kit notifications such as `CheckoutProtocol.error` always run after the merchant
+/// client.
 struct ComposedCheckoutCommunicationClient: CheckoutCommunicationProtocol {
     let merchant: (any CheckoutCommunicationProtocol)?
     let defaults: [String: DefaultClientBinding]

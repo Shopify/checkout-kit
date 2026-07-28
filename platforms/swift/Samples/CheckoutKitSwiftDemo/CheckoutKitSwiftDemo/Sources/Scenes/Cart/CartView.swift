@@ -24,10 +24,6 @@ struct CartView: View {
     @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
     var checkoutPreloadingEnabled = true
 
-    private var client: CheckoutProtocol.Client {
-        .with(windowOpen: windowOpenHandler)
-    }
-
     var body: some View {
         if let lines = cartManager.cart?.lines.nodes {
             ZStack(alignment: .bottom) {
@@ -49,7 +45,9 @@ struct CartView: View {
                                 .onDismiss {
                                     print("[AcceleratedCheckout] Dismissed")
                                 }
-                                .connect(client)
+                                .onWindowOpen { request in
+                                    windowOpenHandler.handle(request)
+                                }
                                 .environment(
                                     \.shopifyAcceleratedCheckoutsConfiguration,
                                     ShopifyAcceleratedCheckouts.Configuration(
@@ -97,13 +95,16 @@ struct CartView: View {
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
-                        .connect(client.on(CheckoutProtocol.complete) { checkout in
+                        .onComplete { checkout in
                             // Set the flag here; defer the cart reset until the user dismisses
                             // the sheet (in .onDismiss). Resetting now would nil the cart and
                             // SwiftUI would auto-collapse this sheet, hiding the confirmation page.
                             print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
                             isCompleted = true
-                        })
+                        }
+                        .onWindowOpen { request in
+                            windowOpenHandler.handle(request)
+                        }
                         .appearance(.app(.automatic))
                         .onDismiss {
                             print("[CheckoutKitSwiftDemo] DISMISSED")

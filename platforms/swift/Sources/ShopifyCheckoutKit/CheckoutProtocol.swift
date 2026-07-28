@@ -15,7 +15,9 @@ public enum CheckoutProtocol {
     static let methodNotFoundCode = -32601
     static let methodNotFoundMessage = "Method not found"
 
-    static let ready = EmbeddedCheckoutProtocol.Event.ready.map { $0.params }
+    /// Advanced handshake request. Checkout Kit returns a standard success response
+    /// when a connected client does not register a handler for this descriptor.
+    public static let ready = EmbeddedCheckoutProtocol.Event.ready.map { $0.params }
 
     public static let complete = EmbeddedCheckoutProtocol.Event.complete.map { $0.params.checkout }
     public static let error = EmbeddedCheckoutProtocol.Event.error.map { $0.params.error }

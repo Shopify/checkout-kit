@@ -29,6 +29,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
     var checkoutURL: URL
     var client: (any CheckoutCommunicationProtocol)?
+    var callbackClient = CheckoutProtocol.Client()
     var onDismissAction: (() -> Void)?
     var onFailAction: ((CheckoutError) -> Void)?
 
@@ -40,8 +41,12 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         CheckoutURLDecorator.decorate(checkoutURL)
     }
 
+    var connectedClient: any CheckoutCommunicationProtocol {
+        CheckoutEventCallbackClient(callbacks: callbackClient, advanced: client)
+    }
+
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
-        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL, client: client)
+        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL, client: connectedClient)
         configureWebViewController(viewController)
         return viewController
     }
@@ -60,15 +65,86 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
             return
         }
 
-        webViewController.client = client
-        webViewController.checkoutView?.client = client
+        webViewController.client = connectedClient
+        webViewController.checkoutView?.client = connectedClient
         webViewController.onDismiss = onDismissAction
         webViewController.onFail = onFailAction
     }
 
+    /// Connects an advanced Embedded Checkout Protocol client.
+    ///
+    /// Prefer the lifecycle callback modifiers for common checkout observation. A
+    /// connected client can additionally handle protocol requests and receives the
+    /// same notifications as the callbacks. Unhandled `ec.ready` requests fall back
+    /// to Checkout Kit's standard handshake response.
     @discardableResult public func connect(_ handler: any CheckoutCommunicationProtocol) -> Self {
         var copy = self
         copy.client = handler
+        return copy
+    }
+
+    /// Adds an action to perform when checkout is visible and interactive.
+    @discardableResult public func onStart(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.start, perform: action)
+        return copy
+    }
+
+    /// Adds an action to perform when checkout completes successfully.
+    @discardableResult public func onComplete(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.complete, perform: action)
+        return copy
+    }
+
+    /// Adds an action to perform when checkout reports a protocol error.
+    ///
+    /// Recoverable protocol errors do not invoke `onFail`; `onFail` remains reserved
+    /// for terminal SDK and presentation failures.
+    @discardableResult public func onError(_ action: @escaping @MainActor @Sendable (ErrorResponse) -> Void) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.error, perform: action)
+        return copy
+    }
+
+    /// Adds an action to perform when checkout fulfillment details change.
+    @discardableResult public func onFulfillmentChange(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.fulfillmentChange, perform: action)
+        return copy
+    }
+
+    /// Adds an action to perform when checkout line items change.
+    @discardableResult public func onLineItemsChange(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.lineItemsChange, perform: action)
+        return copy
+    }
+
+    /// Adds an action to perform when checkout messages change.
+    @discardableResult public func onMessagesChange(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.messagesChange, perform: action)
+        return copy
+    }
+
+    /// Adds an action to perform when checkout totals change.
+    @discardableResult public func onTotalsChange(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.totalsChange, perform: action)
+        return copy
+    }
+
+    /// Adds an action that can handle requests to open an external window.
+    ///
+    /// Return `.success()` after presenting the requested URL, or `.rejected()`
+    /// when the request cannot be handled. When this callback is absent, Checkout
+    /// Kit uses its standard external URL handling.
+    @discardableResult public func onWindowOpen(
+        _ action: @escaping @MainActor @Sendable (WindowOpenRequest) async -> WindowOpenResult
+    ) -> Self {
+        var copy = self
+        copy.callbackClient = callbackClient.on(CheckoutProtocol.windowOpen, perform: action)
         return copy
     }
 

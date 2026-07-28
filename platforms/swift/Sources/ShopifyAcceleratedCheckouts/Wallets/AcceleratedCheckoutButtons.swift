@@ -1,4 +1,7 @@
 import PassKit
+#if !COCOAPODS
+    import EmbeddedCheckoutProtocol
+#endif
 import ShopifyCheckoutKit
 import SwiftUI
 
@@ -230,9 +233,112 @@ extension AcceleratedCheckoutButtons {
         return newView
     }
 
+    /// Connects an advanced Embedded Checkout Protocol client.
+    ///
+    /// Prefer the lifecycle callback modifiers for common checkout observation.
     public func connect(_ client: (any CheckoutCommunicationProtocol)?) -> AcceleratedCheckoutButtons {
         var newView = self
-        newView.clientContainer = CheckoutProtocolClientContainer(client)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            client,
+            callbacks: clientContainer.callbackClient
+        )
+        return newView
+    }
+
+    /// Adds an action to perform when checkout is visible and interactive.
+    public func onStart(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.start, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
+        return newView
+    }
+
+    /// Adds an action to perform when checkout completes successfully.
+    public func onComplete(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.complete, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
+        return newView
+    }
+
+    /// Adds an action to perform when checkout reports a protocol error.
+    ///
+    /// Recoverable protocol errors do not invoke `onFail`; `onFail` remains reserved
+    /// for terminal SDK and presentation failures.
+    public func onError(_ action: @escaping @MainActor @Sendable (ErrorResponse) -> Void) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.error, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
+        return newView
+    }
+
+    /// Adds an action to perform when checkout fulfillment details change.
+    public func onFulfillmentChange(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.fulfillmentChange, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
+        return newView
+    }
+
+    /// Adds an action to perform when checkout line items change.
+    public func onLineItemsChange(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.lineItemsChange, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
+        return newView
+    }
+
+    /// Adds an action to perform when checkout messages change.
+    public func onMessagesChange(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.messagesChange, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
+        return newView
+    }
+
+    /// Adds an action to perform when checkout totals change.
+    public func onTotalsChange(_ action: @escaping @MainActor @Sendable (Checkout) -> Void) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.totalsChange, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
+        return newView
+    }
+
+    /// Adds an action that can handle requests to open an external window.
+    ///
+    /// Return `.success()` after presenting the requested URL, or `.rejected()`
+    /// when the request cannot be handled. When this callback is absent, Checkout
+    /// Kit uses its standard external URL handling.
+    public func onWindowOpen(
+        _ action: @escaping @MainActor @Sendable (WindowOpenRequest) async -> WindowOpenResult
+    ) -> AcceleratedCheckoutButtons {
+        var newView = self
+        let callbacks = clientContainer.callbackClient.on(CheckoutProtocol.windowOpen, perform: action)
+        newView.clientContainer = CheckoutProtocolClientContainer(
+            clientContainer.advancedClient,
+            callbacks: callbacks
+        )
         return newView
     }
 }

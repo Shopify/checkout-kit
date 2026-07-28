@@ -20,6 +20,13 @@
       },
       {
         "kind": "Import",
+        "name": "EmbeddedCheckoutProtocol",
+        "printedName": "EmbeddedCheckoutProtocol",
+        "declKind": "Import",
+        "moduleName": "ShopifyAcceleratedCheckouts"
+      },
+      {
+        "kind": "Import",
         "name": "Foundation",
         "printedName": "Foundation",
         "declKind": "Import",
@@ -2235,6 +2242,384 @@
             "declKind": "Func",
             "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7connectyAC0aD3Kit0D21CommunicationProtocol_pSgF",
             "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7connectyAC0aD3Kit0D21CommunicationProtocol_pSgF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onStart",
+            "printedName": "onStart(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7onStartyACy08EmbeddedD8Protocol0D0VcF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7onStartyACy08EmbeddedD8Protocol0D0VcF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onComplete",
+            "printedName": "onComplete(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV10onCompleteyACy08EmbeddedD8Protocol0D0VcF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV10onCompleteyACy08EmbeddedD8Protocol0D0VcF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onError",
+            "printedName": "onError(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.ErrorResponse) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ErrorResponse",
+                    "printedName": "EmbeddedCheckoutProtocol.ErrorResponse",
+                    "usr": "s:24EmbeddedCheckoutProtocol13ErrorResponseV"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7onErroryACy08EmbeddedD8Protocol0G8ResponseVcF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV7onErroryACy08EmbeddedD8Protocol0G8ResponseVcF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onFulfillmentChange",
+            "printedName": "onFulfillmentChange(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV19onFulfillmentChangeyACy08EmbeddedD8Protocol0D0VcF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV19onFulfillmentChangeyACy08EmbeddedD8Protocol0D0VcF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onLineItemsChange",
+            "printedName": "onLineItemsChange(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV17onLineItemsChangeyACy08EmbeddedD8Protocol0D0VcF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV17onLineItemsChangeyACy08EmbeddedD8Protocol0D0VcF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onMessagesChange",
+            "printedName": "onMessagesChange(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV16onMessagesChangeyACy08EmbeddedD8Protocol0D0VcF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV16onMessagesChangeyACy08EmbeddedD8Protocol0D0VcF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onTotalsChange",
+            "printedName": "onTotalsChange(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.Checkout) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Checkout",
+                    "printedName": "EmbeddedCheckoutProtocol.Checkout",
+                    "usr": "s:24EmbeddedCheckoutProtocol0B0V"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV14onTotalsChangeyACy08EmbeddedD8Protocol0D0VcF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV14onTotalsChangeyACy08EmbeddedD8Protocol0D0VcF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "onWindowOpen",
+            "printedName": "onWindowOpen(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(EmbeddedCheckoutProtocol.WindowOpenRequest) async -> EmbeddedCheckoutProtocol.WindowOpenResult",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "WindowOpenResult",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenResult",
+                    "usr": "s:24EmbeddedCheckoutProtocol16WindowOpenResultV"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "WindowOpenRequest",
+                    "printedName": "EmbeddedCheckoutProtocol.WindowOpenRequest",
+                    "usr": "s:24EmbeddedCheckoutProtocol17WindowOpenRequestV"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV12onWindowOpenyAC08EmbeddedD8Protocol0gH6ResultVAE0gH7RequestVYacF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV12onWindowOpenyAC08EmbeddedD8Protocol0gH6ResultVAE0gH7RequestVYacF",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "Preconcurrency",

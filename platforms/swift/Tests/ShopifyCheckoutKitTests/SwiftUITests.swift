@@ -64,6 +64,85 @@ class ShopifyCheckoutTests: XCTestCase {
         let sheet = shopifyCheckout.connect(client)
         XCTAssertNotNil(sheet.client)
     }
+
+    func testLifecycleCallbacksAndConnectedClientAreComposed() async {
+        var receivedMethods: [String] = []
+        let advancedResponse = #"{"jsonrpc":"2.0","id":"advanced","result":{}}"#
+        let advanced = TestCommunicationClient(response: advancedResponse) { message in
+            let data = Data(message.utf8)
+            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            if let method = object?["method"] as? String {
+                receivedMethods.append(method)
+            }
+        }
+        var callbackMethods: [String] = []
+        let sheet = shopifyCheckout
+            .onStart { _ in callbackMethods.append("ec.start") }
+            .onComplete { _ in callbackMethods.append("ec.complete") }
+            .onTotalsChange { _ in callbackMethods.append("ec.totals.change") }
+            .onLineItemsChange { _ in callbackMethods.append("ec.line_items.change") }
+            .onMessagesChange { _ in callbackMethods.append("ec.messages.change") }
+            .onFulfillmentChange { _ in callbackMethods.append("ec.fulfillment.change") }
+            .onError { _ in callbackMethods.append("ec.error") }
+            .connect(advanced)
+
+        let checkout = #"{"currency":"USD","id":"c-1","line_items":[],"links":[],"status":"incomplete","totals":[],"ucp":{"payment_handlers":{},"version":"2026-04-08"}}"#
+        let messages = [
+            #"{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":\#(checkout)}}"#,
+            #"{"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":\#(checkout)}}"#,
+            #"{"jsonrpc":"2.0","method":"ec.totals.change","params":{"checkout":\#(checkout)}}"#,
+            #"{"jsonrpc":"2.0","method":"ec.line_items.change","params":{"checkout":\#(checkout)}}"#,
+            #"{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":\#(checkout)}}"#,
+            #"{"jsonrpc":"2.0","method":"ec.fulfillment.change","params":{"checkout":\#(checkout)}}"#,
+            #"{"jsonrpc":"2.0","method":"ec.error","params":{"error":{"messages":[],"ucp":{"status":"error","version":"2026-04-08"}}}}"#
+        ]
+
+        for message in messages {
+            let response = await sheet.connectedClient.process(message)
+            XCTAssertEqual(response, advancedResponse)
+        }
+
+        XCTAssertEqual(callbackMethods, receivedMethods)
+        XCTAssertEqual(callbackMethods.count, messages.count)
+    }
+
+    func testWindowOpenCallbackHandlesRequestBeforeConnectedClient() async throws {
+        var receivedURL: String?
+        var advancedClientCalled = false
+        let advanced = TestCommunicationClient(response: nil) { _ in
+            advancedClientCalled = true
+        }
+        let sheet = shopifyCheckout
+            .connect(advanced)
+            .onWindowOpen { request in
+                receivedURL = request.url
+                return .success()
+            }
+
+        let response = await sheet.connectedClient.process(Self.windowOpenRequest)
+        let responseData = try XCTUnwrap(response?.data(using: .utf8))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: responseData) as? [String: Any])
+        let result = try XCTUnwrap(object["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
+
+        XCTAssertEqual(receivedURL, "https://example.com/terms")
+        XCTAssertEqual(object["id"] as? String, "window-1")
+        XCTAssertEqual(ucp["status"] as? String, "success")
+        XCTAssertFalse(advancedClientCalled)
+    }
+
+    private static let windowOpenRequest =
+        #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"window-1","params":{"url":"https://example.com/terms"}}"#
+}
+
+private struct TestCommunicationClient: CheckoutCommunicationProtocol {
+    let response: String?
+    let onProcess: @MainActor @Sendable (String) -> Void
+
+    func process(_ message: String) async -> String? {
+        await onProcess(message)
+        return response
+    }
 }
 
 @MainActor
