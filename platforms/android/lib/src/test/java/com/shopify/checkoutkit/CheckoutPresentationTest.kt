@@ -25,7 +25,7 @@ class CheckoutPresentationTest {
             onFail { received = it }
         }
 
-        val error = CheckoutKitException("boom")
+        val error = CheckoutException(code = CheckoutErrorCode.SDK_ERROR, message = "boom")
         listener.onCheckoutFailed(error)
 
         assertThat(received).isSameAs(error)
@@ -139,7 +139,7 @@ class CheckoutPresentationTest {
     fun `present builder with no callbacks is safe`() {
         val listener = listener {}
 
-        listener.onCheckoutFailed(CheckoutKitException("boom"))
+        listener.onCheckoutFailed(CheckoutException(code = CheckoutErrorCode.SDK_ERROR, message = "boom"))
         listener.onCheckoutDismissed()
         listener.onPermissionRequest(mock())
         listener.onGeolocationPermissionsShowPrompt("origin", mock())

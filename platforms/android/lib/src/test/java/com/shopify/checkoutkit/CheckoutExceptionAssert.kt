@@ -5,59 +5,50 @@ import org.assertj.core.api.AbstractAssert
 class CheckoutExceptionAssert(actual: CheckoutException) :
     AbstractAssert<CheckoutExceptionAssert, CheckoutException>(actual, CheckoutExceptionAssert::class.java) {
     companion object {
-        fun assertThat(actual: CheckoutException): CheckoutExceptionAssert {
-            return CheckoutExceptionAssert(actual)
-        }
+        fun assertThat(actual: CheckoutException): CheckoutExceptionAssert = CheckoutExceptionAssert(actual)
     }
 
-    fun hasDescription(description: String): CheckoutExceptionAssert {
+    fun hasMessage(message: String): CheckoutExceptionAssert {
         isNotNull()
 
-        if (actual.errorDescription != description) {
+        if (actual.message != message) {
+            failWithMessage("Expected exception message <%s>, but was <%s>", message, actual.message)
+        }
+
+        return this
+    }
+
+    fun hasCode(code: CheckoutErrorCode): CheckoutExceptionAssert {
+        isNotNull()
+
+        if (actual.code != code) {
+            failWithMessage("Expected exception code <%s>, but was <%s>", code, actual.code)
+        }
+
+        return this
+    }
+
+    fun hasHttpStatusCode(statusCode: Int): CheckoutExceptionAssert {
+        isNotNull()
+
+        if (actual.httpStatusCode != statusCode) {
             failWithMessage(
-                "Expected exception to have description <%s>, but was, <%s>",
-                description,
-                actual.errorDescription
+                "Expected exception HTTP status code <%s>, but was <%s>",
+                statusCode,
+                actual.httpStatusCode,
             )
-        }
-
-        return this
-    }
-
-    fun hasErrorCode(errorCode: String): CheckoutExceptionAssert {
-        isNotNull()
-
-        if (actual.errorCode != errorCode) {
-            failWithMessage("Expected exception to have errorCode <%s>, but was, <%s>", errorCode, actual.errorCode)
-        }
-
-        return this
-    }
-
-    fun hasStatusCode(statusCode: Int): CheckoutExceptionAssert {
-        isNotNull()
-
-        if (actual !is HttpException) {
-            failWithMessage("Cannot assert status code on an exception that is not a HttpException")
-        }
-
-        val actualCode = (actual as HttpException).statusCode
-        if (actualCode != statusCode) {
-            failWithMessage("Expected exception to have statusCode <%s>, but was, <%s>", statusCode, actualCode)
         }
 
         return this
     }
 }
 
-fun noopDefaultCheckoutListener(): DefaultCheckoutListener {
-    return object : DefaultCheckoutListener() {
-        override fun onCheckoutFailed(error: CheckoutException) {
-            // no-op
-        }
+fun noopDefaultCheckoutListener(): DefaultCheckoutListener = object : DefaultCheckoutListener() {
+    override fun onCheckoutFailed(error: CheckoutException) {
+        // no-op
+    }
 
-        override fun onCheckoutDismissed() {
-            // no-op
-        }
+    override fun onCheckoutDismissed() {
+        // no-op
     }
 }

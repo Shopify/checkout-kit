@@ -138,7 +138,7 @@ class CheckoutWebViewClientTest {
     }
 
     @Test
-    fun `reports a client exception for a web resource load error in the main frame`() {
+    fun `reports unknown for a nonretryable web resource load error in the main frame`() {
         val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com"), true)
         val mockResponse = mockWebResourceError(status = ERROR_BAD_URL)
 
@@ -151,8 +151,7 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(ClientException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.CLIENT_ERROR)
+            .hasCode(CheckoutErrorCode.UNKNOWN)
     }
 
     @Test
@@ -235,8 +234,8 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(CheckoutExpiredException::class.java)
-            .hasErrorCode(CheckoutExpiredException.CART_EXPIRED)
+            .hasCode(CheckoutErrorCode.CART_EXPIRED)
+            .hasHttpStatusCode(HttpURLConnection.HTTP_GONE)
     }
 
     @Test
@@ -252,10 +251,9 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(HttpException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
-            .hasDescription("Not Found")
-            .hasStatusCode(404)
+            .hasCode(CheckoutErrorCode.HTTP_ERROR)
+            .hasMessage("Not Found")
+            .hasHttpStatusCode(404)
     }
 
     @Test
@@ -270,8 +268,7 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(CheckoutUnavailableException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
+            .hasCode(CheckoutErrorCode.HTTP_ERROR)
     }
 
     @Test
@@ -286,8 +283,7 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(CheckoutUnavailableException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
+            .hasCode(CheckoutErrorCode.HTTP_ERROR)
     }
 
     @Test
@@ -302,8 +298,7 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(CheckoutUnavailableException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
+            .hasCode(CheckoutErrorCode.HTTP_ERROR)
     }
 
     @Test
@@ -320,9 +315,8 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(CheckoutUnavailableException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
-            .hasDescription("Bad url")
+            .hasCode(CheckoutErrorCode.HTTP_ERROR)
+            .hasMessage("Bad url")
     }
 
     @Test
@@ -338,9 +332,8 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(CheckoutUnavailableException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
-            .hasDescription("Bad request")
+            .hasCode(CheckoutErrorCode.HTTP_ERROR)
+            .hasMessage("Bad request")
     }
 
     @Test
@@ -356,9 +349,9 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(HttpException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.HTTP_ERROR)
-            .hasDescription("HTTP 502 Error")
+            .hasCode(CheckoutErrorCode.HTTP_ERROR)
+            .hasMessage("HTTP 502 Error")
+            .hasHttpStatusCode(HttpURLConnection.HTTP_BAD_GATEWAY)
     }
 
     // Deliberate trade-off (matches Swift PR #82): the `?open_externally=true` query-param intercept
@@ -425,12 +418,11 @@ class CheckoutWebViewClientTest {
         val result = webViewClient.onRenderProcessGone(view, detail)
 
         assertThat(result).isTrue
-        val captor = argumentCaptor<CheckoutKitException>()
+        val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(CheckoutKitException::class.java)
-            .hasDescription("Render process gone.")
-            .hasErrorCode(CheckoutKitException.RENDER_PROCESS_GONE)
+            .hasCode(CheckoutErrorCode.WEB_CONTENT_PROCESS_TERMINATED)
+            .hasMessage("Render process gone.")
     }
 
     @Config(sdk = [26])
@@ -482,8 +474,7 @@ class CheckoutWebViewClientTest {
         val captor = argumentCaptor<CheckoutException>()
         verify(listener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
-            .isInstanceOf(ClientException::class.java)
-            .hasErrorCode(CheckoutUnavailableException.CLIENT_ERROR)
+            .hasCode(CheckoutErrorCode.NETWORK_ERROR)
     }
 
     private fun registerResolverFor(uri: Uri) {

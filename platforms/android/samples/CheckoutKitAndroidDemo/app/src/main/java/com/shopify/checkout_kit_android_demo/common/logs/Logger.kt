@@ -17,8 +17,9 @@ class Logger(
     fun logSdkError(message: String, error: CheckoutException) {
         val payload = Json.encodeToString(
             mapOf(
-                "type" to error::class.java.name,
-                "message" to (error.message ?: "No message on error"),
+                "code" to error.code.name,
+                "message" to error.message,
+                "httpStatusCode" to error.httpStatusCode?.toString(),
             )
         )
         log(LogSource.SDK, LogLevel.ERROR, message, payload)

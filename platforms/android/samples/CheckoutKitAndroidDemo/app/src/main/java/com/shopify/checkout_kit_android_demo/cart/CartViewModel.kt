@@ -1,7 +1,6 @@
 package com.shopify.checkout_kit_android_demo.cart
 
 import android.content.ActivityNotFoundException
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
@@ -22,10 +21,11 @@ import com.shopify.checkout_kit_android_demo.settings.PreferencesManager
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.CustomerRepository
 import com.shopify.checkout_kit_android_demo.settings.data.CheckoutPresentationMode
 import com.shopify.checkout_kit_android_demo.settings.data.WindowOpenHandler
-import com.shopify.checkoutkit.CheckoutPreload
-import com.shopify.checkoutkit.CheckoutProtocol
+import com.shopify.checkoutkit.CheckoutErrorCode
 import com.shopify.checkoutkit.CheckoutException
+import com.shopify.checkoutkit.CheckoutPreload
 import com.shopify.checkoutkit.CheckoutPresentation
+import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.ucp.embedded.checkout.Checkout
 import com.shopify.ucp.embedded.checkout.WindowOpenResult
@@ -131,9 +131,7 @@ class CartViewModel(
         navController: NavController,
     ) {
         val sampleActivity = activity as? MainActivity
-        onFail { error ->
-            handleCheckoutFailed(error, activity)
-        }
+        onFail(::handleCheckoutFailed)
         onDismiss {
             handleCheckoutDismissed()
         }
@@ -177,19 +175,59 @@ class CartViewModel(
         }
     }
 
-    internal fun handleCheckoutFailed(
-        error: CheckoutException,
-        activity: ComponentActivity,
-    ) {
+    internal fun handleCheckoutFailed(error: CheckoutException) {
         logger.logSdkError("Checkout failed", error)
-        clearCart()
-        viewModelScope.launch(Dispatchers.Main.immediate) {
-            Toast.makeText(
-                activity,
-                activity.getText(R.string.checkout_error),
-                Toast.LENGTH_SHORT,
-            ).show()
+
+        // Checkout Kit has ended its presentation. The host owns recovery: only cart-terminal
+        // failures discard local cart state; other failures retain it so the buyer can retry.
+        if (error.code in cartReplacementErrorCodes) {
+            clearCart()
         }
+
+        viewModelScope.launch {
+            SnackbarController.sendEvent(SnackbarEvent(error.userMessageResourceId()))
+        }
+    }
+
+    private fun CheckoutException.userMessageResourceId(): Int = when (code) {
+        CheckoutErrorCode.CART_EXPIRED,
+        CheckoutErrorCode.CART_COMPLETED,
+        CheckoutErrorCode.INVALID_CART,
+        -> R.string.checkout_error_cart_unavailable
+
+        CheckoutErrorCode.CUSTOMER_ACCOUNT_REQUIRED -> R.string.checkout_error_customer_account_required
+        CheckoutErrorCode.STOREFRONT_PASSWORD_REQUIRED -> R.string.checkout_error_storefront_password_required
+        CheckoutErrorCode.NETWORK_ERROR,
+        CheckoutErrorCode.WEB_CONTENT_PROCESS_TERMINATED,
+        -> R.string.checkout_error_retry
+
+        CheckoutErrorCode.WEB_VIEW_NOT_SUPPORTED -> R.string.checkout_error_web_view_not_supported
+        CheckoutErrorCode.HTTP_ERROR -> if (httpStatusCode.isRetryableCheckoutHttpStatus()) {
+            R.string.checkout_error_retry
+        } else {
+            R.string.checkout_error
+        }
+
+        CheckoutErrorCode.SDK_ERROR,
+        CheckoutErrorCode.UNKNOWN,
+        -> R.string.checkout_error
+    }
+
+    private fun Int?.isRetryableCheckoutHttpStatus(): Boolean =
+        this == HTTP_STATUS_REQUEST_TIMEOUT ||
+            this == HTTP_STATUS_TOO_MANY_REQUESTS ||
+            (this != null && this in HTTP_STATUS_SERVER_ERROR_RANGE)
+
+    private companion object {
+        const val HTTP_STATUS_REQUEST_TIMEOUT = 408
+        const val HTTP_STATUS_TOO_MANY_REQUESTS = 429
+        val HTTP_STATUS_SERVER_ERROR_RANGE = 500..599
+
+        val cartReplacementErrorCodes = setOf(
+            CheckoutErrorCode.CART_EXPIRED,
+            CheckoutErrorCode.CART_COMPLETED,
+            CheckoutErrorCode.INVALID_CART,
+        )
     }
 
     internal fun handleCheckoutDismissed() {

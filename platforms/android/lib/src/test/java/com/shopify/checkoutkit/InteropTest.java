@@ -59,6 +59,23 @@ public class InteropTest {
     }
 
     @Test
+    public void canConstructCheckoutExceptionWithJavaOverloads() {
+        CheckoutException withoutOptionalFields = new CheckoutException(
+                CheckoutErrorCode.UNKNOWN,
+                "Unknown checkout failure"
+        );
+        CheckoutException withHttpStatusCode = new CheckoutException(
+                CheckoutErrorCode.HTTP_ERROR,
+                "Checkout request failed",
+                500
+        );
+
+        assertThat(withoutOptionalFields.getCode()).isEqualTo(CheckoutErrorCode.UNKNOWN);
+        assertThat(withoutOptionalFields.getHttpStatusCode()).isNull();
+        assertThat(withHttpStatusCode.getHttpStatusCode()).isEqualTo(500);
+    }
+
+    @Test
     public void canConfigureCheckoutKit() {
         ShopifyCheckoutKit.configure(configuration -> {
             configuration.setAppearance(new CheckoutAppearance.App(new ColorScheme.Dark()));

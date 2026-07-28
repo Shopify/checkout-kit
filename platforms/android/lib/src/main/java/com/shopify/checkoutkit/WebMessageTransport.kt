@@ -119,10 +119,7 @@ internal object WebMessageListenerTransport : WebMessageTransport {
 }
 
 internal class UnsupportedWebViewException : IllegalStateException(ERROR_DESCRIPTION) {
-    val checkoutError = CheckoutKitException(
-        errorDescription = ERROR_DESCRIPTION,
-        errorCode = CheckoutKitException.WEB_VIEW_NOT_SUPPORTED,
-    )
+    val checkoutError = CheckoutException.webViewNotSupported(ERROR_DESCRIPTION, this)
 
     private companion object {
         private const val ERROR_DESCRIPTION = "This Android WebView does not support Shopify Checkout Kit."

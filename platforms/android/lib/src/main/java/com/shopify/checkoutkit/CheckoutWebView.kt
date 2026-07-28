@@ -32,7 +32,6 @@ import androidx.annotation.MainThread
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
-import java.net.HttpURLConnection.HTTP_GONE
 import java.util.concurrent.CountDownLatch
 
 internal class CheckoutWebView private constructor(
@@ -53,8 +52,11 @@ internal class CheckoutWebView private constructor(
     private var loadComplete = false
     internal var isPresented = false
         private set
+
+    @Volatile
     internal var isPreloadRequest = false
         private set
+
     private var checkoutRequest: CheckoutRequest? = null
     private var didRetryCheckoutRequest = false
     private val touchHandler = CheckoutWebViewTouchHandler()
@@ -178,10 +180,7 @@ internal class CheckoutWebView private constructor(
                 // Renderer was killed because system ran out of memory.
                 log.d(LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
                 listener.onCheckoutViewFailedWithError(
-                    CheckoutKitException(
-                        errorDescription = "Render process gone.",
-                        errorCode = CheckoutKitException.RENDER_PROCESS_GONE,
-                    )
+                    CheckoutException.webContentProcessTerminated("Render process gone.")
                 )
                 true
             } else {
@@ -230,7 +229,7 @@ internal class CheckoutWebView private constructor(
             }
             super.onReceivedError(view, request, error)
             error?.let {
-                handleClientError(request, it.description.toString())
+                handleClientError(request, it)
             }
             if (isMainFrame) {
                 resetCheckoutRequestRetryState()
@@ -284,18 +283,22 @@ internal class CheckoutWebView private constructor(
 
         private fun handleClientError(
             request: WebResourceRequest?,
-            errorDescription: String,
+            error: WebResourceError,
         ) {
             if (request?.isForMainFrame != true) return
 
+            val errorDescription = error.description.toString()
             log.d(
                 LOG_TAG,
                 "Handling client error for main frame. URL: ${request.url.redactedForLogging()}, " +
-                    "errorDescription: $errorDescription"
+                    "errorCode: ${error.errorCode}, errorDescription: $errorDescription"
             )
-            listener.onCheckoutViewFailedWithError(
-                ClientException(errorDescription = errorDescription),
-            )
+            val failure = if (error.errorCode in RETRYABLE_CHECKOUT_ERROR_CODES) {
+                CheckoutException.network(errorDescription)
+            } else {
+                CheckoutException.unknown(errorDescription)
+            }
+            listener.onCheckoutViewFailedWithError(failure)
         }
 
         private fun handleHttpError(
@@ -310,20 +313,9 @@ internal class CheckoutWebView private constructor(
                 "Handling HTTP error for main frame. URL: ${request.url.redactedForLogging()}, " +
                     "statusCode: $statusCode, errorDescription: $errorDescription"
             )
-            when (statusCode) {
-                HTTP_GONE -> {
-                    log.d(LOG_TAG, "Failing with cart expired.")
-                    listener.onCheckoutViewFailedWithError(
-                        CheckoutExpiredException(errorCode = CheckoutExpiredException.CART_EXPIRED),
-                    )
-                }
-                else -> {
-                    log.d(LOG_TAG, "Failing with HTTP error. Status code: $statusCode")
-                    listener.onCheckoutViewFailedWithError(
-                        HttpException(errorDescription = errorDescription, statusCode = statusCode),
-                    )
-                }
-            }
+            listener.onCheckoutViewFailedWithError(
+                CheckoutException.http(statusCode, errorDescription),
+            )
         }
     }
 

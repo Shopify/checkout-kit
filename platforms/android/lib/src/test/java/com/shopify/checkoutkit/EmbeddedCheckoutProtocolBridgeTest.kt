@@ -11,16 +11,13 @@ import com.shopify.ucp.embedded.checkout.windowOpenRejected
 import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
@@ -466,43 +463,69 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     // endregion
 
-    // region ec.error — severity-driven dismissal
+    // region ec.error — terminal protocol and lifecycle failure
 
     @Test
-    fun `ec error is forwarded to client regardless of severity`() {
-        val rawMessage = ecErrorMessage(severity = "recoverable")
-        var received = false
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.error) { received = true }
-        ecp.setClient(client)
+    fun `terminal ec error forwards the full payload before failing presentation`() {
+        var receivedMessages = emptyList<com.shopify.ucp.embedded.checkout.Message>()
+        ecp.setClient(CheckoutProtocol.Client().on(CheckoutProtocol.error) { receivedMessages = it.messages })
 
-        ecp.receiveMessage(rawMessage)
+        ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(received).isTrue()
-    }
-
-    @Test
-    fun `ec error with unrecoverable severity dismisses via listener`() {
-        val rawMessage = ecErrorMessage(severity = "unrecoverable")
-        var received = false
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.error) { received = true }
-        ecp.setClient(client)
-
-        ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(received).isTrue()
+        val received = receivedMessages.single()
+        assertThat(received.code).isEqualTo("unrecoverable_failure")
+        assertThat(received.content).isEqualTo("Session failed")
+        assertThat(received.severity!!.value).isEqualTo("unrecoverable")
         val captor = argumentCaptor<CheckoutException>()
         verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
-        assertThat(captor.firstValue).isInstanceOf(ClientException::class.java)
-        assertThat(captor.firstValue.errorDescription)
-            .isEqualTo("Embedded checkout reported unrecoverable error.")
+        CheckoutExceptionAssert.assertThat(captor.firstValue)
+            .hasCode(CheckoutErrorCode.UNKNOWN)
+            .hasMessage("Session failed")
     }
 
     @Test
-    fun `ec error with unrecoverable severity invalidates cached preload`() {
+    fun `terminal ec error without an unrecoverable error message fails with unknown`() {
+        ecp.receiveMessage(ecErrorMessage(severity = "recoverable"))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        val captor = argumentCaptor<CheckoutException>()
+        verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
+        CheckoutExceptionAssert.assertThat(captor.firstValue)
+            .hasCode(CheckoutErrorCode.UNKNOWN)
+            .hasMessage("Embedded checkout reported a terminal error.")
+    }
+
+    @Test
+    fun `terminal ec error selects the first wire-order unrecoverable error message`() {
+        val messages = """[
+            |{"type":"error","code":"invalid_cart","content":"Cart invalid","severity":"recoverable"},
+            |{"type":"error","code":"cart_completed","content":"Cart complete","severity":"unrecoverable"},
+            |{"type":"error","code":"invalid_cart","content":"Cart invalid again","severity":"unrecoverable"}
+        |]
+        """.trimMargin()
+
+        ecp.receiveMessage(ecErrorMessageWithMessages(messages))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        val captor = argumentCaptor<CheckoutException>()
+        verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
+        CheckoutExceptionAssert.assertThat(captor.firstValue)
+            .hasCode(CheckoutErrorCode.CART_COMPLETED)
+            .hasMessage("Cart complete")
+    }
+
+    @Test
+    fun `duplicate terminal ec errors fail presentation once`() {
+        ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(mockListener).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `terminal ec error invalidates cached preload`() {
         CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
@@ -515,84 +538,53 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `ec error with unrecoverable severity dismisses even when merchant handles error`() {
-        val rawMessage = ecErrorMessage(severity = "unrecoverable")
-        var received = false
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.error) { received = true }
-        ecp.setClient(client)
-
-        ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        assertThat(received).isTrue()
-        verify(mockListener).onCheckoutViewFailedWithError(
-            argThat { this is ClientException },
+    fun `terminal preload error does not suppress a later presented lifecycle failure`() {
+        val preloadedView = CheckoutWebView(activity, webMessageTransport).apply {
+            loadCheckout("https://shopify.dev/cart/123", isPreload = true)
+            setListener(mockListener)
+        }
+        val preloadBridge = EmbeddedCheckoutProtocolBridge(
+            preloadedView,
+            webMessageTransport,
+            protocolMessageExecutor = directExecutor,
         )
-    }
 
-    @Test
-    fun `ec error with recoverable severity does not dismiss`() {
-        val rawMessage = ecErrorMessage(severity = "recoverable")
-        ecp.setClient(CheckoutProtocol.Client())
+        preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        Mockito.verifyNoInteractions(mockListener)
 
-        ecp.receiveMessage(rawMessage)
+        preloadedView.markPreloadConsumed()
+        preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockListener, never()).onCheckoutViewFailedWithError(any())
+        verify(mockListener).onCheckoutViewFailedWithError(any())
     }
 
     @Test
-    fun `ec error with requires_buyer_input severity does not dismiss`() {
-        val rawMessage = ecErrorMessage(severity = "requires_buyer_input")
-        ecp.setClient(CheckoutProtocol.Client())
-
-        ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        verify(mockListener, never()).onCheckoutViewFailedWithError(any())
-    }
-
-    @Test
-    fun `ec error with requires_buyer_review severity does not dismiss`() {
-        val rawMessage = ecErrorMessage(severity = "requires_buyer_review")
-        ecp.setClient(CheckoutProtocol.Client())
-
-        ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        verify(mockListener, never()).onCheckoutViewFailedWithError(any())
-    }
-
-    @Test
-    fun `ec error dismisses when any message has unrecoverable severity`() {
-        val messages = """[
-            |{"type":"error","code":"a","content":"x","severity":"recoverable"},
-            |{"type":"error","code":"b","content":"y","severity":"unrecoverable"}
-        |]
-        """.trimMargin()
-        val rawMessage = ecErrorMessageWithMessages(messages)
-        ecp.setClient(CheckoutProtocol.Client())
-
-        ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
-
-        verify(mockListener).onCheckoutViewFailedWithError(
-            argThat { this is ClientException },
-        )
-    }
-
-    @Test
-    fun `ec error without required messages field is ignored by typed handler`() {
+    fun `malformed ec error fails presentation with sdk error`() {
         val rawMessage = """{"jsonrpc":"2.0","method":"ec.error","params":{"error":{$ERROR_RESPONSE_UCP}}}"""
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.error) { fail("Malformed ec.error should not dispatch") }
-        ecp.setClient(client)
 
         ecp.receiveMessage(rawMessage)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        verify(mockListener, never()).onCheckoutViewFailedWithError(any())
+        val captor = argumentCaptor<CheckoutException>()
+        verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
+        CheckoutExceptionAssert.assertThat(captor.firstValue)
+            .hasCode(CheckoutErrorCode.SDK_ERROR)
+            .hasMessage("Embedded checkout sent an invalid terminal error.")
+    }
+
+    @Test
+    fun `malformed ec error envelope fails presentation with sdk error`() {
+        val rawMessage = """{"jsonrpc":2,"method":"ec.error","params":{"error":{$ERROR_RESPONSE_UCP}}}"""
+
+        ecp.receiveMessage(rawMessage)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        val captor = argumentCaptor<CheckoutException>()
+        verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
+        CheckoutExceptionAssert.assertThat(captor.firstValue)
+            .hasCode(CheckoutErrorCode.SDK_ERROR)
+            .hasMessage("Embedded checkout sent an invalid terminal error.")
     }
 
     // endregion
@@ -778,7 +770,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     private fun ecErrorMessage(severity: String): String {
         val messages =
-            """[{"type":"error","code":"session_failed","content":"Session failed","severity":"$severity"}]"""
+            """[{"type":"error","code":"unrecoverable_failure","content":"Session failed","severity":"$severity"}]"""
         return ecErrorMessageWithMessages(messages)
     }
 
