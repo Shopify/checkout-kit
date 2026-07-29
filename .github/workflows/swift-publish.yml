@@ -17,6 +17,7 @@ jobs:
     # workflow doesn't need updating each time a new platform namespace lands.
     if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.release.tag_name, '/') }}
     runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 30
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/platforms/swift/Gemfile
 

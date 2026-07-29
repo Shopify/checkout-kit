@@ -35,6 +35,7 @@ jobs:
     name: Swift
     if: inputs.swift == 'true'
     runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: platforms/swift
@@ -52,6 +53,7 @@ jobs:
     name: Android
     if: inputs.android == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: platforms/android

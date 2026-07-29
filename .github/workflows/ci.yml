@@ -27,6 +27,7 @@ jobs:
     name: Detect Changed Areas
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       android: ${{ steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.android == 'true' }}
       swift: ${{ steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.swift == 'true' }}
@@ -142,6 +143,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.swift == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: platforms/swift/Scripts/check_sample_package_paths
@@ -214,6 +216,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.scripts == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
@@ -259,6 +262,7 @@ jobs:
       - scripts-test
       - breaking-changes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Verify all upstream jobs succeeded or were skipped
         env:
