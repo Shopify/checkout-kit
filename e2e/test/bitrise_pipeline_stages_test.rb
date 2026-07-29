@@ -10,7 +10,7 @@ class BitrisePipelineStagesTest < Minitest::Test
   def workflow(name, status: "succeeded", external_id: nil)
     {
       "name" => name,
-      "status" => status,
+      "status" => {"Name" => status, "StatusLevel" => 5},
       "external_id" => external_id.nil? ? "build-#{name}" : external_id
     }
   end
@@ -85,6 +85,34 @@ class BitrisePipelineStagesTest < Minitest::Test
     )
 
     assert_nil roster.failed.first.build_url
+  end
+
+  def test_real_bitrise_payload_names_only_the_stage_that_failed
+    roster = BitrisePipelineStages.from_json(<<~JSON, app_slug: APP_SLUG)
+      [{"credit_cost":0,"depends_on":["e2e-produce-browserstack-run-plan"],
+        "external_id":"d9a651a2","finished_at":"2026-07-29T11:17:44Z","id":"95f584ae",
+        "is_generator":false,"name":"e2e-build-swift-ios","started_at":"2026-07-29T11:16:17Z",
+        "status":{"Name":"succeeded","StatusLevel":5}},
+       {"credit_cost":0,"depends_on":["e2e-produce-browserstack-run-plan"],
+        "external_id":"5c4231d8","finished_at":"2026-07-29T11:17:23Z","id":"a9386fa1",
+        "is_generator":false,"name":"e2e-build-react-native-ios","started_at":"2026-07-29T11:16:33Z",
+        "status":{"Name":"failed","StatusLevel":5}}]
+    JSON
+
+    assert_equal ["e2e-build-react-native-ios"], roster.failed.map(&:name)
+    assert_empty roster.not_executed
+  end
+
+  def test_plain_string_status_is_still_read
+    roster = BitrisePipelineStages.from_json(
+      JSON.generate([
+        {"name" => "e2e-build-swift-ios", "status" => "succeeded", "external_id" => "d9a651a2"},
+        {"name" => "e2e-build-react-native-ios", "status" => "failed", "external_id" => "5c4231d8"}
+      ]),
+      app_slug: APP_SLUG
+    )
+
+    assert_equal ["e2e-build-react-native-ios"], roster.failed.map(&:name)
   end
 
   def test_unusable_payloads_produce_an_empty_roster

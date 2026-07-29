@@ -7,6 +7,9 @@ require "json"
 # never arrived. Bitrise signals "this stage never started" with a blank external_id
 # rather than with a status string, and documents no enum for the status field, so
 # anything outside the known success and in-flight values counts as a failure.
+#
+# Bitrise nests the status as {"Name" => "succeeded", "StatusLevel" => 5} rather than
+# exposing a bare string, so read the name out of either shape.
 class BitrisePipelineStages
   Stage = Struct.new(:name, :status, :build_slug, :build_url, keyword_init: true)
 
@@ -49,14 +52,21 @@ class BitrisePipelineStages
 
   def stage_for(name, copies)
     executed = copies.reject { |copy| blank?(copy["external_id"]) }
-    representative = executed.find { |copy| failure_status?(copy["status"]) } || executed.first
+    representative = executed.find { |copy| failure_status?(status_name(copy)) } || executed.first
     build_slug = representative && representative["external_id"]
     Stage.new(
       name: name,
-      status: representative && representative["status"],
+      status: representative && status_name(representative),
       build_slug: build_slug,
       build_url: build_url(build_slug)
     )
+  end
+
+  def status_name(entry)
+    status = entry["status"]
+    return status["Name"] || status["name"] if status.is_a?(Hash)
+
+    status
   end
 
   def build_url(build_slug)
