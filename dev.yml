@@ -52,21 +52,7 @@ open:
   "PRs": "https://github.com/Shopify/checkout-kit/pulls"
 
 check:
-  storefront-env-tests: ./scripts/test_setup_storefront_env
-  ruby-script-tests: ./scripts/test_ruby
-  android-detekt: platforms/android/gradlew -p platforms/android detekt
-  android-lint: |
-    scripts/check_storefront_env
-    platforms/android/gradlew -p platforms/android lintRelease
-    platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:lintRelease
-  swift-lint: cd platforms/swift && ./Scripts/lint
-  react-native-lint-swift: cd platforms/react-native && ./scripts/lint_swift
-  react-native-lint-module: cd platforms/react-native && pnpm module lint
-  react-native-lint-sample: cd platforms/react-native && pnpm sample lint
-  web-lint: cd platforms/web && pnpm lint
-  web-test: cd platforms/web && pnpm test
-  protocol-check: /opt/dev/bin/dev protocol check
-  e2e-bitrise-validate: bitrise validate --config=e2e/bitrise.yml
+  repo: ./scripts/check_changed
 
 commands:
   # Repo-wide
