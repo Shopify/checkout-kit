@@ -78,6 +78,9 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         return copy
     }
 
+    /// Registers a handler called when checkout cannot continue.
+    ///
+    /// Use ``CheckoutError/code`` for your app's recovery policy.
     @discardableResult public func onFail(_ action: @escaping (CheckoutError) -> Void) -> Self {
         var copy = self
         copy.onFailAction = action

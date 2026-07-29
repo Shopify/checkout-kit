@@ -18,11 +18,10 @@ import android.webkit.WebView
  */
 public interface CheckoutListener {
     /**
-     * Event representing an error that occurred during checkout. This can be used to display
-     * error messages for example.
+     * Called when checkout cannot continue.
      *
-     * @param error - the CheckoutErrorException that occurred
-     * @see Exception
+     * Use [CheckoutException.code] for your app's recovery policy. Use the
+     * [CheckoutException.message] and exception cause only for debugging and logging.
      */
     public fun onCheckoutFailed(error: CheckoutException)
 

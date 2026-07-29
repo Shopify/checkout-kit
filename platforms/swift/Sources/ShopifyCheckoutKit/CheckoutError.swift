@@ -5,26 +5,54 @@ import Foundation
 
 /// Stable, consumer-facing reason for a terminal checkout presentation failure.
 public enum CheckoutErrorCode: String, Codable, Sendable {
+    /// The storefront requires a password and cannot be used by Checkout Kit.
     case storefrontPasswordRequired = "storefront_password_required"
+
+    /// Checkout requires a customer account that is not available to the current session.
     case customerAccountRequired = "customer_account_required"
+
+    /// The cart or checkout session is no longer available. Create a new cart before retrying.
     case cartExpired = "cart_expired"
+
+    /// The cart has already completed checkout.
     case cartCompleted = "cart_completed"
+
+    /// The cart is invalid or cannot be used to continue checkout.
     case invalidCart = "invalid_cart"
+
+    /// Checkout returned an HTTP error response. See ``CheckoutError/httpStatusCode``.
     case httpError = "http_error"
+
+    /// Checkout navigation failed before an HTTP response was available.
     case networkError = "network_error"
+
+    /// An internal Checkout Kit error occurred, for example when a protocol message could not be decoded.
     case sdkError = "sdk_error"
+
+    /// An unexpected error occurred.
     case unknown
 }
 
-/// A terminal checkout presentation failure.
+/// A terminal checkout presentation failure delivered through ``CheckoutDelegate/checkoutDidFail(error:)``
+/// or ``ShopifyCheckout/onFail(_:)``.
+///
+/// Use ``code`` for application behavior. Use ``message`` and ``underlyingError`` only for debugging
+/// and logging. ``httpStatusCode`` is present only when an HTTP response caused failure. Your app owns
+/// recovery actions such as retrying, recreating a cart, authenticating a buyer, and reopening checkout.
 public struct CheckoutError: LocalizedError {
+    /// Stable code for this failure.
     public let code: CheckoutErrorCode
+
+    /// Diagnostic description. Do not use it as a stable recovery or analytics key.
     public let message: String
+
+    /// HTTP status for an HTTP-response failure, otherwise `nil`.
     public let httpStatusCode: Int?
 
-    /// Native diagnostic context. This value is not guaranteed to be Sendable.
+    /// Native diagnostic cause, when one is available. This value is not guaranteed to be Sendable.
     public let underlyingError: (any Error)?
 
+    /// Creates a terminal checkout presentation failure.
     public init(
         code: CheckoutErrorCode,
         message: String,
@@ -41,6 +69,7 @@ public struct CheckoutError: LocalizedError {
         message
     }
 
+    /// Creates an SDK failure using an underlying native error as diagnostic context.
     internal static func sdkError(underlying: any Error) -> Self {
         Self(code: .sdkError, message: underlying.localizedDescription, underlyingError: underlying)
     }
