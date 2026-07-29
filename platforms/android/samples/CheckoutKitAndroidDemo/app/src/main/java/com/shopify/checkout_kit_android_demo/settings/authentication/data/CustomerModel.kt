@@ -29,6 +29,11 @@ data class AccessToken(
     fun hasExpired(): Boolean {
         return expiresAt < Instant.now().toEpochMilli()
     }
+
+    override fun toString(): String {
+        return "AccessToken(accessToken=***, refreshToken=***, tokenType=$tokenType, " +
+            "expiresIn=$expiresIn, idToken=${if (idToken == null) "null" else "***"}, expiresAt=$expiresAt)"
+    }
 }
 
 @Serializable

@@ -21,6 +21,7 @@ mockitoCore = "5.23.0"
 mockitoKotlin = "6.3.0"
 robolectric = "4.16.1"
 timber = "5.0.1"
+tink = "1.23.0"
 
 androidxActivity = "1.13.0"
 androidxAppCompat = "1.7.1"
@@ -75,6 +76,7 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidApplicationGradlePlugin" }

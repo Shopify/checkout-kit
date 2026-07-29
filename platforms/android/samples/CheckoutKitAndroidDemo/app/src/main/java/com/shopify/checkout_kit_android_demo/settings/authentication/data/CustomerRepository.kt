@@ -43,12 +43,12 @@ class CustomerRepository(
         val token = getCustomerAccessToken() ?: return null
         when (val result = graphQLClient.getCustomer(token)) {
             is CustomerResponse.Success -> {
-                Timber.i("Fetched customer ${result.customer}")
+                Timber.i("Customer Account API customer retrieved")
                 return result.customer
             }
 
             is CustomerResponse.Error -> {
-                Timber.e("Error when fetching customer, ${result.message}")
+                Timber.e("Error when fetching customer from Customer Account API")
                 return null
             }
         }
@@ -67,7 +67,9 @@ class CustomerRepository(
             return localToken
         }
 
-        return restClient.refreshAccessToken(localToken).toToken()
+        val refreshedToken = restClient.refreshAccessToken(localToken).toToken()
+        updateAuthenticationState(refreshedToken)
+        return refreshedToken
     }
 
     /**
@@ -82,15 +84,15 @@ class CustomerRepository(
                 return customerAccessToken
             } else {
                 Timber.i("Locally stored customer access token expired, refreshing")
-                return restClient.refreshAccessToken(customerAccessToken).toToken()
+                val refreshedToken = restClient.refreshAccessToken(customerAccessToken).toToken()
+                updateAuthenticationState(refreshedToken)
+                return refreshedToken
             }
         }
 
         Timber.i("No locally stored token found, fetching remote token")
         val newToken = restClient.fetchAccessToken(code, codeVerifier).toToken()
-        if (newToken != null) {
-            updateAuthenticationState()
-        }
+        updateAuthenticationState(newToken)
         return newToken
     }
 
@@ -98,28 +100,39 @@ class CustomerRepository(
         val idToken = getCustomerAccessToken()?.idToken ?: ""
         Timber.i("Logging out and deleting stored token")
         restClient.logout(idToken)
-        localTokenStore.delete()
+        if (!localTokenStore.delete()) {
+            Timber.w("Unable to delete stored customer access token")
+        }
         updateAuthenticationState()
     }
 
     private suspend fun OAuthTokenResult.toToken(): AccessToken? {
         return when (this) {
             is OAuthTokenResult.Success -> {
-                Timber.i("Customer Account API token retrieved $this")
-                localTokenStore.save(this.token)
-                this.token
+                Timber.i("Customer Account API token retrieved, expires at ${this.token.expiresAt}")
+                if (localTokenStore.save(this.token)) {
+                    this.token
+                } else {
+                    Timber.w("Unable to persist Customer Account API token")
+                    if (!localTokenStore.delete()) {
+                        Timber.w("Unable to delete stored customer access token")
+                    }
+                    null
+                }
             }
 
             is OAuthTokenResult.Error -> {
-                Timber.i("Failed to fetch Customer Account API token, ${this.message}")
+                Timber.i("Failed to fetch Customer Account API token")
                 null
             }
         }
     }
 
     private suspend fun updateAuthenticationState() {
-        val token = localTokenStore.find()
-        val isAuthenticated = token != null && !token.hasExpired()
-        _isAuthenticated.value = isAuthenticated
+        updateAuthenticationState(localTokenStore.find())
+    }
+
+    private fun updateAuthenticationState(token: AccessToken?) {
+        _isAuthenticated.value = token != null && !token.hasExpired()
     }
 }

@@ -226,13 +226,22 @@ commands:
         run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
 
       test:
-        desc: Run all tests with clean build
-        run: platforms/android/gradlew -p platforms/android clean test --console=plain
+        desc: Run all library and demo app tests
+        run: |
+          set -e
+          scripts/check_storefront_env
+          platforms/android/gradlew -p platforms/android clean test --console=plain
+          platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
         subcommands:
           specific:
             desc: Run specific test class
             syntax: <TestClassName> (e.g. CheckoutBridgeTest)
             run: platforms/android/gradlew -p platforms/android :lib:testDebugUnitTest --tests "$1"
+          demo:
+            desc: Run demo app unit tests
+            run: |
+              scripts/check_storefront_env
+              platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
 
       lint:
         desc: Check code style and lint (detekt + Android lint)

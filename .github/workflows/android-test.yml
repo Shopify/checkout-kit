@@ -31,6 +31,19 @@ jobs:
       - name: Run Tests
         run: ./gradlew test --console=plain
 
+      - name: Setup sample app environment
+        id: sample_env
+        if: ${{ !cancelled() }}
+        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+        env:
+          STOREFRONT_DOMAIN: example.myshopify.com
+          STOREFRONT_ACCESS_TOKEN: test-token
+
+      - name: Run Sample App Unit Tests
+        if: ${{ !cancelled() && steps.sample_env.outcome == 'success' }}
+        run: ./gradlew :app:testDebugUnitTest --console=plain
+        working-directory: platforms/android/samples/CheckoutKitAndroidDemo
+
       - name: Annotate failed tests
         if: failure()
         working-directory: ${{ github.workspace }}
@@ -48,6 +61,7 @@ jobs:
 
           result_files = Dir[
             "platforms/android/lib/build/test-results/testDebugUnitTest/TEST-*.xml",
+            "platforms/android/samples/CheckoutKitAndroidDemo/app/build/test-results/testDebugUnitTest/TEST-*.xml",
             "protocol/languages/kotlin/embedded-checkout-protocol/build/test-results/test/TEST-*.xml",
           ]
 

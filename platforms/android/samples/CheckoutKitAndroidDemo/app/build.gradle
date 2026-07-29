@@ -117,6 +117,10 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+    sourceSets {
+        // Exposes the real backup rules to TokenBackupRulesTest rather than copies.
+        test.resources.srcDir 'src/main/res/xml'
+    }
 }
 
 tasks.withType(KotlinJvmCompile).configureEach {
@@ -124,6 +128,7 @@ tasks.withType(KotlinJvmCompile).configureEach {
         jvmTarget = JvmTarget.JVM_11
     }
 }
+
 
 dependencies {
     // Checkout Kit
@@ -158,8 +163,14 @@ dependencies {
     // Logging
     implementation libs.timber
 
+    // Encrypts Customer Account access tokens with an Android Keystore-wrapped keyset.
+    implementation libs.tink.android
+
     // Serialization
     implementation libs.kotlinx.serialization.json.demo
+
+    testImplementation libs.junit
+    testImplementation libs.assertj.core
 
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.androidx.compose.ui.test.manifest
