@@ -19,10 +19,13 @@ schemes:
     build:
       targets:
         CheckoutKitSwiftDemo: all
+        CheckoutKitSwiftDemoTests: [test]
     run:
       config: Debug
     test:
       config: Debug
+      targets:
+        - CheckoutKitSwiftDemoTests
     profile:
       config: Release
     analyze:
@@ -128,3 +131,27 @@ targets:
         com.apple.developer.associated-domains:
           - webcredentials:$(STOREFRONT_DOMAIN)?mode=developer
           - applinks:$(STOREFRONT_DOMAIN)?mode=developer
+
+  CheckoutKitSwiftDemoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: CheckoutKitSwiftDemoTests
+    dependencies:
+      - target: CheckoutKitSwiftDemo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.shopify.checkoutkit.swiftdemo.tests
+        DEVELOPMENT_TEAM: A7XGC83MZE
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/CheckoutKitSwiftDemo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CheckoutKitSwiftDemo
+        BUNDLE_LOADER: $(TEST_HOST)
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/Frameworks"
+          - "@loader_path/Frameworks"
+    info:
+      path: CheckoutKitSwiftDemoTests/Info.plist
+      properties: {}

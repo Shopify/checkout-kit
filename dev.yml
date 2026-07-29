@@ -226,9 +226,15 @@ commands:
         run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
 
       test:
-        desc: Run all tests with clean build
-        run: platforms/android/gradlew -p platforms/android clean test --console=plain
+        desc: Run all library and sample app tests with clean build
+        run: |
+          set -e
+          platforms/android/gradlew -p platforms/android clean test --console=plain
+          platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
         subcommands:
+          sample:
+            desc: Run the sample app unit tests
+            run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
           specific:
             desc: Run specific test class
             syntax: <TestClassName> (e.g. CheckoutBridgeTest)
@@ -352,10 +358,24 @@ commands:
           ../Scripts/xcode_run build CheckoutKitSwiftDemo
       test:
         desc: |
-          `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package.
-          `dev swift test <test_class_name>` - Run only the specified test class.
+          `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package and the sample apps.
+          `dev swift test <test_class_name>` - Run only the specified package test class.
+          `dev swift test sample [test_class_name]` - Run only the sample app test targets.
         syntax: "[test_class_name]"
-        run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
+        run: |
+          set -e
+          cd platforms/swift
+          if [ -n "${1:-}" ]; then
+            ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
+          else
+            ./Scripts/xcode_run test ShopifyCheckoutKit-Package
+            ./Scripts/test_samples
+          fi
+        subcommands:
+          sample:
+            desc: Run the sample app test targets
+            syntax: "[test_class_name]"
+            run: cd platforms/swift && ./Scripts/test_samples "${1:-}"
       api:
         desc: Validate or update the public Swift API baseline (platforms/swift/api/*.json)
         run: |

@@ -1,11 +1,8 @@
 import {useCallback} from 'react';
 import {Alert} from 'react-native';
 import {useCart} from '../context/Cart';
-import {
-  parseCartBootstrapLink,
-  type CartBootstrapLink,
-} from '../linking/cartBootstrap';
-import useShopify from './useShopify';
+import useShopify from '../hooks/useShopify';
+import {parseCartBootstrapLink, type CartBootstrapLink} from './cartBootstrap';
 
 type UseE2ECartBootstrapOptions = {
   onCartReady: () => void;

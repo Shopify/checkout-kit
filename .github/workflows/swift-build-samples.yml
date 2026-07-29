@@ -1,4 +1,4 @@
-name: Swift — Build Sample Apps
+name: Swift — Build & Test Sample Apps
 
 on:
   workflow_call:
@@ -11,6 +11,6 @@ jobs:
   build-samples:
     uses: ./.github/workflows/swift-test-workflow.yml
     with:
-      test-path: ./Scripts/build_samples
-      job-name: Build Sample Apps
+      test-path: ./Scripts/build_samples && ./Scripts/test_samples
+      job-name: Build & Test Sample Apps
       setup-storefront-env: true

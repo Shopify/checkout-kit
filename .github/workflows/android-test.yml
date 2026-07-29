@@ -106,6 +106,20 @@ jobs:
         run: ./gradlew assembleDebug
         working-directory: platforms/android/samples/CheckoutKitAndroidDemo
 
+      - name: Run Sample App Tests
+        run: ./gradlew :app:testDebugUnitTest --console=plain
+        working-directory: platforms/android/samples/CheckoutKitAndroidDemo
+
+      - name: Upload sample test reports
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-sample-test-reports
+          path: |
+            platforms/android/samples/CheckoutKitAndroidDemo/**/build/reports/tests/
+            platforms/android/samples/CheckoutKitAndroidDemo/**/build/test-results/
+          if-no-files-found: warn
+
   lint:
     runs-on: ubuntu-latest
     defaults:
