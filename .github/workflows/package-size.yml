@@ -17,6 +17,7 @@ jobs:
     name: Detect Changed Packages
     if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       android: ${{ steps.package.outputs.android == 'true' || steps.package.outputs.protocol == 'true' || steps.infra.outputs.android == 'true' }}
       reactNative: ${{ steps.package.outputs.reactNative == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.infra.outputs.reactNative == 'true' }}

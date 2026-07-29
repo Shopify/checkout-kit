@@ -12,6 +12,7 @@ permissions:
 jobs:
   check-updates:
     runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 20
     env:
       MINT_PATH: ${{ github.workspace }}/.mint/lib
       MINT_LINK_PATH: ${{ github.workspace }}/.mint/bin
