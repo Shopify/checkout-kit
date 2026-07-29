@@ -30,9 +30,9 @@ jobs:
     outputs:
       android: ${{ steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.android == 'true' }}
       swift: ${{ steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.swift == 'true' }}
-      reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
-      reactNativeIos: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' }}
-      reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.android == 'true' || steps.platform.outputs.protocol == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
+      reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
+      reactNativeIos: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' }}
+      reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       web: ${{ steps.platform.outputs.web == 'true' || steps.infra.outputs.web == 'true' }}
       protocol: ${{ steps.platform.outputs.protocol == 'true' || steps.infra.outputs.protocol == 'true' }}
       scripts: ${{ steps.infra.outputs.scripts == 'true' }}
