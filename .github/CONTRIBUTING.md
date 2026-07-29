@@ -237,14 +237,14 @@ Open a pull request with the following changes:
 1. Bump `embeddedCheckoutProtocolAndroid` in `platforms/android/gradle/libs.versions.toml`.
 2. Update `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public protocol API changed.
 
-Supported protocol release versions are `YYYY.MM.DD.PATCH` and prerelease versions are `YYYY.MM.DD.PATCH-{alpha|beta|rc}.N`.
+Supported protocol release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`. The Maven artifact uses SemVer for SDK compatibility; the UCP wire protocol revision remains CalVer.
 
 Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
 
 1. Select `Embedded Checkout Protocol` as the platform.
 2. Enter the expected version. The workflow reads the protocol version from `platforms/android/gradle/libs.versions.toml` and fails if the typed version does not match.
 3. Select `Dry run` first to review the release plan without creating a release.
-4. Rerun with `Draft release` to create a draft GitHub Release with the `embedded-checkout-protocol/`-prefixed tag (e.g. `embedded-checkout-protocol/2026.04.08.1-alpha.1`) for human review.
+4. Rerun with `Draft release` to create a draft GitHub Release with the `embedded-checkout-protocol/`-prefixed tag (e.g. `embedded-checkout-protocol/4.0.0-alpha.1`) for human review.
 5. Publish the draft release when ready. Publishing the draft kicks off the [Embedded Checkout Protocol publish workflow](../../actions/workflows/android-protocol-publish.yml). **A manual approval by a maintainer is required before publication to Maven Central.**
 
 ### Releasing a new Android version

@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     # Only run for Embedded Checkout Protocol releases. Protocol releases are
-    # tagged `embedded-checkout-protocol/YYYY.MM.DD.PATCH[-prerelease.N]`.
+    # tagged `embedded-checkout-protocol/X.Y.Z[-prerelease.N]`.
     if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'embedded-checkout-protocol/') }}
     environment:
       name: Central Repository Deployment
