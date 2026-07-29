@@ -10,6 +10,7 @@ applications:
     changed_files_filters:
       - reactNative
       - protocolTypescript
+      - protocolShared
       - e2e
       - ciFilters
   - id: react-native-android
@@ -21,6 +22,7 @@ applications:
     changed_files_filters:
       - reactNative
       - protocolTypescript
+      - protocolShared
       - e2e
       - ciFilters
   - id: kotlin-android
@@ -32,6 +34,7 @@ applications:
     changed_files_filters:
       - android
       - protocolKotlin
+      - protocolShared
       - e2e
       - ciFilters
   - id: swift-ios
@@ -43,6 +46,7 @@ applications:
     changed_files_filters:
       - swift
       - protocolSwift
+      - protocolShared
       - packageSwift
       - e2e
       - ciFilters

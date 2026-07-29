@@ -58,6 +58,10 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal ["react-native-ios", "react-native-android", "kotlin-android", "swift-ios"], selected_ids([".ci/changed-file-filters.yml"])
   end
 
+  def test_shared_protocol_change_selects_all_applications
+    assert_equal ["react-native-ios", "react-native-android", "kotlin-android", "swift-ios"], selected_ids(["protocol/schemas/ucp.json"])
+  end
+
   def test_bitrise_env_reports_runs_present_when_applications_selected
     env = plan(changed_files: ["platforms/react-native/src/index.ts"]).bitrise_env
 

@@ -19,9 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      android: ${{ steps.package.outputs.android == 'true' || steps.package.outputs.protocol == 'true' || steps.infra.outputs.android == 'true' }}
-      reactNative: ${{ steps.package.outputs.reactNative == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.infra.outputs.reactNative == 'true' }}
-      web: ${{ steps.package.outputs.web == 'true' || steps.infra.outputs.web == 'true' }}
+      android: ${{ steps.package.outputs.android == 'true' || steps.package.outputs.protocolKotlin == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.android == 'true' }}
+      reactNative: ${{ steps.package.outputs.reactNative == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.reactNative == 'true' }}
+      web: ${{ steps.package.outputs.web == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
