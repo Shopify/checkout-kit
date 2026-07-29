@@ -363,6 +363,27 @@ describe("<shopify-checkout>", () => {
   });
 
   describe("lifecycle", () => {
+    it("replaces the protocol message listener on reconnect and aborts it on disconnect", () => {
+      const addEventListener = vi.spyOn(window, "addEventListener");
+      const checkout = renderCheckout();
+      const firstOptions = addEventListener.mock.calls.find(
+        ([type]) => type === "message",
+      )?.[2] as AddEventListenerOptions;
+
+      checkout.connectedCallback();
+      const messageListenerOptions = addEventListener.mock.calls.filter(
+        ([type]) => type === "message",
+      );
+      const secondOptions = messageListenerOptions[1]?.[2] as AddEventListenerOptions;
+
+      expect(firstOptions.signal?.aborted).toBe(true);
+      expect(secondOptions.signal?.aborted).toBe(false);
+
+      checkout.disconnectedCallback();
+
+      expect(secondOptions.signal?.aborted).toBe(true);
+    });
+
     it("preserves the shadow tree across element moves", () => {
       const checkout = renderCheckout();
       const wrapper = checkout.shadowRoot!.querySelector("#shopify-element-wrapper");
