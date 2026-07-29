@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.os.Looper
+import android.webkit.RenderProcessGoneDetail
 import androidx.activity.ComponentActivity
 import com.shopify.ucp.embedded.checkout.WindowOpenRequest
 import com.shopify.ucp.embedded.checkout.windowOpenRejected
@@ -24,6 +25,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 @RunWith(RobolectricTestRunner::class)
 @Suppress("LargeClass")
@@ -525,7 +527,103 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `terminal ec error invalidates cached preload`() {
+    fun `renderer termination after terminal error delivers one lifecycle failure`() {
+        ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        viewSpy.CheckoutWebViewClient().onRenderProcessGone(viewSpy, mock<RenderProcessGoneDetail>())
+
+        verify(mockListener, Mockito.times(1)).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `terminal error after renderer termination delivers one lifecycle failure`() {
+        viewSpy.CheckoutWebViewClient().onRenderProcessGone(viewSpy, mock<RenderProcessGoneDetail>())
+        ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+
+        verify(mockListener, Mockito.times(1)).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `terminal ec error transitions cached preload to protocol failure`() {
+        val preload = CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)!!
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val preloadBridge = EmbeddedCheckoutProtocolBridge(
+            cachedWebView,
+            webMessageTransport,
+            protocolMessageExecutor = directExecutor,
+        )
+
+        preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
+        assertThat(preload.state).isEqualTo(PreloadState.Failed(PreloadState.FailureReason.ProtocolError))
+    }
+
+    @Test
+    fun `duplicate terminal errors on backgrounded preload do not deliver lifecycle failure`() {
+        CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        cachedWebView.setListener(mockListener)
+        val preloadBridge = EmbeddedCheckoutProtocolBridge(
+            cachedWebView,
+            webMessageTransport,
+            protocolMessageExecutor = directExecutor,
+        )
+
+        preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        verify(mockListener, Mockito.never()).onCheckoutViewFailedWithError(any())
+    }
+
+    @Test
+    fun `terminal cached preload error defers cache eviction from protocol executor to main thread`() {
+        val preload = CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)!!
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val executor = Executors.newSingleThreadExecutor()
+        val bridge = EmbeddedCheckoutProtocolBridge(
+            cachedWebView,
+            webMessageTransport,
+            protocolMessageExecutor = executor,
+        )
+
+        try {
+            bridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+            executor.submit {}.get()
+
+            assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
+
+            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+            assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+            assertThat(preload.state).isEqualTo(PreloadState.Failed(PreloadState.FailureReason.ProtocolError))
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `terminal ec error of retained post-presentation checkout transitions preload to idle`() {
+        val preload = CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)!!
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        val view = CheckoutWebView.checkoutViewFor("https://shopify.dev/cart/123", activity, webMessageTransport)
+        view.markPresented()
+        assertThat(CheckoutWebView.releaseAfterPresentation(view)).isTrue()
+        val bridge = EmbeddedCheckoutProtocolBridge(view, webMessageTransport, protocolMessageExecutor = directExecutor)
+
+        bridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(preload.state).isEqualTo(PreloadState.Idle)
+    }
+
+    @Test
+    fun `terminal error from foreign view does not evict active cached preload`() {
         CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
@@ -533,12 +631,11 @@ class EmbeddedCheckoutProtocolBridgeTest {
         ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
-        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
     }
 
     @Test
-    fun `terminal preload error does not suppress a later presented lifecycle failure`() {
+    fun `terminal error of noncached preload delivers lifecycle failure`() {
         val preloadedView = CheckoutWebView(activity, webMessageTransport).apply {
             loadCheckout("https://shopify.dev/cart/123", isPreload = true)
             setListener(mockListener)
@@ -549,10 +646,6 @@ class EmbeddedCheckoutProtocolBridgeTest {
             protocolMessageExecutor = directExecutor,
         )
 
-        preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        Mockito.verifyNoInteractions(mockListener)
-
-        preloadedView.markPreloadConsumed()
         preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 

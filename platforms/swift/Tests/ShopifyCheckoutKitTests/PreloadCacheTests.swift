@@ -46,6 +46,39 @@ class PreloadCacheTests: XCTestCase {
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
     }
 
+    func test_WebContentProcessTerminationOnSlotOccupantClearsSlot() {
+        let entry = storeCacheEntry()
+
+        entry.webViewWebContentProcessDidTerminate(entry)
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .failed(reason: .webContentProcessTerminated))
+    }
+
+    func test_WebContentProcessTerminationOnBackgroundedPreloadDoesNotDeliverLifecycleFailure() {
+        let entry = storeCacheEntry()
+        let delegate = MockCheckoutWebViewDelegate()
+        entry.viewDelegate = delegate
+
+        entry.webViewWebContentProcessDidTerminate(entry)
+
+        XCTAssertNil(delegate.errorReceived)
+        XCTAssertEqual(delegate.failureCount, 0)
+    }
+
+    func test_WebContentProcessTerminationOnPresentedSlotOccupantClearsSlot() throws {
+        let entry = storeCacheEntry()
+        entry.hasBeenPresented = true
+        let delegate = MockCheckoutWebViewDelegate()
+        entry.viewDelegate = delegate
+
+        entry.webViewWebContentProcessDidTerminate(entry)
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .idle)
+        XCTAssertEqual(try XCTUnwrap(delegate.errorReceived).code, .webContentProcessTerminated)
+    }
+
     func test_CompleteOnSlotOccupantClearsSlot() async {
         let entry = storeCacheEntry()
 
@@ -88,6 +121,29 @@ class PreloadCacheTests: XCTestCase {
         XCTAssertEqual(delegate.failureCount, 0)
     }
 
+    func test_WebContentProcessTerminationAfterTerminalErrorOnBackgroundedPreloadDoesNotDeliverLifecycleFailure() async {
+        let entry = storeCacheEntry()
+        let preload = CheckoutPreload(cache: CheckoutWebView.preloadCache)
+        let preloadFailed = preloadFailureExpectation(for: preload)
+        let delegate = MockCheckoutWebViewDelegate()
+        let didFail = expectation(description: "view delegate does not receive failure")
+        didFail.isInverted = true
+        delegate.didFailWithErrorExpectation = didFail
+        entry.viewDelegate = delegate
+
+        entry.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecErrorBody(severity: "unrecoverable"))
+        )
+        await fulfillment(of: [preloadFailed], timeout: 2.0)
+
+        entry.webViewWebContentProcessDidTerminate(entry)
+
+        await fulfillment(of: [didFail], timeout: 0.1)
+        XCTAssertEqual(delegate.failureCount, 0)
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .failed(reason: .protocolError))
+    }
+
     func test_TerminalErrorOnPresentedSlotOccupantClearsSlot() async {
         let entry = storeCacheEntry()
         entry.hasBeenPresented = true
@@ -122,6 +178,15 @@ class PreloadCacheTests: XCTestCase {
         let foreign = CheckoutWebView(entryPoint: nil)
 
         foreign.webView(foreign, didFail: nil, withError: timeoutError())
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(entry))
+    }
+
+    func test_WebContentProcessTerminationOnForeignViewPreservesSlot() {
+        let entry = storeCacheEntry()
+        let foreign = CheckoutWebView(entryPoint: nil)
+
+        foreign.webViewWebContentProcessDidTerminate(foreign)
 
         XCTAssertTrue(CheckoutWebView.preloadCache.contains(entry))
     }

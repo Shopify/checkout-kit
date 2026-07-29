@@ -60,6 +60,13 @@ internal class CheckoutWebView private constructor(
 
     private var checkoutRequest: CheckoutRequest? = null
     private var didRetryCheckoutRequest = false
+
+    /**
+     * Ensures one terminal failure is handled per checkout session, regardless of whether it
+     * originated from `ec.error` or renderer termination.
+     */
+    internal var hasHandledTerminalFailure = false
+
     private val touchHandler = CheckoutWebViewTouchHandler()
 
     /** Origin of the loaded checkout URL, trusted as a safe default for incoming-message validation. */
@@ -132,6 +139,7 @@ internal class CheckoutWebView private constructor(
         isPreloadRequest = isPreload
         checkoutOrigin = OriginAllowlist.originFromUrl(url)
         Handler(Looper.getMainLooper()).post {
+            hasHandledTerminalFailure = false
             val request = CheckoutRequest(
                 url = CheckoutUrlDecorator.decorate(url),
                 headers = if (isPreload) {
@@ -184,17 +192,24 @@ internal class CheckoutWebView private constructor(
         }
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-            preloadCache.evict(this@CheckoutWebView, PreloadState.Idle)
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !detail.didCrash()) {
-                // Renderer was killed because system ran out of memory.
-                log.d(LOG_TAG, "onRenderProcessGone called, calling onCheckoutFailedWithError")
-                listener.onCheckoutViewFailedWithError(
-                    CheckoutException.webContentProcessTerminated("Render process gone.")
-                )
-                true
-            } else {
-                false
-            }
+            val shouldDeliverLifecycleFailure = !hasHandledTerminalFailure
+            hasHandledTerminalFailure = true
+            val wasBackgroundedUnconsumedPreload = evictForTerminalFailure(
+                this@CheckoutWebView,
+                PreloadState.FailureReason.WebContentProcessTerminated,
+            )
+            if (wasBackgroundedUnconsumedPreload || !shouldDeliverLifecycleFailure) return true
+
+            // didCrash is API 26; framework delivery of this callback also begins on API 26.
+            val didCrash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) detail.didCrash() else null
+            log.e(
+                LOG_TAG,
+                "Render process gone (didCrash=$didCrash), calling onCheckoutViewFailedWithError",
+            )
+            listener.onCheckoutViewFailedWithError(
+                CheckoutException.webContentProcessTerminated("Web content process terminated.")
+            )
+            return true
         }
 
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -368,6 +383,23 @@ internal class CheckoutWebView private constructor(
         )
         private val preloadCache = PreloadCache()
 
+        internal fun evictForTerminalFailure(
+            view: CheckoutWebView,
+            backgroundedPreloadReason: PreloadState.FailureReason,
+        ): Boolean {
+            val wasBackgroundedUnconsumedPreload =
+                preloadCache.contains(view) && view.isPreloadRequest && !view.isPresented
+            preloadCache.evict(
+                view,
+                if (wasBackgroundedUnconsumedPreload) {
+                    PreloadState.Failed(backgroundedPreloadReason)
+                } else {
+                    PreloadState.Idle
+                },
+            )
+            return wasBackgroundedUnconsumedPreload
+        }
+
         internal var cacheClock: PreloadCache.Clock
             get() = preloadCache.clock
             set(value) {
@@ -453,21 +485,6 @@ internal class CheckoutWebView private constructor(
             preloadCache.discard(view)
         }
 
-        private fun <T> runOnUiThreadBlocking(activity: ComponentActivity, action: () -> T): T {
-            if (Looper.myLooper() == Looper.getMainLooper()) {
-                return action()
-            }
-
-            var result: Result<T>? = null
-            val countDownLatch = CountDownLatch(1)
-            activity.runOnUiThread {
-                result = runCatching { action() }
-                countDownLatch.countDown()
-            }
-            countDownLatch.await()
-            return requireNotNull(result).getOrThrow()
-        }
-
         private fun runOnMainThread(action: () -> Unit) {
             if (Looper.myLooper() == Looper.getMainLooper()) {
                 action()
@@ -488,6 +505,21 @@ private fun insecureCheckoutUrlException(url: String): CheckoutException = Check
     code = CheckoutErrorCode.SDK_ERROR,
     message = "Checkout requires an HTTPS URL: ${url.redactedUrlForLogging()}",
 )
+
+private fun <T> runOnUiThreadBlocking(activity: ComponentActivity, action: () -> T): T {
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+        return action()
+    }
+
+    var result: Result<T>? = null
+    val countDownLatch = CountDownLatch(1)
+    activity.runOnUiThread {
+        result = runCatching { action() }
+        countDownLatch.countDown()
+    }
+    countDownLatch.await()
+    return requireNotNull(result).getOrThrow()
+}
 
 internal class CheckoutWebViewTouchHandler {
     private var lastTouchRawY = 0f

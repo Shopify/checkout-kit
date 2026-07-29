@@ -370,7 +370,9 @@ class CheckoutWebView: WKWebView {
     /// longer drive preload state, even after dismissal or reuse.
     var hasBeenPresented = false
 
-    private var didReceiveTerminalProtocolError = false
+    /// Ensures one terminal failure is handled per checkout session, regardless
+    /// of whether it originated from `ec.error` or WebKit process termination.
+    private var hasHandledTerminalFailure = false
     private var entryPoint: MetaData.EntryPoint?
 
     // MARK: Initializers
@@ -458,7 +460,7 @@ class CheckoutWebView: WKWebView {
 
         checkoutRequest = request
         didRetryCheckoutNavigation = false
-        didReceiveTerminalProtocolError = false
+        hasHandledTerminalFailure = false
         checkoutNavigation = load(request)
     }
 
@@ -568,7 +570,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
                 await checkoutBridge.sendResponse(self, messageBody: response)
             }
 
-            guard !didReceiveTerminalProtocolError else { return }
+            guard !hasHandledTerminalFailure else { return }
 
             // `ec.error` denotes a terminal session error. Message severity selects the public
             // lifecycle code, but does not keep the embedded session alive.
@@ -585,9 +587,9 @@ extension CheckoutWebView: WKScriptMessageHandler {
 
             let wasBackgroundedPreload = isPreloadBackgrounded
             handleCachedViewFailure(.protocolError)
+            hasHandledTerminalFailure = true
             guard !wasBackgroundedPreload else { return }
 
-            didReceiveTerminalProtocolError = true
             viewDelegate?.checkoutViewDidFailWithError(error: failure)
         }
     }
@@ -726,6 +728,24 @@ extension CheckoutWebView: WKNavigationDelegate {
         if navigation === checkoutNavigation {
             resetProvisionalNavigationRetryState()
         }
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        guard !hasHandledTerminalFailure else { return }
+        hasHandledTerminalFailure = true
+        timer = nil
+        resetProvisionalNavigationRetryState()
+        let wasBackgroundedPreload = isPreloadBackgrounded
+        handleCachedViewFailure(.webContentProcessTerminated)
+
+        guard !wasBackgroundedPreload else { return }
+
+        OSLogger.shared.error("Web content process terminated - url:\(LogSafeURL.string(webView.url))")
+        viewDelegate?.checkoutViewDidFailWithError(
+            error: CheckoutError.webContentProcessTerminated(
+                message: "Web content process terminated."
+            )
+        )
     }
 
     func webView(_ webView: WKWebView, didFail _: WKNavigation!, withError error: Error) {

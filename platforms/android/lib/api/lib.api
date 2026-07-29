@@ -623,6 +623,20 @@ public final class com/shopify/checkoutkit/PreloadState$FailureReason$Navigation
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/shopify/checkoutkit/PreloadState$FailureReason$ProtocolError : com/shopify/checkoutkit/PreloadState$FailureReason {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$FailureReason$ProtocolError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/PreloadState$FailureReason$WebContentProcessTerminated : com/shopify/checkoutkit/PreloadState$FailureReason {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$FailureReason$WebContentProcessTerminated;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/shopify/checkoutkit/PreloadState$Idle : com/shopify/checkoutkit/PreloadState {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$Idle;
 	public fun equals (Ljava/lang/Object;)Z

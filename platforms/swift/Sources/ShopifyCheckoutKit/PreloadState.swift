@@ -29,8 +29,11 @@ public enum PreloadState: Equatable {
         /// Preload navigation failed.
         case navigationFailed
 
-        /// The background WebView was no longer available, including process termination.
+        /// The background WebView did not respond to the SDK's keep-alive check.
         case keepAliveLost
+
+        /// WebKit terminated the background WebView's content process.
+        case webContentProcessTerminated
 
         /// Checkout sent a terminal protocol error while preloading.
         case protocolError

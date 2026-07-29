@@ -380,22 +380,9 @@ class CheckoutWebViewClientTest {
         verify(checkoutWebViewListener).onCheckoutViewLoadComplete()
     }
 
-    @Test
-    fun `onRenderProcessGone should return false if sdk version is too low to check detail#didCrash()`() {
-        val view = viewWithProcessor(activity)
-        val webViewClient = view.CheckoutWebViewClient()
-        val detail = mock<RenderProcessGoneDetail>()
-        whenever(detail.didCrash()).thenReturn(false)
-
-        val result = webViewClient.onRenderProcessGone(view, detail)
-
-        assertThat(result).isFalse
-        verify(checkoutWebViewListener, never()).onCheckoutViewFailedWithError(any())
-    }
-
     @Config(sdk = [26])
     @Test
-    fun `onRenderProcessGone should do nothing if the renderer crashed`() {
+    fun `onRenderProcessGone reports stable lifecycle failure for renderer crash`() {
         val view = viewWithProcessor(activity)
         val webViewClient = view.CheckoutWebViewClient()
         val detail = mock<RenderProcessGoneDetail>()
@@ -403,13 +390,17 @@ class CheckoutWebViewClientTest {
 
         val result = webViewClient.onRenderProcessGone(view, detail)
 
-        assertThat(result).isFalse
-        verify(checkoutWebViewListener, never()).onCheckoutViewFailedWithError(any())
+        assertThat(result).isTrue
+        val captor = argumentCaptor<CheckoutException>()
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
+        assertThat(captor.firstValue)
+            .hasCode(CheckoutErrorCode.WEB_CONTENT_PROCESS_TERMINATED)
+            .hasMessage("Web content process terminated.")
     }
 
     @Config(sdk = [26])
     @Test
-    fun `onRenderProcessGone should call onCheckoutFailed if the render process crashed due to low memory`() {
+    fun `onRenderProcessGone reports stable lifecycle failure for system termination`() {
         val view = viewWithProcessor(activity)
         val webViewClient = view.CheckoutWebViewClient()
         val detail = mock<RenderProcessGoneDetail>()
@@ -422,7 +413,43 @@ class CheckoutWebViewClientTest {
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
         assertThat(captor.firstValue)
             .hasCode(CheckoutErrorCode.WEB_CONTENT_PROCESS_TERMINATED)
-            .hasMessage("Render process gone.")
+            .hasMessage("Web content process terminated.")
+    }
+
+    @Config(sdk = [26])
+    @Test
+    fun `renderer termination of backgrounded preload does not report lifecycle failure`() {
+        val checkoutUrl = "https://checkout.shopify.com/cart/123"
+        CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val view = requireNotNull(CheckoutWebView.cachedPreloadViewForTesting())
+        view.setListener(checkoutWebViewListener)
+        val detail = mock<RenderProcessGoneDetail>()
+        whenever(detail.didCrash()).thenReturn(false)
+
+        view.CheckoutWebViewClient().onRenderProcessGone(view, detail)
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        verify(checkoutWebViewListener, never()).onCheckoutViewFailedWithError(any())
+    }
+
+    @Config(sdk = [26])
+    @Test
+    fun `renderer termination of presented cached checkout reports lifecycle failure`() {
+        val checkoutUrl = "https://checkout.shopify.com/cart/123"
+        CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val view = requireNotNull(CheckoutWebView.cachedPreloadViewForTesting())
+        view.markPresented()
+        view.setListener(checkoutWebViewListener)
+        val detail = mock<RenderProcessGoneDetail>()
+        whenever(detail.didCrash()).thenReturn(false)
+
+        view.CheckoutWebViewClient().onRenderProcessGone(view, detail)
+
+        val captor = argumentCaptor<CheckoutException>()
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
+        assertThat(captor.firstValue).hasCode(CheckoutErrorCode.WEB_CONTENT_PROCESS_TERMINATED)
     }
 
     @Config(sdk = [26])

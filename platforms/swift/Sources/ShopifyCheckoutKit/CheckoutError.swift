@@ -26,6 +26,9 @@ public enum CheckoutErrorCode: String, Codable, Sendable {
     /// Checkout navigation failed before an HTTP response was available.
     case networkError = "network_error"
 
+    /// The WebKit content process was terminated.
+    case webContentProcessTerminated = "web_content_process_terminated"
+
     /// An internal Checkout Kit error occurred, for example when a protocol message could not be decoded.
     case sdkError = "sdk_error"
 
@@ -86,6 +89,13 @@ extension CheckoutError {
 
     internal static func network(message: String, underlyingError: (any Error)? = nil) -> CheckoutError {
         CheckoutError(code: .networkError, message: message, underlyingError: underlyingError)
+    }
+
+    internal static func webContentProcessTerminated(
+        message: String,
+        underlyingError: (any Error)? = nil
+    ) -> CheckoutError {
+        CheckoutError(code: .webContentProcessTerminated, message: message, underlyingError: underlyingError)
     }
 
     internal static func sdk(message: String, underlyingError: (any Error)? = nil) -> CheckoutError {

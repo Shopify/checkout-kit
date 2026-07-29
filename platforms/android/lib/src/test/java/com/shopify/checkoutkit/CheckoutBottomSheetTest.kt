@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ProgressBar
@@ -508,6 +509,44 @@ class CheckoutBottomSheetTest {
         assertThat(webView).isSameAs(cachedWebView)
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
         assertThat(shadowOf(webView).wasOnResumeCalled()).isTrue()
+    }
+
+    @Test
+    fun `lifecycle failure retains preloaded checkoutView after sheet dismissal`() {
+        val listener = mock<DefaultCheckoutListener>()
+        CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val sheet = presentBottomSheet("https://shopify.com/cart/123", checkoutListener = listener)
+        val webView = sheet.currentCheckoutWebView()
+
+        webView.listener.onCheckoutViewFailedWithError(checkoutException())
+        runDismissAnimation()
+
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isFalse()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
+    }
+
+    @Test
+    fun `renderer failure in presented sheet is released by sheet dismissal`() {
+        val listener = mock<DefaultCheckoutListener>()
+        val sheet = presentBottomSheet(checkoutListener = listener)
+        sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)
+            .layout(0, 0, 400, 600)
+        val webView = sheet.currentCheckoutWebView()
+
+        val handled = webView.CheckoutWebViewClient().onRenderProcessGone(
+            webView,
+            mock<RenderProcessGoneDetail>(),
+        )
+        verify(listener).onCheckoutFailed(any())
+        assertThat(handled).isTrue()
+        assertThat(shadowOf(webView).wasDestroyCalled()).isFalse()
+
+        runDismissAnimation()
+
+        assertThat(shadowOf(webView).wasDestroyCalled()).isTrue()
+        assertThat(sheet.isShowing).isFalse()
     }
 
     @Test

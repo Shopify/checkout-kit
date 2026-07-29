@@ -274,10 +274,54 @@ class PreloadObservabilityTest {
 
     @Config(sdk = [26])
     @Test
-    fun `renderer termination empties cache and transitions to idle`() {
+    fun `renderer termination after preload ttl transitions to expired`() {
+        var now = 1_000L
+        CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
+            override fun currentTimeMillis(): Long = now
+        }
         val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
+        now += 5 * 60 * 1000L
+        val detail = mock<RenderProcessGoneDetail> {
+            whenever(it.didCrash()).thenReturn(false)
+        }
+
+        shadowOf(view).webViewClient.onRenderProcessGone(view, detail)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+        assertThat(preload.state).isEqualTo(PreloadState.Expired)
+    }
+
+    @Config(sdk = [26])
+    @Test
+    fun `renderer termination empties backgrounded preload cache and transitions to failed`() {
+        val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val view = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val detail = mock<RenderProcessGoneDetail> {
+            whenever(it.didCrash()).thenReturn(false)
+        }
+
+        shadowOf(view).webViewClient.onRenderProcessGone(view, detail)
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+        assertThat(preload.state).isEqualTo(
+            PreloadState.Failed(PreloadState.FailureReason.WebContentProcessTerminated),
+        )
+    }
+
+    @Config(sdk = [26])
+    @Test
+    fun `renderer termination of retained post-presentation checkout transitions preload to idle`() {
+        val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+        assertThat(CheckoutWebView.releaseAfterPresentation(view)).isTrue()
+        assertThat(view.isPreloadRequest).isFalse()
         val detail = mock<RenderProcessGoneDetail> {
             whenever(it.didCrash()).thenReturn(false)
         }
