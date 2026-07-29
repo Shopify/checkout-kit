@@ -181,9 +181,7 @@ describe('ShopifyCheckoutKit', () => {
         preloading: false,
       };
       instance.setConfig(configWithPreloading);
-      expect(NativeModule.setConfig).toHaveBeenCalledWith(
-        configWithPreloading,
-      );
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithPreloading);
     });
   });
 
@@ -195,7 +193,6 @@ describe('ShopifyCheckoutKit', () => {
       expect(NativeModule.preload).toHaveBeenCalledTimes(1);
       expect(NativeModule.preload).toHaveBeenCalledWith(checkoutUrl);
     });
-
   });
 
   describe('invalidate', () => {
@@ -223,6 +220,32 @@ describe('ShopifyCheckoutKit', () => {
       expect(NativeModule.onDispatch).toHaveBeenCalledWith(
         expect.any(Function),
       );
+    });
+
+    it('releases the prior dispatch subscription before a subsequent present call', () => {
+      const firstSubscription = {remove: jest.fn()};
+      const secondSubscription = {remove: jest.fn()};
+      NativeModule.onDispatch
+        .mockReturnValueOnce(firstSubscription)
+        .mockReturnValueOnce(secondSubscription);
+      const instance = new ShopifyCheckout();
+
+      instance.present(checkoutUrl, {onClose: jest.fn()});
+      instance.present(checkoutUrl, {onClose: jest.fn()});
+
+      expect(firstSubscription.remove).toHaveBeenCalledTimes(1);
+      expect(secondSubscription.remove).not.toHaveBeenCalled();
+    });
+
+    it('releases the dispatch subscription after a terminal close event', () => {
+      const subscription = {remove: jest.fn()};
+      NativeModule.onDispatch.mockReturnValueOnce(subscription);
+      const instance = new ShopifyCheckout();
+
+      instance.present(checkoutUrl, {onClose: jest.fn()});
+      lastDispatch()(JSON.stringify({type: 'close'}));
+
+      expect(subscription.remove).toHaveBeenCalledTimes(1);
     });
 
     it('invokes `onClose` when the dispatcher receives a close envelope', () => {
@@ -395,7 +418,10 @@ describe('ShopifyCheckoutKit', () => {
           [CheckoutProtocol.start]: onStart,
         });
         lastDispatch()(
-          JSON.stringify({type: CheckoutProtocol.start, payload: wireStartPayload}),
+          JSON.stringify({
+            type: CheckoutProtocol.start,
+            payload: wireStartPayload,
+          }),
         );
         expect(onStart).toHaveBeenCalledTimes(1);
         expect(onStart).toHaveBeenCalledWith(decodedStartPayload);
