@@ -54,6 +54,7 @@ check:
   react-native-lint-sample: cd platforms/react-native && pnpm sample lint
   web-lint: cd platforms/web && pnpm lint
   web-test: cd platforms/web && pnpm test
+  protocol-check: /opt/dev/bin/dev protocol check
   e2e-bitrise-validate: bitrise validate --config=e2e/bitrise.yml
 
 commands:
@@ -66,6 +67,7 @@ commands:
       /opt/dev/bin/dev swift build
       /opt/dev/bin/dev react-native build
       /opt/dev/bin/dev web build
+      /opt/dev/bin/dev protocol build
 
   codegen:
     desc: "Generate UCP models. Usage: dev codegen <kotlin|swift|typescript>"
@@ -104,6 +106,7 @@ commands:
       /opt/dev/bin/dev swift lint
       /opt/dev/bin/dev react-native lint
       /opt/dev/bin/dev web lint
+      /opt/dev/bin/dev protocol lint
 
   test:
     desc: Run tests across all supported workspaces
@@ -113,6 +116,7 @@ commands:
       /opt/dev/bin/dev swift test
       /opt/dev/bin/dev react-native test
       /opt/dev/bin/dev web test
+      /opt/dev/bin/dev protocol test typescript
 
   apollo:
     desc: "Apollo GraphQL schema and code generation commands"
