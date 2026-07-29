@@ -18,6 +18,12 @@ require_relative "../../scripts/lib/changed_file_filters"
 # every application x suite across that OS, turning an additive config change into
 # a multiplicative set of runs without hand-writing each one.
 class E2EMatrixToBrowserStackRunPlan
+  # Drift between the matrix and the pipeline graph happens in both directions: a stale
+  # branch predating a newly added target, or a build workflow deleted while the matrix
+  # still selects it. The hint has to name both remedies.
+  MISSING_BUILD_WORKFLOW_HINT = "Rebase on main to pick up the latest workflows, " \
+    "or update e2e/config/matrix.yml if you're removing this target intentionally."
+
   attr_reader :config_path, :changed_files
 
   def self.load(config_path, changed_files: nil)
@@ -72,6 +78,17 @@ class E2EMatrixToBrowserStackRunPlan
       env[build_env_key(application.fetch("id"))] = selected_ids.include?(application.fetch("id")).to_s
     end
     env
+  end
+
+  def missing_build_workflows(available_workflow_names)
+    selected_applications.map { |application| "e2e-build-#{application.fetch("id")}" } - available_workflow_names
+  end
+
+  def missing_build_workflow_errors(available_workflow_names)
+    missing_build_workflows(available_workflow_names).map do |workflow|
+      target = workflow.delete_prefix("e2e-build-")
+      "Run plan selected '#{target}' but this branch's e2e/bitrise.yml has no '#{workflow}' workflow."
+    end
   end
 
   def validation_errors
