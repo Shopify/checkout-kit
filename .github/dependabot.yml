@@ -123,6 +123,24 @@ updates:
           - "version-update:semver-major"
           - "version-update:semver-minor"
 
+  # Protocol tooling
+  - package-ecosystem: npm
+    directory: "/protocol"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+
   # Web — @shopify/checkout-kit
   - package-ecosystem: npm
     directory: "/platforms/web"
