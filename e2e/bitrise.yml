@@ -19,9 +19,11 @@ app:
 
 tools:
   # "3.4:installed" tells each pinned stack to use its own preinstalled 3.4.x
-  # (no ~3-min source compile): 3.4.8 on the linux android stack, 3.4.5 on
-  # osx-xcode-26.2.x. Deterministic because the stacks are pinned. Local dev and
-  # GitHub Actions pin the exact patch via the repo-root .ruby-version (3.4.8).
+  # (no ~3-min source compile). Local dev and GitHub Actions pin the exact patch
+  # via the repo-root .ruby-version (3.4.8). The patch level and the interpreter
+  # path a stack serves both move when its image is refreshed, so nothing may
+  # assume a fixed Ruby here — see install-ruby-gems for why the gem cache is
+  # keyed on the interpreter.
   # When bumping stacks (see meta.bitrise.io above), move this line to the next
   # Ruby both stacks preinstall so all workflows stay on a preinstalled version.
   ruby: 3.4:installed
@@ -101,10 +103,25 @@ step_bundles:
             - paths: platforms/react-native/node_modules
   install-ruby-gems:
     steps:
+      - script@1:
+          title: Fingerprint Ruby for the gem cache key
+          inputs:
+            - content: |-
+                set -euo pipefail
+                # The bundle is built with BUNDLE_FORCE_RUBY_PLATFORM, so gems like
+                # bigdecimal and ffi are compiled from source and bake the absolute
+                # path of libruby into their .bundle/.so. The stacks serve Ruby out
+                # of the nix store, and that path changes whenever a stack image is
+                # refreshed even when the version string does not. Without the
+                # interpreter in the cache key, a bundle compiled against the old
+                # Ruby is restored onto the new one and every native gem fails to
+                # dlopen, which takes down `pod install` before it does any work.
+                ruby -rrbconfig -e 'puts [RbConfig::CONFIG["prefix"], RUBY_VERSION, RUBY_PLATFORM]' > .ruby-cache-fingerprint
+                cat .ruby-cache-fingerprint
       - restore-cache@3:
           inputs:
             - key: &rn_ruby_gems_cache_key |-
-                rn-ruby-gems-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/Gemfile.lock" }}
+                rn-ruby-gems-{{ .OS }}-{{ .Arch }}-{{ checksum ".ruby-cache-fingerprint" }}-{{ checksum "platforms/react-native/sample/Gemfile.lock" }}
       - script@1:
           title: Install iOS Ruby dependencies
           inputs:
