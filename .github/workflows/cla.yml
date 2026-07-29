@@ -31,7 +31,7 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: Shopify/shopify-cla-action@v1
+      - uses: Shopify/shopify-cla-action@9938f4b43524d1cfa7471ce9a803edf226697284 # v1
         if: steps.gate.outputs.skip != 'true'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
