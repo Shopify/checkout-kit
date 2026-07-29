@@ -3,6 +3,7 @@
 
 require "json"
 require "optparse"
+require_relative "../lib/bitrise_pipeline_stages"
 require_relative "../lib/e2e_github_reporter"
 
 options = {
@@ -14,7 +15,8 @@ options = {
   branch: ENV["BITRISE_GIT_BRANCH"],
   expected: ENV["E2E_BROWSERSTACK_RUN_PLAN_COUNT"],
   run_plan: ENV["E2E_BROWSERSTACK_RUN_PLAN_JSON"],
-  build_url: ENV["BITRISE_BUILD_URL"]
+  finished_workflows: ENV["BITRISEIO_FINISHED_WORKFLOWS"],
+  pipeline_url: ENV["BITRISEIO_PIPELINE_BUILD_URL"]
 }
 
 OptionParser.new do |opts|
@@ -25,7 +27,8 @@ OptionParser.new do |opts|
   opts.on("--branch BRANCH") { |branch| options[:branch] = branch }
   opts.on("--expected COUNT", Integer) { |count| options[:expected] = count }
   opts.on("--run-plan PATH") { |path| options[:run_plan] = path }
-  opts.on("--build-url URL") { |url| options[:build_url] = url }
+  opts.on("--finished-workflows JSON") { |json| options[:finished_workflows] = json }
+  opts.on("--pipeline-url URL") { |url| options[:pipeline_url] = url }
 end.parse!
 
 pr_number = options[:pr_number].to_s.strip
@@ -58,6 +61,11 @@ tophat_manifest = JSON.parse(File.read(File.expand_path("../../scripts/tophat/ta
 run_plan_path = options[:run_plan].to_s.strip
 run_plan = run_plan_path.empty? || !File.exist?(run_plan_path) ? [] : JSON.parse(File.read(run_plan_path))
 
+stages = BitrisePipelineStages.from_json(
+  options[:finished_workflows],
+  app_slug: tophat_manifest.fetch("app_slug")
+)
+
 reporter = E2EGitHubReporter.new(
   results,
   repository: options.fetch(:repository),
@@ -69,7 +77,8 @@ reporter = E2EGitHubReporter.new(
   targets: tophat_manifest.fetch("targets"),
   expected: expected,
   run_plan: run_plan,
-  build_url: options[:build_url]
+  stages: stages,
+  pipeline_url: options[:pipeline_url]
 )
 reporter.publish!
 puts reporter.markdown_summary

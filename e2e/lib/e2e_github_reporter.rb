@@ -10,8 +10,9 @@ require_relative "../../scripts/lib/json_http_client"
 class E2EGitHubReporter
   COMMENT_MARKER = "<!-- checkout-kit-e2e-report -->"
   TOPHAT_INSTALL_BASE = "http://localhost:29070/install/bitrise-branch"
+  EXECUTE_STAGE_NAME = "e2e-execute-browserstack-run"
 
-  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], build_url: nil)
+  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], stages: nil, pipeline_url: nil)
     @results = results
     @repository = repository
     @sha = sha
@@ -22,7 +23,8 @@ class E2EGitHubReporter
     @targets = targets
     @expected = expected
     @run_plan = run_plan || []
-    @build_url = build_url
+    @stages = stages
+    @pipeline_url = pipeline_url
   end
 
   def publish!
@@ -45,26 +47,17 @@ class E2EGitHubReporter
   end
 
   def comment_body
-    [COMMENT_MARKER, tophat_install_markdown, markdown_summary].join("\n\n")
+    [COMMENT_MARKER, tophat_install_markdown, markdown_summary].compact.join("\n\n")
   end
 
   def markdown_summary
     lines = []
     lines << "## Checkout Kit E2E results"
     lines << ""
-    lines << "| Status | Suite | Target | Platform | OS version tag | Device |"
-    lines << "|---|---|---|---|---|---|"
-    @results.each do |result|
-      lines << "| #{status_icon(result)} | `#{result["execute"]}` | #{result["target"]} | #{result["platform"]} | #{result["os_version_tag"]} | #{device_cell(result)} |"
-    end
+    lines.concat(results_table) unless @results.empty?
     unless complete?
-      lines << ""
-      lines << "> [!WARNING]"
-      lines << "> Expected #{@expected} run#{@expected == 1 ? "" : "s"}, received #{@results.length} — #{missing_count} did not report. Missing runs count as failures until every run reports."
-      missing_runs.each do |run|
-        lines << "> - #{missing_run_label(run)}"
-      end
-      lines << "> See the failing build: #{@build_url}" unless blank?(@build_url)
+      lines << "" unless @results.empty?
+      lines.concat(completeness_lines)
     end
     failure_lines = failed_results.flat_map { |result| failure_details(result) }
     unless failure_lines.empty?
@@ -81,9 +74,129 @@ class E2EGitHubReporter
     lines.join("\n")
   end
 
+  def check_run_payload
+    {
+      name: "Checkout Kit E2E",
+      head_sha: @sha,
+      status: "completed",
+      conclusion: conclusion,
+      output: {
+        title: check_run_title,
+        summary: markdown_summary
+      }
+    }
+  end
+
   private
 
+  def results_table
+    lines = []
+    lines << "| Status | Suite | Target | Platform | OS version tag | Device |"
+    lines << "|---|---|---|---|---|---|"
+    @results.each do |result|
+      lines << "| #{status_icon(result)} | `#{result["execute"]}` | #{result["target"]} | #{result["platform"]} | #{result["os_version_tag"]} | #{device_cell(result)} |"
+    end
+    lines
+  end
+
+  def completeness_lines
+    blocked? ? blocked_lines : shortfall_lines
+  end
+
+  def blocked_lines
+    lines = []
+    lines << "> [!CAUTION]"
+    lines << "> E2E runs were skipped — #{blocking_stage_heading}"
+    lines.concat(blocking_stage_lines)
+    lines << ">"
+    lines << "> #{skipped_runs_heading}"
+    lines.concat(missing_run_lines)
+    lines.concat(pipeline_link_lines)
+    lines
+  end
+
+  def shortfall_lines
+    lines = []
+    lines << "> [!WARNING]"
+    lines << "> Expected #{@expected} run#{@expected == 1 ? "" : "s"}, received #{@results.length} — #{missing_count} did not report. Missing runs count as failures until every run reports."
+    lines.concat(missing_run_lines)
+    unless blocking_stages.empty?
+      lines << ">"
+      lines << "> #{blocking_stage_heading}"
+      lines.concat(blocking_stage_lines)
+    end
+    lines.concat(pipeline_link_lines)
+    lines
+  end
+
+  def blocked?
+    @results.empty? && !blocking_stages.empty?
+  end
+
+  def blocking_stages
+    @blocking_stages ||= resolve_blocking_stages
+  end
+
+  def resolve_blocking_stages
+    return [] if @stages.nil?
+
+    failed = @stages.failed
+    return failed unless failed.empty?
+
+    @stages.not_executed.select { |stage| expected_stage_names.include?(stage.name) }
+  end
+
+  def expected_stage_names
+    application_ids = @run_plan.map { |run| run["application_id"] }.compact.uniq
+    application_ids.map { |application_id| "e2e-build-#{application_id}" } + [EXECUTE_STAGE_NAME]
+  end
+
+  def blocking_stage_heading
+    count = blocking_stages.length
+    "#{count} pipeline stage#{count == 1 ? "" : "s"} #{blocking_stage_verb}:"
+  end
+
+  def blocking_stage_verb
+    @stages.failed.empty? ? "did not run" : "failed"
+  end
+
+  def blocking_stage_lines
+    blocking_stages.map do |stage|
+      next "> - `#{stage.name}`" if blank?(stage.build_url)
+
+      "> - `#{stage.name}` — [build log](#{stage.build_url})"
+    end
+  end
+
+  def skipped_runs_heading
+    return "No planned run executed:" if @expected.nil?
+
+    "None of the #{@expected} planned run#{@expected == 1 ? "" : "s"} executed:"
+  end
+
+  def missing_run_lines
+    missing_runs.map { |run| "> - #{missing_run_label(run)}" }
+  end
+
+  def pipeline_link_lines
+    return [] if blank?(@pipeline_url)
+
+    [">", "> [Pipeline build](#{@pipeline_url})"]
+  end
+
+  def conclusion
+    failed_results.empty? && complete? ? "success" : "failure"
+  end
+
+  def check_run_title
+    return "Blocked by #{blocking_stages.first.name}" if blocked?
+
+    "Checkout Kit E2E #{conclusion}"
+  end
+
   def tophat_install_markdown
+    return nil if produced_targets.empty?
+
     lines = []
     lines << "## Install this build"
     lines << ""
@@ -100,20 +213,6 @@ class E2EGitHubReporter
   def produced_targets
     produced_ids = @results.map { |result| result["target"] }.compact.uniq
     @targets.select { |target| produced_ids.include?(target.fetch("id")) }
-  end
-
-  def check_run_payload
-    conclusion = failed_results.empty? && complete? ? "success" : "failure"
-    {
-      name: "Checkout Kit E2E",
-      head_sha: @sha,
-      status: "completed",
-      conclusion: conclusion,
-      output: {
-        title: "Checkout Kit E2E #{conclusion}",
-        summary: markdown_summary
-      }
-    }
   end
 
   def complete?

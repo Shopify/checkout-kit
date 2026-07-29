@@ -43,6 +43,20 @@ and the PR comment notes the shortfall, so a missing run can never silently
 pass. When the expected count is unavailable the completeness check is skipped
 rather than reporting a false failure.
 
+To show *why* runs are missing, the report reads the pipeline workflow roster
+from `BITRISEIO_FINISHED_WORKFLOWS` and names the stages that failed or never
+started. A stage that never started is only reported when the run plan expects
+it, so a `run_if`-skipped build workflow is not a false failure. When no run
+reports at all and a stage is blocking, the comment replaces the empty results
+and install tables with a caution block that names each blocking stage, links
+its build log, lists the planned runs that did not execute, and links the
+pipeline build; the check run title becomes `Blocked by <stage>`. When a partial
+set of runs reports, the results table stays and the blocking stages are added
+below the shortfall warning. When the roster is unavailable — for example on a
+local run — the report falls back to the shortfall warning alone. The
+`e2e-report` step logs the raw roster, because Bitrise documents no enum for the
+workflow status field.
+
 ## Retry behavior
 
 BrowserStack API calls retry transient infrastructure responses once by default:

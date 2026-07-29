@@ -417,5 +417,9 @@ workflows:
                 fi
                 : "${BITRISE_GIT_COMMIT:?BITRISE_GIT_COMMIT is required}"
                 results_root="${E2E_BROWSERSTACK_RESULTS_DIR:-$BITRISE_DEPLOY_DIR/e2e/results}"
+                # The report names the stages that failed from this roster. Bitrise documents no
+                # enum for its status field, so log the payload to confirm the literals it uses.
+                e2e_log "Pipeline stage roster"
+                printf '%s\n' "${BITRISEIO_FINISHED_WORKFLOWS:-<unset>}"
                 e2e_log "Reporting E2E results to GitHub"
                 e2e/scripts/report_e2e_results --results-root "$results_root"
