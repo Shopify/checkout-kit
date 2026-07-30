@@ -2,7 +2,7 @@ import {useCallback} from 'react';
 import {Alert} from 'react-native';
 import {useCart} from '../context/Cart';
 import useShopify from '../hooks/useShopify';
-import {parseCartBootstrapLink, type CartBootstrapLink} from './cartBootstrap';
+import {parseControlLink, type E2EControlLink} from './controlLink';
 
 type UseE2ECartBootstrapOptions = {
   onCartReady: () => void;
@@ -19,26 +19,33 @@ export function useE2ECartBootstrap({onCartReady}: UseE2ECartBootstrapOptions) {
 
   return useCallback(
     async (url: string) => {
-      let cartBootstrapLink: CartBootstrapLink | null = null;
+      let controlLink: E2EControlLink | null = null;
 
       try {
-        cartBootstrapLink = parseCartBootstrapLink(url);
+        controlLink = parseControlLink(url);
       } catch (error) {
-        Alert.alert('Invalid cart bootstrap link', errorMessage(error));
+        Alert.alert('Invalid e2e control link', errorMessage(error));
         return true;
       }
 
-      if (!cartBootstrapLink) {
+      if (!controlLink) {
         return false;
       }
 
+      if (controlLink.command !== 'cart') {
+        Alert.alert('Unsupported e2e command', controlLink.command);
+        return true;
+      }
+
+      const cartCommand = controlLink;
+
       try {
-        let {variantId} = cartBootstrapLink;
+        let {variantId} = cartCommand;
 
         if (!variantId) {
           const {data} = await fetchProducts();
           const product =
-            data?.products.edges[cartBootstrapLink.productIndex ?? 0]?.node;
+            data?.products.edges[cartCommand.productIndex ?? 0]?.node;
 
           variantId = product?.variants.edges[0]?.node.id;
         }
@@ -49,8 +56,8 @@ export function useE2ECartBootstrap({onCartReady}: UseE2ECartBootstrapOptions) {
 
         await seedCart(
           variantId,
-          cartBootstrapLink.quantity,
-          cartBootstrapLink.buyerIdentityMode,
+          cartCommand.quantity,
+          cartCommand.buyerIdentityMode,
         );
         onCartReady();
       } catch (error) {
