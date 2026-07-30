@@ -1,0 +1,16 @@
+appId: ${E2E_APP_ID}
+name: Present checkout and close it
+tags:
+  - checkout
+  - smoke
+
+env:
+  # No buyerIdentityMode: this test asserts presentation and dismissal, not identity.
+  E2E_CART_PARAMS: "productIndex=0&quantity=1"
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- runFlow: ../../flows/checkout/present.yaml
+- runFlow: ../../flows/checkout/close.yaml
+# The four targets return to different screens, so this test asserts dismissal only.
+# The tests that place an order assert what the cart holds afterwards.
+- runFlow: ../../flows/checkout/assert-dismissed.yaml

@@ -2,7 +2,8 @@ appId: ${E2E_APP_ID}
 name: React Native checkout - hardcoded buyer identity
 tags:
   - checkout
-  - smoke
+  # This test submits a real order, so it belongs to the expensive tier.
+  - full
 
 env:
   # Sample app buyer identity configuration
