@@ -113,4 +113,5 @@ fi
 
 xcrun simctl install "$SIMULATOR_ID" "$APP_PATH"
 
-"$REPO_ROOT/e2e/scripts/run_maestro" ios "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"
+E2E_DEVICE_ID="$SIMULATOR_ID" \
+  "$REPO_ROOT/e2e/scripts/run_maestro" ios "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"
