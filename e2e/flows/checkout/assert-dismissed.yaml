@@ -1,0 +1,6 @@
+appId: ${E2E_APP_ID}
+---
+- extendedWaitUntil:
+    notVisible:
+      id: "shopify_checkout_kit_close_button"
+    timeout: 30000

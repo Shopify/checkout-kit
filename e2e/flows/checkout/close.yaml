@@ -1,0 +1,5 @@
+appId: ${E2E_APP_ID}
+---
+- tapOn:
+    id: "shopify_checkout_kit_close_button"
+- waitForAnimationToEnd

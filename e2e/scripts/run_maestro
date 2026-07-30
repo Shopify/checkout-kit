@@ -6,6 +6,9 @@
 #
 # Every platform runner calls this script, so the environment contract has exactly one
 # definition. Maestro exits non-zero when a tag or the flows glob matches nothing.
+#
+# Set E2E_DEVICE_ID when the caller already knows which device holds the installed app.
+# Maestro otherwise picks a device itself, and it can pick one the app is missing from.
 set -euo pipefail
 
 PLATFORM="${1:?platform (ios|android) is required}"
@@ -28,13 +31,8 @@ MAESTRO="$("$E2E_ROOT/scripts/maestro_bin")"
 CONTROL_LINK="${APP_ID}://e2e"
 
 MAESTRO_ARGS=(--platform "$PLATFORM" test --config config.yaml)
-
 [ -n "$INCLUDE_TAGS" ] && MAESTRO_ARGS+=(--include-tags "$INCLUDE_TAGS")
 [ -n "$EXCLUDE_TAGS" ] && MAESTRO_ARGS+=(--exclude-tags "$EXCLUDE_TAGS")
-
-# Without this, Maestro attaches to whichever device it finds first, so a second booted
-# simulator or attached device can silently receive commands meant for the one the caller
-# just installed the app on.
 [ -n "$DEVICE_ID" ] && MAESTRO_ARGS+=(--device "$DEVICE_ID")
 
 cd "$E2E_ROOT"
@@ -43,7 +41,7 @@ cd "$E2E_ROOT"
 # the workspace root is the only path where tests/**/*.yaml resolves. CI passes the same
 # value, because scripts/zip_e2e_tests puts config.yaml beside tests/ and flows/.
 exec "$MAESTRO" "${MAESTRO_ARGS[@]}" \
-  -e "E2E_APP_ID=${APP_ID}" \
-  -e "E2E_READY_MARKER=${READY_MARKER}" \
-  -e "E2E_CONTROL_LINK=${CONTROL_LINK}" \
-  .
+	-e "E2E_APP_ID=${APP_ID}" \
+	-e "E2E_READY_MARKER=${READY_MARKER}" \
+	-e "E2E_CONTROL_LINK=${CONTROL_LINK}" \
+	.

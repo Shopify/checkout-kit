@@ -143,8 +143,6 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `tests/shared/` holds the tests every target runs through the CI matrix.
 - `tests/<platform>/` holds platform-local tests. The matrix may ignore their tags.
 - `tests/shared/launch-smoke.yaml` is the shared launch smoke test.
-- `tests/shared/cart-from-control-link.yaml` seeds a cart through the control link
-  and waits for the cart marker.
 - `tests/react-native/checkout-guest.yaml` composes the React Native guest
   checkout smoke test from those subflows.
 - `tests/react-native/checkout-hardcoded-buyer-identity.yaml` verifies checkout
