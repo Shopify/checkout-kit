@@ -502,19 +502,19 @@ commands:
               cd sample/android
               USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
       e2e:
-        desc: Run React Native sample Maestro checkout smoke flows
-        syntax: "{ios|android} [--guest] [--hardcoded-buyer-identity]"
+        desc: Run React Native sample Maestro tests, filtered by tag
+        syntax: "{ios|android} [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
         run: |
-          echo "Usage: dev rn e2e {ios|android} [--guest] [--hardcoded-buyer-identity]" >&2
+          echo "Usage: dev rn e2e {ios|android} [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]" >&2
           exit 1
         subcommands:
           ios:
-            desc: Run the React Native iOS Maestro checkout smoke flows
-            syntax: "[--guest] [--hardcoded-buyer-identity]"
+            desc: Run the React Native iOS Maestro tests
+            syntax: "[--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
             run: cd platforms/react-native && ./scripts/e2e_maestro_ios "$@"
           android:
-            desc: Run the React Native Android Maestro checkout smoke flows
-            syntax: "[--guest] [--hardcoded-buyer-identity]"
+            desc: Run the React Native Android Maestro tests
+            syntax: "[--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
             run: cd platforms/react-native && ./scripts/e2e_maestro_android "$@"
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)

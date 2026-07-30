@@ -1,5 +1,8 @@
 appId: ${APP_ID}
 name: React Native checkout - hardcoded buyer identity
+tags:
+  - checkout
+  - smoke
 
 env:
   # Sample app buyer identity configuration
