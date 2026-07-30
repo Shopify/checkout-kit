@@ -233,6 +233,11 @@ commands:
         desc: Build the android sample app and install it to the booted emulator
         run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
 
+      e2e:
+        desc: Run the Android sample Maestro tests, filtered by tag
+        syntax: "[--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+        run: ./platforms/android/scripts/e2e_maestro "$@"
+
       test:
         desc: Run all library and demo app tests
         run: |
@@ -367,6 +372,12 @@ commands:
           fi
           cd Samples
           ../Scripts/xcode_run build CheckoutKitSwiftDemo
+
+      e2e:
+        desc: Run the Swift sample Maestro tests, filtered by tag
+        syntax: "[--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+        run: ./platforms/swift/Scripts/e2e_maestro "$@"
+
       test:
         desc: |
           `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package and the sample apps.

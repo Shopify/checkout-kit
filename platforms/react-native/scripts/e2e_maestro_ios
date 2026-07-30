@@ -9,10 +9,11 @@ METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-ios-metro.log"
 METRO_PID=""
 E2E_ENV_FILE=""
 APP_ID="com.shopify.checkoutkit.reactnativedemo"
-CONTROL_LINK="${APP_ID}://e2e"
 READY_MARKER="checkout-kit-sample-ready"
 INCLUDE_TAGS=""
-EXCLUDE_TAGS="flaky,wip"
+# e2e/config.yaml quarantines flaky and wip for every consumer, so this stays empty
+# unless the caller excludes something else.
+EXCLUDE_TAGS=""
 
 usage() {
   cat <<EOF >&2
@@ -25,7 +26,7 @@ and platform capability (ios-only, android-only).
 
 Options:
   --tags TAG[,TAG...]           Run only tests carrying any of these tags.
-  --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags. Defaults to flaky,wip.
+  --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags.
 EOF
 }
 
@@ -102,17 +103,35 @@ wait_for_metro() {
   return 1
 }
 
-# Resolve the pinned Maestro by path. A Maestro from PATH is whatever the machine happens to
-# hold, and a version below 2.0.7 passes every iOS test locally while failing every one of
-# them on the real devices that CI uses.
-resolve_maestro() {
-  MAESTRO="$("$REPO_ROOT/e2e/scripts/maestro_bin")"
+# Fail before the sample build rather than after it, because that build takes minutes.
+# e2e/scripts/run_maestro resolves the same pinned binary when it runs the suite. A Maestro
+# from PATH is whatever the machine happens to hold, and a version below 2.0.7 passes every
+# iOS test locally while failing every one of them on the real devices that CI uses.
+require_maestro() {
+  "$REPO_ROOT/e2e/scripts/maestro_bin" >/dev/null
+}
+
+# Selects by runtime header rather than by device name, because a simulator may carry
+# any name. simctl groups booted devices under "-- iOS <version> --" headers, so this
+# takes the first device under an iOS header and ignores watchOS and tvOS.
+booted_simulator() {
+  xcrun simctl list devices booted |
+    awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36); exit }'
 }
 
 cd "$ROOT_DIR"
 
-resolve_maestro
+require_maestro
 trap cleanup EXIT
+
+SIMULATOR_ID="$(booted_simulator || true)"
+if [ -z "$SIMULATOR_ID" ]; then
+  echo "No booted iOS simulator found." >&2
+  echo "Boot a simulator first, because Maestro drives the device the app runs on." >&2
+  exit 1
+fi
+
+echo "Using booted simulator: $SIMULATOR_ID"
 
 if ! metro_running; then
   /opt/dev/bin/dev react-native start >"$METRO_LOG" 2>&1 &
@@ -121,23 +140,7 @@ fi
 
 wait_for_metro
 prepare_e2e_env
-ENVFILE="$E2E_ENV_FILE" pnpm sample ios
+ENVFILE="$E2E_ENV_FILE" pnpm sample ios --udid "$SIMULATOR_ID"
 
-(
-  cd "$REPO_ROOT/e2e"
-  MAESTRO_ARGS=(--platform ios test --config config.yaml)
-
-  if [ -n "$INCLUDE_TAGS" ]; then
-    MAESTRO_ARGS+=(--include-tags "$INCLUDE_TAGS")
-  fi
-
-  if [ -n "$EXCLUDE_TAGS" ]; then
-    MAESTRO_ARGS+=(--exclude-tags "$EXCLUDE_TAGS")
-  fi
-
-  "$MAESTRO" "${MAESTRO_ARGS[@]}" \
-    -e "E2E_APP_ID=${APP_ID}" \
-    -e "E2E_READY_MARKER=${READY_MARKER}" \
-    -e "E2E_CONTROL_LINK=${CONTROL_LINK}" \
-    tests
-)
+E2E_DEVICE_ID="$SIMULATOR_ID" \
+  "$REPO_ROOT/e2e/scripts/run_maestro" ios "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"

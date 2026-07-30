@@ -32,14 +32,16 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     )
   end
 
-  def test_a_run_executes_the_whole_tests_folder
-    assert_equal "tests", run_for("swift-ios").fetch("execute")
+  # config.yaml declares `flows: tests/**/*.yaml`, and Maestro resolves that glob relative to
+  # the path it is given. Executing "tests" would look for tests/tests/**, matching nothing.
+  def test_a_run_executes_the_workspace_root_so_the_config_glob_resolves
+    assert_equal ".", run_for("swift-ios").fetch("execute")
   end
 
   def test_a_run_carries_the_default_tags
     run = run_for("swift-ios")
 
-    assert_equal ["launch"], run.fetch("include_tags")
+    assert_equal ["launch", "cart"], run.fetch("include_tags")
     assert_equal ["flaky", "wip"], run.fetch("exclude_tags")
   end
 
