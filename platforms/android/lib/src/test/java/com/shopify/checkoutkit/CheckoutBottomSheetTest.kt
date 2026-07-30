@@ -1149,9 +1149,9 @@ class CheckoutBottomSheetTest {
         """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":$CHECKOUT_JSON}}"""
 
     private fun checkoutException(): CheckoutException {
-        return CheckoutKitException(
-            errorCode = CheckoutKitException.ERROR_SENDING_MESSAGE_TO_CHECKOUT,
-            errorDescription = "Error sending message to checkout",
+        return CheckoutException(
+            code = CheckoutErrorCode.SDK_ERROR,
+            message = "Error sending message to checkout",
         )
     }
 

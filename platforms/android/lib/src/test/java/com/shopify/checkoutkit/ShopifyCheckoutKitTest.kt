@@ -62,8 +62,8 @@ class ShopifyCheckoutKitTest {
             assertThat(checkout).isNull()
             verify(listener).onCheckoutFailed(captor.capture())
             CheckoutExceptionAssert.assertThat(captor.firstValue)
-                .hasDescription("This Android WebView does not support Shopify Checkout Kit.")
-                .hasErrorCode(CheckoutKitException.WEB_VIEW_NOT_SUPPORTED)
+                .hasMessage("This Android WebView does not support Shopify Checkout Kit.")
+                .hasCode(CheckoutErrorCode.WEB_VIEW_NOT_SUPPORTED)
         }
     }
 

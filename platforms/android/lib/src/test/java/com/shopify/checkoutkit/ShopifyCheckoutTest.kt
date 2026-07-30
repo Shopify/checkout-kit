@@ -110,7 +110,7 @@ class ShopifyCheckoutTest {
         var receivedError: CheckoutException? = null
         val view = shopifyCheckout(onFailure = { receivedError = it })
         activity.setContentView(view)
-        val error = CheckoutKitException("boom")
+        val error = CheckoutException(code = CheckoutErrorCode.SDK_ERROR, message = "boom")
 
         view.currentWebView().listener.onCheckoutViewFailedWithError(error)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
@@ -143,10 +143,7 @@ class ShopifyCheckoutTest {
         constructionComplete = true
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
-        assertThat(receivedError)
-            .isInstanceOf(CheckoutKitException::class.java)
-            .extracting("errorCode")
-            .isEqualTo(CheckoutKitException.WEB_VIEW_NOT_SUPPORTED)
+        assertThat(receivedError!!.code).isEqualTo(CheckoutErrorCode.WEB_VIEW_NOT_SUPPORTED)
         assertThat(failureReportedAfterConstruction).isTrue()
         assertThat(view.findViewById<RelativeLayout>(R.id.checkoutKitContainer).children.none { it is CheckoutWebView })
             .isTrue()

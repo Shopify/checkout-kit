@@ -60,7 +60,7 @@ internal fun AppOwnedCheckoutSheet(
                 ) {
                     onFail { error ->
                         currentOnDismiss()
-                        cartViewModel.handleCheckoutFailed(error, activity)
+                        cartViewModel.handleCheckoutFailed(error)
                     }
                     onDismiss {
                         currentOnDismiss()

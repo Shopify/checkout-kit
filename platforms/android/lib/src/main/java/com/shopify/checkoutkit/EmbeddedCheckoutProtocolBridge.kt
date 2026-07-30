@@ -4,14 +4,16 @@ import androidx.core.net.toUri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp
 import com.shopify.ucp.embedded.checkout.ReadyResult
-import com.shopify.ucp.embedded.checkout.Severity
 import com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus
 import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
 import com.shopify.ucp.embedded.checkout.jsonRpcRequestId
 import com.shopify.ucp.embedded.checkout.windowOpenRejected
 import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.net.URI
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -41,6 +43,7 @@ internal class EmbeddedCheckoutProtocolBridge(
     private val protocolMessageExecutor: Executor = ProtocolMessageExecutor.executor,
 ) {
     private var isTransportAttached = false
+    private var terminalLifecycleFailureDelivered = false
     private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
     private val defaultClientBindings: Map<String, DefaultClientBinding> = mapOf(
         CheckoutProtocol.ready.method to DefaultClientBinding(
@@ -50,10 +53,6 @@ internal class EmbeddedCheckoutProtocolBridge(
         CheckoutProtocol.windowOpen.method to DefaultClientBinding(
             client = defaultClient,
             policy = DefaultClientPolicy.RunIfUnhandled,
-        ),
-        CheckoutProtocol.error.method to DefaultClientBinding(
-            client = defaultClient,
-            policy = DefaultClientPolicy.AlwaysRunAfterMerchant,
         ),
         CheckoutProtocol.complete.method to DefaultClientBinding(
             client = defaultClient,
@@ -118,17 +117,42 @@ internal class EmbeddedCheckoutProtocolBridge(
                 CheckoutProtocol.windowOpen.method -> requestId?.let { handleWindowOpenRequest(message) }
                 CheckoutProtocol.start.method -> handleStart(message)
                 CheckoutProtocol.complete.method -> handleComplete(message)
-                null -> {
-                    log.d(LOG_TAG, "Ignoring unsupported ECP method: ${request.method}.")
-                    if (requestId != null) {
-                        sendError(requestId, CODE_METHOD_NOT_FOUND, "Method not found")
-                    }
-                }
+                CheckoutProtocol.error.method -> handleTerminalError(message, request.params)
+                null -> handleUnsupportedOrMalformedTerminalError(
+                    method = request.method,
+                    message = message,
+                    params = request.params,
+                    requestId = requestId,
+                )
                 else -> handleClientMessage(method, message)
             }
         } catch (e: SerializationException) {
             log.d(LOG_TAG, "Failed to decode ECP message: $e  raw=$message")
-            sendError(null, CODE_PARSE_ERROR, "Parse error")
+            val isTerminalError = runCatching {
+                Json.parseToJsonElement(message).jsonObject["method"]?.jsonPrimitive?.content == CheckoutProtocol.error.method
+            }.getOrDefault(false)
+            if (isTerminalError) {
+                handleTerminalError(message, null)
+            } else {
+                sendError(null, CODE_PARSE_ERROR, "Parse error")
+            }
+        }
+    }
+
+    private fun handleUnsupportedOrMalformedTerminalError(
+        method: String,
+        message: String,
+        params: JsonElement?,
+        requestId: JsonElement?,
+    ) {
+        if (method == CheckoutProtocol.error.method) {
+            handleTerminalError(message, params)
+            return
+        }
+
+        log.d(LOG_TAG, "Ignoring unsupported ECP method: $method.")
+        if (requestId != null) {
+            sendError(requestId, CODE_METHOD_NOT_FOUND, "Method not found")
         }
     }
 
@@ -158,17 +182,37 @@ internal class EmbeddedCheckoutProtocolBridge(
         composedClient.process(message)?.let { sendRaw(it) }
     }
 
-    /**
-     * Dispatch a supported protocol message through the consumer client. `ec.error` also
-     * runs through the kit-owned [defaultClient] regardless of the consumer response so
-     * unrecoverable session errors always close checkout while still reaching
-     * `CheckoutProtocol.error`.
-     */
+    /** Dispatch a supported protocol message through the consumer client. */
     private fun handleClientMessage(method: String, message: String) {
         log.d(LOG_TAG, "Delegating $method to client.")
         val response = composedClient.process(message)
         log.d(LOG_TAG, "  client response: $response")
         response?.let { sendRaw(it) }
+    }
+
+    private fun handleTerminalError(message: String, params: JsonElement?) {
+        // Direct protocol subscribers receive the complete terminal ECP payload before lifecycle handling.
+        handleClientMessage(CheckoutProtocol.error.method, message)
+
+        if (terminalLifecycleFailureDelivered) {
+            log.d(LOG_TAG, "Ignoring duplicate terminal ec.error lifecycle failure.")
+            return
+        }
+
+        // `ec.error` denotes a terminal session error. Message severity selects the public
+        // lifecycle code, but does not keep the embedded session alive.
+        log.d(LOG_TAG, "Terminal ec.error received; ending checkout presentation.")
+        CheckoutWebView.invalidate()
+        if (view.isPreloadRequest) return
+        terminalLifecycleFailureDelivered = true
+
+        val failure = runCatching { CheckoutProtocol.error.decode(params) }
+            .getOrNull()
+            ?.let(CheckoutException::terminalProtocol)
+            ?: CheckoutException.sdk("Embedded checkout sent an invalid terminal error.")
+        onMainThread {
+            view.listener.onCheckoutViewFailedWithError(failure)
+        }
     }
 
     private fun sendError(id: JsonElement?, code: Int, message: String) {
@@ -185,11 +229,10 @@ internal class EmbeddedCheckoutProtocolBridge(
      * mirroring Swift's `defaultsClient`. Currently:
      *   - [CheckoutProtocol.windowOpen] - launches the URI via `Intent.ACTION_VIEW`, or
      *     returns [windowOpenRejected] with `window_open_rejected_error` semantics.
-     *   - [CheckoutProtocol.error] - when any message carries `severity: "unrecoverable"`,
-     *     dismiss the kit via the listener. Per UCP spec, `unrecoverable` means no valid
-     *     resource exists to act on, so consumers don't have to wire dismissal in every
-     *     error handler.
      *   - [CheckoutProtocol.complete] - evicts any cached preload state.
+     *
+     * Terminal `ec.error` is delivered to consumer protocol handlers before its separate
+     * lifecycle failure mapping.
      */
     private fun defaultDelegationClient(): CheckoutProtocol.Client =
         CheckoutProtocol.Client()
@@ -225,17 +268,6 @@ internal class EmbeddedCheckoutProtocolBridge(
                     }
                 }
             }
-            .on(CheckoutProtocol.error) { payload ->
-                if (payload.messages.none { it.severity == Severity.Unrecoverable }) return@on
-                log.d(LOG_TAG, "ec.error unrecoverable; dismissing checkout via event processor")
-                CheckoutWebView.invalidate()
-                view.listener.onCheckoutViewFailedWithError(
-                    ClientException(
-                        errorDescription = "Embedded checkout reported unrecoverable error.",
-                    ),
-                )
-            }
-
     companion object {
         private const val LOG_TAG = ECP_LOG_TAG
 

@@ -1,101 +1,102 @@
 package com.shopify.checkoutkit
 
-import kotlinx.serialization.Serializable
+import com.shopify.ucp.embedded.checkout.ErrorResponse
+import com.shopify.ucp.embedded.checkout.MessageType
+import com.shopify.ucp.embedded.checkout.Severity
+import java.net.HttpURLConnection
 
-/**
- * Superclass for the Shopify Checkout Kit exceptions
- */
-@Serializable
-public abstract class CheckoutException(
-    public val errorDescription: String,
-    public val errorCode: String,
-) : Exception(errorDescription)
-
-/**
- * Issued when an internal error occurs within Shopify Checkout Kit. If the issue persists, it is recommended to open a bug report
- * in https://github.com/Shopify/checkout-kit-android
- */
-public class CheckoutKitException @JvmOverloads constructor(
-    errorDescription: String,
-    errorCode: String = UNKNOWN,
-) : CheckoutException(errorDescription, errorCode) {
-    public companion object {
-        public const val ERROR_SENDING_MESSAGE_TO_CHECKOUT: String = "error_sending_message"
-        public const val ERROR_RECEIVING_MESSAGE_FROM_CHECKOUT: String = "error_receiving_message"
-        public const val RENDER_PROCESS_GONE: String = "render_process_gone"
-        public const val WEB_VIEW_NOT_SUPPORTED: String = "web_view_not_supported"
-        public const val UNKNOWN: String = "unknown"
-    }
+/** Stable, consumer-facing reason for a terminal checkout presentation failure. */
+public enum class CheckoutErrorCode {
+    STOREFRONT_PASSWORD_REQUIRED,
+    CUSTOMER_ACCOUNT_REQUIRED,
+    CART_EXPIRED,
+    CART_COMPLETED,
+    INVALID_CART,
+    HTTP_ERROR,
+    NETWORK_ERROR,
+    WEB_VIEW_NOT_SUPPORTED,
+    WEB_CONTENT_PROCESS_TERMINATED,
+    SDK_ERROR,
+    UNKNOWN,
 }
 
 /**
- * Issued when checkout has encountered a unrecoverable error (for example server side error).
- * if the issue persists, it is recommended to open a bug report in https://github.com/Shopify/checkout-kit-android
+ * A terminal checkout presentation failure.
+ *
+ * Use [code] for application behavior. [message] and [cause] are diagnostic context.
+ * [httpStatusCode] is present only when an HTTP response caused failure.
  */
-public open class CheckoutUnavailableException @JvmOverloads constructor(
-    errorDescription: String? = null,
-    errorCode: String = UNKNOWN,
-) : CheckoutException(
-    errorDescription ?: "Checkout is currently unavailable due to an internal error",
-    errorCode,
-) {
-    public companion object {
-        public const val CLIENT_ERROR: String = "client_error"
-        public const val HTTP_ERROR: String = "http_error"
-        public const val UNKNOWN: String = "unknown"
-    }
-}
+public class CheckoutException @JvmOverloads constructor(
+    public val code: CheckoutErrorCode,
+    override val message: String,
+    public val httpStatusCode: Int? = null,
+    cause: Throwable? = null,
+) : Exception(message, cause) {
+    internal companion object {
+        fun http(statusCode: Int, message: String): CheckoutException =
+            CheckoutException(
+                code = if (statusCode == HttpURLConnection.HTTP_GONE) {
+                    CheckoutErrorCode.CART_EXPIRED
+                } else {
+                    CheckoutErrorCode.HTTP_ERROR
+                },
+                message = message,
+                httpStatusCode = statusCode,
+            )
 
-/**
- * Subclass of CheckoutUnavailableException, issued when Checkout is unavailable because a HTTP call resulted in an unexpected status code,
- * (incl. both client or server HTTP errors).
- */
-public class HttpException @JvmOverloads constructor(
-    errorDescription: String? = null,
-    public val statusCode: Int,
-) : CheckoutUnavailableException(errorDescription, HTTP_ERROR)
+        fun network(message: String, cause: Throwable? = null): CheckoutException =
+            CheckoutException(
+                code = CheckoutErrorCode.NETWORK_ERROR,
+                message = message,
+                cause = cause,
+            )
 
-/**
- * Subclass of CheckoutUnavailableException, issued when Checkout is unavailable for reasons unrelated to HTTP calls.
- */
-public class ClientException @JvmOverloads constructor(
-    errorDescription: String? = null,
-) : CheckoutUnavailableException(errorDescription, CLIENT_ERROR)
+        fun webViewNotSupported(message: String, cause: Throwable? = null): CheckoutException =
+            CheckoutException(
+                code = CheckoutErrorCode.WEB_VIEW_NOT_SUPPORTED,
+                message = message,
+                cause = cause,
+            )
 
-/**
- * Issued when checkout is no longer available and will no longer be available with the checkout URL supplied.
- * This may happen when the user has paused on checkout for a long period (hours) and
- * then attempted to proceed again with the same checkout URL.
- * In event of checkoutExpired, a new checkout URL will need to be generated.
- */
-public class CheckoutExpiredException @JvmOverloads constructor(
-    errorDescription: String? = null,
-    errorCode: String = UNKNOWN,
-) : CheckoutException(
-    errorDescription ?: "Checkout is no longer available with the provided token. Please generate a new checkout URL",
-    errorCode,
-) {
-    public companion object {
-        public const val CART_EXPIRED: String = "cart_expired"
-        public const val CART_COMPLETED: String = "cart_completed"
-        public const val INVALID_CART: String = "invalid_cart"
-        public const val UNKNOWN: String = "unknown"
-    }
-}
+        fun webContentProcessTerminated(message: String, cause: Throwable? = null): CheckoutException =
+            CheckoutException(
+                code = CheckoutErrorCode.WEB_CONTENT_PROCESS_TERMINATED,
+                message = message,
+                cause = cause,
+            )
 
-/**
- * Issued when the provided checkout URL results in an error related to a configuration issue, e.g. the shop being on checkout.liquid.
- * The SDK only supports stores migrated for extensibility.
- */
-public class ConfigurationException @JvmOverloads constructor(
-    errorDescription: String? = null,
-    errorCode: String = UNKNOWN,
-) : CheckoutException(
-    errorDescription ?: "Checkout is unavailable due to a configuration issue.",
-    errorCode,
-) {
-    public companion object {
-        public const val STOREFRONT_PASSWORD_REQUIRED: String = "storefront_password_required"
-        public const val UNKNOWN: String = "unknown"
+        fun sdk(message: String, cause: Throwable? = null): CheckoutException =
+            CheckoutException(
+                code = CheckoutErrorCode.SDK_ERROR,
+                message = message,
+                cause = cause,
+            )
+
+        fun unknown(message: String, cause: Throwable? = null): CheckoutException =
+            CheckoutException(
+                code = CheckoutErrorCode.UNKNOWN,
+                message = message,
+                cause = cause,
+            )
+
+        fun terminalProtocol(error: ErrorResponse): CheckoutException {
+            val representative = error.messages.firstOrNull {
+                it.type == MessageType.Error && it.severity == Severity.Unrecoverable
+            }
+
+            return CheckoutException(
+                code = representative?.code.toCheckoutErrorCode(),
+                message = representative?.content ?: "Embedded checkout reported a terminal error.",
+            )
+        }
+
+        private fun String?.toCheckoutErrorCode(): CheckoutErrorCode = when (this?.lowercase()) {
+            "storefront_password_required" -> CheckoutErrorCode.STOREFRONT_PASSWORD_REQUIRED
+            "customer_account_required" -> CheckoutErrorCode.CUSTOMER_ACCOUNT_REQUIRED
+            "cart_expired" -> CheckoutErrorCode.CART_EXPIRED
+            "cart_completed" -> CheckoutErrorCode.CART_COMPLETED
+            "invalid_cart" -> CheckoutErrorCode.INVALID_CART
+            else -> CheckoutErrorCode.UNKNOWN
+        }
     }
 }
