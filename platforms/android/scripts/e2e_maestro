@@ -71,17 +71,22 @@ require_maestro() {
   fi
 }
 
-require_emulator() {
-  if ! adb devices | grep -q "[[:space:]]device$"; then
-    echo "No running Android device or emulator found." >&2
-    echo "Start an emulator first, because Maestro drives the device the app runs on." >&2
-    return 1
-  fi
+attached_device() {
+  adb devices | awk '$2 == "device" { print $1; exit }'
 }
 
 require_maestro
-require_emulator
+
+DEVICE_ID="$(attached_device || true)"
+if [ -z "$DEVICE_ID" ]; then
+  echo "No running Android device or emulator found." >&2
+  echo "Start an emulator first, because Maestro drives the device the app runs on." >&2
+  exit 1
+fi
+
+echo "Using device: $DEVICE_ID"
 
 "$SAMPLE_DIR/gradlew" -p "$SAMPLE_DIR" :app:installDebug --console=plain
 
-"$REPO_ROOT/e2e/scripts/run_maestro" android "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"
+E2E_DEVICE_ID="$DEVICE_ID" \
+  "$REPO_ROOT/e2e/scripts/run_maestro" android "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"
