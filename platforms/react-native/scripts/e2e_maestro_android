@@ -9,10 +9,11 @@ METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-android-metro.log"
 METRO_PID=""
 E2E_ENV_FILE=""
 APP_ID="com.shopify.checkoutkit.reactnativedemo"
-CONTROL_LINK="${APP_ID}://e2e"
 READY_MARKER="checkout-kit-sample-ready"
 INCLUDE_TAGS=""
-EXCLUDE_TAGS="flaky,wip"
+# e2e/config.yaml quarantines flaky and wip for every consumer, so this stays empty
+# unless the caller excludes something else.
+EXCLUDE_TAGS=""
 
 usage() {
   cat <<EOF >&2
@@ -25,7 +26,7 @@ and platform capability (ios-only, android-only).
 
 Options:
   --tags TAG[,TAG...]           Run only tests carrying any of these tags.
-  --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags. Defaults to flaky,wip.
+  --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags.
 EOF
 }
 
@@ -102,16 +103,31 @@ wait_for_metro() {
   return 1
 }
 
-# Resolve the pinned Maestro by path. A Maestro from PATH is whatever the machine happens to
-# hold, and the local version drifting from the CI version has already hidden a real failure.
-resolve_maestro() {
-  MAESTRO="$("$REPO_ROOT/e2e/scripts/maestro_bin")"
+# Fail before the sample build rather than after it, because that build takes minutes.
+# e2e/scripts/run_maestro resolves the same pinned binary when it runs the suite. A Maestro
+# from PATH is whatever the machine happens to hold, and the local version drifting from the
+# CI version has already hidden a real failure.
+require_maestro() {
+  "$REPO_ROOT/e2e/scripts/maestro_bin" >/dev/null
+}
+
+attached_device() {
+  adb devices | awk '$2 == "device" { print $1; exit }'
 }
 
 cd "$ROOT_DIR"
 
-resolve_maestro
+require_maestro
 trap cleanup EXIT
+
+DEVICE_ID="$(attached_device || true)"
+if [ -z "$DEVICE_ID" ]; then
+  echo "No running Android device or emulator found." >&2
+  echo "Start an emulator first, because Maestro drives the device the app runs on." >&2
+  exit 1
+fi
+
+echo "Using device: $DEVICE_ID"
 
 if ! metro_running; then
   /opt/dev/bin/dev react-native start >"$METRO_LOG" 2>&1 &
@@ -120,23 +136,7 @@ fi
 
 wait_for_metro
 prepare_e2e_env
-ENVFILE="$E2E_ENV_FILE" pnpm sample android --extra-params "--refresh-dependencies"
+ENVFILE="$E2E_ENV_FILE" pnpm sample android --device "$DEVICE_ID" --extra-params "--refresh-dependencies"
 
-(
-  cd "$REPO_ROOT/e2e"
-  MAESTRO_ARGS=(--platform android test --config config.yaml)
-
-  if [ -n "$INCLUDE_TAGS" ]; then
-    MAESTRO_ARGS+=(--include-tags "$INCLUDE_TAGS")
-  fi
-
-  if [ -n "$EXCLUDE_TAGS" ]; then
-    MAESTRO_ARGS+=(--exclude-tags "$EXCLUDE_TAGS")
-  fi
-
-  "$MAESTRO" "${MAESTRO_ARGS[@]}" \
-    -e "E2E_APP_ID=${APP_ID}" \
-    -e "E2E_READY_MARKER=${READY_MARKER}" \
-    -e "E2E_CONTROL_LINK=${CONTROL_LINK}" \
-    tests
-)
+E2E_DEVICE_ID="$DEVICE_ID" \
+  "$REPO_ROOT/e2e/scripts/run_maestro" android "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"

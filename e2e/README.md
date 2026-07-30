@@ -3,45 +3,43 @@
 This directory contains Maestro end-to-end flows and configuration for Checkout
 Kit sample apps. Two complementary setups live here:
 
-- A **local** React Native suite, run with `dev rn e2e`, that exercises guest and
-  hardcoded buyer identity checkouts from seeded carts through Shopify checkout
-  and back to the app. Tags select which tests run.
+- **Local** runs, one command per target, that build the sample app, install it on
+  the booted device, and run the tests in `tests/`. Tags select which tests run.
 - A **CI matrix** that expands applications and OS version tags into BrowserStack
   Maestro run rows. Every row runs the whole `tests/` folder and tags select what
   runs inside it.
+
+Both paths call `scripts/run_maestro`, so they share one environment contract.
 
 ## Run locally
 
 Run `dev up` first to provision the local toolchain. Install Maestro separately
 and make sure `maestro --version` succeeds before running these flows.
 
-### React Native checkout smoke (`dev rn e2e`)
+### One command per target
 
-Run the matching command from the repo root.
+Boot a simulator or emulator first, because Maestro drives the device the app runs
+on. Then run the matching command from the repo root.
 
-React Native iOS:
+| Target | Command |
+|---|---|
+| Swift iOS | `dev swift e2e` |
+| Kotlin Android | `dev android e2e` |
+| React Native iOS | `dev rn e2e ios` |
+| React Native Android | `dev rn e2e android` |
 
-```bash
-dev rn e2e ios
-```
-
-React Native Android:
-
-```bash
-dev rn e2e android
-```
-
-Both commands run every test in `tests/`. Narrow a run with `--tags`:
+Each command runs every test in `tests/`. Narrow a run with `--tags`:
 
 ```bash
+dev swift e2e --tags cart
 dev rn e2e ios --tags checkout
-dev rn e2e ios --tags smoke
-dev rn e2e android --tags cart,checkout
+dev android e2e --tags cart,checkout
 ```
 
 Both options match **any** listed tag, because that is how Maestro filters.
 `--tags cart,checkout` runs the cart tests and the checkout tests. `--exclude-tags`
-skips tests carrying any listed tag and defaults to `flaky,wip`.
+skips tests carrying any listed tag. `config.yaml` quarantines `flaky` and `wip`
+for every run, so those need no command line option.
 
 ### Tags
 
@@ -58,36 +56,31 @@ enforces it.
 A platform tag marks a capability only one platform has, such as Apple Pay. It
 must never mark a test that is merely not ported yet.
 
-The React Native commands start Metro if needed, build and launch the target
-sample app, then run Maestro. They require the standard storefront `.env` setup,
-but the E2E flows seed their own carts through the bootstrap deep link. The
-React Native bootstrap link accepts `buyerIdentityMode`, so guest and hardcoded
-buyer identity scenarios share the same cart setup path. No manual sample cart
-setup is required.
-
-### Shared launch smoke
-
-The launch smoke launches a sample app and waits for the shared ready marker
-exposed by that app, using the same environment contract used by CI.
-
-React Native iOS:
-
-```bash
-E2E_APP_ID=com.shopify.checkoutkit.reactnativedemo \
-E2E_READY_MARKER=checkout-kit-sample-ready \
-maestro --platform ios test e2e/tests/shared/launch-smoke.yaml
-```
-
-React Native Android:
-
-```bash
-E2E_APP_ID=com.shopify.checkoutkit.reactnativedemo \
-E2E_READY_MARKER=checkout-kit-sample-ready \
-maestro --platform android test e2e/tests/shared/launch-smoke.yaml
-```
+Every command builds the sample app, installs it, and then calls
+`scripts/run_maestro`. The React Native commands also start Metro if needed. All
+four need the standard storefront `.env` setup, but the flows seed their own carts
+through the control link, so no manual cart setup is required.
 
 React Native E2E runs should use the released native SDK artifacts declared by
 the React Native sample configuration, not local in-repo native SDK overrides.
+
+### The control link
+
+The samples share one command channel: a deep link on the app's own scheme.
+
+```
+<app_id>://e2e/<command>?<parameters>
+```
+
+The scheme equals the app id on all four targets, so `scripts/run_maestro` derives
+`E2E_CONTROL_LINK` rather than taking it as an argument. Commands are `reset`,
+`cart` and `signIn`. Each sample parses the link in its own E2E folder and runs the
+command through one `E2EController`, so sample code that merchants read holds a
+single hook.
+
+The link goes to an app that already runs. A stopped app would need a second entry
+point on every platform, because iOS delivers a cold-start URL through the scene
+connection options and Android through the launch intent.
 
 ## Matrix
 
@@ -145,28 +138,49 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `config.yaml` configures Maestro for shared platform behavior and quarantines
   the `flaky` and `wip` tags.
 - `flows/` contains reusable Maestro subflows for app setup and checkout steps.
+- `tests/shared/` holds the tests every target runs through the CI matrix.
+- `tests/<platform>/` holds platform-local tests. The matrix may ignore their tags.
+- `tests/shared/launch-smoke.yaml` is the shared launch smoke test.
+- `tests/shared/cart-from-control-link.yaml` seeds a cart through the control link
+  and waits for the cart marker.
 - `tests/react-native/checkout-guest.yaml` composes the React Native guest
   checkout smoke test from those subflows.
 - `tests/react-native/checkout-hardcoded-buyer-identity.yaml` verifies checkout
   from a bootstrapped cart with hardcoded buyer identity.
+- `scripts/run_maestro` is the single Maestro invocation every local runner calls.
+  It holds the environment contract and the workspace root rule in one place.
 - `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
   `scripts/` drive the BrowserStack run plan.
-- `tests/shared/launch-smoke.yaml` is the shared launch smoke test.
+
+Maestro resolves the `flows:` glob in `config.yaml` relative to the path on the
+command line, so both paths pass the workspace root. `scripts/zip_e2e_tests` puts
+`config.yaml`, `tests/` and `flows/` side by side, which makes the zip root that
+same workspace root.
 
 ## Shared app contract
 
-Shared flows rely on stable cross-app identifiers. The launch smoke requires each
-target app to expose this ready marker:
+Shared flows rely on stable cross-app identifiers. Every target app must expose
+these markers:
 
-- `checkout-kit-sample-ready`
+| Marker | Appears when |
+|---|---|
+| `checkout-kit-sample-ready` | the app finished launching |
+| `cart-checkout-ready` | the cart holds at least one line |
+
+`cart-checkout-ready` is the assertion for the whole control link path. It appears
+only after the app parsed the link, resolved a variant, created a cart, added the
+line, and navigated to the cart.
+
+`flows/app/bootstrap-cart-from-link.yaml` takes `E2E_CART_PARAMS`, the query string
+for the `cart` command. A test that does not care about buyer identity omits
+`buyerIdentityMode` and keeps the app's configured mode.
 
 Future shared flows should add identifiers here before they are used across
 React Native, Swift, and Android sample apps.
 
 ## Scope
 
-These flows catch regressions in the React Native sample app integration
-surface: cart bootstrap, buyer identity configuration, checkout presentation,
-checkout completion, and return to the sample app. They are not a replacement
-for checkout-web browser-based coverage or for future native Swift and Android
-sample-app E2E coverage.
+These flows catch regressions in the sample app integration surface on all four
+targets: cart bootstrap, buyer identity configuration, checkout presentation,
+checkout completion, and return to the sample app. They are not a replacement for
+checkout-web browser-based coverage.
