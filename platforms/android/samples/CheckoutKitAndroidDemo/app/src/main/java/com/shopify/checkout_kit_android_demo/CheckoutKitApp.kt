@@ -142,9 +142,10 @@ fun CheckoutKitAppRoot(
                             )
                         },
                         actions = {
-                            IconButton(onClick = {
-                                navController.navigate(Screen.Cart.route)
-                            }) {
+                            IconButton(
+                                onClick = { navController.navigate(Screen.Cart.route) },
+                                modifier = Modifier.testTag(E2ETestIds.Tabs.CART),
+                            ) {
                                 BadgedBox(badge = {
                                     if (totalQuantity > 0) {
                                         Badge(

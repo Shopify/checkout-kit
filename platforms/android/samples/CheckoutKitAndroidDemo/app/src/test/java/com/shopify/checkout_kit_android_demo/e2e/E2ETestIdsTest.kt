@@ -13,5 +13,11 @@ class E2ETestIdsTest {
     fun `cart markers match the maestro flows`() {
         assertThat(E2ETestIds.Cart.CHECKOUT_READY).isEqualTo("cart-checkout-ready")
         assertThat(E2ETestIds.Cart.CHECKOUT_BUTTON).isEqualTo("checkout-button")
+        assertThat(E2ETestIds.Cart.EMPTY_MESSAGE).isEqualTo("cart-empty-message")
+    }
+
+    @Test
+    fun `tab markers match the maestro flows`() {
+        assertThat(E2ETestIds.Tabs.CART).isEqualTo("cart-tab")
     }
 }

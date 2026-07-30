@@ -4,6 +4,7 @@ import com.apollographql.apollo.api.Optional
 import com.shopify.checkout_kit_android_demo.common.ID
 import com.shopify.checkout_kit_android_demo.common.client.StorefrontApiClient
 import com.shopify.checkout_kit_android_demo.graphql.type.CartBuyerIdentityInput
+import com.shopify.checkout_kit_android_demo.graphql.type.CartDeliveryInput
 import com.shopify.checkout_kit_android_demo.graphql.type.CartInput
 import com.shopify.checkout_kit_android_demo.graphql.type.CartLineInput
 import com.shopify.checkout_kit_android_demo.graphql.type.CartLineUpdateInput
@@ -20,17 +21,7 @@ class CartRepository(
         demoBuyerIdentityEnabled: Boolean,
         customerAccessToken: String?,
     ): CartState.Cart {
-        val input = CartInput(
-            lines = Optional.present(
-                listOf(
-                    CartLineInput(
-                        merchandiseId = variantId.id,
-                        quantity = Optional.present(quantity),
-                    )
-                )
-            ),
-            buyerIdentity = Optional.present(buyerIdentity(demoBuyerIdentityEnabled, customerAccessToken)),
-        )
+        val input = cartInput(variantId, quantity, demoBuyerIdentityEnabled, customerAccessToken)
 
         val data = storefrontApiClient.createCart(input)
         val cartCreate = data.cartCreate
@@ -76,17 +67,53 @@ class CartRepository(
         }
     }
 
-    private fun buyerIdentity(demoBuyerIdentityEnabled: Boolean, customerAccessToken: String?): CartBuyerIdentityInput {
-        if (customerAccessToken != null) {
-            Timber.i("Setting a customer access token in buyer identity")
-            return CartBuyerIdentityInput(customerAccessToken = Optional.present(customerAccessToken))
+    companion object {
+        internal fun cartInput(
+            variantId: ID,
+            quantity: Int,
+            demoBuyerIdentityEnabled: Boolean,
+            customerAccessToken: String?,
+        ) = CartInput(
+            lines = Optional.present(
+                listOf(
+                    CartLineInput(
+                        merchandiseId = variantId.id,
+                        quantity = Optional.present(quantity),
+                    )
+                )
+            ),
+            buyerIdentity = Optional.present(buyerIdentity(demoBuyerIdentityEnabled, customerAccessToken)),
+            delivery = delivery(demoBuyerIdentityEnabled, customerAccessToken),
+        )
+
+        private fun buyerIdentity(
+            demoBuyerIdentityEnabled: Boolean,
+            customerAccessToken: String?,
+        ): CartBuyerIdentityInput {
+            if (customerAccessToken != null) {
+                Timber.i("Setting a customer access token in buyer identity")
+                return CartBuyerIdentityInput(customerAccessToken = Optional.present(customerAccessToken))
+            }
+
+            return if (demoBuyerIdentityEnabled) {
+                Timber.i("Using demo buyer identity data to prefill checkout")
+                DemoBuyerIdentity.value
+            } else {
+                CartBuyerIdentityInput(countryCode = Optional.present(CountryCode.CA))
+            }
         }
 
-        return if (demoBuyerIdentityEnabled) {
-            Timber.i("Using demo buyer identity data to prefill checkout")
-            DemoBuyerIdentity.value
-        } else {
-            CartBuyerIdentityInput(countryCode = Optional.present(CountryCode.CA))
+        // A signed in customer picks from the addresses the account already holds, so only the
+        // demo identity carries one of its own.
+        private fun delivery(
+            demoBuyerIdentityEnabled: Boolean,
+            customerAccessToken: String?,
+        ): Optional<CartDeliveryInput> {
+            if (customerAccessToken != null || !demoBuyerIdentityEnabled) {
+                return Optional.Absent
+            }
+
+            return Optional.present(DemoBuyerIdentity.delivery)
         }
     }
 }
