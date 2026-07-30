@@ -384,10 +384,24 @@ commands:
           ../Scripts/xcode_run build CheckoutKitSwiftDemo
       test:
         desc: |
-          `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package.
-          `dev swift test <test_class_name>` - Run only the specified test class.
+          `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package and the sample apps.
+          `dev swift test <test_class_name>` - Run only the specified package test class.
+          `dev swift test sample [test_class_name]` - Run only the sample app test targets.
         syntax: "[test_class_name]"
-        run: cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
+        run: |
+          set -e
+          cd platforms/swift
+          if [ -n "${1:-}" ]; then
+            ./Scripts/xcode_run test ShopifyCheckoutKit-Package "$1"
+          else
+            ./Scripts/xcode_run test ShopifyCheckoutKit-Package
+            ./Scripts/test_samples
+          fi
+        subcommands:
+          sample:
+            desc: Run the sample app test targets
+            syntax: "[test_class_name]"
+            run: cd platforms/swift && ./Scripts/test_samples "${1:-}"
       api:
         desc: Validate or update the public Swift API baseline (platforms/swift/api/*.json)
         run: |

@@ -135,7 +135,7 @@ jobs:
           BODY+="1. **Close and reopen this PR** — this fires a new \`pull_request\` event from your user, which triggers all checks.\n"
           BODY+="2. **Trigger workflows via CLI:**\n"
           BODY+="\`\`\`bash\n"
-          BODY+="gh workflow run swift-build-samples.yml --ref auto/update-linters\n"
+          BODY+="gh workflow run swift-build-and-test-samples.yml --ref auto/update-linters\n"
           BODY+="gh workflow run swift-lint.yml --ref auto/update-linters\n"
           BODY+="gh workflow run swift-test-package.yml --ref auto/update-linters\n"
           BODY+="\`\`\`\n"

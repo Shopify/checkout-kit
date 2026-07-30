@@ -36,3 +36,8 @@ jobs:
           coverage-summary-path: platforms/react-native/coverage/coverage-summary.json
           title: 'React Native — Coverage Report'
           create-new-comment: false
+
+      # Runs without --coverage so the coverage report above stays scoped to the
+      # published module.
+      - name: Run sample tests
+        run: pnpm test --testPathPatterns="sample/src"
