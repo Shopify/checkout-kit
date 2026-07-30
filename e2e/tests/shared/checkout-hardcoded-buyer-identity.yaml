@@ -1,0 +1,39 @@
+appId: ${E2E_APP_ID}
+name: Checkout with hardcoded buyer identity
+tags:
+  - checkout
+  # This test submits a real order, so it belongs to the expensive tier.
+  - full
+
+env:
+  # The cart carries the contact and the delivery address, so checkout asks for payment
+  # only. That makes this the shortest real order, and the first one to fix when checkout
+  # breaks.
+  E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=hardcoded"
+
+  # Checkout payment fixture. The shop runs its credit card gateway in test mode, which
+  # accepts this number only. Checkout groups the digits, so the flow needs both forms.
+  CARD_NUMBER: "4242424242424242"
+  CARD_NUMBER_DISPLAY: "4242 4242 4242 4242"
+  CARD_SECURITY_CODE: "123"
+  CARD_HOLDER_NAME: "Maestro Shopify"
+
+  # Checkout billing fixture. The cart supplies a one-time delivery address, which the
+  # billing section cannot copy, so the test types a billing address of its own. Country
+  # and province keep the shop defaults, so this address stays in Canada.
+  BILLING_FIRST_NAME: "Maestro"
+  BILLING_LAST_NAME: "Shopify"
+  BILLING_ADDRESS_LINE1: "620 King Street West"
+  BILLING_CITY: "Toronto"
+  BILLING_POSTAL_CODE: "M5V 1M7"
+
+  # Accepted successful checkout states for this smoke test.
+  POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- runFlow: ../../flows/checkout/present.yaml
+- runFlow: ../../flows/checkout/fill-payment-card.yaml
+- runFlow: ../../flows/checkout/fill-billing-address.yaml
+- runFlow: ../../flows/checkout/submit.yaml
+- runFlow: ../../flows/checkout/assert-complete.yaml
+- runFlow: ../../flows/checkout/assert-returned-to-empty-cart.yaml

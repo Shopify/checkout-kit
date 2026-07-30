@@ -55,6 +55,15 @@ if (!customerAccountApiAuthBaseUrl && customerAccountApiShopId) {
 // Demo buyer identity (prefill toggle in Settings)
 def prefillEmail = properties.getProperty("EMAIL", properties.getProperty("PREFILL_EMAIL", "test.buyer@example.com"))
 def prefillPhone = properties.getProperty("PHONE", properties.getProperty("PREFILL_PHONE", "+14165550100"))
+def prefillFirstName = propertyOrDefault("FIRST_NAME", "Evelyn")
+def prefillLastName = propertyOrDefault("LAST_NAME", "Hartley")
+def prefillAddress1 = propertyOrDefault("ADDRESS_1", "650 King Street")
+def prefillAddress2 = propertyOrDefault("ADDRESS_2", "Shopify HQ")
+def prefillCompany = propertyOrDefault("COMPANY", "Shopify")
+def prefillCity = propertyOrDefault("CITY", "Toronto")
+def prefillProvince = propertyOrDefault("PROVINCE", "ON")
+def prefillZip = propertyOrDefault("ZIP", "M5V 1M7")
+def prefillCountry = propertyOrDefault("COUNTRY", "CA")
 
 if (!storefrontDomain || !accessToken) {
     println("**** Please add a .env file with STOREFRONT_DOMAIN and STOREFRONT_ACCESS_TOKEN set *****")
@@ -84,6 +93,15 @@ android {
         buildConfigField "String", "customerAccountApiGraphQLBaseUrl", "\"$customerAccountApiGraphQLBaseUrl\""
         buildConfigField "String", "prefillEmail", "\"$prefillEmail\""
         buildConfigField "String", "prefillPhone", "\"$prefillPhone\""
+        buildConfigField "String", "prefillFirstName", "\"$prefillFirstName\""
+        buildConfigField "String", "prefillLastName", "\"$prefillLastName\""
+        buildConfigField "String", "prefillAddress1", "\"$prefillAddress1\""
+        buildConfigField "String", "prefillAddress2", "\"$prefillAddress2\""
+        buildConfigField "String", "prefillCompany", "\"$prefillCompany\""
+        buildConfigField "String", "prefillCity", "\"$prefillCity\""
+        buildConfigField "String", "prefillProvince", "\"$prefillProvince\""
+        buildConfigField "String", "prefillZip", "\"$prefillZip\""
+        buildConfigField "String", "prefillCountry", "\"$prefillCountry\""
     }
 
     signingConfigs {
