@@ -146,9 +146,10 @@ fun CheckoutKitAppRoot(
                             )
                         },
                         actions = {
-                            IconButton(onClick = {
-                                navController.navigate(Screen.Cart.route)
-                            }) {
+                            IconButton(
+                                onClick = { navController.navigate(Screen.Cart.route) },
+                                modifier = Modifier.testTag(AccessibilityIdentifiers.Tabs.CART),
+                            ) {
                                 BadgedBox(badge = {
                                     if (totalQuantity > 0) {
                                         Badge(

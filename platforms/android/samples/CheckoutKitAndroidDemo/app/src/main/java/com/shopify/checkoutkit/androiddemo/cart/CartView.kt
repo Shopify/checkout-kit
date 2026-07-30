@@ -277,6 +277,7 @@ private fun EmptyCartMessage(
         ) {
             Header2(
                 text = stringResource(id = R.string.cart_empty),
+                modifier = Modifier.testTag(AccessibilityIdentifiers.Cart.EMPTY_MESSAGE),
             )
             BodyMedium(
                 stringResource(id = R.string.cart_emtpy_description),
