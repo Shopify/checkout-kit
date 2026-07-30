@@ -50,7 +50,7 @@ import ErrorBoundary from './ErrorBoundary';
 import env from 'react-native-config';
 import {createDebugLogger} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
-import {useE2ECartBootstrap} from './hooks/useE2ECartBootstrap';
+import {useE2ECartBootstrap} from './e2e/useE2ECartBootstrap';
 import {E2ETestIds} from './e2e/testIds';
 
 const log = createDebugLogger('ENV');

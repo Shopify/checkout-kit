@@ -245,6 +245,42 @@ EOF
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "/2026-04/graphql"
 }
 
+# project.yml reads $(DEVELOPMENT_TEAM) from the generated xcconfig, so a clone with no
+# DEVELOPMENT_TEAM in .env must still get a signable project. The literal default keeps
+# that working, and a value in .env has to win so a second team can build the sample.
+test_development_team_defaults_then_yields_to_env() {
+  local fixture output xcconfig
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  xcconfig="$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
+
+  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
+    STOREFRONT_ACCESS_TOKEN=synthetic-token \
+    "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_contains "$xcconfig" "DEVELOPMENT_TEAM = A7XGC83MZE"
+  # .env has to carry the key as well, or the next normalizing rewrite drops the override.
+  assert_contains "$fixture/.env" "DEVELOPMENT_TEAM=A7XGC83MZE"
+
+  awk '
+    /^DEVELOPMENT_TEAM=/ { print "DEVELOPMENT_TEAM=SYNTHETIC9"; next }
+    { print }
+  ' "$fixture/.env" >"$fixture/.env.next"
+  mv "$fixture/.env.next" "$fixture/.env"
+
+  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+  assert_contains "$xcconfig" "DEVELOPMENT_TEAM = SYNTHETIC9"
+  assert_contains "$fixture/.env" "DEVELOPMENT_TEAM=SYNTHETIC9"
+
+  # The Accelerated sample still hardcodes the team in its own project.yml, so writing the
+  # key into its xcconfig would create a second source that nothing reads.
+  assert_not_contains \
+    "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" \
+    "DEVELOPMENT_TEAM"
+}
+
 test_migration_from_platform_config() {
   local fixture output android_env
   fixture="$(make_fixture)"
@@ -277,6 +313,7 @@ test_required_values_only
 test_optional_sync_updates_blank_optional_values_after_required_setup
 test_normalizes_existing_root_env
 test_blank_customer_account_api_version_defaults
+test_development_team_defaults_then_yields_to_env
 test_migration_from_platform_config
 
 echo "setup_storefront_env synthetic tests passed."
