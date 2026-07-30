@@ -27,7 +27,12 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
     assert_equal 4, runs.length
     assert_equal(
-      ["react-native-ios-latest", "react-native-android-latest", "kotlin-android-latest", "swift-ios-latest"],
+      [
+        "react-native-ios-latest",
+        "react-native-android-latest",
+        "kotlin-android-latest",
+        "swift-ios-latest"
+      ],
       runs.map { |run| run.fetch("id") }
     )
   end
@@ -42,7 +47,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     ios_run = run_for("swift-ios")
     android_run = run_for("kotlin-android")
 
-    assert_equal ["launch"], ios_run.fetch("include_tags")
+    assert_equal ["launch", "cart"], ios_run.fetch("include_tags")
     assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
     assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
   end

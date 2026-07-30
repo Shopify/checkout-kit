@@ -1,6 +1,9 @@
 package com.shopify.checkoutkit.androiddemo.e2e
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
@@ -95,6 +98,31 @@ class E2EControllerTest {
         assertThat(target.calls).containsExactly("report(signIn is not implemented yet)")
     }
 
+    @Test
+    fun `serializes concurrent handle calls so the second does not start until the first finishes`() = runBlocking<Unit> {
+        val target = E2ECommandTargetSpy()
+        val firstResetStarted = CompletableDeferred<Unit>()
+        val releaseFirstReset = CompletableDeferred<Unit>()
+        target.onResetCart = {
+            firstResetStarted.complete(Unit)
+            releaseFirstReset.await()
+        }
+
+        val first = launch { E2EController(target).handle("com.shopify.checkoutkit.androiddemo://e2e/reset") }
+        firstResetStarted.await()
+
+        val second = launch { E2EController(target).handle("com.shopify.checkoutkit.androiddemo://e2e/reset") }
+        yield()
+
+        assertThat(target.calls).containsExactly("resetCart")
+
+        releaseFirstReset.complete(Unit)
+        first.join()
+        second.join()
+
+        assertThat(target.calls).containsExactly("resetCart", "resetCart")
+    }
+
     private fun handle(path: String, target: E2ECommandTargetSpy) = runBlocking {
         E2EController(target).handle("com.shopify.checkoutkit.androiddemo://e2e$path")
     }
@@ -104,6 +132,7 @@ private class E2ECommandTargetSpy : E2ECommandTarget {
     val calls = mutableListOf<String>()
     var variantIdError: Throwable? = null
     var addCartLineError: Throwable? = null
+    var onResetCart: (suspend () -> Unit)? = null
 
     override suspend fun selectBuyerIdentityMode(mode: E2EBuyerIdentityMode) {
         calls.add("selectBuyerIdentityMode(${mode.parameterValue})")
@@ -111,6 +140,7 @@ private class E2ECommandTargetSpy : E2ECommandTarget {
 
     override suspend fun resetCart() {
         calls.add("resetCart")
+        onResetCart?.invoke()
     }
 
     override suspend fun variantId(atProductIndex: Int): String {

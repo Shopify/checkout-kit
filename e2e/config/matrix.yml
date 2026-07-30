@@ -6,6 +6,7 @@ tests_path: tests
 tags:
   include:
     - launch
+    - cart
   exclude:
     - flaky
     - wip

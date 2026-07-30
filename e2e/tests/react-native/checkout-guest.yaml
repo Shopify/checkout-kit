@@ -6,7 +6,7 @@ tags:
 
 env:
   # Sample app buyer identity configuration
-  BUYER_IDENTITY_MODE: "guest"
+  E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=guest"
 
   # Checkout contact fixture
   EMAIL: "maestro.e2e@shopify.com"

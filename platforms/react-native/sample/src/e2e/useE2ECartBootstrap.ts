@@ -1,4 +1,4 @@
-import {useCallback, useMemo} from 'react';
+import {useCallback, useMemo, useRef} from 'react';
 import {Alert} from 'react-native';
 import type {BuyerIdentityMode} from '../auth/types';
 import {useCart} from '../context/Cart';
@@ -47,7 +47,11 @@ export function useE2ECartBootstrap({onCartReady}: UseE2ECartBootstrapOptions) {
     };
   }, [clearCart, fetchProducts, onCartReady, seedCart]);
 
-  return useCallback((url: string) => new E2EController(target).handle(url), [
-    target,
-  ]);
+  const controllerRef = useRef<E2EController | null>(null);
+  if (!controllerRef.current) {
+    controllerRef.current = new E2EController(target);
+  }
+  controllerRef.current.setTarget(target);
+
+  return useCallback((url: string) => controllerRef.current!.handle(url), []);
 }

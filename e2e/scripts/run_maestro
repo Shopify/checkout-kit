@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+#
+# Runs the shared Maestro suite for one platform and one sample app.
+#
+# Usage: run_maestro <ios|android> <app_id> <ready_marker> [include_tags] [exclude_tags] <test_namespace>
+#
+# Every platform runner calls this script, so the environment contract has exactly one
+# definition. Maestro exits non-zero when a tag or the flows glob matches nothing.
+set -euo pipefail
+
+PLATFORM="${1:?platform (ios|android) is required}"
+APP_ID="${2:?app id is required}"
+READY_MARKER="${3:?ready marker is required}"
+INCLUDE_TAGS="${4:-}"
+EXCLUDE_TAGS="${5:-}"
+TEST_NAMESPACE="${6:?test namespace is required}"
+DEVICE_ID="${E2E_DEVICE_ID:-}"
+
+E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$E2E_ROOT"
+
+# Resolve the binary that e2e/.maestro-version pins instead of taking `maestro` from PATH.
+# Homebrew installs ahead of everything on PATH and tracks its own release train, and a
+# Maestro below 2.0.7 passes every iOS test locally while failing every one of them on the
+# real devices that CI uses.
+MAESTRO="$("$E2E_ROOT/scripts/maestro_bin")"
+
+# The deep link scheme equals the app id on every target, so the link is derived rather
+# than passed. e2e/lib/e2e_matrix_to_browserstack_run_plan.rb derives it the same way for CI.
+CONTROL_LINK="${APP_ID}://e2e"
+
+MAESTRO_ARGS=(--platform "$PLATFORM" test --config config.yaml)
+TEST_DIRECTORIES=(tests/shared)
+TEST_FILES=()
+
+[ -d "tests/$TEST_NAMESPACE" ] && TEST_DIRECTORIES+=("tests/$TEST_NAMESPACE")
+while IFS= read -r test_file; do
+  TEST_FILES+=("$test_file")
+done < <(find "${TEST_DIRECTORIES[@]}" -type f -name "*.yaml" | sort)
+
+[ -n "$INCLUDE_TAGS" ] && MAESTRO_ARGS+=(--include-tags "$INCLUDE_TAGS")
+[ -n "$EXCLUDE_TAGS" ] && MAESTRO_ARGS+=(--exclude-tags "$EXCLUDE_TAGS")
+
+# Without this, Maestro attaches to whichever device it finds first, so a second booted
+# simulator or attached device can silently receive commands meant for the one the caller
+# just installed the app on.
+[ -n "$DEVICE_ID" ] && MAESTRO_ARGS+=(--device "$DEVICE_ID")
+
+exec "$MAESTRO" "${MAESTRO_ARGS[@]}" \
+  -e "E2E_APP_ID=${APP_ID}" \
+  -e "E2E_READY_MARKER=${READY_MARKER}" \
+  -e "E2E_CONTROL_LINK=${CONTROL_LINK}" \
+  "${TEST_FILES[@]}"
