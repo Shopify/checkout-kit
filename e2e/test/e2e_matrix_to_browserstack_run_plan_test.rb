@@ -18,6 +18,88 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     plan(changed_files: changed_files).selected_applications.map { |application| application.fetch("id") }
   end
 
+  def run_for(application_id, changed_files: nil)
+    plan(changed_files: changed_files).expand.find { |run| run.fetch("application_id") == application_id }
+  end
+
+  def test_expand_produces_one_run_per_application_and_os_version_tag
+    runs = plan.expand
+
+    assert_equal 4, runs.length
+    assert_equal(
+      ["react-native-ios-latest", "react-native-android-latest", "kotlin-android-latest", "swift-ios-latest"],
+      runs.map { |run| run.fetch("id") }
+    )
+  end
+
+  def test_a_run_executes_the_whole_tests_folder
+    assert_equal "tests", run_for("swift-ios").fetch("execute")
+  end
+
+  def test_a_run_carries_the_default_tags
+    run = run_for("swift-ios")
+
+    assert_equal ["launch"], run.fetch("include_tags")
+    assert_equal ["flaky", "wip"], run.fetch("exclude_tags")
+  end
+
+  def test_an_application_overrides_the_default_tags
+    config = base_config
+    config.fetch("applications").first["include_tags"] = ["launch", "checkout"]
+    config.fetch("applications").first["exclude_tags"] = ["wip"]
+
+    run = plan(config: config).expand.first
+
+    assert_equal ["launch", "checkout"], run.fetch("include_tags")
+    assert_equal ["wip"], run.fetch("exclude_tags")
+  end
+
+  def test_a_control_link_follows_the_app_id_on_every_application
+    plan.expand.each do |run|
+      assert_equal "#{run.fetch("app_id")}://e2e", run.fetch("control_link")
+    end
+  end
+
+  def test_a_status_context_no_longer_names_a_suite
+    assert_equal "checkout-kit/e2e/swift-ios/latest", run_for("swift-ios").fetch("status_context")
+  end
+
+  def test_validation_errors_flags_an_include_tag_no_test_carries
+    config = base_config
+    config.fetch("tags")["include"] = ["launch", "teleport"]
+
+    errors = plan(config: config).validation_errors
+
+    assert_includes errors, "tags include 'teleport' but no test in tests/ carries it"
+  end
+
+  def test_validation_errors_flags_an_application_include_tag_no_test_carries
+    config = base_config
+    config.fetch("applications").first["include_tags"] = ["teleport"]
+
+    errors = plan(config: config).validation_errors
+
+    assert_includes errors, "application react-native-ios include_tags 'teleport' but no test in tests/ carries it"
+  end
+
+  def test_validation_errors_flags_non_array_include_tags
+    config = base_config
+    config.fetch("applications").first["include_tags"] = "launch"
+
+    errors = plan(config: config).validation_errors
+
+    assert_includes errors, "application react-native-ios include_tags must be an array"
+  end
+
+  def test_validation_errors_flags_a_missing_tests_path
+    config = base_config
+    config["tests_path"] = "does-not-exist"
+
+    errors = plan(config: config).validation_errors
+
+    assert_includes errors, "tests_path is not a directory: does-not-exist"
+  end
+
   def test_nil_changed_files_selects_all_applications
     assert_equal ["react-native-ios", "react-native-android", "kotlin-android", "swift-ios"], selected_ids(nil)
   end

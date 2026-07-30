@@ -15,9 +15,21 @@ class E2EControlLinkTest {
     @Test
     fun `parses every app scheme`() {
         val expected = E2EControlLink.Cart(productIndex = 0)
+        val schemes = listOf(
+            "com.shopify.checkoutkit.androiddemo",
+            "com.shopify.checkoutkit.swiftdemo",
+            "com.shopify.checkoutkit.reactnativedemo",
+        )
 
-        assertThat(E2EControlLink.parse("com.shopify.checkout_kit_android_demo://e2e/cart?productIndex=0")).isEqualTo(expected)
-        assertThat(E2EControlLink.parse("com.shopify.checkoutkit.swiftdemo://e2e/cart?productIndex=0")).isEqualTo(expected)
+        schemes.forEach { scheme ->
+            assertThat(E2EControlLink.parse("$scheme://e2e/cart?productIndex=0")).isEqualTo(expected)
+        }
+    }
+
+    @Test
+    fun `parses a scheme the matrix does not declare`() {
+        assertThat(E2EControlLink.parse("com.example.anything://e2e/cart?productIndex=0"))
+            .isEqualTo(E2EControlLink.Cart(productIndex = 0))
     }
 
     @Test

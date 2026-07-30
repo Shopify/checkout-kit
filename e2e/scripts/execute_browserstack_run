@@ -147,9 +147,14 @@ class BrowserStackRunExecutor
       customBuildName: run.fetch("id"),
       devices: [device],
       execute: [run.fetch("execute")],
+      tags: {
+        includeTags: run.fetch("include_tags"),
+        excludeTags: run.fetch("exclude_tags")
+      },
       setEnvVariables: {
         E2E_APP_ID: run.fetch("app_id"),
-        E2E_READY_MARKER: run.fetch("ready_marker")
+        E2E_READY_MARKER: run.fetch("ready_marker"),
+        E2E_CONTROL_LINK: run.fetch("control_link")
       }
     }
     response = @client.start_build(run.fetch("platform"), body)
@@ -205,6 +210,8 @@ class BrowserStackRunExecutor
       "target" => run.fetch("target"),
       "os_version_tag" => run.fetch("os_version_tag"),
       "execute" => run.fetch("execute"),
+      "include_tags" => run.fetch("include_tags"),
+      "exclude_tags" => run.fetch("exclude_tags"),
       "device_selector" => device.fetch("device_selector"),
       "resolved_device" => device.fetch("resolved_device"),
       "resolved_os_version" => device.fetch("resolved_os_version"),
@@ -228,6 +235,8 @@ class BrowserStackRunExecutor
       "target" => run["target"],
       "os_version_tag" => run["os_version_tag"],
       "execute" => run["execute"],
+      "include_tags" => run["include_tags"],
+      "exclude_tags" => run["exclude_tags"],
       "device_selector" => run["device_selector"],
       "resolved_device" => device["resolved_device"] || run["device_selector"],
       "resolved_os_version" => device["resolved_os_version"],

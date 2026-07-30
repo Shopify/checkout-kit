@@ -20,17 +20,23 @@ describe('parseControlLink', () => {
 
   it('parses every app scheme', () => {
     const expected = {command: 'cart', productIndex: 0, quantity: 1};
+    const schemes = [
+      'com.shopify.checkoutkit.reactnativedemo',
+      'com.shopify.checkoutkit.swiftdemo',
+      'com.shopify.checkoutkit.androiddemo',
+    ];
 
+    schemes.forEach((scheme) => {
+      expect(parseControlLink(`${scheme}://e2e/cart?productIndex=0`)).toEqual(
+        expected,
+      );
+    });
+  });
+
+  it('parses a scheme the matrix does not declare', () => {
     expect(
-      parseControlLink(
-        'com.shopify.checkoutkit.reactnativedemo://e2e/cart?productIndex=0',
-      ),
-    ).toEqual(expected);
-    expect(
-      parseControlLink(
-        'com.shopify.checkout_kit_android_demo://e2e/cart?productIndex=0',
-      ),
-    ).toEqual(expected);
+      parseControlLink('com.example.anything://e2e/cart?productIndex=0'),
+    ).toEqual({command: 'cart', productIndex: 0, quantity: 1});
   });
 
   it('parses the reset command', () => {
