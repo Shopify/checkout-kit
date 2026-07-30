@@ -42,7 +42,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     run = run_for("swift-ios")
 
     assert_equal ["launch", "cart", "checkout"], run.fetch("include_tags")
-    assert_equal ["flaky", "wip", "full"], run.fetch("exclude_tags")
+    assert_equal ["flaky", "wip"], run.fetch("exclude_tags")
   end
 
   def test_an_application_overrides_the_default_tags

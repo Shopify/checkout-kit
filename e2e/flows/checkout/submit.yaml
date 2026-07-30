@@ -1,10 +1,32 @@
 appId: ${E2E_APP_ID}
 ---
+# The keyboard from the last payment field can still cover the foot of the page, so the
+# control has to reach the middle of the screen before the tap. `centerElement` does that.
+# A `visibilityPercentage` below 100 rounds down to zero, which lets the scroll stop early,
+# and a tap that lands on the keyboard does nothing while Maestro still reports it as done.
 - scrollUntilVisible:
     element:
-      text: "^(Pay now|Complete order)$"
+      text: "^(Pay now|Complete order|Review order)$"
     direction: DOWN
-    visibilityPercentage: 90
+    centerElement: true
+
+# A shop that shows shipping options keeps the pay action behind a review step. One button
+# carries both labels, so the review tap comes first and the pay tap follows it.
+- runFlow:
+    when:
+      visible: "^Review order$"
+    commands:
+      - tapOn:
+          text: "^Review order$"
+          enabled: true
+      - extendedWaitUntil:
+          visible: "^(Pay now|Complete order)$"
+          timeout: 30000
+      - scrollUntilVisible:
+          element:
+            text: "^(Pay now|Complete order)$"
+          direction: DOWN
+          centerElement: true
 - tapOn:
     text: "^(Pay now|Complete order)$"
     enabled: true

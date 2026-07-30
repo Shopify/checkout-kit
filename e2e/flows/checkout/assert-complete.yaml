@@ -1,5 +1,7 @@
 appId: ${E2E_APP_ID}
 ---
+# The payment provider and the order creation both run before the page changes, so this
+# wait covers two remote systems rather than a render.
 - extendedWaitUntil:
     visible: "${POST_SUBMIT_RESULT_PATTERN}"
-    timeout: 10000
+    timeout: 60000
