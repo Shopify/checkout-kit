@@ -19,10 +19,13 @@ import kotlinx.serialization.json.Json
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "checkoutKitSettings")
 
-class PreferencesManager(private val context: Context) {
+class PreferencesManager(
+    context: Context,
+    private val dataStore: DataStore<Preferences> = context.dataStore,
+) {
     private val decoder: Json = Json { ignoreUnknownKeys = true }
 
-    val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data.map { preferences ->
+    val userPreferencesFlow: Flow<UserPreferences> = dataStore.data.map { preferences ->
         val appearance = preferences[APPEARANCE]?.let { value ->
             runCatching {
                 decoder.decodeFromString<CheckoutAppearance>(value)
@@ -80,7 +83,7 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setCheckoutSheetPreset(preset: CheckoutSheetPreset) = saveData(CHECKOUT_SHEET_PRESET, preset.name)
 
-    private suspend fun <T> saveData(key: Preferences.Key<T>, value: T) = context.dataStore.edit {
+    private suspend fun <T> saveData(key: Preferences.Key<T>, value: T) = dataStore.edit {
         it[key] = value
     }
 
