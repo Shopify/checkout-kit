@@ -1,5 +1,8 @@
 appId: ${APP_ID}
 name: React Native checkout - guest
+tags:
+  - checkout
+  - full
 
 env:
   # Sample app buyer identity configuration

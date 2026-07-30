@@ -1,4 +1,8 @@
 appId: ${E2E_APP_ID}
+name: Launch smoke
+tags:
+  - launch
+  - smoke
 ---
 - launchApp
 - extendedWaitUntil:
