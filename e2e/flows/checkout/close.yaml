@@ -1,0 +1,27 @@
+appId: ${E2E_APP_ID}
+---
+# The close control carries a different identifier per SDK version, not per platform.
+# The Swift and Kotlin samples build the in-repo SDK, which uses the normalized id from
+# #333. React Native resolves released 4.0.0-alpha.2 artifacts, where Android still
+# exposes checkoutKitCloseBtn and iOS exposes only the "Close" label. Delete the two
+# fallback branches once nativeSdkVersions point at releases containing #333.
+- runFlow:
+    when:
+      visible:
+        id: "shopify_checkout_kit_close_button"
+    commands:
+      - tapOn:
+          id: "shopify_checkout_kit_close_button"
+- runFlow:
+    when:
+      visible:
+        id: "checkoutKitCloseBtn"
+    commands:
+      - tapOn:
+          id: "checkoutKitCloseBtn"
+- runFlow:
+    when:
+      visible: "Close"
+    commands:
+      - tapOn: "Close"
+- waitForAnimationToEnd
