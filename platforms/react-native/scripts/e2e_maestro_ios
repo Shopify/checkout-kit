@@ -10,42 +10,47 @@ METRO_PID=""
 E2E_ENV_FILE=""
 APP_ID="com.shopify.checkoutkit.reactnativedemo"
 CART_BOOTSTRAP_BASE_LINK="${APP_ID}://e2e/cart?productIndex=0&quantity=1"
-MAESTRO_FLOWS=()
+READY_MARKER="checkout-kit-sample-ready"
+INCLUDE_TAGS=""
+EXCLUDE_TAGS="flaky,wip"
 
 usage() {
   cat <<EOF >&2
-Usage: dev rn e2e ios [--guest] [--hardcoded-buyer-identity]
+Usage: dev rn e2e ios [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
 
-Runs all React Native iOS Maestro checkout smoke flows against the released native SDK artifacts.
-Pass one or more focused scenario flags to run only those flows.
+Runs the React Native iOS Maestro tests against the released native SDK artifacts.
+Without --tags, every test in e2e/tests runs. Tags come from the taxonomy: journey
+(launch, cart, checkout, account), cost tier (smoke, full), quarantine (flaky, wip)
+and platform capability (ios-only, android-only).
 
 Options:
-  --guest                       Run only the guest checkout smoke flow.
-  --hardcoded-buyer-identity    Run only the hardcoded buyer identity smoke flow.
+  --tags TAG[,TAG...]           Run only tests carrying any of these tags.
+  --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags. Defaults to flaky,wip.
 EOF
 }
 
-add_maestro_flow() {
-  local flow="$1"
-
-  if [ "${#MAESTRO_FLOWS[@]}" -gt 0 ]; then
-    for existing_flow in "${MAESTRO_FLOWS[@]}"; do
-      if [ "$existing_flow" = "$flow" ]; then
-        return
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --tags)
+      INCLUDE_TAGS="${2:-}"
+      if [ -z "$INCLUDE_TAGS" ]; then
+        usage
+        echo "--tags needs a comma separated tag list" >&2
+        exit 1
       fi
-    done
-  fi
-
-  MAESTRO_FLOWS+=("$flow")
-}
-
-for arg in "$@"; do
-  case "$arg" in
-    --guest)
-      add_maestro_flow "tests/react-native/checkout-guest.yaml"
+      shift 2
       ;;
-    --hardcoded-buyer-identity)
-      add_maestro_flow "tests/react-native/checkout-hardcoded-buyer-identity.yaml"
+    --tags=*)
+      INCLUDE_TAGS="${1#--tags=}"
+      shift
+      ;;
+    --exclude-tags)
+      EXCLUDE_TAGS="${2:-}"
+      shift 2
+      ;;
+    --exclude-tags=*)
+      EXCLUDE_TAGS="${1#--exclude-tags=}"
+      shift
       ;;
     -h|--help)
       usage
@@ -53,18 +58,11 @@ for arg in "$@"; do
       ;;
     *)
       usage
-      echo "Unknown option: $arg" >&2
+      echo "Unknown option: $1" >&2
       exit 1
       ;;
   esac
 done
-
-if [ "${#MAESTRO_FLOWS[@]}" -eq 0 ]; then
-  MAESTRO_FLOWS=(
-    "tests/react-native/checkout-guest.yaml"
-    "tests/react-native/checkout-hardcoded-buyer-identity.yaml"
-  )
-fi
 
 metro_running() {
   curl --silent --fail http://localhost:8081/status | grep -q "packager-status:running"
@@ -127,10 +125,20 @@ ENVFILE="$E2E_ENV_FILE" pnpm sample ios
 
 (
   cd "$REPO_ROOT/e2e"
-  for flow in "${MAESTRO_FLOWS[@]}"; do
-    "$MAESTRO" --platform ios test --config config.yaml \
-      -e "APP_ID=${APP_ID}" \
-      -e "CART_BOOTSTRAP_BASE_LINK=${CART_BOOTSTRAP_BASE_LINK}" \
-      "$flow"
-  done
+  MAESTRO_ARGS=(--platform ios test --config config.yaml)
+
+  if [ -n "$INCLUDE_TAGS" ]; then
+    MAESTRO_ARGS+=(--include-tags "$INCLUDE_TAGS")
+  fi
+
+  if [ -n "$EXCLUDE_TAGS" ]; then
+    MAESTRO_ARGS+=(--exclude-tags "$EXCLUDE_TAGS")
+  fi
+
+  "$MAESTRO" "${MAESTRO_ARGS[@]}" \
+    -e "APP_ID=${APP_ID}" \
+    -e "E2E_APP_ID=${APP_ID}" \
+    -e "E2E_READY_MARKER=${READY_MARKER}" \
+    -e "CART_BOOTSTRAP_BASE_LINK=${CART_BOOTSTRAP_BASE_LINK}" \
+    tests
 )
