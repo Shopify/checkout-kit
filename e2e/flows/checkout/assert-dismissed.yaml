@@ -1,0 +1,14 @@
+appId: ${E2E_APP_ID}
+---
+# The close control is the one element that exists only while checkout is on screen, so its
+# absence proves dismissal. Asserting on checkout copy instead would be wrong: the React
+# Native catalog sells a product called "Email", which the checkout field pattern matches.
+# close.yaml lists why the identifier differs per SDK version. Only one of the three is ever
+# present, so all three must be absent once the sheet is gone.
+- extendedWaitUntil:
+    notVisible:
+      id: "shopify_checkout_kit_close_button"
+    timeout: 30000
+- assertNotVisible:
+    id: "checkoutKitCloseBtn"
+- assertNotVisible: "Close"
