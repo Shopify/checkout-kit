@@ -190,13 +190,31 @@ public class InteropTest {
         try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
             ComponentActivity activity = controller.get();
 
-            List<PreloadState> states = new ArrayList<>();
-            CheckoutPreload preload = ShopifyCheckoutKit.preload("https://shopify.dev", activity, states::add);
+            try (ActivityController<ComponentActivity> finishingController = Robolectric.buildActivity(ComponentActivity.class)) {
+                ComponentActivity finishingActivity = finishingController.get();
+                finishingActivity.finish();
 
-            if (preload != null) {
-                preload.setListener(states::add);
-                assertThat(preload.getState()).isNotNull();
+                CheckoutPreload skippedPreload = ShopifyCheckoutKit.preload(
+                        "https://shopify.dev",
+                        finishingActivity,
+                        ignored -> {}
+                );
+
+                assertThat(skippedPreload).isNull();
             }
+
+            List<PreloadState> states = new ArrayList<>();
+            CheckoutPreload preload = CheckoutWebView.Companion.preload(
+                    "https://shopify.dev",
+                    activity,
+                    new FakeWebMessageTransport(),
+                    states::add
+            );
+
+            assertThat(preload).isNotNull();
+            preload.setListener(states::add);
+            assertThat(preload.getState()).isNotNull();
+            assertThat(states).containsExactly(PreloadState.Loading.INSTANCE, PreloadState.Loading.INSTANCE);
             ShopifyCheckoutKit.invalidate();
         }
     }

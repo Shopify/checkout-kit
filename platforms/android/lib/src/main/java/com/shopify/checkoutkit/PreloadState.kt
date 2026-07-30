@@ -2,13 +2,21 @@ package com.shopify.checkoutkit
 
 /**
  * Observable lifecycle state of a preloaded checkout.
+ *
+ * A failed state includes a stable failure reason and a best-effort diagnostic message. Use
+ * the reason to determine how to handle the failure; the message is not a stable,
+ * machine-readable value.
  */
 public sealed class PreloadState {
     public data object Idle : PreloadState()
     public data object Loading : PreloadState()
     public data object Ready : PreloadState()
     public data object Expired : PreloadState()
-    public data class Failed(public val reason: FailureReason) : PreloadState()
+
+    public data class Failed(
+        public val reason: FailureReason,
+        public val message: String,
+    ) : PreloadState()
 
     /**
      * Explains why a preload failed.
@@ -23,8 +31,8 @@ public sealed class PreloadState {
         /** Preload navigation failed. */
         public data object NavigationFailed : FailureReason()
 
-        /** The preloaded WebView's content process terminated. */
-        public data object WebContentProcessTerminated : FailureReason()
+        /** Cached web content became unavailable before the preload could be reused. */
+        public data object WebContentUnavailable : FailureReason()
 
         /** Checkout sent a terminal protocol error while preloading. */
         public data object ProtocolError : FailureReason()
@@ -39,15 +47,16 @@ public fun interface PreloadStateListener {
 }
 
 /**
- * Returned by [ShopifyCheckoutKit.preload] exposing the current preload state.
- * Because the preload cache is single-slot, every instance reflects the same
- * shared state.
+ * Returned by [ShopifyCheckoutKit.preload] exposing that preload's latest observed state.
  *
  * The cache retains the current instance while its preload is active. A subsequent
- * preload replaces the observer, so retain the returned instance if you need to
- * inspect its shared [state] after it stops receiving changes.
+ * preload replaces the observer; the earlier handle retains its last observed [state]
+ * but stops receiving updates. When presentation reuses a cached preload, that handle also
+ * stops receiving updates and retains its last observed state, which may be [PreloadState.Loading].
  */
-public class CheckoutPreload internal constructor(private val cache: PreloadCache) {
+public class CheckoutPreload internal constructor(cache: PreloadCache) {
+    private var currentState: PreloadState = cache.state
+
     init {
         cache.setObserver(this)
     }
@@ -60,14 +69,15 @@ public class CheckoutPreload internal constructor(private val cache: PreloadCach
         set(value) {
             onMainThread {
                 field = value
-                value?.onStateChanged(cache.state)
+                value?.onStateChanged(currentState)
             }
         }
 
     public val state: PreloadState
-        get() = cache.state
+        get() = currentState
 
     internal fun receive(state: PreloadState) {
+        currentState = state
         listener?.onStateChanged(state)
     }
 }

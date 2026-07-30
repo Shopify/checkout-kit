@@ -163,7 +163,7 @@ public class ShopifyCheckout @MainThread internal constructor(
             pauseWebView()
             webView.clearBottomSheetScrollHandoff()
             webView.removeFromParent()
-            if (retainPreloadOnDestroy && CheckoutWebView.releaseAfterPresentation(webView)) {
+            if (retainPreloadOnDestroy && CheckoutWebView.retainAfterPresentation(webView)) {
                 log.d(LOG_TAG, "Retaining preloaded checkout WebView after dismissal.")
             } else {
                 CheckoutWebView.discardAfterPresentation(webView)

@@ -247,6 +247,7 @@ internal class EmbeddedCheckoutProtocolBridge(
                 CheckoutWebView.evictForTerminalFailure(
                     view,
                     PreloadState.FailureReason.ProtocolError,
+                    "Checkout sent a terminal protocol error.",
                 )
             ) {
                 return@onMainThread

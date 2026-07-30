@@ -52,7 +52,10 @@ class PreloadCacheTests: XCTestCase {
         entry.webViewWebContentProcessDidTerminate(entry)
 
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
-        XCTAssertEqual(CheckoutWebView.preloadCache.state, .failed(reason: .webContentProcessTerminated))
+        XCTAssertEqual(
+            CheckoutWebView.preloadCache.state,
+            .failed(reason: .webContentUnavailable, message: "Web content process terminated.")
+        )
     }
 
     func test_WebContentProcessTerminationOnBackgroundedPreloadDoesNotDeliverLifecycleFailure() {
@@ -141,7 +144,10 @@ class PreloadCacheTests: XCTestCase {
 
         await fulfillment(of: [didFail], timeout: 0.1)
         XCTAssertEqual(delegate.failureCount, 0)
-        XCTAssertEqual(CheckoutWebView.preloadCache.state, .failed(reason: .protocolError))
+        XCTAssertEqual(
+            CheckoutWebView.preloadCache.state,
+            .failed(reason: .protocolError, message: "Checkout sent a terminal protocol error.")
+        )
     }
 
     func test_TerminalErrorOnPresentedSlotOccupantClearsSlot() async {
@@ -159,6 +165,18 @@ class PreloadCacheTests: XCTestCase {
 
         await fulfillment(of: [didFail], timeout: 2.0)
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
+    }
+
+    func test_RetainingPresentedPreloadRearmsExpiryForOriginalTTL() {
+        let entry = storeCacheEntry()
+        let key = PreloadKey(url: url, entryPoint: nil)
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasActiveExpiryTimer())
+        XCTAssertIdentical(CheckoutWebView.preloadCache.view(for: key), entry)
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasActiveExpiryTimer())
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.retainAfterPresentation(entry))
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasActiveExpiryTimer())
     }
 
     // MARK: - Events from a non-occupant view must not touch the slot
@@ -262,7 +280,10 @@ class PreloadCacheTests: XCTestCase {
     private func preloadFailureExpectation(for preload: CheckoutPreload) -> XCTestExpectation {
         let failed = expectation(description: "preload transitions to protocol failure")
         preload.onStateChange = { state in
-            if state == .failed(reason: .protocolError) {
+            if state == .failed(
+                reason: .protocolError,
+                message: "Checkout sent a terminal protocol error."
+            ) {
                 failed.fulfill()
             }
         }

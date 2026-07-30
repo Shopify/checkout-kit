@@ -592,11 +592,13 @@ public final class com/shopify/checkoutkit/PreloadState$Expired : com/shopify/ch
 }
 
 public final class com/shopify/checkoutkit/PreloadState$Failed : com/shopify/checkoutkit/PreloadState {
-	public fun <init> (Lcom/shopify/checkoutkit/PreloadState$FailureReason;)V
+	public fun <init> (Lcom/shopify/checkoutkit/PreloadState$FailureReason;Ljava/lang/String;)V
 	public final fun component1 ()Lcom/shopify/checkoutkit/PreloadState$FailureReason;
-	public final fun copy (Lcom/shopify/checkoutkit/PreloadState$FailureReason;)Lcom/shopify/checkoutkit/PreloadState$Failed;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PreloadState$Failed;Lcom/shopify/checkoutkit/PreloadState$FailureReason;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PreloadState$Failed;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lcom/shopify/checkoutkit/PreloadState$FailureReason;Ljava/lang/String;)Lcom/shopify/checkoutkit/PreloadState$Failed;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PreloadState$Failed;Lcom/shopify/checkoutkit/PreloadState$FailureReason;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PreloadState$Failed;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
 	public final fun getReason ()Lcom/shopify/checkoutkit/PreloadState$FailureReason;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -630,8 +632,8 @@ public final class com/shopify/checkoutkit/PreloadState$FailureReason$ProtocolEr
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/shopify/checkoutkit/PreloadState$FailureReason$WebContentProcessTerminated : com/shopify/checkoutkit/PreloadState$FailureReason {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$FailureReason$WebContentProcessTerminated;
+public final class com/shopify/checkoutkit/PreloadState$FailureReason$WebContentUnavailable : com/shopify/checkoutkit/PreloadState$FailureReason {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$FailureReason$WebContentUnavailable;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;

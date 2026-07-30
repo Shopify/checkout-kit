@@ -33,7 +33,10 @@ class PreloadObservabilityTests: XCTestCase {
 
         let preload = ShopifyCheckoutKit.preload(checkout: insecureURL)
 
-        XCTAssertEqual(preload?.state, .failed(reason: .navigationFailed))
+        XCTAssertEqual(
+            preload?.state,
+            .failed(reason: .navigationFailed, message: "Checkout URL must use HTTPS.")
+        )
     }
 
     func testManualInvalidateTransitionsToIdle() {
@@ -125,13 +128,16 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testKeepAliveFailureTransitionsToFailed() {
+    func testWebContentUnavailableTransitionsToFailed() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
 
         CheckoutWebView.preloadCache.keepAliveDidFail()
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload?.state, .failed(reason: .keepAliveLost))
+            XCTAssertEqual(
+                preload?.state,
+                .failed(reason: .webContentUnavailable, message: "Preload keep-alive failed.")
+            )
         }
     }
 
@@ -146,7 +152,13 @@ class PreloadObservabilityTests: XCTestCase {
         _ = view.handleResponse(response)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload?.state, .failed(reason: .httpError(statusCode: 500)))
+            XCTAssertEqual(
+                preload?.state,
+                .failed(
+                    reason: .httpError(statusCode: 500),
+                    message: "HTTP response returned status code 500."
+                )
+            )
         }
     }
 
@@ -159,7 +171,10 @@ class PreloadObservabilityTests: XCTestCase {
         view.webView(view, didFail: nil, withError: error)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload?.state, .failed(reason: .navigationFailed))
+            XCTAssertEqual(
+                preload?.state,
+                .failed(reason: .navigationFailed, message: "Navigation failed (error code: -1001).")
+            )
         }
     }
 
@@ -172,7 +187,10 @@ class PreloadObservabilityTests: XCTestCase {
         view.webView(view, didFailProvisionalNavigation: nil, withError: error)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload?.state, .failed(reason: .navigationFailed))
+            XCTAssertEqual(
+                preload?.state,
+                .failed(reason: .navigationFailed, message: "Navigation failed (error code: -1001).")
+            )
         }
     }
 

@@ -28,7 +28,7 @@ class ShopifyCheckoutTest {
     @Before
     fun setUp() {
         CheckoutWebView.clearCache()
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         activityController = Robolectric.buildActivity(ComponentActivity::class.java).setup()
         activity = activityController.get()
         webMessageTransport = FakeWebMessageTransport()
@@ -37,7 +37,7 @@ class ShopifyCheckoutTest {
     @After
     fun tearDown() {
         CheckoutWebView.clearCache()
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
     }
 
     @Test
@@ -55,7 +55,7 @@ class ShopifyCheckoutTest {
     @Test
     fun `destroy discards matching preloaded checkout`() {
         CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val preloadedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         val view = shopifyCheckout()
@@ -71,7 +71,7 @@ class ShopifyCheckoutTest {
     @Test
     fun `concurrent presentation does not reuse active preloaded checkout`() {
         CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val preloadedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         val firstView = shopifyCheckout()
@@ -154,7 +154,7 @@ class ShopifyCheckoutTest {
 
         assertThat(receivedError).isNull()
         constructionComplete = true
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
 
         assertThat(receivedError!!.code).isEqualTo(CheckoutErrorCode.WEB_VIEW_NOT_SUPPORTED)
         assertThat(failureReportedAfterConstruction).isTrue()
@@ -201,7 +201,7 @@ class ShopifyCheckoutTest {
         }
 
         view.destroy()
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
 
         assertThat(failed).isFalse()
     }

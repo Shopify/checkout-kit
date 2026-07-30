@@ -102,6 +102,24 @@ final class PreloadCache {
         return cached.view
     }
 
+    /// Retains a dismissed cached view for the remainder of its original preload TTL.
+    ///
+    /// The expiry timer is paused while a cached view is presented so it cannot evict a live
+    /// checkout session. Re-arm it after dismissal without resetting `createdAt`.
+    @discardableResult
+    func retainAfterPresentation(_ view: CheckoutWebView) -> Bool {
+        guard let cached = entry, cached.view === view else {
+            return false
+        }
+        guard !cached.isStale else {
+            expire()
+            return false
+        }
+
+        startExpiryTimer(after: cached.remainingTTL)
+        return true
+    }
+
     func invalidate(disconnect: Bool = true) {
         OSLogger.shared.debug("Invalidating preload cache, disconnect: \(disconnect)")
 
@@ -149,6 +167,10 @@ final class PreloadCache {
         return keepAliveTimer != nil
     }
 
+    func hasActiveExpiryTimer() -> Bool {
+        return expiryTimer != nil
+    }
+
     /// While the preloaded webview is unparented, WebKit can suspend its web process before
     /// the page finishes loading. Periodically evaluating a no-op keeps the process scheduled
     /// so the preloaded page can finish loading before it is presented. The 500ms cadence is
@@ -185,7 +207,10 @@ final class PreloadCache {
     }
 
     func keepAliveDidFail() {
-        evict(with: .failed(reason: .keepAliveLost))
+        evict(with: .failed(
+            reason: .webContentUnavailable,
+            message: "Preload keep-alive failed."
+        ))
     }
 
     private func stopKeepAlive() {
@@ -471,7 +496,10 @@ class CheckoutWebView: WKWebView {
 
     func load(checkout url: URL, isPreload: Bool = false) {
         guard url.scheme?.lowercased() == "https", url.host != nil else {
-            handleCachedViewFailure(.navigationFailed)
+            handleCachedViewFailure(
+                .navigationFailed,
+                message: "Checkout URL must use HTTPS."
+            )
             viewDelegate?.checkoutViewDidFailWithError(
                 error: .sdkError(underlying: InsecureCheckoutURLError(url: url))
             )
@@ -496,13 +524,16 @@ class CheckoutWebView: WKWebView {
         CheckoutWebView.preloadCache.contains(self) && !hasBeenPresented
     }
 
-    private func handleCachedViewFailure(_ reason: PreloadState.FailureReason) {
+    private func handleCachedViewFailure(
+        _ reason: PreloadState.FailureReason,
+        message: String
+    ) {
         guard CheckoutWebView.preloadCache.contains(self) else { return }
 
         if hasBeenPresented {
             CheckoutWebView.preloadCache.evict(with: .idle)
         } else {
-            CheckoutWebView.preloadCache.evict(with: .failed(reason: reason))
+            CheckoutWebView.preloadCache.evict(with: .failed(reason: reason, message: message))
         }
     }
 
@@ -629,7 +660,10 @@ extension CheckoutWebView: WKScriptMessageHandler {
             }
 
             let wasBackgroundedPreload = isPreloadBackgrounded
-            handleCachedViewFailure(.protocolError)
+            handleCachedViewFailure(
+                .protocolError,
+                message: "Checkout sent a terminal protocol error."
+            )
             hasHandledTerminalFailure = true
             guard !wasBackgroundedPreload else { return }
 
@@ -718,7 +752,10 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         if navigationIsMainFrame(action), url.scheme?.lowercased() != "https" {
-            handleCachedViewFailure(.navigationFailed)
+            handleCachedViewFailure(
+                .navigationFailed,
+                message: "Checkout URL must use HTTPS."
+            )
             viewDelegate?.checkoutViewDidFailWithError(
                 error: .sdkError(underlying: InsecureCheckoutURLError(url: url))
             )
@@ -747,7 +784,10 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         if statusCode >= 400 {
-            handleCachedViewFailure(.httpError(statusCode: statusCode))
+            handleCachedViewFailure(
+                .httpError(statusCode: statusCode),
+                message: "HTTP response returned status code \(statusCode)."
+            )
 
             OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
 
@@ -826,7 +866,10 @@ extension CheckoutWebView: WKNavigationDelegate {
         timer = nil
         resetProvisionalNavigationRetryState()
         let wasBackgroundedPreload = isPreloadBackgrounded
-        handleCachedViewFailure(.webContentProcessTerminated)
+        handleCachedViewFailure(
+            .webContentUnavailable,
+            message: "Web content process terminated."
+        )
 
         guard !wasBackgroundedPreload else { return }
 
@@ -880,8 +923,12 @@ extension CheckoutWebView: WKNavigationDelegate {
 
     private func failNavigation(with error: Error) {
         resetProvisionalNavigationRetryState()
-        handleCachedViewFailure(.navigationFailed)
-        let failure = isRetryableProvisionalNavigationError(error as NSError)
+        let nsError = error as NSError
+        handleCachedViewFailure(
+            .navigationFailed,
+            message: "Navigation failed (error code: \(nsError.code))."
+        )
+        let failure = isRetryableProvisionalNavigationError(nsError)
             ? CheckoutError.network(message: error.localizedDescription, underlyingError: error)
             : CheckoutError.unknown(message: error.localizedDescription, underlyingError: error)
         viewDelegate?.checkoutViewDidFailWithError(error: failure)

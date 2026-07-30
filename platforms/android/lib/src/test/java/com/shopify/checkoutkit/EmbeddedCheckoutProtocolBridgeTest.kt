@@ -41,7 +41,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     @Before
     fun setUp() {
         CheckoutWebView.clearCache()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         // Mirror real-Android behavior: startActivity throws ActivityNotFoundException when
         // no activity resolves the intent. Robolectric defaults to silently recording the
@@ -60,7 +60,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     @After
     fun tearDown() {
         CheckoutWebView.clearCache()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
     }
 
     @Test
@@ -81,7 +81,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         assertThat(webMessageTransport.sentMessages).isEmpty()
 
         queuedCommand!!.run()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(webMessageTransport.sentMessages).hasSize(1)
     }
@@ -253,7 +253,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val response = captureSentMessage {
             ecp.receiveMessage(windowOpenRequest(id = "\"7\"", url = "https://example.com"))
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(response).contains("\"status\":\"success\"")
         val launched = shadowOf(activity).nextStartedActivity
@@ -267,7 +267,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val response = captureSentMessage {
             ecp.receiveMessage(windowOpenRequest(id = "\"42\"", url = "https://nothing-resolves.invalid"))
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
         assertThat(response).contains("\"severity\":\"unrecoverable\"")
@@ -283,7 +283,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val response = captureSentMessage {
             ecp.receiveMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(response).contains("\"status\":\"success\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNotNull()
@@ -301,7 +301,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val response = captureSentMessage {
             ecp.receiveMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com"))
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
         assertThat(response).contains("merchant says no")
@@ -320,7 +320,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         ecp.setClient(merchantClient)
 
         ecp.receiveMessage(windowOpenRequest(id = "\"8\"", url = "https://example.com/promo?id=42"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(captured).isNotNull()
         assertThat(captured!!.url).isEqualTo("https://example.com/promo?id=42")
@@ -362,7 +362,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val response = captureSentMessage {
             ecp.receiveMessage(windowOpenRequest(id = "\"13\"", url = "https://example.com/a b"))
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
         assertThat(response).contains("\"severity\":\"unrecoverable\"")
@@ -376,7 +376,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val response = captureSentMessage {
             ecp.receiveMessage(windowOpenRequest(id = "\"14\"", url = "https://example.com/a b"))
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
         assertThat(response).contains("\"severity\":\"unrecoverable\"")
@@ -388,7 +388,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val response = captureSentMessage {
             ecp.receiveMessage(windowOpenRequest(id = "\"15\"", url = "   "))
         }
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(response).contains("\"code\":\"window_open_rejected_error\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNull()
@@ -436,7 +436,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     @Test
     fun `ec start hides progress bar`() {
         ecp.receiveMessage("""{"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{}}}""")
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         verify(mockListener).onCheckoutViewLoadComplete()
     }
 
@@ -448,7 +448,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         ecp.setClient(client)
 
         ecp.receiveMessage(ecStartMessage())
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(received).isTrue()
     }
@@ -458,7 +458,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         ecp.setClient(CheckoutProtocol.Client())
 
         ecp.receiveMessage(ecStartMessage())
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(webMessageTransport.sentMessages).isEmpty()
     }
@@ -473,7 +473,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         ecp.setClient(CheckoutProtocol.Client().on(CheckoutProtocol.error) { receivedMessages = it.messages })
 
         ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val received = receivedMessages.single()
         assertThat(received.code).isEqualTo("unrecoverable_failure")
@@ -489,7 +489,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     @Test
     fun `terminal ec error without an unrecoverable error message fails with unknown`() {
         ecp.receiveMessage(ecErrorMessage(severity = "recoverable"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val captor = argumentCaptor<CheckoutException>()
         verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
@@ -508,7 +508,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         """.trimMargin()
 
         ecp.receiveMessage(ecErrorMessageWithMessages(messages))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val captor = argumentCaptor<CheckoutException>()
         verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
@@ -521,7 +521,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     fun `duplicate terminal ec errors fail presentation once`() {
         ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
         ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         verify(mockListener).onCheckoutViewFailedWithError(any())
     }
@@ -545,7 +545,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     @Test
     fun `terminal ec error transitions cached preload to protocol failure`() {
         val preload = CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)!!
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
         val preloadBridge = EmbeddedCheckoutProtocolBridge(
             cachedWebView,
@@ -554,17 +554,22 @@ class EmbeddedCheckoutProtocolBridgeTest {
         )
 
         preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
         assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
-        assertThat(preload.state).isEqualTo(PreloadState.Failed(PreloadState.FailureReason.ProtocolError))
+        assertThat(preload.state).isEqualTo(
+            PreloadState.Failed(
+                PreloadState.FailureReason.ProtocolError,
+                "Checkout sent a terminal protocol error.",
+            ),
+        )
     }
 
     @Test
     fun `duplicate terminal errors on backgrounded preload do not deliver lifecycle failure`() {
         CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
         cachedWebView.setListener(mockListener)
         val preloadBridge = EmbeddedCheckoutProtocolBridge(
@@ -575,7 +580,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
         preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
         preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         verify(mockListener, Mockito.never()).onCheckoutViewFailedWithError(any())
     }
@@ -583,7 +588,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     @Test
     fun `terminal cached preload error defers cache eviction from protocol executor to main thread`() {
         val preload = CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)!!
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
         val executor = Executors.newSingleThreadExecutor()
         val bridge = EmbeddedCheckoutProtocolBridge(
@@ -598,38 +603,43 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
 
-            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+            shadowOf(Looper.getMainLooper()).idle()
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
-            assertThat(preload.state).isEqualTo(PreloadState.Failed(PreloadState.FailureReason.ProtocolError))
+            assertThat(preload.state).isEqualTo(
+                PreloadState.Failed(
+                    PreloadState.FailureReason.ProtocolError,
+                    "Checkout sent a terminal protocol error.",
+                ),
+            )
         } finally {
             executor.shutdownNow()
         }
     }
 
     @Test
-    fun `terminal ec error of retained post-presentation checkout transitions preload to idle`() {
+    fun `terminal ec error of retained post-presentation checkout does not update consumed preload handle`() {
         val preload = CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)!!
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         val view = CheckoutWebView.checkoutViewFor("https://shopify.dev/cart/123", activity, webMessageTransport)
         view.markPresented()
-        assertThat(CheckoutWebView.releaseAfterPresentation(view)).isTrue()
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isTrue()
         val bridge = EmbeddedCheckoutProtocolBridge(view, webMessageTransport, protocolMessageExecutor = directExecutor)
 
         bridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
-        assertThat(preload.state).isEqualTo(PreloadState.Idle)
+        assertThat(preload.state).isEqualTo(PreloadState.Loading)
     }
 
     @Test
     fun `terminal error from foreign view does not evict active cached preload`() {
         CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         ecp.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
     }
@@ -647,7 +657,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         )
 
         preloadBridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         verify(mockListener).onCheckoutViewFailedWithError(any())
     }
@@ -657,7 +667,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val rawMessage = """{"jsonrpc":"2.0","method":"ec.error","params":{"error":{$ERROR_RESPONSE_UCP}}}"""
 
         ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val captor = argumentCaptor<CheckoutException>()
         verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
@@ -671,7 +681,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         val rawMessage = """{"jsonrpc":2,"method":"ec.error","params":{"error":{$ERROR_RESPONSE_UCP}}}"""
 
         ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val captor = argumentCaptor<CheckoutException>()
         verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
@@ -692,7 +702,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         ecp.setClient(client)
 
         ecp.receiveMessage(ecCompleteMessage())
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(received).isTrue()
     }
@@ -700,11 +710,11 @@ class EmbeddedCheckoutProtocolBridgeTest {
     @Test
     fun `ec complete invalidates cached preload`() {
         CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         ecp.receiveMessage(ecCompleteMessage())
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
         assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
@@ -744,7 +754,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         ecp.setClient(client)
 
         ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(webMessageTransport.sentMessages).isEmpty()
     }
@@ -843,7 +853,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         ecp.setClient(CheckoutProtocol.Client())
 
         ecp.receiveMessage(rawMessage)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(webMessageTransport.sentMessages).isEmpty()
     }
@@ -898,7 +908,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     private fun captureSentMessage(block: () -> Unit): String {
         val initialMessageCount = webMessageTransport.sentMessages.size
         block()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         assertThat(webMessageTransport.sentMessages).hasSize(initialMessageCount + 1)
         return webMessageTransport.sentMessages.last().message
     }

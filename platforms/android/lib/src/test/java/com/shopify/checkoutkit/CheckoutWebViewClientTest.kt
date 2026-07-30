@@ -54,7 +54,7 @@ class CheckoutWebViewClientTest {
     @After
     fun tearDown() {
         CheckoutWebView.clearCache()
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
     }
 
     @Test
@@ -146,7 +146,7 @@ class CheckoutWebViewClientTest {
         val webViewClient = view.CheckoutWebViewClient()
 
         webViewClient.onReceivedError(view, mockRequest, mockResponse)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
 
         val captor = argumentCaptor<CheckoutException>()
         verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
@@ -163,7 +163,7 @@ class CheckoutWebViewClientTest {
     fun `does not retry a non-transient initial main frame error`() {
         val view = viewWithProcessor(activity)
         view.loadCheckout("https://checkout-sdk.myshopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val request = mockWebRequest(Uri.parse(requireNotNull(shadowOf(view).lastLoadedUrl)), true)
         val webViewClient = view.CheckoutWebViewClient()
 
@@ -180,7 +180,7 @@ class CheckoutWebViewClientTest {
             activity = activity,
             webMessageTransport = webMessageTransport,
         )
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val view = requireNotNull(CheckoutWebView.cachedPreloadViewForTesting())
         val originalUrl = requireNotNull(shadowOf(view).lastLoadedUrl)
         val request = mockWebRequest(Uri.parse(originalUrl), true)
@@ -206,7 +206,7 @@ class CheckoutWebViewClientTest {
     fun `subresource errors do not consume the initial checkout retry`() {
         val view = viewWithProcessor(activity)
         view.loadCheckout("https://checkout-sdk.myshopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val originalUrl = requireNotNull(shadowOf(view).lastLoadedUrl)
         val webViewClient = view.CheckoutWebViewClient()
         val error = mockWebResourceError(status = ERROR_TIMEOUT, description = "Timed out")
@@ -421,7 +421,7 @@ class CheckoutWebViewClientTest {
     fun `renderer termination of backgrounded preload does not report lifecycle failure`() {
         val checkoutUrl = "https://checkout.shopify.com/cart/123"
         CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val view = requireNotNull(CheckoutWebView.cachedPreloadViewForTesting())
         view.setListener(checkoutWebViewListener)
         val detail = mock<RenderProcessGoneDetail>()
@@ -438,7 +438,7 @@ class CheckoutWebViewClientTest {
     fun `renderer termination of presented cached checkout reports lifecycle failure`() {
         val checkoutUrl = "https://checkout.shopify.com/cart/123"
         CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val view = requireNotNull(CheckoutWebView.cachedPreloadViewForTesting())
         view.markPresented()
         view.setListener(checkoutWebViewListener)
@@ -457,7 +457,7 @@ class CheckoutWebViewClientTest {
     fun `fallback renderer failure does not evict active preloaded checkout`() {
         val checkoutUrl = "https://checkout.shopify.com/cart/123"
         CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val preloadedView = CheckoutWebView.checkoutViewFor(checkoutUrl, activity, webMessageTransport)
         preloadedView.markPresented()
         val fallbackView = CheckoutWebView.checkoutViewFor(checkoutUrl, activity, webMessageTransport)
@@ -474,14 +474,14 @@ class CheckoutWebViewClientTest {
         val webViewClient = view.CheckoutWebViewClient()
 
         webViewClient.onReceivedHttpError(view, mockRequest, checkoutExpiredResponse)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
     }
 
     private fun assertRetriesInitialMainFrameErrorOnce(errorCode: Int) {
         val listener = spy(CheckoutWebViewListener(mock()))
         val view = viewWithProcessor(activity, listener)
         view.loadCheckout("https://checkout-sdk.myshopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val originalUrl = requireNotNull(shadowOf(view).lastLoadedUrl)
         val request = mockWebRequest(Uri.parse(originalUrl), true)
         val error = mockWebResourceError(status = errorCode, description = "Transient failure")
