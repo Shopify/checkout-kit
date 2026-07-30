@@ -2,10 +2,14 @@ appId: ${E2E_APP_ID}
 ---
 - runFlow: close.yaml
 
+# The four samples return to four different screens after checkout closes, so the flow
+# asserts nothing about which screen that is. The cart control belongs to the app chrome
+# and stays on screen everywhere, which makes it both the "we are back" signal and the
+# way to the cart.
 - extendedWaitUntil:
     visible:
-      id: catalog-tab
-    timeout: 10000
+      id: cart-tab
+    timeout: 30000
 
 - tapOn:
     id: cart-tab

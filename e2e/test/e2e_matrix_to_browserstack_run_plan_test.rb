@@ -52,8 +52,8 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     android_run = run_for("kotlin-android")
 
     assert_equal ["launch", "checkout"], ios_run.fetch("include_tags")
-    assert_equal ["flaky", "wip", "full", "android-only"], ios_run.fetch("exclude_tags")
-    assert_equal ["flaky", "wip", "full", "ios-only"], android_run.fetch("exclude_tags")
+    assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
+    assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
   end
 
   def test_an_application_overrides_the_default_tags
