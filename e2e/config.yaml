@@ -1,6 +1,11 @@
 flows:
   - tests/**/*.yaml
 
+# Quarantined tests stay in the tree and out of every run until someone fixes them.
+excludeTags:
+  - flaky
+  - wip
+
 platform:
   ios:
     # Lets Maestro inspect elements presented inside iOS checkout modal views.
