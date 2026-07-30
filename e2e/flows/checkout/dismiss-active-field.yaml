@@ -1,4 +1,4 @@
-appId: ${APP_ID}
+appId: ${E2E_APP_ID}
 ---
 - runFlow:
     when:

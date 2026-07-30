@@ -12,11 +12,14 @@ require_relative "../../scripts/lib/changed_file_filters"
 # parallelizes over it via `run_at`/`count`.
 #
 # Today the numbers make the config and the expansion look equivalent -
-# 2 applications + 1 os_version_tag + 1 suite, and 2 * 1 * 1 = 2 runs - so it can look
+# 4 applications + 1 os_version_tag, and 4 * 1 = 4 runs - so it can look
 # like a plain YAML-to-JSON copy. The point is the multiplication, not the copy:
 # adding a single os_version_tag (e.g. a minimum-supported OS) transparently duplicates
-# every application x suite across that OS, turning an additive config change into
+# every application across that OS, turning an additive config change into
 # a multiplicative set of runs without hand-writing each one.
+#
+# Every run executes the whole tests folder. Tags decide what runs inside it, so a new
+# test file adds no rows here - it only needs a tag the matrix already includes.
 class E2EMatrixToBrowserStackRunPlan
   # Drift between the matrix and the pipeline graph happens in both directions: a stale
   # branch predating a newly added target, or a build workflow deleted while the matrix
@@ -39,10 +42,8 @@ class E2EMatrixToBrowserStackRunPlan
   def expand
     ensure_valid!
     selected_applications.flat_map do |application|
-      os_version_tags.flat_map do |os_version_tag|
-        suites.map do |suite|
-          build_run(application, os_version_tag, suite)
-        end
+      os_version_tags.map do |os_version_tag|
+        build_run(application, os_version_tag)
       end
     end
   end
@@ -96,11 +97,11 @@ class E2EMatrixToBrowserStackRunPlan
     errors << "version must be 1" unless @config.fetch("version", nil) == 1
     validate_collection(errors, "applications", applications)
     validate_collection(errors, "os_version_tags", os_version_tags)
-    validate_collection(errors, "suites", suites)
     validate_changed_file_filters(errors)
+    validate_tests_path(errors)
     validate_applications(errors)
     validate_os_version_tags(errors)
-    validate_suites(errors)
+    validate_default_tags(errors)
     errors
   end
 
@@ -111,25 +112,41 @@ class E2EMatrixToBrowserStackRunPlan
 
   private
 
-  def build_run(application, os_version_tag, suite)
+  def build_run(application, os_version_tag)
     platform = application.fetch("platform")
     os_version_tag_id = os_version_tag_id(os_version_tag)
-    suite_id = suite.fetch("id")
     application_id = application.fetch("id")
+    app_id = application.fetch("app_id")
 
     {
-      "id" => "#{application_id}-#{os_version_tag_id}-#{suite_id}",
+      "id" => "#{application_id}-#{os_version_tag_id}",
       "application_id" => application_id,
       "target" => application.fetch("target"),
       "platform" => platform,
       "os_version_tag" => os_version_tag_id,
       "device_selector" => device_selector(platform, os_version_tag),
-      "app_id" => application.fetch("app_id"),
+      "app_id" => app_id,
+      "control_link" => control_link(app_id),
       "artifact_env" => application.fetch("artifact_env"),
-      "execute" => suite.fetch("execute"),
+      "execute" => tests_path,
+      "include_tags" => application_tags(application, "include"),
+      "exclude_tags" => application_tags(application, "exclude"),
       "ready_marker" => application.fetch("ready_marker"),
-      "status_context" => "checkout-kit/e2e/#{application_id}/#{os_version_tag_id}/#{suite_id}"
+      "status_context" => "checkout-kit/e2e/#{application_id}/#{os_version_tag_id}"
     }
+  end
+
+  # The control link scheme is the app id on all four targets, so deriving it keeps
+  # one source of truth instead of a second copy that drifts.
+  def control_link(app_id)
+    "#{app_id}://e2e"
+  end
+
+  def application_tags(application, kind)
+    override = application.fetch("#{kind}_tags", nil)
+    return Array(override) if override
+
+    Array(default_tags.fetch(kind, nil))
   end
 
   def application_matches_changed_files?(application)
@@ -185,8 +202,21 @@ class E2EMatrixToBrowserStackRunPlan
     @config.fetch("os_version_tags", []) || []
   end
 
-  def suites
-    @config.fetch("suites", []) || []
+  def tests_path
+    @config.fetch("tests_path", "tests")
+  end
+
+  def default_tags
+    @config.fetch("tags", {}) || {}
+  end
+
+  def declared_tags
+    @declared_tags ||= Dir.glob("#{tests_path}/**/*.yaml", base: e2e_root).flat_map do |path|
+      header = File.read(File.join(e2e_root, path)).split("\n---\n").first
+      YAML.safe_load(header)["tags"] || []
+    rescue Psych::Exception
+      []
+    end.uniq
   end
 
   def validate_collection(errors, name, collection)
@@ -219,6 +249,7 @@ class E2EMatrixToBrowserStackRunPlan
         errors << "application #{id} missing #{key}" if application.fetch(key, "").to_s.empty?
       end
       validate_application_changed_files_filters(errors, application)
+      validate_application_tags(errors, application)
       platform = application.fetch("platform", nil)
       errors << "application #{id} platform must be ios or android" unless ["ios", "android"].include?(platform)
     end
@@ -272,19 +303,55 @@ class E2EMatrixToBrowserStackRunPlan
     nil
   end
 
-  def validate_suites(errors)
-    return unless suites.is_a?(Array)
+  def validate_tests_path(errors)
+    return if File.directory?(File.join(e2e_root, tests_path))
 
-    validate_unique_ids(errors, "suite", suites)
-    suites.each do |suite|
-      id = suite.fetch("id", "")
-      errors << "suite missing id" if id.to_s.empty?
-      execute = suite.fetch("execute", "")
-      errors << "suite #{id} missing execute" if execute.empty?
-      next if execute.empty?
+    errors << "tests_path is not a directory: #{tests_path}"
+  end
 
-      errors << "suite #{id} execute path does not exist: #{execute}" unless File.exist?(File.join(e2e_root, execute))
+  # An include tag no test carries produces a green run that tested nothing.
+  def validate_default_tags(errors)
+    ["include", "exclude"].each do |kind|
+      tags = default_tags.fetch(kind, nil)
+      next if tags.nil?
+
+      unless tags.is_a?(Array)
+        errors << "tags #{kind} must be an array"
+        next
+      end
+
+      next unless kind == "include"
+
+      errors.concat(unknown_include_tag_errors(tags) { |tag| "tags include '#{tag}' but no test in tests/ carries it" })
     end
+  end
+
+  def validate_application_tags(errors, application)
+    id = application.fetch("id", "<missing>")
+
+    ["include", "exclude"].each do |kind|
+      tags = application.fetch("#{kind}_tags", nil)
+      next if tags.nil?
+
+      unless tags.is_a?(Array)
+        errors << "application #{id} #{kind}_tags must be an array"
+        next
+      end
+
+      next unless kind == "include"
+
+      errors.concat(
+        unknown_include_tag_errors(tags) do |tag|
+          "application #{id} include_tags '#{tag}' but no test in tests/ carries it"
+        end
+      )
+    end
+  end
+
+  def unknown_include_tag_errors(tags)
+    return [] if declared_tags.empty?
+
+    (tags - declared_tags).map { |tag| yield(tag) }
   end
 
   def validate_unique_ids(errors, label, collection)

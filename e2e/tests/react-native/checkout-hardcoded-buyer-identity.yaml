@@ -1,4 +1,4 @@
-appId: ${APP_ID}
+appId: ${E2E_APP_ID}
 name: React Native checkout - hardcoded buyer identity
 tags:
   - checkout

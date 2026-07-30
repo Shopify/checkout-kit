@@ -6,8 +6,9 @@ Kit sample apps. Two complementary setups live here:
 - A **local** React Native suite, run with `dev rn e2e`, that exercises guest and
   hardcoded buyer identity checkouts from seeded carts through Shopify checkout
   and back to the app. Tags select which tests run.
-- A **CI matrix** that expands applications, OS version tags, and suites into
-  BrowserStack Maestro run rows, starting with a shared launch smoke.
+- A **CI matrix** that expands applications and OS version tags into BrowserStack
+  Maestro run rows. Every row runs the whole `tests/` folder and tags select what
+  runs inside it.
 
 ## Run locally
 
@@ -90,24 +91,30 @@ the React Native sample configuration, not local in-repo native SDK overrides.
 
 ## Matrix
 
-CI runs are described by `config/matrix.yml`. The matrix expands applications, OS
-version tags, and suites into a BrowserStack run plan. Because Bitrise has no
-built-in matrix support, `e2e/lib/e2e_matrix_to_browserstack_run_plan.rb`
-transforms the matrix into a BrowserStack run plan and the pipeline
-parallelizes over the resulting rows.
+CI runs are described by `config/matrix.yml`. The matrix expands applications and
+OS version tags into a BrowserStack run plan. Because Bitrise has no built-in
+matrix support, `e2e/lib/e2e_matrix_to_browserstack_run_plan.rb` transforms the
+matrix into a BrowserStack run plan and the pipeline parallelizes over the
+resulting rows.
 
 Current applications:
 
 - React Native iOS sample app
 - React Native Android sample app
+- Kotlin Android sample app
+- Swift iOS sample app
 
 Current OS version tags:
 
 - `latest`
 
-Current suites:
+Every run executes the whole `tests/` folder. The top-level `tags:` block sets the
+default include and exclude lists, and an application may override either one to
+adopt a test before the others carry it. Adding a test adds no rows here.
 
-- `tests/shared/launch-smoke.yaml`
+The run plan derives `E2E_CONTROL_LINK` as `<app_id>://e2e`, because the deep link
+scheme equals the app id on all four targets. Each run also supplies `E2E_APP_ID`
+and `E2E_READY_MARKER`, and the local runners supply the same three names.
 
 Validate the matrix:
 
@@ -144,7 +151,7 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
   from a bootstrapped cart with hardcoded buyer identity.
 - `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
   `scripts/` drive the BrowserStack run plan.
-- `tests/shared/launch-smoke.yaml` is the shared launch smoke suite.
+- `tests/shared/launch-smoke.yaml` is the shared launch smoke test.
 
 ## Shared app contract
 
