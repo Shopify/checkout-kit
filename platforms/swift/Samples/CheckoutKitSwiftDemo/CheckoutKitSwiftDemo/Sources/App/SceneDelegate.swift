@@ -242,6 +242,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if CustomerAccountManager.shared.handleCallback(url: url) {
             return
         }
+
+        Task { await E2EController.shared.handle(url: url.absoluteString) }
     }
 
     func scene(_: UIScene, continue userActivity: NSUserActivity) {

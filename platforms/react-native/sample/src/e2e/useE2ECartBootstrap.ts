@@ -1,71 +1,53 @@
-import {useCallback} from 'react';
+import {useCallback, useMemo} from 'react';
 import {Alert} from 'react-native';
+import type {BuyerIdentityMode} from '../auth/types';
 import {useCart} from '../context/Cart';
 import useShopify from '../hooks/useShopify';
-import {parseControlLink, type E2EControlLink} from './controlLink';
+import {E2EController, type E2ECommandTarget} from './controller';
 
 type UseE2ECartBootstrapOptions = {
   onCartReady: () => void;
 };
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unknown error';
-}
-
 export function useE2ECartBootstrap({onCartReady}: UseE2ECartBootstrapOptions) {
-  const {seedCart} = useCart();
+  const {seedCart, clearCart} = useCart();
   const {queries} = useShopify();
   const [fetchProducts] = queries.products;
 
-  return useCallback(
-    async (url: string) => {
-      let controlLink: E2EControlLink | null = null;
+  const target = useMemo<E2ECommandTarget>(() => {
+    let selectedBuyerIdentityMode: BuyerIdentityMode | undefined;
 
-      try {
-        controlLink = parseControlLink(url);
-      } catch (error) {
-        Alert.alert('Invalid e2e control link', errorMessage(error));
-        return true;
-      }
-
-      if (!controlLink) {
-        return false;
-      }
-
-      if (controlLink.command !== 'cart') {
-        Alert.alert('Unsupported e2e command', controlLink.command);
-        return true;
-      }
-
-      const cartCommand = controlLink;
-
-      try {
-        let {variantId} = cartCommand;
+    return {
+      async selectBuyerIdentityMode(mode) {
+        selectedBuyerIdentityMode = mode;
+      },
+      async resetCart() {
+        clearCart();
+      },
+      async variantId(productIndex) {
+        const {data} = await fetchProducts();
+        const product = data?.products.edges[productIndex]?.node;
+        const variantId = product?.variants.edges[0]?.node.id;
 
         if (!variantId) {
-          const {data} = await fetchProducts();
-          const product =
-            data?.products.edges[cartCommand.productIndex ?? 0]?.node;
-
-          variantId = product?.variants.edges[0]?.node.id;
+          throw new Error(`No product at index ${productIndex}`);
         }
 
-        if (!variantId) {
-          throw new Error('Cart bootstrap product variant was not found');
-        }
-
-        await seedCart(
-          variantId,
-          cartCommand.quantity,
-          cartCommand.buyerIdentityMode,
-        );
+        return variantId;
+      },
+      async addCartLine(variantId, quantity) {
+        await seedCart(variantId, quantity, selectedBuyerIdentityMode);
+      },
+      async showCart() {
         onCartReady();
-      } catch (error) {
-        Alert.alert('Cart bootstrap failed', errorMessage(error));
-      }
+      },
+      async report(failure) {
+        Alert.alert('E2E command failed', failure);
+      },
+    };
+  }, [clearCart, fetchProducts, onCartReady, seedCart]);
 
-      return true;
-    },
-    [fetchProducts, onCartReady, seedCart],
-  );
+  return useCallback((url: string) => new E2EController(target).handle(url), [
+    target,
+  ]);
 }
