@@ -25,9 +25,18 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   def test_expand_produces_one_run_per_application_and_os_version_tag
     runs = plan.expand
 
-    assert_equal 4, runs.length
+    assert_equal 8, runs.length
     assert_equal(
-      ["react-native-ios-latest", "react-native-android-latest", "kotlin-android-latest", "swift-ios-latest"],
+      [
+        "react-native-ios-latest",
+        "react-native-ios-previous",
+        "react-native-android-latest",
+        "react-native-android-previous",
+        "kotlin-android-latest",
+        "kotlin-android-previous",
+        "swift-ios-latest",
+        "swift-ios-previous"
+      ],
       runs.map { |run| run.fetch("id") }
     )
   end
@@ -42,7 +51,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     ios_run = run_for("swift-ios")
     android_run = run_for("kotlin-android")
 
-    assert_equal ["launch"], ios_run.fetch("include_tags")
+    assert_equal ["launch", "cart"], ios_run.fetch("include_tags")
     assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
     assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
   end
@@ -161,8 +170,8 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     env = plan(changed_files: ["platforms/react-native/src/index.ts"]).bitrise_env
 
     assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
-    assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
-    assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
+    assert_equal "4", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
+    assert_equal "4", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
     assert_equal "true", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
     assert_equal "true", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
     assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
@@ -173,8 +182,8 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     env = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"]).bitrise_env
 
     assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
-    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
-    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
+    assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
+    assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
     assert_equal "true", env.fetch("E2E_BUILD_SWIFT_IOS")
     assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
     assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
@@ -184,8 +193,8 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     env = plan(changed_files: ["platforms/android/lib/src/main/java/com/shopify/checkoutkit/Foo.kt"]).bitrise_env
 
     assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
-    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
-    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
+    assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
+    assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
     assert_equal "true", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
     assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
     assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")

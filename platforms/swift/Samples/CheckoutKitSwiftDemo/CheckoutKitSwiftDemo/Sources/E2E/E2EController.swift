@@ -30,6 +30,10 @@ final class E2EController {
 
     private let target: E2ECommandTarget
 
+    /// Chains every perform(_:) onto the previous one, because @MainActor alone does not
+    /// stop a second handle(url:) call from interleaving with the first across await points.
+    private var tail: Task<Void, Never>?
+
     init(target: E2ECommandTarget) {
         self.target = target
     }
@@ -49,9 +53,19 @@ final class E2EController {
             return false
         }
 
-        await perform(link)
+        await enqueue(link)
 
         return true
+    }
+
+    private func enqueue(_ link: E2EControlLink) async {
+        let previous = tail
+        let task = Task {
+            await previous?.value
+            await self.perform(link)
+        }
+        tail = task
+        await task.value
     }
 
     private func perform(_ link: E2EControlLink) async {

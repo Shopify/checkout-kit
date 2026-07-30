@@ -1,0 +1,259 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+usage() {
+  if [ -n "${DEV_COMMAND:-}" ]; then
+    cat <<EOF >&2
+Usage: $DEV_COMMAND [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
+
+Runs the $TARGET_DESCRIPTION Maestro tests. Without --tags, every test in e2e/tests
+runs. Tags come from the taxonomy: journey (launch, cart, checkout, account), cost
+tier (smoke, full), quarantine (flaky, wip) and platform capability (ios-only,
+android-only).
+
+Options:
+  --tags TAG[,TAG...]           Run only tests carrying any of these tags.
+  --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags.
+EOF
+    return
+  fi
+
+  echo "Usage: run_local_e2e {swift-ios|kotlin-android|react-native-ios|react-native-android} [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]" >&2
+}
+
+configure_target() {
+  TARGET="$1"
+  READY_MARKER="checkout-kit-sample-ready"
+  IS_REACT_NATIVE=false
+
+  case "$TARGET" in
+    swift-ios)
+      PLATFORM="ios"
+      APP_ID="com.shopify.checkoutkit.swiftdemo"
+      ROOT_DIR="$REPO_ROOT/platforms/swift"
+      APP_NAME="CheckoutKitSwiftDemo"
+      DERIVED_DATA="$ROOT_DIR/Samples/build/e2e-simulator"
+      DEV_COMMAND="dev swift e2e"
+      TARGET_DESCRIPTION="Swift sample"
+      ;;
+    kotlin-android)
+      PLATFORM="android"
+      APP_ID="com.shopify.checkoutkit.androiddemo"
+      ROOT_DIR="$REPO_ROOT/platforms/android"
+      SAMPLE_DIR="$ROOT_DIR/samples/CheckoutKitAndroidDemo"
+      DEV_COMMAND="dev android e2e"
+      TARGET_DESCRIPTION="Android sample"
+      ;;
+    react-native-ios)
+      PLATFORM="ios"
+      APP_ID="com.shopify.checkoutkit.reactnativedemo"
+      ROOT_DIR="$REPO_ROOT/platforms/react-native"
+      IS_REACT_NATIVE=true
+      METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-ios-metro.log"
+      DEV_COMMAND="dev rn e2e ios"
+      TARGET_DESCRIPTION="React Native iOS"
+      ;;
+    react-native-android)
+      PLATFORM="android"
+      APP_ID="com.shopify.checkoutkit.reactnativedemo"
+      ROOT_DIR="$REPO_ROOT/platforms/react-native"
+      IS_REACT_NATIVE=true
+      METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-android-metro.log"
+      DEV_COMMAND="dev rn e2e android"
+      TARGET_DESCRIPTION="React Native Android"
+      ;;
+    *)
+      echo "Unknown target: $TARGET" >&2
+      usage
+      return 1
+      ;;
+  esac
+}
+
+parse_maestro_tag_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --tags)
+        INCLUDE_TAGS="${2:-}"
+        if [ -z "$INCLUDE_TAGS" ]; then
+          usage
+          echo "--tags needs a comma separated tag list" >&2
+          exit 1
+        fi
+        shift 2
+        ;;
+      --tags=*)
+        INCLUDE_TAGS="${1#--tags=}"
+        shift
+        ;;
+      --exclude-tags)
+        EXCLUDE_TAGS="${2:-}"
+        shift 2
+        ;;
+      --exclude-tags=*)
+        EXCLUDE_TAGS="${1#--exclude-tags=}"
+        shift
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        usage
+        echo "Unknown option: $1" >&2
+        exit 1
+        ;;
+    esac
+  done
+}
+
+metro_running() {
+  curl --silent --fail http://localhost:8081/status | grep -q "packager-status:running"
+}
+
+cleanup() {
+  [ -n "$METRO_PID" ] && kill "$METRO_PID" 2>/dev/null || true
+  [ -n "$E2E_ENV_FILE" ] && rm -f "$E2E_ENV_FILE" || true
+}
+
+prepare_e2e_env() {
+  E2E_ENV_FILE="$(mktemp "${TMPDIR:-/tmp}/checkout-kit-rn-e2e-env.XXXXXX")"
+
+  if [ -f "$ROOT_DIR/sample/.env" ]; then
+    cp "$ROOT_DIR/sample/.env" "$E2E_ENV_FILE"
+    printf "\n" >>"$E2E_ENV_FILE"
+  fi
+
+  printf "CHECKOUT_KIT_E2E_DISABLE_LOGBOX=1\n" >>"$E2E_ENV_FILE"
+}
+
+wait_for_metro() {
+  for _ in $(seq 1 60); do
+    metro_running && return 0
+    sleep 1
+  done
+
+  echo "Timed out waiting for Metro. Last log lines:" >&2
+  tail -n 40 "$METRO_LOG" >&2 || true
+  return 1
+}
+
+prepare_react_native_environment() {
+  cd "$ROOT_DIR"
+
+  if ! metro_running; then
+    /opt/dev/bin/dev react-native start >"$METRO_LOG" 2>&1 &
+    METRO_PID="$!"
+  fi
+
+  wait_for_metro
+  prepare_e2e_env
+}
+
+booted_ios_simulator() {
+  xcrun simctl list devices booted |
+    awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36); exit }'
+}
+
+attached_android_device() {
+  adb devices | awk '$2 == "device" { print $1; exit }'
+}
+
+resolve_device() {
+  case "$PLATFORM" in
+    ios)
+      DEVICE_ID="$(booted_ios_simulator || true)"
+      if [ -z "$DEVICE_ID" ]; then
+        echo "No booted iOS simulator found." >&2
+        echo "Boot a simulator first, because Maestro drives the device the app runs on." >&2
+        return 1
+      fi
+      echo "Using booted simulator: $DEVICE_ID"
+      ;;
+    android)
+      DEVICE_ID="$(attached_android_device || true)"
+      if [ -z "$DEVICE_ID" ]; then
+        echo "No running Android device or emulator found." >&2
+        echo "Start an emulator first, because Maestro drives the device the app runs on." >&2
+        return 1
+      fi
+      echo "Using device: $DEVICE_ID"
+      ;;
+  esac
+}
+
+build_and_install() {
+  case "$TARGET" in
+    swift-ios)
+      "$ROOT_DIR/Scripts/generate_xcode_projects"
+      cd "$ROOT_DIR/Samples"
+      xcodebuild build \
+        -workspace Samples.xcworkspace \
+        -scheme "$APP_NAME" \
+        -sdk iphonesimulator \
+        -destination "id=$DEVICE_ID" \
+        -derivedDataPath "$DERIVED_DATA" \
+        -skipPackagePluginValidation \
+        -disableAutomaticPackageResolution \
+        CODE_SIGNING_ALLOWED=NO
+
+      APP_PATH="$(find "$DERIVED_DATA/Build/Products" -maxdepth 2 -name "${APP_NAME}.app" -print -quit)"
+      if [ -z "$APP_PATH" ]; then
+        echo "The build created no ${APP_NAME}.app bundle." >&2
+        return 1
+      fi
+
+      xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+      ;;
+    kotlin-android)
+      ANDROID_SERIAL="$DEVICE_ID" "$SAMPLE_DIR/gradlew" \
+        -p "$SAMPLE_DIR" :app:installDebug --console=plain
+      ;;
+    react-native-ios)
+      cd "$ROOT_DIR"
+      ENVFILE="$E2E_ENV_FILE" pnpm sample ios --udid "$DEVICE_ID"
+      ;;
+    react-native-android)
+      cd "$ROOT_DIR"
+      ENVFILE="$E2E_ENV_FILE" pnpm sample android \
+        --device "$DEVICE_ID" \
+        --extra-params "--refresh-dependencies"
+      ;;
+  esac
+}
+
+main() {
+  if [ "$#" -eq 0 ]; then
+    usage
+    return 1
+  fi
+
+  configure_target "$1"
+  shift
+
+  INCLUDE_TAGS=""
+  EXCLUDE_TAGS=""
+  METRO_PID=""
+  E2E_ENV_FILE=""
+
+  parse_maestro_tag_args "$@"
+
+  "$REPO_ROOT/e2e/scripts/maestro_bin" >/dev/null
+  trap cleanup EXIT
+
+  resolve_device
+  [ "$IS_REACT_NATIVE" = true ] && prepare_react_native_environment
+  build_and_install
+
+  E2E_DEVICE_ID="$DEVICE_ID" \
+    "$REPO_ROOT/e2e/scripts/run_maestro" \
+    "$PLATFORM" "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"
+}
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  main "$@"
+fi
