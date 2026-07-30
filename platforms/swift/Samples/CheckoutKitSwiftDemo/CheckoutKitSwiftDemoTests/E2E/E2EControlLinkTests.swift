@@ -14,9 +14,21 @@ class E2EControlLinkTests: XCTestCase {
 
     func testParsesEveryAppScheme() throws {
         let expected = E2EControlLink.cart(.init(productIndex: 0, quantity: 1))
+        let schemes = [
+            "com.shopify.checkoutkit.swiftdemo",
+            "com.shopify.checkoutkit.androiddemo",
+            "com.shopify.checkoutkit.reactnativedemo"
+        ]
 
-        XCTAssertEqual(try E2EControlLink.parse("com.shopify.checkoutkit.swiftdemo://e2e/cart?productIndex=0"), expected)
-        XCTAssertEqual(try E2EControlLink.parse("com.shopify.checkoutkit.androiddemo://e2e/cart?productIndex=0"), expected)
+        for scheme in schemes {
+            XCTAssertEqual(try E2EControlLink.parse("\(scheme)://e2e/cart?productIndex=0"), expected)
+        }
+    }
+
+    func testParsesASchemeTheMatrixDoesNotDeclare() throws {
+        let expected = E2EControlLink.cart(.init(productIndex: 0, quantity: 1))
+
+        XCTAssertEqual(try E2EControlLink.parse("com.example.anything://e2e/cart?productIndex=0"), expected)
     }
 
     func testParsesTheResetCommand() throws {
