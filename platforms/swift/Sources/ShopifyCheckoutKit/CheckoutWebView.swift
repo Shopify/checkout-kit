@@ -280,10 +280,6 @@ class CheckoutWebView: WKWebView {
     ///     overridden by a merchant-supplied client.
     ///   - `window.open` - falls back to `UIApplication.shared.open(...)` after a
     ///     `canOpenURL` check (consumers may still override via their own client).
-    ///   - `ec.error` - when the payload carries `severity: "unrecoverable"`, dismiss
-    ///     the kit via `viewDelegate`. Per UCP spec, `unrecoverable` means no valid
-    ///     resource exists to act on, so consumers don't have to wire dismissal in
-    ///     every error handler.
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
         .onDecodeError { method, error, params in
             OSLogger.shared.error("Failed to decode \(method) payload: \(error)")
@@ -303,18 +299,6 @@ class CheckoutWebView: WKWebView {
             self.openExternalURL(target)
             return .success()
         }
-        .on(CheckoutProtocol.error) { [weak self] payload in
-            guard let self, payload.messages.contains(where: { $0.severity == .unrecoverable }) else { return }
-            if CheckoutWebView.preloadCache.contains(self) {
-                CheckoutWebView.preloadCache.evict(with: .idle)
-            }
-            self.viewDelegate?.checkoutViewDidFailWithError(
-                error: .checkoutUnavailable(
-                    message: "Embedded checkout reported unrecoverable error.",
-                    code: .clientError(code: .unknown)
-                )
-            )
-        }
 
     var defaultClientBindings: [String: DefaultClientBinding] {
         [
@@ -329,10 +313,6 @@ class CheckoutWebView: WKWebView {
             CheckoutProtocol.windowOpen.method: DefaultClientBinding(
                 client: defaultsClient,
                 policy: .runIfUnhandled
-            ),
-            CheckoutProtocol.error.method: DefaultClientBinding(
-                client: defaultsClient,
-                policy: .alwaysRunAfterMerchant
             )
         ]
     }
@@ -390,6 +370,7 @@ class CheckoutWebView: WKWebView {
     /// longer drive preload state, even after dismissal or reuse.
     var hasBeenPresented = false
 
+    private var didReceiveTerminalProtocolError = false
     private var entryPoint: MetaData.EntryPoint?
 
     // MARK: Initializers
@@ -477,6 +458,7 @@ class CheckoutWebView: WKWebView {
 
         checkoutRequest = request
         didRetryCheckoutNavigation = false
+        didReceiveTerminalProtocolError = false
         checkoutNavigation = load(request)
     }
 
@@ -544,12 +526,19 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        guard CheckoutProtocol.supportedProtocolMethod(body) != nil else {
-            if let response = CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: body) {
+        guard let method = CheckoutProtocol.supportedProtocolMethod(body) else {
+            if isTerminalProtocolError(body) {
+                handleTerminalProtocolError(body, malformedEnvelope: true)
+            } else if let response = CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: body) {
                 Task { @MainActor in
                     await checkoutBridge.sendResponse(self, messageBody: response)
                 }
             }
+            return
+        }
+
+        if method == CheckoutProtocol.error.method {
+            handleTerminalProtocolError(body)
             return
         }
 
@@ -563,6 +552,61 @@ extension CheckoutWebView: WKScriptMessageHandler {
             }
         }
     }
+
+    /// Delivers an `ec.error` payload to protocol subscribers, then ends the embedded session.
+    ///
+    /// Every `ec.error` is terminal regardless of its message severities. The first
+    /// unrecoverable error message selects the stable lifecycle code; no qualifying message maps to
+    /// `.unknown`. Malformed terminal payloads map to `.sdkError`.
+    private func handleTerminalProtocolError(_ body: String, malformedEnvelope: Bool = false) {
+        Task { @MainActor in
+            let composedClient = ComposedCheckoutCommunicationClient(
+                merchant: client,
+                defaults: defaultClientBindings
+            )
+            if let response = await composedClient.process(body) {
+                await checkoutBridge.sendResponse(self, messageBody: response)
+            }
+
+            guard !didReceiveTerminalProtocolError else { return }
+
+            // `ec.error` denotes a terminal session error. Message severity selects the public
+            // lifecycle code, but does not keep the embedded session alive.
+            let failure = if !malformedEnvelope,
+                             let notification = try? JSONDecoder().decode(
+                                 TerminalErrorNotification.self,
+                                 from: Data(body.utf8)
+                             )
+            {
+                CheckoutError.terminalProtocol(error: notification.params.error)
+            } else {
+                CheckoutError.sdk(message: "Embedded checkout sent an invalid terminal error.")
+            }
+
+            let wasBackgroundedPreload = isPreloadBackgrounded
+            handleCachedViewFailure(.protocolError)
+            guard !wasBackgroundedPreload else { return }
+
+            didReceiveTerminalProtocolError = true
+            viewDelegate?.checkoutViewDidFailWithError(error: failure)
+        }
+    }
+
+    private func isTerminalProtocolError(_ body: String) -> Bool {
+        guard
+            let data = body.data(using: .utf8),
+            let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let method = envelope["method"] as? String
+        else {
+            return false
+        }
+
+        return method == CheckoutProtocol.error.method
+    }
+}
+
+private struct TerminalErrorNotification: Decodable {
+    let params: JSONRPCErrorParams
 }
 
 extension CheckoutWebView: WKNavigationDelegate {
@@ -615,19 +659,9 @@ extension CheckoutWebView: WKNavigationDelegate {
 
             OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
 
-            switch statusCode {
-            case 410:
-                OSLogger.shared.debug("Gone (410)")
-                viewDelegate?.checkoutViewDidFailWithError(error: .checkoutExpired(message: "Checkout has expired.", code: CheckoutErrorCode.cartExpired))
-            default:
-                OSLogger.shared.debug("\(statusCode) error received")
-                viewDelegate?.checkoutViewDidFailWithError(
-                    error: .checkoutUnavailable(
-                        message: errorMessageForStatusCode,
-                        code: CheckoutUnavailable.httpError(statusCode: statusCode)
-                    )
-                )
-            }
+            viewDelegate?.checkoutViewDidFailWithError(
+                error: CheckoutError.http(statusCode: statusCode, message: errorMessageForStatusCode)
+            )
 
             return .cancel
         }
@@ -737,7 +771,10 @@ extension CheckoutWebView: WKNavigationDelegate {
     private func failNavigation(with error: Error) {
         resetProvisionalNavigationRetryState()
         handleCachedViewFailure(.navigationFailed)
-        viewDelegate?.checkoutViewDidFailWithError(error: .sdkError(underlying: error))
+        let failure = isRetryableProvisionalNavigationError(error as NSError)
+            ? CheckoutError.network(message: error.localizedDescription, underlyingError: error)
+            : CheckoutError.unknown(message: error.localizedDescription, underlyingError: error)
+        viewDelegate?.checkoutViewDidFailWithError(error: failure)
     }
 
     private func isCheckout(url: URL?) -> Bool {

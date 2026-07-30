@@ -23,6 +23,12 @@ class ShopifyCheckoutKitTests: XCTestCase {
         XCTAssertFalse(ShopifyCheckoutKit.version.isEmpty)
     }
 
+    func test_checkoutErrorLocalizedDescription_usesMessage() {
+        let error = CheckoutError(code: .sdkError, message: "Bridge connection failed.")
+
+        XCTAssertEqual(error.localizedDescription, error.message)
+    }
+
     func test_configuration_whenLogLevelChanges_createsNewLogger() {
         XCTAssertFalse(ShopifyCheckoutKit.version.isEmpty)
     }

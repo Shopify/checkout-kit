@@ -92,7 +92,13 @@ class ApplePayViewController: WalletController, PayController {
             ShopifyAcceleratedCheckouts.logger.error(
                 "[startPayment] Failed to setup cart: \(error)"
             )
-            onCheckoutFail?(.sdkError(underlying: error))
+            onCheckoutFail?(
+                CheckoutError(
+                    code: .sdkError,
+                    message: error.localizedDescription,
+                    underlyingError: error
+                )
+            )
         }
 
         do {

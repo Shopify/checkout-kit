@@ -207,12 +207,9 @@ final class ShopPayViewControllerTests: XCTestCase {
             configuration: mockConfiguration,
             eventHandlers: EventHandlers(
                 checkoutDidFail: { error in
-                    if case let .sdkError(underlying) = error {
-                        underlyingError = underlying
-                        checkoutDidFailExpectation.fulfill()
-                    } else {
-                        XCTFail("Expected sdkError")
-                    }
+                    XCTAssertEqual(error.code, .sdkError)
+                    underlyingError = error.underlyingError
+                    checkoutDidFailExpectation.fulfill()
                 }
             ),
             storefront: mockStorefront

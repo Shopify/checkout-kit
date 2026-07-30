@@ -13,6 +13,7 @@ public enum PreloadState: Equatable {
         case httpError(statusCode: Int)
         case navigationFailed
         case keepAliveLost
+        case protocolError
     }
 }
 

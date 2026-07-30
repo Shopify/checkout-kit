@@ -42,7 +42,7 @@ class CheckoutViewDelegateTests: XCTestCase {
     }
 
     func testCheckoutViewDidFailWithErrorDismissesViewController() {
-        viewController.checkoutViewDidFailWithError(error: .checkoutUnavailable(message: "error", code: CheckoutUnavailable.httpError(statusCode: 500)))
+        viewController.checkoutViewDidFailWithError(error: CheckoutError(code: .httpError, message: "error", httpStatusCode: 500))
 
         XCTAssertTrue(viewController.dismissCalled)
     }

@@ -239,12 +239,12 @@
                 "kind": "TypeNominal",
                 "name": "CheckoutError",
                 "printedName": "ShopifyCheckoutKit.CheckoutError",
-                "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
+                "usr": "s:18ShopifyCheckoutKit0B5ErrorV"
               }
             ],
             "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0B8DelegateP15checkoutDidFail5erroryAA0B5ErrorO_tF",
-            "mangledName": "$s18ShopifyCheckoutKit0B8DelegateP15checkoutDidFail5erroryAA0B5ErrorO_tF",
+            "usr": "s:18ShopifyCheckoutKit0B8DelegateP15checkoutDidFail5erroryAA0B5ErrorV_tF",
+            "mangledName": "$s18ShopifyCheckoutKit0B8DelegateP15checkoutDidFail5erroryAA0B5ErrorV_tF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
@@ -314,6 +314,43 @@
             "declKind": "EnumElement",
             "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO26storefrontPasswordRequiredyA2CmF",
             "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO26storefrontPasswordRequiredyA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
+            "name": "customerAccountRequired",
+            "printedName": "customerAccountRequired",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutErrorCode.Type) -> ShopifyCheckoutKit.CheckoutErrorCode",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO23customerAccountRequiredyA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO23customerAccountRequiredyA2CmF",
             "moduleName": "ShopifyCheckoutKit"
           },
           {
@@ -429,6 +466,117 @@
           },
           {
             "kind": "Var",
+            "name": "httpError",
+            "printedName": "httpError",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutErrorCode.Type) -> ShopifyCheckoutKit.CheckoutErrorCode",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO04httpD0yA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO04httpD0yA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
+            "name": "networkError",
+            "printedName": "networkError",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutErrorCode.Type) -> ShopifyCheckoutKit.CheckoutErrorCode",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO07networkD0yA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO07networkD0yA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
+            "name": "sdkError",
+            "printedName": "sdkError",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutErrorCode.Type) -> ShopifyCheckoutKit.CheckoutErrorCode",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO03sdkD0yA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO03sdkD0yA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
             "name": "unknown",
             "printedName": "unknown",
             "children": [
@@ -463,39 +611,6 @@
             "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO7unknownyA2CmF",
             "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO7unknownyA2CmF",
             "moduleName": "ShopifyCheckoutKit"
-          },
-          {
-            "kind": "Function",
-            "name": "from",
-            "printedName": "from(_:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "CheckoutErrorCode",
-                "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
-                "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "Swift.String?",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "usr": "s:Sq"
-              }
-            ],
-            "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO4fromyACSSSgFZ",
-            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO4fromyACSSSgFZ",
-            "moduleName": "ShopifyCheckoutKit",
-            "static": true,
-            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Constructor",
@@ -683,355 +798,351 @@
       },
       {
         "kind": "TypeDecl",
-        "name": "CheckoutUnavailable",
-        "printedName": "CheckoutUnavailable",
-        "children": [
-          {
-            "kind": "Var",
-            "name": "clientError",
-            "printedName": "clientError",
-            "children": [
-              {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.CheckoutUnavailable.Type) -> (ShopifyCheckoutKit.CheckoutErrorCode) -> ShopifyCheckoutKit.CheckoutUnavailable",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(ShopifyCheckoutKit.CheckoutErrorCode) -> ShopifyCheckoutKit.CheckoutUnavailable",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutUnavailable",
-                        "printedName": "ShopifyCheckoutKit.CheckoutUnavailable",
-                        "usr": "s:18ShopifyCheckoutKit0B11UnavailableO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Tuple",
-                        "printedName": "(code: ShopifyCheckoutKit.CheckoutErrorCode)",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "CheckoutErrorCode",
-                            "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
-                            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyCheckoutKit.CheckoutUnavailable.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutUnavailable",
-                        "printedName": "ShopifyCheckoutKit.CheckoutUnavailable",
-                        "usr": "s:18ShopifyCheckoutKit0B11UnavailableO"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ],
-            "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit0B11UnavailableO11clientErroryAcA0bF4CodeO_tcACmF",
-            "mangledName": "$s18ShopifyCheckoutKit0B11UnavailableO11clientErroryAcA0bF4CodeO_tcACmF",
-            "moduleName": "ShopifyCheckoutKit"
-          },
-          {
-            "kind": "Var",
-            "name": "httpError",
-            "printedName": "httpError",
-            "children": [
-              {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.CheckoutUnavailable.Type) -> (Swift.Int) -> ShopifyCheckoutKit.CheckoutUnavailable",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(Swift.Int) -> ShopifyCheckoutKit.CheckoutUnavailable",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutUnavailable",
-                        "printedName": "ShopifyCheckoutKit.CheckoutUnavailable",
-                        "usr": "s:18ShopifyCheckoutKit0B11UnavailableO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Tuple",
-                        "printedName": "(statusCode: Swift.Int)",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "Int",
-                            "printedName": "Swift.Int",
-                            "usr": "s:Si"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyCheckoutKit.CheckoutUnavailable.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutUnavailable",
-                        "printedName": "ShopifyCheckoutKit.CheckoutUnavailable",
-                        "usr": "s:18ShopifyCheckoutKit0B11UnavailableO"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ],
-            "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit0B11UnavailableO9httpErroryACSi_tcACmF",
-            "mangledName": "$s18ShopifyCheckoutKit0B11UnavailableO9httpErroryACSi_tcACmF",
-            "moduleName": "ShopifyCheckoutKit"
-          }
-        ],
-        "declKind": "Enum",
-        "usr": "s:18ShopifyCheckoutKit0B11UnavailableO",
-        "mangledName": "$s18ShopifyCheckoutKit0B11UnavailableO",
-        "moduleName": "ShopifyCheckoutKit",
-        "isEnumExhaustive": true,
-        "conformances": [
-          {
-            "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          }
-        ]
-      },
-      {
-        "kind": "TypeDecl",
         "name": "CheckoutError",
         "printedName": "CheckoutError",
         "children": [
           {
             "kind": "Var",
-            "name": "sdkError",
-            "printedName": "sdkError",
+            "name": "code",
+            "printedName": "code",
             "children": [
               {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.CheckoutError.Type) -> (any Swift.Error) -> ShopifyCheckoutKit.CheckoutError",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(any Swift.Error) -> ShopifyCheckoutKit.CheckoutError",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutError",
-                        "printedName": "ShopifyCheckoutKit.CheckoutError",
-                        "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Tuple",
-                        "printedName": "(underlying: any Swift.Error)",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "Error",
-                            "printedName": "any Swift.Error",
-                            "usr": "s:s5ErrorP"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyCheckoutKit.CheckoutError.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutError",
-                        "printedName": "ShopifyCheckoutKit.CheckoutError",
-                        "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
-                      }
-                    ]
-                  }
-                ]
+                "kind": "TypeNominal",
+                "name": "CheckoutErrorCode",
+                "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
               }
             ],
-            "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit0B5ErrorO03sdkD0yACs0D0_p_tcACmF",
-            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorO03sdkD0yACs0D0_p_tcACmF",
-            "moduleName": "ShopifyCheckoutKit"
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B5ErrorV4codeAA0bD4CodeOvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV4codeAA0bD4CodeOvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B5ErrorV4codeAA0bD4CodeOvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV4codeAA0bD4CodeOvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
           },
           {
             "kind": "Var",
-            "name": "checkoutUnavailable",
-            "printedName": "checkoutUnavailable",
+            "name": "message",
+            "printedName": "message",
             "children": [
               {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.CheckoutError.Type) -> (Swift.String, ShopifyCheckoutKit.CheckoutUnavailable) -> ShopifyCheckoutKit.CheckoutError",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(Swift.String, ShopifyCheckoutKit.CheckoutUnavailable) -> ShopifyCheckoutKit.CheckoutError",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutError",
-                        "printedName": "ShopifyCheckoutKit.CheckoutError",
-                        "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Tuple",
-                        "printedName": "(message: Swift.String, code: ShopifyCheckoutKit.CheckoutUnavailable)",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "String",
-                            "printedName": "Swift.String",
-                            "usr": "s:SS"
-                          },
-                          {
-                            "kind": "TypeNominal",
-                            "name": "CheckoutUnavailable",
-                            "printedName": "ShopifyCheckoutKit.CheckoutUnavailable",
-                            "usr": "s:18ShopifyCheckoutKit0B11UnavailableO"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyCheckoutKit.CheckoutError.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutError",
-                        "printedName": "ShopifyCheckoutKit.CheckoutError",
-                        "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
-                      }
-                    ]
-                  }
-                ]
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
               }
             ],
-            "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit0B5ErrorO19checkoutUnavailableyACSS_AA0bF0OtcACmF",
-            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorO19checkoutUnavailableyACSS_AA0bF0OtcACmF",
-            "moduleName": "ShopifyCheckoutKit"
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B5ErrorV7messageSSvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV7messageSSvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B5ErrorV7messageSSvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV7messageSSvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
           },
           {
             "kind": "Var",
-            "name": "checkoutExpired",
-            "printedName": "checkoutExpired",
+            "name": "httpStatusCode",
+            "printedName": "httpStatusCode",
             "children": [
               {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.CheckoutError.Type) -> (Swift.String, ShopifyCheckoutKit.CheckoutErrorCode) -> ShopifyCheckoutKit.CheckoutError",
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.Int?",
                 "children": [
                   {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(Swift.String, ShopifyCheckoutKit.CheckoutErrorCode) -> ShopifyCheckoutKit.CheckoutError",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutError",
-                        "printedName": "ShopifyCheckoutKit.CheckoutError",
-                        "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Tuple",
-                        "printedName": "(message: Swift.String, code: ShopifyCheckoutKit.CheckoutErrorCode)",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "String",
-                            "printedName": "Swift.String",
-                            "usr": "s:SS"
-                          },
-                          {
-                            "kind": "TypeNominal",
-                            "name": "CheckoutErrorCode",
-                            "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
-                            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
                     "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyCheckoutKit.CheckoutError.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutError",
-                        "printedName": "ShopifyCheckoutKit.CheckoutError",
-                        "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
-                      }
-                    ]
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
                   }
-                ]
+                ],
+                "usr": "s:Sq"
               }
             ],
-            "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit0B5ErrorO15checkoutExpiredyACSS_AA0bD4CodeOtcACmF",
-            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorO15checkoutExpiredyACSS_AA0bD4CodeOtcACmF",
-            "moduleName": "ShopifyCheckoutKit"
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B5ErrorV14httpStatusCodeSiSgvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV14httpStatusCodeSiSgvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.Int?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B5ErrorV14httpStatusCodeSiSgvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV14httpStatusCodeSiSgvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "underlyingError",
+            "printedName": "underlyingError",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(any Swift.Error)?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Error",
+                    "printedName": "any Swift.Error",
+                    "usr": "s:s5ErrorP"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B5ErrorV010underlyingD0s0D0_pSgvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV010underlyingD0s0D0_pSgvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "(any Swift.Error)?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Error",
+                        "printedName": "any Swift.Error",
+                        "usr": "s:s5ErrorP"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B5ErrorV010underlyingD0s0D0_pSgvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV010underlyingD0s0D0_pSgvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(code:message:httpStatusCode:underlyingError:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutError",
+                "printedName": "ShopifyCheckoutKit.CheckoutError",
+                "usr": "s:18ShopifyCheckoutKit0B5ErrorV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutErrorCode",
+                "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.Int?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(any Swift.Error)?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Error",
+                    "printedName": "any Swift.Error",
+                    "usr": "s:s5ErrorP"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:18ShopifyCheckoutKit0B5ErrorV4code7message14httpStatusCode010underlyingD0AcA0bdI0O_SSSiSgs0D0_pSgtcfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV4code7message14httpStatusCode010underlyingD0AcA0bdI0O_SSSiSgs0D0_pSgtcfc",
+            "moduleName": "ShopifyCheckoutKit",
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Var",
+            "name": "errorDescription",
+            "printedName": "errorDescription",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B5ErrorV16errorDescriptionSSSgvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV16errorDescriptionSSSgvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B5ErrorV16errorDescriptionSSSgvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV16errorDescriptionSSSgvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "accessorKind": "get"
+              }
+            ]
           }
         ],
-        "declKind": "Enum",
-        "usr": "s:18ShopifyCheckoutKit0B5ErrorO",
-        "mangledName": "$s18ShopifyCheckoutKit0B5ErrorO",
+        "declKind": "Struct",
+        "usr": "s:18ShopifyCheckoutKit0B5ErrorV",
+        "mangledName": "$s18ShopifyCheckoutKit0B5ErrorV",
         "moduleName": "ShopifyCheckoutKit",
-        "isEnumExhaustive": true,
         "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "LocalizedError",
+            "printedName": "LocalizedError",
+            "usr": "s:10Foundation14LocalizedErrorP",
+            "mangledName": "$s10Foundation14LocalizedErrorP"
+          },
           {
             "kind": "Conformance",
             "name": "Error",
@@ -2625,14 +2736,14 @@
                     "kind": "TypeNominal",
                     "name": "CheckoutError",
                     "printedName": "ShopifyCheckoutKit.CheckoutError",
-                    "usr": "s:18ShopifyCheckoutKit0B5ErrorO"
+                    "usr": "s:18ShopifyCheckoutKit0B5ErrorV"
                   }
                 ]
               }
             ],
             "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0aB0V6onFailyACyAA0B5ErrorOcF",
-            "mangledName": "$s18ShopifyCheckoutKit0aB0V6onFailyACyAA0B5ErrorOcF",
+            "usr": "s:18ShopifyCheckoutKit0aB0V6onFailyACyAA0B5ErrorVcF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V6onFailyACyAA0B5ErrorVcF",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "Preconcurrency",
@@ -6883,6 +6994,43 @@
                 "declKind": "EnumElement",
                 "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO13keepAliveLostyA2EmF",
                 "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO13FailureReasonO13keepAliveLostyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Var",
+                "name": "protocolError",
+                "printedName": "protocolError",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.FailureReason.Type) -> ShopifyCheckoutKit.PreloadState.FailureReason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "FailureReason",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "FailureReason",
+                            "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason",
+                            "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO13protocolErroryA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO13FailureReasonO13protocolErroryA2EmF",
                 "moduleName": "ShopifyCheckoutKit"
               },
               {

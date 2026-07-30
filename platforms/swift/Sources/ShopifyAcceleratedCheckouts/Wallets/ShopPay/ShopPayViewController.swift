@@ -32,7 +32,11 @@ class ShopPayViewController: WalletController {
             }
             try await present(url: url, client: client)
         } catch {
-            let error = CheckoutError.sdkError(underlying: error)
+            let error = CheckoutError(
+                code: .sdkError,
+                message: error.localizedDescription,
+                underlyingError: error
+            )
             ShopifyAcceleratedCheckouts.logger.error("[present] Failed to create cart: \(error)")
             eventHandlers.checkoutDidFail?(error)
         }
