@@ -1,4 +1,4 @@
-appId: ${APP_ID}
+appId: ${E2E_APP_ID}
 ---
 - launchApp:
     clearState: true
@@ -8,12 +8,12 @@ appId: ${APP_ID}
       AppleLanguages: "(en)"
 - extendedWaitUntil:
     visible:
-      id: checkout-kit-sample-ready
+      id: ${E2E_READY_MARKER}
     timeout: 10000
 # Reset app data before testing the deep-link cold-start path. The app is
 # stopped so openLink is the launch that seeds the cart.
 - stopApp
-- openLink: "${CART_BOOTSTRAP_BASE_LINK}&buyerIdentityMode=${BUYER_IDENTITY_MODE}"
+- openLink: "${E2E_CONTROL_LINK}/cart?productIndex=0&quantity=1&buyerIdentityMode=${BUYER_IDENTITY_MODE}"
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible:

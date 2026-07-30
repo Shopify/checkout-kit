@@ -1,5 +1,14 @@
 version: 1
 changed_file_filters: .ci/changed-file-filters.yml
+tests_path: tests
+# Every run executes the whole tests folder and lets tags decide what runs there.
+# An application may override either list to adopt a test ahead of the others.
+tags:
+  include:
+    - launch
+  exclude:
+    - flaky
+    - wip
 applications:
   - id: react-native-ios
     target: react-native
@@ -52,6 +61,3 @@ applications:
       - ciFilters
 os_version_tags:
   - latest
-suites:
-  - id: launch-smoke
-    execute: tests/shared/launch-smoke.yaml

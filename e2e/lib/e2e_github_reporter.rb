@@ -94,7 +94,7 @@ class E2EGitHubReporter
     lines << "| Status | Suite | Target | Platform | OS version tag | Device |"
     lines << "|---|---|---|---|---|---|"
     @results.each do |result|
-      lines << "| #{status_icon(result)} | `#{result["execute"]}` | #{result["target"]} | #{result["platform"]} | #{result["os_version_tag"]} | #{device_cell(result)} |"
+      lines << "| #{status_icon(result)} | `#{result["application_id"]}` | #{result["target"]} | #{result["platform"]} | #{result["os_version_tag"]} | #{device_cell(result)} |"
     end
     lines
   end
@@ -225,8 +225,7 @@ class E2EGitHubReporter
   end
 
   def missing_run_label(run)
-    suite = File.basename(run["execute"].to_s, ".*")
-    "`#{run["application_id"] || run["target"]}` · #{suite} (#{run["platform"]})"
+    "`#{run["application_id"] || run["target"]}` (#{run["platform"]})"
   end
 
   def missing_count
@@ -278,8 +277,7 @@ class E2EGitHubReporter
   end
 
   def failure_heading(result)
-    suite = File.basename(result["execute"].to_s, ".*")
-    "#{os_label(result["platform"])} — #{suite}"
+    "#{os_label(result["platform"])} — #{result["application_id"]}"
   end
 
   def artifact_links(testcase, result)

@@ -35,7 +35,7 @@ class E2EGitHubReporterTest < Minitest::Test
       "target" => "swift",
       "platform" => "ios",
       "os_version_tag" => "latest",
-      "execute" => "tests/shared/launch-smoke.yaml"
+      "execute" => "."
     }
   end
 
@@ -46,7 +46,7 @@ class E2EGitHubReporterTest < Minitest::Test
       "target" => "react-native",
       "platform" => "ios",
       "os_version_tag" => "latest",
-      "execute" => "tests/shared/launch-smoke.yaml"
+      "execute" => "."
     }
   end
 
@@ -67,7 +67,7 @@ class E2EGitHubReporterTest < Minitest::Test
   end
 
   def result(target)
-    {"target" => target, "passed" => true, "execute" => "flow.yaml"}
+    {"target" => target, "application_id" => target, "passed" => true, "execute" => "."}
   end
 
   def test_install_table_lists_every_produced_target
@@ -120,7 +120,7 @@ class E2EGitHubReporterTest < Minitest::Test
     assert_includes summary, "> - `e2e-build-react-native-ios` — [build log]"
     assert_includes summary, "/build/a7111bcd)"
     assert_includes summary, "> None of the 2 planned runs executed:"
-    assert_includes summary, "> - `swift-ios` · launch-smoke (ios)"
+    assert_includes summary, "> - `swift-ios` (ios)"
     assert_includes summary, "> [Pipeline build](https://app.bitrise.io/app/"
   end
 
@@ -140,8 +140,16 @@ class E2EGitHubReporterTest < Minitest::Test
     summary = reporter(results: [], run_plan: [swift_ios_run], expected: 1).markdown_summary
 
     assert_includes summary, "did not report"
-    assert_includes summary, "> - `swift-ios` · launch-smoke (ios)"
+    assert_includes summary, "> - `swift-ios` (ios)"
     refute_includes summary, "[!CAUTION]"
+  end
+
+  def test_results_table_suite_column_shows_the_application_id_not_the_execute_path
+    reported = swift_ios_run.merge("passed" => true, "resolved_device" => "iPhone")
+    body = reporter(results: [reported]).comment_body
+
+    assert_includes body, "| ✅ | `swift-ios` |"
+    refute_includes body, "| ✅ | `.` |"
   end
 
   def test_partial_report_keeps_the_table_and_names_the_failed_stage
