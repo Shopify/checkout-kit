@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit.androiddemo
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -14,6 +15,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.shopify.checkoutkit.androiddemo.e2e.E2EControlLinkHandler
 import timber.log.Timber
 import timber.log.Timber.DebugTree
 
@@ -45,6 +47,8 @@ class MainActivity : ComponentActivity() {
             CheckoutKitApp()
         }
 
+        E2EControlLinkHandler.handle(this, intent)
+
         requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             val fileChooserParams = this.fileChooserParams
             if (isGranted && fileChooserParams != null) {
@@ -65,6 +69,12 @@ class MainActivity : ComponentActivity() {
             geolocationPermissionCallback = null
             geolocationOrigin = null
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        E2EControlLinkHandler.handle(this, intent)
     }
 
     fun onShowFileChooser(filePathCallback: ValueCallback<Array<Uri>>, fileChooserParams: FileChooserParams): Boolean {
