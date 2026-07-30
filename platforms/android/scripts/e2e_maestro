@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
+SAMPLE_DIR="$ROOT_DIR/samples/CheckoutKitAndroidDemo"
+APP_ID="com.shopify.checkoutkit.androiddemo"
+READY_MARKER="checkout-kit-sample-ready"
+INCLUDE_TAGS=""
+# e2e/config.yaml quarantines flaky and wip for every consumer, so this stays empty
+# unless the caller excludes something else.
+EXCLUDE_TAGS=""
+
+usage() {
+  cat <<EOF >&2
+Usage: dev android e2e [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
+
+Builds the Android sample app, installs it on the booted emulator, and runs the
+Maestro tests in e2e/tests. Without --tags, every test runs. Tags come from the
+taxonomy: journey (launch, cart, checkout, account), cost tier (smoke, full),
+quarantine (flaky, wip) and platform capability (ios-only, android-only).
+
+Options:
+  --tags TAG[,TAG...]           Run only tests carrying any of these tags.
+  --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags.
+EOF
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --tags)
+      INCLUDE_TAGS="${2:-}"
+      if [ -z "$INCLUDE_TAGS" ]; then
+        usage
+        echo "--tags needs a comma separated tag list" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --tags=*)
+      INCLUDE_TAGS="${1#--tags=}"
+      shift
+      ;;
+    --exclude-tags)
+      EXCLUDE_TAGS="${2:-}"
+      shift 2
+      ;;
+    --exclude-tags=*)
+      EXCLUDE_TAGS="${1#--exclude-tags=}"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+require_maestro() {
+  if ! maestro --version >/dev/null 2>&1; then
+    echo "Maestro is required to run E2E tests." >&2
+    echo "Install Maestro and make sure maestro --version succeeds." >&2
+    return 1
+  fi
+}
+
+require_emulator() {
+  if ! adb devices | grep -q "[[:space:]]device$"; then
+    echo "No running Android device or emulator found." >&2
+    echo "Start an emulator first, because Maestro drives the device the app runs on." >&2
+    return 1
+  fi
+}
+
+require_maestro
+require_emulator
+
+"$SAMPLE_DIR/gradlew" -p "$SAMPLE_DIR" :app:installDebug --console=plain
+
+"$REPO_ROOT/e2e/scripts/run_maestro" android "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"

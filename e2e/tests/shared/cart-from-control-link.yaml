@@ -1,0 +1,11 @@
+appId: ${E2E_APP_ID}
+name: Cart from control link
+tags:
+  - cart
+  - smoke
+
+env:
+  # No buyerIdentityMode: this test asserts cart seeding, not buyer identity.
+  E2E_CART_PARAMS: "productIndex=0&quantity=1"
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml

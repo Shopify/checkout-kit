@@ -128,7 +128,7 @@ class E2EMatrixToBrowserStackRunPlan
       "app_id" => app_id,
       "control_link" => control_link(app_id),
       "artifact_env" => application.fetch("artifact_env"),
-      "execute" => tests_path,
+      "execute" => workspace_path,
       "include_tags" => application_tags(application, "include"),
       "exclude_tags" => application_tags(application, "exclude"),
       "ready_marker" => application.fetch("ready_marker"),
@@ -204,6 +204,14 @@ class E2EMatrixToBrowserStackRunPlan
 
   def tests_path
     @config.fetch("tests_path", "tests")
+  end
+
+  # BrowserStack runs Maestro against this path inside the uploaded test suite, and Maestro
+  # resolves the `flows:` glob in config.yaml relative to it. scripts/zip_e2e_tests puts
+  # config.yaml, tests/, and flows/ side by side at the suite root, so the root is the
+  # only path where that glob resolves. The local runners pass the same value.
+  def workspace_path
+    @config.fetch("workspace_path", ".")
   end
 
   def default_tags

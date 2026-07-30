@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
+APP_NAME="CheckoutKitSwiftDemo"
+APP_ID="com.shopify.checkoutkit.swiftdemo"
+READY_MARKER="checkout-kit-sample-ready"
+DERIVED_DATA="$ROOT_DIR/Samples/build/e2e-simulator"
+INCLUDE_TAGS=""
+# e2e/config.yaml quarantines flaky and wip for every consumer, so this stays empty
+# unless the caller excludes something else.
+EXCLUDE_TAGS=""
+
+usage() {
+  cat <<EOF >&2
+Usage: dev swift e2e [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
+
+Builds the Swift sample app, installs it on the booted simulator, and runs the
+Maestro tests in e2e/tests. Without --tags, every test runs. Tags come from the
+taxonomy: journey (launch, cart, checkout, account), cost tier (smoke, full),
+quarantine (flaky, wip) and platform capability (ios-only, android-only).
+
+Options:
+  --tags TAG[,TAG...]           Run only tests carrying any of these tags.
+  --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags.
+EOF
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --tags)
+      INCLUDE_TAGS="${2:-}"
+      if [ -z "$INCLUDE_TAGS" ]; then
+        usage
+        echo "--tags needs a comma separated tag list" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --tags=*)
+      INCLUDE_TAGS="${1#--tags=}"
+      shift
+      ;;
+    --exclude-tags)
+      EXCLUDE_TAGS="${2:-}"
+      shift 2
+      ;;
+    --exclude-tags=*)
+      EXCLUDE_TAGS="${1#--exclude-tags=}"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+require_maestro() {
+  if ! maestro --version >/dev/null 2>&1; then
+    echo "Maestro is required to run E2E tests." >&2
+    echo "Install Maestro and make sure maestro --version succeeds." >&2
+    return 1
+  fi
+}
+
+# Selects by runtime header rather than by device name, because a simulator may carry
+# any name. simctl groups booted devices under "-- iOS <version> --" headers, so this
+# takes the first device under an iOS header and ignores watchOS and tvOS.
+booted_simulator() {
+  xcrun simctl list devices booted |
+    awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36); exit }'
+}
+
+require_maestro
+
+SIMULATOR_ID="$(booted_simulator || true)"
+if [ -z "$SIMULATOR_ID" ]; then
+  echo "No booted iOS simulator found." >&2
+  echo "Boot a simulator first, because Maestro drives the device the app runs on." >&2
+  exit 1
+fi
+
+echo "Using booted simulator: $SIMULATOR_ID"
+
+"$SCRIPT_DIR/generate_xcode_projects"
+
+cd "$ROOT_DIR/Samples"
+
+xcodebuild build \
+  -workspace Samples.xcworkspace \
+  -scheme "$APP_NAME" \
+  -sdk iphonesimulator \
+  -destination "id=$SIMULATOR_ID" \
+  -derivedDataPath "$DERIVED_DATA" \
+  -skipPackagePluginValidation \
+  -disableAutomaticPackageResolution \
+  CODE_SIGNING_ALLOWED=NO
+
+APP_PATH="$(find "$DERIVED_DATA/Build/Products" -maxdepth 2 -name "${APP_NAME}.app" -print -quit)"
+if [ -z "$APP_PATH" ]; then
+  echo "The build created no ${APP_NAME}.app bundle." >&2
+  exit 1
+fi
+
+xcrun simctl install "$SIMULATOR_ID" "$APP_PATH"
+
+"$REPO_ROOT/e2e/scripts/run_maestro" ios "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"
