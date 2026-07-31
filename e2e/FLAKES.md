@@ -10,7 +10,7 @@ the symptom, the date, and the artifact directory. Delete the entry when the fix
 
 | # | Target | Symptom | Seen | Suspected cause |
 |---|---|---|---|---|
-| F1 | React Native iOS | `launch-smoke` fails after 2 seconds. The driver answers `viewHierarchy` with HTTP 500 and `kAXErrorInvalidUIElement`. | 2026-07-31, 1 run of 2 | Maestro reads the accessibility tree while the app still builds it. `extendedWaitUntil` retries a missing element, but it does not retry a driver error. |
+| F1 | React Native iOS | `launch-smoke` fails within 10 seconds. The driver answers `viewHierarchy` with HTTP 500 and `kAXErrorInvalidUIElement`, or Maestro reports `App crashed or stopped`. The screenshot shows the splash screen and the crash log directory holds no report. | 2026-07-31, 2 runs of 3 | Maestro reads the accessibility tree while the app still builds it. `extendedWaitUntil` retries a missing element, but it does not retry a driver error. |
 | F2 | React Native Android | The first `cart-checkout-ready` assert in `bootstrap-cart-from-link.yaml` fails after 53 seconds. The retry in that flow then passes. | 2026-07-31, 1 run of 2 | Metro builds the bundle on request, so the first cart create starts late. |
 
 ## Runner limits, not product faults
@@ -33,6 +33,9 @@ Keep them out of new flows.
   `Nothing changed in the UI`. Assert the result of a tap, never the tap itself.
 - A runner that does not set `E2E_DEVICE_ID` lets Maestro pick the device. It can pick the
   other platform, and the run then reports the wrong target.
+- An unsigned iOS build carries no `application-identifier`, so every keychain write returns
+  `-34018` and the sample drops the customer from the cart. Checkout then opens as a guest
+  and the account test fails far from the cause. Build the sample with `CODE_SIGN_IDENTITY=-`.
 
 ## Evidence
 

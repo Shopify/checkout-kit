@@ -20,4 +20,9 @@ class E2ETestIdsTest {
     fun `tab markers match the maestro flows`() {
         assertThat(E2ETestIds.Tabs.CART).isEqualTo("cart-tab")
     }
+
+    @Test
+    fun `account markers match the maestro flows`() {
+        assertThat(E2ETestIds.Account.SIGNED_IN_VIEW).isEqualTo("account-signed-in-view")
+    }
 }

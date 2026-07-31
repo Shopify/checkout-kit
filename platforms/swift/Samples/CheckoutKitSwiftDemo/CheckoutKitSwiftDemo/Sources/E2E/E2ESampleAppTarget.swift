@@ -49,6 +49,16 @@ struct E2ESampleAppTarget: E2ECommandTarget {
         sceneDelegate?.navigateTo(.cart)
     }
 
+    func presentSignIn() async {
+        E2ESignInRequest.shared.request()
+
+        let sceneDelegate = UIApplication.shared.connectedScenes
+            .compactMap { $0.delegate as? SceneDelegate }
+            .first
+
+        sceneDelegate?.navigateTo(.account)
+    }
+
     func report(failure message: String) async {
         print("[E2E] \(message)")
     }

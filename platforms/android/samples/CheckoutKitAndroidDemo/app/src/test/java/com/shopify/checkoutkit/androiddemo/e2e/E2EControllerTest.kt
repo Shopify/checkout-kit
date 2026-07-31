@@ -87,12 +87,12 @@ class E2EControllerTest {
     }
 
     @Test
-    fun `reports that sign in is not implemented`() {
+    fun `presents sign in`() {
         val target = E2ECommandTargetSpy()
 
         handle("/signIn", target)
 
-        assertThat(target.calls).containsExactly("report(signIn is not implemented yet)")
+        assertThat(target.calls).containsExactly("presentSignIn")
     }
 
     private fun handle(path: String, target: E2ECommandTargetSpy) = runBlocking {
@@ -127,6 +127,10 @@ private class E2ECommandTargetSpy : E2ECommandTarget {
 
     override suspend fun showCart() {
         calls.add("showCart")
+    }
+
+    override suspend fun presentSignIn() {
+        calls.add("presentSignIn")
     }
 
     override suspend fun report(failure: String) {

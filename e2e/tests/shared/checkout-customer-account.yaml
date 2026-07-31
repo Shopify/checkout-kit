@@ -1,15 +1,14 @@
 appId: ${E2E_APP_ID}
-name: Checkout with hardcoded buyer identity
+name: Checkout with a customer account
 tags:
-  - checkout
-  # This test submits a real order, so it belongs to the expensive tier.
+  - account
+  # This test signs in and submits a real order, so it belongs to the expensive tier.
   - full
 
 env:
-  # The cart carries the contact and the delivery address, so checkout asks for payment
-  # only. That makes this the shortest real order, and the first one to fix when checkout
-  # breaks.
-  E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=hardcoded"
+  # The cart attaches the signed-in buyer, so checkout reads the contact address and the
+  # saved delivery address from the account. Only payment is left to type.
+  E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=customerAccount"
 
   # Checkout payment fixture. The shop runs the bogus gateway, which rejects real card
   # brands and reads a single digit instead: 1 approves, 2 declines, 3 fails the gateway.
@@ -18,9 +17,8 @@ env:
   CARD_SECURITY_CODE: "123"
   CARD_HOLDER_NAME: "Maestro Shopify"
 
-  # Checkout billing fixture. The cart supplies a one-time delivery address, which the
-  # billing section cannot copy, so the test types a billing address of its own. Country
-  # and state keep the shop defaults, so this address stays in the United States.
+  # Checkout billing fixture. Checkout copies the delivery address when it can, so the
+  # billing section usually stays closed. These values cover the target that opens it.
   BILLING_FIRST_NAME: "Maestro"
   BILLING_LAST_NAME: "Shopify"
   BILLING_ADDRESS_LINE1: "700 S Flower St"
@@ -31,8 +29,13 @@ env:
   # Accepted successful checkout states for this smoke test.
   POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
 ---
-- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+# Sign in before the cart exists. The buyer identity is attached when the cart is created,
+# so a cart seeded ahead of the session would carry no customer.
+- runFlow: ../../flows/app/launch.yaml
+- runFlow: ../../flows/app/sign-in-customer-account.yaml
+- runFlow: ../../flows/app/seed-cart-from-link.yaml
 - runFlow: ../../flows/checkout/present.yaml
+- runFlow: ../../flows/checkout/assert-buyer-prefilled.yaml
 - runFlow: ../../flows/checkout/fill-payment-card.yaml
 - runFlow: ../../flows/checkout/fill-billing-address.yaml
 - runFlow: ../../flows/checkout/submit.yaml

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AccountView: View {
     @ObservedObject var accountManager = CustomerAccountManager.shared
+    @ObservedObject private var e2eSignInRequest = E2ESignInRequest.shared
     @State private var showingLogin = false
 
     var body: some View {
@@ -17,6 +18,12 @@ struct AccountView: View {
         }
         .sheet(isPresented: $showingLogin) {
             LoginSheetView()
+        }
+        .onReceive(e2eSignInRequest.$isPending) { isPending in
+            guard isPending else { return }
+
+            showingLogin = true
+            e2eSignInRequest.fulfil()
         }
     }
 }
@@ -65,6 +72,7 @@ struct AuthenticatedAccountView: View {
             .padding(.bottom, 32)
         }
         .background(Color(.systemGroupedBackground))
+        .accessibilityIdentifier(E2ETestIds.Account.signedInView)
     }
 }
 

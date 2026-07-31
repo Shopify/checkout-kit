@@ -1,0 +1,14 @@
+appId: ${E2E_APP_ID}
+---
+- launchApp:
+    clearState: true
+    arguments:
+      # iOS-only launch arguments; Android ignores them.
+      AppleLocale: en_US
+      AppleLanguages: "(en)"
+# A cold first launch loads the JavaScript bundle on React Native, so the marker takes
+# far longer here than on the native samples. BrowserStack devices are slower again.
+- extendedWaitUntil:
+    visible:
+      id: ${E2E_READY_MARKER}
+    timeout: 60000

@@ -12,4 +12,8 @@ object E2ETestIds {
     object Tabs {
         const val CART = "cart-tab"
     }
+
+    object Account {
+        const val SIGNED_IN_VIEW = "account-signed-in-view"
+    }
 }

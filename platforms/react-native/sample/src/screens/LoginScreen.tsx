@@ -1,5 +1,6 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {ActivityIndicator, StyleSheet, View} from 'react-native';
+import Config from 'react-native-config';
 import {WebView} from 'react-native-webview';
 import type {ShouldStartLoadRequest} from 'react-native-webview/lib/WebViewTypes';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -80,6 +81,7 @@ function LoginScreen({navigation}: Props) {
         source={{uri: authorizationURL}}
         onShouldStartLoadWithRequest={handleNavigationRequest}
         originWhitelist={['https://*', `${callbackScheme}://*`]}
+        applicationNameForUserAgent={Config.CUSTOM_USER_AGENT || undefined}
         incognito={true}
         style={styles.webview}
       />

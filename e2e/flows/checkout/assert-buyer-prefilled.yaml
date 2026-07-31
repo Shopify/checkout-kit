@@ -1,0 +1,12 @@
+appId: ${E2E_APP_ID}
+---
+# The signed-in buyer is the point of this journey. Checkout reads the contact address and
+# the saved delivery address from the account, so both appear before the test types
+# anything. A guest cart shows an empty contact field and a delivery form instead, so these
+# two assertions separate a real customer cart from a cart that lost its buyer identity.
+- extendedWaitUntil:
+    visible:
+      text: "${E2E_CUSTOMER_ACCOUNT_EMAIL}"
+    timeout: 30000
+- assertVisible:
+    text: "^Ship to$"
