@@ -194,14 +194,17 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
       );
     }
     this.configureMessageRejectionCallback(configuration.onMessageRejected);
-    const {onMessageRejected: _, ...nativeConfiguration} = configuration;
-    RNShopifyCheckoutKit.setConfig(nativeConfiguration);
+    const nativeConfiguration = {...configuration};
+    delete nativeConfiguration.onMessageRejected;
+    RNShopifyCheckoutKit.setConfig({
+      ...nativeConfiguration,
+      hasMessageRejectedCallback:
+        typeof configuration.onMessageRejected === 'function',
+    });
   }
 
   /**
    * Cleans up resources and event listeners used by the checkout sheet.
-   * Currently a no-op — retained as part of the public API for forward
-   * compatibility with future protocol-client subscriptions.
    */
   public teardown() {
     this.releaseDispatchSubscription();

@@ -160,8 +160,12 @@ class RCTShopifyCheckoutKit: NSObject {
             ShopifyCheckoutKit.configuration.allowedMessageOrigins = allowedMessageOrigins
         }
 
-        ShopifyCheckoutKit.configuration.onMessageRejected = { [weak self] rejection in
-            self?.emitMessageRejected(rejection)
+        if configuration["hasMessageRejectedCallback"] as? Bool == true {
+            ShopifyCheckoutKit.configuration.onMessageRejected = { [weak self] rejection in
+                self?.emitMessageRejected(rejection)
+            }
+        } else {
+            ShopifyCheckoutKit.configuration.onMessageRejected = nil
         }
 
         if let colorScheme = configuration["colorScheme"] as? String {
