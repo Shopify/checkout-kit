@@ -1,25 +1,6 @@
 appId: ${E2E_APP_ID}
 ---
-- tapOn:
-    text: "^Email( or mobile phone number)?$"
-- waitForAnimationToEnd
-- inputText: "${EMAIL}"
-- runFlow: dismiss-active-field.yaml
-- extendedWaitUntil:
-    visible: "^${EMAIL}$"
-- tapOn:
-    text: "^First name( \\(optional\\))?$"
-- waitForAnimationToEnd
-- inputText: "${FIRST_NAME}"
-- runFlow: dismiss-active-field.yaml
-- scrollUntilVisible:
-    element:
-      text: "^Last name$"
-    direction: DOWN
-    visibilityPercentage: 100
-    centerElement: true
-- tapOn:
-    text: "^Last name$"
-- waitForAnimationToEnd
-- inputText: "${LAST_NAME}"
-- runFlow: dismiss-active-field.yaml
+# A guest types both halves. A signed-in buyer arrives with the email already attached,
+# so the account journey runs fill-name.yaml on its own.
+- runFlow: fill-email.yaml
+- runFlow: fill-name.yaml

@@ -8,6 +8,7 @@ import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import com.shopify.checkoutkit.androiddemo.BuildConfig
 
 /**
  * WebView used to display the login page and intercept authorization code param redirects
@@ -27,7 +28,12 @@ fun LoginWebView(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
-                settings.apply { javaScriptEnabled = true }
+                settings.apply {
+                    javaScriptEnabled = true
+                    BuildConfig.customUserAgent.takeIf(String::isNotEmpty)?.let { suffix ->
+                        userAgentString = "$userAgentString $suffix"
+                    }
+                }
                 webViewClient = AuthenticationWebViewClient(customerAccountApiRedirectUri, onCodeParamIntercepted)
             }
         },

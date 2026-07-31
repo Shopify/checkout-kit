@@ -1,0 +1,24 @@
+appId: ${E2E_APP_ID}
+---
+# The launch wait can match a view hierarchy the dying process left behind, which sends
+# the link seconds before the new activity exists. Android then drops it, because a deep
+# link has no delivery guarantee. One repeat covers that, and the command is safe to
+# repeat: every cart command resets the cart before it seeds one.
+- retry:
+    maxRetries: 1
+    commands:
+      # The link goes to the running app. A running app is what the account journey needs:
+      # iOS delivers a cold-start URL through the scene connect options and Android through
+      # the launch intent, so a stopped app would need a second entry point on every
+      # platform. Each test supplies E2E_CART_PARAMS, so tests that do not care about buyer
+      # identity leave the app's configured mode alone.
+      - openLink: "${E2E_CONTROL_LINK}/cart?${E2E_CART_PARAMS}"
+      - waitForAnimationToEnd
+      - runFlow: confirm-open-link.yaml
+      # The cart marker only appears after the controller resolved a variant, created a
+      # cart, added the line, and navigated. Reaching it proves the whole command path.
+      # That is two network round trips, so the timeout covers a slow device on a slow shop.
+      - extendedWaitUntil:
+          visible:
+            id: cart-checkout-ready
+          timeout: 60000

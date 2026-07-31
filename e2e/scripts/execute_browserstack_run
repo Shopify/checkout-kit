@@ -137,6 +137,25 @@ class BrowserStackRunExecutor
     response
   end
 
+  # The repository is public, so the account credentials live in Bitrise secrets only.
+  # A run without them skips the account journey instead of failing inside checkout.
+  def customer_account_email
+    ENV.fetch("E2E_CUSTOMER_ACCOUNT_EMAIL", "")
+  end
+
+  def customer_account_code
+    ENV.fetch("E2E_CUSTOMER_ACCOUNT_CODE", "")
+  end
+
+  def exclude_tags(run)
+    tags = run.fetch("exclude_tags")
+
+    return tags unless customer_account_email.empty? || customer_account_code.empty?
+
+    warn("no customer account secrets, excluding the account tag")
+    (tags + ["account"]).uniq
+  end
+
   def start_build(run, app_url, test_suite_url, device)
     body = {
       app: app_url,
@@ -149,12 +168,14 @@ class BrowserStackRunExecutor
       execute: [run.fetch("execute")],
       tags: {
         includeTags: run.fetch("include_tags"),
-        excludeTags: run.fetch("exclude_tags")
+        excludeTags: exclude_tags(run)
       },
       setEnvVariables: {
         E2E_APP_ID: run.fetch("app_id"),
         E2E_READY_MARKER: run.fetch("ready_marker"),
-        E2E_CONTROL_LINK: run.fetch("control_link")
+        E2E_CONTROL_LINK: run.fetch("control_link"),
+        E2E_CUSTOMER_ACCOUNT_EMAIL: customer_account_email,
+        E2E_CUSTOMER_ACCOUNT_CODE: customer_account_code
       }
     }
     response = @client.start_build(run.fetch("platform"), body)

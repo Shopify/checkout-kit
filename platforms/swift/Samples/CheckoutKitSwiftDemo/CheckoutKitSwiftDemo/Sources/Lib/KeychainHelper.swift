@@ -51,6 +51,9 @@ final class KeychainHelper {
         ]
 
         let status = SecItemAdd(query as CFDictionary, nil)
+        if status != errSecSuccess {
+            logger.error("Failed to save \(key) to keychain, OSStatus: \(status)")
+        }
         return status == errSecSuccess
     }
 
@@ -94,9 +97,15 @@ final class KeychainHelper {
 
     func getTokens() -> OAuthTokenResult? {
         guard let data = read(key: tokensKey) else {
+            logger.debug("No token data found in keychain")
             return nil
         }
-        return try? JSONDecoder().decode(OAuthTokenResult.self, from: data)
+        do {
+            return try JSONDecoder().decode(OAuthTokenResult.self, from: data)
+        } catch {
+            logger.error("Failed to decode keychain tokens: \(error)")
+            return nil
+        }
     }
 
     func clearTokens() {

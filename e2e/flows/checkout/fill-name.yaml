@@ -1,0 +1,22 @@
+appId: ${E2E_APP_ID}
+---
+# A signed-in buyer can arrive with either name already filled, and `inputText` appends
+# rather than replaces, so each field is cleared before it is typed.
+- tapOn:
+    text: "^First name( \\(optional\\))?$"
+- waitForAnimationToEnd
+- eraseText
+- inputText: "${FIRST_NAME}"
+- runFlow: dismiss-active-field.yaml
+- scrollUntilVisible:
+    element:
+      text: "^Last name$"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- tapOn:
+    text: "^Last name$"
+- waitForAnimationToEnd
+- eraseText
+- inputText: "${LAST_NAME}"
+- runFlow: dismiss-active-field.yaml

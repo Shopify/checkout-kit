@@ -89,6 +89,7 @@ targets:
         StorefrontAccessToken: $(STOREFRONT_ACCESS_TOKEN)
         CustomerAccountApiClientId: $(CUSTOMER_ACCOUNT_API_CLIENT_ID)
         CustomerAccountApiShopId: $(CUSTOMER_ACCOUNT_API_SHOP_ID)
+        CustomUserAgent: $(CUSTOM_USER_AGENT)
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - shop.$(CUSTOMER_ACCOUNT_API_SHOP_ID).app

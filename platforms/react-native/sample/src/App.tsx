@@ -12,6 +12,7 @@ import {
   NavigationContainer,
   useNavigation,
   type NavigationProp,
+  type NavigatorScreenParams,
 } from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -79,7 +80,7 @@ export type RootStackParamList = {
   ProductDetails: {product: ShopifyProduct; variant?: ProductVariant};
   Cart: undefined;
   CartModal: undefined;
-  Account: undefined;
+  Account: NavigatorScreenParams<AccountStackParamList>;
   Settings: undefined;
 };
 
@@ -459,8 +460,12 @@ function Routes() {
   const navigateToCart = useCallback(() => {
     navigation.navigate('Cart');
   }, [navigation]);
+  const navigateToSignIn = useCallback(() => {
+    navigation.navigate('Account', {screen: 'Login', initial: false});
+  }, [navigation]);
   const handleE2ECartBootstrap = useE2ECartBootstrap({
     onCartReady: navigateToCart,
+    onSignInRequested: navigateToSignIn,
   });
 
   useEffect(() => {

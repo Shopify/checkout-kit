@@ -11,6 +11,10 @@ struct CustomerAccountLoginView: UIViewRepresentable {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
 
+        if let customUserAgent = InfoDictionary.shared.customUserAgent {
+            configuration.applicationNameForUserAgent = customUserAgent
+        }
+
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.load(URLRequest(url: authorizationURL))
