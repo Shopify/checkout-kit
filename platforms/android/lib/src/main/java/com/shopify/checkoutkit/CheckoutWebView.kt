@@ -120,6 +120,9 @@ internal class CheckoutWebView private constructor(
     }
 
     fun loadCheckout(url: String, isPreload: Boolean = false) {
+        if (!OriginAllowlist.isHttpsUrl(url)) {
+            throw insecureCheckoutUrlError(url)
+        }
         log.d(
             LOG_TAG,
             "Loading checkout with url ${url.redactedUrlForLogging()}. IsPreload: $isPreload."
@@ -272,18 +275,33 @@ internal class CheckoutWebView private constructor(
             request: WebResourceRequest?
         ): Boolean {
             val uri = request?.url
-            if (uri == null || (!uri.isContactLink() && !uri.isDeepLink())) return false
+            if (uri == null) return false
 
-            when (val result = ExternalUriLauncher.launch(context, uri)) {
-                is ExternalUriLauncher.Result.Launched ->
-                    log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
-                is ExternalUriLauncher.Result.Rejected ->
-                    log.d(
-                        LOG_TAG,
-                        "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
-                    )
+            if (uri.isContactLink() || uri.isDeepLink()) {
+                when (val result = ExternalUriLauncher.launch(context, uri)) {
+                    is ExternalUriLauncher.Result.Launched ->
+                        log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
+                    is ExternalUriLauncher.Result.Rejected ->
+                        log.d(
+                            LOG_TAG,
+                            "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
+                        )
+                }
+                return true
             }
-            return true
+
+            if (request.isForMainFrame && uri.scheme != Scheme.HTTPS) {
+                val error = insecureCheckoutUrlError(uri.toString())
+                preloadCache.evict(
+                    this@CheckoutWebView,
+                    PreloadState.Failed(PreloadState.FailureReason.NavigationFailed),
+                )
+                resetCheckoutRequestRetryState()
+                listener.onCheckoutViewFailedWithError(error)
+                return true
+            }
+
+            return false
         }
 
         private fun handleClientError(
@@ -359,6 +377,13 @@ internal class CheckoutWebView private constructor(
         ): CheckoutPreload? {
             if (!ShopifyCheckoutKit.configuration.preloading.enabled) {
                 return null
+            }
+
+            if (!OriginAllowlist.isHttpsUrl(url)) {
+                val handle = CheckoutPreload(preloadCache)
+                preloadCache.evict(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+                handle.listener = listener
+                return handle
             }
 
             return try {
@@ -450,6 +475,10 @@ internal class CheckoutWebView private constructor(
 }
 
 private const val LOG_TAG = "CheckoutWebView"
+
+private fun insecureCheckoutUrlError(url: String): CheckoutKitException = CheckoutKitException(
+    errorDescription = "Checkout requires an HTTPS URL: ${url.redactedUrlForLogging()}",
+)
 
 internal class CheckoutWebViewTouchHandler {
     private var lastTouchRawY = 0f

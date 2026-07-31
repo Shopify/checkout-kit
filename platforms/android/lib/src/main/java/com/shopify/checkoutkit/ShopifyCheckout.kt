@@ -130,6 +130,15 @@ public class ShopifyCheckout @MainThread internal constructor(
                     }
                 }
             }
+        } catch (checkoutError: CheckoutException) {
+            initializationError = checkoutError
+            if (hostConfiguration.reportInitializationFailure) {
+                Handler(Looper.getMainLooper()).post {
+                    if (!destroyed) {
+                        hostConfiguration.onFailure(checkoutError)
+                    }
+                }
+            }
         }
     }
 

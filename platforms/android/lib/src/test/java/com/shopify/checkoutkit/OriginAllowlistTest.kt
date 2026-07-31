@@ -61,6 +61,33 @@ class OriginAllowlistTest {
     }
 
     @Test
+    fun `default ports are normalized for exact and wildcard patterns`() {
+        val patterns = OriginAllowlist.effectivePatterns(
+            "https://checkout.shopify.com:443",
+            setOf("https://allowed.example.com:443", "https://*.example.org:443"),
+        )
+
+        assertThat(OriginAllowlist.isAllowed("https://checkout.shopify.com", patterns)).isTrue()
+        assertThat(OriginAllowlist.isAllowed("https://allowed.example.com", patterns)).isTrue()
+        assertThat(OriginAllowlist.isAllowed("https://sub.example.org", patterns)).isTrue()
+        assertThat(OriginAllowlist.isAllowed("https://sub.example.org:8443", patterns)).isFalse()
+    }
+
+    @Test
+    fun `IPv6 origins support default and explicit ports`() {
+        val patterns = OriginAllowlist.effectivePatterns(
+            "https://[2001:db8::1]:443",
+            setOf("https://[2001:db8::2]:8443"),
+        )
+
+        assertThat(OriginAllowlist.isAllowed("https://[2001:db8::1]", patterns)).isTrue()
+        assertThat(OriginAllowlist.isAllowed("https://[2001:db8::2]:8443", patterns)).isTrue()
+        assertThat(OriginAllowlist.isAllowed("https://[2001:db8::2]", patterns)).isFalse()
+        assertThat(OriginAllowlist.originFromUrl("https://[2001:db8::1]:443/cart"))
+            .isEqualTo("https://[2001:db8::1]")
+    }
+
+    @Test
     fun `invalid configured patterns are ignored`() {
         val patterns = OriginAllowlist.effectivePatterns(cartOrigin, setOf("not a url"))
 

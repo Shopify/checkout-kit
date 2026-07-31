@@ -9,6 +9,7 @@ import android.view.View.VISIBLE
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
+import android.webkit.WebResourceRequest
 import android.webkit.WebChromeClient.FileChooserParams
 import android.webkit.WebView
 import android.widget.FrameLayout
@@ -343,6 +344,27 @@ class CheckoutWebViewTest {
         })
     }
 
+    @Test
+    fun `callback failures do not interrupt later trusted messages`() {
+        ShopifyCheckoutKit.configure {
+            it.allowedMessageOrigins = setOf("https://allowed.example.com")
+            it.onMessageRejected = { error("callback failed") }
+        }
+        val view = checkoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        var received = false
+        view.setClient(CheckoutProtocol.Client().on(CheckoutProtocol.start) { received = true })
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = "https://evil.example.com")
+        webMessageTransport.dispatchMessage(ecStartMessage(), sourceOrigin = "https://checkout.shopify.com")
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(received).isTrue()
+        }
+    }
+
     // endregion
 
     @Test
@@ -389,6 +411,35 @@ class CheckoutWebViewTest {
     }
 
     @Test
+    fun `loadCheckout rejects non HTTPS URLs`() {
+        val view = checkoutWebView(activity)
+
+        assertThatThrownBy { view.loadCheckout("http://checkout.shopify.com/cart/123") }
+            .isInstanceOf(CheckoutKitException::class.java)
+            .hasMessageContaining("requires an HTTPS URL")
+    }
+
+    @Test
+    fun `main frame redirect to non HTTPS URL is blocked and reported`() {
+        val view = checkoutWebView(activity)
+        val listener = mock(CheckoutWebViewListener::class.java)
+        val request = mock(WebResourceRequest::class.java)
+        whenever(request.url).thenReturn(Uri.parse("http://checkout.shopify.com/cart/123"))
+        whenever(request.isForMainFrame).thenReturn(true)
+        view.setListener(listener)
+
+        val blocked = view.CheckoutWebViewClient().shouldOverrideUrlLoading(view, request)
+
+        assertThat(blocked).isTrue()
+        verify(listener).onCheckoutViewFailedWithError(
+            org.mockito.kotlin.check {
+                assertThat(it).isInstanceOf(CheckoutKitException::class.java)
+                assertThat(it.message).contains("requires an HTTPS URL")
+            }
+        )
+    }
+
+    @Test
     fun `loadCheckout preserves existing query params alongside ec_version`() {
         val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123?foo=bar")
@@ -429,6 +480,19 @@ class CheckoutWebViewTest {
         assertThat(shadow.lastAdditionalHttpHeaders).containsEntry("Shopify-Purpose", "prefetch")
         assertThat(view.isPreloadRequest).isTrue()
         assertThat(shadow.wasOnPauseCalled()).isTrue()
+    }
+
+    @Test
+    fun `preload reports navigation failure for non HTTPS URL`() {
+        val preload = CheckoutWebView.preload(
+            "http://checkout.shopify.com/cart/123",
+            activity,
+            webMessageTransport,
+        )
+
+        assertThat(preload?.state)
+            .isEqualTo(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
     }
 
     @Test

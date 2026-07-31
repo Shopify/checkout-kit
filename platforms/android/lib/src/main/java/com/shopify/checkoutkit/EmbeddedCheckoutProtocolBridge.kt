@@ -124,7 +124,11 @@ internal class EmbeddedCheckoutProtocolBridge(
         val reason = "origin \"$sourceOrigin\" is not in the allowlist"
         val callback = ShopifyCheckoutKit.configuration.onMessageRejected
         if (callback != null) {
-            callback(RejectedMessage(origin = sourceOrigin, message = message, reason = reason))
+            try {
+                callback(RejectedMessage(origin = sourceOrigin, message = message, reason = reason))
+            } catch (error: Exception) {
+                log.e(LOG_TAG, "onMessageRejected callback threw", error)
+            }
         } else {
             log.d(LOG_TAG, "Dropped ECP WebMessage: $reason")
         }
