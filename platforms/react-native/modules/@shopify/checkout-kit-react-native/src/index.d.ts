@@ -1,10 +1,6 @@
 import type {CheckoutException} from './errors';
 import type {ProtocolHandlers} from './protocol';
-import type {
-  ApplePayContactField,
-  ColorScheme,
-  LogLevel,
-} from './enums';
+import type {ApplePayContactField, ColorScheme, LogLevel} from './enums';
 export {
   AcceleratedCheckoutWallet,
   ApplePayContactField,
@@ -81,7 +77,7 @@ export interface AndroidAutomaticColors {
   dark: AndroidColors;
 }
 
-interface CommonConfiguration {
+export interface CommonConfiguration {
   /**
    * Sets the title of the Checkout sheet.
    *
@@ -129,6 +125,17 @@ interface CommonConfiguration {
    * @default [] (all origins trusted)
    */
   allowedMessageOrigins?: string[];
+  /**
+   * Invoked when an incoming checkout message is rejected by origin
+   * validation. Treat the payload as untrusted.
+   */
+  onMessageRejected?: (detail: RejectedMessage) => void;
+}
+
+export interface RejectedMessage {
+  origin: string;
+  message: string;
+  reason: string;
 }
 
 export type Configuration = CommonConfiguration & {

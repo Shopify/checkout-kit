@@ -201,8 +201,15 @@ export enum ColorScheme {
     storefront = "storefront"
 }
 
-// Warning: (ae-forgotten-export) The symbol "CommonConfiguration" needs to be exported by the entry point index.d.ts
-//
+// @public (undocumented)
+export interface CommonConfiguration {
+    allowedMessageOrigins?: string[];
+    logLevel?: LogLevel;
+    onMessageRejected?: (detail: RejectedMessage) => void;
+    preloading?: boolean;
+    title?: string;
+}
+
 // @public (undocumented)
 export type Configuration = CommonConfiguration & {
     acceleratedCheckouts?: AcceleratedCheckoutConfiguration;
@@ -273,6 +280,16 @@ export interface PresentCallbacks {
 
 // @public (undocumented)
 export type ProtocolHandlers = ProtocolHandlers_2<CheckoutProtocolPayloads>;
+
+// @public (undocumented)
+export interface RejectedMessage {
+    // (undocumented)
+    message: string;
+    // (undocumented)
+    origin: string;
+    // (undocumented)
+    reason: string;
+}
 
 // @public (undocumented)
 export enum RenderState {

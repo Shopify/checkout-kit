@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import kotlin.Unit;
 
 public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
@@ -127,6 +128,8 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     resultConfig.putString("colorScheme", colorSchemeStringFor(checkoutConfig.getAppearance()));
     resultConfig.putString("logLevel", logLevelStringFor(checkoutConfig.getLogLevel()));
     resultConfig.putBoolean("preloading", checkoutConfig.getPreloading().getEnabled());
+    resultConfig.putArray("allowedMessageOrigins",
+        Arguments.fromList(new ArrayList<>(checkoutConfig.getAllowedMessageOrigins())));
 
     return resultConfig;
   }
@@ -145,6 +148,15 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
       if (config.hasKey("allowedMessageOrigins")) {
         configuration.setAllowedMessageOrigins(toStringSet(config.getArray("allowedMessageOrigins")));
       }
+
+      configuration.setOnMessageRejected(rejection -> {
+        WritableMap detail = Arguments.createMap();
+        detail.putString("origin", rejection.getOrigin());
+        detail.putString("message", rejection.getMessage());
+        detail.putString("reason", rejection.getReason());
+        emitOnMessageRejected(detail);
+        return Unit.INSTANCE;
+      });
 
       if (config.hasKey("logLevel")) {
         LogLevel logLevel = logLevelFor(config.getString("logLevel"));
