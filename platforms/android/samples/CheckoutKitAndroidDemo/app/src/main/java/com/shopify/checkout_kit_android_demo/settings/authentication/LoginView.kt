@@ -50,8 +50,10 @@ fun LoginView(
             }
 
             is Status.LoggedIn -> {
-                // Navigate back to settings when login is complete
-                navController.navigate(Screen.Settings.route)
+                // Show the account when login is complete
+                navController.navigate(Screen.Account.route) {
+                    popUpTo(Screen.Login.route) { inclusive = true }
+                }
             }
 
             is Status.Error -> {

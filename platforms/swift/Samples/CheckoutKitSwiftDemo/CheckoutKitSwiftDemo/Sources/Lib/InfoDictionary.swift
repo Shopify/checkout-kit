@@ -13,6 +13,9 @@ final class InfoDictionary: Sendable {
     let customerAccountApiClientId: String?
     let customerAccountApiShopId: String?
 
+    /// User agent suffix the customer account login web view appends. Empty outside CI.
+    let customUserAgent: String?
+
     var customerAccountApiRedirectUri: String? {
         guard let shopId = customerAccountApiShopId, !shopId.isEmpty else {
             return nil
@@ -64,5 +67,6 @@ final class InfoDictionary: Sendable {
         // Customer Account API configuration (optional)
         customerAccountApiClientId = infoPlist["CustomerAccountApiClientId"] as? String
         customerAccountApiShopId = infoPlist["CustomerAccountApiShopId"] as? String
+        customUserAgent = (infoPlist["CustomUserAgent"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 }

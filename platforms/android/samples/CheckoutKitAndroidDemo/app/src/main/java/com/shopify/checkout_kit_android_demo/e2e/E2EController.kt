@@ -11,6 +11,8 @@ interface E2ECommandTarget {
 
     suspend fun showCart()
 
+    suspend fun presentSignIn()
+
     suspend fun report(failure: String)
 }
 
@@ -38,7 +40,7 @@ class E2EController(private val target: E2ECommandTarget) {
             when (link) {
                 is E2EControlLink.Reset -> target.resetCart()
                 is E2EControlLink.Cart -> seedCart(link)
-                is E2EControlLink.SignIn -> throw UnsupportedOperationException("signIn is not implemented yet")
+                is E2EControlLink.SignIn -> target.presentSignIn()
             }
         } catch (error: Exception) {
             target.report(message(error))

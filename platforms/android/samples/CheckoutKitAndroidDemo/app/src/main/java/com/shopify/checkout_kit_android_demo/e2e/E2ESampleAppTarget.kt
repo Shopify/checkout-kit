@@ -53,6 +53,10 @@ class E2ESampleAppTarget : E2ECommandTarget, KoinComponent {
         E2ENavigation.go(Screen.Cart)
     }
 
+    override suspend fun presentSignIn() {
+        E2ENavigation.go(Screen.Login)
+    }
+
     override suspend fun report(failure: String) {
         Timber.e("[E2E] $failure")
     }

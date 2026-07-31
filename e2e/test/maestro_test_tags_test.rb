@@ -99,6 +99,28 @@ class MaestroTestTagsTest < Minitest::Test
     )
   end
 
+  CREDENTIAL_VARIABLES = ["E2E_CUSTOMER_ACCOUNT_EMAIL", "E2E_CUSTOMER_ACCOUNT_CODE"].freeze
+
+  def authored_files
+    Dir.glob("{tests,flows}/**/*.yaml", base: E2E_ROOT).sort
+  end
+
+  # This repository is public. The runner reads the account credentials from Bitrise
+  # secrets or an untracked .env, so no committed file may carry a value for them.
+  def test_no_authored_file_assigns_a_customer_account_credential
+    authored_files.each do |path|
+      body = File.read(File.join(E2E_ROOT, path))
+
+      CREDENTIAL_VARIABLES.each do |variable|
+        refute_match(
+          /^\s*#{variable}\s*:/,
+          body,
+          "#{path} assigns #{variable}, which must reach Maestro from the runner instead"
+        )
+      end
+    end
+  end
+
   def test_there_is_at_least_one_test_to_check
     refute_empty(test_files)
     refute_empty(shared_test_files)

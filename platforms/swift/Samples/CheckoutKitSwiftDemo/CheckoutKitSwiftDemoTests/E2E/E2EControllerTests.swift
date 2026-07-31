@@ -77,12 +77,13 @@ class E2EControllerTests: XCTestCase {
         ])
     }
 
-    func testReportsThatSignInIsNotImplemented() async {
+    func testPresentsSignIn() async {
         let target = E2ECommandTargetSpy()
 
-        await handle("/signIn", target)
+        let handled = await handle("/signIn", target)
 
-        XCTAssertEqual(target.calls, ["report(signIn is not implemented yet)"])
+        XCTAssertTrue(handled)
+        XCTAssertEqual(target.calls, ["presentSignIn"])
     }
 
     @discardableResult
@@ -121,6 +122,10 @@ private class E2ECommandTargetSpy: E2ECommandTarget {
         if let addCartLineError {
             throw addCartLineError
         }
+    }
+
+    func presentSignIn() async {
+        calls.append("presentSignIn")
     }
 
     func showCart() async {

@@ -15,4 +15,8 @@ class E2ETestIdsTests: XCTestCase {
     func testTabMarkersMatchTheMaestroFlows() {
         XCTAssertEqual(E2ETestIds.Tabs.cart, "cart-tab")
     }
+
+    func testAccountMarkersMatchTheMaestroFlows() {
+        XCTAssertEqual(E2ETestIds.Account.signedInView, "account-signed-in-view")
+    }
 }

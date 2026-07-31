@@ -16,7 +16,7 @@ appId: ${E2E_APP_ID}
       # Country/Region and Province already hold the shop defaults, so this flow leaves
       # them alone and supplies an address that suits those defaults.
       - tapOn:
-          text: "^First name$"
+          text: "^First name( \\(optional\\))?$"
       - inputText: "${BILLING_FIRST_NAME}"
       - runFlow: dismiss-active-field.yaml
       - tapOn:
@@ -32,7 +32,7 @@ appId: ${E2E_APP_ID}
       - inputText: "${BILLING_CITY}"
       - runFlow: dismiss-active-field.yaml
       - tapOn:
-          text: "^Postal code$"
+          text: "^${BILLING_POSTAL_FIELD_LABEL}$"
       - inputText: "${BILLING_POSTAL_CODE}"
       - runFlow: dismiss-active-field.yaml
       - waitForAnimationToEnd

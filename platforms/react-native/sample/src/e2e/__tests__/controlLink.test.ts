@@ -135,21 +135,14 @@ describe('parseControlLink', () => {
     });
   });
 
-  it('parses a sign in command without an email', () => {
+  it('parses a sign in command', () => {
     expect(parse('/signIn')).toEqual({command: 'signIn'});
   });
 
-  it('parses a sign in command with an email', () => {
-    expect(parse('/signIn?email=shopper%2Be2e@example.com')).toEqual({
-      command: 'signIn',
-      email: 'shopper+e2e@example.com',
-    });
+  it('rejects sign in parameters', () => {
+    expectRejection(
+      '/signIn?email=shopper@example.com',
+      'signIn takes no parameters',
+    );
   });
-
-  it.each(['/signIn?email=', '/signIn?email=%20'])(
-    'rejects the blank sign in email in %s',
-    path => {
-      expectRejection(path, 'email must not be blank');
-    },
-  );
 });

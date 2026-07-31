@@ -8,6 +8,8 @@ tags:
     - launch
     - cart
     - checkout
+    # execute_browserstack_run drops this tag again when the account secrets are absent.
+    - account
   exclude:
     - flaky
     - wip

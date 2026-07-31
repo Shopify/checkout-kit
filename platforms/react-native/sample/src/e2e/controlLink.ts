@@ -18,7 +18,6 @@ export type E2ECartCommand = {
 
 export type E2ESignInCommand = {
   command: 'signIn';
-  email?: string;
 };
 
 export type E2EControlLink =
@@ -116,17 +115,11 @@ function parseCart(parameters: Parameters): E2ECartCommand {
 }
 
 function parseSignIn(parameters: Parameters): E2ESignInCommand {
-  const email = parameters.get('email');
-
-  if (email === undefined) {
-    return {command: 'signIn'};
+  if (parameters.size > 0) {
+    throw new Error('signIn takes no parameters');
   }
 
-  if (email === '') {
-    throw new Error('email must not be blank');
-  }
-
-  return {command: 'signIn', email};
+  return {command: 'signIn'};
 }
 
 export function parseControlLink(url: string): E2EControlLink | null {

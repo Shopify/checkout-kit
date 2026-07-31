@@ -91,17 +91,12 @@ class E2EControlLinkTests: XCTestCase {
         XCTAssertEqual(try parse("/cart/?productIndex=3"), .cart(.init(productIndex: 3, quantity: 1)))
     }
 
-    func testParsesASignInCommandWithoutAnEmail() throws {
-        XCTAssertEqual(try parse("/signIn"), .signIn(email: nil))
+    func testParsesASignInCommand() throws {
+        XCTAssertEqual(try parse("/signIn"), .signIn)
     }
 
-    func testParsesASignInCommandWithAnEmail() throws {
-        XCTAssertEqual(try parse("/signIn?email=shopper%2Be2e@example.com"), .signIn(email: "shopper+e2e@example.com"))
-    }
-
-    func testRejectsABlankSignInEmail() {
-        assertThrows(.blankEmail, "/signIn?email=")
-        assertThrows(.blankEmail, "/signIn?email=%20")
+    func testRejectsSignInParameters() {
+        assertThrows(.unexpectedParameters(command: "signIn"), "/signIn?email=shopper@example.com")
     }
 
     func testErrorMessagesMatchTheOtherPlatforms() {
@@ -114,7 +109,7 @@ class E2EControlLinkTests: XCTestCase {
             E2EControlLinkError.invalidQuantity: "quantity must be a positive integer",
             E2EControlLinkError.invalidProductIndex: "productIndex must be a non-negative integer",
             E2EControlLinkError.invalidBuyerIdentityMode: "buyerIdentityMode must be guest, hardcoded, or customerAccount",
-            E2EControlLinkError.blankEmail: "email must not be blank"
+            E2EControlLinkError.unexpectedParameters(command: "signIn"): "signIn takes no parameters"
         ]
 
         for (error, message) in messages {
