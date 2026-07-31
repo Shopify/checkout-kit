@@ -65,7 +65,7 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testPreloadingCanBeDisabled() async throws {
-        let checkoutURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
+        let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         ShopifyCheckoutKit.configuration.preloading.enabled = false
@@ -79,7 +79,7 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testChangingConfigurationWithoutChangingPreloadingDoesNotInvalidatePreload() async throws {
-        let checkoutURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
+        let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())

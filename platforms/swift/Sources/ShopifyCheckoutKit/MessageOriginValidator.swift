@@ -7,11 +7,14 @@ public struct MessageRejection: Sendable {
     /// The origin the message was received from, e.g. `https://example.com`.
     public let origin: String
     /// The raw message body as received from the checkout surface.
-    public let body: String
+    public let message: String
+    /// Human-readable reason the message was rejected.
+    public let reason: String
 
-    public init(origin: String, body: String) {
+    public init(origin: String, message: String, reason: String) {
         self.origin = origin
-        self.body = body
+        self.message = message
+        self.reason = reason
     }
 }
 
@@ -24,8 +27,8 @@ struct MessageOrigin: Equatable {
 
     init(scheme: String, host: String, port: Int?) {
         self.scheme = scheme.lowercased()
-        self.host = host.lowercased()
-        self.port = port
+        self.host = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]")).lowercased()
+        self.port = Self.normalizedPort(scheme: scheme.lowercased(), port: port)
     }
 
     init?(url: URL) {
@@ -51,10 +54,18 @@ struct MessageOrigin: Equatable {
     }
 
     var description: String {
+        let serializedHost = host.contains(":") ? "[\(host)]" : host
         if let port {
-            return "\(scheme)://\(host):\(port)"
+            return "\(scheme)://\(serializedHost):\(port)"
         }
-        return "\(scheme)://\(host)"
+        return "\(scheme)://\(serializedHost)"
+    }
+
+    private static func normalizedPort(scheme: String, port: Int?) -> Int? {
+        switch (scheme, port) {
+        case ("https", 443), ("http", 80): nil
+        default: port
+        }
     }
 }
 
@@ -147,15 +158,7 @@ enum MessageOriginValidator {
         }
         guard !authority.isEmpty else { return nil }
 
-        var host = authority
-        var port: Int?
-        if let colon = authority.lastIndex(of: ":") {
-            let portString = String(authority[authority.index(after: colon)...])
-            if let parsedPort = Int(portString) {
-                port = parsedPort
-                host = String(authority[..<colon])
-            }
-        }
+        guard var (host, port) = parseAuthority(authority) else { return nil }
         host = host.lowercased()
         guard !host.isEmpty else { return nil }
 
@@ -164,5 +167,25 @@ enum MessageOriginValidator {
         guard !baseHost.isEmpty else { return nil }
 
         return ParsedPattern(scheme: scheme, host: baseHost, port: port, isWildcard: isWildcard)
+    }
+
+    private static func parseAuthority(_ authority: String) -> (host: String, port: Int?)? {
+        if authority.hasPrefix("[") {
+            guard let closingBracket = authority.firstIndex(of: "]") else { return nil }
+            let host = String(authority[authority.index(after: authority.startIndex) ..< closingBracket])
+            let remainder = authority[authority.index(after: closingBracket)...]
+            guard !remainder.isEmpty else { return (host, nil) }
+            guard remainder.first == ":", let port = Int(remainder.dropFirst()) else { return nil }
+            return (host, port)
+        }
+
+        if let colon = authority.lastIndex(of: ":") {
+            guard authority[..<colon].contains(":") == false else { return nil }
+            let portString = String(authority[authority.index(after: colon)...])
+            guard let port = Int(portString) else { return nil }
+            return (String(authority[..<colon]), port)
+        }
+
+        return (authority, nil)
     }
 }

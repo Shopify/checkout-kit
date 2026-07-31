@@ -87,6 +87,26 @@ final class MessageOriginValidatorTests: XCTestCase {
         XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://example.com:8443", origin: origin))
     }
 
+    func testExplicitDefaultPortMatchesOmittedPort() {
+        let origin = MessageOrigin(scheme: "https", host: "example.com", port: nil)
+        XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://example.com:443", origin: origin))
+        XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://*.example.org:443", origin: MessageOrigin(
+            scheme: "https",
+            host: "sub.example.org",
+            port: nil
+        )))
+    }
+
+    func testBracketedIPv6OriginsWithDefaultAndExplicitPorts() {
+        let defaultPortOrigin = MessageOrigin(scheme: "https", host: "2001:db8::1", port: nil)
+        let explicitPortOrigin = MessageOrigin(scheme: "https", host: "2001:db8::2", port: 8443)
+
+        XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://[2001:db8::1]:443", origin: defaultPortOrigin))
+        XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://[2001:db8::2]:8443", origin: explicitPortOrigin))
+        XCTAssertFalse(MessageOriginValidator.matches(pattern: "https://[2001:db8::2]", origin: explicitPortOrigin))
+        XCTAssertEqual(defaultPortOrigin.description, "https://[2001:db8::1]")
+    }
+
     // MARK: - matches (wildcard subdomain)
 
     func testWildcardMatchesProperSubdomain() {

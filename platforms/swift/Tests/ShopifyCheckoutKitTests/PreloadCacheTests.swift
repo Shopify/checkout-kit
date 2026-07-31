@@ -13,7 +13,7 @@ import XCTest
 /// leave the slot untouched.
 @MainActor
 class PreloadCacheTests: XCTestCase {
-    private var url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
+    private var url = URL(string: "https://shopify1.shopify.com/checkouts/cn/123")!
 
     override func setUp() async throws {
         try await super.setUp()
