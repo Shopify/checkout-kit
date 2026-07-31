@@ -9,7 +9,6 @@ enum E2EControlLinkError: LocalizedError, Equatable, Hashable {
     case invalidQuantity
     case invalidProductIndex
     case invalidBuyerIdentityMode
-    case blankEmail
 
     var errorDescription: String? {
         switch self {
@@ -29,8 +28,6 @@ enum E2EControlLinkError: LocalizedError, Equatable, Hashable {
             return "productIndex must be a non-negative integer"
         case .invalidBuyerIdentityMode:
             return "buyerIdentityMode must be guest, hardcoded, or customerAccount"
-        case .blankEmail:
-            return "email must not be blank"
         }
     }
 }
@@ -38,7 +35,7 @@ enum E2EControlLinkError: LocalizedError, Equatable, Hashable {
 enum E2EControlLink: Equatable {
     case reset
     case cart(CartCommand)
-    case signIn(email: String?)
+    case signIn
 
     struct CartCommand: Equatable {
         var variantId: String?
@@ -54,7 +51,7 @@ enum E2EControlLink: Equatable {
 
     private static let resetParameters: Set<String> = []
     private static let cartParameters: Set<String> = ["variantId", "productIndex", "quantity", "buyerIdentityMode"]
-    private static let signInParameters: Set<String> = ["email"]
+    private static let signInParameters: Set<String> = []
 
     static func parse(_ url: String) throws -> E2EControlLink? {
         guard let separator = url.range(of: schemeSeparator) else {
@@ -80,7 +77,7 @@ enum E2EControlLink: Equatable {
             return try .cart(cartCommand(from: parameters))
         case "signIn":
             try rejectUnknownParameters("signIn", parameters, signInParameters)
-            return try .signIn(email: signInEmail(from: parameters))
+            return .signIn
         default:
             throw E2EControlLinkError.unsupportedCommand
         }
@@ -162,18 +159,6 @@ enum E2EControlLink: Equatable {
         }
 
         return buyerIdentityMode
-    }
-
-    private static func signInEmail(from parameters: Parameters) throws -> String? {
-        guard let email = parameters.value("email") else {
-            return nil
-        }
-
-        guard !email.isEmpty else {
-            throw E2EControlLinkError.blankEmail
-        }
-
-        return email
     }
 
     private struct Parameters {

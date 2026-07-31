@@ -15,9 +15,9 @@ env:
   FIRST_NAME: "Maestro"
   LAST_NAME: "Shopify"
 
-  # Checkout delivery fixture. The shop opens on its own country, so this address picks a
-  # different one and makes the flow use the country picker. The two field labels follow
-  # the country: the United States names them State and ZIP code.
+  # Checkout delivery fixture. This address keeps the shop's own country, so the country
+  # picker stays closed and only the state picker runs. The two field labels follow the
+  # country: the United States names them State and ZIP code.
   COUNTRY_LABEL: "United States"
   ADDRESS_LINE1: "700 S Flower St"
   CITY: "Los Angeles"
@@ -29,10 +29,10 @@ env:
   # reserved for fiction, so this value reaches nobody.
   PHONE: "213 555 0142"
 
-  # Checkout payment fixture. The shop runs its credit card gateway in test mode, which
-  # accepts this number only. Checkout groups the digits, so the flow needs both forms.
-  CARD_NUMBER: "4242424242424242"
-  CARD_NUMBER_DISPLAY: "4242 4242 4242 4242"
+  # Checkout payment fixture. The shop runs the bogus gateway, which rejects real card
+  # brands and reads a single digit instead: 1 approves, 2 declines, 3 fails the gateway.
+  CARD_NUMBER: "1"
+  CARD_NUMBER_DISPLAY: "1"
   CARD_SECURITY_CODE: "123"
   CARD_HOLDER_NAME: "Maestro Shopify"
 
@@ -43,6 +43,7 @@ env:
   BILLING_LAST_NAME: "Shopify"
   BILLING_ADDRESS_LINE1: "700 S Flower St"
   BILLING_CITY: "Los Angeles"
+  BILLING_POSTAL_FIELD_LABEL: "ZIP code"
   BILLING_POSTAL_CODE: "90017"
 
   # Accepted successful checkout states for this smoke test.

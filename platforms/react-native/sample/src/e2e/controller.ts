@@ -11,6 +11,7 @@ export interface E2ECommandTarget {
   variantId(productIndex: number): Promise<string>;
   addCartLine(variantId: string, quantity: number): Promise<void>;
   showCart(): Promise<void>;
+  presentSignIn(): Promise<void>;
   report(failure: string): Promise<void>;
 }
 
@@ -50,7 +51,8 @@ export class E2EController {
           await this.seedCart(link);
           break;
         case 'signIn':
-          throw new Error('signIn is not implemented yet');
+          await this.target.presentSignIn();
+          break;
       }
     } catch (error) {
       await this.target.report(message(error));

@@ -1,0 +1,10 @@
+appId: ${E2E_APP_ID}
+---
+# iOS asks the user to confirm before it hands a custom scheme to an app. Android does
+# not, so the tap is conditional rather than platform-gated.
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+      - waitForAnimationToEnd

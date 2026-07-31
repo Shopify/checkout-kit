@@ -7,9 +7,13 @@ import {E2EController, type E2ECommandTarget} from './controller';
 
 type UseE2ECartBootstrapOptions = {
   onCartReady: () => void;
+  onSignInRequested: () => void;
 };
 
-export function useE2ECartBootstrap({onCartReady}: UseE2ECartBootstrapOptions) {
+export function useE2ECartBootstrap({
+  onCartReady,
+  onSignInRequested,
+}: UseE2ECartBootstrapOptions) {
   const {seedCart, clearCart} = useCart();
   const {queries} = useShopify();
   const [fetchProducts] = queries.products;
@@ -41,11 +45,14 @@ export function useE2ECartBootstrap({onCartReady}: UseE2ECartBootstrapOptions) {
       async showCart() {
         onCartReady();
       },
+      async presentSignIn() {
+        onSignInRequested();
+      },
       async report(failure) {
         Alert.alert('E2E command failed', failure);
       },
     };
-  }, [clearCart, fetchProducts, onCartReady, seedCart]);
+  }, [clearCart, fetchProducts, onCartReady, onSignInRequested, seedCart]);
 
   return useCallback((url: string) => new E2EController(target).handle(url), [
     target,

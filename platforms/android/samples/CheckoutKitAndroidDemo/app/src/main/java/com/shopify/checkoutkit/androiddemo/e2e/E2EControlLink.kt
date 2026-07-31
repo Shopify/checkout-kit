@@ -25,7 +25,7 @@ sealed interface E2EControlLink {
         val buyerIdentityMode: E2EBuyerIdentityMode? = null,
     ) : E2EControlLink
 
-    data class SignIn(val email: String? = null) : E2EControlLink
+    data object SignIn : E2EControlLink
 
     companion object {
         const val HOST = "e2e"
@@ -35,7 +35,7 @@ sealed interface E2EControlLink {
 
         private val RESET_PARAMETERS = emptySet<String>()
         private val CART_PARAMETERS = setOf("variantId", "productIndex", "quantity", "buyerIdentityMode")
-        private val SIGN_IN_PARAMETERS = setOf("email")
+        private val SIGN_IN_PARAMETERS = emptySet<String>()
 
         fun parse(url: String): E2EControlLink? {
             val separatorIndex = url.indexOf(SCHEME_SEPARATOR)
@@ -73,7 +73,7 @@ sealed interface E2EControlLink {
                 "signIn" -> {
                     rejectUnknownParameters("signIn", parameters, SIGN_IN_PARAMETERS)
 
-                    SignIn(email = signInEmail(parameters))
+                    SignIn
                 }
 
                 else -> throw IllegalArgumentException("Unsupported e2e command")
@@ -132,14 +132,6 @@ sealed interface E2EControlLink {
             return requireNotNull(E2EBuyerIdentityMode.from(parameter)) {
                 "buyerIdentityMode must be guest, hardcoded, or customerAccount"
             }
-        }
-
-        private fun signInEmail(parameters: Map<String, String>): String? {
-            val email = parameters["email"] ?: return null
-
-            require(email.isNotEmpty()) { "email must not be blank" }
-
-            return email
         }
 
         private fun parameters(rawQuery: String?): Map<String, String> {

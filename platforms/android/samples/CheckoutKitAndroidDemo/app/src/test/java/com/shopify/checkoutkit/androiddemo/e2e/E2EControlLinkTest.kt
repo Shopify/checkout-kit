@@ -131,27 +131,13 @@ class E2EControlLinkTest {
     }
 
     @Test
-    fun `parses a sign in command without an email`() {
-        assertThat(parse("/signIn")).isEqualTo(E2EControlLink.SignIn())
+    fun `parses a sign in command`() {
+        assertThat(parse("/signIn")).isEqualTo(E2EControlLink.SignIn)
     }
 
     @Test
-    fun `parses a sign in command with an email`() {
-        assertThat(parse("/signIn?email=shopper%2Be2e@example.com"))
-            .isEqualTo(E2EControlLink.SignIn(email = "shopper+e2e@example.com"))
-    }
-
-    @Test
-    fun `decodes a literal plus in a query value as a space`() {
-        assertThat(parse("/signIn?email=shopper+e2e@example.com"))
-            .isEqualTo(E2EControlLink.SignIn(email = "shopper e2e@example.com"))
-    }
-
-    @Test
-    fun `rejects a blank sign in email`() {
-        assertRejects("/signIn?email=", "email must not be blank")
-        assertRejects("/signIn?email=%20", "email must not be blank")
-        assertRejects("/signIn?email=%0A", "email must not be blank")
+    fun `rejects sign in parameters`() {
+        assertRejects("/signIn?email=shopper@example.com", "Unknown signIn parameters: email")
     }
 
     private fun parse(path: String) = E2EControlLink.parse("com.shopify.checkoutkit.androiddemo://e2e$path")
