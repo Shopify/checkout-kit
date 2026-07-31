@@ -35,7 +35,8 @@ class E2EGitHubReporterTest < Minitest::Test
       "target" => "swift",
       "platform" => "ios",
       "os_version_tag" => "latest",
-      "execute" => "."
+      "execute" => ".",
+      "include_tags" => ["launch"]
     }
   end
 
@@ -46,7 +47,8 @@ class E2EGitHubReporterTest < Minitest::Test
       "target" => "react-native",
       "platform" => "ios",
       "os_version_tag" => "latest",
-      "execute" => "."
+      "execute" => ".",
+      "include_tags" => ["launch"]
     }
   end
 
@@ -67,7 +69,7 @@ class E2EGitHubReporterTest < Minitest::Test
   end
 
   def result(target)
-    {"target" => target, "application_id" => target, "passed" => true, "execute" => "."}
+    {"target" => target, "passed" => true, "execute" => "flow.yaml"}
   end
 
   def test_install_table_lists_every_produced_target
@@ -120,14 +122,14 @@ class E2EGitHubReporterTest < Minitest::Test
     assert_includes summary, "> - `e2e-build-react-native-ios` — [build log]"
     assert_includes summary, "/build/a7111bcd)"
     assert_includes summary, "> None of the 2 planned runs executed:"
-    assert_includes summary, "> - `swift-ios` (ios)"
+    assert_includes summary, "> - `swift-ios` · launch (ios)"
     assert_includes summary, "> [Pipeline build](https://app.bitrise.io/app/"
   end
 
   def test_blocked_report_omits_the_empty_tables
     body = blocked_reporter.comment_body
 
-    refute_includes body, "| Status | Suite |"
+    refute_includes body, "| Status | Tags |"
     refute_includes body, "## Install this build"
     refute_includes body, "| SDK | Install |"
   end
@@ -140,16 +142,8 @@ class E2EGitHubReporterTest < Minitest::Test
     summary = reporter(results: [], run_plan: [swift_ios_run], expected: 1).markdown_summary
 
     assert_includes summary, "did not report"
-    assert_includes summary, "> - `swift-ios` (ios)"
+    assert_includes summary, "> - `swift-ios` · launch (ios)"
     refute_includes summary, "[!CAUTION]"
-  end
-
-  def test_results_table_suite_column_shows_the_application_id_not_the_execute_path
-    reported = swift_ios_run.merge("passed" => true, "resolved_device" => "iPhone")
-    body = reporter(results: [reported]).comment_body
-
-    assert_includes body, "| ✅ | `swift-ios` |"
-    refute_includes body, "| ✅ | `.` |"
   end
 
   def test_partial_report_keeps_the_table_and_names_the_failed_stage
@@ -161,7 +155,7 @@ class E2EGitHubReporterTest < Minitest::Test
       expected: 2
     ).markdown_summary
 
-    assert_includes summary, "| Status | Suite |"
+    assert_includes summary, "| Status | Tags |"
     assert_includes summary, "did not report"
     assert_includes summary, "> 1 pipeline stage failed:"
     assert_includes summary, "> - `e2e-execute-browserstack-run` — [build log]"
@@ -203,5 +197,80 @@ class E2EGitHubReporterTest < Minitest::Test
     ).markdown_summary
 
     refute_includes summary, "did not report"
+  end
+
+  def test_results_table_names_the_tags_instead_of_the_execute_path
+    result = swift_ios_run.merge(
+      "passed" => true,
+      "resolved_device" => "iPhone",
+      "include_tags" => %w[cart checkout],
+      "exclude_tags" => %w[flaky]
+    )
+    summary = reporter(results: [result]).markdown_summary
+
+    assert_includes summary, "| Status | Tags | Target | Platform | OS version tag | Device |"
+    assert_includes summary, "| `cart, checkout` |"
+    refute_includes summary, "tests/shared/launch-smoke.yaml"
+  end
+
+  def test_results_table_reads_all_when_the_run_carries_no_include_tags
+    result = swift_ios_run.merge("passed" => true, "resolved_device" => "iPhone", "include_tags" => [])
+    summary = reporter(results: [result]).markdown_summary
+
+    assert_includes summary, "| `all` |"
+  end
+
+  def test_failure_heading_names_the_target_rather_than_the_execute_path
+    result = swift_ios_run.merge("passed" => false, "execute" => ".", "failed_tests" => [])
+    summary = reporter(results: [result]).markdown_summary
+
+    assert_includes summary, "### iOS — swift"
+    refute_includes summary, "### iOS — ."
+  end
+
+  def test_setup_error_names_the_class_and_the_message
+    result = swift_ios_run.merge(
+      "passed" => false,
+      "status" => "error",
+      "failed_tests" => [],
+      "error_class" => "RuntimeError",
+      "error" => "BrowserStack request failed 422: duplicate tags"
+    )
+    summary = reporter(results: [result]).markdown_summary
+
+    assert_includes summary, "> `RuntimeError`: BrowserStack request failed 422: duplicate tags"
+  end
+
+  def test_setup_error_message_collapses_to_one_line
+    result = swift_ios_run.merge(
+      "passed" => false,
+      "failed_tests" => [],
+      "error_class" => "RuntimeError",
+      "error" => "first line\nsecond line"
+    )
+    summary = reporter(results: [result]).markdown_summary
+
+    assert_includes summary, "> `RuntimeError`: first line second line"
+  end
+
+  def test_missing_run_label_names_the_tags_rather_than_the_execute_path
+    planned = swift_ios_run.merge("include_tags" => %w[cart checkout])
+    summary = reporter(results: [], run_plan: [planned], expected: 1).markdown_summary
+
+    assert_includes summary, "> - `swift-ios` · cart, checkout (ios)"
+  end
+
+  def test_missing_run_label_reads_all_without_include_tags
+    planned = swift_ios_run.merge("include_tags" => [])
+    summary = reporter(results: [], run_plan: [planned], expected: 1).markdown_summary
+
+    assert_includes summary, "> - `swift-ios` · all (ios)"
+  end
+
+  def test_failure_without_an_error_field_adds_no_error_line
+    result = swift_ios_run.merge("passed" => false, "failed_tests" => [])
+    summary = reporter(results: [result]).markdown_summary
+
+    refute_includes summary, "> `"
   end
 end

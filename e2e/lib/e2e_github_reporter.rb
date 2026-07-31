@@ -91,12 +91,19 @@ class E2EGitHubReporter
 
   def results_table
     lines = []
-    lines << "| Status | Suite | Target | Platform | OS version tag | Device |"
+    lines << "| Status | Tags | Target | Platform | OS version tag | Device |"
     lines << "|---|---|---|---|---|---|"
     @results.each do |result|
-      lines << "| #{status_icon(result)} | `#{result["application_id"]}` | #{result["target"]} | #{result["platform"]} | #{result["os_version_tag"]} | #{device_cell(result)} |"
+      lines << "| #{status_icon(result)} | `#{tags_cell(result)}` | #{result["target"]} | #{result["platform"]} | #{result["os_version_tag"]} | #{device_cell(result)} |"
     end
     lines
+  end
+
+  # `execute` is the tests folder on every row now that tags select the flows, so it carries
+  # no information. The include tags name what the row actually ran.
+  def tags_cell(result)
+    tags = result.fetch("include_tags", []).to_a
+    tags.empty? ? "all" : tags.join(", ")
   end
 
   def completeness_lines
@@ -225,7 +232,7 @@ class E2EGitHubReporter
   end
 
   def missing_run_label(run)
-    "`#{run["application_id"] || run["target"]}` (#{run["platform"]})"
+    "`#{run["application_id"] || run["target"]}` · #{tags_cell(run)} (#{run["platform"]})"
   end
 
   def missing_count
@@ -263,6 +270,7 @@ class E2EGitHubReporter
     lines << ""
     lines << "### #{failure_heading(result)}"
     lines << ""
+    lines.concat(setup_error_lines(result))
     lines << "| Test | Status | Artifacts |"
     lines << "|---|---|---|"
     tests = result.fetch("failed_tests", [])
@@ -276,8 +284,17 @@ class E2EGitHubReporter
     lines
   end
 
+  # A row that fails before it starts a build reports no test cases, so the message from
+  # result.json is the only place the cause appears.
+  def setup_error_lines(result)
+    return [] if blank?(result["error"])
+
+    message = result["error"].to_s.split("\n").map(&:strip).reject(&:empty?).join(" ")
+    ["> `#{result["error_class"] || "Error"}`: #{message}", ""]
+  end
+
   def failure_heading(result)
-    "#{os_label(result["platform"])} — #{result["application_id"]}"
+    "#{os_label(result["platform"])} — #{result["target"]}"
   end
 
   def artifact_links(testcase, result)
