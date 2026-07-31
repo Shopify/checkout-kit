@@ -18,6 +18,8 @@ internal object OriginAllowlist {
     const val SHOP_APP_ORIGIN: String = "https://shop.app"
 
     private const val WILDCARD_ALL = "*"
+    private const val HTTP_DEFAULT_PORT = 80
+    private const val HTTPS_DEFAULT_PORT = 443
     private val SHOP_APP_PATTERNS = listOf(SHOP_APP_ORIGIN, "https://*.shop.app")
 
     private val WILDCARD_PATTERN = Regex("""^([a-zA-Z][\w+.\-]*)://\*\.([^/:]+)(?::(\d+))?$""")
@@ -80,18 +82,21 @@ internal object OriginAllowlist {
     private fun parseOrigin(value: String): Origin? {
         return try {
             val uri = java.net.URI(value.trim())
-            val scheme = uri.scheme?.lowercase() ?: return null
-            val host = uri.host?.removePrefix("[")?.removeSuffix("]")?.lowercase() ?: return null
-            if (uri.userInfo != null) return null
-            Origin(scheme, host, normalizedPort(scheme, uri.port.takeUnless { it == -1 }))
+            val scheme = uri.scheme?.lowercase()
+            val host = uri.host?.removePrefix("[")?.removeSuffix("]")?.lowercase()
+            if (scheme == null || host == null || uri.userInfo != null) {
+                null
+            } else {
+                Origin(scheme, host, normalizedPort(scheme, uri.port.takeUnless { it == -1 }))
+            }
         } catch (_: Exception) {
             null
         }
     }
 
     private fun normalizedPort(scheme: String, port: Int?): Int? = when {
-        scheme == "https" && port == 443 -> null
-        scheme == "http" && port == 80 -> null
+        scheme == "https" && port == HTTPS_DEFAULT_PORT -> null
+        scheme == "http" && port == HTTP_DEFAULT_PORT -> null
         else -> port
     }
 

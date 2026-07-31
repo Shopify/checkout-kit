@@ -275,33 +275,32 @@ internal class CheckoutWebView private constructor(
             request: WebResourceRequest?
         ): Boolean {
             val uri = request?.url
-            if (uri == null) return false
-
-            if (uri.isContactLink() || uri.isDeepLink()) {
-                when (val result = ExternalUriLauncher.launch(context, uri)) {
-                    is ExternalUriLauncher.Result.Launched ->
-                        log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
-                    is ExternalUriLauncher.Result.Rejected ->
-                        log.d(
-                            LOG_TAG,
-                            "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
-                        )
+            return when {
+                uri == null -> false
+                uri.isContactLink() || uri.isDeepLink() -> {
+                    when (val result = ExternalUriLauncher.launch(context, uri)) {
+                        is ExternalUriLauncher.Result.Launched ->
+                            log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
+                        is ExternalUriLauncher.Result.Rejected ->
+                            log.d(
+                                LOG_TAG,
+                                "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
+                            )
+                    }
+                    true
                 }
-                return true
+                request.isForMainFrame && uri.scheme != Scheme.HTTPS -> {
+                    val error = insecureCheckoutUrlError(uri.toString())
+                    preloadCache.evict(
+                        this@CheckoutWebView,
+                        PreloadState.Failed(PreloadState.FailureReason.NavigationFailed),
+                    )
+                    resetCheckoutRequestRetryState()
+                    listener.onCheckoutViewFailedWithError(error)
+                    true
+                }
+                else -> false
             }
-
-            if (request.isForMainFrame && uri.scheme != Scheme.HTTPS) {
-                val error = insecureCheckoutUrlError(uri.toString())
-                preloadCache.evict(
-                    this@CheckoutWebView,
-                    PreloadState.Failed(PreloadState.FailureReason.NavigationFailed),
-                )
-                resetCheckoutRequestRetryState()
-                listener.onCheckoutViewFailedWithError(error)
-                return true
-            }
-
-            return false
         }
 
         private fun handleClientError(
@@ -375,32 +374,30 @@ internal class CheckoutWebView private constructor(
             webMessageTransport: WebMessageTransport = WebMessageListenerTransport,
             listener: PreloadStateListener? = null,
         ): CheckoutPreload? {
-            if (!ShopifyCheckoutKit.configuration.preloading.enabled) {
-                return null
-            }
-
-            if (!OriginAllowlist.isHttpsUrl(url)) {
-                val handle = CheckoutPreload(preloadCache)
-                preloadCache.evict(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
-                handle.listener = listener
-                return handle
-            }
-
-            return try {
-                runOnUiThreadBlocking(activity) {
-                    val view = CheckoutWebView(activity, webMessageTransport)
+            return when {
+                !ShopifyCheckoutKit.configuration.preloading.enabled -> null
+                !OriginAllowlist.isHttpsUrl(url) -> {
                     val handle = CheckoutPreload(preloadCache)
-                    view.apply {
-                        loadCheckout(url, isPreload = true)
-                        log.d(LOG_TAG, "Pausing preloaded WebView.")
-                        onPause()
-                    }
-                    preloadCache.store(PreloadKey.forUrl(url), view, activity)
+                    preloadCache.evict(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
                     handle.listener = listener
                     handle
                 }
-            } catch (_: UnsupportedWebViewException) {
-                null
+                else -> try {
+                    runOnUiThreadBlocking(activity) {
+                        val view = CheckoutWebView(activity, webMessageTransport)
+                        val handle = CheckoutPreload(preloadCache)
+                        view.apply {
+                            loadCheckout(url, isPreload = true)
+                            log.d(LOG_TAG, "Pausing preloaded WebView.")
+                            onPause()
+                        }
+                        preloadCache.store(PreloadKey.forUrl(url), view, activity)
+                        handle.listener = listener
+                        handle
+                    }
+                } catch (_: UnsupportedWebViewException) {
+                    null
+                }
             }
         }
 
