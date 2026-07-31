@@ -125,6 +125,11 @@ describe('Exports', () => {
 });
 
 type Dispatch = (envelopeJson: string) => void;
+type MessageRejectedDispatch = (detail: {
+  origin: string;
+  message: string;
+  reason: string;
+}) => void;
 
 function lastDispatch(): Dispatch {
   const dispatch = NativeModule.onDispatch.mock.calls[
@@ -134,6 +139,16 @@ function lastDispatch(): Dispatch {
     throw new Error(
       'Expected the last present() call to subscribe to dispatch events',
     );
+  }
+  return dispatch;
+}
+
+function lastMessageRejectedDispatch(): MessageRejectedDispatch {
+  const dispatch = NativeModule.onMessageRejected.mock.calls[
+    NativeModule.onMessageRejected.mock.calls.length - 1
+  ]?.[0] as MessageRejectedDispatch | undefined;
+  if (!dispatch) {
+    throw new Error('Expected a message rejection event subscription');
   }
   return dispatch;
 }
@@ -194,6 +209,48 @@ describe('ShopifyCheckoutKit', () => {
       expect(NativeModule.setConfig).toHaveBeenCalledWith(
         configWithAllowedOrigins,
       );
+    });
+
+    it('keeps onMessageRejected in JS and forwards rejection details', () => {
+      const first = jest.fn();
+      const second = jest.fn();
+      const instance = new ShopifyCheckout({onMessageRejected: first});
+      const dispatch = lastMessageRejectedDispatch();
+      const detail = {
+        origin: 'https://untrusted.example',
+        message: '{"type":"test"}',
+        reason: 'Origin is not allowed',
+      };
+
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({});
+      dispatch(detail);
+      expect(first).toHaveBeenCalledWith(detail);
+
+      instance.setConfig({onMessageRejected: second});
+      expect(NativeModule.onMessageRejected).toHaveBeenCalledTimes(1);
+      dispatch(detail);
+      expect(first).toHaveBeenCalledTimes(1);
+      expect(second).toHaveBeenCalledWith(detail);
+    });
+
+    it('removes the message rejection subscription when the callback is cleared', () => {
+      const remove = jest.fn();
+      NativeModule.onMessageRejected.mockReturnValueOnce({remove});
+      const instance = new ShopifyCheckout({onMessageRejected: jest.fn()});
+
+      instance.setConfig({});
+
+      expect(remove).toHaveBeenCalledTimes(1);
+    });
+
+    it('removes the message rejection subscription during teardown', () => {
+      const remove = jest.fn();
+      NativeModule.onMessageRejected.mockReturnValueOnce({remove});
+      const instance = new ShopifyCheckout({onMessageRejected: jest.fn()});
+
+      instance.teardown();
+
+      expect(remove).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -634,6 +691,25 @@ describe('ShopifyCheckoutKit', () => {
         preloading: true,
       });
       expect(NativeModule.getConfig).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns allowed origins and the configured rejection callback', () => {
+      const onMessageRejected = jest.fn();
+      NativeModule.getConfig.mockReturnValueOnce({
+        colorScheme: 'automatic',
+        logLevel: 'error',
+        preloading: true,
+        allowedMessageOrigins: ['https://example.com'],
+      });
+      const instance = new ShopifyCheckout({onMessageRejected});
+
+      expect(instance.getConfig()).toStrictEqual({
+        colorScheme: ColorScheme.automatic,
+        logLevel: LogLevel.error,
+        preloading: true,
+        allowedMessageOrigins: ['https://example.com'],
+        onMessageRejected,
+      });
     });
   });
 

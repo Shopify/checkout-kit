@@ -82,6 +82,9 @@ const ShopifyCheckoutKit = {
   onDispatch: jest.fn((callback: (envelopeJson: string) => void) =>
     shopifyCheckoutKitEventEmitter.addListener('onDispatch', callback),
   ),
+  onMessageRejected: jest.fn(callback =>
+    shopifyCheckoutKitEventEmitter.addListener('onMessageRejected', callback),
+  ),
   preload: jest.fn(),
   present: jest.fn(),
   dismiss: jest.fn(),

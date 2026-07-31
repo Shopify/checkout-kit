@@ -18,10 +18,12 @@ import type {
   AndroidAutomaticColors,
   AndroidColors,
   Configuration,
+  CommonConfiguration,
   Features,
   GeolocationRequestEvent,
   IosColors,
   PresentCallbacks,
+  RejectedMessage,
   ShopifyCheckoutKit,
 } from './index.d';
 import {AcceleratedCheckoutWallet} from './enums';
@@ -61,6 +63,10 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   private features: Features;
 
   private dispatchSubscription?: {remove: () => void};
+
+  private messageRejectedSubscription?: {remove: () => void};
+
+  private onMessageRejected?: (detail: RejectedMessage) => void;
 
   private _acceleratedCheckoutsReady = false;
 
@@ -169,7 +175,12 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * @returns The current Configuration
    */
   public getConfig(): Configuration {
-    return coerceConfigurationResult(RNShopifyCheckoutKit.getConfig());
+    return {
+      ...coerceConfigurationResult(RNShopifyCheckoutKit.getConfig()),
+      ...(this.onMessageRejected
+        ? {onMessageRejected: this.onMessageRejected}
+        : {}),
+    };
   }
 
   /**
@@ -182,7 +193,9 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
         configuration.acceleratedCheckouts,
       );
     }
-    RNShopifyCheckoutKit.setConfig(configuration);
+    this.configureMessageRejectionCallback(configuration.onMessageRejected);
+    const {onMessageRejected: _, ...nativeConfiguration} = configuration;
+    RNShopifyCheckoutKit.setConfig(nativeConfiguration);
   }
 
   /**
@@ -192,6 +205,9 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    */
   public teardown() {
     this.releaseDispatchSubscription();
+    this.messageRejectedSubscription?.remove();
+    this.messageRejectedSubscription = undefined;
+    this.onMessageRejected = undefined;
   }
 
   /**
@@ -241,6 +257,20 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   // --- private
+
+  private configureMessageRejectionCallback(
+    callback: Configuration['onMessageRejected'],
+  ): void {
+    this.onMessageRejected = callback;
+    if (callback && !this.messageRejectedSubscription) {
+      this.messageRejectedSubscription = RNShopifyCheckoutKit.onMessageRejected(
+        detail => this.onMessageRejected?.(detail),
+      );
+    } else if (!callback && this.messageRejectedSubscription) {
+      this.messageRejectedSubscription.remove();
+      this.messageRejectedSubscription = undefined;
+    }
+  }
 
   /**
    * Accelerated Checkouts is only supported from iOS 16.0 onwards
@@ -383,7 +413,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   private permissionGranted(status: PermissionStatus): boolean {
     return status === 'granted';
   }
-
 }
 
 // API
@@ -426,12 +455,14 @@ export type {
   CheckoutProtocolMethod,
   CheckoutProtocolPayloads,
   Configuration,
+  CommonConfiguration,
   ErrorResponse,
   Features,
   GeolocationRequestEvent,
   IosColors,
   PresentCallbacks,
   ProtocolHandlers,
+  RejectedMessage,
   RenderStateChangeEvent,
 };
 

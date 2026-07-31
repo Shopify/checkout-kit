@@ -160,6 +160,10 @@ class RCTShopifyCheckoutKit: NSObject {
             ShopifyCheckoutKit.configuration.allowedMessageOrigins = allowedMessageOrigins
         }
 
+        ShopifyCheckoutKit.configuration.onMessageRejected = { [weak self] rejection in
+            self?.emitMessageRejected(rejection)
+        }
+
         if let colorScheme = configuration["colorScheme"] as? String {
             ShopifyCheckoutKit.configuration.colorScheme = getColorScheme(colorScheme)
         }
@@ -193,6 +197,7 @@ class RCTShopifyCheckoutKit: NSObject {
             "tintColor": ShopifyCheckoutKit.configuration.tintColor,
             "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
             "closeButtonColor": ShopifyCheckoutKit.configuration.closeButtonTintColor,
+            "allowedMessageOrigins": ShopifyCheckoutKit.configuration.allowedMessageOrigins,
             "logLevel": logLevelToString(ShopifyCheckoutKit.configuration.logLevel)
         ]
     }
@@ -343,6 +348,17 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
 extension RCTShopifyCheckoutKit {
     private func emitDispatchEvent(_ json: String) {
         perform(NSSelectorFromString("emitOnDispatchFromSwift:"), with: json)
+    }
+
+    private func emitMessageRejected(_ rejection: MessageRejection) {
+        perform(
+            NSSelectorFromString("emitOnMessageRejectedFromSwift:"),
+            with: [
+                "origin": rejection.origin,
+                "message": rejection.message,
+                "reason": rejection.reason
+            ]
+        )
     }
 
     /// Builds a `{ "type": ..., "payload": ... }` envelope and forwards

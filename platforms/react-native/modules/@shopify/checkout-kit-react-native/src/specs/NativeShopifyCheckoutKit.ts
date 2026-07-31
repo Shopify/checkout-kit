@@ -47,15 +47,20 @@ type ConfigurationResultSpec = {
   tintColor?: string;
   backgroundColor?: string;
   closeButtonColor?: string;
+  allowedMessageOrigins: string[];
+};
+
+export type RejectedMessageSpec = {
+  origin: string;
+  message: string;
+  reason: string;
 };
 
 export interface Spec extends TurboModule {
   readonly onDispatch: CodegenTypes.EventEmitter<string>;
+  readonly onMessageRejected: CodegenTypes.EventEmitter<RejectedMessageSpec>;
 
-  present(
-    checkoutUrl: string,
-    subscribedMethods: string[],
-  ): void;
+  present(checkoutUrl: string, subscribedMethods: string[]): void;
   preload(checkoutUrl: string): void;
   dismiss(): void;
   invalidateCache(): void;
