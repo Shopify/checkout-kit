@@ -199,7 +199,12 @@ build_and_install() {
         -derivedDataPath "$DERIVED_DATA" \
         -skipPackagePluginValidation \
         -disableAutomaticPackageResolution \
-        CODE_SIGNING_ALLOWED=NO
+        CODE_SIGNING_ALLOWED=YES \
+        CODE_SIGNING_REQUIRED=YES \
+        CODE_SIGN_IDENTITY="-" \
+        CODE_SIGN_STYLE=Manual \
+        PROVISIONING_PROFILE_SPECIFIER="" \
+        DEVELOPMENT_TEAM=""
 
       APP_PATH="$(find "$DERIVED_DATA/Build/Products" -maxdepth 2 -name "${APP_NAME}.app" -print -quit)"
       if [ -z "$APP_PATH" ]; then

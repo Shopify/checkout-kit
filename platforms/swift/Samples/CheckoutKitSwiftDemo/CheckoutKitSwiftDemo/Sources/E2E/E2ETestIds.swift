@@ -10,4 +10,8 @@ enum E2ETestIds {
     enum Tabs {
         static let cart = "cart-tab"
     }
+
+    enum Account {
+        static let signedInView = "account-signed-in-view"
+    }
 }

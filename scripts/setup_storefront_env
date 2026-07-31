@@ -243,7 +243,8 @@ root_has_canonical_keys() {
     LAST_NAME \
     PROVINCE \
     ZIP \
-    PHONE; do
+    PHONE \
+    CUSTOM_USER_AGENT; do
     env_has_key "$key" "$ROOT_ENV" || return 1
   done
 }
@@ -464,6 +465,18 @@ load_values() {
     "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$SWIFT_ACCELERATED_XCCONFIG")" \
     "$DEFAULT_CUSTOMER_ACCOUNT_API_VERSION")"
 
+  CUSTOM_USER_AGENT_VALUE="$(root_or_source_value CUSTOM_USER_AGENT \
+    "$(env_fallback CUSTOM_USER_AGENT)" \
+    "$(read_env_value CUSTOM_USER_AGENT "$ANDROID_ENV")" \
+    "$(read_env_value CUSTOM_USER_AGENT "$REACT_NATIVE_ENV")" \
+    "$(read_env_value CUSTOM_USER_AGENT "$SWIFT_DEMO_XCCONFIG")")"
+
+  E2E_CUSTOMER_ACCOUNT_EMAIL_VALUE="$(root_or_source_value E2E_CUSTOMER_ACCOUNT_EMAIL \
+    "$(env_fallback E2E_CUSTOMER_ACCOUNT_EMAIL)")"
+
+  E2E_CUSTOMER_ACCOUNT_CODE_VALUE="$(root_or_source_value E2E_CUSTOMER_ACCOUNT_CODE \
+    "$(env_fallback E2E_CUSTOMER_ACCOUNT_CODE)")"
+
   EMAIL_VALUE="$(root_or_source_value EMAIL "$(env_fallback EMAIL)" "$(read_env_value EMAIL "$ANDROID_ENV")" "$(read_env_value PREFILL_EMAIL "$ANDROID_ENV")" "$(read_env_value EMAIL "$REACT_NATIVE_ENV")" "$(read_env_value EMAIL "$SWIFT_DEMO_XCCONFIG")" "checkout-kit@example.com")"
   ADDRESS_1_VALUE="$(root_or_source_value ADDRESS_1 "$(env_fallback ADDRESS_1)" "$(read_env_value ADDRESS_1 "$REACT_NATIVE_ENV")" "$(read_env_value ADDRESS_1 "$SWIFT_DEMO_XCCONFIG")" "650 King Street")"
   ADDRESS_2_VALUE="$(root_or_source_value ADDRESS_2 "$(env_fallback ADDRESS_2)" "$(read_env_value ADDRESS_2 "$REACT_NATIVE_ENV")" "$(read_env_value ADDRESS_2 "$SWIFT_DEMO_XCCONFIG")" "Shopify HQ")"
@@ -556,6 +569,14 @@ EOF
   write_env_assignment CUSTOMER_ACCOUNT_API_VERSION "$CUSTOMER_ACCOUNT_API_VERSION_VALUE"
   cat <<EOF
 
+# Maestro end-to-end test configuration (optional).
+# CI supplies these from Bitrise secrets. Leave them blank to skip the account tests.
+EOF
+  write_env_assignment E2E_CUSTOMER_ACCOUNT_EMAIL "$E2E_CUSTOMER_ACCOUNT_EMAIL_VALUE"
+  write_env_assignment E2E_CUSTOMER_ACCOUNT_CODE "$E2E_CUSTOMER_ACCOUNT_CODE_VALUE"
+  write_env_assignment CUSTOM_USER_AGENT "$CUSTOM_USER_AGENT_VALUE"
+  cat <<EOF
+
 # Buyer identity defaults used by sample apps
 EOF
   write_env_assignment EMAIL "$EMAIL_VALUE"
@@ -606,12 +627,22 @@ EOF
     write_env_assignment CUSTOMER_ACCOUNT_API_GRAPHQL_BASE_URL "https://shopify.com/${CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE}/account/customer/api/${CUSTOMER_ACCOUNT_API_VERSION_VALUE}/graphql"
     write_env_assignment CUSTOMER_ACCOUNT_API_AUTH_BASE_URL "https://shopify.com/authentication/${CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE}"
   fi
+  write_env_assignment CUSTOM_USER_AGENT "$CUSTOM_USER_AGENT_VALUE"
 
   cat <<EOF
 
 # Buyer identity defaults
 EOF
   write_env_assignment EMAIL "$EMAIL_VALUE"
+  write_env_assignment ADDRESS_1 "$ADDRESS_1_VALUE"
+  write_env_assignment ADDRESS_2 "$ADDRESS_2_VALUE"
+  write_env_assignment CITY "$CITY_VALUE"
+  write_env_assignment COMPANY "$COMPANY_VALUE"
+  write_env_assignment COUNTRY "$COUNTRY_VALUE"
+  write_env_assignment FIRST_NAME "$FIRST_NAME_VALUE"
+  write_env_assignment LAST_NAME "$LAST_NAME_VALUE"
+  write_env_assignment PROVINCE "$PROVINCE_VALUE"
+  write_env_assignment ZIP "$ZIP_VALUE"
   write_env_assignment PHONE "$PHONE_VALUE"
 }
 
@@ -644,6 +675,7 @@ EOF
 EOF
   write_quoted_env_assignment CUSTOMER_ACCOUNT_API_CLIENT_ID "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE"
   write_quoted_env_assignment CUSTOMER_ACCOUNT_API_SHOP_ID "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE"
+  write_quoted_env_assignment CUSTOM_USER_AGENT "$CUSTOM_USER_AGENT_VALUE"
 }
 
 generate_react_native_xcconfig() {
@@ -665,6 +697,7 @@ generate_swift_demo_xcconfig() {
 EOF
   write_xcconfig_assignment CUSTOMER_ACCOUNT_API_CLIENT_ID "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE"
   write_xcconfig_assignment CUSTOMER_ACCOUNT_API_SHOP_ID "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE"
+  write_xcconfig_assignment CUSTOM_USER_AGENT "$CUSTOM_USER_AGENT_VALUE"
 
   cat <<EOF
 

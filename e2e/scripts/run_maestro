@@ -30,6 +30,28 @@ MAESTRO="$("$E2E_ROOT/scripts/maestro_bin")"
 # than passed. e2e/lib/e2e_matrix_to_browserstack_run_plan.rb derives it the same way for CI.
 CONTROL_LINK="${APP_ID}://e2e"
 
+# Account credentials never live in a flow file. CI exports them from Bitrise secrets.
+# Local runs read them from the untracked root .env, which .env.example documents.
+ENV_FILE="$(cd "$E2E_ROOT/.." && pwd)/.env"
+
+read_env_value() {
+  local key="$1"
+
+  if [ ! -f "$ENV_FILE" ]; then
+    return 0
+  fi
+
+  sed -n "s/^${key}=//p" "$ENV_FILE" | tail -n 1
+}
+
+CUSTOMER_ACCOUNT_EMAIL="${E2E_CUSTOMER_ACCOUNT_EMAIL:-$(read_env_value E2E_CUSTOMER_ACCOUNT_EMAIL)}"
+CUSTOMER_ACCOUNT_CODE="${E2E_CUSTOMER_ACCOUNT_CODE:-$(read_env_value E2E_CUSTOMER_ACCOUNT_CODE)}"
+
+if [ -z "$CUSTOMER_ACCOUNT_EMAIL" ] || [ -z "$CUSTOMER_ACCOUNT_CODE" ]; then
+  echo "run_maestro: no customer account credentials, excluding the account tag" >&2
+  EXCLUDE_TAGS="${EXCLUDE_TAGS:+${EXCLUDE_TAGS},}account"
+fi
+
 MAESTRO_ARGS=(--platform "$PLATFORM" test --config config.yaml)
 [ -n "$INCLUDE_TAGS" ] && MAESTRO_ARGS+=(--include-tags "$INCLUDE_TAGS")
 [ -n "$EXCLUDE_TAGS" ] && MAESTRO_ARGS+=(--exclude-tags "$EXCLUDE_TAGS")
@@ -44,4 +66,6 @@ exec "$MAESTRO" "${MAESTRO_ARGS[@]}" \
 	-e "E2E_APP_ID=${APP_ID}" \
 	-e "E2E_READY_MARKER=${READY_MARKER}" \
 	-e "E2E_CONTROL_LINK=${CONTROL_LINK}" \
+	-e "E2E_CUSTOMER_ACCOUNT_EMAIL=${CUSTOMER_ACCOUNT_EMAIL}" \
+	-e "E2E_CUSTOMER_ACCOUNT_CODE=${CUSTOMER_ACCOUNT_CODE}" \
 	.

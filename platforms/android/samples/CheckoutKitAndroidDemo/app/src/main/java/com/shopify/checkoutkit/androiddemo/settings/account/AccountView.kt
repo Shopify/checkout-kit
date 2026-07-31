@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -22,6 +23,7 @@ import com.shopify.checkoutkit.androiddemo.common.components.Header3
 import com.shopify.checkoutkit.androiddemo.common.components.ProgressIndicator
 import com.shopify.checkoutkit.androiddemo.common.components.RemoteImage
 import com.shopify.checkoutkit.androiddemo.common.navigation.Screen
+import com.shopify.checkoutkit.androiddemo.e2e.E2ETestIds
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -47,7 +49,9 @@ fun AccountView(
         is UIState.Loaded -> {
             Column(
                 verticalArrangement = Arrangement.spacedBy(30.dp),
-                modifier = Modifier.padding(vertical = 20.dp, horizontal = 15.dp)
+                modifier = Modifier
+                    .padding(vertical = 20.dp, horizontal = 15.dp)
+                    .testTag(E2ETestIds.Account.SIGNED_IN_VIEW)
             ) {
                 val customer = uiState.customer
 

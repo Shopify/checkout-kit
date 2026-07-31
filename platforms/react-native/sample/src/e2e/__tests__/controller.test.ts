@@ -24,6 +24,10 @@ class E2ECommandTargetSpy implements E2ECommandTarget {
     return `variant-${productIndex}`;
   }
 
+  async presentSignIn() {
+    this.calls.push('presentSignIn');
+  }
+
   async addCartLine(variantId: string, quantity: number) {
     this.calls.push(`addCartLine(${variantId}, ${quantity})`);
 
@@ -127,11 +131,11 @@ describe('E2EController', () => {
     ]);
   });
 
-  it('reports that sign in is not implemented', async () => {
+  it('presents sign in', async () => {
     const target = new E2ECommandTargetSpy();
 
     await handle('/signIn', target);
 
-    expect(target.calls).toEqual(['report(signIn is not implemented yet)']);
+    expect(target.calls).toEqual(['presentSignIn']);
   });
 });

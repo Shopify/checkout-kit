@@ -40,6 +40,9 @@ def customerAccountApiRedirectUri = properties.getProperty("CUSTOMER_ACCOUNT_API
 def customerAccountApiGraphQLBaseUrl = properties.getProperty("CUSTOMER_ACCOUNT_API_GRAPHQL_BASE_URL")
 def customerAccountApiAuthBaseUrl = properties.getProperty("CUSTOMER_ACCOUNT_API_AUTH_BASE_URL")
 
+// User agent suffix the customer account login web view appends. Empty outside CI.
+def customUserAgent = propertyOrDefault("CUSTOM_USER_AGENT", "")
+
 if (!customerAccountApiRedirectUri && customerAccountApiShopId) {
     customerAccountApiRedirectUri = "shop.${customerAccountApiShopId}.app://callback"
 }
@@ -100,6 +103,7 @@ android {
         buildConfigField "String", "customerAccountApiRedirectUri", "\"$customerAccountApiRedirectUri\""
         buildConfigField "String", "customerAccountApiAuthBaseUrl", "\"$customerAccountApiAuthBaseUrl\""
         buildConfigField "String", "customerAccountApiGraphQLBaseUrl", "\"$customerAccountApiGraphQLBaseUrl\""
+        buildConfigField "String", "customUserAgent", "\"$customUserAgent\""
         buildConfigField "String", "prefillEmail", "\"$prefillEmail\""
         buildConfigField "String", "prefillPhone", "\"$prefillPhone\""
         buildConfigField "String", "prefillFirstName", "\"$prefillFirstName\""

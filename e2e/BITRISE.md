@@ -156,8 +156,23 @@ The launch smoke suite sends only non-sensitive Maestro environment values to Br
 
 - `E2E_APP_ID`
 - `E2E_READY_MARKER`
+- `E2E_CONTROL_LINK`
 
 Do not pass storefront tokens or customer data through BrowserStack Maestro environment variables without explicit review, because those values are visible in BrowserStack dashboards.
+
+## Account journey secrets
+
+The account journey signs a test customer in, so it needs two more Maestro values. Both are reviewed exceptions to the rule above, because the BrowserStack dashboard is private to this organization and the values never enter the repository.
+
+| Variable                     | Where it is used                       | Purpose                                                          |
+| ---------------------------- | -------------------------------------- | ---------------------------------------------------------------- |
+| `E2E_CUSTOMER_ACCOUNT_EMAIL` | Maestro environment                    | Address the sign-in flow types on the hosted login page.          |
+| `E2E_CUSTOMER_ACCOUNT_CODE`  | Maestro environment                    | Verification code the sign-in flow types.                         |
+| `CUSTOM_USER_AGENT`          | Sample app build, through `.env`       | Marks the login web view as a test client. The code fails without it. |
+
+Add all three as secret Bitrise environment variables. Leave them out of any log, any pull request, and any file in this repository. `scripts/setup_storefront_env` reads `CUSTOM_USER_AGENT` from the root `.env` and writes it into each generated sample configuration, all of which are ignored by git.
+
+A run with these values missing skips the account tests instead of failing, so a fork without the secrets still gets a green suite.
 
 ## GitHub reporting
 

@@ -7,17 +7,15 @@ protocol E2ECommandTarget {
     func variantId(atProductIndex index: Int) async throws -> String
     func addCartLine(variantId: String, quantity: Int) async throws
     func showCart() async
+    func presentSignIn() async
     func report(failure message: String) async
 }
 
 enum E2EControllerError: LocalizedError, Equatable {
-    case unimplementedCommand(String)
     case productIndexOutOfRange(Int)
 
     var errorDescription: String? {
         switch self {
-        case let .unimplementedCommand(command):
-            return "\(command) is not implemented yet"
         case let .productIndexOutOfRange(index):
             return "No product at index \(index)"
         }
@@ -76,7 +74,7 @@ final class E2EController {
             case let .cart(command):
                 try await seedCart(command)
             case .signIn:
-                throw E2EControllerError.unimplementedCommand("signIn")
+                await target.presentSignIn()
             }
         } catch {
             await target.report(failure: E2EController.message(for: error))

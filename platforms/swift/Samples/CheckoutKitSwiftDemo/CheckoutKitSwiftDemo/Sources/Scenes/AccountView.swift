@@ -4,6 +4,7 @@ import UIKit
 
 struct AccountView: View {
     @ObservedObject var accountManager = CustomerAccountManager.shared
+    @ObservedObject private var e2eSignInRequest = E2ESignInRequest.shared
     @State private var errorMessage = ""
     @State private var showingError = false
 
@@ -22,6 +23,12 @@ struct AccountView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(errorMessage)
+        }
+        .onReceive(e2eSignInRequest.$isPending) { isPending in
+            guard isPending else { return }
+
+            signIn()
+            e2eSignInRequest.fulfil()
         }
     }
 
@@ -109,6 +116,7 @@ struct AuthenticatedAccountView: View {
             .padding(.bottom, 32)
         }
         .background(Color(.systemGroupedBackground))
+        .accessibilityIdentifier(E2ETestIds.Account.signedInView)
     }
 }
 

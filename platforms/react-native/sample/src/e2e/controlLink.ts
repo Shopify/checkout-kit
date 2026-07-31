@@ -12,7 +12,7 @@ const CART_PARAMETERS = [
   'quantity',
   'buyerIdentityMode',
 ];
-const SIGN_IN_PARAMETERS = ['email'];
+const SIGN_IN_PARAMETERS: string[] = [];
 
 export type E2EResetCommand = {
   command: 'reset';
@@ -28,7 +28,6 @@ export type E2ECartCommand = {
 
 export type E2ESignInCommand = {
   command: 'signIn';
-  email?: string;
 };
 
 export type E2EControlLink =
@@ -145,20 +144,6 @@ function parseCart(parameters: Parameters): E2ECartCommand {
   return {command: 'cart', productIndex, quantity, buyerIdentityMode};
 }
 
-function parseSignIn(parameters: Parameters): E2ESignInCommand {
-  const email = parameters.get('email');
-
-  if (email === undefined) {
-    return {command: 'signIn'};
-  }
-
-  if (email === '') {
-    throw new Error('email must not be blank');
-  }
-
-  return {command: 'signIn', email};
-}
-
 export function parseControlLink(url: string): E2EControlLink | null {
   const separatorIndex = url.indexOf(SCHEME_SEPARATOR);
 
@@ -194,7 +179,7 @@ export function parseControlLink(url: string): E2EControlLink | null {
     case 'signIn':
       rejectUnknownParameters('signIn', parameters, SIGN_IN_PARAMETERS);
 
-      return parseSignIn(parameters);
+      return {command: 'signIn'};
     default:
       throw new Error('Unsupported e2e command');
   }

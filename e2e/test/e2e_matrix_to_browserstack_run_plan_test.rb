@@ -51,7 +51,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     ios_run = run_for("swift-ios")
     android_run = run_for("kotlin-android")
 
-    assert_equal ["launch", "checkout"], ios_run.fetch("include_tags")
+    assert_equal ["launch", "checkout", "account"], ios_run.fetch("include_tags")
     assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
     assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
   end
