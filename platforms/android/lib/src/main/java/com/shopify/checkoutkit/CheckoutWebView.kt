@@ -377,10 +377,12 @@ internal class CheckoutWebView private constructor(
             return when {
                 !ShopifyCheckoutKit.configuration.preloading.enabled -> null
                 !OriginAllowlist.isHttpsUrl(url) -> {
-                    val handle = CheckoutPreload(preloadCache)
-                    preloadCache.evict(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
-                    handle.listener = listener
-                    handle
+                    runOnUiThreadBlocking(activity) {
+                        val handle = CheckoutPreload(preloadCache)
+                        preloadCache.evict(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+                        handle.listener = listener
+                        handle
+                    }
                 }
                 else -> try {
                     runOnUiThreadBlocking(activity) {

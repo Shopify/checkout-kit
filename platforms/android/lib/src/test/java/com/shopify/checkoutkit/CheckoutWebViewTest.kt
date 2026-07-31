@@ -28,6 +28,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLooper
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
@@ -493,6 +494,30 @@ class CheckoutWebViewTest {
         assertThat(preload?.state)
             .isEqualTo(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+    }
+
+    @Test
+    fun `preload evicts cached view on main thread for non HTTPS URL from background thread`() {
+        preload("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val result = CompletableFuture.supplyAsync {
+            CheckoutWebView.preload(
+                "http://checkout.shopify.com/cart/456",
+                activity,
+                webMessageTransport,
+            )
+        }
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(result.isDone).isTrue()
+        }
+
+        assertThat(result.get()!!.state)
+            .isEqualTo(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
     }
 
     @Test
