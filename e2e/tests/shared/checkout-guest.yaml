@@ -1,0 +1,59 @@
+appId: ${E2E_APP_ID}
+name: Checkout as a guest
+tags:
+  - checkout
+  # This test submits a real order, so it belongs to the expensive tier.
+  - full
+
+env:
+  # The cart carries no contact and no delivery address, so checkout asks a guest for
+  # both. That makes this the longest real order, and the widest cover of the form.
+  E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=guest"
+
+  # Checkout contact fixture.
+  EMAIL: "maestro.e2e@shopify.com"
+  FIRST_NAME: "Maestro"
+  LAST_NAME: "Shopify"
+
+  # Checkout delivery fixture. The shop opens on its own country, so this address picks a
+  # different one and makes the flow use the country picker. The two field labels follow
+  # the country: the United States names them State and ZIP code.
+  COUNTRY_LABEL: "United States"
+  ADDRESS_LINE1: "700 S Flower St"
+  CITY: "Los Angeles"
+  STATE_FIELD_LABEL: "State"
+  STATE_LABEL: "California"
+  POSTAL_FIELD_LABEL: "ZIP code"
+  POSTAL_CODE: "90017"
+  # The shop requires a phone number on the delivery address. 555-01xx is the number range
+  # reserved for fiction, so this value reaches nobody.
+  PHONE: "213 555 0142"
+
+  # Checkout payment fixture. The shop runs its credit card gateway in test mode, which
+  # accepts this number only. Checkout groups the digits, so the flow needs both forms.
+  CARD_NUMBER: "4242424242424242"
+  CARD_NUMBER_DISPLAY: "4242 4242 4242 4242"
+  CARD_SECURITY_CODE: "123"
+  CARD_HOLDER_NAME: "Maestro Shopify"
+
+  # Checkout billing fixture. A guest types the delivery address into checkout itself, so
+  # checkout can copy it and the billing section stays closed. These values cover the
+  # target that opens the section anyway.
+  BILLING_FIRST_NAME: "Maestro"
+  BILLING_LAST_NAME: "Shopify"
+  BILLING_ADDRESS_LINE1: "700 S Flower St"
+  BILLING_CITY: "Los Angeles"
+  BILLING_POSTAL_CODE: "90017"
+
+  # Accepted successful checkout states for this smoke test.
+  POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- runFlow: ../../flows/checkout/present.yaml
+- runFlow: ../../flows/checkout/fill-contact.yaml
+- runFlow: ../../flows/checkout/fill-shipping-address.yaml
+- runFlow: ../../flows/checkout/fill-payment-card.yaml
+- runFlow: ../../flows/checkout/fill-billing-address.yaml
+- runFlow: ../../flows/checkout/submit.yaml
+- runFlow: ../../flows/checkout/assert-complete.yaml
+- runFlow: ../../flows/checkout/assert-returned-to-empty-cart.yaml
