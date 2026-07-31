@@ -1,9 +1,13 @@
 appId: ${E2E_APP_ID}
 ---
+# Every scroll below asks for `centerElement`. A `visibilityPercentage` under 100 rounds
+# down to zero instead, which lets the scroll stop before it moves, and the tap that
+# follows then lands on whatever already sat there.
 - scrollUntilVisible:
     element:
       text: "Country/Region"
     direction: DOWN
+    centerElement: true
 
 # If the country is already selected and visible, skip this. Otherwise open the
 # picker, only scroll if needed, then select the configured country.
@@ -22,7 +26,7 @@ appId: ${E2E_APP_ID}
                 element:
                   text: "^${COUNTRY_LABEL}$"
                 direction: DOWN
-                visibilityPercentage: 10
+                centerElement: true
                 optional: true
       - runFlow:
           when:
@@ -32,7 +36,7 @@ appId: ${E2E_APP_ID}
                 element:
                   text: "^${COUNTRY_LABEL}$"
                 direction: UP
-                visibilityPercentage: 10
+                centerElement: true
       - tapOn:
           text: "^${COUNTRY_LABEL}$"
       - waitForAnimationToEnd
@@ -72,7 +76,7 @@ appId: ${E2E_APP_ID}
           element:
             text: "^${STATE_LABEL}$"
           direction: DOWN
-          visibilityPercentage: 10
+          centerElement: true
           optional: true
 - runFlow:
     when:
@@ -82,12 +86,35 @@ appId: ${E2E_APP_ID}
           element:
             text: "^${STATE_LABEL}$"
           direction: UP
-          visibilityPercentage: 10
+          centerElement: true
 - tapOn:
     text: "^${STATE_LABEL}$"
 - waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "^${POSTAL_FIELD_LABEL}$"
+    direction: DOWN
+    centerElement: true
 - tapOn:
     text: "^${POSTAL_FIELD_LABEL}$"
 - waitForAnimationToEnd
 - inputText: "${POSTAL_CODE}"
 - runFlow: dismiss-active-field.yaml
+
+# A shop decides whether the delivery address asks for a phone number, and it can make
+# that field required. The scroll is optional so a shop without the field still passes.
+- scrollUntilVisible:
+    element:
+      text: "^Phone$"
+    direction: DOWN
+    centerElement: true
+    optional: true
+- runFlow:
+    when:
+      visible: "^Phone$"
+    commands:
+      - tapOn:
+          text: "^Phone$"
+      - waitForAnimationToEnd
+      - inputText: "${PHONE}"
+      - runFlow: dismiss-active-field.yaml

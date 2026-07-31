@@ -143,10 +143,12 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `tests/shared/launch-smoke.yaml` is the shared launch smoke test.
 - `tests/shared/cart-from-control-link.yaml` seeds a cart through the control link
   and waits for the cart marker.
-- `tests/react-native/checkout-guest.yaml` composes the React Native guest
-  checkout smoke test from those subflows.
-- `tests/react-native/checkout-hardcoded-buyer-identity.yaml` verifies checkout
-  from a bootstrapped cart with hardcoded buyer identity.
+- `tests/shared/checkout-present-and-close.yaml` opens checkout and closes it.
+- `tests/shared/checkout-hardcoded-buyer-identity.yaml` orders from a cart that
+  already carries the contact and the delivery address.
+- `tests/shared/checkout-guest.yaml` orders from an empty identity, so checkout
+  asks for the contact and the delivery address as well as the payment.
+- `FLAKES.md` records every unstable test and every trap that gives a false result.
 - `scripts/run_maestro` is the single Maestro invocation every local runner calls.
   It holds the environment contract and the workspace root rule in one place.
 - `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
