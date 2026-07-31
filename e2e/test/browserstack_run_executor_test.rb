@@ -7,6 +7,11 @@ load File.expand_path("../scripts/execute_browserstack_run", __dir__)
 class BrowserStackRunExecutorTest < Minitest::Test
   E2E_ROOT = File.expand_path("..", __dir__)
 
+  RUN = {
+    "include_tags" => %w[launch cart checkout account],
+    "exclude_tags" => %w[flaky wip]
+  }.freeze
+
   def with_version_file(contents)
     Dir.mktmpdir do |dir|
       path = File.join(dir, ".maestro-version")
@@ -54,5 +59,33 @@ class BrowserStackRunExecutorTest < Minitest::Test
 
       assert_equal "2.4.0", version
     end
+  end
+
+  def test_account_credentials_present_keeps_both_lists
+    tags = BrowserStackRunExecutor.resolve_tags(RUN, account_enabled: true)
+
+    assert_equal %w[launch cart checkout account], tags.fetch(:includeTags)
+    assert_equal %w[flaky wip], tags.fetch(:excludeTags)
+  end
+
+  def test_account_credentials_missing_drops_the_account_tag_from_the_include_list
+    tags = BrowserStackRunExecutor.resolve_tags(RUN, account_enabled: false)
+
+    assert_equal %w[launch cart checkout], tags.fetch(:includeTags)
+    assert_equal %w[flaky wip account], tags.fetch(:excludeTags)
+  end
+
+  def test_account_credentials_missing_never_repeats_a_tag_across_both_lists
+    tags = BrowserStackRunExecutor.resolve_tags(RUN, account_enabled: false)
+
+    assert_empty(tags.fetch(:includeTags) & tags.fetch(:excludeTags))
+  end
+
+  def test_empty_include_list_still_excludes_the_account_tag
+    run = {"include_tags" => [], "exclude_tags" => []}
+    tags = BrowserStackRunExecutor.resolve_tags(run, account_enabled: false)
+
+    assert_empty tags.fetch(:includeTags)
+    assert_equal ["account"], tags.fetch(:excludeTags)
   end
 end
