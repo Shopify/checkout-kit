@@ -44,6 +44,11 @@ export function ShopifyCheckoutProvider({
   }
 
   useEffect(() => {
+    const checkout = instance.current;
+    return () => checkout?.teardown();
+  }, []);
+
+  useEffect(() => {
     if (!instance.current || !configuration) {
       return;
     }

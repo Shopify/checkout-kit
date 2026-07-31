@@ -178,7 +178,10 @@ describe('ShopifyCheckoutKit', () => {
   describe('instantiation', () => {
     it('calls `setConfig` with the specified config on instantiation', () => {
       new ShopifyCheckout(config);
-      expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({
+        ...config,
+        hasMessageRejectedCallback: false,
+      });
     });
 
     it('does not call `setConfig` if no config was specified on instantiation', () => {
@@ -192,7 +195,10 @@ describe('ShopifyCheckoutKit', () => {
       const instance = new ShopifyCheckout();
       instance.setConfig(config);
       expect(NativeModule.setConfig).toHaveBeenCalledTimes(1);
-      expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({
+        ...config,
+        hasMessageRejectedCallback: false,
+      });
     });
 
     it('calls `setConfig` with logLevel configuration', () => {
@@ -202,7 +208,10 @@ describe('ShopifyCheckoutKit', () => {
         logLevel: LogLevel.debug,
       };
       instance.setConfig(configWithLogLevel);
-      expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithLogLevel);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({
+        ...configWithLogLevel,
+        hasMessageRejectedCallback: false,
+      });
     });
 
     it('calls `setConfig` with preloading configuration', () => {
@@ -212,7 +221,10 @@ describe('ShopifyCheckoutKit', () => {
         preloading: false,
       };
       instance.setConfig(configWithPreloading);
-      expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithPreloading);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({
+        ...configWithPreloading,
+        hasMessageRejectedCallback: false,
+      });
     });
 
     it('calls `setConfig` with title configuration', () => {
@@ -233,7 +245,7 @@ describe('ShopifyCheckoutKit', () => {
       };
       instance.setConfig(configWithAllowedOrigins);
       expect(NativeModule.setConfig).toHaveBeenCalledWith(
-        configWithAllowedOrigins,
+        {...configWithAllowedOrigins, hasMessageRejectedCallback: false},
       );
     });
 
@@ -248,7 +260,9 @@ describe('ShopifyCheckoutKit', () => {
         reason: 'Origin is not allowed',
       };
 
-      expect(NativeModule.setConfig).toHaveBeenCalledWith({});
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({
+        hasMessageRejectedCallback: true,
+      });
       dispatch(detail);
       expect(first).toHaveBeenCalledWith(detail);
 

@@ -22,6 +22,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
         ShopifyCheckoutKit.configuration.logLevel = LogLevel.warn
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configuration.onMessageRejected = nil
     }
 
     private func getShopifyCheckoutKit() -> RCTShopifyCheckoutKit {
@@ -97,6 +98,17 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
         XCTAssertEqual(result?["title"] as? String, "Custom Checkout")
+    }
+
+    func testOnlyInstallsMessageRejectedCallbackWhenRequested() {
+        shopifyCheckoutKit.setConfig(["allowedMessageOrigins": ["https://example.com"]])
+        XCTAssertNil(ShopifyCheckoutKit.configuration.onMessageRejected)
+
+        shopifyCheckoutKit.setConfig(["hasMessageRejectedCallback": true])
+        XCTAssertNotNil(ShopifyCheckoutKit.configuration.onMessageRejected)
+
+        shopifyCheckoutKit.setConfig(["hasMessageRejectedCallback": false])
+        XCTAssertNil(ShopifyCheckoutKit.configuration.onMessageRejected)
     }
 
     func testConfigureWithInvalidColors() {

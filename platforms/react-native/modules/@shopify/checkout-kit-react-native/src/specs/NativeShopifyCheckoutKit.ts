@@ -36,6 +36,7 @@ type ConfigurationSpec = {
   logLevel?: string;
   preloading?: boolean;
   allowedMessageOrigins?: string[];
+  hasMessageRejectedCallback: boolean;
   colors?: ColorsSpec;
 };
 

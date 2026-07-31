@@ -149,14 +149,19 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
         configuration.setAllowedMessageOrigins(toStringSet(config.getArray("allowedMessageOrigins")));
       }
 
-      configuration.setOnMessageRejected(rejection -> {
-        WritableMap detail = Arguments.createMap();
-        detail.putString("origin", rejection.getOrigin());
-        detail.putString("message", rejection.getMessage());
-        detail.putString("reason", rejection.getReason());
-        emitOnMessageRejected(detail);
-        return Unit.INSTANCE;
-      });
+      if (config.hasKey("hasMessageRejectedCallback")
+          && config.getBoolean("hasMessageRejectedCallback")) {
+        configuration.setOnMessageRejected(rejection -> {
+          WritableMap detail = Arguments.createMap();
+          detail.putString("origin", rejection.getOrigin());
+          detail.putString("message", rejection.getMessage());
+          detail.putString("reason", rejection.getReason());
+          emitOnMessageRejected(detail);
+          return Unit.INSTANCE;
+        });
+      } else {
+        configuration.setOnMessageRejected(null);
+      }
 
       if (config.hasKey("logLevel")) {
         LogLevel logLevel = logLevelFor(config.getString("logLevel"));

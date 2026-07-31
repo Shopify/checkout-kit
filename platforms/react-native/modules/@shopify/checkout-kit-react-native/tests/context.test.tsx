@@ -52,6 +52,25 @@ describe('ShopifyCheckoutProvider', () => {
     expect(component).toBeTruthy();
   });
 
+  it('removes the message rejection subscription on unmount', () => {
+    const remove = jest.fn();
+    NativeModules.ShopifyCheckoutKit.onMessageRejected.mockReturnValueOnce({
+      remove,
+    });
+    const configuration: Configuration = {
+      onMessageRejected: jest.fn(),
+    };
+
+    const component = render(
+      <ShopifyCheckoutProvider configuration={configuration}>
+        <MockChild />
+      </ShopifyCheckoutProvider>,
+    );
+    component.unmount();
+
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
   it('creates ShopifyCheckout instance with configuration', () => {
     render(
       <TestComponent>
@@ -61,7 +80,7 @@ describe('ShopifyCheckoutProvider', () => {
 
     expect(
       NativeModules.ShopifyCheckoutKit.setConfig,
-    ).toHaveBeenCalledWith(config);
+    ).toHaveBeenCalledWith({...config, hasMessageRejectedCallback: false});
   });
 
   it('skips configuration when no configuration is provided', () => {
@@ -357,7 +376,10 @@ describe('useShopifyCheckout', () => {
 
     expect(
       NativeModules.ShopifyCheckoutKit.setConfig,
-    ).toHaveBeenCalledWith(newConfig);
+    ).toHaveBeenCalledWith({
+      ...newConfig,
+      hasMessageRejectedCallback: false,
+    });
   });
 
   it('provides getConfig function', async () => {

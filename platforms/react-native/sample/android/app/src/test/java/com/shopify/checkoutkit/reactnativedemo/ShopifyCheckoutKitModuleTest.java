@@ -318,6 +318,23 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
+  public void testOnlyInstallsMessageRejectedCallbackWhenRequested() {
+    JavaOnlyMap config = new JavaOnlyMap();
+    config.putArray("allowedMessageOrigins", JavaOnlyArray.from(List.of("https://example.com")));
+
+    shopifyCheckoutKitModule.setConfig(config);
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getOnMessageRejected()).isNull();
+
+    config.putBoolean("hasMessageRejectedCallback", true);
+    shopifyCheckoutKitModule.setConfig(config);
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getOnMessageRejected()).isNotNull();
+
+    config.putBoolean("hasMessageRejectedCallback", false);
+    shopifyCheckoutKitModule.setConfig(config);
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getOnMessageRejected()).isNull();
+  }
+
+  @Test
   public void testCanConfigureLightColorSchemeWithValidColors() {
     JavaOnlyMap androidColors = createValidLightColors();
     JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
