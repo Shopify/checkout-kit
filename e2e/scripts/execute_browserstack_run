@@ -147,13 +147,28 @@ class BrowserStackRunExecutor
     ENV.fetch("E2E_CUSTOMER_ACCOUNT_CODE", "")
   end
 
-  def exclude_tags(run)
-    tags = run.fetch("exclude_tags")
+  # BrowserStack rejects a build when one tag appears in both lists, so the account tag has
+  # to leave the include list at the same moment it joins the exclude list.
+  def self.resolve_tags(run, account_enabled:)
+    include_tags = run.fetch("include_tags")
+    exclude_tags = run.fetch("exclude_tags")
 
-    return tags unless customer_account_email.empty? || customer_account_code.empty?
+    return {includeTags: include_tags, excludeTags: exclude_tags} if account_enabled
 
-    warn("no customer account secrets, excluding the account tag")
-    (tags + ["account"]).uniq
+    {
+      includeTags: include_tags - ["account"],
+      excludeTags: (exclude_tags + ["account"]).uniq
+    }
+  end
+
+  def account_enabled?
+    !customer_account_email.empty? && !customer_account_code.empty?
+  end
+
+  def resolve_tags(run)
+    warn("no customer account secrets, excluding the account tag") unless account_enabled?
+
+    self.class.resolve_tags(run, account_enabled: account_enabled?)
   end
 
   def start_build(run, app_url, test_suite_url, device)
@@ -166,10 +181,7 @@ class BrowserStackRunExecutor
       customBuildName: run.fetch("id"),
       devices: [device],
       execute: [run.fetch("execute")],
-      tags: {
-        includeTags: run.fetch("include_tags"),
-        excludeTags: exclude_tags(run)
-      },
+      tags: resolve_tags(run),
       setEnvVariables: {
         E2E_APP_ID: run.fetch("app_id"),
         E2E_READY_MARKER: run.fetch("ready_marker"),

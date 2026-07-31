@@ -49,7 +49,18 @@ CUSTOMER_ACCOUNT_CODE="${E2E_CUSTOMER_ACCOUNT_CODE:-$(read_env_value E2E_CUSTOME
 
 if [ -z "$CUSTOMER_ACCOUNT_EMAIL" ] || [ -z "$CUSTOMER_ACCOUNT_CODE" ]; then
   echo "run_maestro: no customer account credentials, excluding the account tag" >&2
+  # The account tag has to leave the include list at the same moment it joins the exclude
+  # list, because a tag named in both lists makes the run ambiguous.
+  REQUESTED_TAGS="$INCLUDE_TAGS"
+  INCLUDE_TAGS="$(printf '%s' "$INCLUDE_TAGS" | tr ',' '\n' | { grep -vx account || true; } | paste -sd, -)"
   EXCLUDE_TAGS="${EXCLUDE_TAGS:+${EXCLUDE_TAGS},}account"
+
+  # An empty include list means "run everything", so a caller who asked only for the
+  # account tag would get the whole suite instead of nothing.
+  if [ -n "$REQUESTED_TAGS" ] && [ -z "$INCLUDE_TAGS" ]; then
+    echo "run_maestro: the requested tags need customer account credentials, so nothing runs" >&2
+    exit 0
+  fi
 fi
 
 MAESTRO_ARGS=(--platform "$PLATFORM" test --config config.yaml)
