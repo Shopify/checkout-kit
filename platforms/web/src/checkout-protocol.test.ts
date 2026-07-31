@@ -842,6 +842,61 @@ describe("<shopify-checkout>", () => {
         expect(checkout.checkout).toEqual(decodeCheckout(payload));
       });
 
+      it("normalizes a default HTTPS port in a configured wildcard subdomain", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          "allowed-origins": "https://*.example.com:443",
+        });
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: "https://checkout.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+      });
+
+      it("normalizes a default HTTPS port in an exact configured origin", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          "allowed-origins": "https://other.example.com:443",
+        });
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: "https://other.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+      });
+
+      it("validates configured origins when URL.canParse is unavailable", async () => {
+        const originalCanParse = URL.canParse;
+        Object.defineProperty(URL, "canParse", { configurable: true, value: undefined });
+
+        try {
+          const { checkout, mockCheckoutWindow } = openPopupCheckout({
+            "allowed-origins": "https://other.example.com",
+          });
+          const onStartSpy = vi.fn();
+          checkout.addEventListener("ec.start", onStartSpy);
+
+          simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+            source: mockCheckoutWindow,
+            origin: "https://other.example.com",
+          });
+          await flushProtocolDispatch();
+
+          expect(onStartSpy).toHaveBeenCalledOnce();
+        } finally {
+          Object.defineProperty(URL, "canParse", { configurable: true, value: originalCanParse });
+        }
+      });
+
       it("does not match the apex origin for a wildcard subdomain pattern", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout({
           "allowed-origins": "https://*.example.com",

@@ -48,7 +48,20 @@ const WILDCARD_ORIGIN_PATTERN = /^([a-zA-Z][\w+.-]*):\/\/\*\.([^/:]+)(?::(\d+))?
 function isValidOriginPattern(pattern: string): boolean {
   if (pattern === "*") return true;
   if (pattern.includes("*")) return WILDCARD_ORIGIN_PATTERN.test(pattern);
-  return URL.canParse(pattern);
+  try {
+    return new URL(pattern).origin.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Returns the serialized port browsers use for an origin. */
+function normalizedOriginPort(protocol: string, port: string | undefined): string {
+  if (port === undefined) return "";
+  if ((protocol === "http" && port === "80") || (protocol === "https" && port === "443")) {
+    return "";
+  }
+  return port;
 }
 
 /**
@@ -75,7 +88,7 @@ function originMatchesPattern(pattern: string, origin: URL): boolean {
   if (scheme === undefined || suffix === undefined) return false;
 
   if (`${scheme.toLowerCase()}:` !== origin.protocol) return false;
-  if ((port ?? "") !== origin.port) return false;
+  if (normalizedOriginPort(scheme.toLowerCase(), port) !== origin.port) return false;
 
   const host = origin.hostname.toLowerCase();
   const suffixHost = suffix.toLowerCase();
