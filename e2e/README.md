@@ -143,10 +143,11 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `tests/shared/` holds the tests every target runs through the CI matrix.
 - `tests/<platform>/` holds platform-local tests. The matrix may ignore their tags.
 - `tests/shared/launch-smoke.yaml` is the shared launch smoke test.
-- `tests/react-native/checkout-guest.yaml` composes the React Native guest
-  checkout smoke test from those subflows.
-- `tests/react-native/checkout-hardcoded-buyer-identity.yaml` verifies checkout
-  from a bootstrapped cart with hardcoded buyer identity.
+- `tests/shared/checkout-present-and-close.yaml` opens checkout and closes it.
+- `tests/shared/checkout-hardcoded-buyer-identity.yaml` orders from a cart that
+  already carries the contact and the delivery address.
+- `tests/shared/checkout-guest.yaml` orders from an empty identity, so checkout
+  asks for the contact and the delivery address as well as the payment.
 - `scripts/run_local_e2e` builds and installs any of the four local targets.
 - `scripts/run_maestro` is their single Maestro invocation. It holds the
   environment contract and the workspace root rule in one place.

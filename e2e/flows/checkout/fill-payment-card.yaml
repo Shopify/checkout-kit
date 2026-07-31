@@ -35,6 +35,9 @@ appId: ${E2E_APP_ID}
 - tapOn:
     text: "^Name on card$"
 - waitForAnimationToEnd
+# Checkout copies the delivery name into this field when the delivery form holds one, and
+# `inputText` appends. The erase makes the field empty first, whichever way it arrived.
+- eraseText
 - inputText: "${CARD_HOLDER_NAME}"
 - runFlow: dismiss-active-field.yaml
 - waitForAnimationToEnd
