@@ -1,7 +1,13 @@
 appId: ${E2E_APP_ID}
 ---
+# No clearState. Maestro 2.4.0 implements it on iOS by uninstalling the app, and on a
+# BrowserStack real device the reinstall reports success and never restores the app, so the
+# launch that follows lands on the home screen. Eight builds carrying the flag failed on
+# five different units, and three builds without it passed, two of them on units that had
+# just failed. The fault is therefore deterministic, and a retry cannot recover it.
+# Seeding the cart resets it anyway, and every test that submits an order names its own
+# buyerIdentityMode, so nothing here needs it.
 - launchApp:
-    clearState: true
     arguments:
       # iOS-only launch arguments; Android ignores them.
       AppleLocale: en_US

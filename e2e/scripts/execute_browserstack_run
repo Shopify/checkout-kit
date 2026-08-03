@@ -137,16 +137,6 @@ class BrowserStackRunExecutor
     response
   end
 
-  # The repository is public, so the account credentials live in Bitrise secrets only.
-  # A run without them skips the account journey instead of failing inside checkout.
-  def customer_account_email
-    ENV.fetch("E2E_CUSTOMER_ACCOUNT_EMAIL", "")
-  end
-
-  def customer_account_code
-    ENV.fetch("E2E_CUSTOMER_ACCOUNT_CODE", "")
-  end
-
   # BrowserStack rejects a build when one tag appears in both lists, so the account tag has
   # to leave the include list at the same moment it joins the exclude list.
   def self.resolve_tags(run, account_enabled:)
@@ -161,12 +151,34 @@ class BrowserStackRunExecutor
     }
   end
 
+  # The repository is public, so every account value lives in Bitrise secrets only. A run
+  # without them skips the account journey instead of failing inside checkout. Maestro reads
+  # the first two at run time. The sample app reads the last two at build time, and without
+  # them the sign-in web view opens http://null/oauth/authorize with an empty client_id.
+  ACCOUNT_VARIABLES = [
+    "E2E_CUSTOMER_ACCOUNT_EMAIL",
+    "E2E_CUSTOMER_ACCOUNT_CODE",
+    "CUSTOMER_ACCOUNT_API_CLIENT_ID",
+    "CUSTOMER_ACCOUNT_API_SHOP_ID"
+  ].freeze
+
+  def self.account_enabled?(env)
+    ACCOUNT_VARIABLES.all? { |variable| !env[variable].to_s.strip.empty? }
+  end
+
+  def self.missing_account_variables(env)
+    ACCOUNT_VARIABLES.select { |variable| env[variable].to_s.strip.empty? }
+  end
+
   def account_enabled?
-    !customer_account_email.empty? && !customer_account_code.empty?
+    self.class.account_enabled?(ENV)
   end
 
   def resolve_tags(run)
-    warn("no customer account secrets, excluding the account tag") unless account_enabled?
+    unless account_enabled?
+      missing = self.class.missing_account_variables(ENV)
+      warn("no #{missing.join(", ")}, excluding the account tag")
+    end
 
     self.class.resolve_tags(run, account_enabled: account_enabled?)
   end
@@ -186,8 +198,8 @@ class BrowserStackRunExecutor
         E2E_APP_ID: run.fetch("app_id"),
         E2E_READY_MARKER: run.fetch("ready_marker"),
         E2E_CONTROL_LINK: run.fetch("control_link"),
-        E2E_CUSTOMER_ACCOUNT_EMAIL: customer_account_email,
-        E2E_CUSTOMER_ACCOUNT_CODE: customer_account_code
+        E2E_CUSTOMER_ACCOUNT_EMAIL: ENV.fetch("E2E_CUSTOMER_ACCOUNT_EMAIL", ""),
+        E2E_CUSTOMER_ACCOUNT_CODE: ENV.fetch("E2E_CUSTOMER_ACCOUNT_CODE", "")
       }
     }
     response = @client.start_build(run.fetch("platform"), body)

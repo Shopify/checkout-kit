@@ -121,6 +121,40 @@ class MaestroTestTagsTest < Minitest::Test
     end
   end
 
+  def env(path)
+    header(path)["env"] || {}
+  end
+
+  # BrowserStack runs every test of one target in one session on one device, and the launch
+  # flow no longer clears app state, so state survives from one test to the next. A test
+  # that submits an order must therefore state the identity it wants rather than inherit it.
+  def test_every_order_test_declares_a_buyer_identity_mode
+    shared_test_files.select { |path| tags(path).include?("full") }.each do |path|
+      assert_match(
+        /buyerIdentityMode=\w+/,
+        env(path)["E2E_CART_PARAMS"].to_s,
+        "#{path} submits an order, so E2E_CART_PARAMS must set buyerIdentityMode"
+      )
+    end
+  end
+
+  # Maestro 2.4.0 implements iOS clearState by uninstalling the app. On a BrowserStack real
+  # device the reinstall reports success and never restores the app, so the next launch
+  # lands on the home screen. Eight builds with the flag failed on five different units and
+  # three builds without it passed, so the fault is deterministic rather than flaky.
+  # Seeding the cart resets it anyway, so the flag buys nothing.
+  def test_the_launch_flow_never_clears_app_state
+    commands = File.readlines(File.join(E2E_ROOT, "flows", "app", "launch.yaml"))
+      .reject { |line| line.strip.start_with?("#") }
+      .join
+
+    refute_match(
+      /clearState/,
+      commands,
+      "clearState uninstalls the iOS app on BrowserStack and never reinstalls it"
+    )
+  end
+
   def test_there_is_at_least_one_test_to_check
     refute_empty(test_files)
     refute_empty(shared_test_files)
