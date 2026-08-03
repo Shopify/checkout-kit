@@ -417,14 +417,14 @@ class CheckoutWebViewTest {
         val view = checkoutWebView(activity)
 
         assertThatThrownBy { view.loadCheckout("http://checkout.shopify.com/cart/123") }
-            .isInstanceOf(CheckoutKitException::class.java)
+            .isInstanceOf(CheckoutException::class.java)
             .hasMessageContaining("requires an HTTPS URL")
     }
 
     @Test
     fun `checkoutViewFor rejects non HTTPS URLs before constructing a WebView`() {
         assertThatThrownBy { checkoutViewFor("http://checkout.shopify.com/cart/123") }
-            .isInstanceOf(CheckoutKitException::class.java)
+            .isInstanceOf(CheckoutException::class.java)
             .hasMessageContaining("requires an HTTPS URL")
 
         assertThat(webMessageTransport.attachCount).isZero()
@@ -444,7 +444,8 @@ class CheckoutWebViewTest {
         assertThat(blocked).isTrue()
         verify(listener).onCheckoutViewFailedWithError(
             org.mockito.kotlin.check {
-                assertThat(it).isInstanceOf(CheckoutKitException::class.java)
+                assertThat(it).isInstanceOf(CheckoutException::class.java)
+                assertThat(it.code).isEqualTo(CheckoutErrorCode.SDK_ERROR)
                 assertThat(it.message).contains("requires an HTTPS URL")
             }
         )
@@ -465,7 +466,8 @@ class CheckoutWebViewTest {
         assertThat(blocked).isTrue()
         verify(listener).onCheckoutViewFailedWithError(
             org.mockito.kotlin.check {
-                assertThat(it).isInstanceOf(CheckoutKitException::class.java)
+                assertThat(it).isInstanceOf(CheckoutException::class.java)
+                assertThat(it.code).isEqualTo(CheckoutErrorCode.SDK_ERROR)
                 assertThat(it.message).contains("requires an HTTPS URL")
             }
         )

@@ -165,8 +165,8 @@ class ShopifyCheckoutTest {
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
         assertThat(receivedError)
-            .isInstanceOf(CheckoutKitException::class.java)
-            .extracting("errorDescription")
+            .isInstanceOf(CheckoutException::class.java)
+            .extracting("message")
             .asString()
             .contains("requires an HTTPS URL")
         assertThat(view.findViewById<RelativeLayout>(R.id.checkoutKitContainer).children.none { it is CheckoutWebView })

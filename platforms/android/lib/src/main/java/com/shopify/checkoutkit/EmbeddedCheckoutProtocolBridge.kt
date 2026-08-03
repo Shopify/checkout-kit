@@ -36,6 +36,7 @@ internal const val ECP_LOG_TAG = "ECP"
  * Messages arrive through [webMessageTransport] and responses are sent back via
  * `window.EmbeddedCheckoutProtocol.postMessage(responseString)`.
  */
+@Suppress("TooManyFunctions")
 internal class EmbeddedCheckoutProtocolBridge(
     private val view: CheckoutWebView,
     private val webMessageTransport: WebMessageTransport,

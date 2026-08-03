@@ -484,8 +484,9 @@ internal class CheckoutWebView private constructor(
 
 private const val LOG_TAG = "CheckoutWebView"
 
-private fun insecureCheckoutUrlException(url: String): CheckoutKitException = CheckoutKitException(
-    errorDescription = "Checkout requires an HTTPS URL: ${url.redactedUrlForLogging()}",
+private fun insecureCheckoutUrlException(url: String): CheckoutException = CheckoutException(
+    code = CheckoutErrorCode.SDK_ERROR,
+    message = "Checkout requires an HTTPS URL: ${url.redactedUrlForLogging()}",
 )
 
 internal class CheckoutWebViewTouchHandler {
