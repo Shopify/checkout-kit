@@ -320,7 +320,9 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testOnlyInstallsMessageRejectedCallbackWhenRequested() {
     JavaOnlyMap config = new JavaOnlyMap();
-    config.putArray("allowedMessageOrigins", JavaOnlyArray.from(List.of("https://example.com")));
+    JavaOnlyArray allowedMessageOrigins = new JavaOnlyArray();
+    allowedMessageOrigins.pushString("https://example.com");
+    config.putArray("allowedMessageOrigins", allowedMessageOrigins);
 
     shopifyCheckoutKitModule.setConfig(config);
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getOnMessageRejected()).isNull();
