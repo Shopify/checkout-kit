@@ -39,17 +39,25 @@ export const SHOP_APP_ORIGIN = "https://shop.app";
  * Default trusted origin patterns for `shop.app`: the apex origin plus a
  * wildcard covering its subdomains (e.g. regional or checkout subdomains).
  */
-const SHOP_APP_ORIGIN_PATTERNS = [SHOP_APP_ORIGIN, "https://*.shop.app"] as const;
+const SHOP_APP_ORIGIN_PATTERNS = [SHOP_APP_ORIGIN, "https://*.shop.app"];
 
 /** Matches a wildcard-subdomain origin pattern, e.g. `https://*.example.com[:8443]`. */
-const WILDCARD_ORIGIN_PATTERN = /^([a-zA-Z][\w+.-]*):\/\/\*\.([^/:]+)(?::(\d+))?$/;
+const WILDCARD_ORIGIN_PATTERN = /^(https?):\/\/\*\.([^/:]+)(?::(\d+))?\/?$/i;
 
 /** Returns whether `pattern` is a usable origin pattern (`*`, wildcard, or exact origin). */
 function isValidOriginPattern(pattern: string): boolean {
   if (pattern === "*") return true;
   if (pattern.includes("*")) return WILDCARD_ORIGIN_PATTERN.test(pattern);
   try {
-    return new URL(pattern).origin.length > 0;
+    const url = new URL(pattern);
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      url.username === "" &&
+      url.password === "" &&
+      url.pathname === "/" &&
+      url.search === "" &&
+      url.hash === ""
+    );
   } catch {
     return false;
   }
@@ -76,7 +84,7 @@ function originMatchesPattern(pattern: string, origin: URL): boolean {
 
   if (!pattern.includes("*")) {
     try {
-      return new URL(pattern).origin === origin.origin;
+      return isValidOriginPattern(pattern) && new URL(pattern).origin === origin.origin;
     } catch {
       return false;
     }

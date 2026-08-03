@@ -808,6 +808,43 @@ describe("<shopify-checkout>", () => {
         expect(checkout.checkout).toEqual(decodeCheckout(payload));
       });
 
+      it("accepts an exact configured origin with a trailing slash", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          "allowed-origins": "https://other.example.com/",
+        });
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: "https://other.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+      });
+
+      it.each([
+        "https://user@other.example.com",
+        "https://other.example.com/path",
+        "https://other.example.com?query=value",
+        "https://other.example.com#fragment",
+      ])("ignores a configured URL that is not an origin: %s", async (pattern) => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout({
+          "allowed-origins": pattern,
+        });
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("ec.start", onStartSpy);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+          origin: "https://other.example.com",
+        });
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).not.toHaveBeenCalled();
+      });
+
       it("accepts protocol messages from a shop.app subdomain by default", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
