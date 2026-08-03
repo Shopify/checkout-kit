@@ -61,16 +61,16 @@ def customerAccountRedirectHost = customerAccountRedirect?.host ?: "callback"
 
 // Demo buyer identity (prefill toggle in Settings)
 def prefillEmail = properties.getProperty("EMAIL", properties.getProperty("PREFILL_EMAIL", "test.buyer@example.com"))
-def prefillPhone = properties.getProperty("PHONE", properties.getProperty("PREFILL_PHONE", "+14165550100"))
+def prefillPhone = properties.getProperty("PHONE", properties.getProperty("PREFILL_PHONE", "+12135550142"))
 def prefillFirstName = propertyOrDefault("FIRST_NAME", "Evelyn")
 def prefillLastName = propertyOrDefault("LAST_NAME", "Hartley")
-def prefillAddress1 = propertyOrDefault("ADDRESS_1", "650 King Street")
+def prefillAddress1 = propertyOrDefault("ADDRESS_1", "700 S Flower St")
 def prefillAddress2 = propertyOrDefault("ADDRESS_2", "Shopify HQ")
 def prefillCompany = propertyOrDefault("COMPANY", "Shopify")
-def prefillCity = propertyOrDefault("CITY", "Toronto")
-def prefillProvince = propertyOrDefault("PROVINCE", "ON")
-def prefillZip = propertyOrDefault("ZIP", "M5V 1M7")
-def prefillCountry = propertyOrDefault("COUNTRY", "CA")
+def prefillCity = propertyOrDefault("CITY", "Los Angeles")
+def prefillProvince = propertyOrDefault("PROVINCE", "CA")
+def prefillZip = propertyOrDefault("ZIP", "90017")
+def prefillCountry = propertyOrDefault("COUNTRY", "US")
 
 if (!storefrontDomain || !accessToken) {
     println("**** Please add a .env file with STOREFRONT_DOMAIN and STOREFRONT_ACCESS_TOKEN set *****")

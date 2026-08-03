@@ -232,6 +232,27 @@ test_required_values_only() {
   assert_output_is_sanitized "$output"
 }
 
+test_buyer_address_defaults_match_the_e2e_shop_country() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
+    STOREFRONT_ACCESS_TOKEN=synthetic-token \
+    "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_contains "$fixture/.env" "ADDRESS_1=700 S Flower St"
+  assert_contains "$fixture/.env" "CITY=Los Angeles"
+  assert_contains "$fixture/.env" "COUNTRY=US"
+  assert_contains "$fixture/.env" "PROVINCE=CA"
+  assert_contains "$fixture/.env" "ZIP=90017"
+  assert_contains "$fixture/.env" "PHONE=+12135550142"
+  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "COUNTRY=US"
+  assert_contains "$fixture/platforms/react-native/sample/.env" "COUNTRY=\"US\""
+  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "COUNTRY = US"
+}
+
 test_optional_sync_updates_blank_optional_values_after_required_setup() {
   local fixture output
   fixture="$(make_fixture)"
@@ -451,6 +472,7 @@ test_merchant_identifier_propagates_to_sample_apps
 test_sample_projects_read_generated_merchant_identifier
 test_sync_and_check
 test_required_values_only
+test_buyer_address_defaults_match_the_e2e_shop_country
 test_optional_sync_updates_blank_optional_values_after_required_setup
 test_shared_merchant_identifier_migrates_to_app_specific_keys
 test_normalizes_existing_root_env
