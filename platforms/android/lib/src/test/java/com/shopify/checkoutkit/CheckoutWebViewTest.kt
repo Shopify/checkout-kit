@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
+@Suppress("LargeClass")
 class CheckoutWebViewTest {
 
     private lateinit var activity: ComponentActivity
@@ -421,6 +422,15 @@ class CheckoutWebViewTest {
     }
 
     @Test
+    fun `checkoutViewFor rejects non HTTPS URLs before constructing a WebView`() {
+        assertThatThrownBy { checkoutViewFor("http://checkout.shopify.com/cart/123") }
+            .isInstanceOf(CheckoutKitException::class.java)
+            .hasMessageContaining("requires an HTTPS URL")
+
+        assertThat(webMessageTransport.attachCount).isZero()
+    }
+
+    @Test
     fun `main frame redirect to non HTTPS URL is blocked and reported`() {
         val view = checkoutWebView(activity)
         val listener = mock(CheckoutWebViewListener::class.java)
@@ -430,6 +440,27 @@ class CheckoutWebViewTest {
         view.setListener(listener)
 
         val blocked = view.CheckoutWebViewClient().shouldOverrideUrlLoading(view, request)
+
+        assertThat(blocked).isTrue()
+        verify(listener).onCheckoutViewFailedWithError(
+            org.mockito.kotlin.check {
+                assertThat(it).isInstanceOf(CheckoutKitException::class.java)
+                assertThat(it.message).contains("requires an HTTPS URL")
+            }
+        )
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun `legacy redirect callback blocks non HTTPS URLs`() {
+        val view = checkoutWebView(activity)
+        val listener = mock(CheckoutWebViewListener::class.java)
+        view.setListener(listener)
+
+        val blocked = view.CheckoutWebViewClient().shouldOverrideUrlLoading(
+            view,
+            "http://checkout.shopify.com/cart/123",
+        )
 
         assertThat(blocked).isTrue()
         verify(listener).onCheckoutViewFailedWithError(

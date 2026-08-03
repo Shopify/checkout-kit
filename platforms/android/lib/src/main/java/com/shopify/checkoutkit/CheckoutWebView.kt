@@ -29,6 +29,7 @@ import android.webkit.WebViewClient.ERROR_HOST_LOOKUP
 import android.webkit.WebViewClient.ERROR_TIMEOUT
 import androidx.activity.ComponentActivity
 import androidx.annotation.MainThread
+import androidx.core.net.toUri
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
@@ -121,7 +122,7 @@ internal class CheckoutWebView private constructor(
 
     fun loadCheckout(url: String, isPreload: Boolean = false) {
         if (!OriginAllowlist.isHttpsUrl(url)) {
-            throw insecureCheckoutUrlError(url)
+            throw insecureCheckoutUrlException(url)
         }
         log.d(
             LOG_TAG,
@@ -273,8 +274,13 @@ internal class CheckoutWebView private constructor(
         override fun shouldOverrideUrlLoading(
             view: WebView?,
             request: WebResourceRequest?
-        ): Boolean {
-            val uri = request?.url
+        ): Boolean = handleNavigation(request?.url, request?.isForMainFrame == true)
+
+        @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+        override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean =
+            handleNavigation(url?.toUri(), isMainFrame = true)
+
+        private fun handleNavigation(uri: Uri?, isMainFrame: Boolean): Boolean {
             return when {
                 uri == null -> false
                 uri.isContactLink() || uri.isDeepLink() -> {
@@ -289,8 +295,8 @@ internal class CheckoutWebView private constructor(
                     }
                     true
                 }
-                request.isForMainFrame && uri.scheme != Scheme.HTTPS -> {
-                    val error = insecureCheckoutUrlError(uri.toString())
+                isMainFrame && uri.scheme != Scheme.HTTPS -> {
+                    val error = insecureCheckoutUrlException(uri.toString())
                     preloadCache.evict(
                         this@CheckoutWebView,
                         PreloadState.Failed(PreloadState.FailureReason.NavigationFailed),
@@ -412,6 +418,9 @@ internal class CheckoutWebView private constructor(
             check(Looper.myLooper() == Looper.getMainLooper()) {
                 "Checkout views must be created on the main thread."
             }
+            if (!OriginAllowlist.isHttpsUrl(url)) {
+                throw insecureCheckoutUrlException(url)
+            }
             val cachedView = if (ShopifyCheckoutKit.configuration.preloading.enabled) {
                 preloadCache.take(PreloadKey.forUrl(url))
             } else {
@@ -475,7 +484,7 @@ internal class CheckoutWebView private constructor(
 
 private const val LOG_TAG = "CheckoutWebView"
 
-private fun insecureCheckoutUrlError(url: String): CheckoutKitException = CheckoutKitException(
+private fun insecureCheckoutUrlException(url: String): CheckoutKitException = CheckoutKitException(
     errorDescription = "Checkout requires an HTTPS URL: ${url.redactedUrlForLogging()}",
 )
 

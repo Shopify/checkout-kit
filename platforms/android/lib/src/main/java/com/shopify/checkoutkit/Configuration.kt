@@ -11,7 +11,7 @@ import android.content.Context
  * Native checkout is open by default: leaving this empty trusts every origin. Once populated, the
  * effective allowlist is these origins plus the cart URL origin and `shop.app` (including its
  * subdomains). Entries may be exact origins (`https://example.com`), scheme-qualified wildcard
- * subdomains, or `"*"` to explicitly trust every origin.
+ * subdomains (`https://&#42;.example.com`), or `"*"` to explicitly trust every origin.
  * @property onMessageRejected Invoked when an incoming message is dropped by origin validation. When
  * null, drops are logged at debug level. Treat the payload as untrusted — it was dropped precisely
  * because its origin was not in the allowlist.

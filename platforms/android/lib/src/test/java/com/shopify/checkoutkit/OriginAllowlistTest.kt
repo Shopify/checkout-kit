@@ -89,10 +89,31 @@ class OriginAllowlistTest {
 
     @Test
     fun `invalid configured patterns are ignored`() {
-        val patterns = OriginAllowlist.effectivePatterns(cartOrigin, setOf("not a url"))
+        val patterns = OriginAllowlist.effectivePatterns(
+            cartOrigin,
+            setOf(
+                "not a url",
+                "https://user@allowed.example.com",
+                "https://allowed.example.com/path",
+                "https://allowed.example.com?query=value",
+                "https://allowed.example.com#fragment",
+            ),
+        )
 
         assertThat(OriginAllowlist.isAllowed("https://not a url", patterns)).isFalse()
+        assertThat(OriginAllowlist.isAllowed("https://allowed.example.com", patterns)).isFalse()
         assertThat(OriginAllowlist.isAllowed(cartOrigin, patterns)).isTrue()
+    }
+
+    @Test
+    fun `exact and wildcard patterns accept a trailing slash`() {
+        val patterns = OriginAllowlist.effectivePatterns(
+            cartOrigin,
+            setOf("https://allowed.example.com/", "https://*.example.org/"),
+        )
+
+        assertThat(OriginAllowlist.isAllowed("https://allowed.example.com", patterns)).isTrue()
+        assertThat(OriginAllowlist.isAllowed("https://sub.example.org", patterns)).isTrue()
     }
 
     @Test

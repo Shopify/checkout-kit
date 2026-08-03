@@ -1,5 +1,7 @@
 package com.shopify.checkoutkit
 
+import java.net.URI
+
 /**
  * Matches incoming-message origins against a configured allowlist.
  *
@@ -12,7 +14,8 @@ package com.shopify.checkoutkit
  * - `"*"` trusts every origin.
  * - A scheme-qualified wildcard subdomain trusts proper subdomains of its suffix (not the apex),
  *   and requires the scheme and effective port to match.
- * - Anything else is treated as an exact origin (`scheme://host[:port]`).
+ * - Anything else must be an exact origin (`scheme://host[:port]`) with no credentials, path,
+ *   query, or fragment. A trailing slash is accepted.
  */
 internal object OriginAllowlist {
     const val SHOP_APP_ORIGIN: String = "https://shop.app"
@@ -20,71 +23,78 @@ internal object OriginAllowlist {
     private const val WILDCARD_ALL = "*"
     private const val HTTP_DEFAULT_PORT = 80
     private const val HTTPS_DEFAULT_PORT = 443
-    private val SHOP_APP_PATTERNS = listOf(SHOP_APP_ORIGIN, "https://*.shop.app")
 
-    private val WILDCARD_PATTERN = Regex("""^([a-zA-Z][\w+.\-]*)://\*\.([^/:]+)(?::(\d+))?$""")
+    sealed interface OriginPattern {
+        data class Exact(val origin: Origin) : OriginPattern
+        data class Wildcard(val scheme: String, val suffix: String, val port: Int?) : OriginPattern
+    }
 
-    private data class Origin(val scheme: String, val host: String, val port: Int?)
+    data class Origin(val scheme: String, val host: String, val port: Int?)
+
+    private val WILDCARD_PATTERN = Regex("""^(https?)://\*\.([^/:]+)(?::(\d+))?/?$""", RegexOption.IGNORE_CASE)
+    private val SHOP_APP_PATTERNS = listOf(
+        OriginPattern.Exact(requireNotNull(parseOrigin(SHOP_APP_ORIGIN, exact = true))),
+        requireNotNull(parsePattern("https://*.shop.app")),
+    )
 
     /**
      * Returns the effective allowlist patterns for the given [checkoutOrigin] (cart URL origin) and
      * merchant-[configured] origins, or `null` when validation is disabled — either because no
      * origins are configured (native open-by-default) or because `"*"` is present.
      */
-    fun effectivePatterns(checkoutOrigin: String?, configured: Set<String>): List<String>? {
+    fun effectivePatterns(checkoutOrigin: String?, configured: Set<String>): List<OriginPattern>? {
         if (configured.isEmpty() || configured.contains(WILDCARD_ALL)) return null
 
-        val patterns = mutableListOf<String>()
-        if (!checkoutOrigin.isNullOrBlank()) patterns.add(checkoutOrigin)
-        patterns.addAll(SHOP_APP_PATTERNS)
-        configured.filterTo(patterns) { isValidPattern(it) }
-        return patterns
-    }
-
-    /** Returns whether [origin] satisfies any of [patterns]. A `null` [patterns] trusts everything. */
-    fun isAllowed(origin: String, patterns: List<String>?): Boolean {
-        if (patterns == null) return true
-        return patterns.any { matches(it, origin) }
-    }
-
-    /** Extracts the `scheme://host[:port]` origin from a full URL, or `null` when it cannot parse. */
-    fun originFromUrl(url: String): String? = parseOrigin(url)?.serialize()
-
-    fun isHttpsUrl(url: String): Boolean = parseOrigin(url)?.scheme == "https"
-
-    private fun isValidPattern(pattern: String): Boolean = when {
-        pattern == WILDCARD_ALL -> true
-        pattern.contains("*") -> WILDCARD_PATTERN.matches(pattern)
-        else -> parseOrigin(pattern) != null
-    }
-
-    private fun matches(pattern: String, origin: String): Boolean {
-        val target = parseOrigin(origin)
-        return when {
-            pattern == WILDCARD_ALL -> true
-            target == null -> false
-            pattern.contains("*") -> matchesWildcard(pattern, target)
-            else -> parseOrigin(pattern) == target
+        return buildList {
+            checkoutOrigin?.let { parseOrigin(it, exact = true) }?.let { add(OriginPattern.Exact(it)) }
+            addAll(SHOP_APP_PATTERNS)
+            configured.mapNotNullTo(this) { parsePattern(it) }
         }
     }
 
-    private fun matchesWildcard(pattern: String, target: Origin): Boolean {
-        val match = WILDCARD_PATTERN.matchEntire(pattern) ?: return false
-        val (scheme, suffix, port) = match.destructured
-        val suffixHost = suffix.lowercase()
-        val normalizedScheme = scheme.lowercase()
-        return target.scheme.equals(scheme, ignoreCase = true) &&
-            normalizedPort(normalizedScheme, port.toIntOrNull()) == target.port &&
-            target.host != suffixHost &&
-            target.host.endsWith(".$suffixHost")
+    /** Returns whether [origin] satisfies any of [patterns]. A `null` [patterns] trusts everything. */
+    fun isAllowed(origin: String, patterns: List<OriginPattern>?): Boolean =
+        patterns?.let { allowedPatterns ->
+            parseOrigin(origin, exact = true)?.let { target ->
+                allowedPatterns.any { pattern ->
+                    when (pattern) {
+                        is OriginPattern.Exact -> pattern.origin == target
+                        is OriginPattern.Wildcard ->
+                            pattern.scheme == target.scheme &&
+                                pattern.port == target.port &&
+                                target.host != pattern.suffix &&
+                                target.host.endsWith(".${pattern.suffix}")
+                    }
+                }
+            } ?: false
+        } ?: true
+
+    /** Extracts the `scheme://host[:port]` origin from a full URL, or `null` when it cannot parse. */
+    fun originFromUrl(url: String): String? = parseOrigin(url, exact = false)?.serialize()
+
+    fun isHttpsUrl(url: String): Boolean = parseOrigin(url, exact = false)?.scheme == Scheme.HTTPS
+
+    private fun parsePattern(pattern: String): OriginPattern? = when {
+        pattern == WILDCARD_ALL -> null
+        !pattern.contains("*") -> parseOrigin(pattern, exact = true)?.let(OriginPattern::Exact)
+        else -> WILDCARD_PATTERN.matchEntire(pattern)?.destructured?.let { (scheme, suffix, port) ->
+            val normalizedScheme = scheme.lowercase()
+            OriginPattern.Wildcard(
+                scheme = normalizedScheme,
+                suffix = suffix.lowercase(),
+                port = normalizedPort(normalizedScheme, port.toIntOrNull()),
+            )
+        }
     }
 
-    private fun parseOrigin(value: String): Origin? {
-        return try {
-            val uri = java.net.URI(value.trim())
-            val scheme = uri.scheme?.lowercase()
-            val host = uri.host?.removePrefix("[")?.removeSuffix("]")?.lowercase()
-            if (scheme == null || host == null || uri.userInfo != null) {
+    private fun parseOrigin(value: String, exact: Boolean): Origin? =
+        try {
+            val uri = URI(value.trim())
+            val scheme = uri.scheme?.lowercase() ?: return null
+            val host = uri.host?.removeSurrounding("[", "]")?.lowercase() ?: return null
+            val hasSupportedScheme = scheme == Scheme.HTTP || scheme == Scheme.HTTPS
+            val hasOnlyOriginComponents = !exact || hasOnlyOriginComponents(uri)
+            if (!hasSupportedScheme || uri.userInfo != null || !hasOnlyOriginComponents) {
                 null
             } else {
                 Origin(scheme, host, normalizedPort(scheme, uri.port.takeUnless { it == -1 }))
@@ -92,11 +102,15 @@ internal object OriginAllowlist {
         } catch (_: Exception) {
             null
         }
+
+    private fun hasOnlyOriginComponents(uri: URI): Boolean {
+        val hasNoPath = uri.path.isNullOrEmpty() || uri.path == "/"
+        return hasNoPath && uri.query == null && uri.fragment == null
     }
 
     private fun normalizedPort(scheme: String, port: Int?): Int? = when {
-        scheme == "https" && port == HTTPS_DEFAULT_PORT -> null
-        scheme == "http" && port == HTTP_DEFAULT_PORT -> null
+        scheme == Scheme.HTTPS && port == HTTPS_DEFAULT_PORT -> null
+        scheme == Scheme.HTTP && port == HTTP_DEFAULT_PORT -> null
         else -> port
     }
 
