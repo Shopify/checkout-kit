@@ -409,8 +409,19 @@ const config: Configuration = {
 
 Each entry may be an exact origin (`https://example.com`), a wildcard subdomain
 (`https://*.example.com`, matching subdomains but not the apex), or `'*'` to
-explicitly trust every origin. Messages dropped by origin validation are logged
-by the native SDK at debug level.
+explicitly trust every origin. Exact and wildcard entries accept an optional
+trailing slash. Exact entries must not include credentials, paths, queries, or
+fragments. Messages dropped by origin validation are logged by the native SDK
+at debug level. To observe them instead, configure `onMessageRejected`:
+
+```tsx
+const config: Configuration = {
+  allowedMessageOrigins: ['https://checkout.example.com'],
+  onMessageRejected: ({origin, message, reason}) => {
+    console.warn(`Dropped message from ${origin}: ${reason}`, message);
+  },
+};
+```
 
 > [!NOTE]
 > Incoming messages are advisory (lifecycle/UI signals) and are never treated as

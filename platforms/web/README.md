@@ -414,6 +414,11 @@ Provide extra origins as a space- or comma-separated list. Each entry may be:
 | `https://*.example.com`   | Any subdomain of `example.com` (not the apex `example.com`).   |
 | `*`                       | Every origin — disables origin validation entirely.            |
 
+Exact and wildcard entries accept an optional trailing slash. Exact entries
+must not include credentials, paths, queries, or fragments. For example,
+`https://example.com/` is accepted, while `https://user@example.com` and
+`https://example.com/path` are ignored.
+
 ```html
 <shopify-checkout src="..." allowed-origins="https://checkout.example.com https://*.example.com" />
 ```

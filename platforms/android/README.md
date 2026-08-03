@@ -370,6 +370,11 @@ Each entry may be an exact origin (`https://example.com`), a wildcard subdomain
 (`https://*.example.com`, matching subdomains but not the apex), or `"*"` to
 explicitly trust every origin.
 
+Exact and wildcard entries accept an optional trailing slash. Exact entries
+must not include credentials, paths, queries, or fragments. For example,
+`https://example.com/` is accepted, while `https://user@example.com` and
+`https://example.com/path` are ignored.
+
 Messages dropped by origin validation are logged at debug level. To observe
 them instead, set `onMessageRejected`:
 
@@ -401,30 +406,6 @@ Override `checkout_web_view_title` in your app resources:
 ```kotlin
 val configuration = ShopifyCheckoutKit.getConfiguration()
 ```
-
-### Incoming message origin validation
-
-Native checkout accepts messages from every origin by default. To restrict messages, configure one
-or more exact origins or wildcard subdomains. The checkout URL's origin and `shop.app` remain
-trusted automatically.
-
-```kotlin
-ShopifyCheckoutKit.configure {
-    it.allowedMessageOrigins = setOf(
-        "https://checkout.example.com",
-        "https://*.example.org",
-    )
-    it.onMessageRejected = { rejection ->
-        reportRejectedOrigin(rejection.origin, rejection.reason)
-    }
-}
-```
-
-Exact entries accept an optional trailing slash, but not credentials, paths, queries, or fragments.
-For example, `https://checkout.example.com/` is accepted, while
-`https://user@checkout.example.com` and `https://checkout.example.com/path` are ignored. Wildcard
-entries require the scheme and match subdomains only; `https://*.example.org` does not match
-`https://example.org`. Use `"*"` to explicitly disable origin validation.
 
 ## Checkout lifecycle
 
