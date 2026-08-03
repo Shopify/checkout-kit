@@ -34,6 +34,22 @@ export interface CheckoutAttributes {
   target?: CheckoutTarget | string;
   appearance?: CheckoutAppearance | string;
   "log-level"?: LogLevel;
+  /**
+   * Space/comma-separated list of extra trusted message origin patterns. Each
+   * entry may be an exact origin (`https://example.com`), a wildcard subdomain
+   * (`https://*.example.com`), or `*` to disable origin validation.
+   */
+  "allowed-origins"?: string;
+}
+
+/** Payload passed to {@link CheckoutProperties.onMessageRejected}. */
+export interface MessageRejectedDetail {
+  /** Origin of the dropped `MessageEvent`. */
+  origin: string;
+  /** Raw `event.data` of the dropped message. Treat as untrusted. */
+  data: unknown;
+  /** Human-readable reason the message was dropped. */
+  reason: string;
 }
 
 export interface CheckoutMethods {
@@ -95,6 +111,27 @@ export interface CheckoutProperties {
    * ```
    */
   logLevel?: LogLevel;
+
+  /**
+   * Extra origins allowed to post incoming checkout-protocol messages, on top
+   * of the always-trusted cart URL origin (from `src`) and `shop.app`.
+   *
+   * Web is closed by default: with no configured origins only the cart URL
+   * origin and `shop.app` (including its subdomains) are trusted. Entries may
+   * be exact origins (`https://example.com`), wildcard subdomains
+   * (`https://*.example.com`), or `'*'` to disable origin validation entirely.
+   *
+   * Reflected to the space/comma-separated `allowed-origins` attribute.
+   */
+  allowedOrigins?: string[];
+
+  /**
+   * Called when an incoming message is dropped by origin validation. The smart
+   * default logs a warning; override to observe rejected messages. Treat the
+   * payload as untrusted — it was dropped precisely because its origin was not
+   * in the allowlist.
+   */
+  onMessageRejected?: (detail: MessageRejectedDetail) => void;
 }
 
 export type TypedEventListener<Event> =

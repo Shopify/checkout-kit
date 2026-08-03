@@ -26,7 +26,12 @@ export type {
 } from "./checkout";
 
 // Public configuration types.
-export type { CheckoutAppearance, CheckoutTarget, LogLevel } from "./checkout.types";
+export type {
+  CheckoutAppearance,
+  CheckoutTarget,
+  LogLevel,
+  MessageRejectedDetail,
+} from "./checkout.types";
 
 // UCP domain types — surfaced because they appear on event details and the
 // `element.checkout` / `element.error` mirrors.

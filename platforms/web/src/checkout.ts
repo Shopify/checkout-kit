@@ -21,11 +21,87 @@ import type {
   CheckoutAppearance,
   ErrorResponse,
   LogLevel,
+  MessageRejectedDetail,
 } from "./checkout.types";
 
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
 export const CK_VERSION = "4.0.0";
+
+/**
+ * Trusted origin always allowed to post messages, alongside the cart URL
+ * origin derived from `src`. Both are included whether or not the integrator
+ * configures an explicit `allowedOrigins` list.
+ */
+export const SHOP_APP_ORIGIN = "https://shop.app";
+
+/**
+ * Default trusted origin patterns for `shop.app`: the apex origin plus a
+ * wildcard covering its subdomains (e.g. regional or checkout subdomains).
+ */
+const SHOP_APP_ORIGIN_PATTERNS = [SHOP_APP_ORIGIN, "https://*.shop.app"];
+
+/** Matches a wildcard-subdomain origin pattern, e.g. `https://*.example.com[:8443]`. */
+const WILDCARD_ORIGIN_PATTERN = /^(https?):\/\/\*\.([^/:]+)(?::(\d+))?\/?$/i;
+
+/** Returns whether `pattern` is a usable origin pattern (`*`, wildcard, or exact origin). */
+function isValidOriginPattern(pattern: string): boolean {
+  if (pattern === "*") return true;
+  if (pattern.includes("*")) return WILDCARD_ORIGIN_PATTERN.test(pattern);
+  try {
+    const url = new URL(pattern);
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      url.username === "" &&
+      url.password === "" &&
+      url.pathname === "/" &&
+      url.search === "" &&
+      url.hash === ""
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Returns the serialized port browsers use for an origin. */
+function normalizedOriginPort(protocol: string, port: string | undefined): string {
+  if (port === undefined) return "";
+  if ((protocol === "http" && port === "80") || (protocol === "https" && port === "443")) {
+    return "";
+  }
+  return port;
+}
+
+/**
+ * Tests whether `origin` satisfies an allowlist `pattern`:
+ * - `"*"` matches every origin.
+ * - `https://*.example.com` matches proper subdomains of `example.com` (not the
+ *   apex), requiring the scheme and port to match too.
+ * - Anything else is treated as an exact origin (normalized via `URL`).
+ */
+function originMatchesPattern(pattern: string, origin: URL): boolean {
+  if (pattern === "*") return true;
+
+  if (!pattern.includes("*")) {
+    try {
+      return isValidOriginPattern(pattern) && new URL(pattern).origin === origin.origin;
+    } catch {
+      return false;
+    }
+  }
+
+  const match = WILDCARD_ORIGIN_PATTERN.exec(pattern);
+  if (!match) return false;
+  const [, scheme, suffix, port] = match;
+  if (scheme === undefined || suffix === undefined) return false;
+
+  if (`${scheme.toLowerCase()}:` !== origin.protocol) return false;
+  if (normalizedOriginPort(scheme.toLowerCase(), port) !== origin.port) return false;
+
+  const host = origin.hostname.toLowerCase();
+  const suffixHost = suffix.toLowerCase();
+  return host !== suffixHost && host.endsWith(`.${suffixHost}`);
+}
 
 const WINDOW_OPEN_INVALID_URL_WARNING = "ec.window.open_request received without a valid url";
 
@@ -197,6 +273,43 @@ export class ShopifyCheckout
   set appearance(value: CheckoutAppearance | string | undefined) {
     this.#setAttribute("appearance", value);
   }
+
+  /**
+   * Extra origins allowed to post incoming checkout-protocol messages, on top
+   * of the always-trusted cart URL origin (from `src`) and `shop.app`.
+   *
+   * Checkout on web is closed by default: with no configured origins, only the
+   * cart URL origin and `shop.app` (including its subdomains) are trusted. Add
+   * origins here to widen the allowlist. Entries may be exact origins
+   * (`https://example.com`), wildcard subdomains (`https://*.example.com`), or
+   * `"*"` to disable origin validation entirely.
+   *
+   * Reflected to the space/comma-separated `allowed-origins` attribute, so the
+   * attribute and property can be used interchangeably.
+   */
+  get allowedOrigins(): string[] {
+    const attr = this.getAttribute("allowed-origins");
+    if (!attr) return [];
+    return attr.split(/[\s,]+/).filter(Boolean);
+  }
+
+  set allowedOrigins(value: string[] | string | undefined) {
+    if (value == null) {
+      this.removeAttribute("allowed-origins");
+      return;
+    }
+    const serialized = Array.isArray(value) ? value.join(" ") : value;
+    this.#setAttribute("allowed-origins", serialized);
+  }
+
+  /**
+   * Invoked when an incoming message is dropped by origin validation. The
+   * smart default logs a warning; assign a function to observe rejected
+   * messages instead (for example, to report them). Beware treating rejected
+   * messages as trusted — they were dropped precisely because their origin was
+   * not in the allowlist.
+   */
+  onMessageRejected?: (detail: MessageRejectedDetail) => void;
 
   #setAttribute(name: string, value: string | boolean | undefined) {
     if (value === true) {
@@ -494,7 +607,8 @@ export class ShopifyCheckout
    */
 
   #validateMessageOrigin(event: MessageEvent) {
-    if (!this.#srcAsURL()) {
+    const src = this.#srcAsURL();
+    if (!src) {
       throw new Error("Dropped message because src is invalid or unset");
     }
 
@@ -508,6 +622,53 @@ export class ShopifyCheckout
     if (origin.protocol !== "https:") {
       throw new Error(`Dropped message from non-HTTPS origin "${event.origin}"`);
     }
+
+    const patterns = this.#allowedOriginPatterns(src);
+    if (patterns !== null && !patterns.some((pattern) => originMatchesPattern(pattern, origin))) {
+      throw new Error(`Dropped message from origin "${origin.origin}" not in allowlist`);
+    }
+  }
+
+  /**
+   * Computes the effective set of trusted origins for incoming messages, or
+   * `null` when validation is disabled via the `"*"` escape hatch.
+   *
+   * Web is closed by default: the cart URL origin (from `src`) and `shop.app`
+   * are always trusted, and any configured `allowedOrigins` are added on top.
+   */
+  #allowedOriginPatterns(src: URL): string[] | null {
+    const configured = this.allowedOrigins;
+    if (configured.includes("*")) return null;
+
+    const patterns = [src.origin, ...SHOP_APP_ORIGIN_PATTERNS];
+    for (const entry of configured) {
+      if (isValidOriginPattern(entry)) {
+        patterns.push(entry);
+      } else {
+        this.#logger.warn(`Ignoring invalid allowed origin "${entry}"`);
+      }
+    }
+    return patterns;
+  }
+
+  /**
+   * Routes a dropped message to the {@link onMessageRejected} callback, falling
+   * back to a logged warning when no callback is set.
+   */
+  #rejectMessage(event: MessageEvent, error: unknown) {
+    const reason = error instanceof Error ? error.message : String(error);
+    if (this.onMessageRejected) {
+      try {
+        this.onMessageRejected({ origin: event.origin, data: event.data, reason });
+      } catch (callbackError) {
+        this.#logger.error(
+          "onMessageRejected callback threw",
+          callbackError instanceof Error ? callbackError.message : String(callbackError),
+        );
+      }
+      return;
+    }
+    this.#logger.warn(reason);
   }
 
   #initCheckoutProtocol() {
@@ -533,7 +694,7 @@ export class ShopifyCheckout
     try {
       this.#validateMessageOrigin(event);
     } catch (error) {
-      this.#logger.warn(error instanceof Error ? error.message : String(error));
+      this.#rejectMessage(event, error);
       return;
     }
 
