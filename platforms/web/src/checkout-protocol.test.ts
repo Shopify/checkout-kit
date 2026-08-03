@@ -911,7 +911,7 @@ describe("<shopify-checkout>", () => {
         expect(onStartSpy).toHaveBeenCalledOnce();
       });
 
-      it("validates configured origins when URL.canParse is unavailable", async () => {
+      it("supports configured origins in browsers without URL.canParse", async () => {
         const originalCanParse = URL.canParse;
         Object.defineProperty(URL, "canParse", { configurable: true, value: undefined });
 
