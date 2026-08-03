@@ -120,7 +120,7 @@ final class CartViewController: UIViewController, CheckoutDelegate {
   }
 
   func checkoutDidFail(error: CheckoutError) {
-    // Show an error state, retry with a fresh cart, or log the SDK error.
+    // Show an error state, retry with a new cart, or log the SDK error.
   }
 }
 ```
@@ -284,18 +284,62 @@ Kit-owned link delegations such as `window.open` are offered to your connected p
 
 ### Error handling
 
-`CheckoutError` covers SDK and native presentation failures. Checkout-originated `ec.error` notifications are available separately through `CheckoutProtocol.error` on the protocol client.
+A checkout lifecycle failure is delivered as a `CheckoutError` to `checkoutDidFail(error:)`
+or `.onFail`. It has a stable `code`, diagnostic `message`, optional `httpStatusCode`, and an
+optional native `underlyingError`. Use the stable code for recovery and analytics. Use diagnostic
+text and underlying errors only for debugging and logging.
 
-| Error | Meaning | Recommended handling |
+| `CheckoutErrorCode` | Meaning | Suggested app action |
 | --- | --- | --- |
-| `.checkoutExpired(code: .cartExpired)` | The cart or checkout session expired. | Create a new cart and present a fresh `checkoutUrl`. |
-| `.checkoutExpired(code: .cartCompleted)` | The cart already completed checkout. | Clear the local cart and fetch a new one. |
-| `.checkoutExpired(code: .invalidCart)` | The cart is invalid or empty. | Rebuild the cart before presenting checkout. |
-| `.checkoutUnavailable(code: .httpError)` | Checkout returned an unexpected HTTP response. | Treat as fatal for this attempt; retry with a fresh URL if appropriate. |
-| `.checkoutUnavailable(code: .clientError)` | Checkout could not load for a client-side reason. | Show a recoverable error and log details. |
-| `.sdkError(underlying:)` | Checkout Kit encountered an internal SDK error. | Log the error and open an issue if it persists. |
+| `.storefrontPasswordRequired` | The storefront is password protected. | Treat this checkout URL as unavailable until storefront password protection has been disabled. |
+| `.customerAccountRequired` | Checkout requires a customer account unavailable to this session. | Prompt the customer to [authenticate](https://shopify.dev/docs/storefronts/mobile/checkout-kit/authenticate-checkouts?extension=swift), then retry. |
+| `.cartExpired` | The cart or checkout session is no longer available. | Create a new cart and retry. |
+| `.cartCompleted` | The cart has already completed checkout. | Clear or create a new cart. |
+| `.invalidCart` | The cart cannot continue checkout. | Create a new cart and retry. |
+| `.httpError` | Checkout returned an HTTP error response. `httpStatusCode` is available. | Inspect `httpStatusCode`; retry only when it makes sense for your app. |
+| `.networkError` | Checkout navigation failed before an HTTP response was available. | Offer a retry when connectivity is available. |
+| `.sdkError` | An internal Checkout Kit error has occurred (e.g. a protocol message could not be decoded). | Log diagnostic context and offer a browser fallback. |
+| `.unknown` | An unexpected error occurred. | Log diagnostic context and offer a browser fallback. |
 
-Password-protected storefronts return `storefront_password_required` and are not supported by Checkout Kit.
+Record `code` (and `httpStatusCode` when available) in analytics as appropriate for your privacy
+policy. Use `message` and `underlyingError` only for debugging and logging; do not use them for recovery behavior.
+
+```swift
+switch error.code {
+case .cartExpired, .invalidCart:
+  createAndPresentFreshCart()
+case .networkError:
+  showRetry()
+case .httpError:
+  handleHTTPFailure(statusCode: error.httpStatusCode)
+default:
+  showCheckoutUnavailable()
+}
+```
+
+You own recovery after a lifecycle failure: retrying, recreating a cart, authenticating a buyer,
+opening a browser fallback, and re-presenting checkout.
+
+#### Checkout session errors
+
+`ec.error` ends the embedded checkout session. Checkout Kit first forwards it to
+`CheckoutProtocol.error`, then reports one lifecycle failure for a presented checkout. The first
+unrecoverable error message determines the lifecycle code; if none is present, the code is
+`.unknown`. `ec.messages.change` reports checkout state only and never calls `.onFail` or
+`checkoutDidFail(error:)`.
+
+Add a protocol handler when you need the complete protocol payload; it runs before the lifecycle failure:
+
+```swift
+let client = CheckoutProtocol.Client()
+  .on(CheckoutProtocol.error) { terminalError in
+    // Inspect the complete ECP terminal payload for advanced diagnostics.
+  }
+```
+
+Failures during preload do not call `.onFail` or `checkoutDidFail(error:)`. Monitor them as
+`PreloadState.failed` through the `CheckoutPreload` returned by `preload`, using `onStateChange`
+or its published `state`. A later `present` can load normally.
 
 ## Authentication and buyer identity
 
@@ -427,7 +471,7 @@ Use `CheckoutProtocol.Client` through `.connect(client)` to observe checkout com
 ## Troubleshooting
 
 - Use `ShopifyCheckoutKit.configuration.logLevel = .debug` or `ShopifyAcceleratedCheckouts.logLevel = .debug` while integrating.
-- If checkout reports an expired, completed, or invalid cart, create a fresh cart and use its new `checkoutUrl`.
+- If checkout reports an expired, completed, or invalid cart, create a new cart and use its `checkoutUrl`.
 - If Apple Pay dismisses immediately, verify the merchant ID, entitlements, payment processing certificate, and device wallet setup.
 - If Universal Links do not open the app, verify the associated domain entitlement and the `/.well-known/apple-app-site-association` file on your custom storefront domain.
 

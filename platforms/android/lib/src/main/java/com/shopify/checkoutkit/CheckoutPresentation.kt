@@ -24,7 +24,9 @@ public class CheckoutPresentation internal constructor() {
     internal var protocolClient: CheckoutProtocol.Client? = null
 
     /**
-     * Called when checkout fails.
+     * Called when checkout cannot continue.
+     *
+     * Use [CheckoutException.code] for your app's recovery policy.
      */
     public fun onFail(handler: (CheckoutException) -> Unit) {
         onFail = handler

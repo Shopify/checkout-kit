@@ -180,7 +180,9 @@ must follow the same `destroy()` contract when removing it from their hierarchy.
 
 The close control and system back invoke `onDismiss`; back navigates WebView history first when possible. Sheet gestures
 and tap-away belong to the host, so route `ModalBottomSheet.onDismissRequest` through the same app dismissal logic.
-`onFail` likewise asks the host to remove its presentation rather than attempting to dismiss an unknown parent.
+`onFail` reports the failure to your app. Your app removes or dismisses its surrounding presentation and calls
+`destroy()` once the view is permanently removed; Checkout Kit does not attempt to dismiss an unknown parent.
+Create a new `ShopifyCheckout` for any retry.
 
 `ShopifyCheckout` callbacks and protocol client are fixed when the view is created. Create a new view for a new checkout
 URL. If a Compose adapter accepts callbacks that can change during recomposition, forward them through stable delegates
@@ -397,17 +399,60 @@ The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed che
 
 ### Error handling
 
-Checkout failures are delivered as `CheckoutException` values. Checkout web error events are mapped to `ConfigurationException`, `CheckoutExpiredException`, or `ClientException`; register `CheckoutProtocol.error` separately if you need to observe `ec.error` messages.
+A checkout lifecycle failure is delivered as a `CheckoutException` to `onFail` or
+`onCheckoutFailed`. It has a stable `code`, diagnostic `message`, optional
+`httpStatusCode`, and the optional native `cause`. Use the stable code for recovery
+and analytics. Use diagnostic text and causes only for debugging and logging.
 
-| Exception | Common code | Meaning | Recommended handling |
-| --- | --- | --- | --- |
-| `ConfigurationException` | `storefront_password_required` | Checkout is password protected or otherwise blocked by configuration. | Treat as fatal for this session. |
-| `CheckoutExpiredException` | `cart_expired` | The cart or checkout session expired. | Create a new cart and present a fresh `checkoutUrl`. |
-| `CheckoutExpiredException` | `cart_completed` | The cart already completed checkout. | Clear the local cart and fetch a new one. |
-| `CheckoutExpiredException` | `invalid_cart` | The cart is invalid or empty. | Rebuild the cart before presenting checkout. |
-| `HttpException` | `http_error` | Checkout returned an unexpected HTTP response. | Treat as fatal for this attempt; retry with a fresh URL if appropriate. |
-| `ClientException` | `client_error` | Checkout could not load for a client-side reason. | Show a recoverable error and log details. |
-| `CheckoutKitException` | `error_receiving_message`, `error_sending_message`, `render_process_gone`, `web_view_not_supported`, `unknown` | Checkout Kit encountered an SDK or WebView issue. | Log details and open an issue if it persists. |
+| `CheckoutErrorCode` | Meaning | Suggested app action |
+| --- | --- | --- |
+| `STOREFRONT_PASSWORD_REQUIRED` | The storefront is password protected. | Treat this checkout URL as unavailable until storefront password protection has been disabled. |
+| `CUSTOMER_ACCOUNT_REQUIRED` | Checkout requires a customer account unavailable to this session. | Prompt the customer to [authenticate](https://shopify.dev/docs/storefronts/mobile/checkout-kit/authenticate-checkouts), then retry. |
+| `CART_EXPIRED` | The cart or checkout session is no longer available. | Create a new cart and retry. |
+| `CART_COMPLETED` | The cart has already completed checkout. | Clear or create a new cart. |
+| `INVALID_CART` | The cart cannot continue checkout. | Create a new cart and retry. |
+| `HTTP_ERROR` | Checkout returned an HTTP error response. `httpStatusCode` is available. | Inspect `httpStatusCode`; retry only when it makes sense for your app. |
+| `NETWORK_ERROR` | Checkout navigation failed before an HTTP response was available. | Offer a retry when connectivity is available. |
+| `WEB_VIEW_NOT_SUPPORTED` | The device WebView provider lacks a required capability. | WebView support is widely available, but offer a browser fallback when it is unavailable. |
+| `WEB_CONTENT_PROCESS_TERMINATED` | The WebView renderer was terminated or crashed. | Dismiss the current presentation, destroy an embedded `ShopifyCheckout` after removal, and let the buyer retry with a new checkout. |
+| `SDK_ERROR` | An internal Checkout Kit error has occurred (e.g. a protocol message could not be decoded). | Log diagnostic context and offer a browser fallback. |
+| `UNKNOWN` | An unexpected error occurred. | Log diagnostic context and offer a browser fallback. |
+
+Record `code` (and `httpStatusCode` when available) in analytics as appropriate for your privacy
+policy. Use `message` and `cause` only for debugging and logging; do not use them for recovery behavior.
+
+```kotlin
+when (error.code) {
+    CheckoutErrorCode.CART_EXPIRED,
+    CheckoutErrorCode.INVALID_CART -> createAndPresentFreshCart()
+    CheckoutErrorCode.NETWORK_ERROR -> showRetry()
+    CheckoutErrorCode.HTTP_ERROR -> handleHttpFailure(error.httpStatusCode)
+    else -> showCheckoutUnavailable()
+}
+```
+
+You own recovery after a lifecycle failure: retrying, recreating a cart, authenticating a buyer,
+opening a browser fallback, and re-presenting checkout.
+
+#### Checkout session errors
+
+`ec.error` ends the embedded checkout session. Checkout Kit first forwards it to
+`CheckoutProtocol.error`, then reports one lifecycle failure for a presented checkout. The first
+unrecoverable error message determines the lifecycle code; if none is present, the code is
+`UNKNOWN`. `ec.messages.change` reports checkout state only and never calls `onFail`.
+
+Add a protocol handler when you need the complete protocol payload; it runs before `onFail`:
+
+```kotlin
+val protocolClient = CheckoutProtocol.Client()
+    .on(CheckoutProtocol.error) { terminalError ->
+        // Inspect the complete ECP terminal payload for advanced diagnostics.
+    }
+```
+
+Failures during preload do not call `onFail` or `onCheckoutFailed`. Monitor them as
+`PreloadState.Failed` with the `PreloadStateListener` passed to `preload`, or with the returned
+`CheckoutPreload` handle's `listener`. A later `present` can load normally.
 
 ## Browser and system callbacks
 
@@ -484,7 +529,7 @@ Checkout Kit opens external HTTPS links, `mailto:`, `tel:`, and custom-scheme li
       }
   }
   ```
-- If checkout reports an expired, completed, or invalid cart, create a fresh cart and use its new `checkoutUrl`.
+- If checkout reports an expired, completed, or invalid cart, create a new cart and use its `checkoutUrl`.
 - If checkout cannot access camera, file upload, or location features, check your manifest permissions and runtime permission flow.
 - If checkout fails with `web_view_not_supported`, the installed WebView provider does not expose WebMessageListener.
   Prompt the buyer to update Android System WebView or Chrome before trying embedded checkout again, or open the
