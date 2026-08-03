@@ -6,8 +6,11 @@ require "yaml"
 class BootstrapCartFromLinkTest < Minitest::Test
   FLOW_PATH = File.expand_path("../flows/app/bootstrap-cart-from-link.yaml", __dir__)
 
-  def commands
-    YAML.load_stream(File.read(FLOW_PATH)).fetch(1)
+  def commands(path = FLOW_PATH)
+    YAML.load_stream(File.read(path)).fetch(1).flat_map do |command|
+      nested_flow = command["runFlow"]
+      nested_flow.is_a?(String) ? commands(File.expand_path(nested_flow, File.dirname(path))) : command
+    end
   end
 
   def test_clears_state_then_relaunches_only_if_the_app_is_not_ready

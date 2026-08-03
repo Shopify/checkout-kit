@@ -146,6 +146,22 @@ class MaestroTestTagsTest < Minitest::Test
     end
   end
 
+  def env(path)
+    header(path)["env"] || {}
+  end
+
+  # Every test that submits an order states the identity it wants instead of inheriting
+  # whichever mode the sample app configured.
+  def test_every_order_test_declares_a_buyer_identity_mode
+    shared_test_files.select { |path| tags(path).include?("full") }.each do |path|
+      assert_match(
+        /buyerIdentityMode=\w+/,
+        env(path)["E2E_CART_PARAMS"].to_s,
+        "#{path} submits an order, so E2E_CART_PARAMS must set buyerIdentityMode"
+      )
+    end
+  end
+
   def test_there_is_at_least_one_test_to_check
     refute_empty(test_files)
     refute_empty(shared_test_files)
