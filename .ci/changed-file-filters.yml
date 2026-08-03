@@ -20,6 +20,15 @@ protocol:
   - 'protocol/**'
   - *exclude-markdown
   - *exclude-docs-directory
+# Protocol files outside language bindings can change every language binding,
+# including shared code-generation tooling. This filter uses one inclusive
+# pattern because GitHub Actions evaluates these patterns with
+# `predicate-quantifier: every`.
+protocolShared:
+  - 'protocol/**'
+  - '!protocol/languages/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
 protocolTypescript:
   - 'protocol/languages/typescript/**'
   - *exclude-markdown

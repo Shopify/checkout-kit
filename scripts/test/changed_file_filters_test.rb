@@ -20,6 +20,14 @@ class ChangedFileFiltersTest < Minitest::Test
     refute @filters.match?("protocolTypescript", ["protocol/languages/kotlin/Models.kt"])
   end
 
+  def test_matches_shared_protocol_inputs_and_generation_tooling
+    assert @filters.match?("protocolShared", ["protocol/schemas/ucp.json"])
+    assert @filters.match?("protocolShared", ["protocol/package.json"])
+    assert @filters.match?("protocolShared", ["protocol/scripts/codegen_tools.mjs"])
+    refute @filters.match?("protocolShared", ["protocol/languages/typescript/models.ts"])
+    refute @filters.match?("protocolTypescript", ["protocol/package.json"])
+  end
+
   def test_excludes_markdown_at_top_level_and_nested
     refute @filters.match?("android", ["platforms/android/README.md"])
     refute @filters.match?("web", ["platforms/web/guides/nested/CHANGELOG.md"])
