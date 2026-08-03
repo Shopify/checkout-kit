@@ -55,6 +55,25 @@ final class MessageOriginValidatorTests: XCTestCase {
         XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://example.com", origin: origin))
     }
 
+    func testExactOriginWithTrailingSlashMatches() {
+        let origin = MessageOrigin(scheme: "https", host: "example.com", port: nil)
+        XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://example.com/", origin: origin))
+    }
+
+    func testExactOriginRejectsURLComponentsBeyondOrigin() {
+        let origin = MessageOrigin(scheme: "https", host: "example.com", port: nil)
+        let invalidPatterns = [
+            "https://user@example.com",
+            "https://example.com/path",
+            "https://example.com?query=value",
+            "https://example.com#fragment"
+        ]
+
+        for pattern in invalidPatterns {
+            XCTAssertFalse(MessageOriginValidator.matches(pattern: pattern, origin: origin), pattern)
+        }
+    }
+
     func testExactOriginRejectsDifferentHost() {
         let origin = MessageOrigin(scheme: "https", host: "evil.com", port: nil)
         XCTAssertFalse(MessageOriginValidator.matches(pattern: "https://example.com", origin: origin))
@@ -112,6 +131,11 @@ final class MessageOriginValidatorTests: XCTestCase {
     func testWildcardMatchesProperSubdomain() {
         let origin = MessageOrigin(scheme: "https", host: "a.example.com", port: nil)
         XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://*.example.com", origin: origin))
+    }
+
+    func testWildcardWithTrailingSlashMatchesProperSubdomain() {
+        let origin = MessageOrigin(scheme: "https", host: "a.example.com", port: nil)
+        XCTAssertTrue(MessageOriginValidator.matches(pattern: "https://*.example.com/", origin: origin))
     }
 
     func testWildcardMatchesNestedSubdomain() {

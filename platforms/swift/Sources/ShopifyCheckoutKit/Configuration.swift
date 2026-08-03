@@ -56,6 +56,9 @@ public struct Configuration: Sendable {
     /// - `"https://example.com"` — an exact origin.
     /// - `"https://*.example.com"` — any subdomain of `example.com`.
     /// - `"*"` — allow all origins (escape hatch).
+    ///
+    /// An optional trailing slash is accepted. Credentials, paths, queries,
+    /// and fragments are not valid in configured origin patterns.
     public var allowedMessageOrigins: [String] = []
 
     /// Invoked when an incoming checkout message is rejected during origin

@@ -150,16 +150,15 @@ enum MessageOriginValidator {
     private static func parse(pattern: String) -> ParsedPattern? {
         guard let schemeSeparator = pattern.range(of: "://") else { return nil }
         let scheme = String(pattern[..<schemeSeparator.lowerBound]).lowercased()
-        guard !scheme.isEmpty else { return nil }
+        guard scheme == "https" || scheme == "http" else { return nil }
 
         var authority = String(pattern[schemeSeparator.upperBound...])
-        if let pathStart = authority.firstIndex(of: "/") {
-            authority = String(authority[..<pathStart])
-        }
-        guard !authority.isEmpty else { return nil }
+        guard !authority.contains("@"), !authority.contains("?"), !authority.contains("#") else { return nil }
+        if authority.hasSuffix("/") { authority.removeLast() }
+        guard !authority.isEmpty, !authority.contains("/") else { return nil }
 
-        guard var (host, port) = parseAuthority(authority) else { return nil }
-        host = host.lowercased()
+        guard let (parsedHost, port) = parseAuthority(authority) else { return nil }
+        let host = parsedHost.lowercased()
         guard !host.isEmpty else { return nil }
 
         let isWildcard = host.hasPrefix("*.")
