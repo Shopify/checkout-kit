@@ -449,9 +449,12 @@ Checkout Kit does not create carts or authenticate buyers. Add buyer context to 
 - Use Storefront API cart buyer identity fields to prefill email, phone, country, and language.
 - Use Storefront API cart delivery mutations to add delivery addresses and select delivery options.
 - Use `walletPreferences: [shop_pay]` when you want checkout to prefer Shop Pay.
-- Use Multipass for Shopify Plus stores that use Classic Customer Accounts. Generate Multipass tokens server-side and set `return_to` to the checkout URL.
+- For Shopify Plus stores that use Classic Customer Accounts, generate Multipass tokens server-side and set `return_to` to the checkout URL.
 
 Keep Multipass secrets out of client-side code.
+
+> [!WARNING]
+> [Multipass](https://shopify.dev/docs/api/customer-authentication/multipass) is now deprecated, consider using Customer Accounts API for new integrations.
 
 ## Offsite payments and links
 

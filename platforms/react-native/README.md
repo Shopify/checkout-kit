@@ -652,6 +652,9 @@ can use [Multipass](https://shopify.dev/docs/api/multipass)
 ([API documentation](https://shopify.dev/docs/api/multipass)) to integrate an
 external identity system and initialize a buyer-aware checkout session.
 
+> [!WARNING]
+> [Multipass](https://shopify.dev/docs/api/customer-authentication/multipass) is now deprecated, consider using Customer Accounts API for new integrations.
+
 ```json
 {
   "email": "<Customer's email address>",

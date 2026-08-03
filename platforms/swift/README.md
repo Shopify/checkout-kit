@@ -308,6 +308,9 @@ Checkout Kit does not create carts or authenticate buyers. Add buyer context to 
 
 Keep Multipass secrets out of client-side code.
 
+> [!WARNING]
+> [Multipass](https://shopify.dev/docs/api/customer-authentication/multipass) is now deprecated, consider using Customer Accounts API for new integrations.
+
 ## Offsite payments and links
 
 Some payment providers redirect buyers to external banking apps or web pages. Configure Universal Links so buyers can return to your app after those flows complete:
