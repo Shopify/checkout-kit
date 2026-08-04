@@ -62,14 +62,19 @@ function configured(value: string | undefined) {
 
 const storefrontApiVersion = env.API_VERSION ?? env.STOREFRONT_VERSION;
 
+/**
+ * Apple Pay only accepts a merchant identifier that this app's entitlement
+ * already lists, so it belongs beside the entitlement rather than in shared
+ * storefront config. Keep it equal to ios/CheckoutKitReactNativeDemo/
+ * CheckoutKitReactNativeDemo.entitlements.
+ */
+const APPLE_PAY_MERCHANT_IDENTIFIER =
+  'merchant.com.shopify.checkoutkit.reactnativedemo';
+
 console.groupCollapsed('ENV');
 log('STOREFRONT_DOMAIN:', configured(env.STOREFRONT_DOMAIN));
 log('STOREFRONT_ACCESS_TOKEN:', configured(env.STOREFRONT_ACCESS_TOKEN));
 log('API_VERSION:', configured(storefrontApiVersion));
-log(
-  'STOREFRONT_MERCHANT_IDENTIFIER:',
-  configured(env.STOREFRONT_MERCHANT_IDENTIFIER),
-);
 log('EMAIL:', configured(env.EMAIL));
 log('PHONE:', configured(env.PHONE));
 console.groupEnd();
@@ -400,7 +405,7 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
               ApplePayContactField.email,
               ApplePayContactField.phone,
             ],
-            merchantIdentifier: env.STOREFRONT_MERCHANT_IDENTIFIER!,
+            merchantIdentifier: APPLE_PAY_MERCHANT_IDENTIFIER,
           },
         },
       },

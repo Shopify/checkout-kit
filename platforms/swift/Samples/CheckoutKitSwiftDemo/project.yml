@@ -51,6 +51,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.shopify.checkoutkit.swiftdemo
         DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
+        STOREFRONT_MERCHANT_IDENTIFIER: merchant.com.shopify.checkoutkit.swiftdemo
         SWIFT_VERSION: "6.0"
         SWIFT_STRICT_CONCURRENCY: complete
         SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
@@ -130,7 +131,7 @@ targets:
       path: CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.entitlements
       properties:
         com.apple.developer.in-app-payments:
-          - merchant.com.shopify.checkoutkit.swiftdemo
+          - $(STOREFRONT_MERCHANT_IDENTIFIER)
         com.apple.developer.associated-domains:
           - webcredentials:$(STOREFRONT_DOMAIN)?mode=developer
           - applinks:$(STOREFRONT_DOMAIN)?mode=developer
