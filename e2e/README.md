@@ -13,6 +13,19 @@ Local runs call `scripts/run_local_e2e`, which builds and installs the target
 before delegating the Maestro invocation to `scripts/run_maestro`. CI applies the
 same environment contract through the BrowserStack run plan.
 
+## Encrypted environments
+
+`dev up` generates the sample-app `.env` and the suite-specific `e2e/.env` from
+committed files under `config/secrets`. Both are generated, so direct edits are
+lost on the next `dev up`.
+
+To change a shared value, run `dev secrets edit demo` or `dev secrets edit e2e`,
+then run `./scripts/ejson_lint` before committing the encrypted file. The lint
+command needs no private key and fails if plaintext was committed.
+
+Use `.env.local` for personal sample-app overrides and `e2e/.env.local` for
+personal E2E overrides. Nothing writes either file.
+
 ## Run locally
 
 Run `dev up` first to provision the local toolchain, including the pinned Maestro
