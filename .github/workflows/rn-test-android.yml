@@ -66,6 +66,6 @@ jobs:
           echo "JAVA_HOME: $JAVA_HOME"
           java -version
           javac -version
-          ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+          ${{ github.workspace }}/scripts/setup_storefront_env
           pnpm module build
           pnpm sample test:android --no-daemon

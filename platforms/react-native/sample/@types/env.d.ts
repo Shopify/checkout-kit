@@ -3,7 +3,6 @@ declare module '@env' {
   export const STOREFRONT_ACCESS_TOKEN: string;
   export const API_VERSION: string | undefined;
   export const STOREFRONT_VERSION: string | undefined;
-  export const STOREFRONT_MERCHANT_IDENTIFIER: string | undefined;
 
   export const EMAIL: string;
   export const ADDRESS_1: string;

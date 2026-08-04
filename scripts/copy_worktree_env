@@ -33,11 +33,18 @@ if [[ "${CURRENT_ROOT}" == "${MAIN_ROOT}" ]]; then
   exit 0
 fi
 
-# Root-level, gitignored source-of-truth files. Nested sample config
-# (Android/Swift/RN) is intentionally omitted: `dev up` regenerates it from the
-# root .env via scripts/setup_storefront_env.
+# Root-level, gitignored files that nothing generates. Anything generated is left
+# out, because `dev up` rebuilds it in this worktree anyway:
+#
+#   .env       scripts/generate_env_files, from config/secrets/demo.ejson
+#   e2e/.env   scripts/generate_env_files, from config/secrets/e2e.ejson
+#   sample app config  scripts/setup_storefront_env, from .env
+#
+# Copying a generated .env would be worse than useless: the next step,
+# scripts/migrate_env_to_local, would read it as hand-written and freeze that
+# stale copy as .env.local, which then overrides the real one for good.
 ROOT_FILES=(
-  ".env"
+  ".env.local"
   ".dev.env"
   "local.properties"
 )

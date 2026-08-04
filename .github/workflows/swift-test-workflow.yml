@@ -77,7 +77,7 @@ jobs:
         env:
           STOREFRONT_DOMAIN: example.myshopify.com
           STOREFRONT_ACCESS_TOKEN: test-token
-        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+        run: ${{ github.workspace }}/scripts/setup_storefront_env
 
       - if: ${{ inputs.setup-storefront-env }}
         uses: ./.github/actions/setup-mint
