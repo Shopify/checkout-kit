@@ -72,12 +72,23 @@ The `e2e-execute-browserstack-run` workflow fans out one parallel copy per Brows
 
 ## Storefront secrets
 
-These secrets are configured in Bitrise.io; they cannot live in the repository. `scripts/setup_storefront_env` reads them to configure the sample app before builds.
+Every storefront value lives encrypted in this repository under `config/secrets`, so Bitrise holds one secret instead of a list that drifts from what the suite actually reads.
 
-| Secret                    | Purpose                                        |
-| ------------------------- | ---------------------------------------------- |
-| `STOREFRONT_DOMAIN`       | Storefront domain for sample app builds.       |
-| `STOREFRONT_ACCESS_TOKEN` | Storefront access token for sample app builds. |
+| Secret               | Purpose                                                       |
+| -------------------- | ------------------------------------------------------------- |
+| `EJSON_PRIVATE_KEY`  | Decrypts `config/secrets/demo.ejson` and `config/secrets/e2e.ejson`. |
+
+The secret is created with both **Expose for pull requests** and **Protected** enabled.
+
+The `e2e` pipeline triggers only on pull requests, so without exposure the key never arrives and no run reaches a store. Bitrise offers no middle setting: a secret is available to every pull request build or to none, including builds from forks.
+
+Protected hides the value and blocks edits, so rotation means deleting the secret and creating it again. Set both flags at creation time. Exposure cannot be enabled later on a protected secret.
+
+Because exposure reaches fork builds too, the control that keeps the key away from outside contributors is **Project settings > Builds > Manual approval**, not the exposure flag. A fork pull request waits for a Shopify admin before any step runs. Keep that toggle on.
+
+`e2e/scripts/bitrise_ci_helpers` installs a pinned `ejson2env`, writes the key into a keydir, and runs `scripts/generate_env_files`. That produces `.env` for the sample app builds and `e2e/.env` for the Maestro suite. Both are gitignored, and neither the key nor any decrypted value ever enters an argument list or the build log.
+
+To change a value, run `dev secrets edit e2e` (or `demo`) and commit the file. Rotating the key means updating this secret and the GCP secret named after the public key. Both `.ejson` files must stay encrypted against the same keypair, because one Bitrise secret cannot hold two private keys; `bitrise_ci_helpers` fails with that message rather than a bare decrypt error.
 
 ## BrowserStack secrets
 
@@ -116,19 +127,19 @@ The launch smoke suite sends only non-sensitive Maestro environment values to Br
 
 Do not pass storefront tokens or customer data through BrowserStack Maestro environment variables without explicit review, because those values are visible in BrowserStack dashboards.
 
-## Account journey secrets
+## Account journey values
 
-The account journey signs a test customer in, so it needs two more Maestro values. Both are reviewed exceptions to the rule above, because the BrowserStack dashboard is private to this organization and the values never enter the repository.
+The account journey signs a test customer in, so it needs three more values. All three come out of `config/secrets/e2e.ejson`, not the Bitrise secrets list.
 
-| Variable                     | Where it is used                       | Purpose                                                          |
-| ---------------------------- | -------------------------------------- | ---------------------------------------------------------------- |
-| `E2E_CUSTOMER_ACCOUNT_EMAIL` | Maestro environment                    | Address the sign-in flow types on the hosted login page.          |
-| `E2E_CUSTOMER_ACCOUNT_CODE`  | Maestro environment                    | Verification code the sign-in flow types.                         |
-| `CUSTOM_USER_AGENT`          | Sample app build, through `.env`       | Marks the login web view as a test client. The code fails without it. |
+| Variable                     | Where it is used                 | Purpose                                                               |
+| ---------------------------- | -------------------------------- | --------------------------------------------------------------------- |
+| `E2E_CUSTOMER_ACCOUNT_EMAIL` | Maestro environment              | Address the sign-in flow types on the hosted login page.              |
+| `E2E_CUSTOMER_ACCOUNT_CODE`  | Maestro environment              | Verification code the sign-in flow types.                             |
+| `CUSTOM_USER_AGENT`          | Sample app build, through `.env` | Marks the login web view as a test client. The code fails without it. |
 
-Add all three as secret Bitrise environment variables. Leave them out of any log, any pull request, and any file in this repository. `scripts/setup_storefront_env` reads `CUSTOM_USER_AGENT` from the root `.env` and writes it into each generated sample configuration, all of which are ignored by git.
+The first two are a reviewed exception to the rule above, because the BrowserStack dashboard is private to this organization. `e2e_export_e2e_credentials` puts them into the environment `e2e/scripts/execute_browserstack_run` reads; `e2e/scripts/run_maestro` reads them from `e2e/.env` for a local run.
 
-A run with these values missing skips the account tests instead of failing, so a fork without the secrets still gets a green suite.
+A run with these values blank skips the account tests instead of failing, so the rest of the suite still runs. A run with no key at all is a different case: `generate_env_files` writes no `.env`, so the store-backed cart and checkout tests fail rather than skip.
 
 ## GitHub reporting
 

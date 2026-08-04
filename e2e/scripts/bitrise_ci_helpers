@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+# Pinned on purpose. An unpinned install would change the decrypt path under CI
+# without a commit saying so.
+E2E_EJSON2ENV_VERSION="2.0.8"
+
 e2e_log() {
   printf '\n==> %s\n' "$*"
 }
@@ -17,10 +21,160 @@ e2e_deploy_dir() {
   printf '%s\n' "$dir"
 }
 
+e2e_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
+}
+
+# Neither Bitrise stack preinstalls ejson2env, and both are ephemeral, so every
+# workflow that decrypts installs it. Only ejson2env is needed: nothing in CI
+# encrypts, and scripts/ejson_lint reads the ciphertext without a binary.
+e2e_install_ejson2env() {
+  local os arch asset base archive checksums expected actual dir
+
+  if command -v ejson2env >/dev/null 2>&1; then
+    e2e_log "ejson2env is already installed"
+    return 0
+  fi
+
+  os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  arch="$(uname -m)"
+
+  case "$arch" in
+  x86_64) arch="amd64" ;;
+  aarch64 | arm64) arch="arm64" ;;
+  esac
+
+  # One universal build covers both Apple architectures.
+  if [ "$os" = "darwin" ]; then
+    arch="all"
+  fi
+
+  asset="ejson2env_${E2E_EJSON2ENV_VERSION}_${os}_${arch}.tar.gz"
+  base="https://github.com/Shopify/ejson2env/releases/download/v${E2E_EJSON2ENV_VERSION}"
+  archive="$(mktemp -d)/${asset}"
+  checksums="$(dirname "$archive")/checksums.txt"
+
+  e2e_log "Installing ejson2env ${E2E_EJSON2ENV_VERSION} for ${os}/${arch}"
+  curl -fsSL --retry 3 -o "$archive" "${base}/${asset}"
+  curl -fsSL --retry 3 -o "$checksums" "${base}/ejson2env_${E2E_EJSON2ENV_VERSION}_checksums.txt"
+
+  # This binary decrypts every secret in the run, so a tampered release must stop
+  # the build rather than reach the keydir.
+  expected="$(awk -v name="$asset" '$2 == name {print $1}' "$checksums")"
+  actual="$(e2e_sha256 "$archive")"
+
+  if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
+    echo "e2e_install_ejson2env: checksum mismatch for ${asset}" >&2
+    return 1
+  fi
+
+  dir="$HOME/.local/bin"
+  mkdir -p "$dir"
+  tar -xzf "$archive" -C "$dir" ejson2env
+  chmod +x "$dir/ejson2env"
+
+  export PATH="$dir:$PATH"
+  envman add --key PATH --value "$PATH"
+}
+
+# CI has no gcloud, so scripts/install_ejson_key cannot run here. Bitrise holds
+# the private key in one secret instead, and this writes it into a keydir that
+# the rest of the run inherits through EJSON_KEYDIR.
+#
+# The key reaches the file through a redirect, so it never enters an argument
+# list and never reaches the build log.
+e2e_install_ejson_key() {
+  local keydir public_keys public_key rendered
+
+  : "${EJSON_PRIVATE_KEY:?EJSON_PRIVATE_KEY is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
+
+  public_keys="$(sed -n 's/.*"_public_key"[[:space:]]*:[[:space:]]*"\([0-9a-f]\{64\}\)".*/\1/p' \
+    config/secrets/*.ejson | sort -u)"
+
+  # One secret can only hold one private key, so every committed file has to name
+  # the same public key. Rekeying one file alone would otherwise fail later with a
+  # decrypt error that says nothing about the cause.
+  if [ "$(printf '%s\n' "$public_keys" | grep -c .)" != "1" ]; then
+    echo "e2e_install_ejson_key: config/secrets holds more than one public key, so one" >&2
+    echo "e2e_install_ejson_key: EJSON_PRIVATE_KEY cannot decrypt them all. Re-encrypt them" >&2
+    echo "e2e_install_ejson_key: against a single keypair." >&2
+    return 1
+  fi
+
+  public_key="$public_keys"
+  keydir="$HOME/.ejson/keys"
+
+  export EJSON_KEYDIR="$keydir"
+  envman add --key EJSON_KEYDIR --value "$keydir"
+
+  # Idempotent: two workflows in one step both need the key, and the mode below
+  # makes the file unwritable, so a second attempt at the same redirect would fail.
+  if [ -s "$keydir/$public_key" ]; then
+    e2e_log "The private key for ${public_key} is already installed"
+    return 0
+  fi
+
+  e2e_log "Installing the ejson private key"
+  mkdir -p "$keydir"
+
+  # Written elsewhere and moved into place, so the mode is never briefly looser
+  # than ejson keygen's own 0440.
+  rendered="$(mktemp)"
+  printf '%s' "$EJSON_PRIVATE_KEY" >"$rendered"
+  chmod 440 "$rendered"
+  mv "$rendered" "$keydir/$public_key"
+
+  e2e_log "Installed the private key for ${public_key}"
+}
+
+e2e_generate_env_files() {
+  e2e_install_ejson2env
+  e2e_install_ejson_key
+
+  e2e_log "Generating env files from config/secrets"
+  ./scripts/generate_env_files
+}
+
 e2e_configure_storefront() {
-  e2e_log "Checking storefront configuration secrets"
-  : "${STOREFRONT_DOMAIN:?STOREFRONT_DOMAIN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
-  : "${STOREFRONT_ACCESS_TOKEN:?STOREFRONT_ACCESS_TOKEN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
+  e2e_generate_env_files
+
   e2e_log "Configuring storefront environment"
   ./scripts/setup_storefront_env
+}
+
+# execute_browserstack_run reads these from the process environment, and the
+# BrowserStack workflow builds no app, so nothing else brings them in.
+#
+# The values come out of ejson2env's default `export KEY='value'` output rather
+# than a hand-written reader, so its quoting is the only quoting involved. They
+# then travel to envman through a file, so no value enters an argument list.
+e2e_export_e2e_credentials() {
+  local key value value_file
+
+  e2e_install_ejson2env
+  e2e_install_ejson_key
+
+  e2e_log "Exporting E2E account credentials"
+  eval "$(ejson2env --keydir "$EJSON_KEYDIR" config/secrets/e2e.ejson)"
+
+  value_file="$(mktemp)"
+
+  for key in E2E_CUSTOMER_ACCOUNT_EMAIL E2E_CUSTOMER_ACCOUNT_CODE; do
+    eval "value=\${${key}:-}"
+
+    if [ -z "$value" ]; then
+      e2e_log "No ${key} in config/secrets/e2e.ejson, so account flows will skip"
+      continue
+    fi
+
+    printf '%s' "$value" >"$value_file"
+    envman add --key "$key" --valuefile "$value_file"
+    e2e_log "Exported ${key}"
+  done
+
+  rm -f "$value_file"
 }

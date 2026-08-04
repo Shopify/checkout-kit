@@ -11,6 +11,30 @@ Kit sample apps. Two complementary setups live here:
 
 Both paths call `scripts/run_maestro`, so they share one environment contract.
 
+## Secrets
+
+The suite reads its own file, `e2e/.env`, so a run cannot pick up whichever store you
+happen to have configured for the sample apps in the repo-root `.env`.
+
+`dev up` generates `e2e/.env` from `config/secrets/e2e.ejson`, which is committed
+encrypted. It is generated, so an edit to it is lost on the next `dev up`. To change
+a value:
+
+```bash
+dev secrets edit e2e
+./scripts/ejson_lint
+```
+
+Then commit `config/secrets/e2e.ejson`. `ejson_lint` needs no key and fails if any
+value landed as plaintext, so run it before committing.
+
+To point a local run at your own store instead, put the keys in `e2e/.env.local`.
+Nothing writes that file, it overrides `e2e/.env` key by key, and `run_maestro` names
+the keys it found there.
+
+A blank `E2E_CUSTOMER_ACCOUNT_EMAIL` or `E2E_CUSTOMER_ACCOUNT_CODE` excludes the
+`account` tag instead of failing, so the rest of the suite still runs.
+
 ## Run locally
 
 Run `dev up` first to provision the local toolchain. Install Maestro separately
@@ -58,8 +82,9 @@ must never mark a test that is merely not ported yet.
 
 Every command builds the sample app, installs it, and then calls
 `scripts/run_maestro`. The React Native commands also start Metro if needed. All
-four need the standard storefront `.env` setup, but the flows seed their own carts
-through the control link, so no manual cart setup is required.
+four need the storefront configuration described in [Secrets](#secrets), but the
+flows seed their own carts through the control link, so no manual cart setup is
+required.
 
 React Native E2E runs should use the released native SDK artifacts declared by
 the React Native sample configuration, not local in-repo native SDK overrides.
@@ -153,6 +178,8 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `FLAKES.md` records every unstable test and every trap that gives a false result.
 - `scripts/run_maestro` is the single Maestro invocation every local runner calls.
   It holds the environment contract and the workspace root rule in one place.
+- `scripts/test_run_maestro` puts a fake `maestro` on `PATH` and asserts the argv, so
+  the environment contract has tests that need no device.
 - `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
   `scripts/` drive the BrowserStack run plan.
 
