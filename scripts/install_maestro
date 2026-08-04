@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+#
+# Installs the Maestro version that e2e/.maestro-version pins.
+#
+# Usage: scripts/install_maestro [--check]
+#
+# Each version lands in its own directory, so a version bump installs beside the old one and
+# a revert needs no download. Nothing is added to PATH: e2e/scripts/maestro_bin resolves the
+# binary by path, so a Homebrew Maestro can stay installed without shadowing the pin.
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VERSIONS_ROOT="${MAESTRO_VERSIONS_ROOT:-$HOME/.maestro-versions}"
+INSTALLER_URL="${MAESTRO_INSTALLER_URL:-https://get.maestro.mobile.dev}"
+
+mode="install"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --check)
+      mode="check"
+      shift
+      ;;
+    *)
+      echo "Usage: scripts/install_maestro [--check]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+version="$(tr -d '[:space:]' <"$REPO_ROOT/e2e/.maestro-version")"
+destination="$VERSIONS_ROOT/$version"
+binary="$destination/bin/maestro"
+
+installed_version() {
+  if [ ! -x "$binary" ]; then
+    return 1
+  fi
+
+  "$binary" --version 2>/dev/null | tr -d '[:space:]'
+}
+
+if [ "$mode" = "check" ]; then
+  found="$(installed_version || true)"
+
+  if [ "$found" != "$version" ]; then
+    echo "install_maestro: expected Maestro $version at $binary, found ${found:-nothing}." >&2
+    echo "  run: /opt/dev/bin/dev up" >&2
+    exit 1
+  fi
+
+  exit
+fi
+
+# The vendor installer carries two side effects that do not belong in a `dev up` step.
+#
+# It exits 1 when `which maestro` returns a Homebrew path, which is true on most machines
+# here. A minimal PATH hides Homebrew, and java, unzip and curl all live in /usr/bin, so the
+# installer still finds everything it checks for.
+#
+# It also appends `export PATH=...` to ~/.zshrc and ~/.bash_profile whenever it cannot find
+# maestro, which is now always. A scratch HOME and ZDOTDIR send those writes to a directory
+# this script deletes, so no developer's shell profile changes.
+scratch="$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-maestro-install.XXXXXX")"
+cleanup() {
+  rm -rf "$scratch"
+}
+trap cleanup EXIT
+
+mkdir -p "$destination"
+
+curl -fsSL "$INSTALLER_URL" | env \
+  PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+  HOME="$scratch" \
+  ZDOTDIR="$scratch" \
+  MAESTRO_VERSION="$version" \
+  MAESTRO_DIR="$destination" \
+  bash
+
+if [ "$(installed_version || true)" != "$version" ]; then
+  echo "install_maestro: the installer finished but $binary does not report $version." >&2
+  echo "  The vendor script may have changed. Check $INSTALLER_URL." >&2
+  exit 1
+fi
+
+echo "Maestro $version is installed at $binary"

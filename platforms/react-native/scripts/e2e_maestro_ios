@@ -104,17 +104,16 @@ wait_for_metro() {
   return 1
 }
 
-require_maestro() {
-  if ! maestro --version >/dev/null 2>&1; then
-    echo "Maestro is required to run React Native E2E tests." >&2
-    echo "Install Maestro and make sure maestro --version succeeds." >&2
-    return 1
-  fi
+# Resolve the pinned Maestro by path. A Maestro from PATH is whatever the machine happens to
+# hold, and a version below 2.0.7 passes every iOS test locally while failing every one of
+# them on the real devices that CI uses.
+resolve_maestro() {
+  MAESTRO="$("$REPO_ROOT/e2e/scripts/maestro_bin")"
 }
 
 cd "$ROOT_DIR"
 
-require_maestro
+resolve_maestro
 trap cleanup EXIT
 
 if ! metro_running; then
@@ -129,7 +128,7 @@ ENVFILE="$E2E_ENV_FILE" pnpm sample ios
 (
   cd "$REPO_ROOT/e2e"
   for flow in "${MAESTRO_FLOWS[@]}"; do
-    maestro --platform ios test --config config.yaml \
+    "$MAESTRO" --platform ios test --config config.yaml \
       -e "APP_ID=${APP_ID}" \
       -e "CART_BOOTSTRAP_BASE_LINK=${CART_BOOTSTRAP_BASE_LINK}" \
       "$flow"

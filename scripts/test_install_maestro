@@ -1,0 +1,239 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+fixtures=()
+
+cleanup() {
+  local fixture
+  if [[ "${#fixtures[@]}" -eq 0 ]]; then
+    return
+  fi
+
+  for fixture in "${fixtures[@]}"; do
+    rm -rf "$fixture"
+  done
+}
+
+trap cleanup EXIT
+
+fail() {
+  echo "test_install_maestro: $1" >&2
+  exit 1
+}
+
+make_fixture() {
+  local fixture
+  fixture="$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-maestro.XXXXXX")"
+  fixtures+=("$fixture")
+
+  mkdir -p "$fixture/scripts" "$fixture/e2e/scripts" "$fixture/versions" "$fixture/home"
+
+  cp "$REPO_ROOT/scripts/install_maestro" "$fixture/scripts/install_maestro"
+  cp "$REPO_ROOT/e2e/scripts/maestro_bin" "$fixture/e2e/scripts/maestro_bin"
+  chmod +x "$fixture/scripts/install_maestro" "$fixture/e2e/scripts/maestro_bin"
+
+  printf '2.4.0\n' >"$fixture/e2e/.maestro-version"
+
+  printf '%s\n' "$fixture"
+}
+
+# Stands in for the binary the vendor installer unpacks. It answers --version the way the
+# real CLI does, with a bare version and nothing else.
+install_stub_binary() {
+  local fixture="$1"
+  local version="$2"
+  local binary="$fixture/versions/$version/bin/maestro"
+
+  mkdir -p "$(dirname "$binary")"
+  cat >"$binary" <<STUB
+#!/usr/bin/env bash
+echo "$version"
+STUB
+  chmod +x "$binary"
+}
+
+# Stands in for https://get.maestro.mobile.dev. It records the environment the real
+# installer inspects, so a test can prove Homebrew is hidden and the profile writes are
+# redirected, then it unpacks a stub the same way the real script does.
+write_fake_installer() {
+  local fixture="$1"
+
+  cat >"$fixture/fake_installer" <<'INSTALLER'
+#!/usr/bin/env bash
+set -euo pipefail
+
+mkdir -p "${MAESTRO_RECORD_DIR}"
+printf '%s\n' "${PATH}" >"${MAESTRO_RECORD_DIR}/path"
+printf '%s\n' "$(command -v maestro || echo none)" >"${MAESTRO_RECORD_DIR}/which_maestro"
+printf '%s\n' "${HOME}" >"${MAESTRO_RECORD_DIR}/home"
+printf '%s\n' "${MAESTRO_VERSION}" >"${MAESTRO_RECORD_DIR}/version"
+printf '%s\n' "${MAESTRO_DIR}" >"${MAESTRO_RECORD_DIR}/dir"
+
+# The real installer appends this to the shell profile whenever it cannot find maestro.
+echo 'export PATH=$PATH:$HOME/.maestro/bin' >>"${HOME}/.zshrc"
+echo 'export PATH=$PATH:$HOME/.maestro/bin' >>"${HOME}/.bash_profile"
+
+mkdir -p "${MAESTRO_DIR}/bin"
+cat >"${MAESTRO_DIR}/bin/maestro" <<STUB
+#!/usr/bin/env bash
+echo "${MAESTRO_VERSION}"
+STUB
+chmod +x "${MAESTRO_DIR}/bin/maestro"
+INSTALLER
+
+  chmod +x "$fixture/fake_installer"
+}
+
+run_install() {
+  local fixture="$1"
+  shift
+
+  MAESTRO_VERSIONS_ROOT="$fixture/versions" \
+    MAESTRO_INSTALLER_URL="file://$fixture/fake_installer" \
+    MAESTRO_RECORD_DIR="$fixture/record" \
+    "$fixture/scripts/install_maestro" "$@"
+}
+
+run_maestro_bin() {
+  local fixture="$1"
+
+  MAESTRO_VERSIONS_ROOT="$fixture/versions" "$fixture/e2e/scripts/maestro_bin"
+}
+
+test_maestro_bin_prints_the_pinned_binary() {
+  local fixture
+  fixture="$(make_fixture)"
+  install_stub_binary "$fixture" "2.4.0"
+
+  local resolved
+  resolved="$(run_maestro_bin "$fixture")"
+
+  [[ "$resolved" == "$fixture/versions/2.4.0/bin/maestro" ]] ||
+    fail "maestro_bin resolved $resolved, which is not the pinned binary"
+}
+
+test_maestro_bin_follows_the_pin_file() {
+  local fixture
+  fixture="$(make_fixture)"
+  printf '2.0.7\n' >"$fixture/e2e/.maestro-version"
+  install_stub_binary "$fixture" "2.0.7"
+
+  local resolved
+  resolved="$(run_maestro_bin "$fixture")"
+
+  [[ "$resolved" == *"/2.0.7/bin/maestro" ]] ||
+    fail "maestro_bin ignored the pin file and resolved $resolved"
+}
+
+test_maestro_bin_fails_when_the_pin_is_not_installed() {
+  local fixture output
+  fixture="$(make_fixture)"
+
+  if output="$(run_maestro_bin "$fixture" 2>&1)"; then
+    fail "maestro_bin succeeded while the pinned version was missing"
+  fi
+
+  grep -q "dev up" <<<"$output" ||
+    fail "maestro_bin must name the command that installs the pin, got: $output"
+}
+
+test_check_passes_when_the_installed_version_matches() {
+  local fixture
+  fixture="$(make_fixture)"
+  install_stub_binary "$fixture" "2.4.0"
+
+  run_install "$fixture" --check ||
+    fail "--check rejected an installation that matches the pin"
+}
+
+test_check_fails_when_the_installed_version_differs() {
+  local fixture
+  fixture="$(make_fixture)"
+  install_stub_binary "$fixture" "2.0.7"
+  mv "$fixture/versions/2.0.7" "$fixture/versions/2.4.0"
+
+  if run_install "$fixture" --check 2>/dev/null; then
+    fail "--check accepted a binary reporting a version other than the pin"
+  fi
+}
+
+test_check_fails_when_nothing_is_installed() {
+  local fixture
+  fixture="$(make_fixture)"
+
+  if run_install "$fixture" --check 2>/dev/null; then
+    fail "--check accepted a missing installation"
+  fi
+}
+
+test_install_puts_the_pin_in_its_own_directory() {
+  local fixture
+  fixture="$(make_fixture)"
+  write_fake_installer "$fixture"
+
+  run_install "$fixture" >/dev/null
+
+  [[ -x "$fixture/versions/2.4.0/bin/maestro" ]] ||
+    fail "install did not place the binary under a per-version directory"
+  [[ "$(cat "$fixture/record/version")" == "2.4.0" ]] ||
+    fail "install passed the wrong MAESTRO_VERSION to the installer"
+  [[ "$(cat "$fixture/record/dir")" == "$fixture/versions/2.4.0" ]] ||
+    fail "install passed the wrong MAESTRO_DIR to the installer"
+}
+
+# The vendor installer exits 1 when `which maestro` is a Homebrew path, which is true on
+# most machines here. It must not see Homebrew at all.
+test_install_hides_homebrew_from_the_installer() {
+  local fixture
+  fixture="$(make_fixture)"
+  write_fake_installer "$fixture"
+
+  run_install "$fixture" >/dev/null
+
+  local seen_path
+  seen_path="$(cat "$fixture/record/path")"
+
+  [[ "$seen_path" != *"/homebrew/"* && "$seen_path" != *"/usr/local/bin"* ]] ||
+    fail "the installer saw a Homebrew path: $seen_path"
+  [[ "$(cat "$fixture/record/which_maestro")" == "none" ]] ||
+    fail "the installer found a maestro on PATH and would refuse to run"
+}
+
+# The vendor installer appends `export PATH=...` to the shell profile whenever it cannot
+# find maestro. A `dev up` step must never edit a developer's shell profile.
+test_install_never_touches_the_real_shell_profile() {
+  local fixture
+  fixture="$(make_fixture)"
+  write_fake_installer "$fixture"
+
+  run_install "$fixture" >/dev/null
+
+  local seen_home
+  seen_home="$(cat "$fixture/record/home")"
+
+  [[ "$seen_home" != "$HOME" ]] ||
+    fail "the installer ran with the real HOME and edited the shell profile"
+  [[ ! -e "$seen_home/.zshrc" ]] ||
+    fail "the scratch profile survived the run, so the directory was not removed"
+}
+
+test_install_is_idempotent() {
+  local fixture
+  fixture="$(make_fixture)"
+  write_fake_installer "$fixture"
+
+  run_install "$fixture" >/dev/null
+  run_install "$fixture" >/dev/null
+
+  run_install "$fixture" --check ||
+    fail "a second install left the pin unusable"
+}
+
+for test_case in $(declare -F | sed -n 's/^declare -f \(test_.*\)$/\1/p' | sort); do
+  "$test_case"
+done
+
+echo "install_maestro synthetic tests passed."

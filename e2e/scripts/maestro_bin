@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#
+# Prints the path of the Maestro binary that e2e/.maestro-version pins.
+#
+# Every runner resolves the binary this way instead of running `maestro` from PATH, because
+# PATH cannot be trusted to hold the pinned version. Homebrew installs to /opt/homebrew/bin,
+# which shadowenv puts ahead of everything, and it tracks its own release train.
+#
+# The version is not cosmetic. Maestro releases below 2.0.7 open a deep link through
+# `xcrun simctl openurl`, which accepts a simulator only. Those releases therefore pass every
+# local iOS test and fail every iOS test on a real device, which is what BrowserStack runs.
+set -euo pipefail
+
+E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VERSIONS_ROOT="${MAESTRO_VERSIONS_ROOT:-$HOME/.maestro-versions}"
+
+version="$(tr -d '[:space:]' <"$E2E_ROOT/.maestro-version")"
+binary="$VERSIONS_ROOT/$version/bin/maestro"
+
+if [ ! -x "$binary" ]; then
+  echo "maestro_bin: Maestro $version is not installed at $binary." >&2
+  echo "  run: /opt/dev/bin/dev up" >&2
+  exit 1
+fi
+
+printf '%s\n' "$binary"
