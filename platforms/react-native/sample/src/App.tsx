@@ -66,8 +66,8 @@ log('STOREFRONT_DOMAIN:', configured(env.STOREFRONT_DOMAIN));
 log('STOREFRONT_ACCESS_TOKEN:', configured(env.STOREFRONT_ACCESS_TOKEN));
 log('API_VERSION:', configured(storefrontApiVersion));
 log(
-  'STOREFRONT_MERCHANT_IDENTIFIER:',
-  configured(env.STOREFRONT_MERCHANT_IDENTIFIER),
+  'APPLE_PAY_MERCHANT_IDENTIFIER:',
+  configured(env.APPLE_PAY_MERCHANT_IDENTIFIER),
 );
 log('EMAIL:', configured(env.EMAIL));
 log('PHONE:', configured(env.PHONE));
@@ -399,7 +399,7 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
               ApplePayContactField.email,
               ApplePayContactField.phone,
             ],
-            merchantIdentifier: env.STOREFRONT_MERCHANT_IDENTIFIER!,
+            merchantIdentifier: env.APPLE_PAY_MERCHANT_IDENTIFIER!,
           },
         },
       },

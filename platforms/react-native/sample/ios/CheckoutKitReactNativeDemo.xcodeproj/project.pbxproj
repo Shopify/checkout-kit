@@ -28,6 +28,7 @@
 		6AF2B3762B0BCA6600C6CE4F /* CheckoutKitReactNativeDemo-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CheckoutKitReactNativeDemo-Bridging-Header.h"; sourceTree = "<group>"; };
 		6AFAD2D12BA9DEF8001F9644 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Localizable.xcstrings; path = CheckoutKitReactNativeDemo/Localizable.xcstrings; sourceTree = "<group>"; };
 		6AFC2CB62B0D5814003B5A63 /* libShopifyCheckoutKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libShopifyCheckoutKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A4F0E4A2E4B123400000001 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = CheckoutKitReactNativeDemo/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9E0AC43398437CA0E3D05DDF /* libPods-CheckoutKitReactNativeDemo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CheckoutKitReactNativeDemo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED728EF8BB9B5E9BA9D50EBE /* Pods-CheckoutKitReactNativeDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CheckoutKitReactNativeDemo.debug.xcconfig"; path = "Target Support Files/Pods-CheckoutKitReactNativeDemo/Pods-CheckoutKitReactNativeDemo.debug.xcconfig"; sourceTree = "<group>"; };
@@ -88,6 +89,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				7A4F0E4A2E4B123400000001 /* Config.xcconfig */,
 				6AB7C68F2AF197BE000DB11B /* Packages */,
 				13B07FAE1A68108700A75B9A /* CheckoutKitReactNativeDemo */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
@@ -456,6 +458,7 @@
 		};
 		83CBBA201A601CBA00E9B192 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A4F0E4A2E4B123400000001 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CC = "";
@@ -539,6 +542,7 @@
 		};
 		83CBBA211A601CBA00E9B192 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A4F0E4A2E4B123400000001 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CC = "";

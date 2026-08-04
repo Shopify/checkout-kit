@@ -9,6 +9,7 @@ ANDROID_ENV="${ROOT_DIR}/platforms/android/samples/CheckoutKitAndroidDemo/.env"
 SWIFT_DEMO_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
 SWIFT_ACCELERATED_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
 REACT_NATIVE_ENV="${ROOT_DIR}/platforms/react-native/sample/.env"
+REACT_NATIVE_XCCONFIG="${ROOT_DIR}/platforms/react-native/sample/ios/Storefront.xcconfig"
 
 DEFAULT_API_VERSION="2026-04"
 DEFAULT_CUSTOMER_ACCOUNT_API_VERSION="2026-04"
@@ -225,7 +226,8 @@ root_has_canonical_keys() {
   for key in \
     STOREFRONT_DOMAIN \
     STOREFRONT_ACCESS_TOKEN \
-    STOREFRONT_MERCHANT_IDENTIFIER \
+    REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER \
+    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER \
     DEVELOPMENT_TEAM \
     API_VERSION \
     CUSTOMER_ACCOUNT_API_CLIENT_ID \
@@ -257,7 +259,8 @@ optional_values_need_prompt() {
   [[ "$prompt_optional_values" == "true" ]] &&
     [[ -t 0 ]] &&
     (
-      [[ -z "$STOREFRONT_MERCHANT_IDENTIFIER_VALUE" ]] ||
+      [[ -z "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]] ||
+        [[ -z "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]] ||
         [[ -z "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE" ]] ||
         [[ -z "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE" ]]
     )
@@ -267,10 +270,18 @@ fill_optional_values_from_environment() {
   local value
   local updated="false"
 
-  if [[ -z "$STOREFRONT_MERCHANT_IDENTIFIER_VALUE" ]]; then
-    value="$(env_fallback STOREFRONT_MERCHANT_IDENTIFIER)"
+  if [[ -z "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]]; then
+    value="$(env_fallback REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER)"
     if [[ -n "$value" ]] && ! is_placeholder_value "$value"; then
-      STOREFRONT_MERCHANT_IDENTIFIER_VALUE="$value"
+      REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$value"
+      updated="true"
+    fi
+  fi
+
+  if [[ -z "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]]; then
+    value="$(env_fallback SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER)"
+    if [[ -n "$value" ]] && ! is_placeholder_value "$value"; then
+      SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$value"
       updated="true"
     fi
   fi
@@ -418,10 +429,19 @@ load_values() {
     "$(read_env_value API_VERSION "$SWIFT_ACCELERATED_XCCONFIG")" \
     "$DEFAULT_API_VERSION")"
 
-  STOREFRONT_MERCHANT_IDENTIFIER_VALUE="$(root_or_source_value STOREFRONT_MERCHANT_IDENTIFIER \
+  REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(root_or_source_value REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER \
+    "$(env_fallback REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER)" \
+    "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$ROOT_ENV")" \
     "$(env_fallback STOREFRONT_MERCHANT_IDENTIFIER)" \
-    "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$ANDROID_ENV")" \
+    "$(read_env_value APPLE_PAY_MERCHANT_IDENTIFIER "$REACT_NATIVE_ENV")" \
     "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$REACT_NATIVE_ENV")" \
+    "$(read_env_value APPLE_PAY_MERCHANT_IDENTIFIER "$REACT_NATIVE_XCCONFIG")")"
+
+  SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(root_or_source_value SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER \
+    "$(env_fallback SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER)" \
+    "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$ROOT_ENV")" \
+    "$(env_fallback STOREFRONT_MERCHANT_IDENTIFIER)" \
+    "$(read_env_value APPLE_PAY_MERCHANT_IDENTIFIER "$SWIFT_DEMO_XCCONFIG")" \
     "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$SWIFT_DEMO_XCCONFIG")")"
 
   CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE="$(root_or_source_value CUSTOMER_ACCOUNT_API_CLIENT_ID \
@@ -473,8 +493,12 @@ collect_missing_values() {
     STOREFRONT_ACCESS_TOKEN_VALUE="$(prompt_required "Storefront access token")"
   fi
 
-  if [[ "$prompt_optional_values" == "true" && -z "$STOREFRONT_MERCHANT_IDENTIFIER_VALUE" ]]; then
-    STOREFRONT_MERCHANT_IDENTIFIER_VALUE="$(prompt_optional "Apple Pay merchant identifier")"
+  if [[ "$prompt_optional_values" == "true" && -z "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]]; then
+    REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(prompt_optional "React Native Apple Pay merchant identifier")"
+  fi
+
+  if [[ "$prompt_optional_values" == "true" && -z "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]]; then
+    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(prompt_optional "Swift Apple Pay merchant identifier")"
   fi
 
   if [[ "$prompt_optional_values" == "true" && -z "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE" ]]; then
@@ -509,8 +533,9 @@ generate_root_env() {
 EOF
   write_env_assignment STOREFRONT_DOMAIN "$STOREFRONT_DOMAIN_VALUE"
   write_env_assignment STOREFRONT_ACCESS_TOKEN "$STOREFRONT_ACCESS_TOKEN_VALUE"
-  echo "# Optional Apple Pay merchant identifier used by accelerated checkout flows."
-  write_env_assignment STOREFRONT_MERCHANT_IDENTIFIER "$STOREFRONT_MERCHANT_IDENTIFIER_VALUE"
+  echo "# Optional Apple Pay merchant identifiers used by accelerated checkout flows."
+  write_env_assignment REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE"
+  write_env_assignment SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE"
   cat <<EOF
 
 # Apple team that signs the Swift samples. Set your own team id, or the Xcode build
@@ -594,7 +619,7 @@ generate_react_native_env() {
   generate_platform_env_header
   write_quoted_env_assignment STOREFRONT_DOMAIN "$STOREFRONT_DOMAIN_VALUE"
   write_quoted_env_assignment STOREFRONT_ACCESS_TOKEN "$STOREFRONT_ACCESS_TOKEN_VALUE"
-  write_quoted_env_assignment STOREFRONT_MERCHANT_IDENTIFIER "$STOREFRONT_MERCHANT_IDENTIFIER_VALUE"
+  write_quoted_env_assignment APPLE_PAY_MERCHANT_IDENTIFIER "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE"
   write_quoted_env_assignment API_VERSION "$API_VERSION_VALUE"
 
   cat <<EOF
@@ -621,12 +646,17 @@ EOF
   write_quoted_env_assignment CUSTOMER_ACCOUNT_API_SHOP_ID "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE"
 }
 
+generate_react_native_xcconfig() {
+  generate_xcconfig_header
+  write_xcconfig_assignment APPLE_PAY_MERCHANT_IDENTIFIER "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE"
+}
+
 generate_swift_demo_xcconfig() {
   generate_xcconfig_header
   write_xcconfig_assignment DEVELOPMENT_TEAM "$DEVELOPMENT_TEAM_VALUE"
   write_xcconfig_assignment STOREFRONT_DOMAIN "$STOREFRONT_DOMAIN_VALUE"
   write_xcconfig_assignment STOREFRONT_ACCESS_TOKEN "$STOREFRONT_ACCESS_TOKEN_VALUE"
-  write_xcconfig_assignment STOREFRONT_MERCHANT_IDENTIFIER "$STOREFRONT_MERCHANT_IDENTIFIER_VALUE"
+  write_xcconfig_assignment APPLE_PAY_MERCHANT_IDENTIFIER "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE"
   write_xcconfig_assignment API_VERSION "$API_VERSION_VALUE"
 
   cat <<EOF
@@ -725,6 +755,7 @@ write_generated_files() {
   generate_swift_demo_xcconfig >"$SWIFT_DEMO_XCCONFIG"
   generate_swift_accelerated_xcconfig >"$SWIFT_ACCELERATED_XCCONFIG"
   generate_react_native_env >"$REACT_NATIVE_ENV"
+  generate_react_native_xcconfig >"$REACT_NATIVE_XCCONFIG"
 
   echo "Synced sample app storefront configuration files."
 }
@@ -754,6 +785,7 @@ check_generated_files() {
   check_generated_file "$SWIFT_DEMO_XCCONFIG" generate_swift_demo_xcconfig || failed="true"
   check_generated_file "$SWIFT_ACCELERATED_XCCONFIG" generate_swift_accelerated_xcconfig || failed="true"
   check_generated_file "$REACT_NATIVE_ENV" generate_react_native_env || failed="true"
+  check_generated_file "$REACT_NATIVE_XCCONFIG" generate_react_native_xcconfig || failed="true"
 
   if [[ "$failed" == "true" ]]; then
     exit 1

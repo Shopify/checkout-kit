@@ -32,7 +32,7 @@ make_fixture() {
   mkdir -p \
     "$fixture/scripts" \
     "$fixture/platforms/android/samples/CheckoutKitAndroidDemo" \
-    "$fixture/platforms/react-native/sample" \
+    "$fixture/platforms/react-native/sample/ios" \
     "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo" \
     "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp"
 
@@ -50,14 +50,14 @@ assert_contains() {
   local path="$1"
   local pattern="$2"
 
-  grep -Fq "$pattern" "$path" || fail "expected generated file content was not found: $path: $pattern"
+  grep -Fq -- "$pattern" "$path" || fail "expected generated file content was not found: $path: $pattern"
 }
 
 assert_not_contains() {
   local path="$1"
   local pattern="$2"
 
-  if grep -Fq "$pattern" "$path"; then
+  if grep -Fq -- "$pattern" "$path"; then
     fail "unexpected generated file content was found"
   fi
 }
@@ -70,6 +70,8 @@ assert_output_is_sanitized() {
     synthetic-store.example.myshopify.com \
     synthetic-token \
     synthetic-merchant \
+    synthetic-react-native-merchant \
+    synthetic-swift-merchant \
     synthetic-client \
     synthetic-shop \
     migrated-store.example.myshopify.com \
@@ -82,6 +84,63 @@ assert_output_is_sanitized() {
   done
 }
 
+test_merchant_identifier_propagates_to_sample_apps() {
+  local fixture output react_native_xcconfig swift_xcconfig
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  react_native_xcconfig="$fixture/platforms/react-native/sample/ios/Storefront.xcconfig"
+  swift_xcconfig="$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
+
+  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
+    STOREFRONT_ACCESS_TOKEN=synthetic-token \
+    REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant \
+    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant \
+    "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_contains "$fixture/.env" \
+    "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant"
+  assert_contains "$fixture/.env" \
+    "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant"
+  assert_contains "$fixture/platforms/react-native/sample/.env" \
+    'APPLE_PAY_MERCHANT_IDENTIFIER="synthetic-react-native-merchant"'
+  assert_contains "$react_native_xcconfig" \
+    "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-react-native-merchant"
+  assert_contains "$swift_xcconfig" \
+    "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-swift-merchant"
+}
+
+test_sample_projects_read_generated_merchant_identifier() {
+  local demo_ejson react_native_app react_native_config react_native_entitlements react_native_project swift_project
+  demo_ejson="$REPO_ROOT/config/secrets/demo.ejson"
+  react_native_app="$REPO_ROOT/platforms/react-native/sample/src/App.tsx"
+  react_native_config="$REPO_ROOT/platforms/react-native/sample/ios/Config.xcconfig"
+  react_native_entitlements="$REPO_ROOT/platforms/react-native/sample/ios/CheckoutKitReactNativeDemo/CheckoutKitReactNativeDemo.entitlements"
+  react_native_project="$REPO_ROOT/platforms/react-native/sample/ios/CheckoutKitReactNativeDemo.xcodeproj/project.pbxproj"
+  swift_project="$REPO_ROOT/platforms/swift/Samples/CheckoutKitSwiftDemo/project.yml"
+
+  jq -e '.environment | has("REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER")' \
+    "$demo_ejson" >/dev/null || fail "demo.ejson is missing the React Native Apple Pay merchant identifier"
+  jq -e '.environment | has("SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER")' \
+    "$demo_ejson" >/dev/null || fail "demo.ejson is missing the Swift Apple Pay merchant identifier"
+  assert_contains "$react_native_app" \
+    "merchantIdentifier: env.APPLE_PAY_MERCHANT_IDENTIFIER!"
+  assert_not_contains "$react_native_app" \
+    "merchant.com.shopify.checkoutkit.reactnativedemo"
+  assert_contains "$react_native_entitlements" \
+    '<string>$(APPLE_PAY_MERCHANT_IDENTIFIER)</string>'
+  assert_not_contains "$react_native_entitlements" \
+    "merchant.com.shopify.checkoutkit.reactnativedemo"
+  assert_contains "$react_native_config" "APPLE_PAY_MERCHANT_IDENTIFIER ="
+  assert_contains "$react_native_config" '#include? "Storefront.xcconfig"'
+  assert_contains "$react_native_project" "Config.xcconfig"
+  assert_contains "$swift_project" \
+    'ApplePayMerchantIdentifier: $(APPLE_PAY_MERCHANT_IDENTIFIER)'
+  assert_contains "$swift_project" \
+    '- $(APPLE_PAY_MERCHANT_IDENTIFIER)'
+  assert_not_contains "$swift_project" "STOREFRONT_MERCHANT_IDENTIFIER"
+}
+
 test_sync_and_check() {
   local fixture output
   fixture="$(make_fixture)"
@@ -89,7 +148,8 @@ test_sync_and_check() {
 
   STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
     STOREFRONT_ACCESS_TOKEN=synthetic-token \
-    STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant \
+    REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant \
+    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant \
     CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
     CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
     "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
@@ -100,10 +160,10 @@ test_sync_and_check() {
   assert_file_exists "$fixture/platforms/react-native/sample/.env"
   assert_file_exists "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
   assert_file_exists "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
-  assert_not_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "STOREFRONT_MERCHANT_IDENTIFIER"
+  assert_not_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "APPLE_PAY_MERCHANT_IDENTIFIER"
   assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "STOREFRONT_MERCHANT_IDENTIFIER"
+  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "APPLE_PAY_MERCHANT_IDENTIFIER"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
   assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "EMAIL"
 
@@ -145,7 +205,8 @@ test_required_values_only() {
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com"
   assert_contains "$fixture/platforms/react-native/sample/.env" "STOREFRONT_DOMAIN=\"synthetic-store.example.myshopify.com\""
   assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "STOREFRONT_DOMAIN = synthetic-store.example.myshopify.com"
-  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.env" "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.env" "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
@@ -168,22 +229,50 @@ test_optional_sync_updates_blank_optional_values_after_required_setup() {
     "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.env" "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.env" "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
 
-  STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant \
+  REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant \
+    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant \
     CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
     CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
     "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant"
+  assert_contains "$fixture/.env" "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant"
+  assert_contains "$fixture/.env" "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant"
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
   assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop"
-  assert_contains "$fixture/platforms/react-native/sample/.env" "STOREFRONT_MERCHANT_IDENTIFIER=\"synthetic-merchant\""
+  assert_contains "$fixture/platforms/react-native/sample/.env" "APPLE_PAY_MERCHANT_IDENTIFIER=\"synthetic-react-native-merchant\""
   assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID = synthetic-client"
   assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.synthetic-shop.app://callback"
+}
+
+test_shared_merchant_identifier_migrates_to_app_specific_keys() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  cat >"$fixture/.env" <<'EOF'
+STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=synthetic-token
+STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant
+EOF
+
+  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_not_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
+  assert_contains "$fixture/.env" \
+    "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-merchant"
+  assert_contains "$fixture/.env" \
+    "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-merchant"
+  assert_contains "$fixture/platforms/react-native/sample/.env" \
+    'APPLE_PAY_MERCHANT_IDENTIFIER="synthetic-merchant"'
+  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" \
+    "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-merchant"
 }
 
 test_normalizes_existing_root_env() {
@@ -219,7 +308,8 @@ test_blank_customer_account_api_version_defaults() {
   cat >"$fixture/.env" <<'EOF'
 STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
 STOREFRONT_ACCESS_TOKEN=synthetic-token
-STOREFRONT_MERCHANT_IDENTIFIER=
+REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=
+SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=
 API_VERSION=2026-04
 CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client
 CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop
@@ -344,9 +434,12 @@ EOF
   assert_output_is_sanitized "$output"
 }
 
+test_merchant_identifier_propagates_to_sample_apps
+test_sample_projects_read_generated_merchant_identifier
 test_sync_and_check
 test_required_values_only
 test_optional_sync_updates_blank_optional_values_after_required_setup
+test_shared_merchant_identifier_migrates_to_app_specific_keys
 test_normalizes_existing_root_env
 test_blank_customer_account_api_version_defaults
 test_development_team_follows_env_and_clears
