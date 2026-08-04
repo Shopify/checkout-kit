@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# Runs the Maestro version that e2e/.maestro-version pins.
+#
+# dev.yml prepends this directory to PATH through its `env:` key, which dev compiles into
+# .shadowenv.d/900_dev_custom_env.lisp. A bare `maestro` inside the repository therefore
+# reaches the pin rather than a Homebrew release.
+#
+# The wrapper exists because dev.yml holds static YAML and cannot read e2e/.maestro-version.
+# A path written straight into dev.yml would have to spell the version out, which would put
+# the version in two files. This script reads the pin on every call instead, so a branch that
+# moves the pin needs no reinstall and no relink.
+#
+# It is tracked rather than generated, so the directory exists before dev compiles the
+# shadowenv. dev writes a relative PATH entry when the directory is missing, and a relative
+# entry resolves against the working directory and silently matches nothing.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Resolve first, so a missing pin exits on the resolver's own message. Calling exec on the
+# substitution directly would append "exec: : not found" to it.
+binary="$("$HERE/../../scripts/maestro_bin")"
+
+exec "$binary" "$@"
