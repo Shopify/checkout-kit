@@ -62,6 +62,40 @@ assert_not_contains() {
   fi
 }
 
+write_canonical_root_env() {
+  local path="$1"
+  local domain="$2"
+
+  cat >"$path" <<EOF
+STOREFRONT_DOMAIN=${domain}
+STOREFRONT_ACCESS_TOKEN=synthetic-token
+STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant
+API_VERSION=2026-04
+CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client
+CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop
+CUSTOMER_ACCOUNT_API_VERSION=2026-04
+CUSTOM_USER_AGENT=
+EMAIL=checkout-kit@example.com
+ADDRESS_1=650 King Street
+ADDRESS_2=Shopify HQ
+CITY=Toronto
+COMPANY=Shopify
+COUNTRY=CA
+FIRST_NAME=Evelyn
+LAST_NAME=Hartley
+PROVINCE=ON
+ZIP=M5V 1M7
+PHONE=+14165550100
+EOF
+}
+
+assert_file_is_unchanged() {
+  local path="$1"
+  local expected="$2"
+
+  cmp -s "$path" "$expected" || fail "file was rewritten but must stay byte-identical: $path"
+}
+
 assert_buyer_identity_keys() {
   local path="$1"
   local key
@@ -84,7 +118,10 @@ assert_output_is_sanitized() {
     migrated-store.example.myshopify.com \
     migrated-token \
     migrated-client \
-    migrated-shop; do
+    migrated-shop \
+    overridden-store.example.myshopify.com \
+    overridden-token \
+    later-store.example.myshopify.com; do
     if grep -Fq "$value" "$output_path"; then
       fail "command output included a configured value"
     fi
@@ -378,6 +415,90 @@ EOF
   assert_output_is_sanitized "$output"
 }
 
+test_duplicate_keys_resolve_last_wins() {
+  local fixture output android_env
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  android_env="$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
+
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  printf 'STOREFRONT_DOMAIN=%s\n' later-store.example.myshopify.com >>"$fixture/.env"
+
+  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$android_env" "STOREFRONT_DOMAIN=later-store.example.myshopify.com"
+  assert_not_contains "$android_env" "synthetic-store.example.myshopify.com"
+}
+
+test_env_local_overrides_root_env() {
+  local fixture output android_env root_before local_before
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  android_env="$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
+  root_before="$fixture/root_before"
+  local_before="$fixture/local_before"
+
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  cat >"$fixture/.env.local" <<'EOF'
+STOREFRONT_DOMAIN=overridden-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=overridden-token
+EOF
+  cp "$fixture/.env" "$root_before"
+  cp "$fixture/.env.local" "$local_before"
+
+  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$android_env" "STOREFRONT_DOMAIN=overridden-store.example.myshopify.com"
+  assert_contains "$android_env" "STOREFRONT_ACCESS_TOKEN=overridden-token"
+  assert_contains "$android_env" "EMAIL=checkout-kit@example.com"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_file_is_unchanged "$fixture/.env.local" "$local_before"
+}
+
+test_env_local_warning_names_only_keys() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  cat >"$fixture/.env.local" <<'EOF'
+STOREFRONT_DOMAIN=overridden-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=overridden-token
+EOF
+
+  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$output" ".env.local"
+  assert_contains "$output" "STOREFRONT_DOMAIN"
+  assert_contains "$output" "STOREFRONT_ACCESS_TOKEN"
+  assert_not_contains "$output" "EMAIL"
+}
+
+test_env_local_is_never_baked_into_root_env() {
+  local fixture output root_before
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  root_before="$fixture/root_before"
+
+  cat >"$fixture/.env" <<'EOF'
+STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=synthetic-token
+EOF
+  printf 'STOREFRONT_DOMAIN=%s\n' overridden-store.example.myshopify.com >"$fixture/.env.local"
+  cp "$fixture/.env" "$root_before"
+
+  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_contains "$output" "Leaving .env alone"
+  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" \
+    "STOREFRONT_DOMAIN=overridden-store.example.myshopify.com"
+}
+
 test_sync_and_check
 test_required_values_only
 test_buyer_address_defaults_match_the_e2e_shop_country
@@ -387,5 +508,9 @@ test_blank_customer_account_api_version_defaults
 test_development_team_follows_env_and_clears
 test_development_team_is_added_to_an_existing_env
 test_migration_from_platform_config
+test_duplicate_keys_resolve_last_wins
+test_env_local_overrides_root_env
+test_env_local_warning_names_only_keys
+test_env_local_is_never_baked_into_root_env
 
 echo "setup_storefront_env synthetic tests passed."
