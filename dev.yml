@@ -11,6 +11,8 @@ up:
       - swiftformat
       - sccache
       - bitrise
+      - ejson
+      - ejson2env
   - ruby
   - xcode:
       version: "26.2"
@@ -25,6 +27,10 @@ up:
         - protocol
         - platforms/react-native
         - platforms/web
+  - custom:
+      name: Check storefront secrets
+      met?: ./scripts/secrets_setup --check
+      meet: "true"
   - custom:
       name: Copy root env into worktree
       met?: ./scripts/copy_worktree_env --check
@@ -52,6 +58,7 @@ open:
   "PRs": "https://github.com/Shopify/checkout-kit/pulls"
 
 check:
+  ejson-plaintext: ./scripts/ejson_lint
   storefront-env-tests: ./scripts/test_setup_storefront_env
   ruby-script-tests: ./scripts/test_ruby
   android-detekt: platforms/android/gradlew -p platforms/android detekt
@@ -92,6 +99,16 @@ commands:
   copy-env:
     desc: Copy the root .env into the current worktree so `dev up` can regenerate sample config
     run: ./scripts/copy_worktree_env
+
+  secrets:
+    desc: "Edit or set up encrypted storefront config. Usage: dev secrets <edit <demo|e2e>|setup>"
+    aliases: [secret]
+    syntax: "<edit <demo|e2e>|setup>"
+    run: |
+      case "${1:-}" in
+        setup) shift; ./scripts/secrets_setup "$@" ;;
+        *) ./scripts/secrets_edit "$@" ;;
+      esac
 
   tophat:
     desc: "Install a PR's build to a device via Tophat. Usage: dev tophat [<pr-number-or-url>] [<target>]"
