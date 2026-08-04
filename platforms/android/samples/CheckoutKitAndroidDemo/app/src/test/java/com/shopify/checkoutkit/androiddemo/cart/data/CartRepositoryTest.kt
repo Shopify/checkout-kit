@@ -21,6 +21,16 @@ class CartRepositoryTest {
         assertThat(input.delivery.getOrNull()).isNull()
     }
 
+    // A country on the buyer identity picks the market, and the market decides the currency,
+    // the address form and the labels the E2E fixture types. The Swift and React Native
+    // samples send no buyer identity for a guest, so this one must not either.
+    @Test
+    fun `a guest supplies no buyer identity`() {
+        val input = cartInput(demoBuyerIdentityEnabled = false, customerAccessToken = null)
+
+        assertThat(input.buyerIdentity.getOrNull()).isNull()
+    }
+
     @Test
     fun `a signed in customer supplies no delivery address`() {
         val input = cartInput(demoBuyerIdentityEnabled = true, customerAccessToken = "token")
