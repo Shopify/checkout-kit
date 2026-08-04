@@ -1,0 +1,6 @@
+appId: ${APP_ID}
+---
+- runFlow: launch.yaml
+# Stop the clean app so the cart link cold-starts it.
+- stopApp
+- runFlow: open-cart-from-link.yaml

@@ -5,6 +5,7 @@ appId: ${APP_ID}
       text: "^(Pay now|Complete order)$"
     direction: DOWN
     visibilityPercentage: 90
+    timeout: 10000
 - tapOn:
     text: "^(Pay now|Complete order)$"
     enabled: true

@@ -280,6 +280,12 @@ export class CustomerAccountManager {
 
   private async restoreSession(): Promise<void> {
     try {
+      if (Config.CUSTOMER_ACCOUNT_RESET_SESSION_ON_LAUNCH === '1') {
+        await tokenStorage.clearTokens();
+        this.store.set(this.sessionAtom, defaultSession);
+        return;
+      }
+
       const tokens = await tokenStorage.getTokens();
       const email = await tokenStorage.getEmail();
 

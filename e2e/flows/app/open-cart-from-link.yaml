@@ -1,0 +1,7 @@
+appId: ${APP_ID}
+---
+- openLink: "${CART_BOOTSTRAP_BASE_LINK}&buyerIdentityMode=${BUYER_IDENTITY_MODE}"
+- extendedWaitUntil:
+    visible:
+      id: cart-checkout-ready
+    timeout: 10000

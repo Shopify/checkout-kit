@@ -12,7 +12,7 @@ env:
   # Accepted successful checkout states for this smoke test.
   POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
 ---
-- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- runFlow: ../../flows/app/open-cart-from-link-after-app-reset.yaml
 - runFlow: ../../flows/checkout/present.yaml
 - runFlow: ../../flows/checkout/fill-payment-card.yaml
 - runFlow: ../../flows/checkout/submit.yaml

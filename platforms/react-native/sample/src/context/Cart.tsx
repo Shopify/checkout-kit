@@ -38,6 +38,8 @@ type AddToCartOptions = {
 const defaultCartId = undefined;
 const defaultCheckoutURL = undefined;
 const defaultTotalQuantity = 0;
+const signInRequiredMessage =
+  'Sign in on the Account tab or change the Buyer Identity setting to add items to your cart.';
 
 const CartContext = createContext<Context>({
   cartId: defaultCartId,
@@ -149,9 +151,6 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
           buyerIdentityMode === BuyerIdentityMode.CustomerAccount &&
           !isAuthenticated
         ) {
-          const signInRequiredMessage =
-            'Sign in on the Account tab or change the Buyer Identity setting to add items to your cart.';
-
           if (forceNewCart) {
             throw new Error(signInRequiredMessage);
           }
@@ -166,6 +165,15 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
           let customerAccessToken: string | undefined;
           if (buyerIdentityMode === BuyerIdentityMode.CustomerAccount) {
             customerAccessToken = (await getValidAccessToken()) ?? undefined;
+
+            if (!customerAccessToken) {
+              if (forceNewCart) {
+                throw new Error(signInRequiredMessage);
+              }
+
+              Alert.alert('Sign in required', signInRequiredMessage);
+              return;
+            }
           }
           const cartInput = createBuyerIdentityCartInput(
             cartAppConfig,

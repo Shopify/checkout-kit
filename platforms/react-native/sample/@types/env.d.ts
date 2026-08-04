@@ -19,4 +19,5 @@ declare module '@env' {
 
   export const CUSTOMER_ACCOUNT_API_CLIENT_ID: string;
   export const CUSTOMER_ACCOUNT_API_SHOP_ID: string;
+  export const CUSTOM_USER_AGENT: string;
 }

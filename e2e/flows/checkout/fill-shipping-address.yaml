@@ -4,6 +4,7 @@ appId: ${APP_ID}
     element:
       text: "Country/Region"
     direction: DOWN
+    timeout: 10000
 
 # If the country is already selected and visible, skip this. Otherwise open the
 # picker, only scroll if needed, then select the configured country.
@@ -24,6 +25,7 @@ appId: ${APP_ID}
                 direction: DOWN
                 visibilityPercentage: 10
                 optional: true
+                timeout: 10000
       - runFlow:
           when:
             notVisible: "^${COUNTRY_LABEL}$"
@@ -33,6 +35,7 @@ appId: ${APP_ID}
                   text: "^${COUNTRY_LABEL}$"
                 direction: UP
                 visibilityPercentage: 10
+                timeout: 10000
       - tapOn:
           text: "^${COUNTRY_LABEL}$"
       - waitForAnimationToEnd
@@ -41,6 +44,7 @@ appId: ${APP_ID}
       text: "Address"
     direction: DOWN
     centerElement: true
+    timeout: 10000
 - tapOn:
     text: "Address"
 - waitForAnimationToEnd
@@ -51,6 +55,7 @@ appId: ${APP_ID}
       text: "^City$"
     direction: DOWN
     centerElement: true
+    timeout: 10000
 - tapOn:
     text: "^City$"
 - waitForAnimationToEnd
@@ -61,6 +66,7 @@ appId: ${APP_ID}
       text: "^${STATE_FIELD_LABEL}$"
     direction: DOWN
     centerElement: true
+    timeout: 10000
 - tapOn:
     text: "^${STATE_FIELD_LABEL}$"
 - waitForAnimationToEnd
@@ -74,6 +80,7 @@ appId: ${APP_ID}
           direction: DOWN
           visibilityPercentage: 10
           optional: true
+          timeout: 10000
 - runFlow:
     when:
       notVisible: "^${STATE_LABEL}$"
@@ -83,6 +90,7 @@ appId: ${APP_ID}
             text: "^${STATE_LABEL}$"
           direction: UP
           visibilityPercentage: 10
+          timeout: 10000
 - tapOn:
     text: "^${STATE_LABEL}$"
 - waitForAnimationToEnd

@@ -56,5 +56,6 @@ export class E2ETestIds {
     signOutButton: 'account-sign-out-button',
     loginProcessing: 'account-login-processing',
     loginWebView: 'account-login-webview',
+    verificationCode: 'customer-authentication-web-code',
   } as const;
 }

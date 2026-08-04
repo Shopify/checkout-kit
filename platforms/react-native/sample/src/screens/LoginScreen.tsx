@@ -1,5 +1,6 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {ActivityIndicator, StyleSheet, View} from 'react-native';
+import {ActivityIndicator, Platform, StyleSheet, View} from 'react-native';
+import Config from 'react-native-config';
 import {WebView} from 'react-native-webview';
 import type {ShouldStartLoadRequest} from 'react-native-webview/lib/WebViewTypes';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -17,6 +18,35 @@ import {E2ETestIds} from '../e2e/testIds';
 
 type Props = NativeStackScreenProps<AccountStackParamList, 'Login'>;
 
+const ANDROID_VERIFICATION_CODE_INPUT_ID_SCRIPT = `
+  (() => {
+    const verificationCodeId = '${E2ETestIds.account.verificationCode}';
+
+    const assignVerificationCodeId = () => {
+      const verificationCodeInput = document.querySelector(
+        'input[autocomplete="one-time-code"]',
+      );
+
+      if (!verificationCodeInput) return false;
+
+      verificationCodeInput.id = verificationCodeId;
+      return true;
+    };
+
+    if (!assignVerificationCodeId()) {
+      const observer = new MutationObserver(() => {
+        if (assignVerificationCodeId()) observer.disconnect();
+      });
+
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  })();
+  true;
+`;
+
 function LoginScreen({navigation}: Props) {
   const {handleAuthCallback} = useAuth();
   const {appConfig, setAppConfig} = useConfig();
@@ -29,6 +59,7 @@ function LoginScreen({navigation}: Props) {
     [],
   );
   const callbackScheme = CustomerAccountManager.callbackScheme;
+  const customUserAgent = Config.CUSTOM_USER_AGENT || undefined;
 
   const handleNavigationRequest = useCallback(
     (request: ShouldStartLoadRequest): boolean => {
@@ -78,6 +109,12 @@ function LoginScreen({navigation}: Props) {
       <WebView
         testID={E2ETestIds.account.loginWebView}
         source={{uri: authorizationURL}}
+        applicationNameForUserAgent={customUserAgent}
+        injectedJavaScript={
+          customUserAgent && Platform.OS === 'android'
+            ? ANDROID_VERIFICATION_CODE_INPUT_ID_SCRIPT
+            : undefined
+        }
         onShouldStartLoadWithRequest={handleNavigationRequest}
         originWhitelist={['https://*', `${callbackScheme}://*`]}
         incognito={true}

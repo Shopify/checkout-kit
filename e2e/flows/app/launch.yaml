@@ -1,0 +1,12 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    arguments:
+      # iOS-only launch arguments; Android ignores them.
+      AppleLocale: en_US
+      AppleLanguages: "(en)"
+- extendedWaitUntil:
+    visible:
+      id: checkout-kit-sample-ready
+    timeout: 10000

@@ -11,17 +11,22 @@ E2E_ENV_FILE=""
 APP_ID="com.shopify.checkoutkit.reactnativedemo"
 CART_BOOTSTRAP_BASE_LINK="${APP_ID}://cart?productIndex=0&quantity=1"
 MAESTRO_FLOWS=()
+CUSTOMER_ACCOUNT_AUTH_ENABLED=0
+E2E_CUSTOMER_ACCOUNT_CODE_VALUE="${E2E_CUSTOMER_ACCOUNT_CODE:-}"
+unset E2E_CUSTOMER_ACCOUNT_CODE
 
 usage() {
   cat <<EOF >&2
-Usage: dev rn e2e android [--guest] [--hardcoded-buyer-identity]
+Usage: dev rn e2e android [--guest] [--hardcoded-buyer-identity] [--customer-account]
 
-Runs all React Native Android Maestro checkout smoke flows against the released native SDK artifacts.
-Pass one or more focused scenario flags to run only those flows.
+Runs the full React Native Android Maestro checkout suite against the benchmark-shop fixture by default.
+Pass one or more focused scenario flags to run only those flows. Guest and hardcoded buyer identity
+can use generic storefront configuration; customer account requires the benchmark-shop configuration.
 
 Options:
   --guest                       Run only the guest checkout smoke flow.
   --hardcoded-buyer-identity    Run only the hardcoded buyer identity smoke flow.
+  --customer-account            Run only the customer account checkout smoke flow.
 EOF
 }
 
@@ -39,6 +44,16 @@ add_maestro_flow() {
   MAESTRO_FLOWS+=("$flow")
 }
 
+customer_account_configured() {
+  local env_file="$ROOT_DIR/sample/.env"
+
+  [ -f "$env_file" ] &&
+    grep -Eq '^CUSTOMER_ACCOUNT_API_CLIENT_ID="[^"]+"$' "$env_file" &&
+    grep -Eq '^CUSTOMER_ACCOUNT_API_SHOP_ID="[^"]+"$' "$env_file" &&
+    grep -Eq '^CUSTOM_USER_AGENT="[^"]+"$' "$env_file" &&
+    [ -n "$E2E_CUSTOMER_ACCOUNT_CODE_VALUE" ]
+}
+
 for arg in "$@"; do
   case "$arg" in
     --guest)
@@ -46,6 +61,10 @@ for arg in "$@"; do
       ;;
     --hardcoded-buyer-identity)
       add_maestro_flow "tests/react-native/checkout-hardcoded-buyer-identity.yaml"
+      ;;
+    --customer-account)
+      CUSTOMER_ACCOUNT_AUTH_ENABLED=1
+      add_maestro_flow "tests/react-native/checkout-customer-account.yaml"
       ;;
     -h|--help)
       usage
@@ -60,10 +79,18 @@ for arg in "$@"; do
 done
 
 if [ "${#MAESTRO_FLOWS[@]}" -eq 0 ]; then
+  CUSTOMER_ACCOUNT_AUTH_ENABLED=1
   MAESTRO_FLOWS=(
     "tests/react-native/checkout-guest.yaml"
     "tests/react-native/checkout-hardcoded-buyer-identity.yaml"
+    "tests/react-native/checkout-customer-account.yaml"
   )
+fi
+
+if [ "$CUSTOMER_ACCOUNT_AUTH_ENABLED" -eq 1 ] && ! customer_account_configured; then
+  echo "Customer account checkout requires the benchmark-shop Customer Account API configuration, CUSTOM_USER_AGENT, and E2E_CUSTOMER_ACCOUNT_CODE." >&2
+  echo "Configure the storefront values in the repository .env, export the private code, and run dev up; or run only --guest and/or --hardcoded-buyer-identity." >&2
+  exit 1
 fi
 
 metro_running() {
@@ -89,6 +116,10 @@ prepare_e2e_env() {
   fi
 
   printf "CHECKOUT_KIT_E2E_DISABLE_LOGBOX=1\n" >>"$E2E_ENV_FILE"
+
+  if [ "$CUSTOMER_ACCOUNT_AUTH_ENABLED" -eq 1 ]; then
+    printf "CUSTOMER_ACCOUNT_RESET_SESSION_ON_LAUNCH=1\n" >>"$E2E_ENV_FILE"
+  fi
 }
 
 wait_for_metro() {
@@ -129,7 +160,8 @@ ENVFILE="$E2E_ENV_FILE" pnpm sample android --extra-params "--refresh-dependenci
 (
   cd "$REPO_ROOT/e2e"
   for flow in "${MAESTRO_FLOWS[@]}"; do
-    maestro --platform android test --config config.yaml \
+    E2E_CUSTOMER_ACCOUNT_CODE="$E2E_CUSTOMER_ACCOUNT_CODE_VALUE" \
+      maestro --platform android test --config config.yaml \
       -e "APP_ID=${APP_ID}" \
       -e "CART_BOOTSTRAP_BASE_LINK=${CART_BOOTSTRAP_BASE_LINK}" \
       "$flow"
