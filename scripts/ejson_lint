@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Fails when any value in the committed ejson files is not encrypted.
+#
+# These files live in a public repository, so an unencrypted value is a leak the
+# moment it is pushed. The check needs no private key and no ejson binary, so it
+# also runs on forks and in CI.
+#
+# Prints key paths only, never values.
+
+require_relative "lib/cli_output"
+require_relative "lib/ejson_secrets"
+
+repo_root = File.expand_path("..", __dir__)
+paths = Dir.glob("config/secrets/*.ejson", base: repo_root).sort
+
+if paths.empty?
+  puts "No ejson files under config/secrets; nothing to lint."
+  exit 0
+end
+
+violations = paths.to_h do |path|
+  [path, EjsonSecrets.plaintext_violations(File.join(repo_root, path))]
+rescue EjsonSecrets::InvalidFile => error
+  CliOutput.die(error.message, hint: "restore the file with `git checkout -- #{path}`")
+end
+
+failed = violations.reject { |_path, keys| keys.empty? }
+
+if failed.empty?
+  puts "All values encrypted in: #{paths.join(", ")}"
+  exit 0
+end
+
+failed.each do |path, keys|
+  warn "#{path}: #{keys.length} unencrypted #{keys.length == 1 ? "value" : "values"}"
+  keys.each { |key| warn "  #{key}" }
+end
+
+CliOutput.die(
+  "Unencrypted values found. They must never be committed.",
+  hint: "run `ejson encrypt #{failed.keys.join(" ")}` then commit again",
+)

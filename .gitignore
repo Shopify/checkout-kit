@@ -54,5 +54,14 @@ captures/
 
 # Android local config / secrets
 local.properties
-.env
 upload-keystore.jks
+
+# Storefront configuration. .env and e2e/.env are generated from config/secrets/*.ejson.
+# The .local files are hand-written overrides that no tooling reads or writes.
+.env
+.env.local
+e2e/.env
+e2e/.env.local
+
+# Decrypted ejson output must never be committed.
+config/secrets/*.json
