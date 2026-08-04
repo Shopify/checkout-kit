@@ -38,22 +38,33 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal ".", run_for("swift-ios").fetch("execute")
   end
 
-  def test_a_run_carries_the_default_tags
-    run = run_for("swift-ios")
+  def test_runs_carry_default_tags_and_the_other_platform_exclusion
+    ios_run = run_for("swift-ios")
+    android_run = run_for("kotlin-android")
 
-    assert_equal ["launch"], run.fetch("include_tags")
-    assert_equal ["flaky", "wip"], run.fetch("exclude_tags")
+    assert_equal ["launch"], ios_run.fetch("include_tags")
+    assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
+    assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
   end
 
   def test_an_application_overrides_the_default_tags
     config = base_config
     config.fetch("applications").first["include_tags"] = ["launch", "checkout"]
-    config.fetch("applications").first["exclude_tags"] = ["wip"]
+    config.fetch("applications").first["exclude_tags"] = ["wip", "android-only"]
 
     run = plan(config: config).expand.first
 
     assert_equal ["launch", "checkout"], run.fetch("include_tags")
-    assert_equal ["wip"], run.fetch("exclude_tags")
+    assert_equal ["wip", "android-only"], run.fetch("exclude_tags")
+  end
+
+  def test_validation_errors_flag_a_tag_in_both_effective_lists
+    config = base_config
+    config.fetch("applications").first["include_tags"] = ["launch", "android-only"]
+
+    errors = plan(config: config).validation_errors
+
+    assert_includes errors, "application react-native-ios includes and excludes [\"android-only\"]"
   end
 
   def test_a_control_link_follows_the_app_id_on_every_application
@@ -275,10 +286,13 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_includes errors, "application react-native-ios changed_files_filters must be an array"
   end
 
-  def test_expand_raises_on_invalid_config
-    error = assert_raises(RuntimeError) { plan(config: {"version" => 2}).expand }
+  def test_expand_reports_an_invalid_application_platform
+    config = base_config
+    config.fetch("applications").first["platform"] = "windows"
 
-    assert_match(/E2E matrix is invalid/, error.message)
+    error = assert_raises(RuntimeError) { plan(config: config).expand }
+
+    assert_includes error.message, "application react-native-ios platform must be ios or android"
   end
 
   def test_bitrise_env_raises_on_invalid_config
