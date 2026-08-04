@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Installs the ejson private key that decrypts config/secrets/*.ejson.
+#
+# The public key lives in the committed ejson files. The matching private key
+# lives in GCP Secret Manager, named after the public key, and every Shopify
+# engineer can read it. This script copies it into the local ejson keydir.
+#
+# Runs automatically as a `dev up` step. With --check it reports (without
+# installing) whether a fetch is needed: exit 0 when nothing can or should be
+# done, and non-zero when a fetch would succeed, so it serves as a met? probe.
+#
+# Anyone without access to the GCP project has no key and needs none. They set
+# their own values in .env by hand, and every step here exits 0 without acting.
+#
+# This script prints public key names and status only. The private key travels
+# from gcloud to the keydir through a redirect, so it never enters an argument
+# list, an environment variable, or this output.
+
+PROJECT="shopify-ejson-keys-dev"
+KEYDIR="${EJSON_KEYDIR:-/opt/ejson/keys}"
+
+mode="install"
+if [[ "${1:-}" == "--check" ]]; then
+  mode="check"
+elif [[ $# -gt 0 ]]; then
+  echo "Usage: scripts/install_ejson_key [--check]" >&2
+  exit 1
+fi
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+public_keys() {
+  local file
+  for file in "${REPO_ROOT}"/config/secrets/*.ejson; do
+    [[ -e "${file}" ]] || continue
+    sed -n 's/.*"_public_key"[[:space:]]*:[[:space:]]*"\([0-9a-f]\{64\}\)".*/\1/p' "${file}"
+  done | sort -u
+}
+
+skip() {
+  # Reported, not fatal. A missing key is a supported state: the values in .env
+  # are then whatever the developer put there.
+  echo "install_ejson_key: $1"
+  echo "install_ejson_key: leaving the keydir alone; .env stays under your control."
+  exit 0
+}
+
+missing=()
+while IFS= read -r pub; do
+  [[ -n "${pub}" ]] || continue
+  [[ -f "${KEYDIR}/${pub}" ]] || missing+=("${pub}")
+done < <(public_keys)
+
+if [[ ${#missing[@]} -eq 0 ]]; then
+  [[ "${mode}" == "check" ]] && exit 0
+  echo "install_ejson_key: every public key already has a private key in ${KEYDIR}."
+  exit 0
+fi
+
+if ! command -v gcloud >/dev/null 2>&1; then
+  skip "gcloud is not installed, so the private key cannot be fetched"
+fi
+
+if [[ ! -d "${KEYDIR}" ]] || [[ ! -w "${KEYDIR}" ]]; then
+  skip "${KEYDIR} is missing or not writable; run \`dev ejson normalize-keydir\` first"
+fi
+
+for pub in "${missing[@]}"; do
+  if ! gcloud secrets describe "${pub}" --project="${PROJECT}" >/dev/null 2>&1; then
+    skip "no readable secret named ${pub} in ${PROJECT}"
+  fi
+done
+
+if [[ "${mode}" == "check" ]]; then
+  echo "install_ejson_key: missing ${#missing[@]} private key(s) in ${KEYDIR}"
+  exit 1
+fi
+
+for pub in "${missing[@]}"; do
+  tmp="$(mktemp)"
+  trap 'rm -f "${tmp}"' EXIT
+
+  if ! gcloud secrets versions access latest --secret="${pub}" --project="${PROJECT}" >"${tmp}" 2>/dev/null; then
+    rm -f "${tmp}"
+    skip "could not read the latest version of ${pub} in ${PROJECT}"
+  fi
+
+  # ejson keygen writes 0440, so match it rather than the looser default umask.
+  chmod 440 "${tmp}"
+  mv "${tmp}" "${KEYDIR}/${pub}"
+  echo "install_ejson_key: installed ${pub}"
+done
