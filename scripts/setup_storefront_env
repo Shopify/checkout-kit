@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 ROOT_ENV="${ROOT_DIR}/.env"
+ROOT_ENV_LOCAL="${ROOT_DIR}/.env.local"
 ANDROID_ENV="${ROOT_DIR}/platforms/android/samples/CheckoutKitAndroidDemo/.env"
 SWIFT_DEMO_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
 SWIFT_ACCELERATED_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
@@ -95,13 +96,35 @@ read_env_value() {
       sub(/[[:space:]]*$/, "", candidate)
       if (candidate == key) {
         value = substr(line, index(line, "=") + 1)
-        print value
-        exit
+        found = 1
       }
     }
+    END { if (found) print value }
   ' "$file")"
 
   strip_outer_quotes "$raw_value"
+}
+
+env_keys() {
+  local file="$1"
+
+  [[ -f "$file" ]] || return 0
+
+  awk '
+    /^[[:space:]]*#/ || /^[[:space:]]*\/\// || /^[[:space:]]*$/ { next }
+    $0 !~ /=/ { next }
+    {
+      line = $0
+      sub(/^[[:space:]]*/, "", line)
+      candidate = line
+      sub(/=.*/, "", candidate)
+      sub(/[[:space:]]*$/, "", candidate)
+      if (candidate != "" && !(candidate in seen)) {
+        seen[candidate] = 1
+        print candidate
+      }
+    }
+  ' "$file"
 }
 
 env_has_key() {
@@ -126,6 +149,36 @@ env_has_key() {
     }
     END { exit found ? 0 : 1 }
   ' "$file"
+}
+
+# Value resolution reads .env.local ahead of .env, so an entry there wins.
+# Decisions about writing .env deliberately do not use these: .env.local must
+# never be baked into .env, or the override would become permanent.
+read_root_value() {
+  local key="$1"
+
+  if env_has_key "$key" "$ROOT_ENV_LOCAL"; then
+    read_env_value "$key" "$ROOT_ENV_LOCAL"
+    return 0
+  fi
+
+  read_env_value "$key" "$ROOT_ENV"
+}
+
+root_has_key() {
+  local key="$1"
+
+  env_has_key "$key" "$ROOT_ENV_LOCAL" || env_has_key "$key" "$ROOT_ENV"
+}
+
+report_local_overrides() {
+  local keys
+
+  keys="$(env_keys "$ROOT_ENV_LOCAL" | paste -sd, - | sed -e 's/,/, /g')"
+  [[ -n "$keys" ]] || return 0
+
+  echo ".env.local overrides .env for: ${keys}"
+  echo "Nothing writes to .env.local, so remove a line there to fall back to .env."
 }
 
 is_missing_required_value() {
@@ -176,7 +229,7 @@ required_config_value() {
   local file_value
   local env_value
 
-  file_value="$(read_env_value "$key" "$ROOT_ENV")"
+  file_value="$(read_root_value "$key")"
   if ! is_missing_required_value "$file_value"; then
     printf '%s' "$file_value"
     return 0
@@ -193,8 +246,8 @@ root_or_source_value() {
   shift
   local root_value
 
-  if env_has_key "$key" "$ROOT_ENV"; then
-    root_value="$(read_env_value "$key" "$ROOT_ENV")"
+  if root_has_key "$key"; then
+    root_value="$(read_root_value "$key")"
     if ! is_placeholder_value "$root_value"; then
       printf '%s' "$root_value"
       return 0
@@ -209,8 +262,8 @@ root_or_source_nonempty_value() {
   shift
   local root_value
 
-  if env_has_key "$key" "$ROOT_ENV"; then
-    root_value="$(read_env_value "$key" "$ROOT_ENV")"
+  if root_has_key "$key"; then
+    root_value="$(read_root_value "$key")"
     if [[ -n "$root_value" ]] && ! is_placeholder_value "$root_value"; then
       printf '%s' "$root_value"
       return 0
@@ -418,8 +471,8 @@ load_values() {
     "$(read_env_value STOREFRONT_ACCESS_TOKEN "$SWIFT_ACCELERATED_XCCONFIG")")"
 
   API_VERSION_VALUE="$(first_config_value \
-    "$(read_env_value API_VERSION "$ROOT_ENV")" \
-    "$(read_env_value STOREFRONT_VERSION "$ROOT_ENV")" \
+    "$(read_root_value API_VERSION)" \
+    "$(read_root_value STOREFRONT_VERSION)" \
     "$(env_fallback API_VERSION)" \
     "$(env_fallback STOREFRONT_VERSION)" \
     "$(read_env_value API_VERSION "$ANDROID_ENV")" \
@@ -700,8 +753,8 @@ ensure_root_env() {
       exit 1
     fi
 
-    if is_missing_required_value "$(read_env_value STOREFRONT_DOMAIN "$ROOT_ENV")" ||
-      is_missing_required_value "$(read_env_value STOREFRONT_ACCESS_TOKEN "$ROOT_ENV")"; then
+    if is_missing_required_value "$(read_root_value STOREFRONT_DOMAIN)" ||
+      is_missing_required_value "$(read_root_value STOREFRONT_ACCESS_TOKEN)"; then
       echo "Root .env is missing required storefront configuration." >&2
       exit 1
     fi
@@ -733,6 +786,17 @@ ensure_root_env() {
   elif customer_account_api_version_needs_default; then
     root_needs_write="true"
     echo "Normalizing root storefront configuration at .env."
+  fi
+
+  # Resolved values carry .env.local overrides, so writing them back would make an
+  # override permanent. Leave .env alone and say why instead.
+  if [[ -f "$ROOT_ENV_LOCAL" ]]; then
+    if [[ "$root_needs_write" == "true" ]]; then
+      echo "Leaving .env alone because .env.local exists. Remove .env.local to let .env be rewritten."
+    fi
+
+    load_values
+    return 0
   fi
 
   if [[ "$root_needs_write" == "true" ]]; then
@@ -794,6 +858,7 @@ check_generated_files() {
   echo "Sample app storefront configuration is up to date."
 }
 
+report_local_overrides
 ensure_root_env
 
 if [[ "$mode" == "check" ]]; then
