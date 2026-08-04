@@ -79,10 +79,14 @@ internal object OriginAllowlist {
         !pattern.contains("*") -> parseOrigin(pattern, exact = true)?.let(OriginPattern::Exact)
         else -> WILDCARD_PATTERN.matchEntire(pattern)?.destructured?.let { (scheme, suffix, port) ->
             val normalizedScheme = scheme.lowercase()
+            val parsedPort = when {
+                port.isEmpty() -> null
+                else -> port.toIntOrNull() ?: return null
+            }
             OriginPattern.Wildcard(
                 scheme = normalizedScheme,
                 suffix = suffix.lowercase(),
-                port = normalizedPort(normalizedScheme, port.toIntOrNull()),
+                port = normalizedPort(normalizedScheme, parsedPort),
             )
         }
     }

@@ -97,11 +97,13 @@ class OriginAllowlistTest {
                 "https://allowed.example.com/path",
                 "https://allowed.example.com?query=value",
                 "https://allowed.example.com#fragment",
+                "https://*.example.com:999999999999",
             ),
         )
 
         assertThat(OriginAllowlist.isAllowed("https://not a url", patterns)).isFalse()
         assertThat(OriginAllowlist.isAllowed("https://allowed.example.com", patterns)).isFalse()
+        assertThat(OriginAllowlist.isAllowed("https://sub.example.com", patterns)).isFalse()
         assertThat(OriginAllowlist.isAllowed(cartOrigin, patterns)).isTrue()
     }
 
