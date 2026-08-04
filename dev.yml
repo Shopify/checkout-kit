@@ -69,6 +69,7 @@ check:
   ejson-plaintext: ./scripts/ejson_lint
   generate-env-tests: ./scripts/test_generate_env_files
   storefront-env-tests: ./scripts/test_setup_storefront_env
+  run-maestro-tests: ./e2e/scripts/test_run_maestro
   ruby-script-tests: ./scripts/test_ruby
   android-detekt: platforms/android/gradlew -p platforms/android detekt
   android-lint: |

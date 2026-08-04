@@ -31,17 +31,65 @@ MAESTRO="$("$E2E_ROOT/scripts/maestro_bin")"
 CONTROL_LINK="${APP_ID}://e2e"
 
 # Account credentials never live in a flow file. CI exports them from Bitrise secrets.
-# Local runs read them from the untracked root .env, which .env.example documents.
-ENV_FILE="$(cd "$E2E_ROOT/.." && pwd)/.env"
+# Local runs read e2e/.env, which scripts/generate_env_files writes from
+# config/secrets/e2e.ejson, plus an optional e2e/.env.local that overrides it.
+#
+# The root .env belongs to the sample apps and their demo store. Reading it here would
+# run the E2E suite against whichever store a developer happens to be using by hand.
+ENV_FILE="$E2E_ROOT/.env"
+ENV_LOCAL_FILE="$E2E_ROOT/.env.local"
 
+if [ -f "$ENV_LOCAL_FILE" ]; then
+  # Key names only. A value is the thing that must never reach a log.
+  OVERRIDDEN_KEYS="$(sed -n 's/^[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$ENV_LOCAL_FILE" |
+    sort -u | paste -sd, -)"
+
+  if [ -n "$OVERRIDDEN_KEYS" ]; then
+    echo "run_maestro: e2e/.env.local overrides: ${OVERRIDDEN_KEYS}" >&2
+  fi
+fi
+
+# ejson2env shell-quotes every value it writes, so a value read straight out of
+# e2e/.env would otherwise reach Maestro with the quotes still attached.
+strip_outer_quotes() {
+  local value="$1"
+
+  case "$value" in
+    \'*\')
+      value="${value#\'}"
+      value="${value%\'}"
+      ;;
+    \"*\")
+      value="${value#\"}"
+      value="${value%\"}"
+      ;;
+  esac
+
+  printf '%s' "$value"
+}
+
+# Later file wins, and within a file the later line wins. That is what makes a
+# commented-out block in e2e/.env.local predictable: the last uncommented
+# assignment is the active one. A key present but blank still wins, so a blank
+# override is the way to clear an inherited value.
 read_env_value() {
   local key="$1"
+  local value=""
+  local file
 
-  if [ ! -f "$ENV_FILE" ]; then
-    return 0
-  fi
+  for file in "$ENV_FILE" "$ENV_LOCAL_FILE"; do
+    if [ ! -f "$file" ]; then
+      continue
+    fi
 
-  sed -n "s/^${key}=//p" "$ENV_FILE" | tail -n 1
+    if ! grep -q "^[[:space:]]*${key}=" "$file"; then
+      continue
+    fi
+
+    value="$(sed -n "s/^[[:space:]]*${key}=//p" "$file" | tail -n 1)"
+  done
+
+  strip_outer_quotes "$value"
 }
 
 CUSTOMER_ACCOUNT_EMAIL="${E2E_CUSTOMER_ACCOUNT_EMAIL:-$(read_env_value E2E_CUSTOMER_ACCOUNT_EMAIL)}"
