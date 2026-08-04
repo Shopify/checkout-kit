@@ -113,7 +113,7 @@ jobs:
           cache: 'gradle'
 
       - name: Setup sample app environment
-        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+        run: ${{ github.workspace }}/scripts/setup_storefront_env
         env:
           STOREFRONT_DOMAIN: example.myshopify.com
           STOREFRONT_ACCESS_TOKEN: test-token
