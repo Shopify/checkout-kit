@@ -2,12 +2,12 @@
 
 set -euo pipefail
 
-# Copies the repo-root .env (and other root-level machine-local config, if
-# present) from the main checkout into the current git worktree, so that a
-# subsequent `dev up` can regenerate all nested sample app configuration from it.
+# Copies root-level machine-local configuration from the main checkout into the
+# current git worktree: .env.local, .dev.env, and local.properties. Generated
+# files such as .env and e2e/.env are deliberately not copied.
 #
 # Runs automatically as a `dev up` step. With --check it reports (without
-# copying) whether the current worktree is missing any root env files: exit 0
+# copying) whether the current worktree is missing any of those files: exit 0
 # when nothing is needed (main checkout, or already seeded) and non-zero when a
 # copy is required, so it can serve as a `dev up` met? probe.
 #
@@ -33,11 +33,18 @@ if [[ "${CURRENT_ROOT}" == "${MAIN_ROOT}" ]]; then
   exit 0
 fi
 
-# Root-level, gitignored source-of-truth files. Nested sample config
-# (Android/Swift/RN) is intentionally omitted: `dev up` regenerates it from the
-# root .env via scripts/setup_storefront_env.
+# Root-level, gitignored files that nothing generates. Anything generated is left
+# out, because `dev up` rebuilds it in this worktree anyway:
+#
+#   .env       scripts/generate_env_files, from config/secrets/demo.ejson
+#   e2e/.env   scripts/generate_env_files, from config/secrets/e2e.ejson
+#   sample app config  scripts/setup_storefront_env, from .env
+#
+# Copying a generated .env would be worse than useless: the next step,
+# scripts/migrate_env_to_local, would read it as hand-written and freeze that
+# stale copy as .env.local, which then overrides the real one for good.
 ROOT_FILES=(
-  ".env"
+  ".env.local"
   ".dev.env"
   "local.properties"
 )
@@ -73,7 +80,7 @@ done
 [[ "${mode}" == "check" ]] && exit 0
 
 if [[ "${copied_any}" != "true" ]]; then
-  echo "No new root env files to copy."
+  echo "No new machine-local files to copy."
 fi
 
 echo "Next: run \`dev up\` in this worktree to regenerate sample app config."

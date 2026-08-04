@@ -17,30 +17,26 @@ DEFAULT_CUSTOMER_ACCOUNT_API_VERSION="2026-04"
 
 usage() {
   cat <<EOF
-Usage: scripts/setup_storefront_env [--check] [--skip-optional-prompts|--prompt-optional]
+Usage: scripts/setup_storefront_env [--check]
 
-Creates or checks sample app storefront configuration from the repo-root .env.
+Generates sample app storefront configuration from the repo-root .env, which
+.env.local overrides key by key.
+
+It never writes .env itself. Shopify employees get .env from
+scripts/generate_env_files, which decrypts config/secrets/demo.ejson. Everyone
+else copies .env.example and fills it in by hand. Either way this command only
+reads it, so a hand-written .env survives every run.
+
 This command prints file paths and status only; it never prints configured values.
-
-By default, interactive setup prompts for missing optional Apple Pay and Customer
-Account API values. Use --skip-optional-prompts for automation paths that should
-only prompt for required storefront values.
 EOF
 }
 
 mode="sync"
-prompt_optional_values="true"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --check)
       mode="check"
-      ;;
-    --skip-optional-prompts)
-      prompt_optional_values="false"
-      ;;
-    --prompt-optional)
-      prompt_optional_values="true"
       ;;
     -h | --help)
       usage
@@ -273,91 +269,6 @@ root_or_source_nonempty_value() {
   first_config_value "$@"
 }
 
-root_has_canonical_keys() {
-  local key
-
-  for key in \
-    STOREFRONT_DOMAIN \
-    STOREFRONT_ACCESS_TOKEN \
-    REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER \
-    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER \
-    DEVELOPMENT_TEAM \
-    API_VERSION \
-    CUSTOMER_ACCOUNT_API_CLIENT_ID \
-    CUSTOMER_ACCOUNT_API_SHOP_ID \
-    CUSTOMER_ACCOUNT_API_VERSION \
-    EMAIL \
-    ADDRESS_1 \
-    ADDRESS_2 \
-    CITY \
-    COMPANY \
-    COUNTRY \
-    FIRST_NAME \
-    LAST_NAME \
-    PROVINCE \
-    ZIP \
-    PHONE; do
-    env_has_key "$key" "$ROOT_ENV" || return 1
-  done
-}
-
-customer_account_api_version_needs_default() {
-  local value
-
-  value="$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$ROOT_ENV")"
-  [[ -z "$value" ]] || is_placeholder_value "$value"
-}
-
-optional_values_need_prompt() {
-  [[ "$prompt_optional_values" == "true" ]] &&
-    [[ -t 0 ]] &&
-    (
-      [[ -z "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]] ||
-        [[ -z "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]] ||
-        [[ -z "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE" ]] ||
-        [[ -z "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE" ]]
-    )
-}
-
-fill_optional_values_from_environment() {
-  local value
-  local updated="false"
-
-  if [[ -z "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]]; then
-    value="$(env_fallback REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER)"
-    if [[ -n "$value" ]] && ! is_placeholder_value "$value"; then
-      REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$value"
-      updated="true"
-    fi
-  fi
-
-  if [[ -z "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]]; then
-    value="$(env_fallback SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER)"
-    if [[ -n "$value" ]] && ! is_placeholder_value "$value"; then
-      SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$value"
-      updated="true"
-    fi
-  fi
-
-  if [[ -z "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE" ]]; then
-    value="$(env_fallback CUSTOMER_ACCOUNT_API_CLIENT_ID)"
-    if [[ -n "$value" ]] && ! is_placeholder_value "$value"; then
-      CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE="$value"
-      updated="true"
-    fi
-  fi
-
-  if [[ -z "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE" ]]; then
-    value="$(env_fallback CUSTOMER_ACCOUNT_API_SHOP_ID)"
-    if [[ -n "$value" ]] && ! is_placeholder_value "$value"; then
-      CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE="$value"
-      updated="true"
-    fi
-  fi
-
-  [[ "$updated" == "true" ]]
-}
-
 derive_customer_account_api_shop_id() {
   local value
 
@@ -423,37 +334,6 @@ derive_customer_account_api_version() {
   esac
 }
 
-prompt_required() {
-  local label="$1"
-  local value=""
-
-  if [[ ! -t 0 ]]; then
-    echo "Storefront configuration requires interactive setup. Run scripts/setup_storefront_env in a terminal." >&2
-    exit 1
-  fi
-
-  while [[ -z "$value" ]]; do
-    read -r -s -p "${label}: " value
-    echo
-    value="$(printf '%s' "$value" | trim)"
-  done
-
-  printf '%s' "$value"
-}
-
-prompt_optional() {
-  local label="$1"
-  local value=""
-
-  if [[ ! -t 0 ]]; then
-    return 0
-  fi
-
-  read -r -s -p "${label} (optional, press Enter to skip): " value
-  echo
-  printf '%s' "$value" | trim
-}
-
 load_values() {
   STOREFRONT_DOMAIN_VALUE="$(first_config_value \
     "$(required_config_value STOREFRONT_DOMAIN)" \
@@ -484,7 +364,7 @@ load_values() {
 
   REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(root_or_source_value REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER \
     "$(env_fallback REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER)" \
-    "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$ROOT_ENV")" \
+    "$(read_root_value STOREFRONT_MERCHANT_IDENTIFIER)" \
     "$(env_fallback STOREFRONT_MERCHANT_IDENTIFIER)" \
     "$(read_env_value APPLE_PAY_MERCHANT_IDENTIFIER "$REACT_NATIVE_ENV")" \
     "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$REACT_NATIVE_ENV")" \
@@ -492,18 +372,21 @@ load_values() {
 
   SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(root_or_source_value SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER \
     "$(env_fallback SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER)" \
-    "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$ROOT_ENV")" \
+    "$(read_root_value STOREFRONT_MERCHANT_IDENTIFIER)" \
     "$(env_fallback STOREFRONT_MERCHANT_IDENTIFIER)" \
     "$(read_env_value APPLE_PAY_MERCHANT_IDENTIFIER "$SWIFT_DEMO_XCCONFIG")" \
     "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$SWIFT_DEMO_XCCONFIG")")"
 
-  CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE="$(root_or_source_value CUSTOMER_ACCOUNT_API_CLIENT_ID \
+  # Nonempty, not plain: a blank line in .env means ejson has no value yet, so the
+  # process environment must still be able to supply one. Neither chain ends in a
+  # default, so a key that is genuinely unset still resolves to blank.
+  CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE="$(root_or_source_nonempty_value CUSTOMER_ACCOUNT_API_CLIENT_ID \
     "$(env_fallback CUSTOMER_ACCOUNT_API_CLIENT_ID)" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$ANDROID_ENV")" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$REACT_NATIVE_ENV")" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$SWIFT_DEMO_XCCONFIG")")"
 
-  CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE="$(root_or_source_value CUSTOMER_ACCOUNT_API_SHOP_ID \
+  CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE="$(root_or_source_nonempty_value CUSTOMER_ACCOUNT_API_SHOP_ID \
     "$(env_fallback CUSTOMER_ACCOUNT_API_SHOP_ID)" \
     "$(derive_customer_account_api_shop_id)" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_SHOP_ID "$REACT_NATIVE_ENV")" \
@@ -535,31 +418,15 @@ load_values() {
     "$(env_fallback DEVELOPMENT_TEAM)")"
 }
 
-collect_missing_values() {
-  fill_optional_values_from_environment || true
-
+# Not fatal. The generated files are still written, so a partly configured
+# checkout builds; the sample app then fails at its first network call instead.
+report_missing_required_values() {
   if is_missing_required_value "$STOREFRONT_DOMAIN_VALUE"; then
-    STOREFRONT_DOMAIN_VALUE="$(prompt_required "Storefront domain")"
+    echo "No usable STOREFRONT_DOMAIN. Set it in .env.local, or run \`dev up\` to generate .env." >&2
   fi
 
   if is_missing_required_value "$STOREFRONT_ACCESS_TOKEN_VALUE"; then
-    STOREFRONT_ACCESS_TOKEN_VALUE="$(prompt_required "Storefront access token")"
-  fi
-
-  if [[ "$prompt_optional_values" == "true" && -z "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]]; then
-    REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(prompt_optional "React Native Apple Pay merchant identifier")"
-  fi
-
-  if [[ "$prompt_optional_values" == "true" && -z "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE" ]]; then
-    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(prompt_optional "Swift Apple Pay merchant identifier")"
-  fi
-
-  if [[ "$prompt_optional_values" == "true" && -z "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE" ]]; then
-    CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE="$(prompt_optional "Customer Account API client ID")"
-  fi
-
-  if [[ "$prompt_optional_values" == "true" && -z "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE" ]]; then
-    CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE="$(prompt_optional "Customer Account API shop ID")"
+    echo "No usable STOREFRONT_ACCESS_TOKEN. Set it in .env.local, or run \`dev up\` to generate .env." >&2
   fi
 }
 
@@ -576,66 +443,18 @@ write_xcconfig_assignment() {
   printf '%s = %s\n' "$1" "$2"
 }
 
-generate_root_env() {
-  cat <<EOF
-# Checkout Kit sample storefront configuration.
-# Edit this file, then run scripts/setup_storefront_env to sync platform config.
-# Do not commit real values from this file.
-
-# Storefront details
-EOF
-  write_env_assignment STOREFRONT_DOMAIN "$STOREFRONT_DOMAIN_VALUE"
-  write_env_assignment STOREFRONT_ACCESS_TOKEN "$STOREFRONT_ACCESS_TOKEN_VALUE"
-  echo "# Optional Apple Pay merchant identifiers used by accelerated checkout flows."
-  write_env_assignment REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER "$REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE"
-  write_env_assignment SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER "$SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE"
-  cat <<EOF
-
-# Apple team that signs the Swift samples. Set your own team id, or the Xcode build
-# fails at signing. A blank value stays blank; setup applies no default team.
-EOF
-  write_env_assignment DEVELOPMENT_TEAM "$DEVELOPMENT_TEAM_VALUE"
-  cat <<EOF
-
-# Storefront API version
-EOF
-  write_env_assignment API_VERSION "$API_VERSION_VALUE"
-  cat <<EOF
-
-# Customer Account API (optional)
-EOF
-  write_env_assignment CUSTOMER_ACCOUNT_API_CLIENT_ID "$CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE"
-  write_env_assignment CUSTOMER_ACCOUNT_API_SHOP_ID "$CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE"
-  write_env_assignment CUSTOMER_ACCOUNT_API_VERSION "$CUSTOMER_ACCOUNT_API_VERSION_VALUE"
-  cat <<EOF
-
-# Buyer identity defaults used by sample apps
-EOF
-  write_env_assignment EMAIL "$EMAIL_VALUE"
-  write_env_assignment ADDRESS_1 "$ADDRESS_1_VALUE"
-  write_env_assignment ADDRESS_2 "$ADDRESS_2_VALUE"
-  write_env_assignment CITY "$CITY_VALUE"
-  write_env_assignment COMPANY "$COMPANY_VALUE"
-  write_env_assignment COUNTRY "$COUNTRY_VALUE"
-  write_env_assignment FIRST_NAME "$FIRST_NAME_VALUE"
-  write_env_assignment LAST_NAME "$LAST_NAME_VALUE"
-  write_env_assignment PROVINCE "$PROVINCE_VALUE"
-  write_env_assignment ZIP "$ZIP_VALUE"
-  write_env_assignment PHONE "$PHONE_VALUE"
-}
-
 generate_platform_env_header() {
   cat <<EOF
-# Generated from repo-root .env by scripts/setup_storefront_env.
-# Do not edit directly; update .env and rerun scripts/setup_storefront_env.
+# Generated from the repo-root .env by scripts/setup_storefront_env.
+# Do not edit directly; change .env.local and rerun scripts/setup_storefront_env.
 
 EOF
 }
 
 generate_xcconfig_header() {
   cat <<EOF
-// Generated from repo-root .env by scripts/setup_storefront_env.
-// Do not edit directly; update .env and rerun scripts/setup_storefront_env.
+// Generated from the repo-root .env by scripts/setup_storefront_env.
+// Do not edit directly; change .env.local and rerun scripts/setup_storefront_env.
 
 EOF
 }
@@ -744,76 +563,6 @@ generate_swift_accelerated_xcconfig() {
   write_xcconfig_assignment API_VERSION "$API_VERSION_VALUE"
 }
 
-ensure_root_env() {
-  load_values
-
-  if [[ "$mode" == "check" ]]; then
-    if [[ ! -f "$ROOT_ENV" ]]; then
-      echo "Missing storefront configuration: .env" >&2
-      exit 1
-    fi
-
-    if is_missing_required_value "$(read_root_value STOREFRONT_DOMAIN)" ||
-      is_missing_required_value "$(read_root_value STOREFRONT_ACCESS_TOKEN)"; then
-      echo "Root .env is missing required storefront configuration." >&2
-      exit 1
-    fi
-
-    if ! root_has_canonical_keys; then
-      echo "Root .env is missing canonical storefront configuration keys." >&2
-      exit 1
-    fi
-
-    if customer_account_api_version_needs_default; then
-      echo "Root .env has a blank Customer Account API version." >&2
-      exit 1
-    fi
-
-    return 0
-  fi
-
-  local root_needs_write="false"
-  if [[ ! -f "$ROOT_ENV" ]]; then
-    root_needs_write="true"
-    echo "Creating root storefront configuration at .env."
-  elif is_missing_required_value "$(read_env_value STOREFRONT_DOMAIN "$ROOT_ENV")" ||
-    is_missing_required_value "$(read_env_value STOREFRONT_ACCESS_TOKEN "$ROOT_ENV")"; then
-    root_needs_write="true"
-    echo "Updating root storefront configuration at .env."
-  elif ! root_has_canonical_keys; then
-    root_needs_write="true"
-    echo "Normalizing root storefront configuration at .env."
-  elif customer_account_api_version_needs_default; then
-    root_needs_write="true"
-    echo "Normalizing root storefront configuration at .env."
-  fi
-
-  # Resolved values carry .env.local overrides, so writing them back would make an
-  # override permanent. Leave .env alone and say why instead.
-  if [[ -f "$ROOT_ENV_LOCAL" ]]; then
-    if [[ "$root_needs_write" == "true" ]]; then
-      echo "Leaving .env alone because .env.local exists. Remove .env.local to let .env be rewritten."
-    fi
-
-    load_values
-    return 0
-  fi
-
-  if [[ "$root_needs_write" == "true" ]]; then
-    collect_missing_values
-    generate_root_env >"$ROOT_ENV"
-  elif fill_optional_values_from_environment; then
-    echo "Updating optional storefront configuration at .env."
-    generate_root_env >"$ROOT_ENV"
-  elif optional_values_need_prompt; then
-    echo "Updating optional storefront configuration at .env."
-    collect_missing_values
-    generate_root_env >"$ROOT_ENV"
-  fi
-
-  load_values
-}
-
 write_generated_files() {
   generate_android_env >"$ANDROID_ENV"
   generate_swift_demo_xcconfig >"$SWIFT_DEMO_XCCONFIG"
@@ -859,10 +608,11 @@ check_generated_files() {
 }
 
 report_local_overrides
-ensure_root_env
+load_values
 
 if [[ "$mode" == "check" ]]; then
   check_generated_files
 else
+  report_missing_required_values
   write_generated_files
 fi

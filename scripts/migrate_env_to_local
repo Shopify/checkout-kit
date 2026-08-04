@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# TODO: remove after 2026-09-01, once everyone has migrated.
+#
+# Keeps a hand-written .env from before scripts/generate_env_files existed.
+#
+# .env used to be the file a developer edited. It is now generated from
+# config/secrets/demo.ejson, so the first `dev up` after this change would
+# overwrite it. Copying it to .env.local first preserves those values, because
+# .env.local overrides .env and nothing ever writes to it.
+#
+# Runs from `dev up` only, before generate_env_files, and only when .env.local is
+# absent. It therefore acts at most once per checkout.
+#
+# This command prints file paths and status only; it never prints a configured
+# value.
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+ROOT_ENV="${ROOT_DIR}/.env"
+ROOT_ENV_LOCAL="${ROOT_DIR}/.env.local"
+
+mode="migrate"
+if [[ "${1:-}" == "--check" ]]; then
+  mode="check"
+elif [[ $# -gt 0 ]]; then
+  echo "Usage: scripts/migrate_env_to_local [--check]" >&2
+  exit 1
+fi
+
+nothing_to_do() {
+  [[ "${mode}" == "check" ]] && exit 0
+
+  echo "migrate_env_to_local: $1"
+  exit 0
+}
+
+if [[ -e "${ROOT_ENV_LOCAL}" ]]; then
+  nothing_to_do ".env.local already exists, so nothing is copied."
+fi
+
+if [[ ! -f "${ROOT_ENV}" ]]; then
+  nothing_to_do "no .env to migrate."
+fi
+
+if [[ "${mode}" == "check" ]]; then
+  echo "migrate_env_to_local: .env has no .env.local yet"
+  exit 1
+fi
+
+cp "${ROOT_ENV}" "${ROOT_ENV_LOCAL}"
+
+echo "migrate_env_to_local: copied .env to .env.local, because .env is now generated."
+echo "migrate_env_to_local: .env.local wins over .env, so your values keep working."
+echo "migrate_env_to_local: delete .env.local to follow the shared config instead."

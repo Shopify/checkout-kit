@@ -22,7 +22,7 @@ e2e_configure_storefront() {
   : "${STOREFRONT_DOMAIN:?STOREFRONT_DOMAIN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
   : "${STOREFRONT_ACCESS_TOKEN:?STOREFRONT_ACCESS_TOKEN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
   e2e_log "Configuring storefront environment"
-  ./scripts/setup_storefront_env --skip-optional-prompts
+  ./scripts/setup_storefront_env
 }
 
 e2e_nightly_commit_window() {

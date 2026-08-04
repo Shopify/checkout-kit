@@ -34,7 +34,7 @@ jobs:
       - name: Setup sample app environment
         id: sample_env
         if: ${{ !cancelled() }}
-        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+        run: ${{ github.workspace }}/scripts/setup_storefront_env
         env:
           STOREFRONT_DOMAIN: example.myshopify.com
           STOREFRONT_ACCESS_TOKEN: test-token
@@ -113,7 +113,7 @@ jobs:
           cache: 'gradle'
 
       - name: Setup sample app environment
-        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+        run: ${{ github.workspace }}/scripts/setup_storefront_env
         env:
           STOREFRONT_DOMAIN: example.myshopify.com
           STOREFRONT_ACCESS_TOKEN: test-token
@@ -146,7 +146,7 @@ jobs:
         run: ./gradlew detekt
 
       - name: Setup sample app environment
-        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+        run: ${{ github.workspace }}/scripts/setup_storefront_env
         env:
           STOREFRONT_DOMAIN: example.myshopify.com
           STOREFRONT_ACCESS_TOKEN: test-token

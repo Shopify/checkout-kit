@@ -2,6 +2,16 @@
 
 set -euo pipefail
 
+# Synthetic tests for scripts/setup_storefront_env.
+#
+# The central guarantee is that .env is only ever read. Shopify employees get it
+# from scripts/generate_env_files; everyone else writes it by hand. Either way a
+# run here must leave it byte-identical, so most tests below assert that as well
+# as the generated output.
+#
+# Values here are synthetic. assert_output_is_sanitized fails the suite if any of
+# them reaches the command output, because this script reports paths only.
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 fixtures=()
@@ -42,8 +52,32 @@ make_fixture() {
   printf '%s\n' "$fixture"
 }
 
+android_env_of() {
+  printf '%s\n' "$1/platforms/android/samples/CheckoutKitAndroidDemo/.env"
+}
+
+react_native_env_of() {
+  printf '%s\n' "$1/platforms/react-native/sample/.env"
+}
+
+react_native_xcconfig_of() {
+  printf '%s\n' "$1/platforms/react-native/sample/ios/Storefront.xcconfig"
+}
+
+swift_demo_xcconfig_of() {
+  printf '%s\n' "$1/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
+}
+
+swift_accelerated_xcconfig_of() {
+  printf '%s\n' "$1/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
+}
+
 assert_file_exists() {
-  [[ -f "$1" ]] || fail "expected generated file is missing"
+  [[ -f "$1" ]] || fail "expected generated file is missing: $1"
+}
+
+assert_file_absent() {
+  [[ ! -e "$1" ]] || fail "file must not be created: $1"
 }
 
 assert_contains() {
@@ -58,7 +92,7 @@ assert_not_contains() {
   local pattern="$2"
 
   if grep -Fq -- "$pattern" "$path"; then
-    fail "unexpected generated file content was found"
+    fail "unexpected generated file content was found: $path: $pattern"
   fi
 }
 
@@ -69,7 +103,8 @@ write_canonical_root_env() {
   cat >"$path" <<EOF
 STOREFRONT_DOMAIN=${domain}
 STOREFRONT_ACCESS_TOKEN=synthetic-token
-STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant
+REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant
+SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant
 API_VERSION=2026-04
 CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client
 CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop
@@ -113,36 +148,33 @@ assert_output_is_sanitized() {
     migrated-shop \
     overridden-store.example.myshopify.com \
     overridden-token \
-    later-store.example.myshopify.com; do
+    later-store.example.myshopify.com \
+    hand-written-store.example.myshopify.com \
+    hand-written-token; do
     if grep -Fq "$value" "$output_path"; then
       fail "command output included a configured value"
     fi
   done
 }
 
-test_merchant_identifier_propagates_to_sample_apps() {
-  local fixture output react_native_xcconfig swift_xcconfig
+test_merchant_identifiers_propagate_without_rewriting_root_env() {
+  local fixture output root_before
   fixture="$(make_fixture)"
   output="$fixture/output.log"
-  react_native_xcconfig="$fixture/platforms/react-native/sample/ios/Storefront.xcconfig"
-  swift_xcconfig="$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
+  root_before="$fixture/root_before"
 
-  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
-    STOREFRONT_ACCESS_TOKEN=synthetic-token \
-    REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant \
-    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant \
-    "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  cp "$fixture/.env" "$root_before"
+
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_contains "$fixture/.env" \
-    "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant"
-  assert_contains "$fixture/.env" \
-    "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant"
-  assert_contains "$fixture/platforms/react-native/sample/.env" \
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_contains "$(react_native_env_of "$fixture")" \
     'APPLE_PAY_MERCHANT_IDENTIFIER="synthetic-react-native-merchant"'
-  assert_contains "$react_native_xcconfig" \
+  assert_contains "$(react_native_xcconfig_of "$fixture")" \
     "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-react-native-merchant"
-  assert_contains "$swift_xcconfig" \
+  assert_contains "$(swift_demo_xcconfig_of "$fixture")" \
     "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-swift-merchant"
 }
 
@@ -178,276 +210,258 @@ test_sample_projects_read_generated_merchant_identifier() {
 }
 
 test_sync_and_check() {
-  local fixture output
+  local fixture output root_before
   fixture="$(make_fixture)"
   output="$fixture/output.log"
+  root_before="$fixture/root_before"
 
-  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
-    STOREFRONT_ACCESS_TOKEN=synthetic-token \
-    REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant \
-    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant \
-    CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
-    CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
-    "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  cp "$fixture/.env" "$root_before"
+
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_file_exists "$fixture/.env"
-  assert_file_exists "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
-  assert_file_exists "$fixture/platforms/react-native/sample/.env"
-  assert_file_exists "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
-  assert_file_exists "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
-  assert_not_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "APPLE_PAY_MERCHANT_IDENTIFIER"
-  assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "APPLE_PAY_MERCHANT_IDENTIFIER"
-  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
-  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "EMAIL"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_file_exists "$(android_env_of "$fixture")"
+  assert_file_exists "$(react_native_env_of "$fixture")"
+  assert_file_exists "$(react_native_xcconfig_of "$fixture")"
+  assert_file_exists "$(swift_demo_xcconfig_of "$fixture")"
+  assert_file_exists "$(swift_accelerated_xcconfig_of "$fixture")"
+
+  assert_not_contains "$(react_native_env_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$(swift_demo_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
+  assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "EMAIL"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
+  # A changed .env must reach every generated file on the next run.
   awk '
     /^API_VERSION=/ { print "API_VERSION=2026-01"; next }
     { print }
   ' "$fixture/.env" >"$fixture/.env.next"
   mv "$fixture/.env.next" "$fixture/.env"
+  cp "$fixture/.env" "$root_before"
 
   "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
-  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "API_VERSION=2026-01"
-  assert_contains "$fixture/platforms/react-native/sample/.env" "API_VERSION=\"2026-01\""
-  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "API_VERSION = 2026-01"
-  assert_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "API_VERSION = 2026-01"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_contains "$(android_env_of "$fixture")" "API_VERSION=2026-01"
+  assert_contains "$(react_native_env_of "$fixture")" "API_VERSION=\"2026-01\""
+  assert_contains "$(swift_demo_xcconfig_of "$fixture")" "API_VERSION = 2026-01"
+  assert_contains "$(swift_accelerated_xcconfig_of "$fixture")" "API_VERSION = 2026-01"
 
-  printf '%s\n' "stale" >"$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
+  printf '%s\n' "stale" >"$(android_env_of "$fixture")"
   if "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1; then
     fail "stale generated config passed --check"
   fi
   assert_output_is_sanitized "$output"
 }
 
-test_required_values_only() {
+# The core guarantee of this phase. scripts/generate_env_files owns .env now, so a
+# sync that rewrote it would either destroy a hand-written file or bake in a
+# .env.local override permanently.
+test_root_env_is_never_written() {
+  local fixture output root_before
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  root_before="$fixture/root_before"
+
+  # Deliberately non-canonical: two keys only, no trailing buyer identity block.
+  # The old script rewrote .env in exactly this case, so this fixture is what
+  # makes the assertion bite.
+  cat >"$fixture/.env" <<'EOF'
+STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=synthetic-token
+EOF
+  cp "$fixture/.env" "$root_before"
+
+  CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
+    CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
+    "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+
+  # The generated files are still complete, from defaults and the process env.
+  assert_contains "$(android_env_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$(android_env_of "$fixture")" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
+
+  "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1 ||
+    fail "--check failed for a sparse .env that had just been synced"
+}
+
+test_absent_root_env_is_not_created() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
+    STOREFRONT_ACCESS_TOKEN=synthetic-token \
+    "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_file_absent "$fixture/.env"
+  assert_contains "$(android_env_of "$fixture")" "STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com"
+}
+
+# The external contributor: no dev, no ejson, no key, a .env written by hand from
+# .env.example. Nothing may overwrite it, and the sample apps must still build.
+test_hand_written_root_env_survives_and_still_configures_the_samples() {
+  local fixture output root_before
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  root_before="$fixture/root_before"
+
+  cat >"$fixture/.env" <<'EOF'
+# My own store. Written by hand from .env.example.
+STOREFRONT_DOMAIN=hand-written-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=hand-written-token
+EOF
+  cp "$fixture/.env" "$root_before"
+
+  PATH="/usr/bin:/bin" "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+
+  assert_contains "$(android_env_of "$fixture")" "STOREFRONT_DOMAIN=hand-written-store.example.myshopify.com"
+  assert_contains "$(react_native_env_of "$fixture")" "STOREFRONT_ACCESS_TOKEN=\"hand-written-token\""
+  assert_contains "$(swift_demo_xcconfig_of "$fixture")" "STOREFRONT_DOMAIN = hand-written-store.example.myshopify.com"
+
+  PATH="/usr/bin:/bin" "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1 ||
+    fail "--check failed for a hand-written .env that had just been synced"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+}
+
+# Reporting a missing value must not abort. The generated files still get written,
+# so the sample app builds and fails at its first network call instead.
+test_missing_required_values_are_reported_without_writing_root_env() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_file_absent "$fixture/.env"
+  assert_contains "$output" "No usable STOREFRONT_DOMAIN"
+  assert_contains "$output" "No usable STOREFRONT_ACCESS_TOKEN"
+  assert_contains "$output" ".env.local"
+  assert_file_exists "$(android_env_of "$fixture")"
+}
+
+test_normalizes_the_storefront_domain() {
   local fixture output
   fixture="$(make_fixture)"
   output="$fixture/output.log"
 
   STOREFRONT_DOMAIN=https://synthetic-store.example.myshopify.com/ \
     STOREFRONT_ACCESS_TOKEN=synthetic-token \
-    "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+    "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_file_exists "$fixture/.env"
-  assert_contains "$fixture/.env" "STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com"
-  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com"
-  assert_contains "$fixture/platforms/react-native/sample/.env" "STOREFRONT_DOMAIN=\"synthetic-store.example.myshopify.com\""
-  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "STOREFRONT_DOMAIN = synthetic-store.example.myshopify.com"
-  assert_contains "$fixture/.env" "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER="
-  assert_contains "$fixture/.env" "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
-  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
-  assert_not_contains "$fixture/platforms/react-native/sample/.env" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_VERSION"
+  assert_contains "$(android_env_of "$fixture")" "STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com"
+  assert_contains "$(react_native_env_of "$fixture")" "STOREFRONT_DOMAIN=\"synthetic-store.example.myshopify.com\""
+  assert_contains "$(swift_demo_xcconfig_of "$fixture")" "STOREFRONT_DOMAIN = synthetic-store.example.myshopify.com"
+  assert_contains "$(android_env_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_not_contains "$(react_native_env_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
   assert_output_is_sanitized "$output"
 }
 
-test_optional_sync_updates_blank_optional_values_after_required_setup() {
-  local fixture output
+test_process_environment_fills_blank_optional_values() {
+  local fixture output root_before
   fixture="$(make_fixture)"
   output="$fixture/output.log"
+  root_before="$fixture/root_before"
 
-  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
-    STOREFRONT_ACCESS_TOKEN=synthetic-token \
-    "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  awk '
+    /^CUSTOMER_ACCOUNT_API_CLIENT_ID=/ { print "CUSTOMER_ACCOUNT_API_CLIENT_ID="; next }
+    /^CUSTOMER_ACCOUNT_API_SHOP_ID=/ { print "CUSTOMER_ACCOUNT_API_SHOP_ID="; next }
+    { print }
+  ' "$fixture/.env" >"$fixture/.env.next"
+  mv "$fixture/.env.next" "$fixture/.env"
+  cp "$fixture/.env" "$root_before"
 
-  assert_output_is_sanitized "$output"
-  assert_contains "$fixture/.env" "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER="
-  assert_contains "$fixture/.env" "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
-
-  REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant \
-    SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant \
-    CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
+  CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client \
     CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop \
     "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
 
   assert_output_is_sanitized "$output"
-  assert_contains "$fixture/.env" "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-react-native-merchant"
-  assert_contains "$fixture/.env" "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-swift-merchant"
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop"
-  assert_contains "$fixture/platforms/react-native/sample/.env" "APPLE_PAY_MERCHANT_IDENTIFIER=\"synthetic-react-native-merchant\""
-  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" "CUSTOMER_ACCOUNT_API_CLIENT_ID = synthetic-client"
-  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.synthetic-shop.app://callback"
-}
-
-test_shared_merchant_identifier_migrates_to_app_specific_keys() {
-  local fixture output
-  fixture="$(make_fixture)"
-  output="$fixture/output.log"
-
-  cat >"$fixture/.env" <<'EOF'
-STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
-STOREFRONT_ACCESS_TOKEN=synthetic-token
-STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant
-EOF
-
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
-  assert_output_is_sanitized "$output"
-
-  assert_not_contains "$fixture/.env" "STOREFRONT_MERCHANT_IDENTIFIER="
-  assert_contains "$fixture/.env" \
-    "REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-merchant"
-  assert_contains "$fixture/.env" \
-    "SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=synthetic-merchant"
-  assert_contains "$fixture/platforms/react-native/sample/.env" \
-    'APPLE_PAY_MERCHANT_IDENTIFIER="synthetic-merchant"'
-  assert_contains "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig" \
-    "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-merchant"
-}
-
-test_normalizes_existing_root_env() {
-  local fixture output
-  fixture="$(make_fixture)"
-  output="$fixture/output.log"
-
-  cat >"$fixture/.env" <<'EOF'
-STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
-STOREFRONT_ACCESS_TOKEN=synthetic-token
-EOF
-
-  if "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1; then
-    fail "non-canonical root .env passed --check"
-  fi
-  assert_output_is_sanitized "$output"
-
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
-  assert_output_is_sanitized "$output"
-
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
-  assert_contains "$fixture/.env" "EMAIL=checkout-kit@example.com"
-
-  "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
-  assert_output_is_sanitized "$output"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_contains "$(swift_demo_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_CLIENT_ID = synthetic-client"
+  assert_contains "$(android_env_of "$fixture")" "CUSTOMER_ACCOUNT_API_REDIRECT_URI=shop.synthetic-shop.app://callback"
 }
 
 test_blank_customer_account_api_version_defaults() {
-  local fixture output
+  local fixture output android_env root_before
   fixture="$(make_fixture)"
   output="$fixture/output.log"
+  android_env="$(android_env_of "$fixture")"
+  root_before="$fixture/root_before"
 
-  cat >"$fixture/.env" <<'EOF'
-STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
-STOREFRONT_ACCESS_TOKEN=synthetic-token
-REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER=
-SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER=
-API_VERSION=2026-04
-CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client
-CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop
-CUSTOMER_ACCOUNT_API_VERSION=
-EMAIL=checkout-kit@example.com
-ADDRESS_1=650 King Street
-ADDRESS_2=Shopify HQ
-CITY=Toronto
-COMPANY=Shopify
-COUNTRY=CA
-FIRST_NAME=Evelyn
-LAST_NAME=Hartley
-PROVINCE=ON
-ZIP=M5V 1M7
-PHONE=+14165550100
-EOF
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  awk '
+    /^CUSTOMER_ACCOUNT_API_VERSION=/ { print "CUSTOMER_ACCOUNT_API_VERSION="; next }
+    { print }
+  ' "$fixture/.env" >"$fixture/.env.next"
+  mv "$fixture/.env.next" "$fixture/.env"
+  cp "$fixture/.env" "$root_before"
 
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
-  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
-  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" "/2026-04/graphql"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_contains "$android_env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$android_env" "/2026-04/graphql"
 }
 
 # project.yml reads $(DEVELOPMENT_TEAM) from the generated xcconfig. Setup applies no
-# default team, so a clone with no DEVELOPMENT_TEAM in .env gets a blank one and fails at
-# signing. A value in .env has to win, and clearing that value has to clear the xcconfig
-# again rather than recover the previous team from the generated file.
+# default team, so a clone whose .env omits the key gets a blank one and fails at signing.
+# .env.local has to win so a second Apple team can build the sample, and dropping that
+# override has to blank the xcconfig again rather than recover the team from it.
 test_development_team_follows_env_and_clears() {
   local fixture output demo_xcconfig accelerated_xcconfig
   fixture="$(make_fixture)"
   output="$fixture/output.log"
-  demo_xcconfig="$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
-  accelerated_xcconfig="$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
+  demo_xcconfig="$(swift_demo_xcconfig_of "$fixture")"
+  accelerated_xcconfig="$(swift_accelerated_xcconfig_of "$fixture")"
 
-  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
-    STOREFRONT_ACCESS_TOKEN=synthetic-token \
-    "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
 
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
   assert_contains "$demo_xcconfig" "DEVELOPMENT_TEAM ="
+  assert_contains "$accelerated_xcconfig" "DEVELOPMENT_TEAM ="
   assert_not_contains "$demo_xcconfig" "DEVELOPMENT_TEAM = A7XGC83MZE"
-  # .env has to carry the key as well, or the next normalizing rewrite drops the override.
-  assert_contains "$fixture/.env" "DEVELOPMENT_TEAM="
+  assert_not_contains "$accelerated_xcconfig" "DEVELOPMENT_TEAM = A7XGC83MZE"
 
-  awk '
-    /^DEVELOPMENT_TEAM=/ { print "DEVELOPMENT_TEAM=SYNTHETIC9"; next }
-    { print }
-  ' "$fixture/.env" >"$fixture/.env.next"
-  mv "$fixture/.env.next" "$fixture/.env"
+  printf 'DEVELOPMENT_TEAM=SYNTHETIC9\n' >"$fixture/.env.local"
 
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
   assert_contains "$demo_xcconfig" "DEVELOPMENT_TEAM = SYNTHETIC9"
   assert_contains "$accelerated_xcconfig" "DEVELOPMENT_TEAM = SYNTHETIC9"
-  assert_contains "$fixture/.env" "DEVELOPMENT_TEAM=SYNTHETIC9"
 
-  awk '
-    /^DEVELOPMENT_TEAM=/ { print "DEVELOPMENT_TEAM="; next }
-    { print }
-  ' "$fixture/.env" >"$fixture/.env.next"
-  mv "$fixture/.env.next" "$fixture/.env"
+  rm "$fixture/.env.local"
 
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
   assert_not_contains "$demo_xcconfig" "SYNTHETIC9"
   assert_not_contains "$accelerated_xcconfig" "SYNTHETIC9"
 }
 
-# A clone whose .env predates DEVELOPMENT_TEAM holds every other canonical key, so the
-# normalizing rewrite has to notice the one absent key. Otherwise dev up leaves .env alone
-# and the developer never sees the key they are meant to override.
-test_development_team_is_added_to_an_existing_env() {
-  local fixture output accelerated_xcconfig
-  fixture="$(make_fixture)"
-  output="$fixture/output.log"
-  accelerated_xcconfig="$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
-
-  STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com \
-    STOREFRONT_ACCESS_TOKEN=synthetic-token \
-    "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
-
-  grep -v '^DEVELOPMENT_TEAM=' "$fixture/.env" >"$fixture/.env.next"
-  mv "$fixture/.env.next" "$fixture/.env"
-
-  if "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1; then
-    fail "root .env without DEVELOPMENT_TEAM passed --check"
-  fi
-  assert_output_is_sanitized "$output"
-
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
-  assert_output_is_sanitized "$output"
-  assert_contains "$fixture/.env" "DEVELOPMENT_TEAM="
-  assert_contains "$accelerated_xcconfig" "DEVELOPMENT_TEAM ="
-}
-
-test_migration_from_platform_config() {
+# Generated platform config is the last fallback, so a checkout that still has it
+# but has lost .env rebuilds the same values instead of silently blanking them.
+test_existing_platform_config_seeds_the_missing_values() {
   local fixture output android_env
   fixture="$(make_fixture)"
   output="$fixture/output.log"
-  android_env="$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
+  android_env="$(android_env_of "$fixture")"
 
   cat >"$android_env" <<'EOF'
 STOREFRONT_DOMAIN=migrated-store.example.myshopify.com
@@ -462,9 +476,11 @@ EOF
   "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
-  assert_file_exists "$fixture/.env"
-  assert_contains "$fixture/.env" "API_VERSION=2026-04"
-  assert_contains "$fixture/.env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_file_absent "$fixture/.env"
+  assert_contains "$android_env" "STOREFRONT_DOMAIN=migrated-store.example.myshopify.com"
+  assert_contains "$android_env" "API_VERSION=2026-04"
+  assert_contains "$android_env" "CUSTOMER_ACCOUNT_API_VERSION=2026-04"
+  assert_contains "$(swift_demo_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_CLIENT_ID = migrated-client"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
   assert_output_is_sanitized "$output"
@@ -474,12 +490,12 @@ test_duplicate_keys_resolve_last_wins() {
   local fixture output android_env
   fixture="$(make_fixture)"
   output="$fixture/output.log"
-  android_env="$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
+  android_env="$(android_env_of "$fixture")"
 
   write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
   printf 'STOREFRONT_DOMAIN=%s\n' later-store.example.myshopify.com >>"$fixture/.env"
 
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
   assert_contains "$android_env" "STOREFRONT_DOMAIN=later-store.example.myshopify.com"
@@ -490,7 +506,7 @@ test_env_local_overrides_root_env() {
   local fixture output android_env root_before local_before
   fixture="$(make_fixture)"
   output="$fixture/output.log"
-  android_env="$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
+  android_env="$(android_env_of "$fixture")"
   root_before="$fixture/root_before"
   local_before="$fixture/local_before"
 
@@ -502,7 +518,7 @@ EOF
   cp "$fixture/.env" "$root_before"
   cp "$fixture/.env.local" "$local_before"
 
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
   assert_contains "$android_env" "STOREFRONT_DOMAIN=overridden-store.example.myshopify.com"
@@ -523,7 +539,7 @@ STOREFRONT_DOMAIN=overridden-store.example.myshopify.com
 STOREFRONT_ACCESS_TOKEN=overridden-token
 EOF
 
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
   assert_contains "$output" ".env.local"
@@ -532,6 +548,8 @@ EOF
   assert_not_contains "$output" "EMAIL"
 }
 
+# An override must never be copied into .env, or it would outlive .env.local and
+# then keep applying after that file is deleted.
 test_env_local_is_never_baked_into_root_env() {
   local fixture output root_before
   fixture="$(make_fixture)"
@@ -545,29 +563,58 @@ EOF
   printf 'STOREFRONT_DOMAIN=%s\n' overridden-store.example.myshopify.com >"$fixture/.env.local"
   cp "$fixture/.env" "$root_before"
 
-  "$fixture/scripts/setup_storefront_env" --skip-optional-prompts >"$output" 2>&1
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
 
   assert_file_is_unchanged "$fixture/.env" "$root_before"
-  assert_contains "$output" "Leaving .env alone"
-  assert_contains "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env" \
+  assert_not_contains "$fixture/.env" "overridden-store.example.myshopify.com"
+  assert_contains "$(android_env_of "$fixture")" \
     "STOREFRONT_DOMAIN=overridden-store.example.myshopify.com"
 }
 
-test_merchant_identifier_propagates_to_sample_apps
+test_legacy_merchant_identifier_configures_both_samples_without_rewriting_root_env() {
+  local fixture output root_before
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  root_before="$fixture/root_before"
+
+  cat >"$fixture/.env" <<'EOF'
+STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=synthetic-token
+STOREFRONT_MERCHANT_IDENTIFIER=synthetic-merchant
+EOF
+  cp "$fixture/.env" "$root_before"
+
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_contains "$(react_native_env_of "$fixture")" \
+    'APPLE_PAY_MERCHANT_IDENTIFIER="synthetic-merchant"'
+  assert_contains "$(react_native_xcconfig_of "$fixture")" \
+    "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-merchant"
+  assert_contains "$(swift_demo_xcconfig_of "$fixture")" \
+    "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-merchant"
+  assert_not_contains "$(android_env_of "$fixture")" "synthetic-merchant"
+  assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "synthetic-merchant"
+}
+
+test_merchant_identifiers_propagate_without_rewriting_root_env
 test_sample_projects_read_generated_merchant_identifier
 test_sync_and_check
-test_required_values_only
-test_optional_sync_updates_blank_optional_values_after_required_setup
-test_shared_merchant_identifier_migrates_to_app_specific_keys
-test_normalizes_existing_root_env
+test_root_env_is_never_written
+test_absent_root_env_is_not_created
+test_hand_written_root_env_survives_and_still_configures_the_samples
+test_missing_required_values_are_reported_without_writing_root_env
+test_normalizes_the_storefront_domain
+test_process_environment_fills_blank_optional_values
 test_blank_customer_account_api_version_defaults
 test_development_team_follows_env_and_clears
-test_development_team_is_added_to_an_existing_env
-test_migration_from_platform_config
+test_existing_platform_config_seeds_the_missing_values
 test_duplicate_keys_resolve_last_wins
 test_env_local_overrides_root_env
 test_env_local_warning_names_only_keys
 test_env_local_is_never_baked_into_root_env
+test_legacy_merchant_identifier_configures_both_samples_without_rewriting_root_env
 
 echo "setup_storefront_env synthetic tests passed."
