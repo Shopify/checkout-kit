@@ -155,6 +155,36 @@ class MaestroTestTagsTest < Minitest::Test
     )
   end
 
+  def test_the_dismiss_flow_only_taps_an_enabled_element
+    body = File.read(File.join(E2E_ROOT, "flows", "checkout", "dismiss-active-field.yaml"))
+
+    refute_match(
+      /^\s*(?:visible|tapOn):\s*"selected"\s*$/,
+      body,
+      "a bare `selected` selector matches a disabled 24 by 22 pixel node on iOS, and Maestro " \
+        "then taps the fixed point behind it after every text entry, so the selector must " \
+        "also require enabled: true"
+    )
+  end
+
+  # The scripts filter is the only thing that selects the scripts-test job, and that job is the
+  # only thing that runs this file. Several guards here read flows/, so the filter must watch it.
+  def scripts_filter_paths
+    workflow = YAML.safe_load_file(File.expand_path("../.github/workflows/ci.yml", E2E_ROOT), aliases: true)
+    step = workflow.fetch("jobs").fetch("changes").fetch("steps").find { |candidate| candidate["id"] == "infra" }
+
+    YAML.safe_load(step.fetch("with").fetch("filters")).fetch("scripts")
+  end
+
+  def test_ci_runs_the_ruby_suite_when_a_flow_changes
+    assert_includes(
+      scripts_filter_paths,
+      "e2e/flows/**",
+      "the scripts filter in .github/workflows/ci.yml must watch e2e/flows/**, or a commit that " \
+        "only edits a flow runs none of the guards in this file"
+    )
+  end
+
   def test_there_is_at_least_one_test_to_check
     refute_empty(test_files)
     refute_empty(shared_test_files)

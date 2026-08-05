@@ -14,12 +14,19 @@ appId: ${E2E_APP_ID}
     commands:
       - tapOn: "Done"
       - waitForAnimationToEnd
+# The checkout page also renders a disabled 24 by 22 pixel node whose accessibility text is
+# "selected". Without enabled: true the branch taps that node after every text entry, and the
+# field that follows never opens.
 - runFlow:
     when:
       platform: ios
-      visible: "selected"
+      visible:
+        text: "selected"
+        enabled: true
     commands:
-      - tapOn: "selected"
+      - tapOn:
+          text: "selected"
+          enabled: true
       - waitForAnimationToEnd
 - runFlow:
     when:
