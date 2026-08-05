@@ -44,7 +44,6 @@ internal class EmbeddedCheckoutProtocolBridge(
     private val protocolMessageExecutor: Executor = ProtocolMessageExecutor.executor,
 ) {
     private var isTransportAttached = false
-    private var terminalLifecycleFailureDelivered = false
     private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
     private val defaultClientBindings: Map<String, DefaultClientBinding> = mapOf(
         CheckoutProtocol.ready.method to DefaultClientBinding(
@@ -229,23 +228,29 @@ internal class EmbeddedCheckoutProtocolBridge(
         // Direct protocol subscribers receive the complete terminal ECP payload before lifecycle handling.
         handleClientMessage(CheckoutProtocol.error.method, message)
 
-        if (terminalLifecycleFailureDelivered) {
-            log.d(LOG_TAG, "Ignoring duplicate terminal ec.error lifecycle failure.")
-            return
-        }
-
-        // `ec.error` denotes a terminal session error. Message severity selects the public
-        // lifecycle code, but does not keep the embedded session alive.
-        log.d(LOG_TAG, "Terminal ec.error received; ending checkout presentation.")
-        CheckoutWebView.invalidate()
-        if (view.isPreloadRequest) return
-        terminalLifecycleFailureDelivered = true
-
         val failure = runCatching { CheckoutProtocol.error.decode(params) }
             .getOrNull()
             ?.let(CheckoutException::terminalProtocol)
             ?: CheckoutException.sdk("Embedded checkout sent an invalid terminal error.")
+
         onMainThread {
+            if (view.hasHandledTerminalFailure) {
+                log.d(LOG_TAG, "Ignoring duplicate terminal ec.error after the session ended.")
+                return@onMainThread
+            }
+            view.hasHandledTerminalFailure = true
+
+            // `ec.error` denotes a terminal session error. Message severity selects the public
+            // lifecycle code, but does not keep the embedded session alive.
+            log.d(LOG_TAG, "Terminal ec.error received; ending checkout presentation.")
+            if (
+                CheckoutWebView.evictForTerminalFailure(
+                    view,
+                    PreloadState.FailureReason.ProtocolError,
+                )
+            ) {
+                return@onMainThread
+            }
             view.listener.onCheckoutViewFailedWithError(failure)
         }
     }

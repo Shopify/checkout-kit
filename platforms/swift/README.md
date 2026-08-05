@@ -298,6 +298,7 @@ text and underlying errors only for debugging and logging.
 | `.invalidCart` | The cart cannot continue checkout. | Create a new cart and retry. |
 | `.httpError` | Checkout returned an HTTP error response. `httpStatusCode` is available. | Inspect `httpStatusCode`; retry only when it makes sense for your app. |
 | `.networkError` | Checkout navigation failed before an HTTP response was available. | Offer a retry when connectivity is available. |
+| `.webContentProcessTerminated` | WebKit terminated the content process. | Let the buyer explicitly retry; Checkout Kit does not reload automatically. |
 | `.sdkError` | An internal Checkout Kit error has occurred (e.g. a protocol message could not be decoded). | Log diagnostic context and offer a browser fallback. |
 | `.unknown` | An unexpected error occurred. | Log diagnostic context and offer a browser fallback. |
 

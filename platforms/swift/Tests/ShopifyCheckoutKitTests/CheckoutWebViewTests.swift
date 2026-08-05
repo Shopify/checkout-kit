@@ -501,6 +501,15 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(receivedError.underlyingError as NSError?, error)
     }
 
+    func testWebContentProcessTerminationEmitsLifecycleFailure() throws {
+        view.webViewWebContentProcessDidTerminate(view)
+
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .webContentProcessTerminated)
+        XCTAssertEqual(error.message, "Web content process terminated.")
+        XCTAssertNil(error.underlyingError)
+    }
+
     func testWebViewDoesNotEmitDidFailForCancelledRedirect() throws {
         let url = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
         let view = CheckoutWebView.for(checkout: url)

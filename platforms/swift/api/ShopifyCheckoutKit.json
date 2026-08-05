@@ -540,6 +540,43 @@
           },
           {
             "kind": "Var",
+            "name": "webContentProcessTerminated",
+            "printedName": "webContentProcessTerminated",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutErrorCode.Type) -> ShopifyCheckoutKit.CheckoutErrorCode",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO27webContentProcessTerminatedyA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO27webContentProcessTerminatedyA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
             "name": "sdkError",
             "printedName": "sdkError",
             "children": [
@@ -6994,6 +7031,43 @@
                 "declKind": "EnumElement",
                 "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO13keepAliveLostyA2EmF",
                 "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO13FailureReasonO13keepAliveLostyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Var",
+                "name": "webContentProcessTerminated",
+                "printedName": "webContentProcessTerminated",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.FailureReason.Type) -> ShopifyCheckoutKit.PreloadState.FailureReason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "FailureReason",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "FailureReason",
+                            "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason",
+                            "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO27webContentProcessTerminatedyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO13FailureReasonO27webContentProcessTerminatedyA2EmF",
                 "moduleName": "ShopifyCheckoutKit"
               },
               {

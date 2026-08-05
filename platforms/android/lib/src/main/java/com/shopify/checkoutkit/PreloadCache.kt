@@ -51,6 +51,16 @@ internal class PreloadCache : DefaultLifecycleObserver {
         transition(state)
     }
 
+    fun contains(view: CheckoutWebView): Boolean {
+        val cached = entry
+        val isCurrentEntry = cached?.view === view
+        if (isCurrentEntry && cached?.isFresh(clock.currentTimeMillis()) == false) {
+            ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding expired preloaded WebView.")
+            evict(PreloadState.Expired)
+        }
+        return entry?.view === view
+    }
+
     private fun transition(state: PreloadState) {
         if (this.state == state) return
 

@@ -10,9 +10,24 @@ public sealed class PreloadState {
     public data object Expired : PreloadState()
     public data class Failed(public val reason: FailureReason) : PreloadState()
 
+    /**
+     * Explains why a preload failed.
+     *
+     * This is an alpha sealed hierarchy. New failure reasons can require consumers
+     * with exhaustive `when` expressions to handle an additional case when recompiling.
+     */
     public sealed class FailureReason {
+        /** The preload received an HTTP response that prevented it from loading. */
         public data class HttpError(public val statusCode: Int) : FailureReason()
+
+        /** Preload navigation failed. */
         public data object NavigationFailed : FailureReason()
+
+        /** The preloaded WebView's content process terminated. */
+        public data object WebContentProcessTerminated : FailureReason()
+
+        /** Checkout sent a terminal protocol error while preloading. */
+        public data object ProtocolError : FailureReason()
     }
 }
 

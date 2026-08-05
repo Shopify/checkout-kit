@@ -106,19 +106,32 @@ class ShopifyCheckoutTest {
     }
 
     @Test
-    fun `failure callback leaves parent presentation ownership with host`() {
+    fun `failure callback leaves presentation and checkout session ownership with host`() {
         var receivedError: CheckoutException? = null
-        val view = shopifyCheckout(onFailure = { receivedError = it })
+        var dismissed = false
+        val view = shopifyCheckout(
+            onDismiss = { dismissed = true },
+            onFailure = { receivedError = it },
+        )
         activity.setContentView(view)
+        val webView = view.currentWebView()
         val error = CheckoutException(code = CheckoutErrorCode.SDK_ERROR, message = "boom")
 
-        view.currentWebView().listener.onCheckoutViewFailedWithError(error)
+        webView.listener.onCheckoutViewFailedWithError(error)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
         assertThat(receivedError).isSameAs(error)
         assertThat(view.parent).isNotNull
+        assertThat(webView.parent).isNotNull
+        assertThat(shadowOf(webView).wasDestroyCalled()).isFalse()
+
+        view.findViewById<Toolbar>(R.id.checkoutKitHeader)
+            .menu
+            .performIdentifierAction(R.id.shopify_checkout_kit_close_button, 0)
+        assertThat(dismissed).isTrue()
 
         view.destroy()
+        assertThat(shadowOf(webView).wasDestroyCalled()).isTrue()
     }
 
     @Test

@@ -40,7 +40,9 @@ import com.shopify.checkoutkit.ShopifyCheckoutKit.log
  * XML inflation is not supported.
  *
  * The view owns checkout chrome, WebView navigation, loading UI, callbacks, and protocol
- * connectivity. Its parent owns presentation state, geometry, and dismissal gestures. Call
+ * connectivity. Its parent owns presentation state, geometry, and dismissal gestures. A lifecycle
+ * failure invokes the host callback; the parent remains responsible for removing its surrounding
+ * presentation, destroying this view, and creating a new [ShopifyCheckout] for any retry. Call
  * [destroy] when the view is permanently removed so the underlying WebView is released promptly.
  */
 @SuppressLint("ViewConstructor")
