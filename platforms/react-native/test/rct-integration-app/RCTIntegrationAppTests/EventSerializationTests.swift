@@ -5,22 +5,21 @@ import XCTest
 
 @available(iOS 16.0, *)
 class EventSerializationTests: XCTestCase {
-
     // MARK: - RenderState
 
-    func testRenderStateSerialization_includesErrorReason() throws {
+    func testRenderStateSerialization_includesErrorReason() {
         let serialized = ShopifyEventSerialization.serialize(renderState: .error(reason: "invariant_violation"))
         XCTAssertEqual(serialized["state"], "error")
         XCTAssertEqual(serialized["reason"], "invariant_violation")
     }
 
-    func testRenderStateSerialization_includesEmptyErrorReason() throws {
+    func testRenderStateSerialization_includesEmptyErrorReason() {
         let serialized = ShopifyEventSerialization.serialize(renderState: .error(reason: ""))
         XCTAssertEqual(serialized["state"], "error")
         XCTAssertEqual(serialized["reason"], "")
     }
 
-    func testRenderStateSerialization_loadingAndRendered() throws {
+    func testRenderStateSerialization_loadingAndRendered() {
         let loading = ShopifyEventSerialization.serialize(renderState: .loading)
         XCTAssertEqual(loading["state"], "loading")
         XCTAssertNil(loading["reason"])
@@ -33,14 +32,14 @@ class EventSerializationTests: XCTestCase {
     // MARK: - Click event
 
     func testClickEventSerialization() throws {
-        let url = URL(string: "https://shopify.dev/test")!
+        let url = try XCTUnwrap(URL(string: "https://shopify.dev/test"))
         let serialized = ShopifyEventSerialization.serialize(clickEvent: url)
         XCTAssertEqual(serialized["url"], url)
     }
 
     // MARK: - Checkout error
 
-    func testCheckoutErrorSerialization_carriesFlattenedFields() throws {
+    func testCheckoutErrorSerialization_carriesFlattenedFields() {
         let serialized = ShopifyEventSerialization.serialize(
             checkoutError: CheckoutError(code: .cartExpired, message: "expired")
         )
@@ -51,7 +50,7 @@ class EventSerializationTests: XCTestCase {
         XCTAssertNil(serialized["__typename"])
     }
 
-    func testCheckoutErrorSerialization_addsStatusCodeForHTTPFailures() throws {
+    func testCheckoutErrorSerialization_addsStatusCodeForHTTPFailures() {
         let serialized = ShopifyEventSerialization.serialize(
             checkoutError: CheckoutError(code: .httpError, message: "Not Found", httpStatusCode: 404)
         )
@@ -63,26 +62,63 @@ class EventSerializationTests: XCTestCase {
 
     /// Locks the wire format shared with Android's
     /// `CustomCheckoutListener.populateErrorDetails`, which sends the
-    /// lower-snake-case enum constant name. Every code listed here must
-    /// match a `CheckoutErrorCode` member on the JS side.
-    func testCheckoutErrorSerialization_everyCodeUsesTheSharedWireName() throws {
-        let expectedWireNames: [CheckoutErrorCode: String] = [
-            .storefrontPasswordRequired: "storefront_password_required",
-            .customerAccountRequired: "customer_account_required",
-            .cartExpired: "cart_expired",
-            .cartCompleted: "cart_completed",
-            .invalidCart: "invalid_cart",
-            .httpError: "http_error",
-            .networkError: "network_error",
-            .sdkError: "sdk_error",
-            .unknown: "unknown"
-        ]
-
-        for (code, wireName) in expectedWireNames {
+    /// lower-snake-case enum constant name.
+    func testCheckoutErrorSerialization_everyCodeUsesTheSharedWireName() {
+        for code in CheckoutErrorCode.allCases {
             let serialized = ShopifyEventSerialization.serialize(
                 checkoutError: CheckoutError(code: code, message: "failed")
             )
-            XCTAssertEqual(serialized["code"] as? String, wireName)
+            XCTAssertEqual(serialized["code"] as? String, code.rawValue)
         }
+    }
+
+    /// Fails when the native SDK gains a code that the JS `CheckoutErrorCode` does not declare.
+    func testEveryNativeErrorCodeIsDeclaredInTheJavaScriptEnum() throws {
+        let errorsFile = try XCTUnwrap(
+            Self.errorsFileURL(),
+            "Found no \(Self.relativeErrorsPath) above \(#filePath)"
+        )
+        let declaredCodes = try Self.declaredCodes(in: String(contentsOf: errorsFile, encoding: .utf8))
+
+        XCTAssertFalse(declaredCodes.isEmpty, "Found no CheckoutErrorCode members in \(errorsFile.path)")
+
+        let missingCodes = CheckoutErrorCode.allCases
+            .map(\.rawValue)
+            .filter { !declaredCodes.contains($0) }
+
+        XCTAssertTrue(
+            missingCodes.isEmpty,
+            "\(errorsFile.path) omits \(missingCodes). Add each code to CheckoutErrorCode there."
+        )
+    }
+
+    private static let relativeErrorsPath = "modules/@shopify/checkout-kit-react-native/src/errors.ts"
+
+    private static func errorsFileURL() -> URL? {
+        var directory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+
+        while directory.path != "/" {
+            let candidate = directory.appendingPathComponent(relativeErrorsPath)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+            directory = directory.deletingLastPathComponent()
+        }
+
+        return nil
+    }
+
+    private static func declaredCodes(in source: String) -> Set<String> {
+        var codes: Set<String> = []
+
+        for line in source.split(separator: "\n") where line.contains(" = '") {
+            let quoted = line.split(separator: "'", omittingEmptySubsequences: false)
+            guard quoted.count >= 3, !quoted[1].isEmpty else {
+                continue
+            }
+            codes.insert(String(quoted[1]))
+        }
+
+        return codes
     }
 }
