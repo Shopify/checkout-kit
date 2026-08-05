@@ -57,7 +57,7 @@ class AuthenticationHelper(
      * in the Authorization request (see PKCE)
      */
     fun createCodeVerifier(): String {
-        val buffer = ByteArray(32)
+        val buffer = ByteArray(CODE_VERIFIER_BYTE_LENGTH)
         SecureRandom().nextBytes(buffer)
         return buffer.base64UrlEncode()
     }
@@ -77,7 +77,7 @@ class AuthenticationHelper(
      */
     private fun state(): String {
         val random = SecureRandom()
-        return (1..36)
+        return (1..STATE_LENGTH)
             .map { ALLOWED_RANDOM_CHARS[random.nextInt(ALLOWED_RANDOM_CHARS.length)] }
             .joinToString("")
     }
@@ -107,6 +107,8 @@ class AuthenticationHelper(
     }
 
     companion object {
+        private const val CODE_VERIFIER_BYTE_LENGTH = 32
+        private const val STATE_LENGTH = 36
         private const val ALLOWED_RANDOM_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
         // Taken from https://shopify.dev/docs/api/customer#authorization-propertydetail-uilocales

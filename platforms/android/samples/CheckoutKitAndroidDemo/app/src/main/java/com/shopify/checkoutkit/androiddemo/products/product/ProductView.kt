@@ -31,6 +31,7 @@ import com.shopify.checkoutkit.androiddemo.common.ui.theme.verticalPadding
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
+@Suppress("MagicNumber") // Layout proportions are visual design values.
 @Composable
 fun ProductView(
     productId: String,

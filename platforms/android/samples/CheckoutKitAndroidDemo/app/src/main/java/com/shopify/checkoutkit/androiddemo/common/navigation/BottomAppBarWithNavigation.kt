@@ -22,6 +22,9 @@ import androidx.navigation.NavHostController
 import com.shopify.checkoutkit.androiddemo.R
 import com.shopify.checkoutkit.androiddemo.common.components.BodySmall
 
+@Suppress("MagicNumber") // The label offset is a visual design value.
+private val bottomNavigationLabelVerticalOffset = (-7.5).dp
+
 @Composable
 fun BottomAppBarWithNavigation(
     navController: NavHostController,
@@ -89,7 +92,7 @@ fun NavigationItem(
             color = color,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .offset(0.dp, (-7.5).dp)
+                .offset(0.dp, bottomNavigationLabelVerticalOffset)
         )
     }
 }

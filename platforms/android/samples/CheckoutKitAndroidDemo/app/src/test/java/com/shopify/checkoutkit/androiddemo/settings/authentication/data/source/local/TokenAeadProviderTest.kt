@@ -38,7 +38,7 @@ class TokenAeadProviderTest {
         }
 
         val codecs = coroutineScope {
-            List(10) {
+            List(CONCURRENT_CALLER_COUNT) {
                 async(Dispatchers.Default) { provider.codec() }
             }.awaitAll()
         }
@@ -61,6 +61,10 @@ class TokenAeadProviderTest {
 
         assertThat(factoryCalls.get()).isEqualTo(2)
         assertThat(replacement).isNotSameAs(original)
+    }
+
+    private companion object {
+        const val CONCURRENT_CALLER_COUNT = 10
     }
 
     private class IdentityAead : Aead {

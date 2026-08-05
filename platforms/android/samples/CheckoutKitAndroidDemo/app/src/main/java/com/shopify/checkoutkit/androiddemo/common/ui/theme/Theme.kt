@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber") // Color channels and UI dimensions are part of the theme definition.
+
 package com.shopify.checkoutkit.androiddemo.common.ui.theme
 
 import androidx.activity.ComponentActivity
