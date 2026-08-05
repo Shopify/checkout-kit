@@ -16,7 +16,8 @@ import com.shopify.checkout_kit_android_demo.R
 @Composable
 fun HeroImage() {
     Surface(
-        color = Color.Black, modifier = Modifier
+        color = Color.Black,
+        modifier = Modifier
             .fillMaxWidth()
             .alpha(0.75f)
     ) {

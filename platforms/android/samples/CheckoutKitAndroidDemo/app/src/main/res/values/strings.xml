@@ -58,7 +58,6 @@
 
     <string name="login" translatable="false">Log in</string>
     <string name="logout" translatable="false">Log out</string>
-    <string name="login_retry" translatable="false">Retry</string>
 
     <!-- Errors -->
     <string name="checkout_error" translatable="false">Checkout is unavailable. Please try again.</string>
@@ -92,7 +91,6 @@
     <string name="featured_default_alt_text" translatable="false">Featured plant image</string>
 
     <!-- Products -->
-    <string name="product_taxes_included" translatable="false">Taxes included</string>
     <string name="products_header" translatable="false">Products</string>
 
     <string name="product_add_to_cart" translatable="false">Add to cart</string>

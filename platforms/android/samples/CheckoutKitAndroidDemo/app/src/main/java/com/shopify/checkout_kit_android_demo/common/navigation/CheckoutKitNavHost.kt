@@ -40,7 +40,10 @@ sealed class Screen(val route: String) {
         }
 
         fun route(collectionHandle: String): String {
-            return route.replace("{collectionHandle}", URLEncoder.encode(collectionHandle, StandardCharsets.UTF_8.name()))
+            return route.replace(
+                "{collectionHandle}",
+                URLEncoder.encode(collectionHandle, StandardCharsets.UTF_8.name())
+            )
         }
     }
 
@@ -81,7 +84,6 @@ fun CheckoutKitNavHost(
         navController = navController,
         startDestination = startDestination,
     ) {
-
         composable(Screen.Home.route) {
             HomeView(navController)
         }

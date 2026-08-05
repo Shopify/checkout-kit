@@ -20,7 +20,6 @@ fun HomeView(
     navController: NavController,
     homeViewModel: HomeViewModel = koinViewModel()
 ) {
-
     LaunchedEffect(key1 = true) {
         homeViewModel.fetchHomePageData()
     }
@@ -50,7 +49,12 @@ fun HomeView(
             is HomeUIState.Loaded -> {
                 ProductCollections(
                     productCollections = homeUiState.productCollections,
-                    onClick = { collectionHandle -> homeViewModel.productCollectionSelected(navController, collectionHandle) }
+                    onClick = { collectionHandle ->
+                        homeViewModel.productCollectionSelected(
+                            navController,
+                            collectionHandle
+                        )
+                    }
                 )
                 Featured(homeUiState.productCollections.firstOrNull()?.products ?: emptyList()) { productId: ID ->
                     homeViewModel.productSelected(navController, productId)

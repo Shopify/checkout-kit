@@ -66,12 +66,13 @@ fun ProductCollection(
     onClick: (String) -> Unit,
     modifier: Modifier,
 ) {
-    Column(modifier = Modifier
-        .padding(bottom = verticalPadding)
-        .clickable {
-            onClick(handle)
-        }) {
-
+    Column(
+        modifier = Modifier
+            .padding(bottom = verticalPadding)
+            .clickable {
+                onClick(handle)
+            }
+    ) {
         RemoteImage(
             url = image?.url,
             altText = image?.altText ?: stringResource(R.string.collection_img_alt_default),

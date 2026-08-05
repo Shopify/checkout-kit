@@ -8,7 +8,10 @@ import kotlinx.coroutines.flow.map
 class ProductCollectionRepository(
     private val client: StorefrontApiClient,
 ) {
-    suspend fun getProductCollections(numberOfCollections: Int, numberOfProductsPerCollection: Int): List<ProductCollection> {
+    suspend fun getProductCollections(
+        numberOfCollections: Int,
+        numberOfProductsPerCollection: Int
+    ): List<ProductCollection> {
         return observeProductCollections(numberOfCollections, numberOfProductsPerCollection).last()
     }
 

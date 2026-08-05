@@ -35,12 +35,14 @@ fun ProductCollectionProduct(
 ) {
     BoxWithConstraints {
         val largeScreen = maxWidth >= largeScreenBreakpoint
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier
-            .fillMaxWidth(.49f)
-            .clickable {
-                onProductClick(product.id)
-            }) {
-
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth(.49f)
+                .clickable {
+                    onProductClick(product.id)
+                }
+        ) {
             RemoteImage(
                 url = product.image?.url,
                 altText = product.image?.altText ?: stringResource(id = R.string.featured_default_alt_text),

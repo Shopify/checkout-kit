@@ -145,5 +145,13 @@ jobs:
       - name: Kotlin Lint
         run: ./gradlew detekt
 
-      - name: Android Lint
-        run: ./gradlew lintRelease
+      - name: Setup sample app environment
+        run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
+        env:
+          STOREFRONT_DOMAIN: example.myshopify.com
+          STOREFRONT_ACCESS_TOKEN: test-token
+
+      - name: Sample static analysis and Android Lint
+        run: |
+          ./gradlew lintRelease
+          ./gradlew -p samples/CheckoutKitAndroidDemo :app:detekt :app:lintRelease

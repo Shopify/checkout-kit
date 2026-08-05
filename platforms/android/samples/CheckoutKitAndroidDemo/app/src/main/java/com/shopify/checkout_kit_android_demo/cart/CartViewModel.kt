@@ -27,7 +27,6 @@ import com.shopify.checkoutkit.CheckoutPreload
 import com.shopify.checkoutkit.CheckoutPresentation
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.ShopifyCheckoutKit
-import com.shopify.ucp.embedded.checkout.Checkout
 import com.shopify.ucp.embedded.checkout.WindowOpenResult
 import com.shopify.ucp.embedded.checkout.windowOpenRejected
 import com.shopify.ucp.embedded.checkout.windowOpenSuccess

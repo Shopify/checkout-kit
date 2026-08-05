@@ -1,10 +1,10 @@
 package com.shopify.checkout_kit_android_demo.settings.authentication.data.source.local
 
 import com.google.crypto.tink.Aead
-import java.security.GeneralSecurityException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
+import java.security.GeneralSecurityException
 
 class EncryptedTokenCodecTest {
     private val codec = EncryptedTokenCodec(FakeAead())
@@ -55,6 +55,5 @@ class EncryptedTokenCodecTest {
             }
             return ciphertext
         }
-
     }
 }
