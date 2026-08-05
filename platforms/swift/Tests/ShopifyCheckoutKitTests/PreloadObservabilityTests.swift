@@ -142,6 +142,18 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
+    func testWebContentProcessTerminationTransitionsToFailed() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        view.webViewWebContentProcessDidTerminate(view)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload?.state, .failed(reason: .keepAliveLost))
+        }
+    }
+
     func testNavigationFailureTransitionsToFailed() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
         let view = CheckoutWebView(entryPoint: nil)

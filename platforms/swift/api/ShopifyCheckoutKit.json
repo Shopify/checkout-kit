@@ -540,6 +540,43 @@
           },
           {
             "kind": "Var",
+            "name": "webContentProcessTerminated",
+            "printedName": "webContentProcessTerminated",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutErrorCode.Type) -> ShopifyCheckoutKit.CheckoutErrorCode",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO27webContentProcessTerminatedyA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO27webContentProcessTerminatedyA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
             "name": "sdkError",
             "printedName": "sdkError",
             "children": [
@@ -650,6 +687,32 @@
           },
           {
             "kind": "TypeAlias",
+            "name": "AllCases",
+            "printedName": "AllCases",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[ShopifyCheckoutKit.CheckoutErrorCode]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "TypeAlias",
+            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO8AllCasesa",
+            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO8AllCasesa",
+            "moduleName": "ShopifyCheckoutKit",
+            "implicit": true
+          },
+          {
+            "kind": "TypeAlias",
             "name": "RawValue",
             "printedName": "RawValue",
             "children": [
@@ -665,6 +728,66 @@
             "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO8RawValuea",
             "moduleName": "ShopifyCheckoutKit",
             "implicit": true
+          },
+          {
+            "kind": "Var",
+            "name": "allCases",
+            "printedName": "allCases",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[ShopifyCheckoutKit.CheckoutErrorCode]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutErrorCode",
+                    "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                    "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO8allCasesSayACGvpZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO8allCasesSayACGvpZ",
+            "moduleName": "ShopifyCheckoutKit",
+            "static": true,
+            "implicit": true,
+            "declAttributes": [
+              "Nonisolated"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[ShopifyCheckoutKit.CheckoutErrorCode]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO8allCasesSayACGvgZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B9ErrorCodeO8allCasesSayACGvgZ",
+                "moduleName": "ShopifyCheckoutKit",
+                "static": true,
+                "implicit": true,
+                "accessorKind": "get"
+              }
+            ]
           },
           {
             "kind": "Var",
@@ -765,6 +888,36 @@
             "printedName": "Encodable",
             "usr": "s:SE",
             "mangledName": "$sSE"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CaseIterable",
+            "printedName": "CaseIterable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "AllCases",
+                "printedName": "AllCases",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[ShopifyCheckoutKit.CheckoutErrorCode]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s12CaseIterableP",
+            "mangledName": "$ss12CaseIterableP"
           },
           {
             "kind": "Conformance",

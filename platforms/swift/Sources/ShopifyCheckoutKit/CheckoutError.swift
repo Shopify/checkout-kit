@@ -4,7 +4,7 @@
 import Foundation
 
 /// Stable, consumer-facing reason for a terminal checkout presentation failure.
-public enum CheckoutErrorCode: String, Codable, Sendable {
+public enum CheckoutErrorCode: String, Codable, CaseIterable, Sendable {
     /// The storefront requires a password and cannot be used by Checkout Kit.
     case storefrontPasswordRequired = "storefront_password_required"
 
@@ -25,6 +25,10 @@ public enum CheckoutErrorCode: String, Codable, Sendable {
 
     /// Checkout navigation failed before an HTTP response was available.
     case networkError = "network_error"
+
+    /// The web content process hosting checkout terminated, for example under memory pressure.
+    /// Reopen checkout to recover.
+    case webContentProcessTerminated = "web_content_process_terminated"
 
     /// An internal Checkout Kit error occurred, for example when a protocol message could not be decoded.
     case sdkError = "sdk_error"
@@ -86,6 +90,10 @@ extension CheckoutError {
 
     internal static func network(message: String, underlyingError: (any Error)? = nil) -> CheckoutError {
         CheckoutError(code: .networkError, message: message, underlyingError: underlyingError)
+    }
+
+    internal static func webContentProcessTerminated(message: String) -> CheckoutError {
+        CheckoutError(code: .webContentProcessTerminated, message: message)
     }
 
     internal static func sdk(message: String, underlyingError: (any Error)? = nil) -> CheckoutError {

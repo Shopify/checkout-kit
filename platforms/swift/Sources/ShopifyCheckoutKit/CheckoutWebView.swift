@@ -669,6 +669,21 @@ extension CheckoutWebView: WKNavigationDelegate {
         return .allow
     }
 
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        timer = nil
+        resetProvisionalNavigationRetryState()
+        handleCachedViewFailure(.keepAliveLost)
+
+        let url = LogSafeURL.string(webView.url)
+        OSLogger.shared.error("Web content process terminated - url:\(url)")
+
+        viewDelegate?.checkoutViewDidFailWithError(
+            error: CheckoutError.webContentProcessTerminated(
+                message: "The web content process hosting checkout terminated."
+            )
+        )
+    }
+
     func webView(_ webView: WKWebView, didStartProvisionalNavigation _: WKNavigation!) {
         let url = LogSafeURL.string(webView.url)
         OSLogger.shared.info("Started provisional navigation - url:\(url)")

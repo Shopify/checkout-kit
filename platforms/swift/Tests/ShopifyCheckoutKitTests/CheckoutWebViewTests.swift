@@ -501,6 +501,22 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(receivedError.underlyingError as NSError?, error)
     }
 
+    func testWebContentProcessTerminationReportsTerminationError() throws {
+        let url = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
+        let view = CheckoutWebView.for(checkout: url)
+
+        let didFailWithErrorExpectation = expectation(description: "checkoutViewDidFailWithError was called")
+        mockDelegate.didFailWithErrorExpectation = didFailWithErrorExpectation
+        view.viewDelegate = mockDelegate
+
+        view.webViewWebContentProcessDidTerminate(view)
+
+        wait(for: [didFailWithErrorExpectation], timeout: 5)
+        let receivedError = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(receivedError.code, .webContentProcessTerminated)
+        XCTAssertNil(receivedError.httpStatusCode)
+    }
+
     func testWebViewDoesNotEmitDidFailForCancelledRedirect() throws {
         let url = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
         let view = CheckoutWebView.for(checkout: url)
