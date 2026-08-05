@@ -493,7 +493,14 @@ commands:
             run: cd platforms/react-native && pnpm test
           ios:
             desc: Run native iOS unit tests via the RCT integration app
-            run: cd platforms/react-native && pnpm sample test:ios
+            long_desc: |
+              Runs the RCT integration app unit tests on a simulator.
+
+              --local
+                Test against in-repo Swift SDK sources.
+            syntax:
+              optional: --local
+            run: cd platforms/react-native && pnpm sample test:ios "$@"
           android:
             desc: Run native Android unit tests for the RN module (publishes/uses local platforms/android SDK)
             run: |
