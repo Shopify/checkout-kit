@@ -12,6 +12,13 @@ require_relative "../lib/browserstack_device_resolver"
 class BrowserStackRunExecutor
   TERMINAL_STATUSES = %w[passed failed error timedout stopped done].freeze
 
+  # BrowserStack builds the suite with its own Maestro. Without this parameter it picks a
+  # default that is years old, and every iOS test that opens the control link fails on a
+  # real device. e2e/scripts/maestro_bin reads the same file, so the version a laptop runs
+  # and the version BrowserStack runs cannot drift apart.
+  # https://www.browserstack.com/docs/app-automate/maestro/set-up-test-env/configure-tests/set-maestro-version
+  MAESTRO_VERSION_FILE = File.expand_path("../.maestro-version", __dir__)
+
   def self.failure_result(context, error)
     context.merge(
       "status" => "error",
@@ -57,6 +64,15 @@ class BrowserStackRunExecutor
     raise ArgumentError, "run_index is required: pass --index or set BITRISE_IO_PARALLEL_INDEX" if raw.nil? || raw.strip.empty?
 
     Integer(raw)
+  end
+
+  # The override exists for probing. Comparing two Maestro versions against one branch needs
+  # a way past the pin that leaves no tracked file edited.
+  def self.resolve_maestro_version(env = ENV, version_file: MAESTRO_VERSION_FILE)
+    override = env["E2E_MAESTRO_VERSION"].to_s.strip
+    return override unless override.empty?
+
+    File.read(version_file).strip
   end
 
   def self.resolve_tests_zip(cli, env)
@@ -126,6 +142,7 @@ class BrowserStackRunExecutor
       app: app_url,
       testSuite: test_suite_url,
       project: ENV.fetch("E2E_BROWSERSTACK_PROJECT", "checkout-kit-e2e"),
+      maestroVersion: self.class.resolve_maestro_version(ENV),
       buildTag: ENV.fetch("BITRISE_GIT_COMMIT", "local"),
       customBuildName: run.fetch("id"),
       devices: [device],

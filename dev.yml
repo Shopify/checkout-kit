@@ -30,6 +30,10 @@ up:
       met?: ./scripts/copy_worktree_env --check
       meet: ./scripts/copy_worktree_env
   - custom:
+      name: Install the pinned Maestro version
+      met?: ./scripts/install_maestro --check
+      meet: ./scripts/install_maestro
+  - custom:
       name: Run Checkout Kit workspace setup
       met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts
       meet: ./scripts/setup_dev_workspace --skip-optional-prompts
@@ -38,6 +42,10 @@ up:
       name: Configure Tophat Quick Launch items
       met?: ruby scripts/tophat/configure_quick_launch
       meet: "true"
+env:
+  PATH:
+    prepend: ./e2e/.maestro/bin
+
 open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
   "Issues": "https://github.com/Shopify/checkout-kit/issues"
