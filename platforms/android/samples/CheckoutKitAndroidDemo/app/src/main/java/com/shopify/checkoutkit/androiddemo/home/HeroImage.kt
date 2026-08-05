@@ -13,6 +13,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.shopify.checkoutkit.androiddemo.R
 
+@Suppress("MagicNumber") // The color matrix uses visual tuning values.
 @Composable
 fun HeroImage() {
     Surface(

@@ -16,7 +16,7 @@ class ProductPagingSource(
         try {
             val cursor = params.key
             Timber.i("Fetching page of ${params.loadSize} products with cursor $cursor")
-            val products = repository.getProducts(params.loadSize, 10, cursor)
+            val products = repository.getProducts(params.loadSize, VARIANTS_PER_PRODUCT, cursor)
             return LoadResult.Page(
                 data = products.products,
                 prevKey = null,
@@ -33,5 +33,9 @@ class ProductPagingSource(
         return state.anchorPosition?.let { position ->
             state.closestPageToPosition(position)?.prevKey
         }
+    }
+
+    private companion object {
+        const val VARIANTS_PER_PRODUCT = 10
     }
 }

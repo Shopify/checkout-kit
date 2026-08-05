@@ -5,22 +5,27 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+private const val SCHEMA_VERSION_1 = 1
+private const val SCHEMA_VERSION_2 = 2
+private const val SCHEMA_VERSION_3 = 3
+private const val SCHEMA_VERSION_4 = 4
+
 @Database(
     entities = [LogLine::class],
-    version = 4,
+    version = SCHEMA_VERSION_4,
     exportSchema = false,
 )
 abstract class LogDatabase : RoomDatabase() {
     abstract fun logDao(): LogDao
 }
 
-val MIGRATION_1_2 = object : Migration(1, 2) {
+val MIGRATION_1_2 = object : Migration(SCHEMA_VERSION_1, SCHEMA_VERSION_2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE LogLine ADD COLUMN checkout_completedorderDetails TEXT")
     }
 }
 
-val MIGRATION_2_3 = object : Migration(2, 3) {
+val MIGRATION_2_3 = object : Migration(SCHEMA_VERSION_2, SCHEMA_VERSION_3) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
             """
@@ -48,7 +53,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
-val MIGRATION_3_4 = object : Migration(3, 4) {
+val MIGRATION_3_4 = object : Migration(SCHEMA_VERSION_3, SCHEMA_VERSION_4) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
             """

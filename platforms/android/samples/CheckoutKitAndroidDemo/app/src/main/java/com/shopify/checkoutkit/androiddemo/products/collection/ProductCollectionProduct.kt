@@ -25,6 +25,7 @@ import com.shopify.checkoutkit.androiddemo.common.ui.theme.defaultProductImageHe
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.largeScreenBreakpoint
 import com.shopify.checkoutkit.androiddemo.products.product.data.Product
 
+@Suppress("MagicNumber") // Layout proportions and dimensions are visual design values.
 @Composable
 fun ProductCollectionProduct(
     product: Product,
