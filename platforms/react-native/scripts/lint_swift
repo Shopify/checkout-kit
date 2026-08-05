@@ -2,8 +2,8 @@
 
 SWIFT_PATHS=(
     modules/@shopify/checkout-kit-react-native
-    test/rct-integration-app/RCTIntegrationApp/AppDelegate.swift
-    test/rct-integration-app/RCTIntegrationAppTests/ProtocolRelayTests.swift
+    test/rct-integration-app/RCTIntegrationApp
+    test/rct-integration-app/RCTIntegrationAppTests
 )
 MODE="${1:-check}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
