@@ -28,6 +28,9 @@ import com.shopify.checkout_kit_android_demo.settings.account.AccountViewModel
 import com.shopify.checkout_kit_android_demo.settings.authentication.LoginViewModel
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.CustomerRepository
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.source.local.CustomerAccessTokenStore
+import com.shopify.checkout_kit_android_demo.settings.authentication.data.source.local.TokenAeadProvider
+import com.shopify.checkout_kit_android_demo.settings.authentication.data.source.local.TokenCodecProvider
+import com.shopify.checkout_kit_android_demo.settings.authentication.data.source.local.customerAccessTokenDataStore
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.source.network.CustomerAccountsApiGraphQLClient
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.source.network.CustomerAccountsApiRestClient
 import com.shopify.checkout_kit_android_demo.settings.authentication.utils.AuthenticationHelper
@@ -60,9 +63,12 @@ val appModules = module {
     single { Json { ignoreUnknownKeys = true } }
 
     // Storage for customer access tokens
+    single<TokenCodecProvider> { TokenAeadProvider(androidApplication().applicationContext) }
     single {
         CustomerAccessTokenStore(
-            appContext = androidApplication().applicationContext,
+            json = get(),
+            tokenCodecProvider = get(),
+            dataStore = androidApplication().applicationContext.customerAccessTokenDataStore,
         )
     }
 
