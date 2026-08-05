@@ -39,6 +39,13 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
     xcbeautify_args="--renderer github-actions"
 fi
 
+# CheckoutErrorCodeParityTest reads these. Process is unavailable on iOS, so the test
+# cannot run the script itself the way CheckoutErrorCodeParityTest.kt does. xcodebuild
+# forwards TEST_RUNNER_-prefixed variables to the test process with the prefix stripped.
+MODULE_DIR="$REACT_NATIVE_DIR/modules/@shopify/checkout-kit-react-native"
+export TEST_RUNNER_JS_CHECKOUT_ERROR_CODES="$(node --experimental-transform-types \
+    --no-warnings "$MODULE_DIR/scripts/print-error-codes.mjs")"
+
 run_xcodebuild() {
     xcodebuild test \
         -workspace RCTIntegrationApp.xcworkspace \

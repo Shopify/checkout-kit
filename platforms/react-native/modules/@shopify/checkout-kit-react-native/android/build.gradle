@@ -138,3 +138,12 @@ dependencies {
   testImplementation "org.assertj:assertj-core:3.27.7"
   testImplementation "org.robolectric:robolectric:4.16.1"
 }
+
+tasks.withType(Test).configureEach {
+  inputs.file("../src/errors.ts")
+    .withPropertyName("checkoutErrorCodeWireFormat")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.file("../scripts/print-error-codes.mjs")
+    .withPropertyName("checkoutErrorCodeExporter")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+}

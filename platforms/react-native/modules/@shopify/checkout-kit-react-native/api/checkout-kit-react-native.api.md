@@ -128,27 +128,16 @@ export { Checkout }
 
 // @public
 export enum CheckoutErrorCode {
-    // (undocumented)
     cartCompleted = "cart_completed",
-    // (undocumented)
     cartExpired = "cart_expired",
-    // (undocumented)
     customerAccountRequired = "customer_account_required",
-    // (undocumented)
     httpError = "http_error",
-    // (undocumented)
     invalidCart = "invalid_cart",
-    // (undocumented)
     networkError = "network_error",
-    // (undocumented)
     sdkError = "sdk_error",
-    // (undocumented)
     storefrontPasswordRequired = "storefront_password_required",
-    // (undocumented)
     unknown = "unknown",
-    // (undocumented)
     webContentProcessTerminated = "web_content_process_terminated",
-    // (undocumented)
     webViewNotSupported = "web_view_not_supported"
 }
 
