@@ -231,6 +231,7 @@ root_has_canonical_keys() {
     STOREFRONT_DOMAIN \
     STOREFRONT_ACCESS_TOKEN \
     STOREFRONT_MERCHANT_IDENTIFIER \
+    DEVELOPMENT_TEAM \
     API_VERSION \
     CUSTOMER_ACCOUNT_API_CLIENT_ID \
     CUSTOMER_ACCOUNT_API_SHOP_ID \
@@ -460,11 +461,10 @@ load_values() {
   ZIP_VALUE="$(root_or_source_value ZIP "$(env_fallback ZIP)" "$(read_env_value ZIP "$REACT_NATIVE_ENV")" "$(read_env_value ZIP "$SWIFT_DEMO_XCCONFIG")" "M5V 1M7")"
   PHONE_VALUE="$(root_or_source_value PHONE "$(env_fallback PHONE)" "$(read_env_value PHONE "$ANDROID_ENV")" "$(read_env_value PREFILL_PHONE "$ANDROID_ENV")" "$(read_env_value PHONE "$REACT_NATIVE_ENV")" "$(read_env_value PHONE "$SWIFT_DEMO_XCCONFIG")" "+14165550100")"
 
-  # Only the demo xcconfig carries this. The Accelerated sample still names the team in its
-  # own project.yml, so a second copy here would be a value nothing reads.
   DEVELOPMENT_TEAM_VALUE="$(root_or_source_nonempty_value DEVELOPMENT_TEAM \
     "$(env_fallback DEVELOPMENT_TEAM)" \
     "$(read_env_value DEVELOPMENT_TEAM "$SWIFT_DEMO_XCCONFIG")" \
+    "$(read_env_value DEVELOPMENT_TEAM "$SWIFT_ACCELERATED_XCCONFIG")" \
     "$DEFAULT_DEVELOPMENT_TEAM")"
 }
 
@@ -519,7 +519,7 @@ EOF
   write_env_assignment STOREFRONT_MERCHANT_IDENTIFIER "$STOREFRONT_MERCHANT_IDENTIFIER_VALUE"
   cat <<EOF
 
-# Apple team that signs the Swift sample. Set your own team to build on a device.
+# Apple team that signs the Swift samples. Set your own team to build on a device.
 EOF
   write_env_assignment DEVELOPMENT_TEAM "$DEVELOPMENT_TEAM_VALUE"
   cat <<EOF
@@ -660,6 +660,7 @@ EOF
 
 generate_swift_accelerated_xcconfig() {
   generate_xcconfig_header
+  write_xcconfig_assignment DEVELOPMENT_TEAM "$DEVELOPMENT_TEAM_VALUE"
   write_xcconfig_assignment STOREFRONT_DOMAIN "$STOREFRONT_DOMAIN_VALUE"
   write_xcconfig_assignment STOREFRONT_ACCESS_TOKEN "$STOREFRONT_ACCESS_TOKEN_VALUE"
   write_xcconfig_assignment API_VERSION "$API_VERSION_VALUE"
