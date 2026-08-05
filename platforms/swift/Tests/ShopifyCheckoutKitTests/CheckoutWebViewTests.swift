@@ -110,9 +110,9 @@ class CheckoutWebViewTests: XCTestCase {
         view.load(checkout: insecureURL)
 
         wait(for: [didFail], timeout: 2.0)
-        guard case let .sdkError(underlying) = mockDelegate.errorReceived else {
-            return XCTFail("Expected sdkError")
-        }
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .sdkError)
+        let underlying = try XCTUnwrap(error.underlyingError)
         XCTAssertTrue(underlying.localizedDescription.contains("requires an HTTPS URL"))
     }
 
@@ -1062,6 +1062,24 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
+    func testOriginValidationAllowsExplicitPortZeroByDefault() async {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        stubMessageOrigin("https://example.com")
+        view.messageRequestURL = { _ in URL(string: "https://example.com:0")! }
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+
+        view.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: Self.readyBody)
+        )
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
     func testOriginValidationRejectsUntrustedOriginWhenAllowlistSet() {
         defer { resetOriginValidationConfig() }
         view.client = nil
@@ -1078,6 +1096,27 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(rejection.get()?.origin, "https://evil.example.com")
         XCTAssertEqual(rejection.get()?.message, Self.readyBody)
         XCTAssertEqual(rejection.get()?.reason, "origin is not in the allowlist")
+    }
+
+    @MainActor
+    func testOriginValidationRejectsExplicitPortZeroWhenAllowlistSet() {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        stubMessageOrigin("https://trusted.example.com")
+        view.messageRequestURL = { _ in URL(string: "https://trusted.example.com:0")! }
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        let rejection = LockedValue<MessageRejection?>(nil)
+        ShopifyCheckoutKit.configuration.onMessageRejected = { rejection.set($0) }
+
+        view.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: Self.readyBody)
+        )
+
+        XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+        XCTAssertEqual(rejection.get()?.origin, "https://trusted.example.com")
+        XCTAssertEqual(rejection.get()?.message, Self.readyBody)
+        XCTAssertEqual(rejection.get()?.reason, "origin uses unsupported port 0")
     }
 
     @MainActor

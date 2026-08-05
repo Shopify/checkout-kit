@@ -22,6 +22,7 @@
   - [SwiftUI](#swiftui)
 - [Preload checkout](#preload-checkout)
 - [Configure checkout](#configure-checkout)
+  - [Incoming message origin validation](#incoming-message-origin-validation)
   - [Current configuration](#current-configuration)
 - [Checkout lifecycle](#checkout-lifecycle)
   - [Error handling](#error-handling)
@@ -221,8 +222,52 @@ ShopifyCheckoutKit.configure {
 | `closeButtonTintColor` | `nil` | Optional tint for the close button. |
 | `logLevel` | `.warn` | SDK logging verbosity. Threshold-ordered `.debug` → `.warn` → `.error` → `.none`; use `.debug` during integration. |
 | `preloading.enabled` | `true` | Enables best-effort checkout preloading before presentation. |
+| `allowedMessageOrigins` | `[]` | Origins trusted to send incoming checkout messages. Empty trusts every origin (open by default). See [Incoming message origin validation](#incoming-message-origin-validation). |
+| `onMessageRejected` | `nil` | Closure invoked when a message is dropped by origin validation. Defaults to logging at debug level. |
 
 To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.
+
+### Incoming message origin validation
+
+The native web view is a private, app-controlled runtime, so Checkout Kit is
+**open by default**: with an empty `allowedMessageOrigins`, incoming
+checkout-protocol messages from any origin are accepted. Provide one or more
+origins to restrict which origins are trusted; the loaded checkout origin and
+`shop.app` (including its subdomains) are always trusted as well.
+
+```swift
+ShopifyCheckoutKit.configure {
+  $0.allowedMessageOrigins = [
+    "https://checkout.example.com",
+    "https://*.example.com",
+  ]
+}
+```
+
+Each entry may be an exact origin (`https://example.com`), a wildcard subdomain
+(`https://*.example.com`, matching subdomains but not the apex), or `"*"` to
+explicitly trust every origin.
+
+Exact and wildcard entries accept an optional trailing slash. Exact entries
+must not include credentials, paths, queries, or fragments. For example,
+`https://example.com/` is accepted, while `https://user@example.com` and
+`https://example.com/path` are ignored.
+
+Messages dropped by origin validation are logged at debug level. To observe
+them instead, set `onMessageRejected`:
+
+```swift
+ShopifyCheckoutKit.configure {
+  $0.onMessageRejected = { rejection in
+    print("Dropped \(rejection.origin): \(rejection.message)")
+  }
+}
+```
+
+> [!WARNING]
+> The `MessageRejection` payload is untrusted — it was dropped precisely because
+> its origin was not in the allowlist. Incoming messages are advisory and are
+> never treated as an authoritative source of checkout state.
 
 ### Current configuration
 

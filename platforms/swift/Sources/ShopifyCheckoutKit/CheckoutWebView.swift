@@ -281,6 +281,10 @@ class CheckoutWebView: WKWebView {
         MessageOrigin(securityOrigin: message.frameInfo.securityOrigin)
     }
 
+    /// Resolves the request URL associated with an incoming message. Overridable
+    /// in tests since `WKFrameInfo` cannot be constructed directly.
+    var messageRequestURL: (WKScriptMessage) -> URL? = { $0.frameInfo.request.url }
+
     /// Resolves whether an incoming message came from the main frame. Overridable in tests.
     var messageIsMainFrame: (WKScriptMessage) -> Bool = { $0.frameInfo.isMainFrame }
 
@@ -557,6 +561,11 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
+        guard !shouldRejectExplicitPortZero(message) else {
+            rejectMessage(message, body: body, reason: "origin uses unsupported port 0")
+            return
+        }
+
         guard isMessageOriginAllowed(message) else {
             rejectMessage(message, body: body, reason: "origin is not in the allowlist")
             return
@@ -669,6 +678,18 @@ extension CheckoutWebView {
         guard let patterns else { return true }
 
         return MessageOriginValidator.isAllowed(origin: messageOrigin(message), patterns: patterns)
+    }
+
+    /// `WKSecurityOrigin` reports both an omitted port and an explicit port 0 as
+    /// zero. Use the frame request URL to reject the explicit form when origin
+    /// validation is enabled, while preserving native's open-by-default behavior.
+    private func shouldRejectExplicitPortZero(_ message: WKScriptMessage) -> Bool {
+        let patterns = MessageOriginValidator.effectiveAllowlist(
+            configuredOrigins: ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            checkoutURL: loadedCheckoutURL
+        )
+        guard patterns != nil else { return false }
+        return messageRequestURL(message)?.port == 0
     }
 }
 
