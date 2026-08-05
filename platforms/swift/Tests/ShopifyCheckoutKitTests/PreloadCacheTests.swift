@@ -203,6 +203,7 @@ class PreloadCacheTests: XCTestCase {
     func test_TerminalErrorOnForeignViewPreservesSlot() async {
         let entry = storeCacheEntry()
         let foreign = CheckoutWebView(entryPoint: nil)
+        foreign.messageIsMainFrame = { _ in true }
         let delegate = MockCheckoutWebViewDelegate()
         let didFail = expectation(description: "foreign view delegate receives failure")
         delegate.didFailWithErrorExpectation = didFail
@@ -239,6 +240,7 @@ class PreloadCacheTests: XCTestCase {
 
     private func storeCacheEntry() -> CheckoutWebView {
         let entry = CheckoutWebView(entryPoint: nil)
+        entry.messageIsMainFrame = { _ in true }
         _ = CheckoutWebView.preloadCache.store(entry, for: PreloadKey(url: url, entryPoint: nil))
         return entry
     }

@@ -18,6 +18,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.viewDelegate = mockDelegate
         view.checkoutBridge = MockCheckoutBridge.self
         view.messageIsMainFrame = { _ in true }
+        view.messageRequestURL = { _ in nil }
         MockCheckoutBridge.reset()
     }
 
