@@ -13,11 +13,6 @@ REACT_NATIVE_ENV="${ROOT_DIR}/platforms/react-native/sample/.env"
 DEFAULT_API_VERSION="2026-04"
 DEFAULT_CUSTOMER_ACCOUNT_API_VERSION="2026-04"
 
-# The Shopify team that signs the sample. A developer outside it sets DEVELOPMENT_TEAM in
-# .env rather than editing project.yml, because that file is tracked and the edit would
-# reach every other clone.
-DEFAULT_DEVELOPMENT_TEAM="A7XGC83MZE"
-
 usage() {
   cat <<EOF
 Usage: scripts/setup_storefront_env [--check] [--skip-optional-prompts|--prompt-optional]
@@ -231,6 +226,7 @@ root_has_canonical_keys() {
     STOREFRONT_DOMAIN \
     STOREFRONT_ACCESS_TOKEN \
     STOREFRONT_MERCHANT_IDENTIFIER \
+    DEVELOPMENT_TEAM \
     API_VERSION \
     CUSTOMER_ACCOUNT_API_CLIENT_ID \
     CUSTOMER_ACCOUNT_API_SHOP_ID \
@@ -460,12 +456,10 @@ load_values() {
   ZIP_VALUE="$(root_or_source_value ZIP "$(env_fallback ZIP)" "$(read_env_value ZIP "$REACT_NATIVE_ENV")" "$(read_env_value ZIP "$SWIFT_DEMO_XCCONFIG")" "M5V 1M7")"
   PHONE_VALUE="$(root_or_source_value PHONE "$(env_fallback PHONE)" "$(read_env_value PHONE "$ANDROID_ENV")" "$(read_env_value PREFILL_PHONE "$ANDROID_ENV")" "$(read_env_value PHONE "$REACT_NATIVE_ENV")" "$(read_env_value PHONE "$SWIFT_DEMO_XCCONFIG")" "+14165550100")"
 
-  # Only the demo xcconfig carries this. The Accelerated sample still names the team in its
-  # own project.yml, so a second copy here would be a value nothing reads.
+  # No default and no generated-file fallback: a cleared DEVELOPMENT_TEAM stays cleared, and
+  # the Xcode build fails at signing until the developer supplies their own team.
   DEVELOPMENT_TEAM_VALUE="$(root_or_source_nonempty_value DEVELOPMENT_TEAM \
-    "$(env_fallback DEVELOPMENT_TEAM)" \
-    "$(read_env_value DEVELOPMENT_TEAM "$SWIFT_DEMO_XCCONFIG")" \
-    "$DEFAULT_DEVELOPMENT_TEAM")"
+    "$(env_fallback DEVELOPMENT_TEAM)")"
 }
 
 collect_missing_values() {
@@ -519,7 +513,8 @@ EOF
   write_env_assignment STOREFRONT_MERCHANT_IDENTIFIER "$STOREFRONT_MERCHANT_IDENTIFIER_VALUE"
   cat <<EOF
 
-# Apple team that signs the Swift sample. Set your own team to build on a device.
+# Apple team that signs the Swift samples. Set your own team id, or the Xcode build
+# fails at signing. A blank value stays blank; setup applies no default team.
 EOF
   write_env_assignment DEVELOPMENT_TEAM "$DEVELOPMENT_TEAM_VALUE"
   cat <<EOF
@@ -660,6 +655,7 @@ EOF
 
 generate_swift_accelerated_xcconfig() {
   generate_xcconfig_header
+  write_xcconfig_assignment DEVELOPMENT_TEAM "$DEVELOPMENT_TEAM_VALUE"
   write_xcconfig_assignment STOREFRONT_DOMAIN "$STOREFRONT_DOMAIN_VALUE"
   write_xcconfig_assignment STOREFRONT_ACCESS_TOKEN "$STOREFRONT_ACCESS_TOKEN_VALUE"
   write_xcconfig_assignment API_VERSION "$API_VERSION_VALUE"

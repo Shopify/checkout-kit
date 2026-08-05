@@ -11,6 +11,6 @@ jobs:
   build-and-test-samples:
     uses: ./.github/workflows/swift-test-workflow.yml
     with:
-      test-path: ./Scripts/build_samples && ./Scripts/test_samples
+      test-path: ./Scripts/build_and_test_samples
       job-name: Build & Test Sample Apps
       setup-storefront-env: true
