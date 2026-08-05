@@ -62,6 +62,8 @@ but `dev up` leaves missing optional values blank instead of prompting.
 
 Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, `dev react-native <command>` (or `dev rn`), and `dev web <command>` after setup. Protocol schema/model commands are available as `dev protocol <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
 
+`dev check` selects checks from changed files using the same platform filters as CI. Use `dev check -i` before opening a PR to include committed changes on the current branch. With no changed files, it runs every check. Run `./scripts/check_changed --plan --changed-file <path>` to inspect the selection without running commands.
+
 React Native sample apps can be run against local in-repo SDK sources with
 `dev rn ios --local` or `dev rn android --local`. The Web sample accepts a
 checkout URL directly and does not use the shared storefront credential files.

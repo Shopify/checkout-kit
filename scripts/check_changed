@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require_relative "lib/changed_file_filters"
+require_relative "lib/check_selection"
+
+ROOT = File.expand_path("..", __dir__)
+DEV = "/opt/dev/bin/dev"
+
+options = {filters: ".ci/changed-file-filters.yml", plan: false, changed_files: []}
+
+OptionParser.new do |parser|
+  parser.banner = "Usage: scripts/check_changed [--plan] [--changed-file PATH] [--changed-files-file PATH]"
+  parser.on("--plan", "Print selected checks without running them") { options[:plan] = true }
+  parser.on("--filters PATH", "Changed-file filter configuration") { |path| options[:filters] = path }
+  parser.on("--changed-file PATH", "Add a changed file") { |path| options[:changed_files] << path }
+  parser.on("--changed-files-file PATH", "Read changed files from PATH") do |path|
+    options[:changed_files].concat(File.readlines(path, chomp: true))
+  end
+end.parse!
+
+stdin_files = STDIN.read.lines(chomp: true)
+changed_files = (options[:changed_files] + stdin_files).reject(&:empty?).uniq
+filters = ChangedFileFilters.load(options[:filters])
+errors = filters.validation_errors
+abort(errors.join("\n")) unless errors.empty?
+
+selection = CheckSelection.new(filters: filters).checks_for(changed_files)
+puts "Changed files: #{changed_files.empty? ? "none supplied; running all checks" : changed_files.join(", ")}"
+puts "Selected checks: #{selection.join(", ")}"
+exit 0 if options[:plan]
+
+commands = {
+  android: [
+    [DEV, "android", "lint"],
+    [DEV, "android", "test"]
+  ],
+  swift: [
+    [DEV, "swift", "lint"],
+    [DEV, "swift", "test"]
+  ],
+  react_native: [
+    [DEV, "react-native", "lint"],
+    ["sh", "-lc", "cd platforms/react-native && pnpm test --coverage --testPathPatterns='modules/@shopify/checkout-kit-react-native/tests' --coverageReporters=json-summary"]
+  ],
+  web: [
+    [DEV, "web", "check"]
+  ],
+  protocol_typescript: [
+    [DEV, "protocol", "lint"],
+    ["sh", "-lc", "cd protocol && pnpm test --coverage"]
+  ],
+  scripts: [
+    ["./scripts/test_ruby"]
+  ],
+  e2e: [
+    ["bitrise", "validate", "--config=e2e/bitrise.yml"]
+  ]
+}.freeze
+
+Dir.chdir(ROOT) do
+  selection.each do |check|
+    commands.fetch(check).each do |command|
+      puts "\n==> #{check}: #{command.join(" ")}"
+      success = system(*command)
+      abort("#{check} check failed") unless success
+    end
+  end
+end
