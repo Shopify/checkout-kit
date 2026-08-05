@@ -278,7 +278,7 @@ commands:
           /opt/dev/bin/dev android check android-lint
         subcommands:
           detekt:
-            desc: Run library static analysis and sample formatting checks
+            desc: Run library static analysis and sample formatting/linting checks
             run: |
               scripts/check_storefront_env
               platforms/android/gradlew -p platforms/android detekt
