@@ -6,7 +6,7 @@ import XCTest
 
 @MainActor
 class PreloadObservabilityTests: XCTestCase {
-    private var url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
+    private var url = URL(string: "https://shopify1.shopify.com/checkouts/cn/123")!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -26,6 +26,14 @@ class PreloadObservabilityTests: XCTestCase {
         guard case .loading = preload?.state else {
             return XCTFail("expected .loading, got \(String(describing: preload?.state))")
         }
+    }
+
+    func testHTTPPreloadTransitionsToNavigationFailure() throws {
+        let insecureURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/123"))
+
+        let preload = ShopifyCheckoutKit.preload(checkout: insecureURL)
+
+        XCTAssertEqual(preload?.state, .failed(reason: .navigationFailed))
     }
 
     func testManualInvalidateTransitionsToIdle() {
@@ -188,7 +196,7 @@ class PreloadObservabilityTests: XCTestCase {
             for: PreloadKey(url: url, entryPoint: nil)
         )
 
-        let otherURL = try XCTUnwrap(URL(string: "http://shopify1.shopify.com/checkouts/cn/other"))
+        let otherURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/other"))
         _ = CheckoutWebView.preloadCache.view(for: PreloadKey(url: otherURL, entryPoint: nil))
 
         withExtendedLifetime(preload) {

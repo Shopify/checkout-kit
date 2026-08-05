@@ -13,7 +13,7 @@ import XCTest
 /// leave the slot untouched.
 @MainActor
 class PreloadCacheTests: XCTestCase {
-    private var url = URL(string: "http://shopify1.shopify.com/checkouts/cn/123")!
+    private var url = URL(string: "https://shopify1.shopify.com/checkouts/cn/123")!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -203,6 +203,7 @@ class PreloadCacheTests: XCTestCase {
     func test_TerminalErrorOnForeignViewPreservesSlot() async {
         let entry = storeCacheEntry()
         let foreign = CheckoutWebView(entryPoint: nil)
+        foreign.messageIsMainFrame = { _ in true }
         let delegate = MockCheckoutWebViewDelegate()
         let didFail = expectation(description: "foreign view delegate receives failure")
         delegate.didFailWithErrorExpectation = didFail
@@ -239,6 +240,7 @@ class PreloadCacheTests: XCTestCase {
 
     private func storeCacheEntry() -> CheckoutWebView {
         let entry = CheckoutWebView(entryPoint: nil)
+        entry.messageIsMainFrame = { _ in true }
         _ = CheckoutWebView.preloadCache.store(entry, for: PreloadKey(url: url, entryPoint: nil))
         return entry
     }

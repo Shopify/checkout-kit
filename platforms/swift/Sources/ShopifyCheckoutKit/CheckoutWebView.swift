@@ -272,6 +272,22 @@ class CheckoutWebView: WKWebView {
 
     var openExternalURL: (URL) -> Void = { UIApplication.shared.open($0) }
 
+    /// Resolves whether a navigation targets the main frame. Overridable in tests.
+    var navigationIsMainFrame: (WKNavigationAction) -> Bool = { $0.targetFrame?.isMainFrame == true }
+
+    /// Resolves the origin an incoming message was sent from. Overridable in
+    /// tests since `WKSecurityOrigin` cannot be constructed directly.
+    var messageOrigin: (WKScriptMessage) -> MessageOrigin = { message in
+        MessageOrigin(securityOrigin: message.frameInfo.securityOrigin)
+    }
+
+    /// Resolves the request URL associated with an incoming message. Overridable
+    /// in tests since `WKFrameInfo` cannot be constructed directly.
+    var messageRequestURL: (WKScriptMessage) -> URL? = { $0.frameInfo.request.url }
+
+    /// Resolves whether an incoming message came from the main frame. Overridable in tests.
+    var messageIsMainFrame: (WKScriptMessage) -> Bool = { $0.frameInfo.isMainFrame }
+
     /// Kit-owned client that handles delegations and kit-mandated notifications. Currently:
     ///   - `ec.ready` - kit-owned handshake. Supported delegations are announced up
     ///     front via the `ec_delegate` URL query param; acceptance is implicit, so the
@@ -373,6 +389,10 @@ class CheckoutWebView: WKWebView {
     /// Ensures one terminal failure is handled per checkout session, regardless
     /// of whether it originated from `ec.error` or WebKit process termination.
     private var hasHandledTerminalFailure = false
+
+    /// The checkout URL passed to `load(checkout:)`. Used to derive the trusted
+    /// cart-url origin for incoming message validation.
+    var loadedCheckoutURL: URL?
     private var entryPoint: MetaData.EntryPoint?
 
     // MARK: Initializers
@@ -450,7 +470,15 @@ class CheckoutWebView: WKWebView {
     // MARK: -
 
     func load(checkout url: URL, isPreload: Bool = false) {
+        guard url.scheme?.lowercased() == "https", url.host != nil else {
+            handleCachedViewFailure(.navigationFailed)
+            viewDelegate?.checkoutViewDidFailWithError(
+                error: .sdkError(underlying: InsecureCheckoutURLError(url: url))
+            )
+            return
+        }
         OSLogger.shared.info("Loading checkout URL: \(LogSafeURL.string(url)), isPreload: \(isPreload)")
+        loadedCheckoutURL = url
         var request = URLRequest(url: url)
 
         if isPreload, ShopifyCheckoutKit.configuration.preloading.enabled {
@@ -525,6 +553,21 @@ private final class ScriptMessageHandlerRegistration {
 extension CheckoutWebView: WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? String else {
+            return
+        }
+
+        guard messageIsMainFrame(message) else {
+            rejectMessage(message, body: body, reason: "message was sent from a child frame")
+            return
+        }
+
+        guard !shouldRejectExplicitPortZero(message) else {
+            rejectMessage(message, body: body, reason: "origin uses unsupported port 0")
+            return
+        }
+
+        guard isMessageOriginAllowed(message) else {
+            rejectMessage(message, body: body, reason: "origin is not in the allowlist")
             return
         }
 
@@ -611,6 +654,45 @@ private struct TerminalErrorNotification: Decodable {
     let params: JSONRPCErrorParams
 }
 
+extension CheckoutWebView {
+    private func rejectMessage(_ message: WKScriptMessage, body: String, reason: String) {
+        let rejection = MessageRejection(
+            origin: messageOrigin(message).description,
+            message: body,
+            reason: reason
+        )
+        let onRejected = ShopifyCheckoutKit.configuration.onMessageRejected ?? { rejection in
+            OSLogger.shared.debug("Rejected checkout message from \(rejection.origin): \(rejection.reason)")
+        }
+        onRejected(rejection)
+    }
+
+    /// Validates the origin of an incoming checkout message against the effective
+    /// allowlist. When validation is disabled (native default with no configured
+    /// allowlist, or the `"*"` escape hatch) the message origin is not inspected.
+    func isMessageOriginAllowed(_ message: WKScriptMessage) -> Bool {
+        let patterns = MessageOriginValidator.effectiveAllowlist(
+            configuredOrigins: ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            checkoutURL: loadedCheckoutURL
+        )
+        guard let patterns else { return true }
+
+        return MessageOriginValidator.isAllowed(origin: messageOrigin(message), patterns: patterns)
+    }
+
+    /// `WKSecurityOrigin` reports both an omitted port and an explicit port 0 as
+    /// zero. Use the frame request URL to reject the explicit form when origin
+    /// validation is enabled, while preserving native's open-by-default behavior.
+    private func shouldRejectExplicitPortZero(_ message: WKScriptMessage) -> Bool {
+        let patterns = MessageOriginValidator.effectiveAllowlist(
+            configuredOrigins: ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            checkoutURL: loadedCheckoutURL
+        )
+        guard patterns != nil else { return false }
+        return messageRequestURL(message)?.port == 0
+    }
+}
+
 extension CheckoutWebView: WKNavigationDelegate {
     func webView(_: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
         // Handle rare cases where the url is nil
@@ -633,6 +715,14 @@ extension CheckoutWebView: WKNavigationDelegate {
                 OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). If you're expecting this scheme, it must be listed under LSApplicationSchemeQueries in Info.plist.")
                 return decisionHandler(.cancel)
             }
+        }
+
+        if navigationIsMainFrame(action), url.scheme?.lowercased() != "https" {
+            handleCachedViewFailure(.navigationFailed)
+            viewDelegate?.checkoutViewDidFailWithError(
+                error: .sdkError(underlying: InsecureCheckoutURLError(url: url))
+            )
+            return decisionHandler(.cancel)
         }
 
         decisionHandler(.allow)
@@ -799,5 +889,13 @@ extension CheckoutWebView: WKNavigationDelegate {
 
     private func isCheckout(url: URL?) -> Bool {
         return self.url == url
+    }
+}
+
+private struct InsecureCheckoutURLError: LocalizedError {
+    let url: URL
+
+    var errorDescription: String? {
+        "Checkout requires an HTTPS URL: \(LogSafeURL.string(url))"
     }
 }
