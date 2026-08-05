@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Synthetic tests for e2e/scripts/bitrise_ci_helpers.
+#
+# The guarantee here is the separation between the two stores. The sample apps
+# are configured from the repo-root .env, which comes from config/secrets/demo.ejson
+# and which a developer may point at their own shop. The E2E suite has its own
+# shop in config/secrets/e2e.ejson. A suite run that read the repo-root .env would
+# test whichever store happened to be configured for manual work.
+#
+# scripts/test_setup_storefront_env proves --env-file reads the file it is given.
+# This file proves the E2E path passes it.
+#
+# The helpers only define functions when sourced, so no CI environment is needed.
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+HELPERS="${REPO_ROOT}/e2e/scripts/bitrise_ci_helpers"
+
+fixtures=()
+
+cleanup() {
+  local fixture
+  if [[ "${#fixtures[@]}" -eq 0 ]]; then
+    return
+  fi
+
+  for fixture in "${fixtures[@]}"; do
+    rm -rf "$fixture"
+  done
+}
+
+trap cleanup EXIT
+
+fail() {
+  echo "test_bitrise_ci_helpers: $1" >&2
+  exit 1
+}
+
+# A fake scripts/setup_storefront_env that records its argv instead of writing
+# any platform configuration.
+make_fixture() {
+  local fixture
+  fixture="$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-ci-helpers.XXXXXX")"
+  fixtures+=("$fixture")
+
+  mkdir -p "$fixture/scripts" "$fixture/e2e"
+
+  cat >"$fixture/scripts/setup_storefront_env" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@" >"${ARGV_LOG}"
+EOF
+  chmod +x "$fixture/scripts/setup_storefront_env"
+
+  printf '%s\n' "$fixture"
+}
+
+# Runs e2e_configure_storefront with the decrypt step stubbed out, so the test
+# needs no key and no network.
+run_configure_storefront() {
+  local fixture="$1"
+
+  (
+    source "$HELPERS"
+
+    e2e_generate_env_files() { :; }
+    e2e_log() { :; }
+
+    cd "$fixture"
+    ARGV_LOG="$fixture/argv.log" e2e_configure_storefront
+  )
+}
+
+argv_of() {
+  cat "$1/argv.log"
+}
+
+test_configure_storefront_reads_the_e2e_env_file() {
+  local fixture argv
+  fixture="$(make_fixture)"
+
+  run_configure_storefront "$fixture"
+
+  [[ -f "$fixture/argv.log" ]] || fail "setup_storefront_env was never called"
+
+  argv="$(argv_of "$fixture")"
+
+  grep -Fxq -- "--env-file" <<<"$argv" ||
+    fail "e2e_configure_storefront did not pass --env-file, so the suite reads the repo-root .env"
+
+  grep -Fxq -- "e2e/.env" <<<"$argv" ||
+    fail "e2e_configure_storefront passed --env-file but not e2e/.env"
+}
+
+# The flag and its value must be adjacent, or the value lands on some other flag.
+test_env_file_value_follows_the_flag() {
+  local fixture
+  fixture="$(make_fixture)"
+
+  run_configure_storefront "$fixture"
+
+  grep -A 1 -Fx -- "--env-file" "$fixture/argv.log" | grep -Fxq -- "e2e/.env" ||
+    fail "the value after --env-file is not e2e/.env"
+}
+
+# Generated platform config is a value source, and on a workspace that already
+# built the demo app it holds the demo store and a Canadian address. The suite
+# must not inherit it. See flake B2 in e2e/FLAKES.md.
+test_configure_storefront_ignores_generated_config() {
+  local fixture
+  fixture="$(make_fixture)"
+
+  run_configure_storefront "$fixture"
+
+  grep -Fxq -- "--ignore-generated" "$fixture/argv.log" ||
+    fail "e2e_configure_storefront did not pass --ignore-generated, so a stale demo address can win"
+}
+
+test_configure_storefront_never_names_the_repo_root_env() {
+  local fixture line
+  fixture="$(make_fixture)"
+
+  run_configure_storefront "$fixture"
+
+  while IFS= read -r line; do
+    if [[ "$line" == ".env" || "$line" == "./.env" || "$line" == */checkout-kit/.env ]]; then
+      fail "e2e_configure_storefront pointed setup_storefront_env at the repo-root .env"
+    fi
+  done <"$fixture/argv.log"
+}
+
+test_configure_storefront_reads_the_e2e_env_file
+test_env_file_value_follows_the_flag
+test_configure_storefront_ignores_generated_config
+test_configure_storefront_never_names_the_repo_root_env
+
+echo "bitrise_ci_helpers synthetic tests passed."

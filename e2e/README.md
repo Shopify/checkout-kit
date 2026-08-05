@@ -16,6 +16,17 @@ Both paths call `scripts/run_maestro`, so they share one environment contract.
 The suite reads its own file, `e2e/.env`, so a run cannot pick up whichever store you
 happen to have configured for the sample apps in the repo-root `.env`.
 
+CI builds the sample apps from that same file. `e2e_configure_storefront` calls
+`scripts/setup_storefront_env --env-file e2e/.env --ignore-generated`, so the app under
+test talks to the E2E store and never to the demo store. `--ignore-generated` stops the
+previously generated platform config acting as a value source, because on a workspace
+that already built the demo app it holds the demo store and a Canadian address.
+
+`e2e.ejson` holds no buyer address. The address comes from the defaults in
+`scripts/setup_storefront_env`, which are in the United States, because the checkout
+flows assert on `ZIP code`, `State` and `California`. Change one and you must change the
+other. See flake B2 in [FLAKES.md](FLAKES.md).
+
 `dev up` generates `e2e/.env` from `config/secrets/e2e.ejson`, which is committed
 encrypted. It is generated, so an edit to it is lost on the next `dev up`. To change
 a value:
@@ -180,6 +191,10 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
   It holds the environment contract and the workspace root rule in one place.
 - `scripts/test_run_maestro` puts a fake `maestro` on `PATH` and asserts the argv, so
   the environment contract has tests that need no device.
+- `scripts/bitrise_ci_helpers` holds the shared shell functions the CI build steps use,
+  including `e2e_configure_storefront`.
+- `scripts/test_bitrise_ci_helpers` puts a fake `setup_storefront_env` on the path and
+  asserts the argv, so the split between the E2E store and the demo store has a test.
 - `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
   `scripts/` drive the BrowserStack run plan.
 
