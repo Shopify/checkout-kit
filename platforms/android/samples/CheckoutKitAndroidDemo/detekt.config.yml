@@ -6,6 +6,11 @@ naming:
     active: true
     ignoreAnnotated: [ 'Composable', 'Test' ]
 
+style:
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+
 formatting:
   active: true
   autoCorrect: true
