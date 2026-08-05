@@ -28,7 +28,12 @@ public enum class CheckoutErrorCode {
     /** Checkout navigation failed before an HTTP response was available. */
     NETWORK_ERROR,
 
-    /** The installed WebView provider does not support the required WebMessageListener API. */
+    /**
+     * The installed WebView provider does not support the required WebMessageListener API.
+     *
+     * Android System WebView updates apart from the operating system, so an old provider
+     * can lack the API. Checkout Kit reports no equivalent code on iOS.
+     */
     WEB_VIEW_NOT_SUPPORTED,
 
     /** The WebView renderer process was terminated or crashed. */
