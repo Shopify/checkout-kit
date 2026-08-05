@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Branded navigation assets retain their vector detail at the sample's display size. -->
+    <issue id="VectorPath">
+        <ignore path="src/main/res/drawable/home.xml" />
+        <ignore path="src/main/res/drawable/logo_vector.xml" />
+        <ignore path="src/main/res/drawable/product.xml" />
+    </issue>
+</lint>

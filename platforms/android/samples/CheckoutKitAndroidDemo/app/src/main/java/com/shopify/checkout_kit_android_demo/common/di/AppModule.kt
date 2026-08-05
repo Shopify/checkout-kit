@@ -9,12 +9,12 @@ import com.shopify.checkout_kit_android_demo.BuildConfig
 import com.shopify.checkout_kit_android_demo.cart.CartViewModel
 import com.shopify.checkout_kit_android_demo.cart.data.CartRepository
 import com.shopify.checkout_kit_android_demo.common.client.StorefrontApiClient
-import com.shopify.checkout_kit_android_demo.graphql.cache.Cache.cache
 import com.shopify.checkout_kit_android_demo.common.logs.LogDatabase
 import com.shopify.checkout_kit_android_demo.common.logs.Logger
 import com.shopify.checkout_kit_android_demo.common.logs.MIGRATION_1_2
 import com.shopify.checkout_kit_android_demo.common.logs.MIGRATION_2_3
 import com.shopify.checkout_kit_android_demo.common.logs.MIGRATION_3_4
+import com.shopify.checkout_kit_android_demo.graphql.cache.Cache.cache
 import com.shopify.checkout_kit_android_demo.home.HomeViewModel
 import com.shopify.checkout_kit_android_demo.logs.LogsViewModel
 import com.shopify.checkout_kit_android_demo.products.ProductsViewModel

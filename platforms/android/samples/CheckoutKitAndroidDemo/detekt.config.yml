@@ -1,0 +1,12 @@
+# The sample intentionally applies only Detekt formatting rules. Full static analysis is enforced
+# for the published library, while this keeps sample lint adoption actionable without a baseline.
+formatting:
+  active: true
+  autoCorrect: true
+  MaximumLineLength:
+    active: true
+    maxLineLength: 140
+  NoUnusedImports:
+    active: true
+  NoWildcardImports:
+    active: true

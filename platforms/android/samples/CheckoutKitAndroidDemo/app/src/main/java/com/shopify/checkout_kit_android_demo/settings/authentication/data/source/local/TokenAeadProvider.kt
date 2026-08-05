@@ -6,15 +6,13 @@ import com.google.crypto.tink.KeyTemplates
 import com.google.crypto.tink.RegistryConfiguration
 import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
-import java.io.IOException
-import java.security.GeneralSecurityException
-import java.security.KeyStore
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.security.KeyStore
+import kotlin.coroutines.cancellation.CancellationException
 
 // SharedPreferences file name; this alone maps to
 // shared_prefs/customer_access_token_keyset.xml and must match the XML backup exclusions.
@@ -98,6 +96,5 @@ internal class TokenAeadProvider internal constructor(
                 Timber.w("Unable to delete customer access token master key (%s)", failure.javaClass.simpleName)
             }
         }
-
     }
 }

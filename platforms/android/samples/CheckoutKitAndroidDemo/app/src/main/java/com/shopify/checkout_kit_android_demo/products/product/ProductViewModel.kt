@@ -117,7 +117,8 @@ class ProductViewModel(
                         }?.availableForSale ?: false,
                     )
                 }
-            })
+            }
+        )
     }
 
     // Modifies the options for the selected variant (e.g: [size: large, color: red]) by replacing one with a new option (e.g. color: blue)

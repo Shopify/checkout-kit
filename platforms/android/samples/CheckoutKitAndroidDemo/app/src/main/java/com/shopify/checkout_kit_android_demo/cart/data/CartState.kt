@@ -13,7 +13,6 @@ sealed class CartState {
         val cartTotals: CartTotals,
         val checkoutUrl: String,
     ) : CartState()
-
 }
 
 data class CartLine(

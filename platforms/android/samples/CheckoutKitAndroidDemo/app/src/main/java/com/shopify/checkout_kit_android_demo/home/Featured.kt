@@ -41,7 +41,6 @@ fun Featured(
                 .padding(start = 15.dp, end = 15.dp, top = 30.dp)
                 .fillMaxSize()
         ) {
-
             Header3(
                 resourceId = R.string.featured_title,
                 modifier = Modifier,

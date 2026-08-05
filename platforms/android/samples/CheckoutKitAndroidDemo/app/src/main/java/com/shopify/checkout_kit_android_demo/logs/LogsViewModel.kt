@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 
-class LogsViewModel(private val logDb: LogDatabase): ViewModel() {
+class LogsViewModel(private val logDb: LogDatabase) : ViewModel() {
 
     private val _logState = MutableStateFlow<LogState>(LogState.Loading)
     val logState: StateFlow<LogState> = _logState.asStateFlow()
@@ -44,14 +44,13 @@ class LogsViewModel(private val logDb: LogDatabase): ViewModel() {
         checkoutId = checkoutContext?.checkoutId,
         previousCheckoutPayload = checkoutContext?.previousCheckoutPayload,
     )
-
 }
 
 sealed class LogState {
-    data object Loading: LogState()
+    data object Loading : LogState()
     data class Populated(
         val groups: List<CheckoutLogGroup>
-    ): LogState()
+    ) : LogState()
 }
 
 data class CheckoutLogGroup(

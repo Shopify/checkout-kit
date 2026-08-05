@@ -55,7 +55,10 @@ check:
   storefront-env-tests: ./scripts/test_setup_storefront_env
   ruby-script-tests: ./scripts/test_ruby
   android-detekt: platforms/android/gradlew -p platforms/android detekt
-  android-lint: platforms/android/gradlew -p platforms/android lintRelease
+  android-lint: |
+    scripts/check_storefront_env
+    platforms/android/gradlew -p platforms/android lintRelease
+    platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:lintRelease
   swift-lint: cd platforms/swift && ./Scripts/lint
   react-native-lint-swift: cd platforms/react-native && ./scripts/lint_swift
   react-native-lint-module: cd platforms/react-native && pnpm module lint
@@ -252,14 +255,20 @@ commands:
               platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
 
       lint:
-        desc: Check code style and lint (detekt + Android lint)
+        desc: Check code style and lint (detekt + Android lint, including the sample)
         aliases: [style]
-        run: platforms/android/gradlew -p platforms/android detekt lintRelease
+        run: |
+          scripts/check_storefront_env
+          platforms/android/gradlew -p platforms/android detekt lintRelease
+          platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:detekt :app:lintRelease
 
       format:
-        desc: Auto-format and apply safe lint autocorrections
+        desc: Auto-format and apply safe lint autocorrections, including the sample
         aliases: [fix]
-        run: platforms/android/gradlew -p platforms/android detekt --auto-correct
+        run: |
+          scripts/check_storefront_env
+          platforms/android/gradlew -p platforms/android detekt --auto-correct
+          platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:detekt --auto-correct
 
       check:
         desc: Run all Android checks (detekt, Android lint)
@@ -269,11 +278,17 @@ commands:
           /opt/dev/bin/dev android check android-lint
         subcommands:
           detekt:
-            desc: Run detekt static analysis
-            run: platforms/android/gradlew -p platforms/android detekt
+            desc: Run library static analysis and sample formatting checks
+            run: |
+              scripts/check_storefront_env
+              platforms/android/gradlew -p platforms/android detekt
+              platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:detekt
           android-lint:
-            desc: Run Android lint
-            run: platforms/android/gradlew -p platforms/android lintRelease
+            desc: Run Android lint, including the sample
+            run: |
+              scripts/check_storefront_env
+              platforms/android/gradlew -p platforms/android lintRelease
+              platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:lintRelease
 
       clean:
         desc: Clean Android Gradle build outputs

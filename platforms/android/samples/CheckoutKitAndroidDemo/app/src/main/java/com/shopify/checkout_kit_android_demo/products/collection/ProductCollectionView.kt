@@ -84,7 +84,12 @@ fun ProductCollectionView(
                             ProductCollectionProduct(
                                 product = collectionProduct,
                                 textColor = MaterialTheme.colorScheme.onBackground,
-                                onProductClick = { productId -> productCollectionViewModel.productSelected(navController, productId) }
+                                onProductClick = { productId ->
+                                    productCollectionViewModel.productSelected(
+                                        navController,
+                                        productId
+                                    )
+                                }
                             )
                         }
                     }

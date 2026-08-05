@@ -1,6 +1,5 @@
 package com.shopify.checkout_kit_android_demo.cart
 
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column

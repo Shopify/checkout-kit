@@ -67,7 +67,10 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setCheckoutPreloadingEnabled(enabled: Boolean) = saveData(CHECKOUT_PRELOADING, enabled)
 
-    suspend fun setCheckoutPresentationMode(mode: CheckoutPresentationMode) = saveData(CHECKOUT_PRESENTATION_MODE, mode.name)
+    suspend fun setCheckoutPresentationMode(mode: CheckoutPresentationMode) = saveData(
+        CHECKOUT_PRESENTATION_MODE,
+        mode.name
+    )
 
     suspend fun setDragToDismissEnabled(enabled: Boolean) = saveData(DRAG_TO_DISMISS, enabled)
 
@@ -91,7 +94,6 @@ class PreferencesManager(private val context: Context) {
         private val TAP_AWAY_TO_DISMISS = booleanPreferencesKey("tapAwayToDismiss")
         private val WINDOW_OPEN_HANDLER = stringPreferencesKey("windowOpenHandler")
         private val CHECKOUT_SHEET_PRESET = stringPreferencesKey("checkoutSheetStyle")
-
     }
 }
 

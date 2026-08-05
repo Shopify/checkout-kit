@@ -1,12 +1,12 @@
 package com.shopify.checkout_kit_android_demo.settings.authentication.data.source.local
 
 import com.google.crypto.tink.Aead
-import java.io.IOException
-import java.security.GeneralSecurityException
-import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
+import java.io.IOException
+import java.security.GeneralSecurityException
+import java.util.concurrent.atomic.AtomicInteger
 
 class KeysetAeadFactoryTest {
     @Test

@@ -87,7 +87,9 @@ class MainActivity : ComponentActivity() {
         } else {
             geolocationPermissionCallback = callback
             geolocationOrigin = origin
-            geolocationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            geolocationLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
         }
     }
 

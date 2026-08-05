@@ -8,12 +8,6 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.google.crypto.tink.Aead
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.AccessToken
-import java.io.File
-import java.io.IOException
-import java.nio.charset.StandardCharsets.UTF_8
-import java.security.GeneralSecurityException
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,6 +25,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
+import java.io.IOException
+import java.nio.charset.StandardCharsets.UTF_8
+import java.security.GeneralSecurityException
+import java.util.Base64
+import java.util.concurrent.atomic.AtomicInteger
 
 class CustomerAccessTokenStoreTest {
     @get:Rule
@@ -135,13 +135,15 @@ class CustomerAccessTokenStoreTest {
     @Test
     fun `does not remove a token saved while an unreadable token is being discarded`() = runBlocking<Unit> {
         val replacement = "v1:replacement"
-        val store = storeWith(DecryptFailingAead {
-            runBlocking {
-                dataStore.edit { preferences ->
-                    preferences[TOKEN_KEY] = replacement
+        val store = storeWith(
+            DecryptFailingAead {
+                runBlocking {
+                    dataStore.edit { preferences ->
+                        preferences[TOKEN_KEY] = replacement
+                    }
                 }
             }
-        })
+        )
 
         store.save(token())
 
@@ -153,7 +155,9 @@ class CustomerAccessTokenStoreTest {
     fun `does not persist a token when the codec cannot be created`() = runBlocking<Unit> {
         val store = CustomerAccessTokenStore(
             json = json,
-            tokenCodecProvider = codecProvider(codecFactory = { throw GeneralSecurityException("Unable to load keyset") }),
+            tokenCodecProvider = codecProvider(
+                codecFactory = { throw GeneralSecurityException("Unable to load keyset") }
+            ),
             dataStore = dataStore
         )
 
@@ -170,7 +174,9 @@ class CustomerAccessTokenStoreTest {
         }
         val store = CustomerAccessTokenStore(
             json = json,
-            tokenCodecProvider = codecProvider(codecFactory = { throw GeneralSecurityException("Unable to load keyset") }),
+            tokenCodecProvider = codecProvider(
+                codecFactory = { throw GeneralSecurityException("Unable to load keyset") }
+            ),
             dataStore = dataStore
         )
 

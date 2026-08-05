@@ -1,8 +1,6 @@
 package com.shopify.checkout_kit_android_demo.settings.authentication.data.source.local
 
 import com.google.crypto.tink.Aead
-import java.security.GeneralSecurityException
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -11,6 +9,8 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
+import java.security.GeneralSecurityException
+import java.util.concurrent.atomic.AtomicInteger
 
 class TokenAeadProviderTest {
     @Test

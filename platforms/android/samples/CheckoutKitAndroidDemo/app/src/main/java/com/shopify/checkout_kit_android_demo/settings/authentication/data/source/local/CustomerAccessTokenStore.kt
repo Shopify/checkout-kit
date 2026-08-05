@@ -9,14 +9,14 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.shopify.checkout_kit_android_demo.settings.authentication.data.AccessToken
-import java.io.IOException
-import java.security.GeneralSecurityException
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
+import java.io.IOException
+import java.security.GeneralSecurityException
+import kotlin.coroutines.cancellation.CancellationException
 
 // Keep this name in sync with the DataStore exclusions in res/xml/data_extraction_rules.xml and
 // res/xml/backup_rules.xml.

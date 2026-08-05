@@ -24,7 +24,6 @@ fun LoginView(
     navController: NavController,
     loginViewModel: LoginViewModel = koinViewModel(),
 ) {
-
     val uiState = loginViewModel.uiState.collectAsState().value
 
     LaunchedEffect(key1 = true) {

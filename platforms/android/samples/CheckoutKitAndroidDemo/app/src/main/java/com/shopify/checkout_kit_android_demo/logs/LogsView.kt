@@ -58,7 +58,6 @@ fun LogsView(logsViewModel: LogsViewModel) {
                     .fillMaxSize()
                     .padding(horizontal = horizontalPadding, vertical = verticalPadding)
             ) {
-
                 Button(shape = RectangleShape, onClick = {
                     logsViewModel.clear()
                 }) {
