@@ -1,0 +1,72 @@
+package com.shopify.checkoutkit.androiddemo.products.collection
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.shopify.checkoutkit.androiddemo.R
+import com.shopify.checkoutkit.androiddemo.common.ID
+import com.shopify.checkoutkit.androiddemo.common.components.MoneyRangeText
+import com.shopify.checkoutkit.androiddemo.common.components.RemoteImage
+import com.shopify.checkoutkit.androiddemo.common.ui.theme.defaultProductImageHeight
+import com.shopify.checkoutkit.androiddemo.common.ui.theme.defaultProductImageHeightLg
+import com.shopify.checkoutkit.androiddemo.common.ui.theme.largeScreenBreakpoint
+import com.shopify.checkoutkit.androiddemo.products.product.data.Product
+
+@Composable
+fun ProductCollectionProduct(
+    product: Product,
+    onProductClick: (id: ID) -> Unit,
+    textColor: Color = MaterialTheme.colorScheme.onPrimary,
+    imageHeight: Dp = defaultProductImageHeight,
+    imageHeightLg: Dp = defaultProductImageHeightLg,
+) {
+    BoxWithConstraints {
+        val largeScreen = maxWidth >= largeScreenBreakpoint
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth(.49f)
+                .clickable {
+                    onProductClick(product.id)
+                }
+        ) {
+            RemoteImage(
+                url = product.image?.url,
+                altText = product.image?.altText ?: stringResource(id = R.string.featured_default_alt_text),
+                modifier = Modifier
+                    .height(if (largeScreen) imageHeightLg else imageHeight)
+                    .align(Alignment.CenterHorizontally),
+            )
+
+            Text(
+                text = product.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = textColor,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+            )
+
+            MoneyRangeText(
+                fromPrice = product.priceRange.minVariantPrice.amount,
+                fromCurrencyCode = product.priceRange.minVariantPrice.currencyCode,
+                toPrice = product.priceRange.maxVariantPrice.amount,
+                toCurrencyCode = product.priceRange.maxVariantPrice.currencyCode,
+                style = MaterialTheme.typography.bodyMedium,
+                color = textColor,
+            )
+        }
+    }
+}
