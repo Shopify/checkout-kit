@@ -26,7 +26,7 @@ internal interface WebMessageTransport {
         webView: WebView,
         jsObjectName: String,
         allowedOriginRules: Set<String>,
-        onMessage: (message: String, isMainFrame: Boolean) -> Unit,
+        onMessage: (message: String, sourceOrigin: String, isMainFrame: Boolean) -> Unit,
     ): Boolean
 
     /** Removes the listener registered under [jsObjectName]. */
@@ -38,7 +38,7 @@ internal interface WebMessageTransport {
 
 /** Adapts AndroidX WebMessages to the text-only callback exposed by [WebMessageTransport]. */
 internal class WebMessageListenerAdapter(
-    private val onMessage: (message: String, isMainFrame: Boolean) -> Unit,
+    private val onMessage: (message: String, sourceOrigin: String, isMainFrame: Boolean) -> Unit,
 ) : WebViewCompat.WebMessageListener {
     override fun onPostMessage(
         view: WebView,
@@ -58,7 +58,7 @@ internal class WebMessageListenerAdapter(
             return
         }
 
-        onMessage(data, isMainFrame)
+        onMessage(data, sourceOrigin.toString(), isMainFrame)
     }
 }
 
@@ -74,7 +74,7 @@ internal object WebMessageListenerTransport : WebMessageTransport {
         webView: WebView,
         jsObjectName: String,
         allowedOriginRules: Set<String>,
-        onMessage: (message: String, isMainFrame: Boolean) -> Unit,
+        onMessage: (message: String, sourceOrigin: String, isMainFrame: Boolean) -> Unit,
     ): Boolean {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return false
 

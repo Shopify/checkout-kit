@@ -152,6 +152,30 @@ class ShopifyCheckoutTest {
     }
 
     @Test
+    fun `non HTTPS checkout reports failure after construction and creates inert view`() {
+        var receivedError: CheckoutException? = null
+
+        val view = ShopifyCheckout.create(
+            context = activity,
+            checkoutUrl = "http://checkout.shopify.com/cart/123",
+            webMessageTransport = webMessageTransport,
+        ) {
+            onFail { receivedError = it }
+        }
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(receivedError)
+            .isInstanceOf(CheckoutException::class.java)
+            .extracting("message")
+            .asString()
+            .contains("requires an HTTPS URL")
+        assertThat(view.findViewById<RelativeLayout>(R.id.checkoutKitContainer).children.none { it is CheckoutWebView })
+            .isTrue()
+
+        view.destroy()
+    }
+
+    @Test
     fun `destroy suppresses pending initialization failure`() {
         webMessageTransport.supported = false
         var failed = false

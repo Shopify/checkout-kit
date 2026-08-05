@@ -10,6 +10,7 @@ import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient.FileChooserParams
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
@@ -27,9 +28,11 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLooper
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
+@Suppress("LargeClass")
 class CheckoutWebViewTest {
 
     private lateinit var activity: ComponentActivity
@@ -56,6 +59,8 @@ class CheckoutWebViewTest {
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel
+            it.allowedMessageOrigins = initialConfiguration.allowedMessageOrigins
+            it.onMessageRejected = initialConfiguration.onMessageRejected
         }
     }
 
@@ -273,6 +278,95 @@ class CheckoutWebViewTest {
         }
     }
 
+    @Test
+    fun `web message from any origin is accepted when no allowlist is configured`() {
+        val view = checkoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        var received = false
+        view.setClient(
+            CheckoutProtocol.Client().on(CheckoutProtocol.messagesChange) { received = true },
+        )
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = "https://evil.example.com")
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(received).isTrue()
+        }
+    }
+
+    @Test
+    fun `web message from the cart URL origin is accepted when an allowlist is configured`() {
+        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        assertWebMessageReceivedFrom("https://checkout.shopify.com")
+    }
+
+    @Test
+    fun `web message from a shop app subdomain is accepted when an allowlist is configured`() {
+        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        assertWebMessageReceivedFrom("https://checkout.shop.app")
+    }
+
+    @Test
+    fun `web message from a configured origin is accepted`() {
+        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        assertWebMessageReceivedFrom("https://allowed.example.com")
+    }
+
+    @Test
+    fun `web message from an untrusted origin is dropped and reported when an allowlist is configured`() {
+        val rejected = mutableListOf<RejectedMessage>()
+        ShopifyCheckoutKit.configure {
+            it.allowedMessageOrigins = setOf("https://allowed.example.com")
+            it.onMessageRejected = { rejected.add(it) }
+        }
+        val view = checkoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        var received = false
+        var sentinelReceived = false
+        view.setClient(
+            CheckoutProtocol.Client()
+                .on(CheckoutProtocol.messagesChange) { received = true }
+                .on(CheckoutProtocol.start) { sentinelReceived = true },
+        )
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = "https://evil.example.com")
+        webMessageTransport.dispatchMessage(ecStartMessage(), sourceOrigin = "https://checkout.shopify.com")
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(sentinelReceived).isTrue()
+        }
+        assertThat(received).isFalse()
+        assertThat(rejected).singleElement().satisfies({
+            assertThat(it.origin).isEqualTo("https://evil.example.com")
+            assertThat(it.reason).contains("not in the allowlist")
+        })
+    }
+
+    @Test
+    fun `callback failures do not interrupt later trusted messages`() {
+        ShopifyCheckoutKit.configure {
+            it.allowedMessageOrigins = setOf("https://allowed.example.com")
+            it.onMessageRejected = { error("callback failed") }
+        }
+        val view = checkoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        var received = false
+        view.setClient(CheckoutProtocol.Client().on(CheckoutProtocol.start) { received = true })
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = "https://evil.example.com")
+        webMessageTransport.dispatchMessage(ecStartMessage(), sourceOrigin = "https://checkout.shopify.com")
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(received).isTrue()
+        }
+    }
+
     // endregion
 
     @Test
@@ -319,6 +413,67 @@ class CheckoutWebViewTest {
     }
 
     @Test
+    fun `loadCheckout rejects non HTTPS URLs`() {
+        val view = checkoutWebView(activity)
+
+        assertThatThrownBy { view.loadCheckout("http://checkout.shopify.com/cart/123") }
+            .isInstanceOf(CheckoutException::class.java)
+            .hasMessageContaining("requires an HTTPS URL")
+    }
+
+    @Test
+    fun `checkoutViewFor rejects non HTTPS URLs before constructing a WebView`() {
+        assertThatThrownBy { checkoutViewFor("http://checkout.shopify.com/cart/123") }
+            .isInstanceOf(CheckoutException::class.java)
+            .hasMessageContaining("requires an HTTPS URL")
+
+        assertThat(webMessageTransport.attachCount).isZero()
+    }
+
+    @Test
+    fun `main frame redirect to non HTTPS URL is blocked and reported`() {
+        val view = checkoutWebView(activity)
+        val listener = mock(CheckoutWebViewListener::class.java)
+        val request = mock(WebResourceRequest::class.java)
+        whenever(request.url).thenReturn(Uri.parse("http://checkout.shopify.com/cart/123"))
+        whenever(request.isForMainFrame).thenReturn(true)
+        view.setListener(listener)
+
+        val blocked = view.CheckoutWebViewClient().shouldOverrideUrlLoading(view, request)
+
+        assertThat(blocked).isTrue()
+        verify(listener).onCheckoutViewFailedWithError(
+            org.mockito.kotlin.check {
+                assertThat(it).isInstanceOf(CheckoutException::class.java)
+                assertThat(it.code).isEqualTo(CheckoutErrorCode.SDK_ERROR)
+                assertThat(it.message).contains("requires an HTTPS URL")
+            }
+        )
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun `legacy redirect callback blocks non HTTPS URLs`() {
+        val view = checkoutWebView(activity)
+        val listener = mock(CheckoutWebViewListener::class.java)
+        view.setListener(listener)
+
+        val blocked = view.CheckoutWebViewClient().shouldOverrideUrlLoading(
+            view,
+            "http://checkout.shopify.com/cart/123",
+        )
+
+        assertThat(blocked).isTrue()
+        verify(listener).onCheckoutViewFailedWithError(
+            org.mockito.kotlin.check {
+                assertThat(it).isInstanceOf(CheckoutException::class.java)
+                assertThat(it.code).isEqualTo(CheckoutErrorCode.SDK_ERROR)
+                assertThat(it.message).contains("requires an HTTPS URL")
+            }
+        )
+    }
+
+    @Test
     fun `loadCheckout preserves existing query params alongside ec_version`() {
         val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123?foo=bar")
@@ -359,6 +514,43 @@ class CheckoutWebViewTest {
         assertThat(shadow.lastAdditionalHttpHeaders).containsEntry("Shopify-Purpose", "prefetch")
         assertThat(view.isPreloadRequest).isTrue()
         assertThat(shadow.wasOnPauseCalled()).isTrue()
+    }
+
+    @Test
+    fun `preload reports navigation failure for non HTTPS URL`() {
+        val preload = CheckoutWebView.preload(
+            "http://checkout.shopify.com/cart/123",
+            activity,
+            webMessageTransport,
+        )
+
+        assertThat(preload?.state)
+            .isEqualTo(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+    }
+
+    @Test
+    fun `preload evicts cached view on main thread for non HTTPS URL from background thread`() {
+        preload("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val result = CompletableFuture.supplyAsync {
+            CheckoutWebView.preload(
+                "http://checkout.shopify.com/cart/456",
+                activity,
+                webMessageTransport,
+            )
+        }
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(result.isDone).isTrue()
+        }
+
+        assertThat(result.get()!!.state)
+            .isEqualTo(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
     }
 
     @Test
@@ -604,6 +796,27 @@ class CheckoutWebViewTest {
         }
         assertThat(ignoredMessageReceived).isFalse()
         assertThat(webMessageTransport.sentMessages).isEmpty()
+    }
+
+    /**
+     * Loads a checkout (so its cart origin becomes a trusted default), dispatches a protocol message
+     * from [origin], and asserts it reaches the client.
+     */
+    private fun assertWebMessageReceivedFrom(origin: String) {
+        val view = checkoutWebView(activity)
+        view.loadCheckout("https://checkout.shopify.com/cart/123")
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        var received = false
+        view.setClient(
+            CheckoutProtocol.Client().on(CheckoutProtocol.messagesChange) { received = true },
+        )
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = origin)
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            assertThat(received).isTrue()
+        }
     }
 
     private fun ecStartMessage(): String =

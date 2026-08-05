@@ -21,7 +21,7 @@ internal class FakeWebMessageTransport(
         val message: String,
     )
 
-    private var onMessage: ((message: String, isMainFrame: Boolean) -> Unit)? = null
+    private var onMessage: ((message: String, sourceOrigin: String, isMainFrame: Boolean) -> Unit)? = null
     var lastAttachment: Attachment? = null
         private set
     var lastAttachAttempt: Attachment? = null
@@ -38,7 +38,7 @@ internal class FakeWebMessageTransport(
         webView: WebView,
         jsObjectName: String,
         allowedOriginRules: Set<String>,
-        onMessage: (message: String, isMainFrame: Boolean) -> Unit,
+        onMessage: (message: String, sourceOrigin: String, isMainFrame: Boolean) -> Unit,
     ): Boolean {
         attachCount += 1
         val attachment = Attachment(webView, jsObjectName, allowedOriginRules.toSet())
@@ -62,8 +62,9 @@ internal class FakeWebMessageTransport(
 
     fun dispatchMessage(
         message: String,
+        sourceOrigin: String = "https://checkout.shopify.com",
         isMainFrame: Boolean = true,
     ) {
-        checkNotNull(onMessage)(message, isMainFrame)
+        checkNotNull(onMessage)(message, sourceOrigin, isMainFrame)
     }
 }

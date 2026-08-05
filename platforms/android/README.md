@@ -258,6 +258,8 @@ ShopifyCheckoutKit.configure {
 | `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
+| `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
+| `onMessageRejected` | `null` | Observes messages rejected by origin validation. |
 
 ### Color schemes
 
@@ -361,6 +363,30 @@ Override `checkout_web_view_title` in your app resources:
 ```kotlin
 val configuration = ShopifyCheckoutKit.getConfiguration()
 ```
+
+### Incoming message origin validation
+
+Native checkout accepts messages from every origin by default. To restrict messages, configure one
+or more exact origins or wildcard subdomains. The checkout URL's origin and `shop.app` remain
+trusted automatically.
+
+```kotlin
+ShopifyCheckoutKit.configure {
+    it.allowedMessageOrigins = setOf(
+        "https://checkout.example.com",
+        "https://*.example.org",
+    )
+    it.onMessageRejected = { rejection ->
+        reportRejectedOrigin(rejection.origin, rejection.reason)
+    }
+}
+```
+
+Exact entries accept an optional trailing slash, but not credentials, paths, queries, or fragments.
+For example, `https://checkout.example.com/` is accepted, while
+`https://user@checkout.example.com` and `https://checkout.example.com/path` are ignored. Wildcard
+entries require the scheme and match subdomains only; `https://*.example.org` does not match
+`https://example.org`. Use `"*"` to explicitly disable origin validation.
 
 ## Checkout lifecycle
 

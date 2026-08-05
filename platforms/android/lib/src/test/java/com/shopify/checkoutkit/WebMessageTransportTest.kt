@@ -23,24 +23,32 @@ class WebMessageTransportTest {
     private val webView = mock<WebView>()
 
     @Test
-    fun `listener adapter forwards string payload and frame metadata`() {
+    fun `listener adapter forwards string payload, origin, and frame metadata`() {
         var receivedMessage: String? = null
+        var receivedOrigin: String? = null
         var receivedFromMainFrame: Boolean? = null
-        val listener = WebMessageListenerAdapter { message, isMainFrame ->
+        val listener = WebMessageListenerAdapter { message, sourceOrigin, isMainFrame ->
             receivedMessage = message
+            receivedOrigin = sourceOrigin
             receivedFromMainFrame = isMainFrame
         }
 
-        dispatchMessage(listener, WebMessageCompat("hello"), isMainFrame = false)
+        dispatchMessage(
+            listener,
+            WebMessageCompat("hello"),
+            sourceOrigin = Uri.parse("https://checkout.shopify.com"),
+            isMainFrame = false,
+        )
 
         assertThat(receivedMessage).isEqualTo("hello")
+        assertThat(receivedOrigin).isEqualTo("https://checkout.shopify.com")
         assertThat(receivedFromMainFrame).isFalse()
     }
 
     @Test
     fun `listener adapter ignores null string payload`() {
         var received = false
-        val listener = WebMessageListenerAdapter { _, _ -> received = true }
+        val listener = WebMessageListenerAdapter { _, _, _ -> received = true }
         val message: String? = null
 
         dispatchMessage(listener, WebMessageCompat(message))
@@ -51,7 +59,7 @@ class WebMessageTransportTest {
     @Test
     fun `listener adapter ignores non-string payload`() {
         var received = false
-        val listener = WebMessageListenerAdapter { _, _ -> received = true }
+        val listener = WebMessageListenerAdapter { _, _, _ -> received = true }
 
         dispatchMessage(listener, WebMessageCompat(byteArrayOf(1)))
 
@@ -97,12 +105,13 @@ class WebMessageTransportTest {
     private fun dispatchMessage(
         listener: WebMessageListenerAdapter,
         message: WebMessageCompat,
+        sourceOrigin: Uri = Uri.EMPTY,
         isMainFrame: Boolean = true,
     ) {
         listener.onPostMessage(
             webView,
             message,
-            Uri.EMPTY,
+            sourceOrigin,
             isMainFrame,
             mock<JavaScriptReplyProxy>(),
         )
