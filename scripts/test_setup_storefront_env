@@ -150,7 +150,11 @@ assert_output_is_sanitized() {
     overridden-token \
     later-store.example.myshopify.com \
     hand-written-store.example.myshopify.com \
-    hand-written-token; do
+    hand-written-token \
+    e2e-store.example.myshopify.com \
+    e2e-token \
+    e2e-local-store.example.myshopify.com \
+    inherited-merchant; do
     if grep -Fq "$value" "$output_path"; then
       fail "command output included a configured value"
     fi
@@ -625,6 +629,122 @@ EOF
   assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "synthetic-merchant"
 }
 
+# The E2E suite owns its own store, so it configures the sample apps from its own
+# file. Reading the repo-root .env here would build the apps against whichever
+# store the developer keeps for manual testing.
+test_env_file_selects_an_alternate_source() {
+  local fixture output android_env root_before
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  android_env="$(android_env_of "$fixture")"
+  root_before="$fixture/root_before"
+
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  cp "$fixture/.env" "$root_before"
+
+  mkdir -p "$fixture/e2e"
+  cat >"$fixture/e2e/.env" <<'EOF'
+STOREFRONT_DOMAIN=e2e-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=e2e-token
+API_VERSION=2026-04
+EOF
+
+  "$fixture/scripts/setup_storefront_env" --env-file "$fixture/e2e/.env" >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_file_is_unchanged "$fixture/.env" "$root_before"
+  assert_contains "$android_env" "STOREFRONT_DOMAIN=e2e-store.example.myshopify.com"
+  assert_not_contains "$android_env" "synthetic-store.example.myshopify.com"
+}
+
+test_env_file_takes_its_own_local_overlay() {
+  local fixture output android_env
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  android_env="$(android_env_of "$fixture")"
+
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  printf 'STOREFRONT_DOMAIN=%s\n' overridden-store.example.myshopify.com >"$fixture/.env.local"
+
+  mkdir -p "$fixture/e2e"
+  cat >"$fixture/e2e/.env" <<'EOF'
+STOREFRONT_DOMAIN=e2e-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=e2e-token
+EOF
+  printf 'STOREFRONT_DOMAIN=%s\n' e2e-local-store.example.myshopify.com >"$fixture/e2e/.env.local"
+
+  "$fixture/scripts/setup_storefront_env" --env-file "$fixture/e2e/.env" >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$android_env" "STOREFRONT_DOMAIN=e2e-local-store.example.myshopify.com"
+  assert_not_contains "$android_env" "overridden-store.example.myshopify.com"
+}
+
+# Generated platform config is a fallback so a developer who lost .env keeps
+# their values. An isolated E2E run must be able to ignore that stale input.
+test_env_file_ignores_stale_generated_config() {
+  local fixture output android_env react_native_env
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  android_env="$(android_env_of "$fixture")"
+  react_native_env="$(react_native_env_of "$fixture")"
+
+  cat >"$react_native_env" <<'EOF'
+STOREFRONT_DOMAIN=stale-demo.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=stale-demo-token
+EOF
+
+  mkdir -p "$fixture/e2e"
+  cat >"$fixture/e2e/.env" <<'EOF'
+STOREFRONT_DOMAIN=e2e-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=e2e-token
+EOF
+
+  "$fixture/scripts/setup_storefront_env" \
+    --env-file "$fixture/e2e/.env" --ignore-generated >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$android_env" "STOREFRONT_DOMAIN=e2e-store.example.myshopify.com"
+  assert_contains "$android_env" "STOREFRONT_ACCESS_TOKEN=e2e-token"
+  assert_not_contains "$android_env" "stale-demo.example.myshopify.com"
+  assert_not_contains "$android_env" "stale-demo-token"
+}
+
+# The demo path keeps inheriting, so a developer who lost .env does not silently
+# lose their configured store.
+test_generated_config_is_still_inherited_without_the_flag() {
+  local fixture output react_native_env
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  react_native_env="$(react_native_env_of "$fixture")"
+
+  cat >"$react_native_env" <<'EOF'
+APPLE_PAY_MERCHANT_IDENTIFIER=inherited-merchant
+EOF
+
+  mkdir -p "$fixture/e2e"
+  cat >"$fixture/e2e/.env" <<'EOF'
+STOREFRONT_DOMAIN=e2e-store.example.myshopify.com
+STOREFRONT_ACCESS_TOKEN=e2e-token
+EOF
+
+  "$fixture/scripts/setup_storefront_env" --env-file "$fixture/e2e/.env" >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$react_native_env" "APPLE_PAY_MERCHANT_IDENTIFIER=\"inherited-merchant\""
+}
+
+test_env_file_requires_a_path() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  if "$fixture/scripts/setup_storefront_env" --env-file >"$output" 2>&1; then
+    fail "--env-file was accepted with no path"
+  fi
+  assert_contains "$output" "Usage:"
+}
+
 test_merchant_identifiers_propagate_without_rewriting_root_env
 test_sample_projects_read_generated_merchant_identifier
 test_sync_and_check
@@ -643,5 +763,10 @@ test_blank_env_local_values_clear_customer_account_config
 test_env_local_warning_names_only_keys
 test_env_local_is_never_baked_into_root_env
 test_legacy_merchant_identifier_configures_both_samples_without_rewriting_root_env
+test_env_file_selects_an_alternate_source
+test_env_file_takes_its_own_local_overlay
+test_env_file_ignores_stale_generated_config
+test_generated_config_is_still_inherited_without_the_flag
+test_env_file_requires_a_path
 
 echo "setup_storefront_env synthetic tests passed."

@@ -183,11 +183,18 @@ e2e_generate_env_files() {
   ./scripts/generate_env_files
 }
 
+# The suite has its own shop, in config/secrets/e2e.ejson. The repo-root .env
+# comes from config/secrets/demo.ejson and a developer may point it at their own
+# shop, so reading it here would run the suite against whichever store happened
+# to be configured for manual testing.
+#
+# Ignoring generated platform config keeps a previous demo-store run from becoming
+# an input to this E2E-store run.
 e2e_configure_storefront() {
   e2e_generate_env_files
 
-  e2e_log "Configuring storefront environment"
-  ./scripts/setup_storefront_env
+  e2e_log "Configuring storefront environment from e2e/.env"
+  ./scripts/setup_storefront_env --env-file e2e/.env --ignore-generated
 }
 
 e2e_nightly_commit_window() {
