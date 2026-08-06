@@ -1,6 +1,7 @@
 package com.shopify.reactnative.checkoutkit;
 
 import android.app.Activity;
+import android.util.Log;
 import androidx.activity.ComponentActivity;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
@@ -18,6 +19,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
+
+  private static final String TAG = "ShopifyCheckoutKit";
 
   public static Configuration checkoutConfig = new Configuration();
 
@@ -60,7 +63,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      DispatchHandle dispatch = new DispatchHandle(json -> emitOnDispatch(json));
+      DispatchHandle dispatch = new DispatchHandle(this::emitWhenReactInstanceIsActive);
       CustomCheckoutListener listener = new CustomCheckoutListener(dispatch);
       checkoutListener = listener;
 
@@ -111,6 +114,31 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
       checkoutListener.release();
       checkoutListener = null;
     }
+  }
+
+  /**
+   * Emits a dispatch envelope only while the React instance is still active.
+   *
+   * A checkout sheet can outlive the React runtime, so a late lifecycle or protocol event can
+   * arrive after teardown. The native emitter behind emitOnDispatch is freed at that point, and
+   * calling it reads freed memory and aborts the process.
+   */
+  private void emitWhenReactInstanceIsActive(String json) {
+    if (!getReactApplicationContext().hasActiveReactInstance()) {
+      Log.w(TAG, "Dropping dispatch event, the React instance is no longer active.");
+      return;
+    }
+    emitOnDispatch(json);
+  }
+
+  /**
+   * Called by React Native when this module is torn down. Releases the listener so an orphaned
+   * checkout sheet cannot dispatch into the runtime that is going away.
+   */
+  @Override
+  public void invalidate() {
+    releaseCheckoutListener();
+    super.invalidate();
   }
 
   @ReactMethod(isBlockingSynchronousMethod = true)
