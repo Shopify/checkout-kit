@@ -355,4 +355,21 @@ public class InteropTest {
         assertThat(colors.getDragHandleColor()).isEqualTo(dragHandle);
         assertThat(colors.getCloseIcon()).isEqualTo(icon);
     }
+
+    @Test
+    public void customizeLeavesDragHandleColorUnsetWhenOnlyHeaderFontChanges() {
+        ColorScheme.Light lightScheme = new ColorScheme.Light();
+        Color headerFont = new Color.SRGB(0xFF336699);
+
+        ColorScheme customized = lightScheme.customize(builder -> {
+            builder.setHeaderFont(headerFont);
+            return Unit.INSTANCE;
+        });
+
+        assertThat(customized).isInstanceOf(ColorScheme.Light.class);
+        Colors colors = ((ColorScheme.Light) customized).getColors();
+
+        assertThat(colors.getHeaderFont()).isEqualTo(headerFont);
+        assertThat(colors.getDragHandleColor()).isNull();
+    }
 }
