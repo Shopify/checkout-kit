@@ -1,6 +1,8 @@
 package com.shopify.reactnative.checkoutkit
 
+import com.facebook.react.bridge.JavaOnlyMap
 import com.shopify.checkoutkit.CheckoutAppearance
+import com.shopify.checkoutkit.Color
 import com.shopify.checkoutkit.ColorScheme
 import com.shopify.checkoutkit.LogLevel
 import org.assertj.core.api.Assertions.assertThat
@@ -72,6 +74,48 @@ class ShopifyCheckoutKitModuleTest {
     @Test
     fun `appearanceFor returns null for a missing color scheme`() {
         assertThat(ShopifyCheckoutKitModule.appearanceFor(null, null)).isNull()
+    }
+
+    @Test
+    fun `appearanceFor applies the nested light and dark colors of the automatic scheme`() {
+        val androidConfig = JavaOnlyMap().apply {
+            putMap("light", colorConfig("#FFFFFF"))
+            putMap("dark", colorConfig("#000000"))
+        }
+
+        val scheme = automaticSchemeOf(ShopifyCheckoutKitModule.appearanceFor("automatic", androidConfig))
+
+        assertThat(scheme.lightColors.webViewBackground).isEqualTo(Color.SRGB(0xFFFFFFFF.toInt()))
+        assertThat(scheme.darkColors.webViewBackground).isEqualTo(Color.SRGB(0xFF000000.toInt()))
+    }
+
+    @Test
+    fun `appearanceFor keeps the SDK colors when the automatic scheme omits the dark colors`() {
+        val androidConfig = JavaOnlyMap().apply {
+            putMap("light", colorConfig("#FFFFFF"))
+        }
+
+        val appearance = ShopifyCheckoutKitModule.appearanceFor("automatic", androidConfig)
+
+        assertThat(appearance).isEqualTo(CheckoutAppearance.App(ColorScheme.Automatic()))
+    }
+
+    @Test
+    fun `appearanceFor applies a flat color config to an explicit scheme`() {
+        val appearance = ShopifyCheckoutKitModule.appearanceFor("light", colorConfig("#FFFFFF"))
+
+        val scheme = (appearance as CheckoutAppearance.App).colorScheme as ColorScheme.Light
+        assertThat(scheme.colors.webViewBackground).isEqualTo(Color.SRGB(0xFFFFFFFF.toInt()))
+    }
+
+    private fun automaticSchemeOf(appearance: CheckoutAppearance?): ColorScheme.Automatic =
+        (appearance as CheckoutAppearance.App).colorScheme as ColorScheme.Automatic
+
+    private fun colorConfig(backgroundColor: String) = JavaOnlyMap().apply {
+        putString("backgroundColor", backgroundColor)
+        putString("progressIndicator", "#123456")
+        putString("headerTextColor", "#654321")
+        putString("headerBackgroundColor", backgroundColor)
     }
 
     @Test

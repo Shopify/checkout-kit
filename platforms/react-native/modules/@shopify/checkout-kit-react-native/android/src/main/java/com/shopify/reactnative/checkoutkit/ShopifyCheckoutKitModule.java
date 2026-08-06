@@ -209,11 +209,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
       return null;
     }
 
-    if (isValidColorConfig(androidConfig)) {
-      ColorScheme schemeWithOverrides = getColors(scheme, androidConfig);
-      if (schemeWithOverrides != null) {
-        return new CheckoutAppearance.App(schemeWithOverrides);
-      }
+    ColorScheme schemeWithOverrides = getColors(scheme, androidConfig);
+
+    if (schemeWithOverrides != null) {
+      return new CheckoutAppearance.App(schemeWithOverrides);
     }
 
     return new CheckoutAppearance.App(scheme);
@@ -369,7 +368,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
       return null;
     }
 
-    if (colorScheme instanceof ColorScheme.Automatic && isValidColorScheme(colorScheme, config)) {
+    if (colorScheme instanceof ColorScheme.Automatic) {
       Colors lightColors = createColorsFromConfig(config.getMap("light"));
       Colors darkColors = createColorsFromConfig(config.getMap("dark"));
 
