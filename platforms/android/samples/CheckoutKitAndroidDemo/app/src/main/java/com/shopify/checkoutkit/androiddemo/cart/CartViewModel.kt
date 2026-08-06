@@ -279,6 +279,11 @@ class CartViewModel(
                     windowOpenRejected(reason = "no activity resolved URL").also {
                         recordWindowOpenResponse("rejected", it)
                     }
+                } catch (e: SecurityException) {
+                    Timber.w(e, "External app launch blocked")
+                    windowOpenRejected(reason = "external app launch blocked").also {
+                        recordWindowOpenResponse("rejected", it)
+                    }
                 }
             }
         }
