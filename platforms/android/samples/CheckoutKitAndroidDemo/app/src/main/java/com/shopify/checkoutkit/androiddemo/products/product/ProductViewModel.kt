@@ -7,7 +7,6 @@ import com.shopify.checkoutkit.androiddemo.products.product.data.Product
 import com.shopify.checkoutkit.androiddemo.products.product.data.ProductRepository
 import com.shopify.checkoutkit.androiddemo.products.product.data.ProductVariant
 import com.shopify.checkoutkit.androiddemo.products.product.data.ProductVariantOptionDetails
-import com.shopify.checkoutkit.androiddemo.products.product.data.ProductVariantSelectedOption
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,14 +56,12 @@ class ProductViewModel(
 
     private fun updateLoadedProduct(product: Product) {
         val currentState = _uiState.value as? ProductUIState.Loaded
-        val selectedVariant = currentState?.selectedVariant?.let { currentVariant ->
-            product.variants.find { variant -> variant.id == currentVariant.id }
-        } ?: product.variants.first()
+        val selectedVariant = selectedVariantFor(product, currentState?.selectedVariant)
 
         _uiState.value = ProductUIState.Loaded(
             product = product,
             selectedVariant = selectedVariant,
-            availableOptions = buildAvailableOptions(product, selectedVariant),
+            availableOptions = availableOptionsFor(product, selectedVariant),
             isAddingToCart = currentState?.isAddingToCart ?: false,
             addQuantityAmount = currentState?.addQuantityAmount ?: 1
         )
@@ -74,63 +71,17 @@ class ProductViewModel(
     fun updateSelectedOption(name: String, value: String) {
         val state = _uiState.value
         if (state is ProductUIState.Loaded) {
-            val matchingVariant = state.product.variants.first { variant ->
-                variant.selectedOptions.containsAll(newOptions(state.selectedVariant, name, value))
-            }
-            matchingVariant.let {
+            variantForOption(state.product, state.selectedVariant, name, value)?.let { matchingVariant ->
                 _uiState.value = state.copy(
-                    selectedVariant = it,
-                    availableOptions = buildAvailableOptions(
+                    selectedVariant = matchingVariant,
+                    availableOptions = availableOptionsFor(
                         product = state.product,
-                        selectedVariant = it
-                    )
+                        selectedVariant = matchingVariant,
+                    ),
                 )
             }
         }
     }
-
-    // Returns variant options for the product, and whether the option is available for sale (when combined with other options on the
-    // currently selected variant) e.g. { "size": [{"large", true}, {"medium", false}], "color": [{"red", true}, {"blue", false}]}
-    private fun buildAvailableOptions(
-        product: Product,
-        selectedVariant: ProductVariant
-    ): Map<String, List<ProductVariantOptionDetails>> {
-        // Only return available options if more than one option exists
-        if (product.variants.size == 1) {
-            return emptyMap()
-        }
-
-        val options = product.variants
-            .flatMap { it.selectedOptions }
-            .distinctBy { it.value }
-
-        return options.associateBy(
-            { it.name },
-            { selectedOption ->
-                options.filter { it.name == selectedOption.name }.map { option ->
-                    ProductVariantOptionDetails(
-                        name = option.value,
-                        availableForSale = product.variants.find {
-                            it.selectedOptions.containsAll(
-                                newOptions(selectedVariant, selectedOption.name, option.value)
-                            )
-                        }?.availableForSale ?: false,
-                    )
-                }
-            }
-        )
-    }
-
-    // Modifies the options for the selected variant (e.g: [size: large, color: red]) by replacing one with a new option (e.g. color: blue)
-// to return e.g. [size: large, color: blue]
-    private fun newOptions(
-        selectedVariant: ProductVariant,
-        name: String,
-        value: String
-    ): List<ProductVariantSelectedOption> =
-        selectedVariant.selectedOptions
-            .filter { it.name != name }
-            .plus(ProductVariantSelectedOption(name, value))
 
     private fun setIsAddingToCart(value: Boolean) {
         val currentState = _uiState.value
