@@ -293,7 +293,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `window open default launches non-web URLs with native app controller`() {
+    fun `window open default launches non-web URLs with an external app intent`() {
         registerFakeBrowserFor("mailto:help@example.com")
 
         val response = captureSentMessage {
