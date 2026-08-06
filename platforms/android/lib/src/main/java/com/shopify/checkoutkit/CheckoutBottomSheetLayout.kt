@@ -47,6 +47,7 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     private var dragging = false
     private var gestureStartedOutsideScrollableChild = false
     private var dismissAnimationRunning = false
+    private var openAnimationRunning = false
     private var dismissAnimationEndAction: (() -> Unit)? = null
 
     /**
@@ -381,10 +382,12 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
         dragOffsetY = 0f
         translationY = height.toFloat()
         visibility = VISIBLE
+        openAnimationRunning = true
         animate()
             .translationY(0f)
             .setDuration(OPEN_ANIMATION_DURATION_MS)
             .setInterpolator(openInterpolator)
+            .withEndAction { openAnimationRunning = false }
             .start()
     }
 
@@ -405,7 +408,7 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     }
 
     private val canHandleDragToDismiss: Boolean
-        get() = isEnabled && dragToDismissEnabled && !dismissAnimationRunning
+        get() = isEnabled && dragToDismissEnabled && !dismissAnimationRunning && !openAnimationRunning
 
     private companion object {
         private const val OPEN_ANIMATION_DURATION_MS = 260L

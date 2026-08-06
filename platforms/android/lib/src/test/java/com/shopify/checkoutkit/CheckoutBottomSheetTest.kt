@@ -358,6 +358,32 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
+    fun `checkout sheet reaches the fully open position when tapped during the open animation`() {
+        val (sheet, _) = checkoutSheetWithScrollableChild(childTop = TEST_SHEET_HEADER_SIZE)
+        sheet.animateIn()
+        assertThat(sheetOffsetY(sheet)).isEqualTo(TEST_SHEET_SIZE.toFloat())
+
+        sheet.onTouchEvent(motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
+        sheet.onTouchEvent(motionEvent(MotionEvent.ACTION_UP, y = 20f))
+        ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
+
+        assertThat(sheetOffsetY(sheet)).isEqualTo(0f)
+    }
+
+    @Test
+    fun `checkout sheet accepts drag to dismiss once the open animation completes`() {
+        val (sheet, _) = checkoutSheetWithScrollableChild(childTop = TEST_SHEET_HEADER_SIZE)
+        sheet.animateIn()
+        ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
+
+        sheet.onInterceptTouchEvent(motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
+
+        assertThat(
+            sheet.onInterceptTouchEvent(motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
+        ).isTrue()
+    }
+
+    @Test
     fun `checkout sheet does not intercept downward drag when drag to dismiss is disabled`() {
         val (sheet, _) = checkoutSheetWithScrollableChild(childTop = TEST_SHEET_HEADER_SIZE)
         sheet.dragToDismissEnabled = false
