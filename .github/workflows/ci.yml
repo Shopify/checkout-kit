@@ -67,6 +67,7 @@ jobs:
               - '.github/workflows/swift-test-workflow.yml'
               - '.github/workflows/swift-lint.yml'
               - '.github/workflows/breaking-changes.yml'
+              - '.github/actions/setup-mint/**'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             # Common React Native infra: JS-level jobs (jest, lint, packed
@@ -80,6 +81,7 @@ jobs:
               - '.github/scripts/package-json-version'
               - '.github/scripts/validate-release-version'
               - '.github/actions/setup/**'
+              - '.github/actions/setup-mint/**'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
@@ -89,6 +91,7 @@ jobs:
               - 'Package.resolved'
               - '.github/workflows/rn-test-ios.yml'
               - '.github/workflows/rn-build-ios.yml'
+              - '.github/actions/setup-mint/**'
             # Android-only RN infra: gates the gradle build/test jobs.
             reactNativeAndroid:
               - '.github/workflows/rn-test-android.yml'

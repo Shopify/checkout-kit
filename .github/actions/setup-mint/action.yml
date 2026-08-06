@@ -1,0 +1,34 @@
+name: Setup Mint
+description: Install Mint and provision the tools pinned by platforms/swift/Mintfile, restoring them from cache when the pins are unchanged
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve Mint paths
+      shell: bash
+      run: |
+        echo "MINT_PATH=${GITHUB_WORKSPACE}/.mint/lib" >> "$GITHUB_ENV"
+        echo "MINT_LINK_PATH=${GITHUB_WORKSPACE}/.mint/bin" >> "$GITHUB_ENV"
+
+    - name: Cache Mint packages
+      id: mint-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .mint
+        key: ${{ runner.os }}-mint-${{ hashFiles('platforms/swift/Mintfile') }}
+        restore-keys: |
+          ${{ runner.os }}-mint-
+
+    - name: Install Mint
+      shell: bash
+      run: brew install mint
+
+    - name: Bootstrap Mint packages
+      if: steps.mint-cache.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: platforms/swift
+      run: mint bootstrap --link
+
+    - name: Add Mint to PATH
+      shell: bash
+      run: echo "${GITHUB_WORKSPACE}/.mint/bin" >> "$GITHUB_PATH"
