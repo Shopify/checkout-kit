@@ -4,7 +4,7 @@
 import Foundation
 
 /// Stable, consumer-facing reason for a terminal checkout presentation failure.
-public enum CheckoutErrorCode: String, Codable, Sendable {
+public enum CheckoutErrorCode: String, Codable, CaseIterable, Sendable {
     /// The storefront requires a password and cannot be used by Checkout Kit.
     case storefrontPasswordRequired = "storefront_password_required"
 
