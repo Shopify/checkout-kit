@@ -22,6 +22,7 @@ node_modules/
 # Swift / Xcode / SwiftPM
 .build/
 .swiftpm/
+.xcresults/
 xcuserdata/
 platforms/swift/Samples/**/*.xcodeproj/
 platforms/react-native/test/rct-integration-app/*.xcodeproj/

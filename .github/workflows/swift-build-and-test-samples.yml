@@ -14,3 +14,4 @@ jobs:
       test-path: ./Scripts/build_and_test_samples
       job-name: Build & Test Sample Apps
       setup-storefront-env: true
+      artifact-name: swift-sample-builds-xcresult

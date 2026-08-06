@@ -13,3 +13,4 @@ jobs:
     with:
       test-path: ./Scripts/xcode_run test ShopifyCheckoutKit-Package
       job-name: Run Package Tests
+      artifact-name: swift-package-tests-xcresult
