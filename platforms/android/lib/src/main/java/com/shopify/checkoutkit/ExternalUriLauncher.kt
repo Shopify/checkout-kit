@@ -1,7 +1,9 @@
 package com.shopify.checkoutkit
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -42,7 +44,9 @@ internal object ExternalUriLauncher {
         val intent = Intent(Intent.ACTION_VIEW, uri)
             .putExtras(customTabsExtras)
             .setPackage(browserPackage)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (context.findActivity() == null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         return launchIntent(context, intent, uri)
     }
 
@@ -57,6 +61,15 @@ internal object ExternalUriLauncher {
                 val serviceIntent = Intent(CUSTOM_TABS_SERVICE_ACTION).setPackage(packageName)
                 context.packageManager.resolveService(serviceIntent, 0) != null
             }
+    }
+
+    private fun Context.findActivity(): Activity? {
+        var current: Context? = this
+        while (current is ContextWrapper && current !is Activity) {
+            val baseContext = current.baseContext
+            current = if (baseContext === current) null else baseContext
+        }
+        return current as? Activity
     }
 
     private fun launchIntent(context: Context, intent: Intent, uri: Uri): Result {

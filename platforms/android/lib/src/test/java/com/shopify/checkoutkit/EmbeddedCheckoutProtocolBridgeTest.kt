@@ -262,7 +262,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         assertThat(launched.data.toString()).isEqualTo("https://example.com")
         assertThat(launched.`package`).isEqualTo(FAKE_BROWSER_PACKAGE)
         assertThat(launched.extras?.keySet()).contains("android.support.customtabs.extra.SESSION")
-        assertThat(launched.flags and Intent.FLAG_ACTIVITY_NEW_TASK).isNotEqualTo(0)
+        assertThat(launched.flags and Intent.FLAG_ACTIVITY_NEW_TASK).isEqualTo(0)
     }
 
     @Test
