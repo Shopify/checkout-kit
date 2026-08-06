@@ -84,6 +84,8 @@ internal object ExternalUriLauncher {
     }
 
     private val BROWSER_PROBE_URI = "http://www.example.com".toUri()
+
+    // Custom Tabs protocol constants. Kept local to avoid depending on androidx.browser.
     private const val CUSTOM_TABS_SERVICE_ACTION = "android.support.customtabs.action.CustomTabsService"
     private const val CUSTOM_TABS_SESSION_EXTRA = "android.support.customtabs.extra.SESSION"
 }
