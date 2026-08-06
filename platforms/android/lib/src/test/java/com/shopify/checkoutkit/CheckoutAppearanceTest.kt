@@ -12,6 +12,15 @@ class CheckoutAppearanceTest {
     }
 
     @Test
+    fun `storefront accepts native colors`() {
+        val colors = ColorScheme.Dark().colors
+
+        val appearance = CheckoutAppearance.Storefront(colors)
+
+        assertThat(appearance.effectiveColorScheme).isEqualTo(ColorScheme.Light(colors))
+    }
+
+    @Test
     fun `storefront native colors can be customized and serialized`() {
         val headerBackground = Color.SRGB(0xFF008060.toInt())
         val appearance = CheckoutAppearance.Storefront().customize {

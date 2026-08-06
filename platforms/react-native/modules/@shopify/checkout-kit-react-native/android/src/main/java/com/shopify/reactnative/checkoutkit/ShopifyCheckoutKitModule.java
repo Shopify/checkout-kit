@@ -207,23 +207,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   private static CheckoutAppearance getStorefrontAppearance(ReadableMap androidConfig) {
-    CheckoutAppearance.Storefront storefront = new CheckoutAppearance.Storefront();
-
     Colors colors = createColorsFromConfig(androidConfig);
-    if (colors == null) {
-      return storefront;
-    }
-
-    return storefront.customize(builder -> {
-      builder.withWebViewBackground(colors.getWebViewBackground());
-      builder.withHeaderBackground(colors.getHeaderBackground());
-      builder.withHeaderFont(colors.getHeaderFont());
-      builder.withProgressIndicator(colors.getProgressIndicator());
-      Color closeButtonColor = colors.getCloseIconTint();
-      if (closeButtonColor != null) {
-        builder.withCloseIconTint(closeButtonColor);
-      }
-    });
+    return colors == null
+        ? new CheckoutAppearance.Storefront()
+        : new CheckoutAppearance.Storefront(colors);
   }
 
   private static ColorScheme getColorScheme(String colorScheme) {

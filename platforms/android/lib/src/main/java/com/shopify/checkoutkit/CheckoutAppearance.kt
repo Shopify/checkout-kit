@@ -22,11 +22,9 @@ public sealed interface CheckoutAppearance {
      * can be customized to match the merchant's branding.
      */
     @Serializable
-    public class Storefront private constructor(
-        private val colors: Colors,
+    public class Storefront(
+        private val colors: Colors = ColorScheme.Light().colors,
     ) : CheckoutAppearance {
-        public constructor() : this(ColorScheme.Light().colors)
-
         /**
          * Creates a customized storefront appearance for native sheet elements.
          *

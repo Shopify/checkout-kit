@@ -46,6 +46,8 @@ public final class com/shopify/checkoutkit/CheckoutAppearance$Companion {
 public final class com/shopify/checkoutkit/CheckoutAppearance$Storefront : com/shopify/checkoutkit/CheckoutAppearance {
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront$Companion;
 	public fun <init> ()V
+	public fun <init> (Lcom/shopify/checkoutkit/Colors;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/Colors;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun customize (Lcom/shopify/checkoutkit/StorefrontCustomizer;)Lcom/shopify/checkoutkit/CheckoutAppearance$Storefront;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
