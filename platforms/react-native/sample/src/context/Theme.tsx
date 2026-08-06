@@ -4,6 +4,10 @@ import type {ColorSchemeName} from 'react-native';
 import {Appearance, useColorScheme} from 'react-native';
 import type {Theme} from '@react-navigation/native';
 import {DarkTheme, DefaultTheme} from '@react-navigation/native';
+import type {
+  AndroidColors,
+  IosColors,
+} from '@shopify/checkout-kit-react-native';
 import {ColorScheme} from '@shopify/checkout-kit-react-native';
 
 interface Context {
@@ -168,6 +172,32 @@ export function getColors(
     default:
       return lightColors;
   }
+}
+
+export function getCheckoutKitColors(
+  colorScheme: ColorScheme,
+  preference: ColorSchemeName,
+): {ios: IosColors; android: AndroidColors} | undefined {
+  if (colorScheme === ColorScheme.automatic) {
+    return undefined;
+  }
+
+  const colors = getColors(colorScheme, preference);
+
+  return {
+    ios: {
+      backgroundColor: colors.webviewBackgroundColor,
+      tintColor: colors.webViewProgressIndicator,
+      closeButtonColor: colors.webviewCloseButtonColor,
+    },
+    android: {
+      backgroundColor: colors.webviewBackgroundColor,
+      progressIndicator: colors.webViewProgressIndicator,
+      headerBackgroundColor: colors.webviewBackgroundColor,
+      headerTextColor: colors.webviewHeaderTextColor,
+      closeButtonColor: colors.webviewCloseButtonColor,
+    },
+  };
 }
 
 export const ThemeProvider: React.FC<
