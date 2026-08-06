@@ -200,18 +200,6 @@ class StorefrontURL {
 const checkoutKitConfigDefaults: Configuration = {
   logLevel: LogLevel.debug,
   colorScheme: ColorScheme.dark,
-  colors: {
-    ios: {
-      backgroundColor: '#f0f0e8',
-      tintColor: '#2d2a38',
-    },
-    android: {
-      backgroundColor: '#f0f0e8',
-      progressIndicator: '#2d2a38',
-      headerBackgroundColor: '#f0f0e8',
-      headerTextColor: '#2d2a38',
-    },
-  },
 };
 
 function AppWithContext({children}: PropsWithChildren) {
@@ -393,20 +381,7 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
       ...checkoutKitConfigDefaults,
       ...checkoutKitThemeConfig,
       preloading: appConfig.checkoutPreloadingEnabled,
-      colors: {
-        ...checkoutKitThemeConfig.colors,
-        ios: {
-          ...checkoutKitThemeConfig.colors?.ios,
-          ...checkoutKitConfigDefaults.colors?.ios,
-        },
-        android:
-          appConfig.colorScheme === ColorScheme.automatic
-            ? checkoutKitThemeConfig.colors?.android
-            : {
-                ...checkoutKitThemeConfig.colors?.android,
-                ...checkoutKitConfigDefaults.colors?.android,
-              },
-      },
+      colors: checkoutKitThemeConfig.colors,
       acceleratedCheckouts: {
         storefrontDomain: env.STOREFRONT_DOMAIN!,
         storefrontAccessToken: env.STOREFRONT_ACCESS_TOKEN!,

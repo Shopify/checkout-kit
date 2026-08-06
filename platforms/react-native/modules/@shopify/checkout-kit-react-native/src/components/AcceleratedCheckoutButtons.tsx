@@ -1,6 +1,7 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {Platform, UIManager} from 'react-native';
 import type {AcceleratedCheckoutWallet, CheckoutException} from '..';
+import {parseCheckoutError, type CheckoutNativeError} from '../errors';
 import {
   CheckoutProtocol,
   decodeProtocolPayload,
@@ -182,7 +183,7 @@ export const AcceleratedCheckoutButtons: React.FC<
 
   const handleFail = useCallback(
     (event: {nativeEvent: unknown}) => {
-      onFail?.(event.nativeEvent as CheckoutException);
+      onFail?.(parseCheckoutError(event.nativeEvent as CheckoutNativeError));
     },
     [onFail],
   );

@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class CustomCheckoutListener extends DefaultCheckoutListener {
@@ -108,14 +109,14 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   }
 
   @Override
-  public void onCheckoutCanceled() {
+  public void onCheckoutDismissed() {
     if (dispatch.isReleased()) {
       return;
     }
     try {
       dispatch.invoke(buildEnvelope(DispatchEventTypes.CLOSE, null));
     } catch (IOException e) {
-      Log.e(TAG, "Error processing checkout canceled event", e);
+      Log.e(TAG, "Error processing checkout dismissed event", e);
     } finally {
       release();
     }
@@ -133,32 +134,16 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   }
 
   private Map<String, Object> populateErrorDetails(CheckoutException checkoutError) {
-    Map<String, Object> errorMap = new HashMap();
-    errorMap.put("__typename", getErrorTypeName(checkoutError));
-    errorMap.put("message", checkoutError.getErrorDescription());
-    errorMap.put("code", checkoutError.getErrorCode());
+    Map<String, Object> errorMap = new HashMap<>();
+    errorMap.put("message", checkoutError.getMessage());
+    errorMap.put("code", checkoutError.getCode().name().toLowerCase(Locale.ROOT));
 
-    if (checkoutError instanceof HttpException) {
-      errorMap.put("statusCode", ((HttpException) checkoutError).getStatusCode());
+    Integer httpStatusCode = checkoutError.getHttpStatusCode();
+    if (httpStatusCode != null) {
+      errorMap.put("statusCode", httpStatusCode);
     }
 
     return errorMap;
-  }
-
-  private String getErrorTypeName(CheckoutException error) {
-    if (error instanceof CheckoutExpiredException) {
-      return "CheckoutExpiredError";
-    } else if (error instanceof ClientException) {
-      return "CheckoutClientError";
-    } else if (error instanceof HttpException) {
-      return "CheckoutHTTPError";
-    } else if (error instanceof ConfigurationException) {
-      return "ConfigurationError";
-    } else if (error instanceof CheckoutKitException) {
-      return "InternalError";
-    } else {
-      return "UnknownError";
-    }
   }
 
 }
