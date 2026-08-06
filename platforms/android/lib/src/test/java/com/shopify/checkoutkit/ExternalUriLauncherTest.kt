@@ -24,13 +24,19 @@ package com.shopify.checkoutkit
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.net.Uri
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 
@@ -54,5 +60,39 @@ class ExternalUriLauncherTest {
         val result = ExternalUriLauncher.launch(context, Uri.parse("mailto:help@example.com"))
 
         assertThat(result).isEqualTo(ExternalUriLauncher.Result.Launched)
+        val intent = argumentCaptor<Intent>()
+        verify(context).startActivity(intent.capture())
+        assertThat(intent.firstValue.extras?.keySet().orEmpty())
+            .doesNotContain(CUSTOM_TABS_SESSION_EXTRA)
+    }
+
+    @Test
+    fun `launch uses a targeted Custom Tab for web links`() {
+        val context = mock<Context>()
+        val packageManager = mock<PackageManager>()
+        whenever(context.packageManager).thenReturn(packageManager)
+        whenever(packageManager.queryIntentActivities(any<Intent>(), eq(0)))
+            .thenReturn(
+                listOf(
+                    ResolveInfo().apply {
+                        activityInfo = ActivityInfo().apply { packageName = BROWSER_PACKAGE }
+                    },
+                ),
+            )
+        whenever(packageManager.resolveService(any<Intent>(), eq(0))).thenReturn(ResolveInfo())
+
+        val result = ExternalUriLauncher.launch(context, Uri.parse("https://example.com"))
+
+        assertThat(result).isEqualTo(ExternalUriLauncher.Result.Launched)
+        val intent = argumentCaptor<Intent>()
+        verify(context).startActivity(intent.capture())
+        assertThat(intent.firstValue.`package`).isEqualTo(BROWSER_PACKAGE)
+        assertThat(intent.firstValue.extras?.keySet().orEmpty())
+            .contains(CUSTOM_TABS_SESSION_EXTRA)
+    }
+
+    private companion object {
+        private const val BROWSER_PACKAGE = "com.example.browser"
+        private const val CUSTOM_TABS_SESSION_EXTRA = "android.support.customtabs.extra.SESSION"
     }
 }
