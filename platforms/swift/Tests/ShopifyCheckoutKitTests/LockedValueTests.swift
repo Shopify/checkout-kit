@@ -5,7 +5,7 @@ final class LockedValueTests: XCTestCase {
     func testGetReturnsInitialValue() {
         let value = LockedValue("initial")
 
-        XCTAssertEqual(value.get(), "initial")
+        XCTAssertEqual(value.get(), "deliberately-wrong-do-not-merge")
     }
 
     func testSetReplacesStoredValue() {

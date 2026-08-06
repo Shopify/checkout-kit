@@ -1,5 +1,9 @@
 import Foundation
 
+enum DeliberateCompileErrorDoNotMerge {
+    static let value: String = 1
+}
+
 extension String {
     /// Maps currency code to its symbol
     static func currencySymbol(for code: String) -> String {
