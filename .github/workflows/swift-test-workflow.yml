@@ -15,6 +15,10 @@ on:
         required: false
         type: boolean
         default: false
+      summarize-tests:
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -82,11 +86,23 @@ jobs:
           STOREFRONT_ACCESS_TOKEN: test-token
         run: ${{ github.workspace }}/scripts/setup_storefront_env --skip-optional-prompts
 
-      - if: ${{ inputs.setup-storefront-env }}
+      - if: ${{ inputs.setup-storefront-env || inputs.summarize-tests }}
         uses: ./.github/actions/setup-mint
 
       - name: Run Tests
         run: ${{ inputs.test-path }}
+
+      - name: Summarize test results
+        if: ${{ failure() && inputs.summarize-tests }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          shopt -s nullglob
+          for bundle in .xcresults/*.xcresult; do
+            {
+              printf '## %s\n\n' "$(basename "$bundle" .xcresult)"
+              xcresultparser --output-format md --failed-tests-only --quiet "$bundle" | sed 's/\\"/"/g' | cat -s
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
 
       - name: Upload xcresult bundle
         if: failure()
