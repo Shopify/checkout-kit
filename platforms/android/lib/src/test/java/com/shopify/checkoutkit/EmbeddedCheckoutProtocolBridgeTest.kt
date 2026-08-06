@@ -260,7 +260,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         assertThat(launched).isNotNull()
         assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)
         assertThat(launched.data.toString()).isEqualTo("https://example.com")
-        assertThat(launched.`package`).isNull()
+        assertThat(launched.`package`).isEqualTo(FAKE_BROWSER_PACKAGE)
         assertThat(launched.extras?.keySet()).contains("android.support.customtabs.extra.SESSION")
         assertThat(launched.flags and Intent.FLAG_ACTIVITY_NEW_TASK).isNotEqualTo(0)
     }
@@ -910,6 +910,8 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     private companion object {
         private const val ERROR_RESPONSE_UCP = """"ucp":{"version":"2026-04-08","status":"error"}"""
+        private const val FAKE_BROWSER_PACKAGE = "com.fake.browser"
+        private const val CUSTOM_TABS_SERVICE_ACTION = "android.support.customtabs.action.CustomTabsService"
     }
 
     /** Runs [block], drains the main-thread queue, and captures the raw response message. */
@@ -926,13 +928,21 @@ class EmbeddedCheckoutProtocolBridgeTest {
      * Mirrors the behavior of a real device with a browser installed.
      */
     private fun registerFakeBrowserFor(uri: String) {
-        val componentName = ComponentName("com.fake.browser", "FakeBrowserActivity")
+        val componentName = ComponentName(FAKE_BROWSER_PACKAGE, "FakeBrowserActivity")
         val intentFilter = IntentFilter(Intent.ACTION_VIEW).apply {
             addCategory(Intent.CATEGORY_DEFAULT)
-            addDataScheme(Uri.parse(uri).scheme)
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            setOf("http", "https", Uri.parse(uri).scheme).filterNotNull().forEach(::addDataScheme)
         }
-        shadowOf(activity.packageManager).addActivityIfNotPresent(componentName)
-        shadowOf(activity.packageManager).addIntentFilterForActivity(componentName, intentFilter)
+        val customTabsService = ComponentName(FAKE_BROWSER_PACKAGE, "FakeCustomTabsService")
+        val packageManager = shadowOf(activity.packageManager)
+        packageManager.addActivityIfNotPresent(componentName)
+        packageManager.addIntentFilterForActivity(componentName, intentFilter)
+        packageManager.addServiceIfNotPresent(customTabsService)
+        packageManager.addIntentFilterForService(
+            customTabsService,
+            IntentFilter(CUSTOM_TABS_SERVICE_ACTION),
+        )
     }
 
     // endregion
