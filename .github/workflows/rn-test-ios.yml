@@ -15,9 +15,6 @@ jobs:
     defaults:
       run:
         working-directory: platforms/react-native
-    env:
-      MINT_PATH: ${{ github.workspace }}/.mint/lib
-      MINT_LINK_PATH: ${{ github.workspace }}/.mint/bin
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -52,25 +49,7 @@ jobs:
           bundler-cache: true
           working-directory: platforms/react-native/sample
 
-      - name: Cache Mint packages
-        id: mint-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .mint
-          key: ${{ runner.os }}-mint-${{ hashFiles('platforms/swift/Mintfile') }}
-          restore-keys: |
-            ${{ runner.os }}-mint-
-
-      - name: Install Mint
-        run: brew install mint
-
-      - name: Bootstrap Mint packages
-        if: steps.mint-cache.outputs.cache-hit != 'true'
-        working-directory: platforms/swift
-        run: mint bootstrap --link
-
-      - name: Add Mint to PATH
-        run: echo "${{ github.workspace }}/.mint/bin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/setup-mint
 
       - name: Verify iOS lockfile uses published native SDK
         run: scripts/check_published_podfile_lock test/rct-integration-app/Podfile.lock

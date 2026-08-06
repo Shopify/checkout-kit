@@ -23,33 +23,13 @@ jobs:
     name: SwiftFormat & SwiftLint
     runs-on: ${{ vars.MACOS_RUNNER }}
     timeout-minutes: 20
-    env:
-      MINT_PATH: ${{ github.workspace }}/.mint/lib
-      MINT_LINK_PATH: ${{ github.workspace }}/.mint/bin
     defaults:
       run:
         working-directory: platforms/swift
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Cache Mint packages
-        id: mint-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .mint
-          key: ${{ runner.os }}-mint-${{ hashFiles('platforms/swift/Mintfile') }}
-          restore-keys: |
-            ${{ runner.os }}-mint-
-
-      - name: Install Mint
-        run: brew install mint
-
-      - name: Bootstrap Mint packages
-        if: steps.mint-cache.outputs.cache-hit != 'true'
-        run: mint bootstrap --link
-
-      - name: Add Mint to PATH
-        run: echo "${{ github.workspace }}/.mint/bin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/setup-mint
 
       - run: ./Scripts/lint check --verbose --skip-pod
 
