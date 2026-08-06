@@ -74,7 +74,7 @@ Use the Shopify.dev guides for broader product workflows:
 | --- | --- | --- |
 | Swift | [Samples](platforms/swift/Samples/README.md) | Storefront API cart flow, checkout presentation, Customer Account API, and accelerated checkout buttons. |
 | Android | [Samples](platforms/android/samples/README.md) | Storefront API cart flow, checkout presentation, protocol lifecycle events, file chooser, and geolocation callbacks. |
-| Web | [Sample](platforms/web/sample/README.md) | Local playground for the `<shopify-checkout>` web component and `checkout:*` events. |
+| Web | [Sample](platforms/web/sample/README.md) | Local playground for the `<shopify-checkout>` web component and `ec.*` events. |
 
 ## Versioning
 

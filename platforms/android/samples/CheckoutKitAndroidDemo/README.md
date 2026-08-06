@@ -6,16 +6,17 @@ This sample demonstrates how to integrate Checkout Kit with the Shopify Storefro
 
 - Product and collection browsing from the Storefront API
 - Cart create, add, update, remove, and fetch operations
-- `cart.checkoutUrl` presentation with `ShopifyCheckoutKit`
+- `cart.checkoutUrl` presentation with either the Checkout Kit sheet or an app-owned Compose sheet
 - Typed checkout lifecycle events through `CheckoutProtocol.Client`
-- Checkout fail/dismiss callbacks through the presentation builder
-- File chooser, geolocation, and web permission host callbacks
+- Checkout fail/dismiss callbacks and configurable sheet presentation
+- Default intent and custom Chrome Custom Tabs handling for checkout window-open requests
+- File chooser and geolocation host callbacks
 - Buyer identity demo data for checkout prefill
 - Customer Account API sign-in and customer access token cart identity
 
 ## Checkout flow
 
-The sample's cart flow demonstrates the Kotlin-first `ShopifyCheckoutKit.present(checkoutUrl, activity) { ... }` API. It connects a typed `CheckoutProtocol.Client` to observe checkout state changes, including completion, and uses the presentation builder for fail/dismiss plus the sample's file chooser, geolocation, and web permission host callbacks.
+The sample's cart flow can use the Kotlin-first `ShopifyCheckoutKit.present(checkoutUrl, activity) { ... }` API or embed `ShopifyCheckout` in an app-owned Compose sheet. Both modes connect a typed `CheckoutProtocol.Client` to observe checkout state changes, including completion, and configure fail/dismiss, file chooser, and geolocation callbacks. Settings also demonstrate Checkout Kit sheet presets and dismissal behavior, plus the SDK's default window-open handling or a custom Chrome Custom Tabs protocol handler.
 
 ## Architecture
 
@@ -51,6 +52,8 @@ CheckoutKitAndroidDemo/
 |       |-- products/collection/data/         Collection repository
 |       |-- settings/authentication/          Customer Account API sign-in flow
 |       |-- cart/CartViewModel.kt             Checkout presentation and protocol handlers
+|       |-- cart/AppOwnedCheckoutSheet.kt     App-owned Compose sheet integration
+|       |-- settings/                         Presentation and window-open settings
 |       `-- MainActivity.kt                   File chooser and geolocation permission callbacks
 `-- .env                                      Local store configuration, not checked in
 ```
@@ -61,7 +64,7 @@ Do not edit files in `app/build/generated/source/apollo/` by hand. Update `.grap
 
 1. `StorefrontApiClient.kt` wraps an `ApolloClient`, points it at the configured Storefront API endpoint, and executes generated query and mutation types.
 2. Repository classes such as `CartRepository`, `ProductRepository`, and `ProductCollectionRepository` map generated Storefront API responses into local UI state.
-3. `CartViewModel.kt` presents checkout with `ShopifyCheckoutKit.present`, connects `CheckoutProtocol.Client`, and forwards browser/system callbacks to `MainActivity`.
+3. `CartViewModel.kt` configures `ShopifyCheckoutKit.present` and the shared protocol client; `AppOwnedCheckoutSheet.kt` demonstrates embedding the same checkout in app-owned Compose UI. Both forward browser/system callbacks to `MainActivity`.
 4. Apollo decodes responses into generated Kotlin types, so schema or operation changes surface as compile errors.
 
 ## Setup
@@ -148,6 +151,8 @@ Open the project in Android Studio, sync Gradle, then build and run.
 | `products/collection/data/ProductCollectionRepository.kt` | Collection Storefront API calls. |
 | `settings/authentication/data/CustomerRepository.kt` | Customer Account API token exchange and customer lookup. |
 | `common/navigation/CheckoutKitNavHost.kt` | App navigation. |
-| `cart/CartViewModel.kt` | Checkout presentation, fail/dismiss callbacks, and protocol lifecycle handlers. |
+| `cart/CartViewModel.kt` | Checkout Kit sheet presentation, fail/dismiss callbacks, protocol lifecycle handlers, and window-open routing. |
+| `cart/AppOwnedCheckoutSheet.kt` | App-owned Compose sheet containing an embedded `ShopifyCheckout`. |
 | `MainActivity.kt` | File chooser and geolocation permission callbacks. |
+| `settings/` | Checkout presentation mode, sheet style and dismissal, and window-open handler controls. |
 | `settings/authentication/` | Customer Account API sign-in screens and WebView flow. |

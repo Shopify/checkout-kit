@@ -17,7 +17,7 @@ Add the Checkout Kit repository:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.1")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.2")
 ]
 ```
 
@@ -37,21 +37,24 @@ For local protocol development, this directory also contains a standalone `Packa
 ```swift
 import EmbeddedCheckoutProtocol
 
-let client = CheckoutProtocol.Client()
-  .on(CheckoutProtocol.start) { checkout in
+let client = EmbeddedCheckoutProtocol.Client()
+  .on(EmbeddedCheckoutProtocol.Event.start) { message in
+    let checkout = message.params.checkout
     print("Checkout started: \(checkout.id)")
   }
-  .on(CheckoutProtocol.complete) { checkout in
+  .on(EmbeddedCheckoutProtocol.Event.complete) { message in
+    let checkout = message.params.checkout
     print("Checkout completed: \(checkout.order?.id ?? "unknown")")
   }
-  .on(CheckoutProtocol.totalsChange) { checkout in
+  .on(EmbeddedCheckoutProtocol.Event.totalsChange) { message in
+    let checkout = message.params.checkout
     print("Totals changed: \(checkout.totals)")
   }
 ```
 
 ## Connect to Checkout Kit
 
-Checkout Kit's Swift SDK accepts `CheckoutProtocol.Client` anywhere it accepts `CheckoutCommunicationProtocol`.
+Checkout Kit's Swift SDK accepts `EmbeddedCheckoutProtocol.Client` anywhere it accepts `CheckoutCommunicationProtocol`. The SDK also exposes the same client type as `CheckoutProtocol.Client` when you import `ShopifyCheckoutKit`.
 
 ### UIKit
 
@@ -81,25 +84,26 @@ AcceleratedCheckoutButtons(cartID: cartID)
   .connect(client)
 ```
 
-The button-specific `onFail`, `onCancel`, and `onRenderStateChange` handlers remain on `AcceleratedCheckoutButtons`.
+The button-specific `onFail`, `onDismiss`, and `onRenderStateChange` handlers remain on `AcceleratedCheckoutButtons`.
 
 ## Supported notifications
 
-Public notification descriptors include:
+Checkout Kit-supported notification descriptors include:
 
-- `CheckoutProtocol.start`
-- `CheckoutProtocol.complete`
-- `CheckoutProtocol.error`
-- `CheckoutProtocol.lineItemsChange`
-- `CheckoutProtocol.messagesChange`
-- `CheckoutProtocol.totalsChange`
+- `EmbeddedCheckoutProtocol.Event.start`
+- `EmbeddedCheckoutProtocol.Event.complete`
+- `EmbeddedCheckoutProtocol.Event.error`
+- `EmbeddedCheckoutProtocol.Event.lineItemsChange`
+- `EmbeddedCheckoutProtocol.Event.messagesChange`
+- `EmbeddedCheckoutProtocol.Event.totalsChange`
+- `EmbeddedCheckoutProtocol.Event.fulfillmentChange`
 
 Use these for app behavior such as clearing local carts after completion, updating analytics, or logging checkout messages.
 
 ## Supported delegations
 
-Public delegation descriptors include:
+Checkout Kit-supported delegation descriptors include:
 
-- `CheckoutProtocol.windowOpen`
+- `EmbeddedCheckoutProtocol.Event.windowOpen`
 
 Use this to handle `ec.window.open_request` when your app needs custom routing for checkout link requests.

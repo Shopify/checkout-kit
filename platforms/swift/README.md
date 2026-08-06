@@ -497,8 +497,8 @@ AcceleratedCheckoutButtons(cartID: cartID)
   .onFail { error in
     // Handle checkout failure.
   }
-  .onCancel {
-    // The buyer canceled the accelerated checkout flow.
+  .onDismiss {
+    // The buyer dismissed the accelerated checkout flow.
   }
   .connect(client)
 ```
