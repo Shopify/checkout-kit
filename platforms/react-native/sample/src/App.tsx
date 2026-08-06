@@ -197,7 +197,6 @@ class StorefrontURL {
 
 const checkoutKitConfigDefaults: Configuration = {
   logLevel: LogLevel.debug,
-  colorScheme: ColorScheme.light,
 };
 
 function AppWithContext({children}: PropsWithChildren) {
