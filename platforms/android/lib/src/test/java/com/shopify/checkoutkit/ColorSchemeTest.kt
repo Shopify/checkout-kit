@@ -16,7 +16,8 @@ class ColorSchemeTest {
         assertThat(dark.colors.progressIndicator).isEqualTo(Color.ResourceId(R.color.checkoutDarkProgressIndicator))
         assertThat(dark.colors.closeIcon).isNull()
         assertThat(dark.colors.closeIconTint).isNull()
-        assertThat(dark.colors.dragHandleColor).isEqualTo(Color.ResourceId(R.color.checkoutDarkFont))
+        assertThat(dark.colors.dragHandleColor).isNull()
+        assertThat(dark.dragHandleColor(isDark = true)).isEqualTo(Color.ResourceId(R.color.checkoutDarkFont))
     }
 
     @Test
@@ -29,7 +30,8 @@ class ColorSchemeTest {
         assertThat(light.colors.progressIndicator).isEqualTo(Color.ResourceId(R.color.checkoutLightProgressIndicator))
         assertThat(light.colors.closeIcon).isNull()
         assertThat(light.colors.closeIconTint).isNull()
-        assertThat(light.colors.dragHandleColor).isEqualTo(Color.ResourceId(R.color.checkoutLightFont))
+        assertThat(light.colors.dragHandleColor).isNull()
+        assertThat(light.dragHandleColor(isDark = false)).isEqualTo(Color.ResourceId(R.color.checkoutLightFont))
     }
 
     @Test
@@ -44,7 +46,8 @@ class ColorSchemeTest {
         ).isEqualTo(Color.ResourceId(R.color.checkoutDarkProgressIndicator))
         assertThat(automatic.darkColors.closeIcon).isNull()
         assertThat(automatic.darkColors.closeIconTint).isNull()
-        assertThat(automatic.darkColors.dragHandleColor).isEqualTo(Color.ResourceId(R.color.checkoutDarkFont))
+        assertThat(automatic.darkColors.dragHandleColor).isNull()
+        assertThat(automatic.dragHandleColor(isDark = true)).isEqualTo(Color.ResourceId(R.color.checkoutDarkFont))
 
         assertThat(automatic.lightColors.headerBackground).isEqualTo(Color.ResourceId(R.color.checkoutLightBg))
         assertThat(automatic.lightColors.headerFont).isEqualTo(Color.ResourceId(R.color.checkoutLightFont))
@@ -54,7 +57,8 @@ class ColorSchemeTest {
         ).isEqualTo(Color.ResourceId(R.color.checkoutLightProgressIndicator))
         assertThat(automatic.lightColors.closeIcon).isNull()
         assertThat(automatic.lightColors.closeIconTint).isNull()
-        assertThat(automatic.lightColors.dragHandleColor).isEqualTo(Color.ResourceId(R.color.checkoutLightFont))
+        assertThat(automatic.lightColors.dragHandleColor).isNull()
+        assertThat(automatic.dragHandleColor(isDark = false)).isEqualTo(Color.ResourceId(R.color.checkoutLightFont))
     }
 
     @Test
@@ -409,5 +413,31 @@ class ColorSchemeTest {
         assertThat(autoScheme.darkColors.closeIconTint).isEqualTo(darkTint)
         assertThat(autoScheme.lightColors.dragHandleColor).isEqualTo(lightHandle)
         assertThat(autoScheme.darkColors.dragHandleColor).isEqualTo(darkHandle)
+    }
+
+    @Test
+    fun `customize derives the drag handle color from a customized header font`() {
+        val customFont = Color.ResourceId(99)
+
+        val light = ColorScheme.Light().customize { headerFont = customFont }
+        val dark = ColorScheme.Dark().customize { headerFont = customFont }
+        val automatic = ColorScheme.Automatic().customize { headerFont = customFont }
+
+        assertThat(light.dragHandleColor(isDark = false)).isEqualTo(customFont)
+        assertThat(dark.dragHandleColor(isDark = true)).isEqualTo(customFont)
+        assertThat(automatic.dragHandleColor(isDark = false)).isEqualTo(customFont)
+        assertThat(automatic.dragHandleColor(isDark = true)).isEqualTo(customFont)
+    }
+
+    @Test
+    fun `customize keeps an explicit drag handle color over a customized header font`() {
+        val customFont = Color.ResourceId(99)
+        val customHandle = Color.ResourceId(100)
+
+        val light = ColorScheme.Light().customize {
+            withHeaderFont(customFont).withDragHandleColor(customHandle)
+        }
+
+        assertThat(light.dragHandleColor(isDark = false)).isEqualTo(customHandle)
     }
 }

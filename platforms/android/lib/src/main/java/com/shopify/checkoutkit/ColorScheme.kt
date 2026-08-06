@@ -166,7 +166,7 @@ public sealed class ColorScheme(public val id: String) {
  * - The WebView background color,
  * - The native header background and font color,
  * - The progress/loading indicator,
- * - The optional drag handle.
+ * - The optional drag handle, which follows the header font color when it is not set.
  *
  * @see ColorScheme
  * @see CheckoutAppearance.Storefront
@@ -292,7 +292,6 @@ private val defaultLightColors = Colors(
     headerBackground = Color.ResourceId(R.color.checkoutLightBg),
     headerFont = Color.ResourceId(R.color.checkoutLightFont),
     progressIndicator = Color.ResourceId(R.color.checkoutLightProgressIndicator),
-    dragHandleColor = Color.ResourceId(R.color.checkoutLightFont),
 )
 
 private val defaultDarkColors = Colors(
@@ -300,5 +299,4 @@ private val defaultDarkColors = Colors(
     headerBackground = Color.ResourceId(R.color.checkoutDarkBg),
     headerFont = Color.ResourceId(R.color.checkoutDarkFont),
     progressIndicator = Color.ResourceId(R.color.checkoutDarkProgressIndicator),
-    dragHandleColor = Color.ResourceId(R.color.checkoutDarkFont),
 )

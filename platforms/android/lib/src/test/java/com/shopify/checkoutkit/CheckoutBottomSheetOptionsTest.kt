@@ -214,6 +214,26 @@ class CheckoutBottomSheetOptionsTest {
     }
 
     @Test
+    fun `drag handle derives its color from a customized header font`() {
+        val customHeaderFont = Color.SRGB(0xFF336699.toInt())
+        ShopifyCheckoutKit.configure {
+            it.appearance = CheckoutAppearance.App(
+                colorScheme = ColorScheme.Light().customize {
+                    headerBackground = Color.SRGB(0xFF000000.toInt())
+                    headerFont = customHeaderFont
+                },
+            )
+            it.sheet = CheckoutSheetOptions(dragHandle = CheckoutSheetDragHandle(visible = true))
+        }
+
+        val sheet = presentBottomSheet()
+        val dragHandle = sheet.findViewById<View>(R.id.checkoutKitDragHandle)!!
+
+        assertThat(dragHandle.background).isInstanceOf(GradientDrawable::class.java)
+        assertThat(shadowOf(dragHandle.background as GradientDrawable).lastSetColor).isEqualTo(0x66336699)
+    }
+
+    @Test
     fun `drag handle remains hidden when drag to dismiss is disabled`() {
         ShopifyCheckoutKit.configure {
             it.sheet = CheckoutSheetOptions(
