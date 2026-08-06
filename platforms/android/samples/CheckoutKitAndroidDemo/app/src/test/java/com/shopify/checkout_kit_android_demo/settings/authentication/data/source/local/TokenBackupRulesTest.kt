@@ -1,9 +1,9 @@
 package com.shopify.checkout_kit_android_demo.settings.authentication.data.source.local
 
-import javax.xml.parsers.DocumentBuilderFactory
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.w3c.dom.Element
+import javax.xml.parsers.DocumentBuilderFactory
 
 class TokenBackupRulesTest {
     @Test
@@ -42,13 +42,17 @@ class TokenBackupRulesTest {
             val exclusions = section!!.getElementsByTagName("exclude")
 
             tokenDataStorePaths.forEach { tokenDataStorePath ->
-                assertThat((0 until exclusions.length).any {
-                    (exclusions.item(it) as Element).getAttribute("path") == tokenDataStorePath
-                }).withFailMessage("Missing DataStore exclusion for $tokenDataStorePath in $sectionName").isTrue()
+                assertThat(
+                    (0 until exclusions.length).any {
+                        (exclusions.item(it) as Element).getAttribute("path") == tokenDataStorePath
+                    }
+                ).withFailMessage("Missing DataStore exclusion for $tokenDataStorePath in $sectionName").isTrue()
             }
-            assertThat((0 until exclusions.length).any {
-                (exclusions.item(it) as Element).getAttribute("path") == keysetPath
-            }).withFailMessage("Missing keyset exclusion in $sectionName").isTrue()
+            assertThat(
+                (0 until exclusions.length).any {
+                    (exclusions.item(it) as Element).getAttribute("path") == keysetPath
+                }
+            ).withFailMessage("Missing keyset exclusion in $sectionName").isTrue()
         }
     }
 }

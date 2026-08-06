@@ -27,14 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -58,7 +57,6 @@ import com.shopify.checkout_kit_android_demo.settings.SettingsUiState
 import com.shopify.checkout_kit_android_demo.settings.SettingsViewModel
 import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.ColorScheme
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -83,7 +81,6 @@ fun CheckoutKitAppRoot(
     val cartState = cartViewModel.cartState.collectAsState()
     val totalQuantity = cartState.value.totalQuantity
     val activity = LocalActivity.current as ComponentActivity
-    val context = LocalContext.current
 
     CheckoutKitSampleTheme(darkTheme = useDarkTheme) {
         val checkoutAppearance = (settingsUiState as? SettingsUiState.Loaded)?.settings?.appearance
@@ -101,13 +98,20 @@ fun CheckoutKitAppRoot(
             val navController = rememberNavController()
             var currentScreen by remember { mutableStateOf<Screen>(Screen.Product) }
             var presentedCheckoutUrl by remember { mutableStateOf<String?>(null) }
-            val scope = rememberCoroutineScope()
             val snackbarHostState = remember { SnackbarHostState() }
+            var snackbarResourceId by remember { mutableStateOf<Int?>(null) }
+            var snackbarEventId by remember { mutableIntStateOf(0) }
+            val snackbarMessage = snackbarResourceId?.let { stringResource(it) }
 
             ObserveAsEvents(flow = SnackbarController.events) { event ->
-                scope.launch {
+                snackbarResourceId = event.resourceId
+                snackbarEventId++
+            }
+
+            LaunchedEffect(snackbarEventId) {
+                snackbarMessage?.let { message ->
                     snackbarHostState.currentSnackbarData?.dismiss()
-                    snackbarHostState.showSnackbar(message = context.resources.getText(event.resourceId).toString())
+                    snackbarHostState.showSnackbar(message = message)
                 }
             }
 
@@ -147,7 +151,8 @@ fun CheckoutKitAppRoot(
                                             containerColor = MaterialTheme.colorScheme.primary,
                                             contentColor = MaterialTheme.colorScheme.onPrimary,
                                             modifier = Modifier.offset(
-                                                x = -(7.5.dp), y = 20.dp
+                                                x = -(7.5.dp),
+                                                y = 20.dp
                                             )
                                         ) {
                                             Text("$totalQuantity")
@@ -157,7 +162,9 @@ fun CheckoutKitAppRoot(
                                     Icon(
                                         modifier = Modifier.height(48.dp),
                                         painter = painterResource(id = R.drawable.cart),
-                                        contentDescription = stringResource(id = R.string.cart_icon_content_description),
+                                        contentDescription = stringResource(
+                                            id = R.string.cart_icon_content_description
+                                        ),
                                     )
                                 }
                             }

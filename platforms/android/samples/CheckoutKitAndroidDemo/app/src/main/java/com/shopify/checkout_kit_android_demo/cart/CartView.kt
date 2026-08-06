@@ -22,9 +22,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,7 +57,6 @@ fun CartView(
     cartViewModel: CartViewModel,
     onPresentAppOwnedCheckout: (String) -> Unit,
 ) {
-
     val state = cartViewModel.cartState.collectAsState().value
     val loading = cartViewModel.loadingState.collectAsState().value
     val checkoutPresentationMode = cartViewModel.checkoutPresentationMode.collectAsState().value
@@ -153,7 +152,10 @@ private fun CartLines(
             }
         }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(bottom = verticalPadding)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(bottom = verticalPadding)
+            ) {
                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = stringResource(id = R.string.cart_product_header),

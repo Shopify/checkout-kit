@@ -36,7 +36,6 @@ fun ProductView(
     productId: String,
     productViewModel: ProductViewModel = koinViewModel(),
 ) {
-
     LaunchedEffect(key1 = true) {
         productViewModel.fetchProduct(productId)
     }

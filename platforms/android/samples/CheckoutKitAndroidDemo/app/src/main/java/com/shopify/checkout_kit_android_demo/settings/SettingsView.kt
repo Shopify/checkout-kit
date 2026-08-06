@@ -36,7 +36,6 @@ fun SettingsView(
     settingsViewModel: SettingsViewModel,
     navController: NavHostController,
 ) {
-
     when (val uiState = settingsViewModel.uiState.collectAsState().value) {
         is SettingsUiState.Loading -> {
             ProgressIndicator()
@@ -104,7 +103,6 @@ fun SettingsView(
                             .background(color = MaterialTheme.colorScheme.background)
                             .fillMaxWidth()
                     )
-
                 }
 
                 AppearanceSection(

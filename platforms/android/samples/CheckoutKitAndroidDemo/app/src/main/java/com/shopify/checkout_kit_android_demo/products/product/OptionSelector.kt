@@ -22,7 +22,6 @@ fun OptionSelector(
 ) {
     availableOptions.forEach { (optionName, optionValues) ->
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-
             BodySmall(optionName)
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

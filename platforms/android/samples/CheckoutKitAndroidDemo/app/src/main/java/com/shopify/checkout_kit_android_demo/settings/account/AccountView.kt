@@ -29,7 +29,6 @@ fun AccountView(
     navController: NavHostController,
     viewModel: AccountViewModel = koinViewModel(),
 ) {
-
     val uiState = viewModel.uiState.collectAsState().value
 
     LaunchedEffect(key1 = true) {
@@ -59,7 +58,6 @@ fun AccountView(
                                 .padding(bottom = 20.dp)
                                 .fillMaxWidth()
                         ) {
-
                             Header2(
                                 text = customer.displayName,
                                 modifier = Modifier.padding(end = 10.dp),

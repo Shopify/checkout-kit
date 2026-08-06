@@ -46,7 +46,6 @@ fun ProductsView(
     navController: NavController,
     productsViewModel: ProductsViewModel = koinViewModel(),
 ) {
-
     val pager = remember {
         Pager(PagingConfig(pageSize = 10)) {
             productsViewModel.pagingSource
@@ -115,11 +114,14 @@ fun Product(
     imageHeight: Dp,
     onProductClick: (id: ID) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier
-        .wrapContentWidth()
-        .clickable {
-            onProductClick(product.id)
-        }) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .wrapContentWidth()
+            .clickable {
+                onProductClick(product.id)
+            }
+    ) {
         RemoteImage(
             url = product.image?.url,
             altText = product.image?.altText ?: stringResource(id = R.string.product_alt_text_default),

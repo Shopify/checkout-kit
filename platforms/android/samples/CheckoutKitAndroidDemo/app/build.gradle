@@ -5,6 +5,7 @@ plugins {
     id 'com.google.devtools.ksp'
     id 'org.jetbrains.kotlin.plugin.compose'
     id 'com.apollographql.apollo'
+    id 'io.gitlab.arturbosch.detekt'
 }
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -94,6 +95,14 @@ android {
         }
     }
 
+    lint {
+        checkDependencies = true
+        warningsAsErrors = true
+        disable 'GradleDependency', 'NewerVersionAvailable', 'SimilarGradleDependency'
+        warning 'LintBaseline'
+        informational 'AndroidGradlePluginVersion'
+    }
+
     buildTypes {
         release {
             minifyEnabled = false
@@ -130,7 +139,18 @@ tasks.withType(KotlinJvmCompile).configureEach {
 }
 
 
+// The sample applies only auto-correctable formatting rules. Full Detekt static analysis remains
+// enabled for the published library; enabling default rules here would surface unrelated existing
+// sample debt rather than make this formatting check actionable.
+detekt {
+    buildUponDefaultConfig = false
+    config.setFrom('../detekt.config.yml')
+    autoCorrect = true
+}
+
 dependencies {
+    detektPlugins libs.detekt.formatting
+
     // Checkout Kit
     implementation project(':lib')
 

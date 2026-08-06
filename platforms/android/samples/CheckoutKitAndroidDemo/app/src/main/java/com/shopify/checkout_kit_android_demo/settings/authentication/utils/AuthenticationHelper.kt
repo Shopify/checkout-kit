@@ -1,7 +1,7 @@
 package com.shopify.checkout_kit_android_demo.settings.authentication.utils
 
-import android.net.Uri
 import android.util.Base64
+import androidx.core.net.toUri
 import androidx.compose.ui.text.intl.Locale
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -24,7 +24,7 @@ class AuthenticationHelper(
         locale: Locale,
     ): String {
         val codeChallenge = codeChallenge(codeVerifier)
-        val url = Uri.parse("$baseUrl/oauth/authorize").buildUpon()
+        val url = "$baseUrl/oauth/authorize".toUri().buildUpon()
             .appendQueryParameter("scope", "openid email customer-account-api:full")
             .appendQueryParameter("client_id", clientId)
             .appendQueryParameter("response_type", "code")
@@ -49,7 +49,7 @@ class AuthenticationHelper(
      * Builds a logout URL
      */
     fun buildLogoutURL(idToken: String): String {
-        return "$baseUrl/logout?id_token_hint=${idToken}"
+        return "$baseUrl/logout?id_token_hint=$idToken"
     }
 
     /**

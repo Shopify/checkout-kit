@@ -10,6 +10,7 @@
         android:layout_height="wrap_content"
         android:elevation="0dp"
         android:minHeight="?attr/actionBarSize"
+        android:paddingStart="4dp"
         android:paddingEnd="4dp"
         android:theme="@style/Theme.AppCompat.DayNight"
         app:contentInsetStart="22dp"
