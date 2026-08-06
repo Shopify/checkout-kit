@@ -57,30 +57,36 @@ pods need to be installed. The underlying
 
 ## Local SDK development (`--local`)
 
-The RN module wraps the Shopify Swift and Android SDKs, which live in this same monorepo at `platforms/swift/` and `platforms/android/`. By default the sample app builds against the **published** artifacts on CocoaPods / Maven Central — the same path CI takes. To build against the in-repo SDK sources instead, pass `--local` to any sample command:
+The RN module wraps the Shopify Swift and Android SDKs, which live in this same monorepo at `platforms/swift/` and `platforms/android/`. The sample app builds against the **published** artifacts on CocoaPods / Maven Central — the same path CI takes.
+
+**Most work does not need `--local`.** Before reaching for it, check whether the native API you need already exists in the published version pinned at `checkoutKit.nativeSdkVersions` in `modules/@shopify/checkout-kit-react-native/package.json`. If it does, build normally. Editing `platforms/swift/` or `platforms/android/` does not on its own require the flag.
+
+`--local` is for one case: you changed the Swift or Kotlin **public API** and want to integrate the RN side against it before that native version ships.
 
 ```sh
 dev rn android --local        # publishes lib to ~/.m2/ then builds the sample against it
 dev rn ios --local            # builds the sample against the local Swift SDK
 dev rn pod-install --local    # re-resolve iOS pods against the local Swift SDK
+dev rn test android --local   # RN module Android tests against the local Android SDK
 ```
 
-The flag is opt-in because the in-repo SDKs change as we develop. Default published mode is always safe; `--local` activates the in-progress API surface.
+While you do this, CI stays red and the PR is not mergeable — CI resolves published artifacts only. It becomes mergeable when the native release lands on CocoaPods and Maven Central and `nativeSdkVersions` is bumped to it. That red state is expected, not a problem to work around.
 
 ### How it works
 
 - **Android**: every `--local` invocation runs `scripts/publish_android_snapshot`, which publishes the current local `com.shopify:embedded-checkout-protocol` and `com.shopify:checkout-kit` versions to `~/.m2/` via the Android Gradle build. The sample's `build.gradle` uses exclusive Maven Local resolution for those modules, so validation fails rather than falling back to a published artifact if the local publish is missing.
 - **iOS**: with `--local`, the Podfile injects `pod "ShopifyCheckoutKit", :path => "../../../../"` (the repo root, where `ShopifyCheckoutKit.podspec` lives). CocoaPods reads Swift sources from `platforms/swift/` directly.
 
-Internally `--local` exports `USE_LOCAL_SDK=1` before invoking the underlying tool. Setting the env var directly works too:
-
-```sh
-USE_LOCAL_SDK=1 dev rn android
-```
+Internally `--local` exports `USE_LOCAL_SDK=1` before invoking the underlying tool. Pass the flag rather than exporting the variable in your shell profile — an ambient `USE_LOCAL_SDK=1` silently applies to every later build.
 
 ### CI
 
-CI uses the default (published) path naturally — no special flag handling. Keep `USE_LOCAL_SDK=1` scoped to local development or explicit validation against unreleased native SDK changes.
+CI uses the published path and never sets the flag. Two guards keep it that way:
+
+- `scripts/check_published_podfile_lock` fails the iOS jobs if a committed `Podfile.lock` resolves `ShopifyCheckoutKit` from a local path. Regenerate with `env -u USE_LOCAL_SDK dev rn pod-install`.
+- `scripts/check_no_local_sdk_default` fails the Android jobs if `USE_LOCAL_SDK=1` is hardcoded into a script, `dev.yml`, or a workflow, or if `mavenLocal()` is added outside the `useLocalSdk` branch. The sample Gradle build also aborts when the variable is set while `CI` is set.
+
+Local mode has to stay an explicit command-line choice. Hardcoding it makes local runs disagree with CI, and because Maven Local keeps the same version across republishes, it can quietly resolve a stale artifact from `~/.m2`.
 
 ### Gotchas
 
