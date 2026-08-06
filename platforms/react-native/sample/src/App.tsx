@@ -1,12 +1,12 @@
 import type {PropsWithChildren, ReactNode} from 'react';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  Appearance,
   Linking,
   Pressable,
   StatusBar,
   StyleSheet,
   View,
+  useColorScheme,
 } from 'react-native';
 import {
   NavigationContainer,
@@ -199,7 +199,7 @@ class StorefrontURL {
 
 const checkoutKitConfigDefaults: Configuration = {
   logLevel: LogLevel.debug,
-  colorScheme: ColorScheme.dark,
+  colorScheme: ColorScheme.light,
 };
 
 function AppWithContext({children}: PropsWithChildren) {
@@ -309,20 +309,14 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
     fetchAccessToken();
   }, [fetchAccessToken]);
 
-  const updatedColors = getColors(
-    appConfig.colorScheme,
-    Appearance.getColorScheme(),
-  );
+  const osColorScheme = useColorScheme();
+  const updatedColors = getColors(appConfig.colorScheme, osColorScheme);
 
   const checkoutKitThemeConfig: Configuration = useMemo(() => {
     if (appConfig.colorScheme === ColorScheme.automatic) {
       return {
         colorScheme: ColorScheme.automatic,
         colors: {
-          ios: {
-            backgroundColor: updatedColors.webviewBackgroundColor,
-            tintColor: updatedColors.webViewProgressIndicator,
-          },
           android: {
             light: {
               backgroundColor: lightColors.webviewBackgroundColor,
