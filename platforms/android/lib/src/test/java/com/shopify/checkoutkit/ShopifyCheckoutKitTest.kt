@@ -3,6 +3,7 @@ package com.shopify.checkoutkit
 import android.widget.RelativeLayout
 import androidx.activity.ComponentActivity
 import androidx.core.view.children
+import androidx.lifecycle.LifecycleRegistry
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -16,6 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 class ShopifyCheckoutKitTest {
@@ -81,6 +83,77 @@ class ShopifyCheckoutKitTest {
             )
 
             assertThat(checkout).isNull()
+        }
+    }
+
+    @Test
+    fun `present ignores a second call while a checkout is showing`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
+            val activity = activityController.get()
+
+            val first = presentCheckout(activity)
+            val second = presentCheckout(activity)
+
+            assertThat(first).isNotNull
+            assertThat(ShadowDialog.getShownDialogs()).hasSize(1)
+            assertThat(second).isSameAs(first)
+        }
+    }
+
+    @Test
+    fun `present shows a new checkout after the previous one is dismissed`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
+            val activity = activityController.get()
+            val first = presentCheckout(activity)
+            layoutLatestSheet()
+
+            first?.dismiss()
+            ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
+            val second = presentCheckout(activity)
+
+            assertThat(second).isNotNull
+            assertThat(second).isNotSameAs(first)
+            assertThat(ShadowDialog.getShownDialogs()).hasSize(2)
+        }
+    }
+
+    @Test
+    fun `present releases its lifecycle observer once checkout is dismissed`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
+            val activity = activityController.get()
+            val registry = activity.lifecycle as LifecycleRegistry
+            val observerCountBeforePresent = registry.observerCount
+
+            val checkout = presentCheckout(activity)
+            layoutLatestSheet()
+            assertThat(registry.observerCount).isEqualTo(observerCountBeforePresent + 1)
+
+            checkout?.dismiss()
+            ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
+
+            assertThat(registry.observerCount).isEqualTo(observerCountBeforePresent)
+        }
+    }
+
+    @Test
+    fun `releasing the lifecycle observer keeps the preloaded checkout view reusable`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
+            val activity = activityController.get()
+            val registry = activity.lifecycle as LifecycleRegistry
+            preload(PRELOAD_URL, activity)
+            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+            val observerCountBeforePresent = registry.observerCount
+
+            val first = presentCheckout(activity, PRELOAD_URL)
+            layoutLatestSheet()
+            first?.dismiss()
+            ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
+            presentCheckout(activity, PRELOAD_URL)
+
+            assertThat(shadowOf(cachedView).wasDestroyCalled()).isFalse()
+            assertThat(latestSheetCheckoutWebView()).isSameAs(cachedView)
+            assertThat(registry.observerCount).isEqualTo(observerCountBeforePresent + 1)
         }
     }
 
@@ -202,7 +275,32 @@ class ShopifyCheckoutKitTest {
         ShopifyCheckoutKit.preload(url, activity, webMessageTransport)
     }
 
+    private fun presentCheckout(
+        activity: ComponentActivity,
+        url: String = "https://shopify.dev",
+    ): CheckoutHandle? {
+        return ShopifyCheckoutKit.present(
+            url,
+            activity,
+            noopDefaultCheckoutListener(),
+            webMessageTransport = webMessageTransport,
+        )
+    }
+
+    private fun layoutLatestSheet() {
+        val sheet = ShadowDialog.getLatestDialog() as CheckoutBottomSheet
+        sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+            .layout(0, 0, TEST_SHEET_SIZE, TEST_SHEET_SIZE)
+    }
+
+    private fun latestSheetCheckoutWebView(): CheckoutWebView {
+        val sheet = ShadowDialog.getLatestDialog() as CheckoutBottomSheet
+        return sheet.findViewById<RelativeLayout>(R.id.checkoutKitContainer)!!
+            .children.first { it is CheckoutWebView } as CheckoutWebView
+    }
+
     private companion object {
         private const val TEST_SHEET_SIZE = 1000
+        private const val PRELOAD_URL = "https://shopify.dev/cart/123"
     }
 }
