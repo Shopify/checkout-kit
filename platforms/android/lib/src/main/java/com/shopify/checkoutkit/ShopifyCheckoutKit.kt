@@ -14,6 +14,21 @@ public object ShopifyCheckoutKit {
     internal val log = LogWrapper()
 
     /**
+     * The presentation currently tracked as on screen, so repeat [present] calls can be refused.
+     */
+    private class LivePresentation(
+        private val sheet: CheckoutBottomSheet,
+        private val activity: ComponentActivity,
+        val handle: CheckoutHandle,
+    ) {
+        fun isShowingFor(context: ComponentActivity): Boolean = activity === context && sheet.isShowing
+
+        fun tracks(other: CheckoutBottomSheet): Boolean = sheet === other
+    }
+
+    private var livePresentation: LivePresentation? = null
+
+    /**
      * Returns the current version of ShopifyCheckoutKit.
 
      * @return the current version
@@ -203,6 +218,31 @@ public object ShopifyCheckoutKit {
             return null
         }
 
+        val alreadyPresented = livePresentation?.takeIf { it.isShowingFor(context) }
+        if (alreadyPresented != null) {
+            log.w("ShopifyCheckoutKit", "A checkout is already presented, ignoring this presentation.")
+        }
+        return alreadyPresented?.handle ?: startPresentation(
+            checkoutUrl = checkoutUrl,
+            context = context,
+            checkoutListener = checkoutListener,
+            protocolClient = protocolClient,
+            webMessageTransport = webMessageTransport,
+        )
+    }
+
+    /**
+     * Builds, starts, and tracks a new bottom-sheet presentation.
+     *
+     * Called only once the activity is usable and no checkout is already on screen for it.
+     */
+    private fun <T : DefaultCheckoutListener> startPresentation(
+        checkoutUrl: String,
+        context: ComponentActivity,
+        checkoutListener: T,
+        protocolClient: CheckoutProtocol.Client?,
+        webMessageTransport: WebMessageTransport,
+    ): CheckoutHandle? {
         log.d("ShopifyCheckoutKit", "Constructing bottom sheet")
         val checkout = CheckoutBottomSheet(
             checkoutUrl = checkoutUrl,
@@ -224,8 +264,18 @@ public object ShopifyCheckoutKit {
         val checkoutStarted = checkout.start()
         if (!checkoutStarted) {
             context.lifecycle.removeObserver(lifecycleObserver)
+            return null
         }
-        return if (checkoutStarted) CheckoutHandle { checkout.dismiss() } else null
+
+        val handle = CheckoutHandle { checkout.dismiss() }
+        livePresentation = LivePresentation(sheet = checkout, activity = context, handle = handle)
+        checkout.onDismissFinalized = {
+            context.lifecycle.removeObserver(lifecycleObserver)
+            if (livePresentation?.tracks(checkout) == true) {
+                livePresentation = null
+            }
+        }
+        return handle
     }
 }
 
