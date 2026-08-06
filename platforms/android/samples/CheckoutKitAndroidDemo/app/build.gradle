@@ -61,7 +61,7 @@ if (!storefrontDomain || !accessToken) {
 }
 
 android {
-    namespace = 'com.shopify.checkout_kit_android_demo'
+    namespace = 'com.shopify.checkoutkit.androiddemo'
     compileSdk = 37
 
     defaultConfig {
@@ -198,7 +198,7 @@ dependencies {
 
 apollo {
     service("storefront") {
-        packageName.set("com.shopify.checkout_kit_android_demo.graphql")
+        packageName.set("com.shopify.checkoutkit.androiddemo.graphql")
         srcDir("src/main/graphql")
         plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:${libs.versions.apolloCache.get()}")
         pluginArgument("com.apollographql.cache.packageName", packageName.get())
