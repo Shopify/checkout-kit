@@ -60,9 +60,10 @@ Duplicate in-progress PR pipelines are cancelled by Bitrise native Rolling build
 
 Nightly pipelines ship the sample apps to the stores from the same E2E test storefront the PR pipeline uses, so they need no storefront configuration of their own.
 
-| Pipeline                       | App                    | Destination |
-| ------------------------------ | ---------------------- | ----------- |
-| `nightly-swift-ios-testflight` | `CheckoutKitSwiftDemo` | TestFlight  |
+| Pipeline                              | App                          | Destination |
+| ------------------------------------- | ---------------------------- | ----------- |
+| `nightly-swift-ios-testflight`        | `CheckoutKitSwiftDemo`       | TestFlight  |
+| `nightly-react-native-ios-testflight` | `CheckoutKitReactNativeDemo` | TestFlight  |
 
 These pipelines are deliberately absent from `trigger_map`, so nothing starts them on a pull request. Create a daily **scheduled build** under **Project settings > Scheduled builds**, targeting `main` and selecting the pipeline. The schedule is the one part of this design that Bitrise keeps outside the repository.
 
@@ -76,7 +77,7 @@ The gate asks whether HEAD was committed inside `NIGHTLY_COMMIT_WINDOW`, which d
 
 The build number is `$BITRISE_BUILD_NUMBER`, injected as an `xcodebuild` build-setting override. No committed file changes value, so nothing has to be bumped by hand and no two uploads can collide.
 
-This only works because the sample's XcodeGen spec binds `CFBundleVersion` to `$(CURRENT_PROJECT_VERSION)`. Without that binding XcodeGen writes the setting's current value into the plist as a literal, an override is silently discarded, and App Store Connect rejects every upload after the first. `e2e/scripts/build_swift_ios_testflight` re-reads the archived plist and fails the build if the number did not land.
+This only works because each sample binds `CFBundleVersion` to `$(CURRENT_PROJECT_VERSION)` rather than to a literal. `CheckoutKitSwiftDemo` binds it in its XcodeGen spec, and `CheckoutKitReactNativeDemo` binds it in its committed `Info.plist`. Without that binding the literal wins, the override is silently discarded, and App Store Connect rejects every upload after the first. Both build scripts call `e2e_assert_archived_build_number`, which re-reads the archived plist and fails the build if the number did not land.
 
 ### Signing
 
@@ -84,9 +85,10 @@ The nightly iOS build passes its signing arguments explicitly and calls `e2e_rej
 
 Each nightly iOS workflow names its profile in `NIGHTLY_IOS_PROVISIONING_PROFILE_SPECIFIER`, under that workflow's `envs` in `e2e/bitrise.yml`. The build script has no default and exits if the variable is missing, so a renamed profile fails the build immediately instead of signing with the wrong identity. The variable is workflow-scoped rather than an `app.envs` entry, because each app needs its own profile.
 
-| App                    | Profile                                        | Export method       |
-| ---------------------- | ---------------------------------------------- | ------------------- |
-| `CheckoutKitSwiftDemo` | `PP-Bitrise-com.shopify.checkoutkit.swiftdemo` | `app-store-connect` |
+| App                          | Profile                                              | Export method       |
+| ---------------------------- | ---------------------------------------------------- | ------------------- |
+| `CheckoutKitSwiftDemo`       | `PP-Bitrise-com.shopify.checkoutkit.swiftdemo`       | `app-store-connect` |
+| `CheckoutKitReactNativeDemo` | `PP-Bitrise-com.shopify.checkoutkit.reactnativedemo` | `app-store-connect` |
 
 Required Bitrise code signing assets, beyond the E2E development assets:
 

@@ -94,6 +94,15 @@ pipelines:
         depends_on:
           - nightly-decide-should-build
 
+  nightly-react-native-ios-testflight:
+    workflows:
+      nightly-decide-should-build: {}
+      nightly-release-react-native-ios:
+        run_if:
+          expression: '{{ enveq "NIGHTLY_SHOULD_BUILD" "true" }}'
+        depends_on:
+          - nightly-decide-should-build
+
 step_bundles:
   install-node-modules:
     steps:
@@ -480,5 +489,33 @@ workflows:
             # the Bitrise app, so this workflow needs no upload secret of its own.
             - connection: automatic
             - ipa_path: $NIGHTLY_SWIFT_IOS_IPA_PATH
+      - deploy-to-bitrise-io@2:
+          is_always_run: false
+
+  nightly-release-react-native-ios:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.4large
+    envs:
+      - NIGHTLY_IOS_PROVISIONING_PROFILE_SPECIFIER: PP-Bitrise-com.shopify.checkoutkit.reactnativedemo
+    steps:
+      - git-clone@8: {}
+      - certificate-and-profile-installer@1: {}
+      - bundle::install-node-modules: {}
+      - bundle::install-ruby-gems: {}
+      - bundle::install-cocoapods: {}
+      - script@1:
+          title: Build the React Native iOS App Store IPA
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                e2e/scripts/build_react_native_ios_testflight
+      - deploy-to-itunesconnect-application-loader@2:
+          inputs:
+            - connection: automatic
+            - ipa_path: $NIGHTLY_REACT_NATIVE_IOS_IPA_PATH
       - deploy-to-bitrise-io@2:
           is_always_run: false
