@@ -83,8 +83,8 @@ fun Header(
     textAlign: TextAlign,
     fontSize: TextUnit
 ) {
-    if (text == null && resourceId == null) {
-        throw IllegalArgumentException("No text or resourceId passed to Header component")
+    require(text != null || resourceId != null) {
+        "No text or resourceId passed to Header component"
     }
     Text(
         text = text ?: stringResource(id = resourceId!!),
