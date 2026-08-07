@@ -50,6 +50,7 @@ experiences.
   - [Cache invalidation](#cache-invalidation)
 - [Checkout lifecycle](#checkout-lifecycle)
   - [SDK callbacks on `present()`](#sdk-callbacks-on-present)
+  - [Error handling](#error-handling)
 - [Identity \& customer accounts](#identity--customer-accounts)
   - [Cart: buyer bag, identity, and preferences](#cart-buyer-bag-identity-and-preferences)
     - [Multipass](#multipass)
@@ -626,6 +627,75 @@ shopify.present(checkoutUrl, {
 
 `onClose` and `onFail` are mutually exclusive — exactly one of them fires
 per `present(...)` call, after which both handles are released.
+
+### Error handling
+
+A terminal checkout failure arrives as a `CheckoutException`. It has a stable
+`code`, a diagnostic `message`, and an optional `statusCode` that is present
+only when an HTTP response caused the failure.
+
+Use `code` to decide what your app does. Use `message` for logging and
+diagnostics only — the text is not stable and is not written for buyers.
+
+```tsx
+import {CheckoutErrorCode} from '@shopify/checkout-kit-react-native';
+```
+
+| `CheckoutErrorCode` | Meaning | Suggested app action |
+| --- | --- | --- |
+| `storefrontPasswordRequired` | The storefront is password protected. | Treat this checkout URL as unavailable until storefront password protection has been disabled. |
+| `customerAccountRequired` | Checkout requires a customer account unavailable to this session. | Prompt the customer to [authenticate](https://shopify.dev/docs/storefronts/mobile/checkout-kit/authenticate-checkouts), then retry. |
+| `cartExpired` | The cart or checkout session is no longer available. | Create a new cart and retry. |
+| `cartCompleted` | The cart has already completed checkout. | Clear or create a new cart. |
+| `invalidCart` | The cart cannot continue checkout. | Create a new cart and retry. |
+| `httpError` | Checkout returned an HTTP error response. `statusCode` is available. | Inspect `statusCode`; retry only when it makes sense for your app. |
+| `networkError` | Checkout navigation failed before an HTTP response was available. | Offer a retry when connectivity is available. |
+| `webViewNotSupported` | The device WebView provider lacks a required capability. Android only. | WebView support is widely available, but offer a browser fallback when it is unavailable. |
+| `webContentProcessTerminated` | The WebView renderer was terminated or crashed. | Dismiss the current presentation and let the buyer retry with a new checkout. |
+| `sdkError` | An internal Checkout Kit error has occurred, such as a protocol message that could not be decoded. | Log diagnostic context and offer a browser fallback. |
+| `unknown` | An unexpected error occurred, including any code a newer native SDK sends that this package does not recognize. | Log diagnostic context and offer a browser fallback. |
+
+> [!NOTE]
+> `statusCode` is the JavaScript name for the native `httpStatusCode` field.
+> `webViewNotSupported` is only ever sent by Android; iOS has no equivalent.
+
+Narrow on `code` to choose a recovery path:
+
+```tsx
+shopify.present(checkoutUrl, {
+  onFail: (error: CheckoutException) => {
+    switch (error.code) {
+      case CheckoutErrorCode.cartExpired:
+      case CheckoutErrorCode.cartCompleted:
+      case CheckoutErrorCode.invalidCart:
+        createAndPresentFreshCart();
+        break;
+      case CheckoutErrorCode.customerAccountRequired:
+        promptSignIn();
+        break;
+      case CheckoutErrorCode.httpError:
+        handleHttpFailure(error.statusCode);
+        break;
+      case CheckoutErrorCode.networkError:
+        showRetry();
+        break;
+      default:
+        showCheckoutUnavailable();
+    }
+  },
+});
+```
+
+Your app owns recovery after a terminal failure: retrying, recreating a cart,
+authenticating a buyer, opening a browser fallback, and re-presenting checkout.
+
+Record `code` (and `statusCode` when available) in analytics as appropriate for
+your privacy policy.
+
+The sample app has a worked version of this mapping in
+[`sample/src/checkout/checkoutErrorMessage.ts`](./sample/src/checkout/checkoutErrorMessage.ts),
+wired into `onFail` in
+[`sample/src/hooks/useCheckoutEventHandlers.ts`](./sample/src/hooks/useCheckoutEventHandlers.ts).
 
 ## Identity & customer accounts
 
