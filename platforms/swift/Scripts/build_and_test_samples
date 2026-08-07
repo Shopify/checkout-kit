@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+SAMPLES_DIR="$SCRIPT_DIR/../Samples"
+
+if ! "$REPO_ROOT/scripts/setup_storefront_env" --check; then
+    echo "Run dev up from the repo root to sync sample app storefront configuration."
+    exit 1
+fi
+
+"$SCRIPT_DIR/generate_xcode_projects"
+
+cd "$SAMPLES_DIR"
+
+run_app() {
+    local app="$1"
+    local action="$2"
+
+    if [[ ! -f "$app/Storefront.xcconfig" ]]; then
+        echo "Missing Storefront.xcconfig for $app. Run dev up from the repo root."
+        exit 1
+    fi
+
+    "$SCRIPT_DIR/xcode_run" "$action" "$app"
+}
+
+run_app CheckoutKitSwiftDemo "clean build test"
+run_app ShopifyAcceleratedCheckoutsApp "clean build"

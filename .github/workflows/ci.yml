@@ -63,7 +63,7 @@ jobs:
               - 'Package.swift'
               - 'Package.resolved'
               - '.github/workflows/swift-test-package.yml'
-              - '.github/workflows/swift-build-samples.yml'
+              - '.github/workflows/swift-build-and-test-samples.yml'
               - '.github/workflows/swift-test-workflow.yml'
               - '.github/workflows/swift-lint.yml'
               - '.github/workflows/breaking-changes.yml'
@@ -129,11 +129,11 @@ jobs:
     if: needs.changes.outputs.swift == 'true'
     uses: ./.github/workflows/swift-test-package.yml
 
-  swift-build-samples:
+  swift-build-and-test-samples:
     name: Swift
     needs: changes
     if: needs.changes.outputs.swift == 'true'
-    uses: ./.github/workflows/swift-build-samples.yml
+    uses: ./.github/workflows/swift-build-and-test-samples.yml
 
   swift-lint:
     name: Swift
@@ -250,7 +250,7 @@ jobs:
       - changes
       - android-test
       - swift-test-package
-      - swift-build-samples
+      - swift-build-and-test-samples
       - swift-lint
       - swift-sample-package-paths
       - rn-test

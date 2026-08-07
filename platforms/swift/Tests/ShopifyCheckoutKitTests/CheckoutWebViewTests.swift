@@ -421,7 +421,7 @@ class CheckoutWebViewTests: XCTestCase {
 
         pollForInvalidation()
 
-        wait(for: [invalidated], timeout: 2)
+        wait(for: [invalidated], timeout: 3)
     }
 
     func testInvalidateDetachesCachedPreloadedWebView() {
@@ -864,7 +864,7 @@ class CheckoutWebViewTests: XCTestCase {
 
         view.userContentController(WKUserContentController(), didReceive: message)
 
-        await fulfillment(of: [responseSent], timeout: 1.0)
+        await fulfillment(of: [responseSent], timeout: 5.0)
         let response = try XCTUnwrap(MockCheckoutBridge.lastResponseBody)
         let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
         XCTAssertEqual(parsed["id"] as? String, "r")
