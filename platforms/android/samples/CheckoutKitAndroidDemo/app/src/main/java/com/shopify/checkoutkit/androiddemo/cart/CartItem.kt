@@ -30,7 +30,7 @@ import com.shopify.checkoutkit.androiddemo.common.components.QuantitySelector
 import com.shopify.checkoutkit.androiddemo.common.components.RemoteImage
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.largeScreenBreakpoint
 
-private val cartItemImageHeightFraction = .95f
+private const val CART_ITEM_IMAGE_HEIGHT_FRACTION = .95f
 
 @Composable
 fun CartItem(
@@ -50,7 +50,7 @@ fun CartItem(
                 altText = cartLine.image?.altText,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(cartItemImageHeightFraction)
+                    .fillMaxHeight(CART_ITEM_IMAGE_HEIGHT_FRACTION)
             )
 
             Column(
