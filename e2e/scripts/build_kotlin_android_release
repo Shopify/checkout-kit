@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/bitrise_ci_helpers"
+
+: "${BITRISE_BUILD_NUMBER:?BITRISE_BUILD_NUMBER is required. Google Play rejects a versionCode it has already seen.}"
+
+e2e_configure_storefront
+
+e2e_log "Building the Kotlin Android release bundle"
+cd platforms/android/samples/CheckoutKitAndroidDemo
+./gradlew :app:bundleRelease \
+  -PcheckoutKitVersionCode="$BITRISE_BUILD_NUMBER" \
+  --no-daemon \
+  --console=plain
+
+android_aab="$PWD/app/build/outputs/bundle/release/app-release.aab"
+test -f "$android_aab"
+
+e2e_assert_android_version_code \
+  "$PWD/app/build/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml" \
+  "$BITRISE_BUILD_NUMBER"
+
+e2e_log "Publishing Kotlin Android AAB path"
+envman add --key NIGHTLY_KOTLIN_ANDROID_AAB_PATH --value "$android_aab"

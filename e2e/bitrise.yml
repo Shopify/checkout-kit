@@ -103,6 +103,15 @@ pipelines:
         depends_on:
           - nightly-decide-should-build
 
+  nightly-kotlin-android-play:
+    workflows:
+      nightly-decide-should-build: {}
+      nightly-release-kotlin-android:
+        run_if:
+          expression: '{{ enveq "NIGHTLY_SHOULD_BUILD" "true" }}'
+        depends_on:
+          - nightly-decide-should-build
+
 step_bundles:
   install-node-modules:
     steps:
@@ -517,5 +526,44 @@ workflows:
           inputs:
             - connection: automatic
             - ipa_path: $NIGHTLY_REACT_NATIVE_IOS_IPA_PATH
+      - deploy-to-bitrise-io@2:
+          is_always_run: false
+
+  nightly-release-kotlin-android:
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Build the Kotlin Android release bundle
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                e2e/scripts/build_kotlin_android_release
+      # Signing stays out of Gradle. This step reads the keystore already
+      # configured on the Bitrise app, so no secret name appears in this file and
+      # app/build.gradle gains no release signing config.
+      - sign-apk@2:
+          inputs:
+            - android_app: $NIGHTLY_KOTLIN_ANDROID_AAB_PATH
+      - google-play-deploy@3:
+          inputs:
+            # Bitrise derives this name from the Generic file storage env key, so
+            # the uploaded key must be stored as exactly SERVICE_ACCOUNT_JSON_KEY.
+            - service_account_json_key_path: $BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL
+            - package_name: com.shopify.checkoutkit.androiddemo
+            # Managed publishing does not cover the internal track, and updates to
+            # it skip review, so `completed` reaches testers with no manual step.
+            # `draft` would serve nobody until someone clicks publish.
+            - track: internal
+            - status: completed
+            - app_path: $BITRISE_SIGNED_AAB_PATH
+            # The release build sets minifyEnabled false, so R8 writes no mapping
+            # file. The step default points at one and fails when it is absent.
+            - mapping_file: ""
       - deploy-to-bitrise-io@2:
           is_always_run: false
