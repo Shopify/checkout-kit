@@ -48,7 +48,7 @@ sealed class Screen(val route: String) {
                 Logs.route -> Logs
                 Login.route -> Login
                 Account.route -> Account
-                else -> throw RuntimeException("Unknown route")
+                else -> throw IllegalArgumentException("Unknown route: $route")
             }
         }
     }

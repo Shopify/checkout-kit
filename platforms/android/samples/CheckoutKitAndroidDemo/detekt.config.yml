@@ -14,7 +14,7 @@ exceptions:
   TooGenericExceptionCaught:
     active: false
   TooGenericExceptionThrown:
-    active: false
+    active: true
 
 naming:
   FunctionNaming:

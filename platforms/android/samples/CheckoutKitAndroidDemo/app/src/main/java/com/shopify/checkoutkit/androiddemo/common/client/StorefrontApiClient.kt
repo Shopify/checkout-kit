@@ -90,7 +90,7 @@ class StorefrontApiClient(
                 ?.takeIf { errorMessages -> errorMessages.isNotBlank() }
 
             if (storefrontErrors != null) {
-                throw RuntimeException("Storefront API error: $storefrontErrors")
+                throw StorefrontApiException("Storefront API error: $storefrontErrors")
             }
         }
 
