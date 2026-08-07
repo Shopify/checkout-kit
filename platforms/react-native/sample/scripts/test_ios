@@ -8,6 +8,12 @@ REPO_ROOT="$(cd "$REACT_NATIVE_DIR/../.." && pwd)"
 TEST_APP_DIR="$REACT_NATIVE_DIR/test/rct-integration-app"
 export BUNDLE_GEMFILE="$REACT_NATIVE_DIR/sample/Gemfile"
 
+for arg in "$@"; do
+    if [ "$arg" = "--local" ]; then
+        export USE_LOCAL_SDK=1
+    fi
+done
+
 source "$SCRIPT_DIR/simulator"
 dest="$(get_sim_destination)"
 
@@ -17,12 +23,16 @@ bundle check || bundle install
 
 cd "$TEST_APP_DIR"
 
-pod_install_args="--repo-update"
-if [ "$CI" = "true" ]; then
-    pod_install_args="$pod_install_args --deployment"
-fi
+if [ "${USE_LOCAL_SDK:-0}" = "1" ]; then
+    bundle exec pod update ShopifyCheckoutKit ShopifyCheckoutKit/AcceleratedCheckouts --repo-update
+else
+    pod_install_args="--repo-update"
+    if [ "$CI" = "true" ]; then
+        pod_install_args="$pod_install_args --deployment"
+    fi
 
-bundle exec pod install $pod_install_args
+    bundle exec pod install $pod_install_args
+fi
 
 xcbeautify_args=""
 if [ "$CI" = "true" ]; then
