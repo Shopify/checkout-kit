@@ -33,8 +33,9 @@ This repository contains the Checkout Kit implementations, samples, and protocol
 | `@shopify/checkout-kit-react-native` | `4.0.0-alpha.3` | npm `next` dist-tag | Alpha | React Native wrapper for the iOS and Android native SDKs. | [React Native](platforms/react-native/README.md) |
 | `@shopify/checkout-kit` | `4.0.0-alpha.2` | npm `next` dist-tag | Alpha | Web component for opening Shopify checkout from a web page. | [Web](platforms/web/README.md) |
 | `EmbeddedCheckoutProtocol` | Source package | Swift Package Manager | Internal/supporting | Swift client for Embedded Checkout Protocol messages. | [Protocol Swift](protocol/languages/swift/README.md) |
+| `com.shopify:embedded-checkout-protocol` | `2026.04.08.1-alpha.2` | Maven Central | Internal/supporting | Kotlin client for Embedded Checkout Protocol messages. | [Protocol Android](protocol/languages/kotlin/embedded-checkout-protocol/README.md) |
 
-Swift, Android, and React Native rows show the planned first Checkout Kit alpha releases. Web is already published as `4.0.0-alpha.2`.
+The Checkout Kit Swift, Android, and React Native rows show the planned first Checkout Kit alpha releases. Web is already published as `4.0.0-alpha.2`.
 
 ## Platform Support
 
