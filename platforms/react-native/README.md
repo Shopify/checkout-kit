@@ -41,6 +41,7 @@ experiences.
     - [Checkout Sheet title](#checkout-sheet-title)
       - [iOS - Localization](#ios---localization)
       - [Android - Localization](#android---localization)
+      - [Expo - Localization](#expo---localization)
     - [Currency](#currency)
     - [Language](#language)
 - [Preloading](#preloading)
@@ -341,6 +342,7 @@ instance of the `ShopifyCheckout` class.
 
 | Name          | Required | Default     | Description                                                                                                                                                    |
 | ------------- | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       |          | `Checkout`  | Sets the title of the checkout sheet at runtime on both iOS and Android. For per-locale localization, use the platform resource files. See [Localization](#localization). |
 | `colorScheme` |          | `automatic` | Sets the color scheme for the checkout.                                                                                                                        |
 | `preloading`  |          | `true`      | Enable/disable [preloading](#preloading).                                                                                                                      |
 | `colors`      |          | `{}`        | An object with `ios` and `android` properties to override the colors for iOS and Android platforms individually. See [`colors`](#colors) for more information. |
@@ -470,21 +472,32 @@ function AppWithContext() {
 
 #### Checkout Sheet title
 
+The `title` configuration attribute sets the checkout sheet title at runtime on
+**both iOS and Android**:
+
+```tsx
+shopify.setConfig({title: 'Checkout'});
+```
+
+Use `setConfig({title: dynamicTitle})` when you derive or retrieve the value at
+runtime, e.g. from an API or based on the cart contents.
+
+For **per-locale localization**, provide translated values through the platform
+resource files below. The runtime `title` takes precedence when set, so leave it
+unset when relying on the resource files for localization.
+
 ##### iOS - Localization
 
-On iOS, you can set a localized value on the `title` attribute of the
-configuration.
-
-Alternatively, use a Localizable.xcstrings file in your app by doing the
-following:
+Use a `Localizable.xcstrings` file in your app by doing the following:
 
 1. Create a `Localizable.xcstrings` file under "ios/{YourApplicationName}"
 2. Add an entry for the key `"shopify_checkout_sheet_title"`
 
 ##### Android - Localization
 
-On Android, you can add a string entry for the key `"checkout_web_view_title"`
-to the "android/app/src/res/values/strings.xml" file for your application.
+Add a string entry for the key `"checkout_web_view_title"` to the
+"android/app/src/main/res/values/strings.xml" file for your application. Add a
+`values-<locale>/strings.xml` file for each additional locale you support.
 
 ```diff
 <resources>
@@ -493,9 +506,50 @@ to the "android/app/src/res/values/strings.xml" file for your application.
 </resources>
 ```
 
-> [!IMPORTANT]
-> The `title` configuration attribute will only affect iOS. For Android you **must** use
-> `res/values/strings.xml`.
+##### Expo - Localization
+
+Expo apps that use [prebuild](https://docs.expo.dev/workflow/prebuild/) do not
+commit the native `android/` and `ios/` directories, so the Android
+`strings.xml` edit above is not persistent. Add the string through a local
+[config plugin](https://docs.expo.dev/config-plugins/introduction/) instead so
+it is reapplied on every prebuild.
+
+Create `plugins/withCheckoutSheetTitle.js`:
+
+```js
+const {withStringsXml, AndroidConfig} = require('expo/config-plugins');
+
+const {setStringItem} = AndroidConfig.Strings;
+
+module.exports = function withCheckoutSheetTitle(config, title = 'Checkout') {
+  return withStringsXml(config, (config) => {
+    config.modResults = setStringItem(
+      [{$: {name: 'checkout_web_view_title'}, _: title}],
+      config.modResults,
+    );
+    return config;
+  });
+};
+```
+
+Then reference it from `app.json` / `app.config.js`:
+
+```json
+{
+  "expo": {
+    "plugins": [["./plugins/withCheckoutSheetTitle", "Checkout"]]
+  }
+}
+```
+
+You'll need to run `npx expo prebuild` to apply it, and re-run your android
+build (not just restart metro, as this is a native gradle change).
+
+> [!NOTE]
+> The config plugin writes the default `values/strings.xml`. Per-locale titles
+> require writing `values-<locale>/strings.xml` for each locale, which the
+> snippet above does not cover. On iOS, localized titles continue to use the
+> `Localizable.xcstrings` step above.
 
 #### Currency
 

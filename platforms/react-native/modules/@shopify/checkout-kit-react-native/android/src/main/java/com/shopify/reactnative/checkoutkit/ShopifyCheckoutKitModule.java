@@ -121,6 +121,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   public WritableMap getConfig() {
     WritableMap resultConfig = Arguments.createMap();
 
+    resultConfig.putString("title", checkoutConfig.getTitle());
     resultConfig.putString("colorScheme", colorSchemeStringFor(checkoutConfig.getAppearance()));
     resultConfig.putString("logLevel", logLevelStringFor(checkoutConfig.getLogLevel()));
     resultConfig.putBoolean("preloading", checkoutConfig.getPreloading().getEnabled());
@@ -131,6 +132,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   @ReactMethod
   public void setConfig(ReadableMap config) {
     ShopifyCheckoutKit.configure(configuration -> {
+      if (config.hasKey("title")) {
+        configuration.setTitle(config.getString("title"));
+      }
+
       if (config.hasKey("preloading")) {
         configuration.setPreloading(new Preloading(config.getBoolean("preloading")));
       }

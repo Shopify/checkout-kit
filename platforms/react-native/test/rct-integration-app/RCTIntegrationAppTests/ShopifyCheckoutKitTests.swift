@@ -78,6 +78,27 @@ class ShopifyCheckoutKitTests: XCTestCase {
         XCTAssertEqual(result?["colorScheme"] as? String, "light")
     }
 
+    func testConfigureSetsTitle() {
+        let configuration: [AnyHashable: Any] = [
+            "title": "Custom Checkout"
+        ]
+
+        shopifyCheckoutKit.setConfig(configuration)
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.title, "Custom Checkout")
+    }
+
+    func testGetConfigReturnsTitle() {
+        let configuration: [AnyHashable: Any] = [
+            "title": "Custom Checkout"
+        ]
+        shopifyCheckoutKit.setConfig(configuration)
+
+        let result = shopifyCheckoutKit.getConfig() as? [String: Any]
+
+        XCTAssertEqual(result?["title"] as? String, "Custom Checkout")
+    }
+
     func testConfigureWithInvalidColors() {
         let configuration: [AnyHashable: Any] = [
             "colors": [

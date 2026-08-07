@@ -199,6 +199,16 @@ describe('ShopifyCheckoutKit', () => {
       instance.setConfig(configWithPreloading);
       expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithPreloading);
     });
+
+    it('calls `setConfig` with title configuration', () => {
+      const instance = new ShopifyCheckout();
+      const configWithTitle: Configuration = {
+        colorScheme: ColorScheme.automatic,
+        title: 'Custom Checkout',
+      };
+      instance.setConfig(configWithTitle);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithTitle);
+    });
   });
 
   describe('preload', () => {

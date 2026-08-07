@@ -258,6 +258,7 @@ ShopifyCheckoutKit.configure {
 | `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
+| `title` | `null` | Runtime override for the checkout sheet header title. When `null`, the SDK uses the localized `checkout_web_view_title` string resource. |
 | `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
 | `onMessageRejected` | `null` | Observes messages rejected by origin validation. |
 
@@ -350,13 +351,47 @@ when `dismissal.dragToDismissEnabled = false` so disabled drag gestures are not 
 
 ### Title localization
 
-Override `checkout_web_view_title` in your app resources:
+The checkout sheet header title resolves from two sources, in order:
+
+1. A runtime title set with `configure { it.title = "…" }`.
+2. When `title` is `null`, the `checkout_web_view_title` string resource.
+
+#### Runtime title
+
+Set a title at runtime for parity with iOS. This value is a fixed string that the system does not re-localize:
+
+```kotlin
+ShopifyCheckoutKit.configure {
+    it.title = "Buy now"
+}
+```
+
+#### Per-locale title
+
+Leave `title` unset (`null`) and localize the `checkout_web_view_title` string resource. Android resolves it against the active locale from the matching `values-<locale>/` directory:
 
 ```xml
+<!-- res/values/strings.xml -->
 <resources>
   <string name="checkout_web_view_title">Buy now</string>
 </resources>
 ```
+
+```xml
+<!-- res/values-ja/strings.xml -->
+<resources>
+  <string name="checkout_web_view_title">今すぐ購入</string>
+</resources>
+```
+
+#### Changing locale mid-checkout
+
+The header title is resolved once, when the checkout sheet is presented, and does not update while the sheet is on screen. What happens when the device locale changes during checkout depends on your host Activity's `android:configChanges`:
+
+| Host Activity manifest | On locale change | Title after change |
+| --- | --- | --- |
+| Default (no `locale` in `configChanges`) | Android destroys and recreates the Activity, dismissing the sheet | On the next presentation a `null` `title` re-resolves `checkout_web_view_title` in the new locale; a runtime `title` keeps its fixed string until you call `configure { it.title = … }` again. |
+| `android:configChanges="locale\|layoutDirection"` | Android keeps the Activity and calls `onConfigurationChanged`; the sheet stays mounted | The mounted title does not change. Re-present checkout to pick up the new locale, or update a runtime `title` in `onConfigurationChanged` and re-present. |
 
 ### Current configuration
 

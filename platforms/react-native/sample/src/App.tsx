@@ -198,6 +198,7 @@ class StorefrontURL {
 }
 
 const checkoutKitConfigDefaults: Configuration = {
+  title: 'Plant Store',
   logLevel: LogLevel.debug,
   colorScheme: ColorScheme.dark,
 };

@@ -85,7 +85,10 @@ interface CommonConfiguration {
   /**
    * Sets the title of the Checkout sheet.
    *
-   * * Important: This will only modify the Checkout Sheet on iOS, not Android.
+   * When omitted, each platform uses its default localized title.
+   *
+   * For per-locale localization, either provide translated values through the
+   * platform resource files or use this runtime value in a locale listener.
    *
    * To implement localization support for iOS:
    *  1. Create a "Localizable.xcstrings" file under "ios/{YourApplication}"
