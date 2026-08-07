@@ -103,6 +103,11 @@ targets:
         Email: $(EMAIL)
         Phone: $(PHONE)
         CFBundleDisplayName: Plant
+        # Bound to the build settings above so an xcodebuild override reaches the
+        # bundle. XcodeGen otherwise bakes their current values in as literals,
+        # and every store upload after the first is rejected as a repeat.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSLocationWhenInUseUsageDescription: Your location may be required to locate pickup points near you when you request this shipping option.
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSupportsIndirectInputEvents: true
