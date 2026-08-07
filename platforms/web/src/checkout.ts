@@ -34,12 +34,18 @@ export const CK_VERSION = "4.0.0";
  * configures an explicit `allowedOrigins` list.
  */
 export const SHOP_APP_ORIGIN = "https://shop.app";
+const SHOP_COM_ORIGIN = "https://shop.com";
 
 /**
- * Default trusted origin patterns for `shop.app`: the apex origin plus a
- * wildcard covering its subdomains (e.g. regional or checkout subdomains).
+ * Default trusted origin patterns for Shopify-owned domains: their apex origins
+ * plus wildcards covering regional or checkout subdomains.
  */
-const SHOP_APP_ORIGIN_PATTERNS = [SHOP_APP_ORIGIN, "https://*.shop.app"];
+const SHOP_ORIGIN_PATTERNS = [
+  SHOP_APP_ORIGIN,
+  "https://*.shop.app",
+  SHOP_COM_ORIGIN,
+  "https://*.shop.com",
+];
 
 /** Matches a wildcard-subdomain origin pattern, e.g. `https://*.example.com[:8443]`. */
 const WILDCARD_ORIGIN_PATTERN = /^(https?):\/\/\*\.([^/:]+)(?::(\d+))?\/?$/i;
@@ -276,10 +282,12 @@ export class ShopifyCheckout
 
   /**
    * Extra origins allowed to post incoming checkout-protocol messages, on top
-   * of the always-trusted cart URL origin (from `src`) and `shop.app`.
+   * of the always-trusted cart URL origin (from `src`) and Shopify-owned
+   * `shop.app` and `shop.com` domains.
    *
    * Checkout on web is closed by default: with no configured origins, only the
-   * cart URL origin and `shop.app` (including its subdomains) are trusted. Add
+   * cart URL origin and Shopify-owned `shop.app` and `shop.com` domains
+   * (including their subdomains) are trusted. Add
    * origins here to widen the allowlist. Entries may be exact origins
    * (`https://example.com`), wildcard subdomains (`https://*.example.com`), or
    * `"*"` to disable origin validation entirely.
@@ -633,14 +641,15 @@ export class ShopifyCheckout
    * Computes the effective set of trusted origins for incoming messages, or
    * `null` when validation is disabled via the `"*"` escape hatch.
    *
-   * Web is closed by default: the cart URL origin (from `src`) and `shop.app`
-   * are always trusted, and any configured `allowedOrigins` are added on top.
+   * Web is closed by default: the cart URL origin (from `src`) and Shopify-owned
+   * `shop.app` and `shop.com` domains are always trusted, and any configured
+   * `allowedOrigins` are added on top.
    */
   #allowedOriginPatterns(src: URL): string[] | null {
     const configured = this.allowedOrigins;
     if (configured.includes("*")) return null;
 
-    const patterns = [src.origin, ...SHOP_APP_ORIGIN_PATTERNS];
+    const patterns = [src.origin, ...SHOP_ORIGIN_PATTERNS];
     for (const entry of configured) {
       if (isValidOriginPattern(entry)) {
         patterns.push(entry);

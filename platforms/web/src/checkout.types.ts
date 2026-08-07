@@ -114,10 +114,12 @@ export interface CheckoutProperties {
 
   /**
    * Extra origins allowed to post incoming checkout-protocol messages, on top
-   * of the always-trusted cart URL origin (from `src`) and `shop.app`.
+   * of the always-trusted cart URL origin (from `src`) and Shopify-owned
+   * `shop.app` and `shop.com` domains.
    *
    * Web is closed by default: with no configured origins only the cart URL
-   * origin and `shop.app` (including its subdomains) are trusted. Entries may
+   * origin and Shopify-owned `shop.app` and `shop.com` domains (including
+   * their subdomains) are trusted. Entries may
    * be exact origins (`https://example.com`), wildcard subdomains
    * (`https://*.example.com`), or `'*'` to disable origin validation entirely.
    *

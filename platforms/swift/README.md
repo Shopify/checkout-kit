@@ -233,7 +233,8 @@ The native web view is a private, app-controlled runtime, so Checkout Kit is
 **open by default**: with an empty `allowedMessageOrigins`, incoming
 checkout-protocol messages from any origin are accepted. Provide one or more
 origins to restrict which origins are trusted; the loaded checkout origin and
-`shop.app` (including its subdomains) are always trusted as well.
+Shopify-owned `shop.app` and `shop.com` domains (including their subdomains) are always
+trusted as well.
 
 ```swift
 ShopifyCheckoutKit.configure {

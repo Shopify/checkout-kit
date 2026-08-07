@@ -45,12 +45,13 @@ public struct Configuration: Sendable {
     public var logLevel: LogLevel = .warn
 
     /// Origins that are trusted to send incoming checkout messages, in addition
-    /// to the loaded checkout origin and shop.app.
+    /// to the loaded checkout origin and Shopify-owned shop.app and shop.com
+    /// domains.
     ///
     /// The native surface is open by default: when this is empty, messages from
     /// any origin are accepted. Provide one or more origins to restrict which
-    /// origins are trusted; the loaded checkout origin and shop.app are always
-    /// appended. Use `"*"` to explicitly disable origin validation.
+    /// origins are trusted; the loaded checkout origin and Shopify-owned shop.app
+    /// and shop.com domains are always appended. Use `"*"` to explicitly disable origin validation.
     ///
     /// Entries are origin patterns:
     /// - `"https://example.com"` — an exact origin.

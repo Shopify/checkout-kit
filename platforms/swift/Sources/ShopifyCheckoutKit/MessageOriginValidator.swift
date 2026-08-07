@@ -74,15 +74,21 @@ struct MessageOrigin: Equatable {
 ///
 /// Native surfaces are open by default: an empty configured allowlist accepts
 /// messages from any origin. When a merchant provides an allowlist, only the
-/// configured origins plus the loaded checkout origin and shop.app are trusted.
+/// configured origins plus the loaded checkout origin and Shopify-owned shop.app and shop.com
+/// domains are trusted.
 /// `"*"` disables validation entirely.
 enum MessageOriginValidator {
     /// The escape hatch pattern that disables validation.
     static let allowAllPattern = "*"
 
-    /// shop.app is trusted by default; both the apex and its subdomains are allowed
-    /// so regional/checkout subdomains work without extra configuration.
-    static let shopAppOriginPatterns = ["https://shop.app", "https://*.shop.app"]
+    /// Shopify-owned domains are trusted by default; both each apex and its subdomains are
+    /// allowed so regional/checkout subdomains work without extra configuration.
+    static let shopOriginPatterns = [
+        "https://shop.app",
+        "https://*.shop.app",
+        "https://shop.com",
+        "https://*.shop.com"
+    ]
 
     /// Returns the effective allowlist patterns, or `nil` when validation is
     /// disabled (allow all).
@@ -106,7 +112,7 @@ enum MessageOriginValidator {
         if let checkoutURL, let origin = MessageOrigin(url: checkoutURL) {
             patterns.append(origin.description)
         }
-        patterns.append(contentsOf: shopAppOriginPatterns)
+        patterns.append(contentsOf: shopOriginPatterns)
         return patterns
     }
 
