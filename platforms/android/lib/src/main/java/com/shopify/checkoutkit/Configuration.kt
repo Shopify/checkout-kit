@@ -9,8 +9,9 @@ import android.content.Context
  *
  * @property allowedMessageOrigins Extra origins allowed to post incoming checkout-protocol messages.
  * Native checkout is open by default: leaving this empty trusts every origin. Once populated, the
- * effective allowlist is these origins plus the cart URL origin and `shop.app` (including its
- * subdomains). Entries may be exact origins (`https://example.com`), scheme-qualified wildcard
+ * effective allowlist is these origins plus the cart URL origin and Shopify-owned `shop.app` and
+ * `shop.com` domains (including their subdomains). Entries may be exact origins
+ * (`https://example.com`), scheme-qualified wildcard
  * subdomains (`https://&#42;.example.com`), or `"*"` to explicitly trust every origin.
  * Messages dropped by origin validation are logged as warnings.
  */

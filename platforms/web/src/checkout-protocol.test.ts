@@ -1136,21 +1136,24 @@ describe("<shopify-checkout>", () => {
         expect(onStartSpy).not.toHaveBeenCalled();
       });
 
-      it("accepts protocol messages from a shop.app subdomain by default", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const onStartSpy = vi.fn();
-        const payload = makeCheckoutPayload();
-        checkout.addEventListener("start", onStartSpy);
+      it.each(["https://checkout.shop.app", "https://checkout.shop.com"])(
+        "accepts protocol messages from a Shopify domain subdomain by default: %s",
+        async (origin) => {
+          const { checkout, mockCheckoutWindow } = openPopupCheckout();
+          const onStartSpy = vi.fn();
+          const payload = makeCheckoutPayload();
+          checkout.addEventListener("start", onStartSpy);
 
-        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
-          source: mockCheckoutWindow,
-          origin: "https://checkout.shop.app",
-        });
-        await flushProtocolDispatch();
+          simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+            source: mockCheckoutWindow,
+            origin,
+          });
+          await flushProtocolDispatch();
 
-        expect(onStartSpy).toHaveBeenCalledOnce();
-        expect(checkout.checkout).toEqual(decodeCheckout(payload));
-      });
+          expect(onStartSpy).toHaveBeenCalledOnce();
+          expect(checkout.checkout).toEqual(decodeCheckout(payload));
+        },
+      );
 
       it("accepts protocol messages matching a configured wildcard subdomain", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout({

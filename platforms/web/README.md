@@ -403,9 +403,10 @@ checkout.logLevel = 'debug';
 ### `allowed-origins`
 
 Adds trusted origins that may send checkout protocol messages, beyond the
-checkout URL origin from `src` and `shop.app`, which are always trusted.
-This includes `shop.app` subdomains. Separate multiple entries with spaces or
-commas. Entries may be exact origins or wildcard subdomains:
+checkout URL origin from `src` and Shopify-owned `shop.app` and `shop.com`
+domains, which are always trusted. This includes their subdomains. Separate
+multiple entries with spaces or commas. Entries may be exact origins or wildcard
+subdomains:
 
 ```html
 <shopify-checkout

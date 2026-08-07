@@ -7,7 +7,8 @@ import java.net.URI
  *
  * Native checkout is **open by default**: an empty merchant allowlist trusts every origin. Once a
  * merchant configures origins, the effective allowlist is those origins plus two safe defaults —
- * the cart URL origin and `shop.app` (including its subdomains). `"*"` is an explicit escape hatch
+ * the cart URL origin and Shopify-owned `shop.app` and `shop.com` domains (including their
+ * subdomains). `"*"` is an explicit escape hatch
  * that trusts every origin.
  *
  * Allowlist entries are origin patterns:
@@ -19,6 +20,7 @@ import java.net.URI
  */
 internal object OriginAllowlist {
     const val SHOP_APP_ORIGIN: String = "https://shop.app"
+    const val SHOP_COM_ORIGIN: String = "https://shop.com"
 
     private const val WILDCARD_ALL = "*"
     private const val HTTP_DEFAULT_PORT = 80
@@ -32,9 +34,11 @@ internal object OriginAllowlist {
     data class Origin(val scheme: String, val host: String, val port: Int?)
 
     private val WILDCARD_PATTERN = Regex("""^(https?)://\*\.([^/:]+)(?::(\d+))?/?$""", RegexOption.IGNORE_CASE)
-    private val SHOP_APP_PATTERNS = listOf(
+    private val SHOP_ORIGIN_PATTERNS = listOf(
         OriginPattern.Exact(requireNotNull(parseOrigin(SHOP_APP_ORIGIN, exact = true))),
         requireNotNull(parsePattern("https://*.shop.app")),
+        OriginPattern.Exact(requireNotNull(parseOrigin(SHOP_COM_ORIGIN, exact = true))),
+        requireNotNull(parsePattern("https://*.shop.com")),
     )
 
     /**
@@ -47,7 +51,7 @@ internal object OriginAllowlist {
 
         return buildList {
             checkoutOrigin?.let { parseOrigin(it, exact = true) }?.let { add(OriginPattern.Exact(it)) }
-            addAll(SHOP_APP_PATTERNS)
+            addAll(SHOP_ORIGIN_PATTERNS)
             configured.mapNotNullTo(this) { parsePattern(it) }
         }
     }
