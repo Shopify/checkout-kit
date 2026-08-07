@@ -9,13 +9,25 @@ public class CheckoutViewController: UINavigationController {
     public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) {
         let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: nil)
         super.init(rootViewController: rootViewController)
+        configureNavigationBar()
         presentationController?.delegate = rootViewController
     }
 
     package init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: entryPoint)
         super.init(rootViewController: rootViewController)
+        configureNavigationBar()
         presentationController?.delegate = rootViewController
+    }
+
+    private func configureNavigationBar() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+
+        navigationBar.standardAppearance = appearance
+        navigationBar.scrollEdgeAppearance = appearance
+        navigationBar.compactAppearance = appearance
+        navigationBar.compactScrollEdgeAppearance = appearance
     }
 
     @available(*, unavailable)

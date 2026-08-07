@@ -32,6 +32,21 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertEqual(viewController.title, "Checkout")
     }
 
+    func testCheckoutNavigationBarIsTransparent() {
+        let checkoutViewController = CheckoutViewController(checkout: checkoutURL)
+        let appearances = [
+            checkoutViewController.navigationBar.standardAppearance,
+            checkoutViewController.navigationBar.scrollEdgeAppearance,
+            checkoutViewController.navigationBar.compactAppearance,
+            checkoutViewController.navigationBar.compactScrollEdgeAppearance
+        ]
+
+        for appearance in appearances {
+            XCTAssertNil(appearance?.backgroundColor)
+            XCTAssertNil(appearance?.backgroundEffect)
+        }
+    }
+
     func testTitleCanBeCustomized() {
         customTitle = "Custom title"
         ShopifyCheckoutKit.configure { $0.title = customTitle ?? "Checkout" }

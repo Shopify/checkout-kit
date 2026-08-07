@@ -69,7 +69,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         let checkoutView = CheckoutWebView.for(checkout: url, entryPoint: entryPoint)
         checkoutView.translatesAutoresizingMaskIntoConstraints = false
-        checkoutView.scrollView.contentInsetAdjustmentBehavior = .never
+        checkoutView.scrollView.contentInsetAdjustmentBehavior = .automatic
         checkoutView.client = client
         self.checkoutView = checkoutView
 
@@ -104,7 +104,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         view.addSubview(checkoutView)
         NSLayoutConstraint.activate([
-            checkoutView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            checkoutView.topAnchor.constraint(equalTo: view.topAnchor),
             checkoutView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             checkoutView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             checkoutView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
