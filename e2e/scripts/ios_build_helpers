@@ -2,6 +2,33 @@
 
 set -euo pipefail
 
+E2E_IOS_SIGNING_OVERRIDE_VARS=(
+  E2E_IOS_BUNDLE_ID
+  E2E_IOS_PROVISIONING_PROFILE_SPECIFIER
+  E2E_IOS_DEVELOPMENT_TEAM
+  E2E_IOS_CODE_SIGN_IDENTITY
+  E2E_IOS_EXPORT_METHOD
+)
+
+# Store builds must fail rather than sign with whatever the environment says. Each
+# of these variables wins over the matching e2e_build_ios_device_ipa argument, so
+# one left in the Bitrise secrets silently re-points a release build at
+# development signing and the upload is rejected far downstream.
+e2e_reject_ios_signing_overrides() {
+  local name
+  local found=0
+  for name in "${E2E_IOS_SIGNING_OVERRIDE_VARS[@]}"; do
+    if [ -n "${!name:-}" ]; then
+      echo "$name is set, and it overrides the signing arguments this release build passes explicitly." >&2
+      found=1
+    fi
+  done
+  if [ "$found" -ne 0 ]; then
+    echo "Stop exposing these variables to this workflow, then run the build again." >&2
+    return 1
+  fi
+}
+
 e2e_build_ios_device_ipa() {
   local workspace=""
   local project=""
@@ -15,9 +42,11 @@ e2e_build_ios_device_ipa() {
   local archive_path=""
   local export_path=""
   local export_options=""
+  local build_settings=()
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
+      --build-setting) build_settings+=("$2"); shift 2 ;;
       --workspace) workspace="$2"; shift 2 ;;
       --project) project="$2"; shift 2 ;;
       --scheme) scheme="$2"; shift 2 ;;
@@ -117,7 +146,8 @@ PLIST
     -destination generic/platform=iOS \
     -archivePath "$archive_path" \
     "CODE_SIGNING_ALLOWED=NO" \
-    "CODE_SIGNING_REQUIRED=NO"; then
+    "CODE_SIGNING_REQUIRED=NO" \
+    ${build_settings[@]+"${build_settings[@]}"}; then
     e2e_log "iOS archive failed"
     echo "Check Bitrise code signing assets for bundle id ${bundle_id} and team ${development_team}." >&2
     echo "Expected provisioning profile specifier: ${profile_specifier}." >&2

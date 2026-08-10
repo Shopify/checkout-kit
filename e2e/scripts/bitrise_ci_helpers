@@ -24,3 +24,29 @@ e2e_configure_storefront() {
   e2e_log "Configuring storefront environment"
   ./scripts/setup_storefront_env --skip-optional-prompts
 }
+
+e2e_nightly_commit_window() {
+  printf '%s\n' "${NIGHTLY_COMMIT_WINDOW:-24 hours}"
+}
+
+e2e_nightly_head_is_recent() {
+  # Reads HEAD only, so this stays correct on the shallow clone git-clone@8 makes.
+  if [ -n "$(git log -1 --since="$(e2e_nightly_commit_window)" --format=%H HEAD)" ]; then
+    printf 'true\n'
+  else
+    printf 'false\n'
+  fi
+}
+
+e2e_nightly_should_build() {
+  local window
+  window="$(e2e_nightly_commit_window)"
+  local should_build
+  should_build="$(e2e_nightly_head_is_recent)"
+  e2e_log "HEAD committed within the last ${window}: ${should_build}"
+  if [ "$should_build" != "true" ]; then
+    e2e_log "Nothing landed in the last ${window}. Every later step in this workflow is skipped."
+    e2e_log "Keep NIGHTLY_COMMIT_WINDOW equal to the Bitrise schedule interval, or the nightly skips or repeats work."
+  fi
+  envman add --key NIGHTLY_SHOULD_BUILD --value "$should_build"
+}

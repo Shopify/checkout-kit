@@ -81,6 +81,19 @@ pipelines:
           - e2e-execute-browserstack-run
         should_always_run: workflow
 
+  # Deliberately absent from trigger_map: a scheduled build in the Bitrise UI is
+  # the only thing that starts this, alongside a manual start or the API. Do not
+  # add a `triggers:` block either — Bitrise rejects a config that mixes it with
+  # the legacy trigger_map above.
+  nightly-swift-ios-testflight:
+    workflows:
+      nightly-decide-should-build: {}
+      nightly-release-swift-ios:
+        run_if:
+          expression: '{{ enveq "NIGHTLY_SHOULD_BUILD" "true" }}'
+        depends_on:
+          - nightly-decide-should-build
+
 step_bundles:
   install-node-modules:
     steps:
@@ -245,7 +258,7 @@ workflows:
         # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
         # only receive Xcode patch updates, so this pins Xcode 26.2 / iOS 26.2
         # (23C54) to match local development.
-        stack: osx-xcode-26.2.x
+        stack: &macos_stack osx-xcode-26.2.x
         machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
@@ -332,10 +345,7 @@ workflows:
   e2e-build-swift-ios:
     meta:
       bitrise.io:
-        # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
-        # only receive Xcode patch updates, so this pins Xcode 26.2 / iOS 26.2
-        # (23C54) to match local development.
-        stack: osx-xcode-26.2.x
+        stack: *macos_stack
         machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
@@ -423,3 +433,52 @@ workflows:
                 printf '%s\n' "${BITRISEIO_FINISHED_WORKFLOWS:-<unset>}"
                 e2e_log "Reporting E2E results to GitHub"
                 e2e/scripts/report_e2e_results --results-root "$results_root"
+
+  # Shared by every nightly pipeline. Runs on the cheap default Linux stack so a
+  # night with no new commits never boots a macOS machine at all.
+  nightly-decide-should-build:
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Decide whether the nightly build runs
+          timeout: 300
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                e2e_nightly_should_build
+      - share-pipeline-variable@1:
+          inputs:
+            - variables: NIGHTLY_SHOULD_BUILD
+
+  nightly-release-swift-ios:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.4large
+    # Scoped to this workflow, not app.envs, because each iOS app needs its own
+    # App Store profile. The build script exits if this is missing.
+    envs:
+      - NIGHTLY_IOS_PROVISIONING_PROFILE_SPECIFIER: PP-Bitrise-com.shopify.checkoutkit.swiftdemo
+    steps:
+      - git-clone@8: {}
+      - certificate-and-profile-installer@1: {}
+      - bundle::bootstrap-mint:
+          inputs:
+            - mintfile_dir: platforms/swift
+      - script@1:
+          title: Build the Swift iOS App Store IPA
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                e2e/scripts/build_swift_ios_testflight
+      - deploy-to-itunesconnect-application-loader@2:
+          inputs:
+            # `automatic` uses the App Store Connect API key already configured on
+            # the Bitrise app, so this workflow needs no upload secret of its own.
+            - connection: automatic
+            - ipa_path: $NIGHTLY_SWIFT_IOS_IPA_PATH
+      - deploy-to-bitrise-io@2:
+          is_always_run: false

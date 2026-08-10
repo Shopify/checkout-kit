@@ -56,6 +56,48 @@ The GitHub checks are kept non-blocking while the suite stabilizes; they become 
 
 Duplicate in-progress PR pipelines are cancelled by Bitrise native Rolling builds rather than a repo-owned cancellation script. Under **Project settings > Builds > Build strategy**, **Abort builds triggered by pull requests** and **Abort running builds** are enabled, so a newer PR build cancels the older one.
 
+## Nightly release pipelines
+
+Nightly pipelines ship the sample apps to the stores from the same E2E test storefront the PR pipeline uses, so they need no storefront configuration of their own.
+
+| Pipeline                       | App                    | Destination |
+| ------------------------------ | ---------------------- | ----------- |
+| `nightly-swift-ios-testflight` | `CheckoutKitSwiftDemo` | TestFlight  |
+
+These pipelines are deliberately absent from `trigger_map`, so nothing starts them on a pull request. Create a daily **scheduled build** under **Project settings > Scheduled builds**, targeting `main` and selecting the pipeline. The schedule is the one part of this design that Bitrise keeps outside the repository.
+
+### Commit age gate
+
+Every nightly pipeline starts with `nightly-decide-should-build`, which runs on the default Linux stack and publishes `NIGHTLY_SHOULD_BUILD`. The release workflow is gated on it with `run_if`, so a night with no new commits never boots a macOS machine and never consumes a store build number.
+
+The gate asks whether HEAD was committed inside `NIGHTLY_COMMIT_WINDOW`, which defaults to `24 hours`. **Keep this window equal to the schedule interval.** A window shorter than the interval skips commits, and a longer one re-uploads work that already shipped.
+
+### Build numbers
+
+The build number is `$BITRISE_BUILD_NUMBER`, injected as an `xcodebuild` build-setting override. No committed file changes value, so nothing has to be bumped by hand and no two uploads can collide.
+
+This only works because the sample's XcodeGen spec binds `CFBundleVersion` to `$(CURRENT_PROJECT_VERSION)`. Without that binding XcodeGen writes the setting's current value into the plist as a literal, an override is silently discarded, and App Store Connect rejects every upload after the first. `e2e/scripts/build_swift_ios_testflight` re-reads the archived plist and fails the build if the number did not land.
+
+### Signing
+
+The nightly iOS build passes its signing arguments explicitly and calls `e2e_reject_ios_signing_overrides` first, because each `E2E_IOS_*` variable in the Code signing table below wins over the matching argument. Do not expose any of them to a nightly workflow; a release build would silently fall back to development signing.
+
+Each nightly iOS workflow names its profile in `NIGHTLY_IOS_PROVISIONING_PROFILE_SPECIFIER`, under that workflow's `envs` in `e2e/bitrise.yml`. The build script has no default and exits if the variable is missing, so a renamed profile fails the build immediately instead of signing with the wrong identity. The variable is workflow-scoped rather than an `app.envs` entry, because each app needs its own profile.
+
+| App                    | Profile                                        | Export method       |
+| ---------------------- | ---------------------------------------------- | ------------------- |
+| `CheckoutKitSwiftDemo` | `PP-Bitrise-com.shopify.checkoutkit.swiftdemo` | `app-store-connect` |
+
+Required Bitrise code signing assets, beyond the E2E development assets:
+
+| Asset                             | Requirement                                                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Certificate                       | An **Apple Distribution** certificate for team `A7XGC83MZE`. A development certificate cannot sign a store build.           |
+| Provisioning profile              | An **App Store** profile for the app's bundle identifier. Development and Ad Hoc profiles both fail at `-exportArchive`.     |
+| Profile capabilities              | The profile must carry every entitlement the XcodeGen spec declares, currently Apple Pay and Associated Domains.            |
+| App Store Connect connection      | An App Store Connect API key connection on the Bitrise app, so the upload step needs `connection: automatic` and no secret.  |
+| App Store Connect app record      | An app record for the bundle identifier. The upload cannot create one.                                                      |
+
 ## Required app environment variables
 
 The non-secret E2E defaults live in `e2e/bitrise.yml` under `app.envs`. Change them in this repository rather than in the Bitrise Workflow Editor.
