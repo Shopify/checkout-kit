@@ -10,6 +10,7 @@ appId: ${E2E_APP_ID}
           clearState: true
           arguments:
             # iOS-only launch arguments; Android ignores them.
+            preloadObservabilityEnabled: true
             AppleLocale: en_US
             AppleLanguages: "(en)"
 - runFlow:
@@ -18,6 +19,7 @@ appId: ${E2E_APP_ID}
     commands:
       - launchApp:
           arguments:
+            preloadObservabilityEnabled: true
             AppleLocale: en_US
             AppleLanguages: "(en)"
 # Avoid relaunching healthy apps. BrowserStack can report the state-clearing reinstall and
@@ -37,6 +39,7 @@ appId: ${E2E_APP_ID}
           commands:
             - launchApp:
                 arguments:
+                  preloadObservabilityEnabled: true
                   AppleLocale: en_US
                   AppleLanguages: "(en)"
             - extendedWaitUntil:

@@ -5,7 +5,7 @@ require "yaml"
 
 class MaestroTestTagsTest < Minitest::Test
   E2E_ROOT = File.expand_path("..", __dir__)
-  JOURNEY_TAGS = ["launch", "cart", "checkout", "account"].freeze
+  JOURNEY_TAGS = ["launch", "cart", "checkout", "account", "preload"].freeze
   COST_TIER_TAGS = ["smoke", "full"].freeze
   QUARANTINE_TAGS = ["flaky", "wip"].freeze
   PLATFORM_TAGS = ["ios-only", "android-only"].freeze

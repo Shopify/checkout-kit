@@ -41,6 +41,14 @@ applications:
     app_id: com.shopify.checkoutkit.androiddemo
     artifact_env: E2E_KOTLIN_ANDROID_APP_PATH
     ready_marker: checkout-kit-sample-ready
+    # The preload journey reads the native samples' PreloadState callbacks, which only the
+    # Swift and Kotlin samples surface, so the two native rows adopt it ahead of the others.
+    # An override replaces the default list rather than extending it, so it restates the
+    # defaults; dropping `checkout` here would silently retire that coverage on this row.
+    include_tags:
+      - launch
+      - checkout
+      - preload
     changed_files_filters:
       - android
       - protocolKotlin
@@ -53,6 +61,11 @@ applications:
     app_id: com.shopify.checkoutkit.swiftdemo
     artifact_env: E2E_SWIFT_IOS_APP_PATH
     ready_marker: checkout-kit-sample-ready
+    # See kotlin-android: the override restates the defaults and adds the preload journey.
+    include_tags:
+      - launch
+      - checkout
+      - preload
     changed_files_filters:
       - swift
       - protocolSwift

@@ -44,12 +44,31 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_runs_carry_default_tags_and_the_other_platform_exclusion
+    # The native rows override their include list to adopt the preload journey, so the
+    # defaults are asserted on a row that still inherits them.
+    default_run = run_for("react-native-ios")
     ios_run = run_for("swift-ios")
     android_run = run_for("kotlin-android")
 
-    assert_equal ["launch", "checkout"], ios_run.fetch("include_tags")
+    assert_equal ["launch", "checkout"], default_run.fetch("include_tags")
     assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
     assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
+  end
+
+  # Only the Swift and Kotlin samples expose the PreloadState callbacks the preload journey
+  # asserts on. React Native adopts the tag once its wrapper surfaces them.
+  def test_the_native_applications_adopt_the_preload_journey_without_losing_defaults
+    default_include_tags = base_config.fetch("tags").fetch("include")
+
+    ["swift-ios", "kotlin-android"].each do |application_id|
+      include_tags = run_for(application_id).fetch("include_tags")
+
+      assert_empty default_include_tags - include_tags
+      assert_includes include_tags, "preload"
+    end
+
+    refute_includes run_for("react-native-ios").fetch("include_tags"), "preload"
+    refute_includes run_for("react-native-android").fetch("include_tags"), "preload"
   end
 
   def test_an_application_overrides_the_default_tags
