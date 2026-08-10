@@ -65,5 +65,5 @@ in Xcode, then build and run the `ShopifyAcceleratedCheckoutsApp` scheme.
 | Build log output | Cause | Fix |
 | --- | --- | --- |
 | `Storefront.xcconfig: no such file or directory` | `Storefront.xcconfig` file is missing. | Run `dev up` from the repo root or any platform directory. |
-| `STOREFRONT_DOMAIN` is blank in generated entitlements | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank. | Set it in `.env.local`, then run `dev up`. Root `.env` is generated, so an edit there is lost. |
-| Associated domains not working at runtime | Domain value is incorrect. | Set the right value in `.env.local`, then run `dev up`. |
+| `STOREFRONT_DOMAIN` is blank in generated entitlements | `Storefront.xcconfig` exists but `STOREFRONT_DOMAIN` is blank. | Set it in `.env.local` (Shopify employees) or `.env` (external contributors), then rerun setup. |
+| Associated domains not working at runtime | Domain value is incorrect. | Correct it in `.env.local` (Shopify employees) or `.env` (external contributors), then rerun setup. |

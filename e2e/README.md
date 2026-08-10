@@ -15,21 +15,14 @@ same environment contract through the BrowserStack run plan.
 
 ## Encrypted environments
 
-`dev up` generates the sample-app `.env` and the suite-specific `e2e/.env` from
-committed files under `config/secrets`. Both are generated, so direct edits are
-lost on the next `dev up`.
+`dev up` generates `.env` and `e2e/.env` from `config/secrets`.
 
-To change a shared value, run `dev secrets edit demo` or `dev secrets edit e2e`,
-then run `./scripts/ejson_lint` before committing the encrypted file. The lint
-command needs no private key and fails if plaintext was committed.
+Use `dev secrets edit demo` or `dev secrets edit e2e` for shared changes, and
+`.env.local` for gitignored sample-app overrides. Run `./scripts/ejson_lint`
+before committing encrypted configuration changes.
 
-Use `.env.local` for personal sample-app overrides and `e2e/.env.local` for
-personal E2E overrides. Nothing writes either file.
-
-CI configures the sample apps from `e2e/.env` with
-`scripts/setup_storefront_env --env-file e2e/.env --ignore-generated`. This keeps
-E2E runs on their own store and prevents previously generated demo configuration
-from becoming an input.
+CI builds sample apps from `e2e/.env`; local Maestro runs use the configuration
+already generated for the sample app.
 
 ## Run locally
 
@@ -161,7 +154,6 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `config.yaml` configures Maestro for shared platform behavior and quarantines
   the `flaky` and `wip` tags.
 - `flows/` contains reusable Maestro subflows for app setup and checkout steps.
-<<<<<<< HEAD
 - `tests/shared/` holds the tests every target runs through the CI matrix.
 - `tests/<platform>/` holds platform-local tests. The matrix may ignore their tags.
 - `tests/shared/launch-smoke.yaml` is the shared launch smoke test.
@@ -174,19 +166,8 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `scripts/run_local_e2e` builds and installs any of the four local targets.
 - `scripts/run_maestro` is their single Maestro invocation. It holds the
   environment contract and target-specific test-file selection in one place.
-||||||| parent of 0e27e5e2 (Build E2E apps from e2e/.env, not the demo store)
-- `tests/react-native/checkout-guest.yaml` composes the React Native guest
-  checkout smoke test from those subflows.
-- `tests/react-native/checkout-hardcoded-buyer-identity.yaml` verifies checkout
-  from a bootstrapped cart with hardcoded buyer identity.
-=======
-- `tests/react-native/checkout-guest.yaml` composes the React Native guest
-  checkout smoke test from those subflows.
-- `tests/react-native/checkout-hardcoded-buyer-identity.yaml` verifies checkout
-  from a bootstrapped cart with hardcoded buyer identity.
-- `scripts/bitrise_ci_helpers` holds the shared shell functions the CI build steps use,
-  including `e2e_configure_storefront`.
->>>>>>> 0e27e5e2 (Build E2E apps from e2e/.env, not the demo store)
+- `scripts/bitrise_ci_helpers` holds shared functions used by CI builds, including
+  EJSON setup and `e2e_configure_storefront`.
 - `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
   `scripts/` drive the BrowserStack run plan.
 

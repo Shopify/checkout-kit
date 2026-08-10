@@ -154,10 +154,11 @@ Because exposure also reaches fork builds, keep **Project settings > Builds >
 Manual approval** enabled so a Shopify admin must approve an outside contribution
 before any step can access the key.
 
-`e2e/scripts/bitrise_ci_helpers` installs a pinned `ejson2env`, verifies its
-checksum, writes the key into `EJSON_KEYDIR`, and runs `scripts/generate_env_files`.
-That generates `.env` and `e2e/.env`; neither the key nor decrypted values enter
-an argument list or build log.
+`e2e/scripts/bitrise_ci_helpers` requires the pinned `ejson2env` version. It
+warns and installs the pin if another version is present, verifies the archive
+against a checksum committed in the helper, writes the key into `EJSON_KEYDIR`,
+and runs `scripts/generate_env_files`. That generates `.env` and `e2e/.env`;
+neither the key nor decrypted values enter an argument list or build log.
 
 Both committed EJSON files must use the same keypair because one Bitrise secret
 cannot hold two private keys. To change a value, run `dev secrets edit demo` or

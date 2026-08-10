@@ -66,52 +66,55 @@ e2e_export_github_token() {
 }
 
 e2e_sha256() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$1" | awk '{print $1}'
-  else
-    shasum -a 256 "$1" | awk '{print $1}'
-  fi
+  ruby -rdigest -e 'puts Digest::SHA256.file(ARGV.fetch(0)).hexdigest' "$1"
 }
 
 # Neither Bitrise stack preinstalls ejson2env, and both are ephemeral, so every
 # workflow that decrypts installs it. Only ejson2env is needed: nothing in CI
 # encrypts, and scripts/ejson_lint reads the ciphertext without a binary.
 e2e_install_ejson2env() {
-  local os arch asset base archive checksums expected actual dir
+  local installed_version host release_platform asset base archive expected actual dir
 
   if command -v ejson2env >/dev/null 2>&1; then
-    e2e_log "ejson2env is already installed"
-    return 0
+    installed_version="$(ejson2env --version 2>/dev/null | awk '{print $NF; exit}')"
+    if [ "$installed_version" = "$E2E_EJSON2ENV_VERSION" ]; then
+      e2e_log "ejson2env ${E2E_EJSON2ENV_VERSION} is already installed"
+      return 0
+    fi
+
+    echo "e2e_install_ejson2env: warning: found ejson2env ${installed_version:-with an unknown version}; expected ${E2E_EJSON2ENV_VERSION}. Installing the pinned version." >&2
   fi
 
-  os="$(uname -s | tr '[:upper:]' '[:lower:]')"
-  arch="$(uname -m)"
-
-  case "$arch" in
-  x86_64) arch="amd64" ;;
-  aarch64 | arm64) arch="arm64" ;;
+  host="$(uname -s)/$(uname -m)"
+  case "$host" in
+  Darwin/*)
+    release_platform="darwin_all"
+    expected="98734569cde6075bb5cf43a2aa83ebec2ad91959a43eb077538fd8feda850af7"
+    ;;
+  Linux/x86_64)
+    release_platform="linux_amd64"
+    expected="d06d1090733658f2f493d20d6262c276bd776aff84f580e1d9e4acfd1d399398"
+    ;;
+  Linux/aarch64 | Linux/arm64)
+    release_platform="linux_arm64"
+    expected="95a5fd97c7390341e9c6ad2489c84e079ff9e97ddfa7e1a8e35b6a7b571afe1d"
+    ;;
+  *)
+    echo "e2e_install_ejson2env: no pinned archive for ${host}" >&2
+    return 1
+    ;;
   esac
 
-  # One universal build covers both Apple architectures.
-  if [ "$os" = "darwin" ]; then
-    arch="all"
-  fi
+  asset="ejson2env_${E2E_EJSON2ENV_VERSION}_${release_platform}.tar.gz"
 
-  asset="ejson2env_${E2E_EJSON2ENV_VERSION}_${os}_${arch}.tar.gz"
   base="https://github.com/Shopify/ejson2env/releases/download/v${E2E_EJSON2ENV_VERSION}"
   archive="$(mktemp -d)/${asset}"
-  checksums="$(dirname "$archive")/checksums.txt"
 
-  e2e_log "Installing ejson2env ${E2E_EJSON2ENV_VERSION} for ${os}/${arch}"
+  e2e_log "Installing ejson2env ${E2E_EJSON2ENV_VERSION} for ${host}"
   curl -fsSL --retry 3 -o "$archive" "${base}/${asset}"
-  curl -fsSL --retry 3 -o "$checksums" "${base}/ejson2env_${E2E_EJSON2ENV_VERSION}_checksums.txt"
 
-  # This binary decrypts every secret in the run, so a tampered release must stop
-  # the build rather than reach the keydir.
-  expected="$(awk -v name="$asset" '$2 == name {print $1}' "$checksums")"
   actual="$(e2e_sha256 "$archive")"
-
-  if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
+  if [ "$expected" != "$actual" ]; then
     echo "e2e_install_ejson2env: checksum mismatch for ${asset}" >&2
     return 1
   fi
@@ -120,6 +123,12 @@ e2e_install_ejson2env() {
   mkdir -p "$dir"
   tar -xzf "$archive" -C "$dir" ejson2env
   chmod +x "$dir/ejson2env"
+
+  installed_version="$("$dir/ejson2env" --version 2>/dev/null | awk '{print $NF; exit}')"
+  if [ "$installed_version" != "$E2E_EJSON2ENV_VERSION" ]; then
+    echo "e2e_install_ejson2env: installed version ${installed_version:-unknown}; expected ${E2E_EJSON2ENV_VERSION}" >&2
+    return 1
+  fi
 
   export PATH="$dir:$PATH"
   envman add --key PATH --value "$PATH"

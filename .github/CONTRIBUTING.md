@@ -54,20 +54,21 @@ setup steps. Those repo-owned steps are summarized at the end so a Swift,
 Android, React Native, or Web setup failure is visible without hiding later
 platform results. If a setup step fails, fix it and rerun `dev up`.
 
-Setup generates the Android, Swift, and React Native sample config files from the
-repo-root `.env`. Nothing prompts, and nothing overwrites a value you set yourself.
+Setup generates the Android, Swift, and React Native sample config files from
+`.env`, with matching keys in `.env.local` taking precedence.
 
-**Shopify employees.** `dev up` installs the ejson private key from GCP, then
-generates `.env` and `e2e/.env` from the encrypted files under `config/secrets`.
-Both are generated, so an edit to either is lost on the next `dev up`. To change a
-value for everyone, run `dev secrets edit demo` (or `e2e`) and commit the file. To
-change one for yourself only, put it in `.env.local`, which nothing writes and which
-overrides `.env` key by key.
+**Shopify employees.** Run `dev up` to generate `.env` and `e2e/.env` from
+`config/secrets`. Use `dev secrets edit demo` or `dev secrets edit e2e` for shared
+changes, and `.env.local` for gitignored overrides.
 
-**External contributors.** You have neither `dev` nor a key, and need neither. Copy
-`.env.example` to `.env`, fill in your own store, then run
-`scripts/setup_storefront_env` from the repo root. It only ever reads `.env`, so
-your values stay where you put them.
+**External contributors.** Create `.env`, add your storefront details, then run
+setup from the repository root:
+
+```bash
+cp .env.example .env
+# Edit .env with your storefront details
+scripts/setup_storefront_env
+```
 
 Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, `dev react-native <command>` (or `dev rn`), and `dev web <command>` after setup. Protocol schema/model commands are available as `dev protocol <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
 

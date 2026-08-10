@@ -17,22 +17,11 @@ usage() {
   cat <<EOF
 Usage: scripts/setup_storefront_env [--check] [--env-file PATH] [--ignore-generated]
 
-Generates sample app storefront configuration from the repo-root .env, which
-.env.local overrides key by key.
+Generates sample app storefront configuration from .env, with .env.local as a
+key-by-key overlay.
 
---env-file reads PATH instead of the repo-root .env, and PATH.local instead of
-.env.local. The E2E suite passes e2e/.env, so a suite run configures the sample
-apps from the E2E store rather than whichever store a developer keeps for manual
-testing. The generated files are shared, so the last run wins.
-
---ignore-generated stops the generated platform files acting as a value source.
-Use it with --env-file, so the output depends only on the file passed and the
-documented defaults, not on whatever the previous run happened to write.
-
-It never writes .env itself. Shopify employees get .env from
-scripts/generate_env_files, which decrypts config/secrets/demo.ejson. Everyone
-else copies .env.example and fills it in by hand. Either way this command only
-reads it, so a hand-written .env survives every run.
+--env-file PATH reads PATH and PATH.local instead.
+--ignore-generated excludes generated config files as fallback inputs.
 
 This command prints file paths and status only; it never prints configured values.
 EOF
@@ -107,7 +96,7 @@ strip_outer_quotes() {
 # an E2E run is the demo store. --ignore-generated drops them as a source.
 is_generated_file() {
   case "$1" in
-    "$ANDROID_ENV" | "$REACT_NATIVE_ENV" | "$SWIFT_DEMO_XCCONFIG" | "$SWIFT_ACCELERATED_XCCONFIG")
+    "$ANDROID_ENV" | "$REACT_NATIVE_ENV" | "$REACT_NATIVE_XCCONFIG" | "$SWIFT_DEMO_XCCONFIG" | "$SWIFT_ACCELERATED_XCCONFIG")
       return 0
       ;;
   esac
