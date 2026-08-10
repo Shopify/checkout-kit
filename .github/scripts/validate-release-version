@@ -22,10 +22,6 @@ EXPECTED_VERSION="${2:-}"
 EXPECTED_TAG="${3:-}"
 
 SEMVER_REGEX='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$'
-CALVER_REGEX='^[0-9]{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$'
-
-# Most release targets are SemVer. Embedded Checkout Protocol overrides these
-# defaults to CalVer in its platform branch below.
 VERSION_REGEX="$SEMVER_REGEX"
 VERSION_FORMAT="X.Y.Z or X.Y.Z-{alpha|beta|rc}.N"
 
@@ -111,9 +107,6 @@ case "$PLATFORM_INPUT" in
     RELEASE_TITLE_PREFIX="Embedded Checkout Protocol"
     TAG_PREFIX="embedded-checkout-protocol/"
     PUBLISH_WORKFLOW="android-protocol-publish.yml"
-    VERSION_REGEX="$CALVER_REGEX"
-    VERSION_FORMAT="YYYY.MM.DD.PATCH or YYYY.MM.DD.PATCH-{alpha|beta|rc}.N"
-
     ANDROID_VERSION_FILE="platforms/android/gradle/libs.versions.toml"
 
     VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroid")
@@ -141,8 +134,8 @@ if [[ ! "$VERSION" =~ $VERSION_REGEX ]]; then
   exit 1
 fi
 
-if [ -n "${ANDROID_PROTOCOL_VERSION:-}" ] && [[ ! "$ANDROID_PROTOCOL_VERSION" =~ $CALVER_REGEX ]]; then
-  echo "::error::Embedded Checkout Protocol version '$ANDROID_PROTOCOL_VERSION' is invalid. Expected YYYY.MM.DD.PATCH or YYYY.MM.DD.PATCH-{alpha|beta|rc}.N." >&2
+if [ -n "${ANDROID_PROTOCOL_VERSION:-}" ] && [[ ! "$ANDROID_PROTOCOL_VERSION" =~ $SEMVER_REGEX ]]; then
+  echo "::error::Embedded Checkout Protocol version '$ANDROID_PROTOCOL_VERSION' is invalid. Expected X.Y.Z or X.Y.Z-{alpha|beta|rc}.N." >&2
   exit 1
 fi
 
