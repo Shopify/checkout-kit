@@ -84,6 +84,7 @@ public class ShopifyCheckout @MainThread internal constructor(
     private var dismissNotified = false
     private var destroyed = false
     private var webViewResumed = false
+    private var headerBorderIsVisible = false
     internal var retainPreloadOnDestroy = false
     internal var initializationError: CheckoutException? = null
         private set
@@ -160,6 +161,7 @@ public class ShopifyCheckout @MainThread internal constructor(
         checkoutWebView?.let { webView ->
             webView.setClient(null)
             webView.setListener(CheckoutWebViewListener(NoopCheckoutListener()))
+            webView.setOnScrollChangeListener(null)
             pauseWebView()
             webView.clearBottomSheetScrollHandoff()
             webView.removeFromParent()
@@ -263,6 +265,9 @@ public class ShopifyCheckout @MainThread internal constructor(
 
         findViewById<RelativeLayout>(R.id.checkoutKitContainer).setBackgroundColor(webViewBackgroundColor)
         findViewById<View>(R.id.checkoutKitLoadingBackground).setBackgroundColor(webViewBackgroundColor)
+        findViewById<View>(R.id.checkoutKitHeaderBorder).setBackgroundColor(
+            colorScheme.headerBorderColor(isDarkTheme).getValue(context)
+        )
         progressBar.progressTintList = ColorStateList.valueOf(
             colorScheme.progressIndicatorColor(isDarkTheme).getValue(context)
         )
@@ -271,6 +276,21 @@ public class ShopifyCheckout @MainThread internal constructor(
     private fun addWebViewToContainer(webView: CheckoutWebView) {
         webView.removeFromParent()
         webView.setBackgroundColor(webViewBackgroundColor)
+        val headerBorder = findViewById<View>(R.id.checkoutKitHeaderBorder)
+        webView.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            val shouldShowBorder = scrollY > 0
+            if (headerBorderIsVisible == shouldShowBorder) return@setOnScrollChangeListener
+
+            headerBorderIsVisible = shouldShowBorder
+            headerBorder.animate().cancel()
+            headerBorder.animate()
+                .alpha(if (shouldShowBorder) 1f else 0f)
+                .setDuration(HEADER_BORDER_FADE_DURATION_MS)
+                .start()
+        }
+        headerBorderIsVisible = webView.scrollY > 0
+        headerBorder.animate().cancel()
+        headerBorder.alpha = if (headerBorderIsVisible) 1f else 0f
         findViewById<RelativeLayout>(R.id.checkoutKitContainer).apply {
             addView(webView, 0, RelativeLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
             progressBar.bringToFront()
@@ -327,6 +347,7 @@ public class ShopifyCheckout @MainThread internal constructor(
 
     public companion object {
         private const val LOG_TAG = "ShopifyCheckout"
+        private const val HEADER_BORDER_FADE_DURATION_MS = 120L
 
         /**
          * Creates checkout content using the Kotlin presentation builder.

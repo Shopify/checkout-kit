@@ -576,6 +576,7 @@ class CheckoutBottomSheetTest {
 
         val webView = sheet.currentCheckoutWebView()
         assertThat(webView).isSameAs(cachedWebView)
+        webView.scrollTo(0, 10)
 
         sheet.dismiss()
         runDismissAnimation()
@@ -591,6 +592,7 @@ class CheckoutBottomSheetTest {
         assertThat(nextSheet.currentCheckoutWebView()).isSameAs(cachedWebView)
         assertThat(cachedWebView.isPresented).isTrue()
         assertThat(shadowOf(cachedWebView).getOnTouchListener()).isNotNull
+        assertThat(nextSheet.findViewById<View>(R.id.checkoutKitHeaderBorder)!!.alpha).isEqualTo(1f)
 
         nextSheet.dismiss()
         runDismissAnimation()
@@ -912,6 +914,10 @@ class CheckoutBottomSheetTest {
         assertThat(header.elevation).isEqualTo(6f.dpToPx(activity))
         assertThat(titleLayoutParams.gravity and Gravity.START).isEqualTo(Gravity.START)
         assertThat(titleLayoutParams.gravity and Gravity.CENTER_VERTICAL).isEqualTo(Gravity.CENTER_VERTICAL)
+
+        sheet.currentCheckoutWebView().scrollTo(0, 10)
+
+        assertThat(header.elevation).isEqualTo(6f.dpToPx(activity))
     }
 
     @Test
@@ -928,6 +934,42 @@ class CheckoutBottomSheetTest {
 
         assertThat(webViewContainerBackgroundColor).isEqualTo(configuredColor)
         assertThat(shadowOf(webView).backgroundColor).isEqualTo(configuredColor)
+    }
+
+    @Test
+    fun `header border appears while checkout is scrolled`() {
+        val customColors = customColors()
+        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
+        val sheet = presentBottomSheet()
+        val toolbar = sheet.findViewById<Toolbar>(R.id.checkoutKitHeader)!!
+        val headerBorder = sheet.findViewById<View>(R.id.checkoutKitHeaderBorder)!!
+        val webView = sheet.currentCheckoutWebView()
+        val restingColor = customColors.headerBackground.getValue(activity)
+
+        assertThat(backgroundColor(toolbar)).isEqualTo(restingColor)
+        assertThat(toolbar.elevation).isEqualTo(0f)
+        assertThat(backgroundColor(headerBorder)).isEqualTo(customColors.headerBorderColor!!.getValue(activity))
+        assertThat(headerBorder.alpha).isEqualTo(0f)
+
+        webView.scrollTo(0, 10)
+        ShadowLooper.idleMainLooper(120, TimeUnit.MILLISECONDS)
+
+        assertThat(backgroundColor(toolbar)).isEqualTo(restingColor)
+        assertThat(toolbar.elevation).isEqualTo(0f)
+        assertThat(headerBorder.alpha).isEqualTo(1f)
+
+        webView.scrollTo(0, 0)
+        ShadowLooper.idleMainLooper(120, TimeUnit.MILLISECONDS)
+
+        assertThat(backgroundColor(toolbar)).isEqualTo(restingColor)
+        assertThat(toolbar.elevation).isEqualTo(0f)
+        assertThat(headerBorder.alpha).isEqualTo(0f)
+
+        webView.scrollTo(0, 10)
+        webView.scrollTo(0, 0)
+        ShadowLooper.idleMainLooper(120, TimeUnit.MILLISECONDS)
+
+        assertThat(headerBorder.alpha).isEqualTo(0f)
     }
 
     @Test
@@ -1121,6 +1163,7 @@ class CheckoutBottomSheetTest {
             headerBackground = Color.ResourceId(androidx.appcompat.R.color.material_blue_grey_900),
             webViewBackground = Color.ResourceId(androidx.appcompat.R.color.material_deep_teal_200),
             progressIndicator = Color.ResourceId(androidx.appcompat.R.color.background_material_dark),
+            headerBorderColor = Color.ResourceId(androidx.appcompat.R.color.material_grey_600),
         )
     }
 

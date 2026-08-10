@@ -2,8 +2,10 @@
 <resources>
     <color name="checkoutLightBg">#fff</color>
     <color name="checkoutLightFont">#1d1d1f</color>
+    <color name="checkoutLightHeaderBorder">#e1e3e5</color>
     <color name="checkoutDarkBg">#1d1d1f</color>
     <color name="checkoutDarkFont">#fff</color>
+    <color name="checkoutDarkHeaderBorder">#454545</color>
     <color name="checkoutLightProgressIndicator">#1773b0</color>
     <color name="checkoutDarkProgressIndicator">#1e8cc8</color>
 </resources>

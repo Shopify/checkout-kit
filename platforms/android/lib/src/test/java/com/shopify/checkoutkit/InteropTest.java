@@ -335,6 +335,7 @@ public class InteropTest {
         Color webViewBg = new Color.ResourceId(android.R.color.white);
         Color progressColor = new Color.ResourceId(android.R.color.holo_green_dark);
         Color dragHandle = new Color.ResourceId(android.R.color.holo_blue_light);
+        Color headerBorder = new Color.ResourceId(android.R.color.darker_gray);
         DrawableResource icon = new DrawableResource(android.R.drawable.ic_menu_close_clear_cancel);
 
         ColorScheme customized = lightScheme.customize(builder -> {
@@ -342,6 +343,7 @@ public class InteropTest {
                     .withWebViewBackground(webViewBg)
                     .withProgressIndicator(progressColor)
                     .withDragHandleColor(dragHandle)
+                    .withHeaderBorderColor(headerBorder)
                     .withCloseIcon(icon);
             return Unit.INSTANCE;
         });
@@ -353,6 +355,7 @@ public class InteropTest {
         assertThat(colors.getWebViewBackground()).isEqualTo(webViewBg);
         assertThat(colors.getProgressIndicator()).isEqualTo(progressColor);
         assertThat(colors.getDragHandleColor()).isEqualTo(dragHandle);
+        assertThat(colors.getHeaderBorderColor()).isEqualTo(headerBorder);
         assertThat(colors.getCloseIcon()).isEqualTo(icon);
     }
 

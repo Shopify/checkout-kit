@@ -14,6 +14,7 @@ class ColorSchemeTest {
         assertThat(dark.colors.headerFont).isEqualTo(Color.ResourceId(R.color.checkoutDarkFont))
         assertThat(dark.colors.webViewBackground).isEqualTo(Color.ResourceId(R.color.checkoutDarkBg))
         assertThat(dark.colors.progressIndicator).isEqualTo(Color.ResourceId(R.color.checkoutDarkProgressIndicator))
+        assertThat(dark.colors.headerBorderColor).isEqualTo(Color.ResourceId(R.color.checkoutDarkHeaderBorder))
         assertThat(dark.colors.closeIcon).isNull()
         assertThat(dark.colors.closeIconTint).isNull()
         assertThat(dark.colors.dragHandleColor).isNull()
@@ -28,6 +29,7 @@ class ColorSchemeTest {
         assertThat(light.colors.headerFont).isEqualTo(Color.ResourceId(R.color.checkoutLightFont))
         assertThat(light.colors.webViewBackground).isEqualTo(Color.ResourceId(R.color.checkoutLightBg))
         assertThat(light.colors.progressIndicator).isEqualTo(Color.ResourceId(R.color.checkoutLightProgressIndicator))
+        assertThat(light.colors.headerBorderColor).isEqualTo(Color.ResourceId(R.color.checkoutLightHeaderBorder))
         assertThat(light.colors.closeIcon).isNull()
         assertThat(light.colors.closeIconTint).isNull()
         assertThat(light.colors.dragHandleColor).isNull()
@@ -44,6 +46,7 @@ class ColorSchemeTest {
         assertThat(
             automatic.darkColors.progressIndicator
         ).isEqualTo(Color.ResourceId(R.color.checkoutDarkProgressIndicator))
+        assertThat(automatic.darkColors.headerBorderColor).isEqualTo(Color.ResourceId(R.color.checkoutDarkHeaderBorder))
         assertThat(automatic.darkColors.closeIcon).isNull()
         assertThat(automatic.darkColors.closeIconTint).isNull()
         assertThat(automatic.darkColors.dragHandleColor).isNull()
@@ -55,6 +58,9 @@ class ColorSchemeTest {
         assertThat(
             automatic.lightColors.progressIndicator
         ).isEqualTo(Color.ResourceId(R.color.checkoutLightProgressIndicator))
+        assertThat(
+            automatic.lightColors.headerBorderColor
+        ).isEqualTo(Color.ResourceId(R.color.checkoutLightHeaderBorder))
         assertThat(automatic.lightColors.closeIcon).isNull()
         assertThat(automatic.lightColors.closeIconTint).isNull()
         assertThat(automatic.lightColors.dragHandleColor).isNull()
@@ -111,6 +117,41 @@ class ColorSchemeTest {
         assertThat(
             automatic.headerFontColor(isDark = true)
         ).isEqualTo(Color.ResourceId(6))
+    }
+
+    @Test
+    fun `header border color uses configured colors and scheme-specific defaults`() {
+        val lightBorder = Color.ResourceId(9)
+        val darkBorder = Color.ResourceId(10)
+        val automatic = ColorScheme.Automatic(
+            lightColors = Colors(
+                headerBackground = Color.ResourceId(1),
+                headerFont = Color.ResourceId(2),
+                webViewBackground = Color.ResourceId(3),
+                progressIndicator = Color.ResourceId(4),
+                headerBorderColor = lightBorder,
+            ),
+            darkColors = Colors(
+                headerBackground = Color.ResourceId(5),
+                headerFont = Color.ResourceId(6),
+                webViewBackground = Color.ResourceId(7),
+                progressIndicator = Color.ResourceId(8),
+                headerBorderColor = darkBorder,
+            ),
+        )
+        val customLightWithoutBorder = ColorScheme.Light(
+            colors = Colors(
+                headerBackground = Color.ResourceId(1),
+                headerFont = Color.ResourceId(2),
+                webViewBackground = Color.ResourceId(3),
+                progressIndicator = Color.ResourceId(4),
+            )
+        )
+
+        assertThat(automatic.headerBorderColor(isDark = false)).isEqualTo(lightBorder)
+        assertThat(automatic.headerBorderColor(isDark = true)).isEqualTo(darkBorder)
+        assertThat(customLightWithoutBorder.headerBorderColor(isDark = true))
+            .isEqualTo(Color.ResourceId(R.color.checkoutLightHeaderBorder))
     }
 
     @Test
@@ -361,16 +402,19 @@ class ColorSchemeTest {
         val originalScheme = ColorScheme.Dark()
         val customIcon = DrawableResource(123)
         val customTint = Color.SRGB(0xFF0000)
+        val customBorder = Color.SRGB(0xFF00FF)
 
         val customizedScheme = originalScheme.customize {
             withCloseIcon(customIcon)
                 .withCloseIconTint(customTint)
+                .withHeaderBorderColor(customBorder)
         }
 
         assertThat(customizedScheme).isInstanceOf(ColorScheme.Dark::class.java)
         val darkScheme = customizedScheme as ColorScheme.Dark
         assertThat(darkScheme.colors.closeIcon).isEqualTo(customIcon)
         assertThat(darkScheme.colors.closeIconTint).isEqualTo(customTint)
+        assertThat(darkScheme.colors.headerBorderColor).isEqualTo(customBorder)
     }
 
     @Test
