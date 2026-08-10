@@ -31,6 +31,13 @@ apply plugin: "com.facebook.react.rootproject"
 
 def useLocalSdk = (System.getenv("USE_LOCAL_SDK") ?: "0") == "1"
 
+if (useLocalSdk && System.getenv("CI") != null) {
+    throw new GradleException(
+        "USE_LOCAL_SDK=1 is set in CI. CI must resolve the published native SDKs, " +
+        "so this build would not match what merges. Unset USE_LOCAL_SDK."
+    )
+}
+
 allprojects {
     repositories {
         if (useLocalSdk) {

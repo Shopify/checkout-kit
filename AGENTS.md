@@ -48,61 +48,80 @@ uses the committed `Package.resolved` files instead of silently updating package
 pins. This prevents sample app dependencies such as Apollo iOS from being
 written into the repo-root Swift package lockfile.
 
-## React Native development with local native SDK changes
+## React Native and the native SDKs
 
-Until the new native SDK libraries have stable released versions, assume React Native validation needs the local native SDK workflow. Use `--local` whenever running the React Native sample or native React Native tests that depend on the in-repo Swift/Kotlin SDKs.
+**Default: do not pass `--local`, and do not set `USE_LOCAL_SDK=1`.** React Native builds
+resolve the published native SDKs from CocoaPods and Maven Central. That is what CI does, and
+it is what almost all React Native work needs.
 
-Use the React Native `--local` workflow when you need to test React Native against native SDK changes that exist in this repository but have not been released as a SemVer/CocoaPods/Maven version yet.
+### The question that decides it
 
-This applies when changes are made under:
+Does the native API you need already exist in the published version pinned at
+`checkoutKit.nativeSdkVersions` in
+`platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`?
+
+- **Yes** — do not use `--local`. Editing files under `platforms/swift/` or
+  `platforms/android/` does not on its own require it.
+- **No** — you are adding that API in this PR. Only then is `--local` correct.
+
+### The one workflow that needs it
+
+`--local` covers a single case: you changed the Swift or Kotlin **public API**, and you want to
+integrate the React Native side against it now, before that native SDK version ships.
+
+1. Make the Swift or Kotlin public API change and submit it in a PR.
+2. Use `--local` to build the React Native side against those in-repo sources.
+
+Expect this state while you do it:
+
+- CI stays red and the PR is not mergeable. CI resolves published artifacts only. It does not
+  accept a `Podfile.lock` or a Maven resolution produced by `--local`.
+- The PR becomes mergeable once the native release reaches CocoaPods and Maven Central and
+  `checkoutKit.nativeSdkVersions` is bumped to it.
+
+This is a local development aid for early integration. It is not part of normal development.
+
+### Scope
+
+`--local` concerns the native SDK sources:
 
 - `platforms/swift/` — the iOS Swift SDK / CocoaPods sources
 - `platforms/android/` — the Android SDK / Maven artifact sources
 - `protocol/languages/kotlin/` — Kotlin protocol artifacts consumed by the Android SDK
 
-It does **not** refer to the React Native wrapper platform folders:
+It does **not** concern the React Native wrapper platform folders, which build from source
+either way:
 
 - `platforms/react-native/modules/@shopify/checkout-kit-react-native/ios/`
 - `platforms/react-native/modules/@shopify/checkout-kit-react-native/android/`
 
-### What `--local` does
+### What it does
 
-- For React Native iOS, `--local` wires CocoaPods to the in-repo `platforms/swift/` sources via a local path instead of a released pod version.
-- For React Native Android, `--local` publishes/uses the in-repo Android SDK and Kotlin protocol artifacts through Maven Local so Gradle resolves the local `com.shopify:checkout-kit` and `com.shopify:embedded-checkout-protocol` artifacts instead of released Maven versions.
-
-### When to use it
-
-Use `--local` whenever you are validating React Native behavior that depends on unreleased native SDK changes, for example:
-
-- a new Swift SDK API that the React Native iOS bridge calls
-- a new Android SDK API that the React Native Android bridge calls
-- generated protocol/model changes under `protocol/languages/kotlin/` that the React Native module consumes through Android
-- any change in `platforms/swift/`, `platforms/android/`, or `protocol/languages/kotlin/` that has not yet been released and consumed through normal dependency versions
-
-Re-run the relevant local workflow whenever `platforms/swift/`, `platforms/android/`, or `protocol/languages/kotlin/` changes, because the React Native sample/tests need to re-resolve those local native SDK sources/artifacts.
+- iOS: wires CocoaPods to the in-repo `platforms/swift/` sources via a local path instead of a released pod version.
+- Android: publishes the in-repo Android SDK and Kotlin protocol artifacts to Maven Local, then resolves `com.shopify:checkout-kit` and `com.shopify:embedded-checkout-protocol` from there.
 
 ```bash
-# iOS sample using local platforms/swift sources
 dev rn ios --local
-
-# Android sample using local Android and Kotlin protocol artifacts via Maven Local
 dev rn android --local
-
-# React Native Android unit tests using local Android and Kotlin protocol artifacts via Maven Local
-# `dev rn test android` publishes the Android SDK artifacts to ~/.m2 first, then runs the RN module tests.
-dev rn test android
+dev rn test android --local
 ```
 
-For ad-hoc Android Gradle test commands, publish the local Android SDK first and set `USE_LOCAL_SDK=1` so the React Native sample resolves the local `com.shopify:checkout-kit` and `com.shopify:embedded-checkout-protocol` artifacts from Maven Local:
+Re-run the relevant command whenever `platforms/swift/`, `platforms/android/`, or
+`protocol/languages/kotlin/` changes, so the build re-resolves those sources.
 
-```bash
-cd platforms/react-native
-USE_LOCAL_SDK=1 ./scripts/publish_android_snapshot
-cd sample/android
-USE_LOCAL_SDK=1 ./gradlew :shopify_checkout-kit-react-native:testDebugUnitTest
-```
+### Rules
 
-The React Native Android sample uses exclusive Maven Local resolution for those two `com.shopify` modules when `USE_LOCAL_SDK=1`. Keep that filtering in the sample Gradle build; duplicating exclusive repository filters for the same modules elsewhere can break dependency resolution.
+- Never commit a `Podfile.lock` generated with `--local`. It records a local path, and
+  `platforms/react-native/scripts/check_published_podfile_lock` fails CI on it. Regenerate with
+  `env -u USE_LOCAL_SDK dev rn pod-install`.
+- Never hardcode `USE_LOCAL_SDK=1` into a script, `dev.yml`, or a workflow. It has to stay an
+  explicit choice made on the command line, or local runs stop matching CI and can resolve a
+  stale artifact from `~/.m2`. `platforms/react-native/scripts/check_no_local_sdk_default` fails
+  CI on it.
+- The React Native Android sample uses exclusive Maven Local resolution for those two
+  `com.shopify` modules when `USE_LOCAL_SDK=1`. Keep that filtering in the sample Gradle build;
+  duplicating exclusive repository filters for the same modules elsewhere can break dependency
+  resolution.
 
 ## Sensitive configuration
 

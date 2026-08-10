@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+REPO_ROOT = File.expand_path("../../..", __dir__)
+
+require_relative "#{REPO_ROOT}/scripts/lib/local_sdk_default"
+
+problems = LocalSdkDefault.problems_by_path(REPO_ROOT)
+
+if problems.any?
+  problems.each do |path, found|
+    found.each do |problem|
+      warn "::error file=#{path}::#{problem}"
+    end
+  end
+  warn ""
+  warn "Local SDK mode must stay opt-in. CI resolves published native SDKs, so a hardcoded"
+  warn "USE_LOCAL_SDK=1 makes local runs disagree with CI and can resolve a stale ~/.m2 artifact."
+  warn "Pass --local at the command line instead."
+  exit 1
+end
+
+puts "No hardcoded local SDK defaults; React Native builds resolve published native SDKs."
