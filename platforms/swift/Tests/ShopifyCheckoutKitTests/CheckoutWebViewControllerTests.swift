@@ -42,6 +42,41 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertEqual(viewController.checkoutView?.configuration.applicationNameForUserAgent, expectedUserAgent)
     }
 
+    func test_init_adjustsCheckoutContentForSafeArea() {
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+
+        XCTAssertEqual(viewController.checkoutView?.scrollView.contentInsetAdjustmentBehavior, .automatic)
+    }
+
+    func test_viewDidLoad_extendsCheckoutViewBehindNavigationBar() throws {
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.loadViewIfNeeded()
+
+        let checkoutView = try XCTUnwrap(viewController.checkoutView)
+        let topConstraint = try XCTUnwrap(
+            viewController.view.constraints.first {
+                $0.firstItem === checkoutView && $0.firstAttribute == .top
+            }
+        )
+
+        XCTAssertTrue(topConstraint.secondItem === viewController.view)
+        XCTAssertEqual(topConstraint.secondAttribute, .top)
+    }
+
+    func test_viewDidLoad_keepsProgressBarBelowNavigationBar() throws {
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.loadViewIfNeeded()
+
+        let topConstraint = try XCTUnwrap(
+            viewController.view.constraints.first {
+                $0.firstItem === viewController.progressBar && $0.firstAttribute == .top
+            }
+        )
+
+        XCTAssertTrue(topConstraint.secondItem === viewController.view.safeAreaLayoutGuide)
+        XCTAssertEqual(topConstraint.secondAttribute, .top)
+    }
+
     func test_checkoutViewDidFailWithError_dismissesAndInvokesOnFail() {
         var failCalled = false
         let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
