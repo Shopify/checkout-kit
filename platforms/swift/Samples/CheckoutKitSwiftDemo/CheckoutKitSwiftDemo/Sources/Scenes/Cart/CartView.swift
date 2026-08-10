@@ -12,6 +12,7 @@ struct CartView: View {
     @State var isCompleted: Bool = false
     @State var showCheckoutSheet: Bool = false
     @State private var checkoutPreload: CheckoutPreload?
+    @State private var preloadStateTestId = PreloadStateMarker.testId(for: .idle)
 
     @ObservedObject var cartManager: CartManager = .shared
 
@@ -37,6 +38,8 @@ struct CartView: View {
                     }
                     .padding(.bottom, 130)
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(preloadStateTestId)
 
                 VStack(spacing: DesignSystem.buttonSpacing) {
                     if let cartID = cartManager.cart?.id {
@@ -159,6 +162,7 @@ struct CartView: View {
         ShopifyCheckoutKit.invalidate()
         checkoutPreload = ShopifyCheckoutKit.preload(checkout: url)
         checkoutPreload?.onStateChange = { state in
+            preloadStateTestId = PreloadStateMarker.testId(for: state)
             print("[Preload] state changed to \(state)")
             ShopifyCheckoutKit.configuration.logger.log("Preload state changed to \(state)")
         }

@@ -11,6 +11,7 @@ import com.shopify.checkoutkit.CheckoutErrorCode
 import com.shopify.checkoutkit.CheckoutException
 import com.shopify.checkoutkit.CheckoutPresentation
 import com.shopify.checkoutkit.CheckoutProtocol
+import com.shopify.checkoutkit.PreloadState
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.checkoutkit.androiddemo.MainActivity
 import com.shopify.checkoutkit.androiddemo.R
@@ -22,6 +23,7 @@ import com.shopify.checkoutkit.androiddemo.common.SnackbarEvent
 import com.shopify.checkoutkit.androiddemo.common.logs.LogLevel
 import com.shopify.checkoutkit.androiddemo.common.logs.Logger
 import com.shopify.checkoutkit.androiddemo.common.navigation.Screen
+import com.shopify.checkoutkit.androiddemo.e2e.PreloadStateMarker
 import com.shopify.checkoutkit.androiddemo.settings.PreferencesManager
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.AuthenticationState
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.CustomerRepository
@@ -59,6 +61,9 @@ class CartViewModel(
 
     private val _checkoutPresentationMode = MutableStateFlow(CheckoutPresentationMode.CheckoutKitSheet)
     val checkoutPresentationMode: StateFlow<CheckoutPresentationMode> = _checkoutPresentationMode.asStateFlow()
+
+    private val _preloadStateTestId = MutableStateFlow(PreloadStateMarker.testId(PreloadState.Idle))
+    val preloadStateTestId: StateFlow<String> = _preloadStateTestId.asStateFlow()
 
     private var demoBuyerIdentityEnabled = false
     private var checkoutPreloadingEnabled = true
@@ -171,6 +176,7 @@ class CartViewModel(
         Timber.i("Preloading checkout")
         ShopifyCheckoutKit.preload(url, activity) { state ->
             Timber.i("Preload state changed to $state")
+            _preloadStateTestId.value = PreloadStateMarker.testId(state)
         }
     }
 
