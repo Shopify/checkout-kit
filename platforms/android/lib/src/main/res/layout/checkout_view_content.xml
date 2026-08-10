@@ -55,4 +55,13 @@
             android:max="100" />
 
     </RelativeLayout>
+
+    <View
+        android:id="@+id/checkoutKitHeaderBorder"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/checkoutKitHeader"
+        android:alpha="0"
+        android:importantForAccessibility="no"
+        android:visibility="visible" />
 </RelativeLayout>

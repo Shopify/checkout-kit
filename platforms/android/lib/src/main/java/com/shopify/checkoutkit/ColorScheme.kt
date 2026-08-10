@@ -56,6 +56,19 @@ public sealed class ColorScheme(public val id: String) {
         is Light -> this.colors.headerFont
     }
 
+    internal fun headerBorderColor(isDark: Boolean): Color {
+        val (color, defaultColor) = when (this) {
+            is Automatic -> if (isDark) {
+                this.darkColors.headerBorderColor to R.color.checkoutDarkHeaderBorder
+            } else {
+                this.lightColors.headerBorderColor to R.color.checkoutLightHeaderBorder
+            }
+            is Dark -> this.colors.headerBorderColor to R.color.checkoutDarkHeaderBorder
+            is Light -> this.colors.headerBorderColor to R.color.checkoutLightHeaderBorder
+        }
+        return color ?: Color.ResourceId(defaultColor)
+    }
+
     internal fun progressIndicatorColor(isDark: Boolean) = when (this) {
         is Automatic -> if (isDark) this.darkColors.progressIndicator else this.lightColors.progressIndicator
         is Dark -> this.colors.progressIndicator
@@ -165,6 +178,7 @@ public sealed class ColorScheme(public val id: String) {
  * colors can be overridden through [CheckoutAppearance.Storefront.customize]. Colors that can be overridden are:
  * - The WebView background color,
  * - The native header background and font color,
+ * - The header border shown when checkout content scrolls beneath it,
  * - The progress/loading indicator,
  * - The optional drag handle, which follows the header font color when it is not set.
  *
@@ -180,6 +194,7 @@ public data class Colors(
     val closeIcon: DrawableResource? = null,
     val closeIconTint: Color? = null,
     val dragHandleColor: Color? = null,
+    val headerBorderColor: Color? = null,
 )
 
 /**
@@ -193,6 +208,7 @@ public class ColorsBuilder internal constructor(private val baseColors: Colors) 
     public var closeIcon: DrawableResource? = null
     public var closeIconTint: Color? = null
     public var dragHandleColor: Color? = null
+    public var headerBorderColor: Color? = null
 
     public fun withWebViewBackground(color: Color): ColorsBuilder {
         webViewBackground = color
@@ -219,6 +235,11 @@ public class ColorsBuilder internal constructor(private val baseColors: Colors) 
         return this
     }
 
+    public fun withHeaderBorderColor(color: Color): ColorsBuilder {
+        headerBorderColor = color
+        return this
+    }
+
     public fun withCloseIcon(icon: DrawableResource): ColorsBuilder {
         closeIcon = icon
         return this
@@ -237,7 +258,8 @@ public class ColorsBuilder internal constructor(private val baseColors: Colors) 
             progressIndicator = progressIndicator ?: baseColors.progressIndicator,
             closeIcon = closeIcon ?: baseColors.closeIcon,
             closeIconTint = closeIconTint ?: baseColors.closeIconTint,
-            dragHandleColor = dragHandleColor ?: baseColors.dragHandleColor
+            dragHandleColor = dragHandleColor ?: baseColors.dragHandleColor,
+            headerBorderColor = headerBorderColor ?: baseColors.headerBorderColor,
         )
     }
 }
@@ -292,6 +314,7 @@ private val defaultLightColors = Colors(
     headerBackground = Color.ResourceId(R.color.checkoutLightBg),
     headerFont = Color.ResourceId(R.color.checkoutLightFont),
     progressIndicator = Color.ResourceId(R.color.checkoutLightProgressIndicator),
+    headerBorderColor = Color.ResourceId(R.color.checkoutLightHeaderBorder),
 )
 
 private val defaultDarkColors = Colors(
@@ -299,4 +322,5 @@ private val defaultDarkColors = Colors(
     headerBackground = Color.ResourceId(R.color.checkoutDarkBg),
     headerFont = Color.ResourceId(R.color.checkoutDarkFont),
     progressIndicator = Color.ResourceId(R.color.checkoutDarkProgressIndicator),
+    headerBorderColor = Color.ResourceId(R.color.checkoutDarkHeaderBorder),
 )
