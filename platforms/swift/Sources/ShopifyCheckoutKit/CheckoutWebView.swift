@@ -287,6 +287,7 @@ struct UIApplicationExternalURLHandler: ExternalURLHandling {
 @MainActor
 class CheckoutWebView: WKWebView {
     static let preloadCache = PreloadCache()
+    static let preloadCacheHitLogMessage = "Presenting preloaded checkout from cache"
     private static let purposeHeader = "Shopify-Purpose"
     private static let prefetchPurpose = "prefetch"
 
@@ -402,11 +403,16 @@ class CheckoutWebView: WKWebView {
             return CheckoutWebView(entryPoint: entryPoint)
         }
 
+        let cacheWasReady = preloadCache.state == .ready
         guard let cachedView = preloadCache.view(for: PreloadKey(url: url, entryPoint: entryPoint)) else {
             return CheckoutWebView(entryPoint: entryPoint)
         }
 
         OSLogger.shared.debug("Presenting cached entry")
+        let configuration = ShopifyCheckoutKit.configuration
+        if cacheWasReady, configuration.logLevel == .debug {
+            configuration.logger.log(preloadCacheHitLogMessage)
+        }
         return cachedView
     }
 

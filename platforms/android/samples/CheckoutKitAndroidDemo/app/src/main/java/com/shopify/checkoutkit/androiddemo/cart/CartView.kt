@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
@@ -63,6 +64,7 @@ fun CartView(
     val loading = cartViewModel.loadingState.collectAsState().value
     val checkoutPresentationMode = cartViewModel.checkoutPresentationMode.collectAsState().value
     val preloadStateTestId = cartViewModel.preloadStateTestId.collectAsState().value
+    val preloadCacheHitTestId = cartViewModel.preloadCacheHitTestId.collectAsState().value
 
     val activity = LocalActivity.current as ComponentActivity
     var mutableQuantity by remember { mutableStateOf<Map<String, Int>>(mutableMapOf()) }
@@ -91,12 +93,19 @@ fun CartView(
                     it.title to it.quantity
                 }
 
-                // Exposes the current preload state as a preload identifier.
                 Column(
                     modifier = Modifier
                         .padding(top = 4.dp)
                         .testTag(preloadStateTestId)
                 ) {
+                    // Keep a separate semantics node without adding a second child to the outer
+                    // SpaceBetween column, which would shift short cart content to the bottom.
+                    Box(
+                        modifier = Modifier
+                            .size(1.dp)
+                            .testTag(preloadCacheHitTestId)
+                    )
+
                     CartLines(
                         lines = state.cartLines,
                         loading = loading,

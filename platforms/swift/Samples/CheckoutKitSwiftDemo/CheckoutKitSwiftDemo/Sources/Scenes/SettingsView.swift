@@ -7,6 +7,7 @@ enum AppStorageKeys: String {
     case acceleratedCheckoutsLogLevel
     case checkoutKitLogLevel
     case checkoutPreloadingEnabled
+    case preloadObservabilityEnabled
     case buyerIdentityMode
     case applePayStyle
     case windowOpenHandler

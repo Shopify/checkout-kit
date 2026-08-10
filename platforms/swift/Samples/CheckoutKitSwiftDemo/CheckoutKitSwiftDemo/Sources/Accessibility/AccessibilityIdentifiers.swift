@@ -1,6 +1,7 @@
 enum AccessibilityIdentifiers {
     static let appReady = "checkout-kit-sample-ready"
     static let preloadStatePrefix = "preload-state-"
+    static let preloadCacheHitPrefix = "preload-cache-hit-"
 
     enum Cart {
         static let checkoutReady = "cart-checkout-ready"
