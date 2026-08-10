@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -60,6 +61,7 @@ fun CartView(
     val state = cartViewModel.cartState.collectAsState().value
     val loading = cartViewModel.loadingState.collectAsState().value
     val checkoutPresentationMode = cartViewModel.checkoutPresentationMode.collectAsState().value
+    val preloadStateTestId = cartViewModel.preloadStateTestId.collectAsState().value
 
     val activity = LocalActivity.current as ComponentActivity
     var mutableQuantity by remember { mutableStateOf<Map<String, Int>>(mutableMapOf()) }
@@ -88,7 +90,13 @@ fun CartView(
                     it.title to it.quantity
                 }
 
-                Column(modifier = Modifier.padding(top = 4.dp)) {
+                // Invisible preload-state seam for the Maestro preload flows, following the
+                // checkout-kit-sample-ready pattern: automation metadata only, no rendered UI.
+                Column(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .testTag(preloadStateTestId)
+                ) {
                     CartLines(
                         lines = state.cartLines,
                         loading = loading,

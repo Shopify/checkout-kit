@@ -252,6 +252,7 @@ protocol CheckoutWebViewDelegate: AnyObject {
 @MainActor
 class CheckoutWebView: WKWebView {
     static let preloadCache = PreloadCache()
+    static let preloadCacheHitLogMessage = "Presenting preloaded checkout from cache"
     private static let purposeHeader = "Shopify-Purpose"
     private static let prefetchPurpose = "prefetch"
 
@@ -346,6 +347,7 @@ class CheckoutWebView: WKWebView {
         }
 
         OSLogger.shared.debug("Presenting cached entry")
+        ShopifyCheckoutKit.configuration.logger.log(preloadCacheHitLogMessage)
         return cachedView
     }
 

@@ -269,6 +269,11 @@ class E2EGitHubReporter
     tests = result.fetch("failed_tests", [])
     if tests.empty?
       lines << "| — | #{status_icon(result)} | #{artifact_links(nil, result)} |"
+      unless blank?(result["error"])
+        error = result["error"].to_s.gsub(/\s+/, " ").gsub("`", "'")
+        lines << ""
+        lines << "> Diagnostic: `#{error}`"
+      end
     else
       tests.each do |testcase|
         lines << "| `#{testcase.fetch("name", "unknown")}` | ❌ | #{artifact_links(testcase, result)} |"

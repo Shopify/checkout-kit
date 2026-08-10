@@ -1,4 +1,5 @@
 import ApolloAPI
+import Combine
 import EmbeddedCheckoutProtocol
 import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
@@ -12,6 +13,8 @@ struct CartView: View {
     @State var isCompleted: Bool = false
     @State var showCheckoutSheet: Bool = false
     @State private var checkoutPreload: CheckoutPreload?
+    @State private var preloadStateTestId = PreloadStateMarker.testId(for: .idle)
+    @State private var preloadCacheHitTestId = E2ETestIds.preloadCacheHitPending
 
     @ObservedObject var cartManager: CartManager = .shared
 
@@ -37,6 +40,10 @@ struct CartView: View {
                     }
                     .padding(.bottom, 130)
                 }
+                // Invisible cache-consumption seam for the Maestro preload flows: flips to
+                // `preload-cache-hit` when the SDK logs its cache-hit diagnostic at present time.
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(preloadCacheHitTestId)
 
                 VStack(spacing: DesignSystem.buttonSpacing) {
                     if let cartID = cartManager.cart?.id {
@@ -94,6 +101,8 @@ struct CartView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(preloadStateTestId)
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
@@ -141,6 +150,13 @@ struct CartView: View {
             .onChange(of: checkoutPreloadingEnabled) { _ in
                 preloadCheckoutIfNeeded()
             }
+            .onReceive(
+                NotificationCenter.default
+                    .publisher(for: PreloadCacheHitSignal.notification)
+                    .receive(on: RunLoop.main)
+            ) { _ in
+                preloadCacheHitTestId = E2ETestIds.preloadCacheHit
+            }
         } else {
             EmptyState()
         }
@@ -158,6 +174,7 @@ struct CartView: View {
         ShopifyCheckoutKit.invalidate()
         checkoutPreload = ShopifyCheckoutKit.preload(checkout: url)
         checkoutPreload?.onStateChange = { state in
+            preloadStateTestId = PreloadStateMarker.testId(for: state)
             print("[Preload] state changed to \(state)")
             ShopifyCheckoutKit.configuration.logger.log("Preload state changed to \(state)")
         }

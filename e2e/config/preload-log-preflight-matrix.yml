@@ -1,0 +1,33 @@
+version: 1
+changed_file_filters: .ci/changed-file-filters.yml
+applications:
+  - id: kotlin-android
+    target: kotlin
+    platform: android
+    app_id: com.shopify.checkoutkit.androiddemo
+    artifact_env: E2E_KOTLIN_ANDROID_APP_PATH
+    ready_marker: checkout-kit-sample-ready
+    changed_files_filters:
+      - android
+      - protocolKotlin
+      - protocolShared
+      - e2e
+      - ciFilters
+  - id: swift-ios
+    target: swift
+    platform: ios
+    app_id: com.shopify.checkoutkit.swiftdemo
+    artifact_env: E2E_SWIFT_IOS_APP_PATH
+    ready_marker: checkout-kit-sample-ready
+    changed_files_filters:
+      - swift
+      - protocolSwift
+      - protocolShared
+      - packageSwift
+      - e2e
+      - ciFilters
+os_version_tags:
+  - latest
+suites:
+  - id: native-preload-cache-hit-preflight
+    execute: tests/preflight/native-preload-cache-hit.yaml

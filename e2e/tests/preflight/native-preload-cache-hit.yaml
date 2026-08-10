@@ -1,0 +1,97 @@
+appId: ${E2E_APP_ID}
+name: Native preload cache-hit log preflight
+---
+# First launches on fresh BrowserStack devices can be slow or dropped; retry the
+# launch itself before treating a missing ready marker as a failure.
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          clearState: true
+          arguments:
+            # iOS-only launch arguments; Android ignores them.
+            AppleLocale: en_US
+            AppleLanguages: "(en)"
+      - extendedWaitUntil:
+          visible:
+            id: ${E2E_READY_MARKER}
+          timeout: 60000
+
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: 25%,30%
+      - extendedWaitUntil:
+          visible: "Add to Cart"
+          timeout: 30000
+      - tapOn: "Add to Cart"
+      - extendedWaitUntil:
+          visible: "Added"
+          timeout: 30000
+      - tapOn:
+          point: 90%,11%
+      - extendedWaitUntil:
+          visible: "Catalog"
+          timeout: 15000
+      - tapOn: "Cart"
+      - extendedWaitUntil:
+          visible:
+            id: checkoutSheetButton
+          timeout: 30000
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "Shop"
+      - extendedWaitUntil:
+          notVisible: "Collections"
+          timeout: 15000
+      - tapOn: "Masters Podcast (Digital Download)"
+      - extendedWaitUntil:
+          visible: "Add to cart"
+          timeout: 30000
+      - tapOn: "Add to cart"
+      - tapOn: "Go to cart icon"
+      - extendedWaitUntil:
+          visible: "Your cart"
+          timeout: 30000
+
+- extendedWaitUntil:
+    visible:
+      id: preload-state-ready
+    timeout: 60000
+
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: checkoutSheetButton
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "Check out"
+
+- extendedWaitUntil:
+    visible: "^(Email( or mobile phone number)?|Delivery|Card number)$"
+    timeout: 60000
+
+# iOS cache-consumption proof: the SDK logs its cache-hit diagnostic through the
+# public configured logger at present time; the sample converts it into the
+# invisible `preload-cache-hit` ID on the cart screen. Close the sheet first so
+# the cart hierarchy is inspectable again.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: shopify_checkout_kit_close_button
+      - extendedWaitUntil:
+          visible:
+            id: preload-cache-hit
+          timeout: 30000

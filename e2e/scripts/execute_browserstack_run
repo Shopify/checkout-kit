@@ -18,6 +18,16 @@ class BrowserStackRunExecutor
   # and the version BrowserStack runs cannot drift apart.
   # https://www.browserstack.com/docs/app-automate/maestro/set-up-test-env/configure-tests/set-maestro-version
   MAESTRO_VERSION_FILE = File.expand_path("../.maestro-version", __dir__)
+  PRELOAD_LOG_PREFLIGHT_FLOW = "tests/preflight/native-preload-cache-hit.yaml"
+  PRELOAD_CACHE_HIT_LOGS = {
+    "kotlin" => "Returning cached preloaded WebView."
+  }.freeze
+  ANDROID_CONCURRENT_PRESENTATION_LOG = "Preloaded WebView is already presented; creating a new WebView."
+  BROWSERSTACK_LOG_ARTIFACT_KEYS = %w[device_log instrumentation_log maestro_log].freeze
+  IOS_PRELOAD_DIAGNOSTIC_SIGNALS = [
+    "Presenting cached entry",
+    "Presenting preloaded checkout from cache"
+  ].freeze
 
   def self.failure_result(context, error)
     context.merge(
@@ -82,6 +92,93 @@ class BrowserStackRunExecutor
     value
   end
 
+  def self.build_request_body(run:, app_url:, test_suite_url:, device:, env: ENV)
+    {
+      app: app_url,
+      testSuite: test_suite_url,
+      project: env.fetch("E2E_BROWSERSTACK_PROJECT", "checkout-kit-e2e"),
+      maestroVersion: resolve_maestro_version(env),
+      buildTag: env.fetch("BITRISE_GIT_COMMIT", "local"),
+      customBuildName: run.fetch("id"),
+      devices: [device],
+      execute: [run.fetch("execute")],
+      deviceLogs: true,
+      setEnvVariables: {
+        E2E_APP_ID: run.fetch("app_id"),
+        E2E_READY_MARKER: run.fetch("ready_marker")
+      }
+    }
+  end
+
+  def self.testcases_for(sessions)
+    sessions.flat_map do |session|
+      session.dig("testcases", "data").to_a.flat_map do |group|
+        group.fetch("testcases", [])
+      end
+    end
+  end
+
+  def self.sessions_have_testcases?(sessions)
+    sessions.any? && sessions.all? { |session| testcases_for([session]).any? }
+  end
+
+  # Temporary preflight-only diagnostics: failing iOS Maestro testcases are the
+  # only ones that publish log artifacts, so mine them for the failed steps and
+  # for whether the SDK's cache-hit messages reached the physical device log.
+  # Lines containing URLs are excluded so no checkout values can leak into the
+  # PR report.
+  def self.diagnose_ios_preflight_failure!(run:, sessions:, fetch_log:)
+    return unless run.fetch("execute") == PRELOAD_LOG_PREFLIGHT_FLOW
+    return unless run.fetch("target") == "swift"
+
+    failed = testcases_for(sessions).reject { |testcase| testcase.fetch("status", "") == "passed" }
+    return if failed.empty?
+
+    reports = failed.map do |testcase|
+      maestro_log = testcase["maestro_log"] ? fetch_log.call(testcase["maestro_log"]) : ""
+      device_log = testcase["device_log"] ? fetch_log.call(testcase["device_log"]) : ""
+      failed_steps = maestro_log.lines
+        .select { |line| line.include?("FAILED") && !line.include?("://") }
+        .last(3)
+        .map(&:strip)
+        .join(" | ")
+      signals = IOS_PRELOAD_DIAGNOSTIC_SIGNALS
+        .map { |signal| "#{signal}=#{device_log.include?(signal)}" }
+        .join(", ")
+      "failed steps: #{failed_steps}; device log signals: #{signals}"
+    end
+
+    raise "iOS preload preflight diagnostics — #{reports.join(" || ")}"
+  end
+
+  def self.verify_preload_cache_hit_log!(run:, sessions:, fetch_log:)
+    return unless run.fetch("execute") == PRELOAD_LOG_PREFLIGHT_FLOW
+
+    expected = PRELOAD_CACHE_HIT_LOGS[run.fetch("target")]
+    return unless expected
+
+    passing_testcases = testcases_for(sessions).select do |testcase|
+      testcase.fetch("status", "") == "passed"
+    end
+    log_urls = passing_testcases.flat_map do |testcase|
+      BROWSERSTACK_LOG_ARTIFACT_KEYS.filter_map { |key| testcase[key] }
+    end
+    if log_urls.empty?
+      available_keys = passing_testcases.flat_map(&:keys).uniq.sort.join(", ")
+      raise "Passing BrowserStack testcase did not expose a supported log artifact; available keys: #{available_keys}"
+    end
+
+    device_output = log_urls.map { |url| fetch_log.call(url) }.join("\n")
+    unless device_output.include?(expected)
+      raise "BrowserStack log artifacts did not contain the #{run.fetch("target")} preload cache-hit signal"
+    end
+    if run.fetch("target") == "kotlin" && device_output.include?(ANDROID_CONCURRENT_PRESENTATION_LOG)
+      raise "Android BrowserStack logs recorded a concurrent fresh presentation"
+    end
+
+    puts "Verified #{run.fetch("target")} preload cache-hit signal in BrowserStack logs."
+  end
+
   def initialize(options)
     @options = options
     @client = BrowserStackClient.new(
@@ -102,6 +199,16 @@ class BrowserStackRunExecutor
     puts "BrowserStack build: #{BrowserStackClient.build_url(@build.fetch("build_id"))}"
     build_status = poll_build(@build.fetch("build_id"))
     sessions = fetch_sessions(build_status)
+    self.class.verify_preload_cache_hit_log!(
+      run: @run,
+      sessions: sessions,
+      fetch_log: ->(url) { @client.get_artifact_text(url) }
+    )
+    self.class.diagnose_ios_preflight_failure!(
+      run: @run,
+      sessions: sessions,
+      fetch_log: ->(url) { @client.get_artifact_text(url) }
+    )
     result = normalize_result(@run, @device, @app, @suite, @build, build_status, sessions)
     write_json("result.json", result)
   rescue StandardError => error
@@ -138,20 +245,12 @@ class BrowserStackRunExecutor
   end
 
   def start_build(run, app_url, test_suite_url, device)
-    body = {
-      app: app_url,
-      testSuite: test_suite_url,
-      project: ENV.fetch("E2E_BROWSERSTACK_PROJECT", "checkout-kit-e2e"),
-      maestroVersion: self.class.resolve_maestro_version(ENV),
-      buildTag: ENV.fetch("BITRISE_GIT_COMMIT", "local"),
-      customBuildName: run.fetch("id"),
-      devices: [device],
-      execute: [run.fetch("execute")],
-      setEnvVariables: {
-        E2E_APP_ID: run.fetch("app_id"),
-        E2E_READY_MARKER: run.fetch("ready_marker")
-      }
-    }
+    body = self.class.build_request_body(
+      run: run,
+      app_url: app_url,
+      test_suite_url: test_suite_url,
+      device: device
+    )
     response = @client.start_build(run.fetch("platform"), body)
     write_json("build-start.json", response)
     response
@@ -183,19 +282,31 @@ class BrowserStackRunExecutor
 
   def fetch_sessions(build_status)
     build_id = build_status.fetch("id")
-    build_status.fetch("devices", []).flat_map do |device|
-      device.fetch("sessions", []).map do |session|
-        @client.get_session(build_id, session.fetch("id"))
+    session_ids = build_status.fetch("devices", []).flat_map do |device|
+      device.fetch("sessions", []).map { |session| session.fetch("id") }
+    end
+    deadline = Time.now + ENV.fetch("E2E_BROWSERSTACK_SESSION_DETAILS_TIMEOUT_SECONDS", "120").to_i
+    needs_testcase_artifacts =
+      @run.fetch("execute") == PRELOAD_LOG_PREFLIGHT_FLOW &&
+      PRELOAD_CACHE_HIT_LOGS.key?(@run.fetch("target"))
+
+    loop do
+      sessions = session_ids.map { |session_id| @client.get_session(build_id, session_id) }
+      return sessions unless needs_testcase_artifacts
+      return sessions if self.class.sessions_have_testcases?(sessions)
+
+      if Time.now >= deadline
+        raise "BrowserStack session details did not publish testcase artifacts before timeout"
       end
+
+      sleep ENV.fetch("E2E_BROWSERSTACK_SESSION_DETAILS_POLL_SECONDS", "5").to_i
     end
   end
 
   def normalize_result(run, device, app, suite, build, build_status, sessions)
     status = build_status.fetch("status").to_s.downcase
-    failed_tests = sessions.flat_map do |session|
-      session.dig("testcases", "data").to_a.flat_map do |group|
-        group.fetch("testcases", []).select { |testcase| testcase.fetch("status", "") != "passed" }
-      end
+    failed_tests = self.class.testcases_for(sessions).reject do |testcase|
+      testcase.fetch("status", "") == "passed"
     end
 
     {

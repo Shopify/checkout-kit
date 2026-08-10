@@ -196,4 +196,21 @@ class E2EGitHubReporterTest < Minitest::Test
 
     refute_includes summary, "did not report"
   end
+
+  def test_setup_failure_includes_its_diagnostic
+    result = swift_ios_run.merge(
+      "passed" => false,
+      "resolved_device" => "iPhone",
+      "build_id" => "build-id",
+      "failed_tests" => [],
+      "error" => "device log did not contain cache hit"
+    )
+    summary = reporter(
+      results: [result],
+      run_plan: [swift_ios_run],
+      expected: 1
+    ).markdown_summary
+
+    assert_includes summary, "> Diagnostic: `device log did not contain cache hit`"
+  end
 end

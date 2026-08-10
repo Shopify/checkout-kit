@@ -327,6 +327,29 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }
 
+    func testMatchingPresentLogsTheCacheHitThroughTheConfiguredLogger() {
+        let originalLogger = ShopifyCheckoutKit.configuration.logger
+        defer { ShopifyCheckoutKit.configuration.logger = originalLogger }
+        let logger = RecordingLogger()
+        ShopifyCheckoutKit.configuration.logger = logger
+        ShopifyCheckoutKit.preload(checkout: url)
+
+        _ = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(url))
+
+        XCTAssertTrue(logger.messages.contains(CheckoutWebView.preloadCacheHitLogMessage))
+    }
+
+    func testFreshPresentDoesNotLogTheCacheHit() {
+        let originalLogger = ShopifyCheckoutKit.configuration.logger
+        defer { ShopifyCheckoutKit.configuration.logger = originalLogger }
+        let logger = RecordingLogger()
+        ShopifyCheckoutKit.configuration.logger = logger
+
+        _ = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(url))
+
+        XCTAssertFalse(logger.messages.contains(CheckoutWebView.preloadCacheHitLogMessage))
+    }
+
     func testPresentWithDifferentURLDoesNotReusePreloadedWebView() throws {
         ShopifyCheckoutKit.preload(checkout: url)
         let otherURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/456"))
@@ -1242,6 +1265,29 @@ private actor RecordingBridgeClient: CheckoutCommunicationProtocol {
 }
 
 @MainActor
+final class RecordingLogger: Logger, @unchecked Sendable {
+    private let lock = NSLock()
+    private nonisolated(unsafe) var storage: [String] = []
+
+    nonisolated var messages: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    nonisolated func log(_ message: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        storage.append(message)
+    }
+
+    nonisolated func clearLogs() {
+        lock.lock()
+        defer { lock.unlock() }
+        storage.removeAll()
+    }
+}
+
 class LoadedRequestObservableWebView: CheckoutWebView {
     var lastLoadedURLRequest: URLRequest?
 
