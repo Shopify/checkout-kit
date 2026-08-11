@@ -65,6 +65,7 @@ Nightly pipelines ship the sample apps to the stores from the same E2E test stor
 | `nightly-swift-ios-testflight`        | `CheckoutKitSwiftDemo`       | TestFlight          |
 | `nightly-react-native-ios-testflight` | `CheckoutKitReactNativeDemo` | TestFlight          |
 | `nightly-kotlin-android-play`         | `CheckoutKitAndroidDemo`     | Play internal track |
+| `nightly-react-native-android-play`   | `CheckoutKitReactNativeDemo` | Play internal track |
 
 These pipelines are deliberately absent from `trigger_map`, so nothing starts them on a pull request. Create a daily **scheduled build** under **Project settings > Scheduled builds**, targeting `main` and selecting the pipeline. The schedule is the one part of this design that Bitrise keeps outside the repository.
 
@@ -80,7 +81,7 @@ Every nightly build numbers itself from `$BITRISE_BUILD_NUMBER`, injected at bui
 
 On iOS the value arrives as an `xcodebuild` build-setting override. This only works because each sample binds `CFBundleVersion` to `$(CURRENT_PROJECT_VERSION)` rather than to a literal. `CheckoutKitSwiftDemo` binds it in its XcodeGen spec, and `CheckoutKitReactNativeDemo` binds it in its committed `Info.plist`. Without that binding the literal wins, the override is silently discarded, and App Store Connect rejects every upload after the first. Both build scripts call `e2e_assert_archived_build_number`, which re-reads the archived plist and fails the build if the number did not land.
 
-On Android the value arrives as the Gradle property `-PcheckoutKitVersionCode`, which `app/build.gradle` reads for both `versionCode` and the derived `versionName`. The committed default is unchanged, so PR builds and local development are unaffected. The build script then calls `e2e_assert_android_version_code`, which re-reads the merged manifest and fails the build if the number did not land.
+On Android the value arrives as the Gradle property `-PcheckoutKitVersionCode`, which each `app/build.gradle` reads for its `versionCode`. `CheckoutKitAndroidDemo` also derives its `versionName` from that number; `CheckoutKitReactNativeDemo` keeps the literal `versionName` it already had. Both committed defaults are unchanged, so PR builds and local development are unaffected. Each build script then calls `e2e_assert_android_version_code`, which re-reads the merged manifest and fails the build if the number did not land.
 
 ### iOS signing and upload
 
@@ -107,9 +108,20 @@ Both iOS samples declare `ITSAppUsesNonExemptEncryption` as `false`, so TestFlig
 
 ### Android signing and upload
 
-Signing stays out of Gradle. `buildTypes.release` in `app/build.gradle` declares no `signingConfig`, so `bundleRelease` writes an unsigned bundle and `sign-apk@2` signs it afterwards. That step reads the keystore already configured on the Bitrise app, so no secret name appears in `e2e/bitrise.yml` and the sample gains no release signing surface.
+Signing stays out of Gradle for both Android apps. Each nightly builds an unsigned bundle, and `sign-apk@2` signs it afterwards. That step reads the keystore already configured on the Bitrise app, so no secret name appears in `e2e/bitrise.yml` and neither sample gains a release signing surface.
 
-`google-play-deploy@3` then uploads to the `internal` track with `status: completed`. It is passed an empty `mapping_file`, because the release build sets `minifyEnabled false` and R8 writes no mapping file; the step default points at one and fails when it is absent.
+The two apps reach that unsigned bundle by different routes, because their `release` build types differ.
+
+| App                          | Task            | Why                                                                                                                                     |
+| ---------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `CheckoutKitAndroidDemo`     | `bundleRelease` | `buildTypes.release` already declares no `signingConfig` and sets `minifyEnabled false`.                                                 |
+| `CheckoutKitReactNativeDemo` | `bundleNightly` | Its `release` type points at `signingConfigs.release` and enables minify, so the nightly needs a build type of its own. See below.        |
+
+The React Native sample declares a `nightly` build type in `platforms/react-native/sample/android/app/build.gradle`. It takes `initWith release`, then sets `signingConfig = null` and `minifyEnabled false`. The explicit `null` matters: `initWith` copies `signingConfigs.release`, which is silently empty unless the four `CHECKOUT_KIT_UPLOAD_*` properties exist, so leaving it in place would make the output depend on properties that CI does not set. `matchingFallbacks = ['release']` keeps dependency resolution on the release variant, the same shape the existing `e2e` build type uses.
+
+The React Native nightly passes `-PreactNativeArchitectures=arm64-v8a` and so ships one architecture. This never changes what a tester downloads, because Play splits the bundle per device; it only shortens the build. The New Architecture compiles its C++ codegen output once per architecture, and every test device is arm64. Add `x86_64` to that list if you need to install a nightly onto an emulator from the Play track. Do not remove `arm64-v8a`; Play requires 64-bit support.
+
+`google-play-deploy@3` then uploads to the `internal` track with `status: completed`. It is passed an empty `mapping_file`, because both builds set `minifyEnabled false` and R8 writes no mapping file; the step default points at one and fails when it is absent.
 
 The internal track is the only track that reaches testers with no manual step. Managed publishing does not cover it, and updates to it are not reviewed, so `status: completed` publishes to the tester list within minutes. The closed track is reviewed on every release, which no daily schedule can absorb.
 
@@ -117,12 +129,14 @@ Two one-time exceptions apply. The app's **first** release is reviewed even on t
 
 Access is invite-only. A tester needs the opt-in link and a Google account on the tester list, and the app stays out of Play search. The internal track caps at 100 testers.
 
+Both Android samples target API 36. Play requires that level for new apps and for updates from 31 August 2026, and internal testing is not exempt; only permanently private, organisation-restricted apps are. Do not lower either `targetSdkVersion` below 36.
+
 | Asset                    | Requirement                                                                                                       |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------- |
 | Keystore                 | A release keystore under **Code signing**. `sign-apk@2` reads the Bitrise keystore variables by default.           |
 | Service account key      | The Play service-account JSON in **Generic file storage**, with env key exactly `SERVICE_ACCOUNT_JSON_KEY`.         |
 | Service account grant    | The *Release to testing tracks* permission in the Play Console.                                                    |
-| Play app record          | An app for the package name, with its **first release uploaded by hand**. The API cannot create the first release. |
+| Play app record          | One app per package name, each with its **first release uploaded by hand**. The API cannot create a first release. |
 | Tester list              | An internal testing tester list, or the upload succeeds and nobody can install it.                                |
 
 `dry_run: "true"` on `google-play-deploy@3` validates the credentials and the app record without publishing. It is optional here, because every run takes a fresh `$BITRISE_BUILD_NUMBER` and no two `versionCode` values can collide.

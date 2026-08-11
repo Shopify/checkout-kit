@@ -89,6 +89,8 @@ react {
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def appVersionCode = (project.findProperty("checkoutKitVersionCode") ?: 11) as Integer
+
 android {
   ndkVersion rootProject.ext.ndkVersion
   buildToolsVersion rootProject.ext.buildToolsVersion
@@ -108,7 +110,7 @@ android {
     applicationId "com.shopify.checkoutkit.reactnativedemo"
     minSdkVersion rootProject.ext.minSdkVersion
     targetSdkVersion rootProject.ext.targetSdkVersion
-    versionCode 11
+    versionCode appVersionCode
     versionName "1.1"
   }
   signingConfigs {
@@ -140,6 +142,12 @@ android {
       initWith release
       matchingFallbacks = ['release']
       signingConfig signingConfigs.debug
+      minifyEnabled false
+    }
+    nightly {
+      initWith release
+      matchingFallbacks = ['release']
+      signingConfig = null
       minifyEnabled false
     }
   }

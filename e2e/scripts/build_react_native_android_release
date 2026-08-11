@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/bitrise_ci_helpers"
+
+: "${BITRISE_BUILD_NUMBER:?BITRISE_BUILD_NUMBER is required. Google Play rejects a versionCode it has already seen.}"
+
+e2e_enable_corepack
+e2e_configure_storefront
+
+e2e_log "Building React Native module"
+cd platforms/react-native
+pnpm module build
+
+e2e_log "Building the React Native Android release bundle"
+cd sample/android
+./gradlew :app:bundleNightly \
+  -PcheckoutKitVersionCode="$BITRISE_BUILD_NUMBER" \
+  -PreactNativeArchitectures=arm64-v8a \
+  --no-daemon \
+  --console=plain
+
+android_aab="$PWD/app/build/outputs/bundle/nightly/app-nightly.aab"
+test -f "$android_aab"
+
+e2e_assert_android_version_code \
+  "$PWD/app/build/intermediates/merged_manifests/nightly/processNightlyManifest/AndroidManifest.xml" \
+  "$BITRISE_BUILD_NUMBER"
+
+e2e_log "Publishing React Native Android AAB path"
+envman add --key NIGHTLY_REACT_NATIVE_ANDROID_AAB_PATH --value "$android_aab"
