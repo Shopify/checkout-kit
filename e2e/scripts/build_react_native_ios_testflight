@@ -13,19 +13,16 @@ e2e_reject_ios_signing_overrides
 
 e2e_configure_storefront
 
-e2e_log "Generating Swift sample Xcode projects"
-platforms/swift/Scripts/generate_xcode_projects
-
-app_name="CheckoutKitSwiftDemo"
+app_name="CheckoutKitReactNativeDemo"
 archive_path="$(e2e_deploy_dir)/${app_name}.xcarchive"
 
-cd platforms/swift/Samples
+cd platforms/react-native/sample/ios
 
 e2e_build_ios_device_ipa \
-  --workspace Samples.xcworkspace \
+  --workspace "${app_name}.xcworkspace" \
   --scheme "$app_name" \
   --app-name "$app_name" \
-  --bundle-id com.shopify.checkoutkit.swiftdemo \
+  --bundle-id com.shopify.checkoutkit.reactnativedemo \
   --code-sign-identity "Apple Distribution" \
   --export-method app-store-connect \
   --profile-specifier "$NIGHTLY_IOS_PROVISIONING_PROFILE_SPECIFIER" \
@@ -36,7 +33,7 @@ e2e_assert_archived_build_number \
   "$archive_path" \
   "$app_name" \
   "$BITRISE_BUILD_NUMBER" \
-  "platforms/swift/Samples/${app_name}/project.yml"
+  "platforms/react-native/sample/ios/${app_name}/Info.plist"
 
-e2e_log "Publishing Swift iOS IPA path"
-envman add --key NIGHTLY_SWIFT_IOS_IPA_PATH --value "$E2E_IOS_PROVISIONED_IPA"
+e2e_log "Publishing React Native iOS IPA path"
+envman add --key NIGHTLY_REACT_NATIVE_IOS_IPA_PATH --value "$E2E_IOS_PROVISIONED_IPA"

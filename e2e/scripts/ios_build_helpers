@@ -178,3 +178,22 @@ PLIST
 
   E2E_IOS_PROVISIONED_IPA="$provisioned_ipa"
 }
+
+# A wrong build number is otherwise only reported by the store, long after this
+# build has been marked green.
+e2e_assert_archived_build_number() {
+  local archive_path="$1"
+  local app_name="$2"
+  local expected="$3"
+  local version_source="$4"
+
+  e2e_log "Verifying the archived build number"
+  local info_plist="$archive_path/Products/Applications/${app_name}.app/Info.plist"
+  local archived
+  archived="$(plutil -extract CFBundleVersion raw -o - "$info_plist")"
+  if [ "$archived" != "$expected" ]; then
+    e2e_log "Archived CFBundleVersion is ${archived}, expected ${expected}"
+    echo "Check that CFBundleVersion in ${version_source} still reads \$(CURRENT_PROJECT_VERSION)." >&2
+    return 1
+  fi
+}
