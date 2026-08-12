@@ -247,7 +247,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     // region ec.window.open_request — merchant-overridable with kit fallback
 
     @Test
-    fun `window open launches intent when activity resolves the uri`() {
+    fun `window open launches Custom Tabs when activity resolves the uri`() {
         registerFakeBrowserFor("https://example.com")
 
         val response = captureSentMessage {
@@ -260,6 +260,9 @@ class EmbeddedCheckoutProtocolBridgeTest {
         assertThat(launched).isNotNull()
         assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)
         assertThat(launched.data.toString()).isEqualTo("https://example.com")
+        assertThat(launched.`package`).isEqualTo(FAKE_BROWSER_PACKAGE)
+        assertThat(launched.extras?.keySet()).contains("android.support.customtabs.extra.SESSION")
+        assertThat(launched.flags and Intent.FLAG_ACTIVITY_NEW_TASK).isEqualTo(0)
     }
 
     @Test
@@ -287,6 +290,21 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
         assertThat(response).contains("\"status\":\"success\"")
         assertThat(shadowOf(activity).nextStartedActivity).isNotNull()
+    }
+
+    @Test
+    fun `window open default launches non-web URLs with an external app intent`() {
+        registerFakeBrowserFor("mailto:help@example.com")
+
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"43\"", url = "mailto:help@example.com"))
+        }
+
+        assertThat(response).contains("\"status\":\"success\"")
+        val launched = shadowOf(activity).nextStartedActivity
+        assertThat(launched).isNotNull()
+        assertThat(launched.action).isEqualTo(Intent.ACTION_VIEW)
+        assertThat(launched.data.toString()).isEqualTo("mailto:help@example.com")
     }
 
     @Test
@@ -902,6 +920,8 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     private companion object {
         private const val ERROR_RESPONSE_UCP = """"ucp":{"version":"2026-04-08","status":"error"}"""
+        private const val FAKE_BROWSER_PACKAGE = "com.fake.browser"
+        private const val CUSTOM_TABS_SERVICE_ACTION = "android.support.customtabs.action.CustomTabsService"
     }
 
     /** Runs [block], drains the main-thread queue, and captures the raw response message. */
@@ -914,18 +934,25 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     /**
-     * Makes [uri] resolvable through Robolectric's shadow package manager so that
-     * `queryIntentActivities(Intent.ACTION_VIEW, uri)` returns a non-empty list.
+     * Makes [uri] resolvable through Robolectric's shadow package manager.
      * Mirrors the behavior of a real device with a browser installed.
      */
     private fun registerFakeBrowserFor(uri: String) {
-        val componentName = ComponentName("com.fake.browser", "FakeBrowserActivity")
+        val componentName = ComponentName(FAKE_BROWSER_PACKAGE, "FakeBrowserActivity")
         val intentFilter = IntentFilter(Intent.ACTION_VIEW).apply {
             addCategory(Intent.CATEGORY_DEFAULT)
-            addDataScheme(Uri.parse(uri).scheme)
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            setOf("http", "https", Uri.parse(uri).scheme).filterNotNull().forEach(::addDataScheme)
         }
-        shadowOf(activity.packageManager).addActivityIfNotPresent(componentName)
-        shadowOf(activity.packageManager).addIntentFilterForActivity(componentName, intentFilter)
+        val customTabsService = ComponentName(FAKE_BROWSER_PACKAGE, "FakeCustomTabsService")
+        val packageManager = shadowOf(activity.packageManager)
+        packageManager.addActivityIfNotPresent(componentName)
+        packageManager.addIntentFilterForActivity(componentName, intentFilter)
+        packageManager.addServiceIfNotPresent(customTabsService)
+        packageManager.addIntentFilterForService(
+            customTabsService,
+            IntentFilter(CUSTOM_TABS_SERVICE_ACTION),
+        )
     }
 
     // endregion

@@ -63,23 +63,25 @@ class CheckoutWebViewTests: XCTestCase {
         wait(for: [received], timeout: 2.0)
     }
 
-    func testDeepLinkIsCancelledWhenUIApplicationCannotOpen() throws {
+    func testDeepLinkIsCancelledAfterAttemptingUIApplicationOpen() throws {
         let link = try XCTUnwrap(URL(string: "unhandled-scheme://nowhere"))
+        let handler = MockExternalURLHandler(didOpen: false)
+        view.externalURLHandler = handler
         let received = expectation(description: "policy decided")
 
         view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link)) { policy in
-            XCTAssertEqual(policy, .cancel, "Schemes that canOpenURL refuses should be cancelled")
+            XCTAssertEqual(policy, .cancel, "Deep link navigation should not continue in the checkout WebView")
             received.fulfill()
         }
 
         wait(for: [received], timeout: 2.0)
+        XCTAssertEqual(handler.openedURL, link, "The deep link should be routed through the external URL handler")
     }
 
-    func testDeepLinkIsCancelledAndOpenedExternallyWhenUIApplicationCanOpen() throws {
+    func testDeepLinkIsCancelledAndOpenedExternallyWhenExternalHandlerOpens() throws {
         let link = try XCTUnwrap(URL(string: "tel:+15555551234"))
-        var openedURL: URL?
-        view.canOpenExternalURL = { _ in true }
-        view.openExternalURL = { openedURL = $0 }
+        let handler = MockExternalURLHandler(didOpen: true)
+        view.externalURLHandler = handler
         let received = expectation(description: "policy decided")
 
         view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link)) { policy in
@@ -88,7 +90,7 @@ class CheckoutWebViewTests: XCTestCase {
         }
 
         wait(for: [received], timeout: 2.0)
-        XCTAssertEqual(openedURL, link, "The deep link should be opened via UIApplication exactly once")
+        XCTAssertEqual(handler.openedURL, link, "The deep link should be opened via the external URL handler exactly once")
     }
 
     func testHTTPSubframeRequestIsAllowed() throws {
@@ -842,8 +844,10 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
-    func testDefaultsClientRejectsUnopenableScheme() async throws {
+    func testDefaultsClientOpensNonWebSchemeWithExternalURLHandler() async throws {
         let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"req-window-1","params":{"url":"unhandled-scheme://nowhere"}}"#
+        let externalURLHandler = MockExternalURLHandler(didOpen: true)
+        view.externalURLHandler = externalURLHandler
 
         let raw = await view.defaultsClient.process(body)
         let response = try XCTUnwrap(raw)
@@ -851,11 +855,38 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(parsed["id"] as? String, "req-window-1")
         let resultBody = try XCTUnwrap(parsed["result"] as? [String: Any])
         let ucp = try XCTUnwrap(resultBody["ucp"] as? [String: Any])
-        XCTAssertEqual(
-            ucp["status"] as? String,
-            "error",
-            "Default handler should reject schemes that canOpenURL refuses"
-        )
+        XCTAssertEqual(ucp["status"] as? String, "success")
+        XCTAssertEqual(externalURLHandler.openedURL?.absoluteString, "unhandled-scheme://nowhere")
+    }
+
+    @MainActor
+    func testDefaultsClientFallsBackToExternalHandlerForWebURLWhenNoPresenter() async throws {
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"req-window-1","params":{"url":"https://example.com/policy"}}"#
+        let externalURLHandler = MockExternalURLHandler(didOpen: true)
+        view.externalURLHandler = externalURLHandler
+
+        let raw = await view.defaultsClient.process(body)
+        let response = try XCTUnwrap(raw)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        let resultBody = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(resultBody["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "success")
+        XCTAssertEqual(externalURLHandler.openedURL?.absoluteString, "https://example.com/policy")
+    }
+
+    @MainActor
+    func testDefaultsClientRejectsWhenExternalURLHandlerCannotOpenNonWebScheme() async throws {
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"req-window-1","params":{"url":"unhandled-scheme://nowhere"}}"#
+        view.externalURLHandler = MockExternalURLHandler(didOpen: false)
+
+        let raw = await view.defaultsClient.process(body)
+        let response = try XCTUnwrap(raw)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        let resultBody = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(resultBody["ucp"] as? [String: Any])
+        XCTAssertEqual(ucp["status"] as? String, "error")
+        let messages = try XCTUnwrap(resultBody["messages"] as? [[String: Any]])
+        XCTAssertEqual(messages.first?["content"] as? String, "failed to open URL")
     }
 
     @MainActor
@@ -1297,5 +1328,20 @@ class MockCheckoutBridge: CheckoutBridgeProtocol {
         responseBodies.append(messageBody)
         sendResponseExpectation?.fulfill()
         return true
+    }
+}
+
+@MainActor
+final class MockExternalURLHandler: ExternalURLHandling {
+    nonisolated let didOpen: Bool
+    private(set) var openedURL: URL?
+
+    nonisolated init(didOpen: Bool) {
+        self.didOpen = didOpen
+    }
+
+    func open(_ url: URL) async -> Bool {
+        openedURL = url
+        return didOpen
     }
 }

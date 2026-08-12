@@ -55,6 +55,13 @@
       },
       {
         "kind": "Import",
+        "name": "SafariServices",
+        "printedName": "SafariServices",
+        "declKind": "Import",
+        "moduleName": "ShopifyCheckoutKit"
+      },
+      {
+        "kind": "Import",
         "name": "SwiftOnoneSupport",
         "printedName": "SwiftOnoneSupport",
         "declKind": "Import",

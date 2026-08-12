@@ -490,7 +490,7 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 }
 ```
 
-`ec.window.open_request` is handled by your registered `CheckoutProtocol.windowOpen` handler if you provide one. Otherwise, Checkout Kit falls back to its default Android intent behavior.
+`ec.window.open_request` is handled by your registered `CheckoutProtocol.windowOpen` handler if you provide one. Otherwise, Checkout Kit opens web links in Android Custom Tabs and non-web links through Android intents.
 
 The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed checkout protocol messages.
 
@@ -602,7 +602,9 @@ Keep Multipass secrets out of client-side code.
 
 Some payment providers redirect buyers to external banking apps or web pages. Configure Android App Links or deep links so buyers can return to your app after those flows complete.
 
-Checkout Kit opens external HTTPS links, `mailto:`, `tel:`, and custom-scheme links through Android intents. Make sure your app has:
+Checkout Kit opens delegated external HTTPS links in Android Custom Tabs by default. `mailto:`, `tel:`, and custom-scheme links still open through Android intents. If you want delegated web links to leave your app, register a `CheckoutProtocol.windowOpen` handler and launch an `Intent.ACTION_VIEW` yourself.
+
+Make sure your app has:
 
 - Intent filters for the storefront links it owns.
 - Fallback behavior for links that no installed app can open.

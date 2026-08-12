@@ -208,8 +208,8 @@ internal class EmbeddedCheckoutProtocolBridge(
      *
      * Tries the merchant's [client] first — if they registered a handler via
      * `.on(CheckoutProtocol.windowOpen) { ... }`, their response wins. Otherwise
-     * falls back to the kit-owned [defaultClient], which launches the URL via
-     * `Intent.ACTION_VIEW` (see [defaultDelegationClient]).
+     * falls back to the kit-owned [defaultClient], which launches web URLs in a
+     * Custom Tab and other URLs via `Intent.ACTION_VIEW` (see [defaultDelegationClient]).
      */
     private fun handleWindowOpenRequest(message: String) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.windowOpen.method}")
@@ -268,8 +268,9 @@ internal class EmbeddedCheckoutProtocolBridge(
     /**
      * Kit-owned client that handles delegations and kit-mandated notifications,
      * mirroring Swift's `defaultsClient`. Currently:
-     *   - [CheckoutProtocol.windowOpen] - launches the URI via `Intent.ACTION_VIEW`, or
-     *     returns [windowOpenRejected] with `window_open_rejected_error` semantics.
+     *   - [CheckoutProtocol.windowOpen] - launches web URIs in a Custom Tab and other URIs
+     *     via `Intent.ACTION_VIEW`, or returns [windowOpenRejected] with
+     *     `window_open_rejected_error` semantics.
      *   - [CheckoutProtocol.complete] - evicts any cached preload state.
      *
      * Terminal `ec.error` is delivered to consumer protocol handlers before its separate

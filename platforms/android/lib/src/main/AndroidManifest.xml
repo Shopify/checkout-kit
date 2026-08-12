@@ -3,6 +3,14 @@
 
     <queries>
         <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="http"/>
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService"/>
+        </intent>
+        <intent>
             <action android:name="org.chromium.intent.action.PAY"/>
         </intent>
         <intent>

@@ -1,8 +1,8 @@
 package com.shopify.checkoutkit.androiddemo.cart
 
 import android.content.ActivityNotFoundException
+import android.content.Intent
 import androidx.activity.ComponentActivity
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -259,27 +259,27 @@ class CartViewModel(
             }
 
         return when (windowOpenHandler) {
-            // With no sample handler registered, Checkout Kit retains its default ACTION_VIEW handling.
+            // With no sample handler registered, Checkout Kit retains its default Custom Tab handling.
             WindowOpenHandler.Default -> base
-            WindowOpenHandler.CustomTabs -> base.on(CheckoutProtocol.windowOpen) { request ->
+            WindowOpenHandler.ExternalApp -> base.on(CheckoutProtocol.windowOpen) { request ->
                 recordReceivedProtocolMessage(CheckoutProtocol.windowOpen.method, request)
                 val uri = request.url.toUri()
-                val scheme = uri.scheme?.lowercase()
-                if (scheme != "http" && scheme != "https") {
-                    windowOpenRejected(reason = "unsupported URL scheme: $scheme").also {
+                Timber.i("ECP ec.window.open_request (${uri.scheme}) → external app")
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    activity.startActivity(intent)
+                    windowOpenSuccess().also {
+                        recordWindowOpenResponse("success", it)
+                    }
+                } catch (e: ActivityNotFoundException) {
+                    Timber.w(e, "No activity resolved URL")
+                    windowOpenRejected(reason = "no activity resolved URL").also {
                         recordWindowOpenResponse("rejected", it)
                     }
-                } else {
-                    try {
-                        CustomTabsIntent.Builder().build().launchUrl(activity, uri)
-                        windowOpenSuccess().also {
-                            recordWindowOpenResponse("success", it)
-                        }
-                    } catch (e: ActivityNotFoundException) {
-                        Timber.w(e, "No activity resolved URL")
-                        windowOpenRejected(reason = "no activity resolved URL").also {
-                            recordWindowOpenResponse("rejected", it)
-                        }
+                } catch (e: SecurityException) {
+                    Timber.w(e, "External app launch blocked")
+                    windowOpenRejected(reason = "external app launch blocked").also {
+                        recordWindowOpenResponse("rejected", it)
                     }
                 }
             }

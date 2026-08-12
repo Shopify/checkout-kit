@@ -42,7 +42,10 @@ class PreferencesManager(private val context: Context) {
         val dragToDismissEnabled = preferences[DRAG_TO_DISMISS] ?: true
         val tapAwayToDismissEnabled = preferences[TAP_AWAY_TO_DISMISS] ?: true
         val windowOpenHandler = preferences[WINDOW_OPEN_HANDLER]?.let { value ->
-            runCatching { WindowOpenHandler.valueOf(value) }.getOrNull()
+            when (value) {
+                "CustomTabs" -> WindowOpenHandler.Default
+                else -> runCatching { WindowOpenHandler.valueOf(value) }.getOrNull()
+            }
         } ?: WindowOpenHandler.Default
         val checkoutSheetPreset = preferences[CHECKOUT_SHEET_PRESET]?.let { value ->
             runCatching { CheckoutSheetPreset.valueOf(value) }.getOrNull()

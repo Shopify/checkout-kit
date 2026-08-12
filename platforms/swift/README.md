@@ -362,7 +362,7 @@ ShopifyCheckout(checkout: checkoutURL)
 
 The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed checkout messages.
 See the [UCP shopping embedded protocol schema](../../protocol/services/shopping/embedded.openrpc.json) for method and payload definitions.
-Kit-owned link delegations such as `window.open` are offered to your connected protocol client first and fall back to Checkout Kit's default handler if unhandled.
+Kit-owned link delegations such as `window.open` are offered to your connected protocol client first and fall back to Checkout Kit's default handler if unhandled. The default handler opens web links in `SFSafariViewController` and non-web links through `UIApplication.shared.open(_:)`.
 
 ### Error handling
 
@@ -449,7 +449,7 @@ Some payment providers redirect buyers to external banking apps or web pages. Co
 
 See [Universal Links](documentation/universal_links.md) for setup and testing details.
 
-Checkout Kit forwards external HTTPS links, deep links, `mailto:`, and `tel:` links to `UIApplication.shared.open(_:)`.
+Checkout Kit opens delegated external HTTPS links in `SFSafariViewController` by default. Deep links, `mailto:`, and `tel:` links still open through `UIApplication.shared.open(_:)`. If you want delegated web links to leave your app, register a `CheckoutProtocol.windowOpen` handler and call `UIApplication.shared.open(_:)` yourself.
 
 ## Geolocation and pickup points
 
