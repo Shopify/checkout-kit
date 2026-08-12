@@ -9,7 +9,7 @@ METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-ios-metro.log"
 METRO_PID=""
 E2E_ENV_FILE=""
 APP_ID="com.shopify.checkoutkit.reactnativedemo"
-CART_BOOTSTRAP_BASE_LINK="${APP_ID}://cart?productIndex=0&quantity=1"
+CART_BOOTSTRAP_BASE_LINK="${APP_ID}://e2e/cart?productIndex=0&quantity=1"
 MAESTRO_FLOWS=()
 
 usage() {

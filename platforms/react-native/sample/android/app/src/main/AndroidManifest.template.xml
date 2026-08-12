@@ -41,7 +41,8 @@
             <category android:name="android.intent.category.DEFAULT" />
             <category android:name="android.intent.category.BROWSABLE" />
 
-            <data android:scheme="com.shopify.checkoutkit.reactnativedemo" android:host="cart" />
+            <!-- E2E control link. Sample apps only; not part of the merchant integration. -->
+            <data android:scheme="com.shopify.checkoutkit.reactnativedemo" android:host="e2e" />
         </intent-filter>
       </activity>
     </application>
