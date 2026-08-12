@@ -16,3 +16,29 @@ jobs:
       - packageSwift
       - ciFilters
       - iosCiConfig
+  - id: swift-samples
+    changed_files_filters:
+      - swift
+      - protocolSwift
+      - protocolShared
+      - packageSwift
+      - ciFilters
+      - iosCiConfig
+  # packageSwift mirrors the reactNativeIos infra filter in ci.yml: the sample app
+  # resolves the Swift package, so a manifest change rebuilds the React Native apps too.
+  - id: react-native-build-ios
+    changed_files_filters:
+      - reactNative
+      - protocolTypescript
+      - protocolShared
+      - packageSwift
+      - ciFilters
+      - iosCiConfig
+  - id: react-native-test-ios
+    changed_files_filters:
+      - reactNative
+      - protocolTypescript
+      - protocolShared
+      - packageSwift
+      - ciFilters
+      - iosCiConfig
