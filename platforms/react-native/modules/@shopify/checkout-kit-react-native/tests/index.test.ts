@@ -234,7 +234,10 @@ describe('ShopifyCheckoutKit', () => {
         title: 'Custom Checkout',
       };
       instance.setConfig(configWithTitle);
-      expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithTitle);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({
+        ...configWithTitle,
+        hasMessageRejectedCallback: false,
+      });
     });
 
     it('calls `setConfig` with allowedMessageOrigins configuration', () => {
