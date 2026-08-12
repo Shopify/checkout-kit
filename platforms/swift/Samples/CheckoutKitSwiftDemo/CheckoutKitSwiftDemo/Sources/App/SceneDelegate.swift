@@ -239,10 +239,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
 
-        if CustomerAccountManager.shared.handleCallback(url: url) {
-            return
-        }
-
         Task { await E2EController.shared.handle(url: url.absoluteString) }
     }
 
