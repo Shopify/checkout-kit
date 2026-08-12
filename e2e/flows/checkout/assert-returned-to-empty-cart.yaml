@@ -1,4 +1,4 @@
-appId: ${APP_ID}
+appId: ${E2E_APP_ID}
 ---
 # RN E2E runs against released native SDK artifacts. Android 4.0.0-alpha.2
 # still exposes checkoutKitCloseBtn; #333 normalized the source id to

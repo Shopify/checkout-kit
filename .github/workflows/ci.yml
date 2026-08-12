@@ -113,6 +113,7 @@ jobs:
               - 'e2e/lib/**'
               - 'e2e/test/**'
               - 'e2e/scripts/**'
+              - 'e2e/flows/**'
               - 'e2e/tests/**'
               - 'e2e/config.yaml'
               - 'e2e/config/matrix.yml'

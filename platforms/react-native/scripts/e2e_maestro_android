@@ -9,7 +9,7 @@ METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-android-metro.log"
 METRO_PID=""
 E2E_ENV_FILE=""
 APP_ID="com.shopify.checkoutkit.reactnativedemo"
-CART_BOOTSTRAP_BASE_LINK="${APP_ID}://e2e/cart?productIndex=0&quantity=1"
+CONTROL_LINK="${APP_ID}://e2e"
 READY_MARKER="checkout-kit-sample-ready"
 INCLUDE_TAGS=""
 EXCLUDE_TAGS="flaky,wip"
@@ -135,9 +135,8 @@ ENVFILE="$E2E_ENV_FILE" pnpm sample android --extra-params "--refresh-dependenci
   fi
 
   "$MAESTRO" "${MAESTRO_ARGS[@]}" \
-    -e "APP_ID=${APP_ID}" \
     -e "E2E_APP_ID=${APP_ID}" \
     -e "E2E_READY_MARKER=${READY_MARKER}" \
-    -e "CART_BOOTSTRAP_BASE_LINK=${CART_BOOTSTRAP_BASE_LINK}" \
+    -e "E2E_CONTROL_LINK=${CONTROL_LINK}" \
     tests
 )
