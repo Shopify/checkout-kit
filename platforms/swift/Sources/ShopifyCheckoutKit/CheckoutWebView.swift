@@ -257,7 +257,11 @@ protocol ExternalURLHandling: Sendable {
 struct UIApplicationExternalURLHandler: ExternalURLHandling {
     @MainActor
     func open(_ url: URL) async -> Bool {
-        await UIApplication.shared.openURL(url)
+        await withCheckedContinuation { continuation in
+            UIApplication.shared.open(url, options: [:]) { didOpen in
+                continuation.resume(returning: didOpen)
+            }
+        }
     }
 }
 
@@ -726,14 +730,6 @@ extension UIApplication {
             return activeScenes.compactMap(\.keyWindow).first
         } else {
             return activeScenes.flatMap(\.windows).first { $0.isKeyWindow }
-        }
-    }
-
-    func openURL(_ url: URL) async -> Bool {
-        await withCheckedContinuation { continuation in
-            open(url, options: [:]) { didOpen in
-                continuation.resume(returning: didOpen)
-            }
         }
     }
 }
