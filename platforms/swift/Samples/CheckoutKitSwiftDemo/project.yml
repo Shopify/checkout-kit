@@ -84,7 +84,7 @@ targets:
     info:
       path: CheckoutKitSwiftDemo/Info.plist
       properties:
-        StorefrontMerchantIdentifier: $(STOREFRONT_MERCHANT_IDENTIFIER)
+        ApplePayMerchantIdentifier: $(APPLE_PAY_MERCHANT_IDENTIFIER)
         StorefrontDomain: $(STOREFRONT_DOMAIN)
         StorefrontAccessToken: $(STOREFRONT_ACCESS_TOKEN)
         CustomerAccountApiClientId: $(CUSTOMER_ACCOUNT_API_CLIENT_ID)
@@ -132,7 +132,7 @@ targets:
       path: CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.entitlements
       properties:
         com.apple.developer.in-app-payments:
-          - merchant.com.shopify.checkoutkit.swiftdemo
+          - $(APPLE_PAY_MERCHANT_IDENTIFIER)
         com.apple.developer.associated-domains:
           - webcredentials:$(STOREFRONT_DOMAIN)?mode=developer
           - applinks:$(STOREFRONT_DOMAIN)?mode=developer

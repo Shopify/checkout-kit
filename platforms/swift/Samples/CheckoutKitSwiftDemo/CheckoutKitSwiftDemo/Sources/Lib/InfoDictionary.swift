@@ -35,7 +35,7 @@ final class InfoDictionary: Sendable {
             let phone = infoPlist["Phone"] as? String,
             let domain = infoPlist["StorefrontDomain"] as? String,
             let accessToken = infoPlist["StorefrontAccessToken"] as? String,
-            let merchantIdentifier = infoPlist["StorefrontMerchantIdentifier"] as? String,
+            let merchantIdentifier = infoPlist["ApplePayMerchantIdentifier"] as? String,
             let version = infoPlist["CFBundleShortVersionString"] as? String,
             let buildNumber = infoPlist["CFBundleVersion"] as? String
         else {
