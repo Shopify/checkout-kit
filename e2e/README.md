@@ -3,9 +3,9 @@
 This directory contains Maestro end-to-end flows and configuration for Checkout
 Kit sample apps. Two complementary setups live here:
 
-- A **local** React Native checkout smoke suite, run with `dev rn e2e`, that
-  exercises guest and hardcoded buyer identity checkouts from seeded carts
-  through Shopify checkout and back to the app.
+- A **local** React Native suite, run with `dev rn e2e`, that exercises guest and
+  hardcoded buyer identity checkouts from seeded carts through Shopify checkout
+  and back to the app. Tags select which tests run.
 - A **CI matrix** that expands applications, OS version tags, and suites into
   BrowserStack Maestro run rows, starting with a shared launch smoke.
 
@@ -30,16 +30,32 @@ React Native Android:
 dev rn e2e android
 ```
 
-Run one or more focused React Native scenarios by passing scenario flags:
+Both commands run every test in `tests/`. Narrow a run with `--tags`:
 
 ```bash
-dev rn e2e ios --guest
-dev rn e2e ios --hardcoded-buyer-identity
-dev rn e2e ios --guest --hardcoded-buyer-identity
-dev rn e2e android --guest
-dev rn e2e android --hardcoded-buyer-identity
-dev rn e2e android --guest --hardcoded-buyer-identity
+dev rn e2e ios --tags checkout
+dev rn e2e ios --tags smoke
+dev rn e2e android --tags cart,checkout
 ```
+
+Both options match **any** listed tag, because that is how Maestro filters.
+`--tags cart,checkout` runs the cart tests and the checkout tests. `--exclude-tags`
+skips tests carrying any listed tag and defaults to `flaky,wip`.
+
+### Tags
+
+Every test declares tags from this taxonomy. `e2e/test/maestro_test_tags_test.rb`
+enforces it.
+
+| Group | Tags | Rule |
+|---|---|---|
+| Journey | `launch`, `cart`, `checkout`, `account` | Exactly one per test |
+| Cost tier | `smoke`, `full` | Exactly one per test |
+| Quarantine | `flaky`, `wip` | Excluded by default, in `config.yaml` |
+| Platform capability | `ios-only`, `android-only` | Needs a `# Platform capability:` comment |
+
+A platform tag marks a capability only one platform has, such as Apple Pay. It
+must never mark a test that is merely not ported yet.
 
 The React Native commands start Metro if needed, build and launch the target
 sample app, then run Maestro. They require the standard storefront `.env` setup,
@@ -119,7 +135,8 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 
 ## Files
 
-- `config.yaml` configures Maestro for shared platform behavior.
+- `config.yaml` configures Maestro for shared platform behavior and quarantines
+  the `flaky` and `wip` tags.
 - `flows/` contains reusable Maestro subflows for app setup and checkout steps.
 - `tests/react-native/checkout-guest.yaml` composes the React Native guest
   checkout smoke test from those subflows.
