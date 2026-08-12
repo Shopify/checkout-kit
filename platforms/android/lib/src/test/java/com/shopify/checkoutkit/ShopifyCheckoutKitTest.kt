@@ -28,13 +28,13 @@ class ShopifyCheckoutKitTest {
         initialConfiguration = ShopifyCheckoutKit.getConfiguration()
         webMessageTransport = FakeWebMessageTransport()
         CheckoutWebView.clearCache()
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
     }
 
     @After
     fun tearDown() {
         CheckoutWebView.clearCache()
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         ShopifyCheckoutKit.configure {
             it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
@@ -114,7 +114,7 @@ class ShopifyCheckoutKitTest {
             val activity = activityController.get()
 
             preload("https://shopify.dev/cart/123", activity)
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
 
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()
             assertThat(cachedView).isNotNull
@@ -130,7 +130,7 @@ class ShopifyCheckoutKitTest {
             val activity = activityController.get()
 
             preload("https://shopify.dev/cart/123", activity)
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
         }
@@ -143,7 +143,7 @@ class ShopifyCheckoutKitTest {
             activity.finish()
 
             preload("https://shopify.dev/cart/123", activity)
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
         }
@@ -158,7 +158,7 @@ class ShopifyCheckoutKitTest {
             val activity = activityController.get()
 
             preload("https://shopify.dev/cart/123", activity)
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
         }
@@ -169,13 +169,13 @@ class ShopifyCheckoutKitTest {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
             preload("https://shopify.dev/cart/123", activity)
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
             ShopifyCheckoutKit.configure {
                 it.logLevel = LogLevel.DEBUG
             }
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
             assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
@@ -187,11 +187,11 @@ class ShopifyCheckoutKitTest {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
             preload("https://shopify.dev/cart/123", activity)
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
             ShopifyCheckoutKit.invalidate()
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
             assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()

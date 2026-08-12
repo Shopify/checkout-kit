@@ -7430,12 +7430,12 @@
               {
                 "kind": "TypeFunc",
                 "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.PreloadState.Type) -> (ShopifyCheckoutKit.PreloadState.FailureReason) -> ShopifyCheckoutKit.PreloadState",
+                "printedName": "(ShopifyCheckoutKit.PreloadState.Type) -> (ShopifyCheckoutKit.PreloadState.FailureReason, Swift.String) -> ShopifyCheckoutKit.PreloadState",
                 "children": [
                   {
                     "kind": "TypeFunc",
                     "name": "Function",
-                    "printedName": "(ShopifyCheckoutKit.PreloadState.FailureReason) -> ShopifyCheckoutKit.PreloadState",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.FailureReason, Swift.String) -> ShopifyCheckoutKit.PreloadState",
                     "children": [
                       {
                         "kind": "TypeNominal",
@@ -7446,13 +7446,19 @@
                       {
                         "kind": "TypeNominal",
                         "name": "Tuple",
-                        "printedName": "(reason: ShopifyCheckoutKit.PreloadState.FailureReason)",
+                        "printedName": "(reason: ShopifyCheckoutKit.PreloadState.FailureReason, message: Swift.String)",
                         "children": [
                           {
                             "kind": "TypeNominal",
                             "name": "FailureReason",
                             "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason",
                             "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
                           }
                         ]
                       }
@@ -7475,8 +7481,8 @@
               }
             ],
             "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit12PreloadStateO6failedyA2C13FailureReasonO_tcACmF",
-            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO6failedyA2C13FailureReasonO_tcACmF",
+            "usr": "s:18ShopifyCheckoutKit12PreloadStateO6failedyA2C13FailureReasonO_SStcACmF",
+            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO6failedyA2C13FailureReasonO_SStcACmF",
             "moduleName": "ShopifyCheckoutKit"
           },
           {
@@ -7580,8 +7586,8 @@
               },
               {
                 "kind": "Var",
-                "name": "keepAliveLost",
-                "printedName": "keepAliveLost",
+                "name": "webContentUnavailable",
+                "printedName": "webContentUnavailable",
                 "children": [
                   {
                     "kind": "TypeFunc",
@@ -7611,45 +7617,8 @@
                   }
                 ],
                 "declKind": "EnumElement",
-                "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO13keepAliveLostyA2EmF",
-                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO13FailureReasonO13keepAliveLostyA2EmF",
-                "moduleName": "ShopifyCheckoutKit"
-              },
-              {
-                "kind": "Var",
-                "name": "webContentProcessTerminated",
-                "printedName": "webContentProcessTerminated",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(ShopifyCheckoutKit.PreloadState.FailureReason.Type) -> ShopifyCheckoutKit.PreloadState.FailureReason",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "FailureReason",
-                        "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason",
-                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO"
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Metatype",
-                        "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason.Type",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "FailureReason",
-                            "printedName": "ShopifyCheckoutKit.PreloadState.FailureReason",
-                            "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO"
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ],
-                "declKind": "EnumElement",
-                "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO27webContentProcessTerminatedyA2EmF",
-                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO13FailureReasonO27webContentProcessTerminatedyA2EmF",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO13FailureReasonO21webContentUnavailableyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO13FailureReasonO21webContentUnavailableyA2EmF",
                 "moduleName": "ShopifyCheckoutKit"
               },
               {

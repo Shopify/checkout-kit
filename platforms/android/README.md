@@ -204,6 +204,39 @@ Call `preload` when your app has a strong signal that the buyer is likely to che
 ShopifyCheckoutKit.preload(checkoutUrl, activity)
 ```
 
+`preload` returns a nullable `CheckoutPreload` handle. You can ignore it when preloading is only a performance hint, or retain it to observe the preload lifecycle:
+
+```kotlin
+val preload = ShopifyCheckoutKit.preload(checkoutUrl, activity) { state ->
+    when (state) {
+        PreloadState.Loading -> showPreloadProgress()
+        PreloadState.Ready -> enableCheckoutAffordance()
+        is PreloadState.Failed -> recordPreloadFailure(state.reason)
+        PreloadState.Expired,
+        PreloadState.Idle -> Unit
+    }
+}
+
+if (preload == null) {
+    // Preloading is disabled, unavailable, or unsupported.
+    // Calling present still loads checkout normally.
+}
+```
+
+The listener runs on the main thread and receives the current state immediately, followed by state changes. You can also set `preload?.listener` after creation. The preload cache has one observer, so a later `preload` call replaces the listener associated with an earlier handle. That earlier handle retains its last observed state but receives no further updates; retain the latest handle when observing state. When `present` reuses a preload, its handle also stops receiving updates and retains its last observed state, which may be `Loading`.
+
+A successful background preload normally transitions from `Loading` to `Ready`. `Idle` means the preload was intentionally abandoned or became inapplicable, such as after explicit invalidation, disabling preloading, activity destruction, or a checkout URL mismatch. `Failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+
+| State | Meaning |
+| --- | --- |
+| `Loading` | The background checkout WebView is loading. |
+| `Ready` | The preload finished and can be used for the matching checkout URL. |
+| `Idle` | The preload was invalidated or otherwise cleared. |
+| `Expired` | The cached preload reached its lifetime and was discarded before use. |
+| `Failed(reason)` | Checkout navigation, web content, or an HTTP response failed while preloading. |
+
+`preload` returns `null` when preloading is disabled, the activity is finishing or destroyed, or the installed WebView does not support the required WebMessageListener API.
+
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
 ```kotlin

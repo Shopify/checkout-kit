@@ -19,7 +19,10 @@ public enum PreloadState: Equatable {
     case expired
 
     /// The cached checkout could not be retained for the associated reason.
-    case failed(reason: FailureReason)
+    ///
+    /// The message contains best-effort diagnostic context. It is not a stable, machine-readable
+    /// value; use ``FailureReason`` to determine how to handle the failure.
+    case failed(reason: FailureReason, message: String)
 
     /// Reason a preload cache entry was not available.
     public enum FailureReason: Equatable {
@@ -29,11 +32,8 @@ public enum PreloadState: Equatable {
         /// Preload navigation failed.
         case navigationFailed
 
-        /// The background WebView did not respond to the SDK's keep-alive check.
-        case keepAliveLost
-
-        /// WebKit terminated the background WebView's content process.
-        case webContentProcessTerminated
+        /// Cached web content became unavailable before the preload could be reused.
+        case webContentUnavailable
 
         /// Checkout sent a terminal protocol error while preloading.
         case protocolError
@@ -43,7 +43,8 @@ public enum PreloadState: Equatable {
 /// Returned by `preload(checkout:)` to expose the current preload state.
 ///
 /// Retain the returned instance for as long as you want to observe state changes; the cache holds
-/// it weakly. Preload state is independent of presentation lifecycle callbacks.
+/// it weakly. When presentation reuses a cached preload, this handle stops receiving updates and
+/// retains its last observed state, which may be `.loading`.
 @MainActor
 public final class CheckoutPreload: ObservableObject {
     /// The latest observed preload state.

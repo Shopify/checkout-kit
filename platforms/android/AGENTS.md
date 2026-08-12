@@ -40,7 +40,7 @@ The sample is a separate Gradle composite (`samples/CheckoutKitAndroidDemo/setti
 ## Testing patterns
 
 - Tests use **Robolectric** (`@RunWith(RobolectricTestRunner::class)`) to exercise Android framework code without a device.
-- Main-thread tasks are drained with `shadowOf(Looper.getMainLooper()).runToEndOfTasks()`. If a test involves posted work and seems flaky, check whether this is being called.
+- Drain immediate main-thread work with `shadowOf(Looper.getMainLooper()).idle()`. It does not advance delayed tasks. Use `idleFor(...)` when a test deliberately needs delayed work to run, such as preload expiry. Avoid `runToEndOfTasks()` in preload tests: it advances the scheduler through delayed work and fires the five-minute expiry timer.
 - Assertion library is **AssertJ**; mocking is **Mockito** + **Mockito-Kotlin**. Mockito is on 5.x because the library targets JVM 11. Don't introduce new assertion/mocking libraries without discussion.
 - Tests live in the same package as the class under test (file name: `ClassNameTest.kt`).
 

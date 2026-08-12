@@ -9,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.shopify.checkoutkit.CheckoutErrorCode
 import com.shopify.checkoutkit.CheckoutException
-import com.shopify.checkoutkit.CheckoutPreload
 import com.shopify.checkoutkit.CheckoutPresentation
 import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.ShopifyCheckoutKit
@@ -59,7 +58,6 @@ class CartViewModel(
 
     private var demoBuyerIdentityEnabled = false
     private var checkoutPreloadingEnabled = true
-    private var checkoutPreload: CheckoutPreload? = null
     private var windowOpenHandler = WindowOpenHandler.Default
 
     init {
@@ -156,8 +154,7 @@ class CartViewModel(
         if (!checkoutPreloadingEnabled) return
 
         Timber.i("Preloading checkout")
-        ShopifyCheckoutKit.invalidate()
-        checkoutPreload = ShopifyCheckoutKit.preload(url, activity) { state ->
+        ShopifyCheckoutKit.preload(url, activity) { state ->
             Timber.i("Preload state changed to $state")
         }
     }

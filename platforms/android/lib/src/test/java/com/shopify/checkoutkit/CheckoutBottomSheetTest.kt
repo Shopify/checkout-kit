@@ -59,7 +59,7 @@ class CheckoutBottomSheetTest {
     @After
     fun tearDown() {
         CheckoutWebView.clearCache()
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         CheckoutWebView.cacheClock = PreloadCache.Clock()
         ShopifyCheckoutKit.configure {
             it.appearance = configuration.appearance
@@ -496,11 +496,11 @@ class CheckoutBottomSheetTest {
     @Test
     fun `bottom sheet uses cached preloaded checkoutView for matching URL`() {
         CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         val sheet = presentBottomSheet("https://shopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
 
         val webView = sheet
             .findViewById<RelativeLayout>(R.id.checkoutKitContainer)
@@ -515,7 +515,7 @@ class CheckoutBottomSheetTest {
     fun `lifecycle failure retains preloaded checkoutView after sheet dismissal`() {
         val listener = mock<DefaultCheckoutListener>()
         CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
         val sheet = presentBottomSheet("https://shopify.com/cart/123", checkoutListener = listener)
         val webView = sheet.currentCheckoutWebView()
@@ -568,11 +568,11 @@ class CheckoutBottomSheetTest {
     @Test
     fun `dismiss() retains preloaded checkoutView for another presentation`() {
         CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         val sheet = presentBottomSheet("https://shopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
 
         val webView = sheet.currentCheckoutWebView()
         assertThat(webView).isSameAs(cachedWebView)
@@ -587,7 +587,7 @@ class CheckoutBottomSheetTest {
         assertThat(shadowOf(cachedWebView).getOnTouchListener()).isNull()
 
         val nextSheet = presentBottomSheet("https://shopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
 
         assertThat(nextSheet.currentCheckoutWebView()).isSameAs(cachedWebView)
         assertThat(cachedWebView.isPresented).isTrue()
@@ -605,10 +605,10 @@ class CheckoutBottomSheetTest {
     fun `dismissed preload reused as embedded checkout has no sheet touch listener`() {
         val checkoutUrl = "https://shopify.com/cart/123"
         CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
         val sheet = presentBottomSheet(checkoutUrl)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
 
         sheet.dismiss()
         runDismissAnimation()
@@ -625,11 +625,11 @@ class CheckoutBottomSheetTest {
     @Test
     fun `dismiss() destroys a presented preload that was invalidated`() {
         CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
         val sheet = presentBottomSheet("https://shopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         CheckoutWebView.invalidate()
 
         sheet.dismiss()
@@ -643,13 +643,13 @@ class CheckoutBottomSheetTest {
     fun `dismiss() destroys a presented preload that expired`() {
         var now = 1_000L
         CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
-            override fun currentTimeMillis(): Long = now
+            override fun elapsedRealtime(): Long = now
         }
         CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
         val sheet = presentBottomSheet("https://shopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+        ShadowLooper.shadowMainLooper().idle()
 
         now += 5 * 60 * 1000L
         sheet.dismiss()
@@ -716,7 +716,7 @@ class CheckoutBottomSheetTest {
         webMessageTransport.dispatchMessage(ecMessagesChangeMessage())
 
         await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
-            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+            shadowOf(Looper.getMainLooper()).idle()
             assertThat(received).isTrue()
         }
     }
@@ -727,7 +727,7 @@ class CheckoutBottomSheetTest {
         val sheet = presentBottomSheet(checkoutListener = mockListener)
 
         sheet.cancel()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         verify(mockListener).onCheckoutDismissed()
         verify(mockListener, never()).onCheckoutFailed(any())
@@ -741,7 +741,7 @@ class CheckoutBottomSheetTest {
         val error = checkoutException()
 
         checkoutSheet.closeCheckoutWithError(error)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
         runDismissAnimation()
 
         verify(mockListener, never()).onCheckoutDismissed()
@@ -980,7 +980,7 @@ class CheckoutBottomSheetTest {
         }
 
         val sheet = presentBottomSheet(checkoutListener = mock<DefaultCheckoutListener>())
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val toolbar = sheet.findViewById<Toolbar>(R.id.checkoutKitHeader)!!
         val closeMenuItem = toolbar.menu.findItem(R.id.shopify_checkout_kit_close_button)
@@ -1001,7 +1001,7 @@ class CheckoutBottomSheetTest {
         }
 
         val sheet = presentBottomSheet(checkoutListener = mock<DefaultCheckoutListener>())
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val toolbar = sheet.findViewById<Toolbar>(R.id.checkoutKitHeader)!!
         val closeMenuItem = toolbar.menu.findItem(R.id.shopify_checkout_kit_close_button)
@@ -1024,7 +1024,7 @@ class CheckoutBottomSheetTest {
         }
         val mockProcessor = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockProcessor)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val toolbar = sheet.findViewById<Toolbar>(R.id.checkoutKitHeader)!!
         val closeMenuItem = toolbar.menu.findItem(R.id.shopify_checkout_kit_close_button)
@@ -1051,7 +1051,7 @@ class CheckoutBottomSheetTest {
         }
         val mockProcessor = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockProcessor)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val toolbar = sheet.findViewById<Toolbar>(R.id.checkoutKitHeader)!!
         val closeMenuItem = toolbar.menu.findItem(R.id.shopify_checkout_kit_close_button)
@@ -1070,10 +1070,10 @@ class CheckoutBottomSheetTest {
     fun `back press dismisses bottom sheet when WebView has no history to navigate`() {
         val mockListener = mock<DefaultCheckoutListener>()
         val sheet = presentBottomSheet(checkoutListener = mockListener)
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         sheet.onBackPressedDispatcher.onBackPressed()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         verify(mockListener).onCheckoutDismissed()
         assertThat(sheet.isShowing).isFalse()
@@ -1086,17 +1086,17 @@ class CheckoutBottomSheetTest {
             checkoutUrl = "https://shopify.com/checkouts/c/abc",
             checkoutListener = mockListener,
         )
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val webView = sheet.currentWebView()
         webView.loadUrl("https://shopify.com/checkouts/c/abc/step2")
         // ShadowWebView doesn't auto-track loadUrl in history; push two entries so canGoBack() returns true.
         shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc")
         shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc/step2")
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         sheet.onBackPressedDispatcher.onBackPressed()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         verify(mockListener, never()).onCheckoutDismissed()
         assertThat(sheet.isShowing).isTrue()
@@ -1110,16 +1110,16 @@ class CheckoutBottomSheetTest {
             checkoutUrl = "https://shopify.com/checkouts/c/abc",
             checkoutListener = mockListener,
         )
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val webView = sheet.currentWebView()
         webView.loadUrl("https://shopify.com/cn-12345/thank-you")
         shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc")
         shadowOf(webView).pushEntryToHistory("https://shopify.com/cn-12345/thank-you")
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         sheet.onBackPressedDispatcher.onBackPressed()
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        shadowOf(Looper.getMainLooper()).idle()
 
         verify(mockListener).onCheckoutDismissed()
         assertThat(sheet.isShowing).isFalse()

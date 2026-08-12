@@ -196,7 +196,8 @@ internal class CheckoutWebView private constructor(
             hasHandledTerminalFailure = true
             val wasBackgroundedUnconsumedPreload = evictForTerminalFailure(
                 this@CheckoutWebView,
-                PreloadState.FailureReason.WebContentProcessTerminated,
+                PreloadState.FailureReason.WebContentUnavailable,
+                "Web content process terminated.",
             )
             if (wasBackgroundedUnconsumedPreload || !shouldDeliverLifecycleFailure) return true
 
@@ -247,8 +248,11 @@ internal class CheckoutWebView private constructor(
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
                 preloadCache.evict(
-                    this@CheckoutWebView,
-                    PreloadState.Failed(PreloadState.FailureReason.NavigationFailed),
+                    PreloadState.Failed(
+                        PreloadState.FailureReason.NavigationFailed,
+                        "Navigation failed (error code: ${error?.errorCode ?: 0}).",
+                    ),
+                    view = this@CheckoutWebView,
                 )
             }
             super.onReceivedError(view, request, error)
@@ -269,8 +273,11 @@ internal class CheckoutWebView private constructor(
             if (isMainFrame) {
                 val statusCode = errorResponse?.statusCode ?: 0
                 preloadCache.evict(
-                    this@CheckoutWebView,
-                    PreloadState.Failed(PreloadState.FailureReason.HttpError(statusCode)),
+                    PreloadState.Failed(
+                        PreloadState.FailureReason.HttpError(statusCode),
+                        "HTTP response returned status code $statusCode.",
+                    ),
+                    view = this@CheckoutWebView,
                 )
             }
             super.onReceivedHttpError(view, request, errorResponse)
@@ -313,8 +320,11 @@ internal class CheckoutWebView private constructor(
                 isMainFrame && uri.scheme != Scheme.HTTPS -> {
                     val error = insecureCheckoutUrlException(uri.toString())
                     preloadCache.evict(
-                        this@CheckoutWebView,
-                        PreloadState.Failed(PreloadState.FailureReason.NavigationFailed),
+                        PreloadState.Failed(
+                            PreloadState.FailureReason.NavigationFailed,
+                            "Checkout URL must use HTTPS.",
+                        ),
+                        view = this@CheckoutWebView,
                     )
                     resetCheckoutRequestRetryState()
                     listener.onCheckoutViewFailedWithError(error)
@@ -386,16 +396,17 @@ internal class CheckoutWebView private constructor(
         internal fun evictForTerminalFailure(
             view: CheckoutWebView,
             backgroundedPreloadReason: PreloadState.FailureReason,
+            backgroundedPreloadMessage: String,
         ): Boolean {
             val wasBackgroundedUnconsumedPreload =
                 preloadCache.contains(view) && view.isPreloadRequest && !view.isPresented
             preloadCache.evict(
-                view,
                 if (wasBackgroundedUnconsumedPreload) {
-                    PreloadState.Failed(backgroundedPreloadReason)
+                    PreloadState.Failed(backgroundedPreloadReason, backgroundedPreloadMessage)
                 } else {
                     PreloadState.Idle
                 },
+                view = view,
             )
             return wasBackgroundedUnconsumedPreload
         }
@@ -417,7 +428,12 @@ internal class CheckoutWebView private constructor(
                 !OriginAllowlist.isHttpsUrl(url) -> {
                     runOnUiThreadBlocking(activity) {
                         val handle = CheckoutPreload(preloadCache)
-                        preloadCache.evict(PreloadState.Failed(PreloadState.FailureReason.NavigationFailed))
+                        preloadCache.evict(
+                            PreloadState.Failed(
+                                PreloadState.FailureReason.NavigationFailed,
+                                "Checkout URL must use HTTPS.",
+                            ),
+                        )
                         handle.listener = listener
                         handle
                     }
@@ -478,8 +494,8 @@ internal class CheckoutWebView private constructor(
             invalidate()
         }
 
-        internal fun releaseAfterPresentation(view: CheckoutWebView): Boolean =
-            preloadCache.release(view)
+        internal fun retainAfterPresentation(view: CheckoutWebView): Boolean =
+            preloadCache.retainAfterPresentation(view)
 
         internal fun discardAfterPresentation(view: CheckoutWebView) {
             preloadCache.discard(view)
@@ -493,7 +509,7 @@ internal class CheckoutWebView private constructor(
             }
         }
 
-        internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedViewForTesting()
+        internal fun cachedPreloadViewForTesting(): CheckoutWebView? = preloadCache.cachedView
 
         internal fun hasCacheEntryForTesting(): Boolean = preloadCache.hasEntry
     }

@@ -169,6 +169,43 @@ Call `preload` when your app has a strong signal that the buyer is likely to che
 ShopifyCheckoutKit.preload(checkout: checkoutURL)
 ```
 
+`preload` returns an optional `CheckoutPreload` handle. You can ignore it when preloading is only a performance hint, or retain it to observe the preload lifecycle:
+
+```swift
+let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+preload?.onStateChange = { state in
+  switch state {
+  case .loading:
+    showPreloadProgress()
+  case .ready:
+    enableCheckoutAffordance()
+  case .failed(let reason):
+    recordPreloadFailure(reason)
+  case .expired, .idle:
+    break
+  }
+}
+
+if preload == nil {
+  // Preloading is disabled.
+  // Calling present still loads checkout normally.
+}
+```
+
+`onStateChange` receives the current state immediately, followed by state changes. The preload cache has one weak observer, so a later `preload` call replaces the observer associated with an earlier handle; retain the latest handle for as long as you need to observe state. When `present` reuses a preload, its handle also stops receiving updates and retains its last observed state, which may be `.loading`.
+
+A successful background preload normally transitions from `.loading` to `.ready`. `.idle` means the preload was intentionally abandoned or became inapplicable, such as after explicit invalidation, disabling preloading, activity destruction, or a checkout URL mismatch. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+
+| State | Meaning |
+| --- | --- |
+| `.loading` | The background checkout WebView is loading. |
+| `.ready` | The preload finished and can be used for the matching checkout URL. |
+| `.idle` | The preload was invalidated or otherwise cleared. |
+| `.expired` | The cached preload exceeded its lifetime before it could be used. |
+| `.failed(reason:)` | An HTTP, navigation, or web-content failure occurred while preloading. |
+
+`preload` returns `nil` when preloading is disabled.
+
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
 ```swift

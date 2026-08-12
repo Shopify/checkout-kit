@@ -178,7 +178,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         progressObserver?.invalidate()
         progressObserver = nil
 
-        if let checkoutView, CheckoutWebView.preloadCache.contains(checkoutView) {
+        if let checkoutView, CheckoutWebView.preloadCache.retainAfterPresentation(checkoutView) {
             checkoutView.viewDelegate = nil
             checkoutView.client = nil
             checkoutView.removeFromSuperview()

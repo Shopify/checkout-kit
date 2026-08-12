@@ -624,7 +624,10 @@ class CheckoutWebViewTests: XCTestCase {
 
         view.webView(view, didFailProvisionalNavigation: retryNavigation, withError: error)
 
-        XCTAssertEqual(CheckoutWebView.preloadCache.state, .failed(reason: .navigationFailed))
+        XCTAssertEqual(
+            CheckoutWebView.preloadCache.state,
+            .failed(reason: .navigationFailed, message: "Navigation failed (error code: -1001).")
+        )
     }
 
     func testClientIsSetOnWebView() {
