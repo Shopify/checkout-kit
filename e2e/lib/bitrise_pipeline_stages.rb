@@ -43,6 +43,10 @@ class BitrisePipelineStages
     @stages.select { |stage| blank?(stage.build_slug) }
   end
 
+  def stage(name)
+    @stages.find { |stage| stage.name == name }
+  end
+
   private
 
   def collapse(entries)

@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "optparse"
+require_relative "../lib/bitrise_pipeline_stages"
+require_relative "../lib/ios_ci_reporter"
+require_relative "../lib/ios_ci_run_plan"
+
+options = {
+  config: File.expand_path("../config/ios_ci.yml", __dir__),
+  repository: ENV["GITHUB_REPOSITORY"] || "Shopify/checkout-kit",
+  sha: ENV["BITRISE_GIT_COMMIT"],
+  pr_number: ENV["BITRISE_PULL_REQUEST"],
+  token: ENV["GITHUB_TOKEN"],
+  selected_jobs: ENV["CI_IOS_SELECTED_JOBS"],
+  finished_workflows: ENV["BITRISEIO_FINISHED_WORKFLOWS"],
+  pipeline_url: ENV["BITRISEIO_PIPELINE_BUILD_URL"]
+}
+
+OptionParser.new do |opts|
+  opts.on("--config PATH") { |path| options[:config] = path }
+  opts.on("--repository REPOSITORY") { |repository| options[:repository] = repository }
+  opts.on("--sha SHA") { |sha| options[:sha] = sha }
+  opts.on("--pr NUMBER") { |number| options[:pr_number] = number }
+  opts.on("--selected-jobs LIST") { |list| options[:selected_jobs] = list }
+  opts.on("--finished-workflows JSON") { |json| options[:finished_workflows] = json }
+  opts.on("--pipeline-url URL") { |url| options[:pipeline_url] = url }
+end.parse!
+
+pr_number = options[:pr_number].to_s.strip
+if pr_number.empty? || pr_number == "false" || pr_number == "0"
+  warn "No pull request associated with this build; skipping GitHub iOS CI report"
+  exit 0
+end
+
+%i[sha token].each do |key|
+  next unless options[key].nil? || options[key].to_s.strip.empty?
+
+  abort "#{key} is required"
+end
+
+run_plan = IOSCIRunPlan.load(options.fetch(:config))
+tophat_manifest = JSON.parse(File.read(File.expand_path("../../scripts/tophat/targets.json", __dir__)))
+
+stages = BitrisePipelineStages.from_json(
+  options[:finished_workflows],
+  app_slug: tophat_manifest.fetch("app_slug")
+)
+
+reporter = IOSCIReporter.new(
+  job_ids: run_plan.job_ids,
+  selected_job_ids: options[:selected_jobs].to_s.split(",").map(&:strip).reject(&:empty?),
+  repository: options.fetch(:repository),
+  sha: options.fetch(:sha),
+  token: options.fetch(:token),
+  stages: stages,
+  pipeline_url: options[:pipeline_url]
+)
+reporter.publish!
+puts reporter.markdown_summary

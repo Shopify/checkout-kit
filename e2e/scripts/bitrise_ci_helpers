@@ -17,6 +17,50 @@ e2e_deploy_dir() {
   printf '%s\n' "$dir"
 }
 
+# Writes the changed file list and prints its path. Two gates read it — the E2E matrix
+# and the iOS CI run plan — and a second copy of this derivation would let them select
+# different work from the same commit.
+#
+# PR builds: the checkout is a shallow merge commit, so the GitHub API is the
+# authoritative source for the PR's changed files. Non-PR runs (manual, scheduled,
+# local) fall back to diffing the branch against its base with a three-dot range
+# (changes since the merge-base, not tip-to-tip).
+e2e_changed_files_file() {
+  local changed_files
+  changed_files="$(mktemp "${TMPDIR:-/tmp}/checkout-kit-changed-files.XXXXXX")"
+  if [ -n "${BITRISE_PULL_REQUEST:-}" ]; then
+    ruby e2e/scripts/github_pr_changed_files > "$changed_files"
+  else
+    git diff --name-only "${BITRISE_GIT_BRANCH_DEST:-origin/main}...HEAD" > "$changed_files"
+  fi
+  printf '%s\n' "$changed_files"
+}
+
+# Writes the branch-head bitrise.yml and prints its path. Bitrise resolves the pipeline
+# graph from the branch head (before the merge checkout), while the run plan is generated
+# from the merged tree. A stale branch can select a job whose workflow does not exist in
+# the graph, which fails cryptically later. Comparing against this copy fails fast.
+e2e_branch_bitrise_config() {
+  local branch_config
+  branch_config="$(e2e_deploy_dir)/branch-bitrise.yml"
+  if [ -z "${BITRISE_PULL_REQUEST:-}" ]; then
+    cp e2e/bitrise.yml "$branch_config"
+  elif [ -z "${BITRISE_GIT_COMMIT:-}" ] || ! git show "${BITRISE_GIT_COMMIT}:e2e/bitrise.yml" > "$branch_config" 2>/dev/null; then
+    rm -f "$branch_config"
+    printf '%s\n' "Unable to read e2e/bitrise.yml from the pull request branch head. Rebase on main and push the branch again." >&2
+    return 1
+  fi
+  printf '%s\n' "$branch_config"
+}
+
+e2e_export_github_token() {
+  e2e_log "Checking GitHub reporting configuration"
+  if [ -z "${GITHUB_TOKEN:-}" ]; then
+    : "${GIT_HTTP_PASSWORD:?GITHUB_TOKEN or Bitrise GitHub App GIT_HTTP_PASSWORD is required. Enable Project settings > Repository > Extend GitHub App permissions to builds.}"
+    export GITHUB_TOKEN="$GIT_HTTP_PASSWORD"
+  fi
+}
+
 e2e_configure_storefront() {
   e2e_log "Checking storefront configuration secrets"
   : "${STOREFRONT_DOMAIN:?STOREFRONT_DOMAIN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"

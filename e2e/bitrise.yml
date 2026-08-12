@@ -13,6 +13,10 @@ meta:
 
 app:
   envs:
+    # One device for every macOS job. GitHub Actions grew two values by accident
+    # (iPhone 17 Pro for Swift, iPhone 16 Pro for React Native); the port keeps a
+    # single one so a runtime change cannot break half the jobs.
+    - CI_IOS_SIMULATOR_DEVICE: iPhone 17 Pro
     - E2E_BROWSERSTACK_API_RETRIES: "1"
     - E2E_BROWSERSTACK_TIMEOUT_SECONDS: "1800"
     - E2E_BROWSERSTACK_POLL_SECONDS: "30"
@@ -39,6 +43,14 @@ trigger_map:
       # groups — RE2 cannot compile them and the trigger will fail to evaluate.
       regex: '^(platforms/(swift|android|react-native)|protocol|e2e|\.ci)/.*|^Package\.(swift|resolved)$'
     pipeline: e2e
+
+  # Deliberately unfiltered. ci-ios is a required check, and a required check that
+  # never posts leaves a pull request permanently unmergeable. The cheap Linux
+  # ci-ios-plan workflow decides which macOS jobs run, and ci-ios-report always posts
+  # — including for a change that needs no macOS job at all.
+  - pull_request_source_branch: "*"
+    draft_pull_request_enabled: false
+    pipeline: ci-ios
 
 pipelines:
   e2e:
@@ -84,6 +96,25 @@ pipelines:
           expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
         depends_on:
           - e2e-execute-browserstack-run
+        should_always_run: workflow
+
+  # The macOS merge gate. Separate from the e2e pipeline on purpose: Bitrise reports one
+  # status per pipeline, and sharing would tie the merge gate to the BrowserStack device
+  # flake that e2e/BITRISE.md deliberately keeps non-blocking.
+  ci-ios:
+    status_report_name: "ci/bitrise/<target_id>/<event_type>"
+    workflows:
+      ci-ios-plan: {}
+      ci-ios-swift-package-tests:
+        run_if:
+          expression: '{{ enveq "CI_IOS_SWIFT_PACKAGE_TESTS" "true" }}'
+        depends_on:
+          - ci-ios-plan
+      # No run_if: this workflow is the required check, so it posts on every build,
+      # including one where ci-ios-plan selected nothing and every job was skipped.
+      ci-ios-report:
+        depends_on:
+          - ci-ios-swift-package-tests
         should_always_run: workflow
 
   # Deliberately absent from trigger_map: a scheduled build in the Bitrise UI is
@@ -177,6 +208,21 @@ step_bundles:
           inputs:
             - key: *rn_cocoapods_cache_key
             - paths: platforms/react-native/sample/ios/Pods
+  # xcodebuild spends the first minute of a test run waiting for a cold simulator to
+  # finish booting. Booting it up front with `bootstatus -b` moves that wait out of the
+  # measured build step and fails loudly when the runtime is missing from the stack.
+  create-ios-simulator:
+    steps:
+      - script@1:
+          title: Create and boot the iOS simulator
+          inputs:
+            - content: |-
+                set -euo pipefail
+                : "${CI_IOS_SIMULATOR_DEVICE:?CI_IOS_SIMULATOR_DEVICE is required}"
+                xcrun simctl delete all
+                simulator_uuid="$(xcrun simctl create CIDevice "$CI_IOS_SIMULATOR_DEVICE")"
+                xcrun simctl bootstatus "$simulator_uuid" -b
+                envman add --key CURRENT_SIMULATOR_UUID --value "$simulator_uuid"
   bootstrap-mint:
     inputs:
       - mintfile_dir: ""
@@ -202,6 +248,80 @@ step_bundles:
             - paths: ~/.mint
 
 workflows:
+  # Runs on the cheap default Linux stack. Every macOS machine this pipeline boots is
+  # decided here, so a change that needs no iOS job costs one short Linux build.
+  ci-ios-plan:
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Decide which iOS jobs run
+          timeout: 900
+          no_output_timeout: 450
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                e2e_log "Fetching pull request changed files"
+                changed_files="$(e2e_changed_files_file)"
+                ruby e2e/scripts/ios_ci_run_plan validate --changed-files-file "$changed_files"
+                e2e_log "Asserting the pipeline can run every selected job"
+                branch_config="$(e2e_branch_bitrise_config)"
+                ruby e2e/scripts/ios_ci_run_plan assert-pipeline-coverage --pipeline-config "$branch_config" --changed-files-file "$changed_files"
+                e2e_log "Publishing iOS CI job flags"
+                bitrise_env_file="$(e2e_deploy_dir)/ios-ci-env.txt"
+                ruby e2e/scripts/ios_ci_run_plan bitrise-env --changed-files-file "$changed_files" > "$bitrise_env_file"
+                cat "$bitrise_env_file"
+                while IFS='=' read -r key value; do
+                  envman add --key "$key" --value "$value"
+                done < "$bitrise_env_file"
+      - share-pipeline-variable@1:
+          inputs:
+            - variables: |-
+                CI_IOS_HAS_JOBS
+                CI_IOS_SELECTED_JOBS
+                CI_IOS_SWIFT_PACKAGE_TESTS
+
+  ci-ios-swift-package-tests:
+    meta:
+      bitrise.io:
+        # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
+        # only receive Xcode patch updates, so this pins Xcode 26.2 / iOS 26.2
+        # (23C54) to match local development.
+        stack: &macos_stack osx-xcode-26.2.x
+        machine_type_id: g2.mac.4large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-ios-simulator: {}
+      - script@1:
+          title: Run Swift package tests
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/swift
+                ./Scripts/xcode_run test ShopifyCheckoutKit-Package
+
+  ci-ios-report:
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Report iOS CI results to GitHub
+          timeout: 900
+          no_output_timeout: 450
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                e2e_export_github_token
+                : "${BITRISE_GIT_COMMIT:?BITRISE_GIT_COMMIT is required}"
+                # The report names the stages that failed from this roster. Bitrise documents no
+                # enum for its status field, so log the payload to confirm the literals it uses.
+                e2e_log "Pipeline stage roster"
+                printf '%s\n' "${BITRISEIO_FINISHED_WORKFLOWS:-<unset>}"
+                e2e_log "Reporting iOS CI results to GitHub"
+                ruby e2e/scripts/report_ios_ci_results
+
   e2e-produce-browserstack-run-plan:
     steps:
       - git-clone@8: {}
@@ -213,28 +333,11 @@ workflows:
             - content: |-
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
-                changed_files="$(e2e_deploy_dir)/changed-files.txt"
                 e2e_log "Fetching pull request changed files"
-                # PR builds: the checkout is a shallow merge commit, so the GitHub API
-                # is the authoritative source for the PR's changed files. Non-PR runs
-                # (manual, scheduled, local) fall back to diffing the branch against its
-                # base with a three-dot range (changes since the merge-base, not tip-to-tip).
-                if [ -n "${BITRISE_PULL_REQUEST:-}" ]; then
-                  ruby e2e/scripts/github_pr_changed_files > "$changed_files"
-                else
-                  git diff --name-only "${BITRISE_GIT_BRANCH_DEST:-origin/main}...HEAD" > "$changed_files"
-                fi
+                changed_files="$(e2e_changed_files_file)"
                 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate --changed-files-file "$changed_files"
-                # Guard against config-vs-matrix drift: Bitrise resolves the pipeline graph from
-                # the branch-head bitrise.yml (before the merge checkout), while the matrix here is
-                # generated from the merged tree. A stale branch can select a target whose build
-                # workflow does not exist in the graph, which fails cryptically later in
-                # e2e-execute-browserstack-run. Fail fast against the branch-head config instead.
                 e2e_log "Asserting the pipeline can build every selected target"
-                branch_config="$(e2e_deploy_dir)/branch-bitrise.yml"
-                if [ -z "${BITRISE_PULL_REQUEST:-}" ] || [ -z "${BITRISE_GIT_COMMIT:-}" ] || ! git show "${BITRISE_GIT_COMMIT}:e2e/bitrise.yml" > "$branch_config" 2>/dev/null; then
-                  cp e2e/bitrise.yml "$branch_config"
-                fi
+                branch_config="$(e2e_branch_bitrise_config)"
                 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan assert-pipeline-coverage --pipeline-config "$branch_config" --changed-files-file "$changed_files"
                 e2e_log "Producing BrowserStack run plan"
                 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand --changed-files-file "$changed_files" > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
@@ -269,10 +372,7 @@ workflows:
   e2e-build-react-native-ios:
     meta:
       bitrise.io:
-        # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
-        # only receive Xcode patch updates, so this pins Xcode 26.2 / iOS 26.2
-        # (23C54) to match local development.
-        stack: &macos_stack osx-xcode-26.2.x
+        stack: *macos_stack
         machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
@@ -434,11 +534,7 @@ workflows:
             - content: |-
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
-                e2e_log "Checking GitHub reporting configuration"
-                if [ -z "${GITHUB_TOKEN:-}" ]; then
-                  : "${GIT_HTTP_PASSWORD:?GITHUB_TOKEN or Bitrise GitHub App GIT_HTTP_PASSWORD is required. Enable Project settings > Repository > Extend GitHub App permissions to builds.}"
-                  export GITHUB_TOKEN="$GIT_HTTP_PASSWORD"
-                fi
+                e2e_export_github_token
                 : "${BITRISE_GIT_COMMIT:?BITRISE_GIT_COMMIT is required}"
                 results_root="${E2E_BROWSERSTACK_RESULTS_DIR:-$BITRISE_DEPLOY_DIR/e2e/results}"
                 # The report names the stages that failed from this roster. Bitrise documents no
