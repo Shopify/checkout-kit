@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           bundle install
           cd ios
-          bundle exec pod install --deployment --repo-update
+          bundle exec pod install --deployment
 
       - name: Build module
         run: pnpm module build
