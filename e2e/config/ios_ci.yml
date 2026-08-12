@@ -1,0 +1,18 @@
+version: 1
+changed_file_filters: .ci/changed-file-filters.yml
+# One entry per macOS CI job the Bitrise ci-ios pipeline runs. Each id maps to a
+# ci-ios-<id> workflow in e2e/bitrise.yml and to a CI_IOS_<ID> run_if flag, and
+# e2e/test/ios_ci_run_plan_test.rb fails when the two sides drift apart.
+#
+# These filters mirror the GitHub Actions `changes` job in .github/workflows/ci.yml.
+# The iOS jobs deliberately subscribe to iosCiConfig rather than the broad e2e filter,
+# so editing a Maestro flow does not boot a macOS machine.
+jobs:
+  - id: swift-package-tests
+    changed_files_filters:
+      - swift
+      - protocolSwift
+      - protocolShared
+      - packageSwift
+      - ciFilters
+      - iosCiConfig

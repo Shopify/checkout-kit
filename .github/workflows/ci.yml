@@ -116,7 +116,8 @@ jobs:
               - 'e2e/flows/**'
               - 'e2e/tests/**'
               - 'e2e/config.yaml'
-              - 'e2e/config/matrix.yml'
+              - 'e2e/config/**'
+              - 'e2e/bitrise.yml'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
 
