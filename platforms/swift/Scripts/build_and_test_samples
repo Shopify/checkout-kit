@@ -28,4 +28,4 @@ run_app() {
 }
 
 run_app CheckoutKitSwiftDemo "clean build test"
-run_app ShopifyAcceleratedCheckoutsApp "clean build"
+run_app ShopifyAcceleratedCheckoutsApp "build"
