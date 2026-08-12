@@ -67,14 +67,14 @@ _no matching version_. Pin to the alpha explicitly, or follow the `next`
 dist-tag:
 
 ```sh
-# Pin to the current alpha (recommended for now — prereleases can change shape)
-pnpm add @shopify/checkout-kit@4.0.0-alpha.2
+# Pin to this alpha (recommended for now — prereleases can change shape)
+pnpm add @shopify/checkout-kit@4.0.0-alpha.3
 
 # Or track the latest prerelease via the `next` dist-tag
 pnpm add @shopify/checkout-kit@next
 
 # The same works with npm:
-npm install @shopify/checkout-kit@4.0.0-alpha.2
+npm install @shopify/checkout-kit@4.0.0-alpha.3
 # or
 npm install @shopify/checkout-kit@next
 ```
@@ -398,6 +398,35 @@ Use `"debug"` while wiring up `src` and event handlers during integration, or
 ```ts
 checkout.logLevel = 'debug';
 ```
+
+### `allowed-origins`
+
+Adds trusted origins that may send checkout protocol messages, beyond the
+checkout URL origin from `src` and `shop.app`, which are always trusted.
+This includes `shop.app` subdomains. Separate multiple entries with spaces or
+commas. Entries may be exact origins or wildcard subdomains:
+
+```html
+<shopify-checkout
+  allowed-origins="https://payments.example.com https://*.example.net"
+></shopify-checkout>
+```
+
+```ts
+checkout.allowedOrigins = [
+  'https://payments.example.com',
+  'https://*.example.net',
+];
+```
+
+Wildcard entries match subdomains only, not the apex domain. For example,
+`https://*.example.net` matches `https://pay.example.net` but not
+`https://example.net`. Invalid entries are ignored and log a warning at
+`log-level="warn"` or more verbose.
+
+> [!CAUTION]
+> Setting `allowed-origins="*"` disables the message-origin allowlist. Use it
+> only for controlled debugging, never in production.
 
 ### Popup dimensions
 

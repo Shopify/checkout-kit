@@ -152,6 +152,8 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @attribute src - The URL of the checkout to load.
  * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
  * @attribute appearance - Checkout appearance preference (app:light, app:dark, app:automatic, storefront).
+ * @attribute log-level - Console logging verbosity (debug, warn, error, or none).
+ * @attribute allowed-origins - Extra trusted message origins, separated by spaces or commas.
  *
  * @event ec.start - Dispatched when the checkout has started
  * @event ec.complete - Dispatched when the checkout was successfully completed

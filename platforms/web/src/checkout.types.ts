@@ -100,7 +100,7 @@ export interface CheckoutProperties {
   /**
    * Console logging verbosity. Ordered as a threshold — `debug` is the most
    * verbose and `none` silences everything; `warn` and `error` sit between.
-   * Defaults to `'warn'`.
+   * Defaults to `'error'`.
    *
    * This property is automatically reflected to the `log-level` attribute, so
    * you can use the `log-level` attribute or this property interchangeably.
