@@ -26,7 +26,7 @@ cd "$TEST_APP_DIR"
 if [ "${USE_LOCAL_SDK:-0}" = "1" ]; then
     bundle exec pod update ShopifyCheckoutKit ShopifyCheckoutKit/AcceleratedCheckouts --repo-update
 else
-    pod_install_args="--repo-update"
+    pod_install_args="${POD_REPO_UPDATE:+--repo-update}"
     if [ "$CI" = "true" ]; then
         pod_install_args="$pod_install_args --deployment"
     fi
