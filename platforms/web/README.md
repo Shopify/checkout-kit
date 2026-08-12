@@ -67,14 +67,14 @@ _no matching version_. Pin to the alpha explicitly, or follow the `next`
 dist-tag:
 
 ```sh
-# Pin to the current alpha (recommended for now — prereleases can change shape)
-pnpm add @shopify/checkout-kit@4.0.0-alpha.2
+# Pin to this alpha (recommended for now — prereleases can change shape)
+pnpm add @shopify/checkout-kit@4.0.0-alpha.3
 
 # Or track the latest prerelease via the `next` dist-tag
 pnpm add @shopify/checkout-kit@next
 
 # The same works with npm:
-npm install @shopify/checkout-kit@4.0.0-alpha.2
+npm install @shopify/checkout-kit@4.0.0-alpha.3
 # or
 npm install @shopify/checkout-kit@next
 ```
