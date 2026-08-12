@@ -53,6 +53,7 @@ import com.shopify.checkoutkit.androiddemo.common.navigation.BottomAppBarWithNav
 import com.shopify.checkoutkit.androiddemo.common.navigation.CheckoutKitNavHost
 import com.shopify.checkoutkit.androiddemo.common.navigation.Screen
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.CheckoutKitSampleTheme
+import com.shopify.checkoutkit.androiddemo.e2e.E2ENavigationEffect
 import com.shopify.checkoutkit.androiddemo.e2e.E2ETestIds
 import com.shopify.checkoutkit.androiddemo.logs.LogsViewModel
 import com.shopify.checkoutkit.androiddemo.settings.SettingsUiState
@@ -96,6 +97,9 @@ fun CheckoutKitAppRoot(
                 .testTag(E2ETestIds.APP_READY),
         ) {
             val navController = rememberNavController()
+
+            E2ENavigationEffect(navController)
+
             var currentScreen by remember { mutableStateOf<Screen>(Screen.Product) }
             var presentedCheckoutUrl by remember { mutableStateOf<String?>(null) }
             val snackbarHostState = remember { SnackbarHostState() }
