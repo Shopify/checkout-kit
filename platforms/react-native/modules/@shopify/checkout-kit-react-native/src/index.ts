@@ -50,14 +50,16 @@ const defaultFeatures: Features = {
   handleGeolocationRequests: true,
 };
 
+// Native checkout configuration is process-global, so its rejection callback
+// must also have one shared subscription and one current owner in JavaScript.
+let messageRejectedSubscription: {remove: () => void} | undefined;
+let messageRejectedCallback: Configuration['onMessageRejected'];
+let messageRejectedOwner: ShopifyCheckout | undefined;
+
 class ShopifyCheckout implements ShopifyCheckoutKit {
   private features: Features;
 
   private dispatchSubscription?: {remove: () => void};
-
-  private messageRejectedSubscription?: {remove: () => void};
-
-  private onMessageRejected?: (detail: RejectedMessage) => void;
 
   private _acceleratedCheckoutsReady = false;
 
@@ -168,8 +170,8 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   public getConfig(): Configuration {
     return {
       ...coerceConfigurationResult(RNShopifyCheckoutKit.getConfig()),
-      ...(this.onMessageRejected
-        ? {onMessageRejected: this.onMessageRejected}
+      ...(messageRejectedCallback
+        ? {onMessageRejected: messageRejectedCallback}
         : {}),
     };
   }
@@ -199,9 +201,10 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    */
   public teardown() {
     this.releaseDispatchSubscription();
-    this.messageRejectedSubscription?.remove();
-    this.messageRejectedSubscription = undefined;
-    this.onMessageRejected = undefined;
+    if (messageRejectedOwner === this) {
+      this.configureMessageRejectionCallback(undefined);
+      RNShopifyCheckoutKit.setConfig({hasMessageRejectedCallback: false});
+    }
   }
 
   /**
@@ -255,14 +258,15 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   private configureMessageRejectionCallback(
     callback: Configuration['onMessageRejected'],
   ): void {
-    this.onMessageRejected = callback;
-    if (callback && !this.messageRejectedSubscription) {
-      this.messageRejectedSubscription = RNShopifyCheckoutKit.onMessageRejected(
-        detail => this.onMessageRejected?.(detail),
+    messageRejectedCallback = callback;
+    messageRejectedOwner = callback ? this : undefined;
+    if (callback && !messageRejectedSubscription) {
+      messageRejectedSubscription = RNShopifyCheckoutKit.onMessageRejected(
+        detail => messageRejectedCallback?.(detail),
       );
-    } else if (!callback && this.messageRejectedSubscription) {
-      this.messageRejectedSubscription.remove();
-      this.messageRejectedSubscription = undefined;
+    } else if (!callback && messageRejectedSubscription) {
+      messageRejectedSubscription.remove();
+      messageRejectedSubscription = undefined;
     }
   }
 

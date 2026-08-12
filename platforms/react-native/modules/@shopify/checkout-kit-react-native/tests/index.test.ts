@@ -274,6 +274,37 @@ describe('ShopifyCheckoutKit', () => {
       dispatch(detail);
       expect(first).toHaveBeenCalledTimes(1);
       expect(second).toHaveBeenCalledWith(detail);
+
+      instance.teardown();
+    });
+
+    it('keeps a single global callback owned by the latest configured instance', () => {
+      const remove = jest.fn();
+      NativeModule.onMessageRejected.mockReturnValueOnce({remove});
+      const firstCallback = jest.fn();
+      const secondCallback = jest.fn();
+      const first = new ShopifyCheckout({onMessageRejected: firstCallback});
+      const dispatch = lastMessageRejectedDispatch();
+      const second = new ShopifyCheckout({onMessageRejected: secondCallback});
+      const detail = {
+        origin: 'https://untrusted.example',
+        message: '{"type":"test"}',
+        reason: 'Origin is not allowed',
+      };
+
+      expect(NativeModule.onMessageRejected).toHaveBeenCalledTimes(1);
+      dispatch(detail);
+      expect(firstCallback).not.toHaveBeenCalled();
+      expect(secondCallback).toHaveBeenCalledWith(detail);
+
+      first.teardown();
+      expect(remove).not.toHaveBeenCalled();
+
+      second.teardown();
+      expect(remove).toHaveBeenCalledTimes(1);
+      expect(NativeModule.setConfig).toHaveBeenLastCalledWith({
+        hasMessageRejectedCallback: false,
+      });
     });
 
     it('removes the message rejection subscription when the callback is cleared', () => {
@@ -294,6 +325,9 @@ describe('ShopifyCheckoutKit', () => {
       instance.teardown();
 
       expect(remove).toHaveBeenCalledTimes(1);
+      expect(NativeModule.setConfig).toHaveBeenLastCalledWith({
+        hasMessageRejectedCallback: false,
+      });
     });
   });
 
@@ -772,6 +806,8 @@ describe('ShopifyCheckoutKit', () => {
         allowedMessageOrigins: ['https://example.com'],
         onMessageRejected,
       });
+
+      instance.teardown();
     });
   });
 

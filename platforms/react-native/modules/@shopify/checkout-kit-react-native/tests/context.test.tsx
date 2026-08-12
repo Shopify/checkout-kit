@@ -69,6 +69,9 @@ describe('ShopifyCheckoutProvider', () => {
     component.unmount();
 
     expect(remove).toHaveBeenCalledTimes(1);
+    expect(
+      NativeModules.ShopifyCheckoutKit.setConfig,
+    ).toHaveBeenLastCalledWith({hasMessageRejectedCallback: false});
   });
 
   it('creates ShopifyCheckout instance with configuration', () => {
