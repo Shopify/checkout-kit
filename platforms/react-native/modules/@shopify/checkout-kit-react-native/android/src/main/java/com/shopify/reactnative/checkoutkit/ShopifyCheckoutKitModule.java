@@ -363,6 +363,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
           // for now
           null,
           closeButtonColor,
+          null,
           null);
     }
 
