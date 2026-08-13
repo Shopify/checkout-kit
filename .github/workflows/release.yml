@@ -30,7 +30,7 @@ on:
           - Production release
 
 concurrency:
-  group: release-${{ inputs.platform }}
+  group: ${{ (inputs.platform == 'Web' || startsWith(github.event.release.tag_name, 'web/')) && 'web-publish' || format('release-{0}', inputs.platform) }}
   cancel-in-progress: false
 
 jobs:
@@ -64,6 +64,14 @@ jobs:
           REF: ${{ github.ref }}
         run: |
           echo "::error::Stable releases must be created from the main branch. Current ref: $REF"
+          exit 1
+
+      - name: Require main branch for Web releases
+        if: inputs.platform == 'Web' && inputs.mode != 'Dry run' && github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error::Web releases must be created from the main branch. Current ref: $REF"
           exit 1
 
       - name: Check tag and release do not already exist
