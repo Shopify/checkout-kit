@@ -81,7 +81,6 @@ class CartViewModel(
                 .drop(1)
                 .collect {
                     clearCart()
-                    ShopifyCheckoutKit.invalidate()
                 }
         }
     }
