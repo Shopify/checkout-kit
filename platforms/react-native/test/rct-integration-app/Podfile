@@ -37,7 +37,8 @@ target 'RCTIntegrationApp' do
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
-      :ccache_enabled => false
+      # Opt-in only. See the sample app's Podfile for why.
+      :ccache_enabled => ENV.fetch('CCACHE_ENABLED', '0') == '1'
     )
   end
 end

@@ -44,7 +44,10 @@ target 'CheckoutKitReactNativeDemo' do
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
-      :ccache_enabled => false
+      # Opt-in only. A default would make a local pod install produce a different
+      # Pods project than CI does, and the compiler wrapper is the last place to
+      # want that divergence. e2e/bitrise.yml sets it on the macOS build jobs.
+      :ccache_enabled => ENV.fetch('CCACHE_ENABLED', '0') == '1'
     )
   end
 end

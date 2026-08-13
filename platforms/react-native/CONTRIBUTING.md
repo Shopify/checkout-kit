@@ -95,9 +95,14 @@ Local mode has to stay an explicit command-line choice. Hardcoding it makes loca
 - **Android (Android Studio)**: when running the sample via Android Studio's Run button after editing `platforms/android/**` or `protocol/languages/kotlin/**`, run `platforms/react-native/scripts/publish_android_snapshot` once manually (with `USE_LOCAL_SDK=1`) or run `dev rn android --local` from a terminal to refresh `~/.m2/`.
 - The flag affects **only the RN build**. The standalone Swift and Android SDK builds (`dev android build`, `swift build`, etc.) are unaffected.
 
-## Optional: Speed up builds with sccache
+## Optional: Speed up builds with a compiler cache
 
-For faster native compilation (especially on incremental builds), you can install [sccache](https://github.com/mozilla/sccache), a shared compilation cache:
+The two platforms use different caches, because Xcode and CMake discover a
+compiler cache in different ways.
+
+### Android: sccache
+
+Install [sccache](https://github.com/mozilla/sccache), a shared compilation cache:
 
 ```sh
 # macOS (using Homebrew)
@@ -109,12 +114,43 @@ cargo install sccache
 # Other systems: see https://github.com/mozilla/sccache#installation
 ```
 
-The build scripts will automatically detect and use sccache if available. On Android, React Native's CMake files look for a command named `ccache`, so the sample Android scripts put an sccache-backed compatibility command first on `PATH`. If you encounter any build issues, you can temporarily disable it:
+The Android build scripts detect it automatically. React Native's CMake files
+look for a command named `ccache`, so the sample Android scripts put an
+sccache-backed compatibility command first on `PATH`. To disable it for one build:
 
 ```sh
-# Disable sccache for a single build
-SCCACHE=false pnpm sample ios
 SCCACHE=false pnpm sample android
+```
+
+### iOS: ccache
+
+Xcode spawns the compiler as a single executable, so it cannot use sccache the
+way CMake does. React Native's CocoaPods integration wires in
+[ccache](https://ccache.dev) instead. It is opt-in, so a local `pod install`
+produces the same Pods project CI does unless you ask for the difference:
+
+```sh
+brew install ccache
+
+CCACHE_ENABLED=1 pnpm pod-install
+CCACHE_ENABLED=1 pnpm sample build:ios
+```
+
+Set it for `pod install` as well as the build — the setting is baked into the
+generated Pods project, not read at build time. CI sets `CCACHE_ENABLED=1` on
+the Bitrise React Native iOS workflows.
+
+The build scripts export `CCACHE_BINARY` for you. Without that export React
+Native's compiler wrapper runs a plain `clang`, the build still succeeds, and
+nothing is cached — so check `ccache --show-stats` rather than assuming.
+
+A ccache-enabled `pod install` also writes `CC`, `CXX`, `LD`, `LDPLUSPLUS` and an
+absolute `CCACHE_BINARY` path into the tracked
+`sample/ios/CheckoutKitReactNativeDemo.xcodeproj/project.pbxproj`. Never commit
+that. Restore it with:
+
+```sh
+git checkout -- sample/ios/CheckoutKitReactNativeDemo.xcodeproj/project.pbxproj
 ```
 
 ## Making changes to the Native Module

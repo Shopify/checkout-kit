@@ -3,19 +3,23 @@
 set -ex
 set -eo pipefail
 
-# Add sccache for faster compilation outside of CI environments
-# Can be disabled with SCCACHE=false for debugging or matching CI behavior locally
-if [ "$CI" = "true" ] || [ "$SCCACHE" = "false" ]; then
-    # CI detected or sccache explicitly disabled - skipping sccache for clean builds
-    if command -v sccache >/dev/null 2>&1; then
-        sccache --stop-server 2>/dev/null || true
-    fi
-else
-    if command -v sccache >/dev/null 2>&1; then
-        export RUSTC_WRAPPER=sccache
-        export CC="sccache clang"
-        export CXX="sccache clang++"
-    fi
+# The compiler cache for this build is ccache, wired in by the Podfile as an Xcode
+# build setting when CCACHE_ENABLED=1. sccache cannot fill that role here: Xcode
+# spawns CC as a single executable, so exporting CC="sccache clang" fails every
+# compile with "unable to spawn process". Only Android uses sccache — see
+# scripts/android_sccache, which shims it behind the name CMake looks for.
+# Can be disabled with SCCACHE=false for debugging or matching CI behavior locally.
+if [ "${SCCACHE:-}" = "false" ] && command -v sccache >/dev/null 2>&1; then
+    sccache --stop-server 2>/dev/null || true
+fi
+
+# pod install points CC at React Native's ccache-clang.sh, which runs
+# `exec $CCACHE_BINARY clang`. It writes CCACHE_BINARY as an Xcode build setting, and
+# Xcode does not put that in the compiler's environment — so the wrapper silently execs
+# a bare clang and caches nothing. Exporting it here is what makes the cache real.
+if [ "${CCACHE_ENABLED:-0}" = "1" ]; then
+    CCACHE_BINARY="${CCACHE_BINARY:-$(command -v ccache)}"
+    export CCACHE_BINARY
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

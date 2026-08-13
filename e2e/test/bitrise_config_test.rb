@@ -94,6 +94,25 @@ class BitriseConfigTest < Minitest::Test
   # A restore with no matching save warms nothing: the key never gets written, so every
   # build pays full price while looking cached. YAML resolves the anchors both sides share,
   # so comparing the resolved key strings catches a save that drifted onto a different key.
+  RESTORE_CACHE_INPUTS = ["key", "verbose", "timeout", "retries"].freeze
+
+  # Bitrise fails a step given an input it does not declare, and `bitrise validate` does
+  # not check inputs against the steplib. A plural `keys:` reads naturally and does not
+  # exist, so spell out what restore-cache actually accepts.
+  def test_restore_cache_steps_use_only_declared_inputs
+    containers = workflows.merge(config.fetch("step_bundles", {}))
+
+    undeclared = containers.flat_map do |name, definition|
+      Array(definition["steps"]).flat_map(&:to_a)
+        .select { |id, _step| id.start_with?("restore-cache@") }
+        .flat_map { |_id, step| Array(step["inputs"]).flat_map(&:keys) }
+        .reject { |input| RESTORE_CACHE_INPUTS.include?(input) }
+        .map { |input| "#{name}: #{input}" }
+    end
+
+    assert_empty undeclared, "restore-cache does not accept these inputs:\n#{undeclared.join("\n")}"
+  end
+
   def test_every_restored_cache_is_also_saved
     containers = workflows.merge(config.fetch("step_bundles", {}))
 
@@ -106,11 +125,14 @@ class BitriseConfigTest < Minitest::Test
     assert_empty unsaved, "These caches are restored but never saved:\n#{unsaved.join("\n")}"
   end
 
+  # restore-cache takes one `key` input holding a priority-ordered list: an exact key on
+  # the first line, then fallback prefixes. Only that first line names a cache anything
+  # writes, so it is the only line a save has to match.
   def cache_keys(steps, prefix)
     Array(steps).flat_map(&:to_a)
       .select { |id, _step| id.start_with?(prefix) }
       .flat_map { |_id, step| Array(step["inputs"]).filter_map { |input| input["key"] } }
-      .map(&:strip)
+      .map { |key| key.to_s.lines.first.to_s.strip }
   end
 
   def test_every_triggered_pipeline_reports_a_status_unique_to_itself

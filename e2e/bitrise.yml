@@ -241,6 +241,20 @@ step_bundles:
                 simulator_uuid="$(xcrun simctl create CIDevice "$CI_IOS_SIMULATOR_DEVICE")"
                 xcrun simctl bootstatus "$simulator_uuid" -b
                 envman add --key CURRENT_SIMULATOR_UUID --value "$simulator_uuid"
+  # react_native_post_install resolves ccache when `pod install` runs, so this has to
+  # come before install-cocoapods. The cache directory itself is restored and saved in
+  # each workflow, because a save has to follow the build step that fills it.
+  install-ccache:
+    steps:
+      - script@1:
+          title: Install ccache
+          inputs:
+            - content: |-
+                set -euo pipefail
+                if ! command -v ccache >/dev/null 2>&1; then
+                  brew install ccache
+                fi
+                ccache --version
   bootstrap-mint:
     inputs:
       - mintfile_dir: ""
@@ -368,6 +382,11 @@ workflows:
       bitrise.io:
         stack: *macos_stack
         machine_type_id: g2.mac.4large
+    envs:
+      # Opt-in, set here and nowhere shared. A hardcoded default would make a local
+      # pod install produce a different Pods project than this job does.
+      - CCACHE_ENABLED: "1"
+      - CCACHE_DIR: $BITRISE_SOURCE_DIR/.ccache
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
@@ -384,6 +403,7 @@ workflows:
                 scripts/check_published_podfile_lock sample/ios/Podfile.lock
       - bundle::install-node-modules: {}
       - bundle::install-ruby-gems: {}
+      - bundle::install-ccache: {}
       - bundle::install-cocoapods: {}
       # The 89 pods here are the React Native New Architecture C++ core. They dominate the
       # build and only change when the lockfile or the Swift package pins do.
@@ -391,6 +411,18 @@ workflows:
           inputs:
             - key: &rn_sample_derived_data_cache_key |-
                 rn-sample-derived-data-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}-{{ checksum "Package.resolved" }}
+      # Keyed on the branch so each build starts from the last one on the same branch and
+      # ends up saved under its own key. A lockfile key would freeze the compiler cache at
+      # its first contents, which is the opposite of what a compiler cache is for.
+      # restore-cache takes one `key` input; extra lines are fallback prefixes tried in
+      # order. save-cache takes a single key, so line 1 is repeated below verbatim, and
+      # bitrise_config_test.rb fails the build if the two ever drift apart.
+      - restore-cache@3:
+          inputs:
+            - key: |-
+                rn-sample-ccache-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-{{ .CommitHash }}
+                rn-sample-ccache-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-
+                rn-sample-ccache-{{ .OS }}-{{ .Arch }}-
       - script@1:
           title: Build the React Native iOS sample
           timeout: 5400
@@ -401,16 +433,25 @@ workflows:
                 cd platforms/react-native
                 pnpm module build
                 pnpm sample build:ios
+                ccache --show-stats
       - save-cache@1:
           inputs:
             - key: *rn_sample_derived_data_cache_key
             - paths: ~/Library/Developer/Xcode/DerivedData
+      - save-cache@1:
+          inputs:
+            - key: |-
+                rn-sample-ccache-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-{{ .CommitHash }}
+            - paths: $CCACHE_DIR
 
   ci-ios-react-native-test-ios:
     meta:
       bitrise.io:
         stack: *macos_stack
         machine_type_id: g2.mac.4large
+    envs:
+      - CCACHE_ENABLED: "1"
+      - CCACHE_DIR: $BITRISE_SOURCE_DIR/.ccache
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
@@ -432,10 +473,18 @@ workflows:
       # Not the install-cocoapods bundle: that one owns the sample app's Pods tree.
       # test_ios runs `pod install` for the integration app itself, so this pair only
       # carries the resulting Pods directory across builds.
+      - bundle::install-ccache: {}
       - restore-cache@3:
           inputs:
             - key: &rct_integration_cocoapods_cache_key |-
                 rct-integration-cocoapods-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/test/rct-integration-app/Podfile.lock" }}
+      # See the sample build job for why the exact key is repeated on save-cache.
+      - restore-cache@3:
+          inputs:
+            - key: |-
+                rct-integration-ccache-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-{{ .CommitHash }}
+                rct-integration-ccache-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-
+                rct-integration-ccache-{{ .OS }}-{{ .Arch }}-
       - script@1:
           title: Run the React Native iOS tests
           timeout: 5400
@@ -446,10 +495,16 @@ workflows:
                 cd platforms/react-native
                 pnpm module build
                 pnpm sample test:ios
+                ccache --show-stats
       - save-cache@1:
           inputs:
             - key: *rct_integration_cocoapods_cache_key
             - paths: platforms/react-native/test/rct-integration-app/Pods
+      - save-cache@1:
+          inputs:
+            - key: |-
+                rct-integration-ccache-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-{{ .CommitHash }}
+            - paths: $CCACHE_DIR
 
   ci-ios-report:
     steps:
