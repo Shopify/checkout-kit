@@ -2,6 +2,7 @@ package com.shopify.checkoutkit.androiddemo.settings.authentication.utils
 
 import android.net.Uri
 import android.util.Base64
+import androidx.core.net.toUri
 import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationRequest
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -29,7 +30,7 @@ class AuthenticationHelper(
         val codeVerifier = randomUrlSafeString()
         val state = randomUrlSafeString()
         val nonce = randomUrlSafeString()
-        val authorizationUri = Uri.parse("$issuer/oauth/authorize").buildUpon()
+        val authorizationUri = "$issuer/oauth/authorize".toUri().buildUpon()
             .appendQueryParameter("scope", "openid email customer-account-api:full")
             .appendQueryParameter("client_id", clientId)
             .appendQueryParameter("response_type", "code")
@@ -42,7 +43,7 @@ class AuthenticationHelper(
             .build()
 
         return AuthorizationContext(
-            browserRequest = BrowserAuthenticationRequest(authorizationUri, Uri.parse(redirectUri)),
+            browserRequest = BrowserAuthenticationRequest(authorizationUri, redirectUri.toUri()),
             codeVerifier = codeVerifier,
             state = state,
             nonce = nonce,
@@ -50,7 +51,7 @@ class AuthenticationHelper(
     }
 
     fun authorizationCode(callbackUri: Uri, expectedState: String): String {
-        if (!callbackUri.matchesRedirect(Uri.parse(redirectUri)) || callbackUri.fragment != null) {
+        if (!callbackUri.matchesRedirect(redirectUri.toUri()) || callbackUri.fragment != null) {
             throw AuthenticationException("Invalid authorization callback")
         }
 
@@ -72,22 +73,22 @@ class AuthenticationHelper(
 
     fun logoutRequest(idToken: String): BrowserAuthenticationRequest {
         validateConfiguration()
-        val logoutUri = Uri.parse("$issuer/logout").buildUpon()
+        val logoutUri = "$issuer/logout".toUri().buildUpon()
             .appendQueryParameter("id_token_hint", idToken)
             .appendQueryParameter("post_logout_redirect_uri", redirectUri)
             .build()
-        return BrowserAuthenticationRequest(logoutUri, Uri.parse(redirectUri))
+        return BrowserAuthenticationRequest(logoutUri, redirectUri.toUri())
     }
 
     fun validateLogoutCallback(callbackUri: Uri) {
-        if (!callbackUri.matchesRedirect(Uri.parse(redirectUri))) {
+        if (!callbackUri.matchesRedirect(redirectUri.toUri())) {
             throw AuthenticationException("Invalid logout callback")
         }
     }
 
     private fun validateConfiguration() {
-        val issuerUri = Uri.parse(issuer)
-        val callbackUri = Uri.parse(redirectUri)
+        val issuerUri = issuer.toUri()
+        val callbackUri = redirectUri.toUri()
         val callbackScheme = callbackUri.scheme.orEmpty()
         val callbackHasAuthority = !callbackUri.host.isNullOrBlank()
         if (
