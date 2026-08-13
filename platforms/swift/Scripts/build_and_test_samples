@@ -27,5 +27,5 @@ run_app() {
     "$SCRIPT_DIR/xcode_run" "$action" "$app"
 }
 
-run_app CheckoutKitSwiftDemo "clean build test"
+run_app CheckoutKitSwiftDemo "build test"
 run_app ShopifyAcceleratedCheckoutsApp "build"
