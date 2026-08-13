@@ -13,6 +13,7 @@ struct ApplePayButtonRepresentable: UIViewRepresentable {
 
     func makeUIView(context _: UIViewRepresentableContext<ApplePayButtonRepresentable>) -> PKPaymentButton {
         let button = PKPaymentButton(paymentButtonType: buttonType, paymentButtonStyle: buttonStyle)
+        button.accessibilityIdentifier = "apple-pay-button"
         button.cornerRadius = cornerRadius
         button.addAction(UIAction { _ in action() }, for: .touchUpInside)
         return button
