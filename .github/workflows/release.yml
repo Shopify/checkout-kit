@@ -1,6 +1,8 @@
 name: Release package
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       platform:
@@ -12,6 +14,7 @@ on:
           - Android
           - Embedded Checkout Protocol
           - React Native
+          - Web
       version:
         description: Expected package version. Must match the checked-in version for the selected platform.
         required: true
@@ -26,10 +29,6 @@ on:
           - Draft release
           - Production release
 
-permissions:
-  contents: write
-  actions: write
-
 concurrency:
   group: release-${{ inputs.platform }}
   cancel-in-progress: false
@@ -37,8 +36,14 @@ concurrency:
 jobs:
   release:
     name: Release ${{ inputs.platform }} ${{ inputs.version }}
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+      actions: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
 
     steps:
       - name: Checkout
@@ -111,7 +116,11 @@ jobs:
             echo "  Publish dispatch: skipped until the draft release is manually published"
           else
             echo "  Release creation: published GitHub Release"
-            echo "  Publish dispatch: ${PUBLISH_WORKFLOW} will be dispatched after release creation"
+            if [ "$DISPLAY_PLATFORM" = "Web" ]; then
+              echo "  Publish: the Web publish job will run after release creation"
+            else
+              echo "  Publish dispatch: ${PUBLISH_WORKFLOW} will be dispatched after release creation"
+            fi
           fi
 
       - name: Create GitHub Release
@@ -139,7 +148,7 @@ jobs:
           gh release create "${args[@]}"
 
       - name: Dispatch publish workflow
-        if: ${{ inputs.mode == 'Production release' }}
+        if: ${{ inputs.mode == 'Production release' && inputs.platform != 'Web' }}
         env:
           TAG: ${{ steps.release.outputs.tag }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
@@ -205,3 +214,84 @@ jobs:
           SUMMARY
             echo "::notice::GitHub CLI draft release command written to the job summary."
           fi
+
+  web-publish:
+    name: Publish @shopify/checkout-kit to npm
+    needs: release
+    if: |
+      always() && (
+        (github.event_name == 'workflow_dispatch'
+          && inputs.platform == 'Web'
+          && inputs.mode == 'Production release'
+          && needs.release.result == 'success')
+        || (github.event_name == 'release'
+          && startsWith(github.event.release.tag_name, 'web/'))
+      )
+    permissions:
+      contents: read
+      id-token: write
+    environment:
+      name: npm-web
+      url: https://www.npmjs.com/package/@shopify/checkout-kit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: platforms/web
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/web/package.json
+          cache-dependency-path: platforms/web/pnpm-lock.yaml
+          package-json-file: platforms/web/package.json
+          working-directory: platforms/web
+          ignore-scripts: "true"
+
+      - name: Validate release version
+        id: release
+        working-directory: .
+        env:
+          EXPECTED_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || needs.release.outputs.tag }}
+        run: .github/scripts/validate-release-version Web "" "$EXPECTED_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Verify version is not already published
+        run: |
+          set -euo pipefail
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          URL="https://registry.npmjs.org/${NAME}/${VERSION}"
+          if curl -fs "$URL" > /dev/null; then
+            echo "::error::${NAME}@${VERSION} is already published on npm. Bump platforms/web/package.json before re-running."
+            exit 1
+          fi
+          echo "::notice::${NAME}@${VERSION} is not yet on npm — safe to proceed."
+
+      - name: Lint (typecheck + oxlint + format)
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify package (publint)
+        run: pnpm verify
+
+      - name: Pack and inspect contents
+        run: |
+          pnpm pack --pack-destination /tmp/web-publish
+          echo "Tarball contents:"
+          tar -tzf /tmp/web-publish/*.tgz | sort
+
+      - name: Publish to npm
+        run: pnpm dlx npm@11.5.1 publish --no-git-checks --tag "$DIST_TAG" --access public --provenance
+        env:
+          DIST_TAG: ${{ steps.release.outputs.npm_tag }}
+          NPM_CONFIG_PROVENANCE: "true"
+          NPM_TOKEN: ""
+          NODE_AUTH_TOKEN: ""

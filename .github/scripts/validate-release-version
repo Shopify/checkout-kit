@@ -130,8 +130,19 @@ case "$PLATFORM_INPUT" in
     VERSION=$(json_version "$RN_PACKAGE_FILE")
     ;;
 
+  Web|web)
+    PLATFORM="web"
+    DISPLAY_PLATFORM="Web"
+    RELEASE_TITLE_PREFIX="Web"
+    TAG_PREFIX="web/"
+    PUBLISH_WORKFLOW="release.yml"
+
+    WEB_PACKAGE_FILE="platforms/web/package.json"
+    VERSION=$(json_version "$WEB_PACKAGE_FILE")
+    ;;
+
   *)
-    echo "::error::Unsupported platform '$PLATFORM_INPUT'. Expected one of: iOS, Android, Embedded Checkout Protocol, React Native." >&2
+    echo "::error::Unsupported platform '$PLATFORM_INPUT'. Expected one of: iOS, Android, Embedded Checkout Protocol, React Native, Web." >&2
     exit 1
     ;;
 esac
