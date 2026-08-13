@@ -435,8 +435,8 @@ val configuration = ShopifyCheckoutKit.getConfiguration()
 ### Incoming message origin validation
 
 Native checkout accepts messages from every origin by default. To restrict messages, configure one
-or more exact origins or wildcard subdomains. The checkout URL's origin and `shop.app` remain
-trusted automatically.
+or more exact origins or wildcard subdomains. The checkout URL's origin and Shopify-owned
+`shop.app` and `shop.com` domains (including their subdomains) remain trusted automatically.
 
 ```kotlin
 ShopifyCheckoutKit.configure {

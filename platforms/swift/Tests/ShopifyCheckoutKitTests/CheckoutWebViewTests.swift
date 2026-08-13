@@ -1209,11 +1209,11 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
-    func testOriginValidationAllowsShopAppSubdomainWhenAllowlistSet() async {
+    func testOriginValidationAllowsShopComSubdomainWhenAllowlistSet() async {
         defer { resetOriginValidationConfig() }
         view.client = nil
         view.loadedCheckoutURL = url
-        stubMessageOrigin("https://checkout.shop.app")
+        stubMessageOrigin("https://checkout.shop.com")
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent

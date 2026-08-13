@@ -32,7 +32,9 @@ final class MessageOriginValidatorTests: XCTestCase {
             "https://merchant.example.com",
             "https://checkout.example.com",
             "https://shop.app",
-            "https://*.shop.app"
+            "https://*.shop.app",
+            "https://shop.com",
+            "https://*.shop.com"
         ])
     }
 
@@ -44,7 +46,9 @@ final class MessageOriginValidatorTests: XCTestCase {
         XCTAssertEqual(patterns, [
             "https://merchant.example.com",
             "https://shop.app",
-            "https://*.shop.app"
+            "https://*.shop.app",
+            "https://shop.com",
+            "https://*.shop.com"
         ])
     }
 

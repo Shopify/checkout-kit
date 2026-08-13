@@ -845,7 +845,7 @@ describe("<shopify-checkout>", () => {
         expect(onStartSpy).not.toHaveBeenCalled();
       });
 
-      it("accepts protocol messages from a shop.app subdomain by default", async () => {
+      it("accepts protocol messages from a shop.com subdomain by default", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
         const payload = makeCheckoutPayload();
@@ -853,7 +853,7 @@ describe("<shopify-checkout>", () => {
 
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
-          origin: "https://checkout.shop.app",
+          origin: "https://checkout.shop.com",
         });
         await flushProtocolDispatch();
 
