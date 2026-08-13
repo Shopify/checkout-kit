@@ -240,6 +240,52 @@ step_bundles:
                 simulator_uuid="$(xcrun simctl create CIDevice "$CI_IOS_SIMULATOR_DEVICE")"
                 xcrun simctl bootstatus "$simulator_uuid" -b
                 envman add --key CURRENT_SIMULATOR_UUID --value "$simulator_uuid"
+  install-sccache:
+    steps:
+      - script@1:
+          title: Install sccache
+          inputs:
+            - content: |-
+                set -euo pipefail
+                if ! command -v sccache >/dev/null 2>&1; then
+                  brew install sccache
+                fi
+                sccache --version
+  restore-sccache:
+    inputs:
+      - cache_namespace: ""
+    steps:
+      - script@1:
+          title: Configure sccache cache keys
+          inputs:
+            - content: |-
+                set -euo pipefail
+                : "${cache_namespace:?cache_namespace input is required}"
+                : "${BITRISE_GIT_BRANCH:?BITRISE_GIT_BRANCH is required}"
+                : "${BITRISE_GIT_COMMIT:?BITRISE_GIT_COMMIT is required}"
+                cache_os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+                cache_arch="$(uname -m)"
+                cache_prefix="${cache_namespace}-sccache-${cache_os}-${cache_arch}"
+                cache_key="${cache_prefix}-${BITRISE_GIT_BRANCH}-${BITRISE_GIT_COMMIT}"
+                cache_restore_keys="$(printf '%s\n%s\n%s' "$cache_key" "${cache_prefix}-${BITRISE_GIT_BRANCH}-" "${cache_prefix}-")"
+                envman add --key SCCACHE_CACHE_KEY --value "$cache_key"
+                envman add --key SCCACHE_RESTORE_KEYS --value "$cache_restore_keys"
+      - restore-cache@3:
+          inputs:
+            - key: $SCCACHE_RESTORE_KEYS
+  save-sccache:
+    steps:
+      - script@1:
+          title: Validate sccache cache configuration
+          inputs:
+            - content: |-
+                set -euo pipefail
+                : "${SCCACHE_CACHE_KEY:?restore-sccache must run before save-sccache}"
+                : "${SCCACHE_DIR:?SCCACHE_DIR is required}"
+      - save-cache@1:
+          inputs:
+            - key: $SCCACHE_CACHE_KEY
+            - paths: $SCCACHE_DIR
   bootstrap-mint:
     inputs:
       - mintfile_dir: ""
@@ -367,6 +413,9 @@ workflows:
       bitrise.io:
         stack: *macos_stack
         machine_type_id: g2.mac.4large
+    envs:
+      - SCCACHE_ENABLED: "1"
+      - SCCACHE_DIR: $BITRISE_SOURCE_DIR/.sccache
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
@@ -383,6 +432,7 @@ workflows:
                 scripts/check_published_podfile_lock sample/ios/Podfile.lock
       - bundle::install-node-modules: {}
       - bundle::install-ruby-gems: {}
+      - bundle::install-sccache: {}
       - bundle::install-cocoapods: {}
       # The 89 pods here are the React Native New Architecture C++ core. They dominate the
       # build and only change when the lockfile or the Swift package pins do.
@@ -390,6 +440,9 @@ workflows:
           inputs:
             - key: &rn_sample_derived_data_cache_key |-
                 rn-sample-derived-data-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}-{{ checksum "Package.resolved" }}
+      - bundle::restore-sccache:
+          inputs:
+            - cache_namespace: rn-sample
       - script@1:
           title: Build the React Native iOS sample
           timeout: 5400
@@ -400,16 +453,21 @@ workflows:
                 cd platforms/react-native
                 pnpm module build
                 pnpm sample build:ios
+                sccache --show-stats
       - save-cache@1:
           inputs:
             - key: *rn_sample_derived_data_cache_key
             - paths: ~/Library/Developer/Xcode/DerivedData
+      - bundle::save-sccache: {}
 
   ci-ios-react-native-test-ios:
     meta:
       bitrise.io:
         stack: *macos_stack
         machine_type_id: g2.mac.4large
+    envs:
+      - SCCACHE_ENABLED: "1"
+      - SCCACHE_DIR: $BITRISE_SOURCE_DIR/.sccache
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
@@ -431,10 +489,14 @@ workflows:
       # Not the install-cocoapods bundle: that one owns the sample app's Pods tree.
       # test_ios runs `pod install` for the integration app itself, so this pair only
       # carries the resulting Pods directory across builds.
+      - bundle::install-sccache: {}
       - restore-cache@3:
           inputs:
             - key: &rct_integration_cocoapods_cache_key |-
                 rct-integration-cocoapods-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/test/rct-integration-app/Podfile.lock" }}
+      - bundle::restore-sccache:
+          inputs:
+            - cache_namespace: rct-integration
       - script@1:
           title: Run the React Native iOS tests
           timeout: 5400
@@ -445,10 +507,12 @@ workflows:
                 cd platforms/react-native
                 pnpm module build
                 pnpm sample test:ios
+                sccache --show-stats
       - save-cache@1:
           inputs:
             - key: *rct_integration_cocoapods_cache_key
             - paths: platforms/react-native/test/rct-integration-app/Pods
+      - bundle::save-sccache: {}
 
   ci-ios-report:
     steps:

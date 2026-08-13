@@ -216,4 +216,6 @@ The pipeline uses Bitrise cache steps for key-based pnpm/CocoaPods/Gradle cache 
 
 Do not add `activate-build-cache-for-xcode` or `activate-build-cache-for-gradle`; the Bitrise Build Cache add-on is disabled for Shopify Bitrise apps.
 
+The React Native iOS workflows also persist sccache between builds. Its keys prefer the current commit, then the latest entry from the branch, then the architecture. Each workflow gives `restore-sccache` a cache namespace; that bundle derives the exact save key and ordered restore keys once, and `save-sccache` reuses the generated exact key. The iOS build scripts start the server before Xcode and configure the compiler launcher using sccache's documented Xcode settings.
+
 Ruby and Node versions are pinned in `e2e/bitrise.yml` via the Bitrise `tools:` configuration (`ruby: "3.4:installed"`, `nodejs: 22.14.0`), which Bitrise installs before each workflow runs. The `:installed` suffix tells each stack to use its own preinstalled 3.4.x rather than compiling one from source. Pin exact versions that the target stacks preinstall so setup stays fast and reproducible; a version the stack does not ship is installed on demand and is slower. pnpm is pinned separately through Corepack via the `packageManager` field in `platforms/react-native/package.json`.

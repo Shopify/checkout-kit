@@ -3,6 +3,7 @@
 set -e -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/ios_sccache"
 REACT_NATIVE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 REPO_ROOT="$(cd "$REACT_NATIVE_DIR/../.." && pwd)"
 TEST_APP_DIR="$REACT_NATIVE_DIR/test/rct-integration-app"
@@ -55,7 +56,8 @@ run_xcodebuild() {
         -disableAutomaticPackageResolution \
         -sdk iphonesimulator \
         ASSETCATALOG_COMPILER_OPTIMIZATION=time \
-        COMPILER_INDEX_STORE_ENABLE=NO
+        COMPILER_INDEX_STORE_ENABLE=NO \
+        "${IOS_SCCACHE_XCODEBUILD_ARGS[@]}"
 }
 
 if command -v xcbeautify >/dev/null 2>&1; then
