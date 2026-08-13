@@ -53,6 +53,31 @@ class MaestroTestTagsTest < Minitest::Test
     end
   end
 
+  def platform_tag_errors(path, declared_tags)
+    platforms = declared_tags & PLATFORM_TAGS
+    return [] if platforms.length <= 1
+
+    ["#{path} must declare at most one platform tag, found #{platforms.inspect}"]
+  end
+
+  def test_every_test_declares_at_most_one_platform_capability
+    test_files.each do |path|
+      assert_empty(platform_tag_errors(path, tags(path)))
+    end
+  end
+
+  def test_dual_platform_tags_are_rejected
+    errors = platform_tag_errors(
+      "tests/shared/dual-platform.yaml",
+      ["launch", "smoke", "ios-only", "android-only"]
+    )
+
+    assert_equal(
+      ['tests/shared/dual-platform.yaml must declare at most one platform tag, found ["ios-only", "android-only"]'],
+      errors
+    )
+  end
+
   def test_a_platform_tag_names_the_capability_that_earns_it
     test_files.each do |path|
       next if (tags(path) & PLATFORM_TAGS).empty?
