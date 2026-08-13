@@ -96,7 +96,7 @@ class AuthenticationHelper(
         return bytes.base64UrlEncode()
     }
 
-    private fun codeChallenge(verifier: String): String {
+    internal fun codeChallenge(verifier: String): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.UTF_8))
         return digest.base64UrlEncode()
     }
