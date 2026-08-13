@@ -98,11 +98,15 @@ Use `Production release` mode in the `Release package` workflow to create the
 GitHub Release and run the protected Web publish job in the same workflow. Use
 `Dry run` first to validate the package version and inspect the release plan.
 
-## One-time setup (already done — for reference)
+## Required npm configuration
 
-These are the one-time admin tasks required to enable Trusted Publishing.
-Documented here so this guide remains complete if the configuration ever
-needs to be re-created.
+> [!IMPORTANT]
+> Before the first Web release using `.github/workflows/release.yml`, update
+> the npm Trusted Publisher to use `release.yml`. npm binds trusted publishing
+> to the exact workflow filename; leaving it configured for the removed
+> `web-publish.yml` workflow will cause publishing to fail.
+
+These are the admin settings required to enable Trusted Publishing.
 
 ### npm Trusted Publisher
 
@@ -117,7 +121,8 @@ On <https://www.npmjs.com/package/@shopify/checkout-kit>:
    - **Environment name**: `npm-web`
 
 This tells npm to accept publishes that present an OIDC token from this exact
-workflow file in this environment. No long-lived `NPM_TOKEN` is needed.
+workflow file in this environment. No long-lived `NPM_TOKEN` is needed. Verify
+this setting after merging any workflow rename and before publishing.
 
 ### GitHub environment
 
@@ -125,7 +130,7 @@ In the repo's _Settings → Environments → New environment_:
 
 - **Name**: `npm-web`
 - **Required reviewers**: 1+ maintainers from the package owners list
-- **Deployment branches**: restrict to `main`
+- **Deployment branches and tags**: allow `main` and tags matching `web/*`
 
 The required-reviewer rule means every publish requires explicit human
 approval, even if the workflow somehow ran without authorization.
