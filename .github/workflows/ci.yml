@@ -99,6 +99,8 @@ jobs:
               - '.github/workflows/rn-build-android.yml'
             web:
               - '.github/workflows/web.yml'
+              - '.github/workflows/release.yml'
+              - '.github/scripts/validate-release-version'
               - '.github/actions/setup/**'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
