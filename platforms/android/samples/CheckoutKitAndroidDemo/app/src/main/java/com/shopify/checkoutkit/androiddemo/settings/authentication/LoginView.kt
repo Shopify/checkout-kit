@@ -8,14 +8,12 @@ import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.shopify.checkoutkit.androiddemo.MainActivity
 import com.shopify.checkoutkit.androiddemo.R
 import com.shopify.checkoutkit.androiddemo.common.components.BodyMedium
 import com.shopify.checkoutkit.androiddemo.common.components.ProgressIndicator
@@ -29,7 +27,7 @@ fun LoginView(
 ) {
 
     val uiState = loginViewModel.uiState.collectAsState().value
-    val activity = LocalActivity.current as MainActivity
+    val browserAuthenticationLauncher = LocalBrowserAuthenticationLauncher.current
     val locale = Locale.current.toString()
 
     LaunchedEffect(Unit) {
@@ -52,7 +50,7 @@ fun LoginView(
                 ) {
                     Button(
                         onClick = {
-                            activity.launchCustomerAccountAuthentication(uiState.status.authorizationContext.browserRequest) { result ->
+                            browserAuthenticationLauncher.launch(uiState.status.authorizationContext.browserRequest) { result ->
                                 loginViewModel.browserAuthenticationCompleted(result)
                             }
                         },
