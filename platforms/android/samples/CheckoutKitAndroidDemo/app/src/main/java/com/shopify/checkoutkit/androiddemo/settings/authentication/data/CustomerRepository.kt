@@ -30,8 +30,8 @@ class CustomerRepository(
 ) {
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val _isAuthenticated = MutableStateFlow(false)
-    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
+    private val _authenticationState = MutableStateFlow<AuthenticationState>(AuthenticationState.Loading)
+    val authenticationState: StateFlow<AuthenticationState> = _authenticationState.asStateFlow()
 
     init {
         repositoryScope.launch {
@@ -171,7 +171,16 @@ class CustomerRepository(
 
     private suspend fun updateAuthenticationState() {
         val token = localTokenStore.find()
-        val isAuthenticated = token != null && !token.hasExpired()
-        _isAuthenticated.value = isAuthenticated
+        _authenticationState.value = if (token != null && !token.hasExpired()) {
+            AuthenticationState.Authenticated
+        } else {
+            AuthenticationState.Unauthenticated
+        }
     }
+}
+
+sealed interface AuthenticationState {
+    data object Loading : AuthenticationState
+    data object Authenticated : AuthenticationState
+    data object Unauthenticated : AuthenticationState
 }

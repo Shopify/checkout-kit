@@ -9,6 +9,7 @@ import com.shopify.checkoutkit.androiddemo.BuildConfig
 import com.shopify.checkoutkit.androiddemo.common.withCustomCloseIcon
 import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationRequest
 import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationResult
+import com.shopify.checkoutkit.androiddemo.settings.authentication.data.AuthenticationState
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.CustomerRepository
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutSheetPreset
@@ -37,14 +38,18 @@ class SettingsViewModel(
         viewModelScope.launch {
             combine(
                 settingsRepository.observeSettings(),
-                customerRepository.isAuthenticated
-            ) { settings, isAuthenticated ->
-                SettingsUiState.Loaded(
-                    settings = settings,
-                    sdkVersion = ShopifyCheckoutKit.VERSION,
-                    sampleAppVersion = BuildConfig.VERSION_NAME,
-                    isAuthenticated = isAuthenticated
-                )
+                customerRepository.authenticationState
+            ) { settings, authenticationState ->
+                when (authenticationState) {
+                    AuthenticationState.Loading -> SettingsUiState.Loading
+                    AuthenticationState.Authenticated,
+                    AuthenticationState.Unauthenticated -> SettingsUiState.Loaded(
+                        settings = settings,
+                        sdkVersion = ShopifyCheckoutKit.VERSION,
+                        sampleAppVersion = BuildConfig.VERSION_NAME,
+                        isAuthenticated = authenticationState == AuthenticationState.Authenticated
+                    )
+                }
             }.collect { uiState ->
                 _uiState.value = uiState
             }
