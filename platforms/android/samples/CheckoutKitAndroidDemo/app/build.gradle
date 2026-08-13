@@ -52,6 +52,10 @@ if (!customerAccountApiAuthBaseUrl && customerAccountApiShopId) {
     customerAccountApiAuthBaseUrl = "https://shopify.com/authentication/${customerAccountApiShopId}"
 }
 
+def customerAccountRedirect = customerAccountApiRedirectUri ? new URI(customerAccountApiRedirectUri) : null
+def customerAccountRedirectScheme = customerAccountRedirect?.scheme ?: "invalid-customer-account-callback"
+def customerAccountRedirectHost = customerAccountRedirect?.host ?: "callback"
+
 // Demo buyer identity (prefill toggle in Settings)
 def prefillEmail = properties.getProperty("EMAIL", properties.getProperty("PREFILL_EMAIL", "test.buyer@example.com"))
 def prefillPhone = properties.getProperty("PHONE", properties.getProperty("PREFILL_PHONE", "+14165550100"))
@@ -70,6 +74,11 @@ android {
         targetSdk = 36
         versionCode = 34
         versionName = "0.0.${versionCode}"
+
+        manifestPlaceholders = [
+            customerAccountRedirectScheme: customerAccountRedirectScheme,
+            customerAccountRedirectHost: customerAccountRedirectHost,
+        ]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -155,6 +164,7 @@ dependencies {
     implementation project(':lib')
 
     implementation libs.androidx.appcompat
+    implementation libs.androidx.browser
     implementation libs.androidx.core.ktx
     implementation libs.androidx.lifecycle.runtime.ktx
     implementation libs.androidx.activity.compose
@@ -188,11 +198,12 @@ dependencies {
     // Serialization
     implementation libs.kotlinx.serialization.json.demo
 
-    testImplementation libs.junit
-    testImplementation libs.assertj.core
-
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.androidx.compose.ui.test.manifest
+
+    testImplementation libs.junit
+    testImplementation libs.assertj.core
+    testImplementation libs.robolectric
 }
 
 apollo {

@@ -5,6 +5,7 @@ import com.shopify.checkoutkit.androiddemo.settings.authentication.data.source.n
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.source.network.CustomerAccountsApiRestClient
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.source.network.CustomerResponse
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.source.network.OAuthTokenResult
+import com.shopify.checkoutkit.androiddemo.settings.authentication.utils.IDTokenValidator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,11 +22,12 @@ class CustomerRepository(
     private val restClient: CustomerAccountsApiRestClient,
     private val graphQLClient: CustomerAccountsApiGraphQLClient,
     private val localTokenStore: CustomerAccessTokenStore,
+    private val idTokenValidator: IDTokenValidator,
 ) {
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val _isAuthenticated = MutableStateFlow(false)
-    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
+    private val _authenticationState = MutableStateFlow<AuthenticationState>(AuthenticationState.Loading)
+    val authenticationState: StateFlow<AuthenticationState> = _authenticationState.asStateFlow()
 
     init {
         repositoryScope.launch {
@@ -43,12 +45,12 @@ class CustomerRepository(
         val token = getCustomerAccessToken() ?: return null
         when (val result = graphQLClient.getCustomer(token)) {
             is CustomerResponse.Success -> {
-                Timber.i("Customer Account API customer retrieved")
+                Timber.i("Fetched customer account")
                 return result.customer
             }
 
             is CustomerResponse.Error -> {
-                Timber.e("Error when fetching customer from Customer Account API")
+                Timber.e("Error when fetching customer, ${result.message}")
                 return null
             }
         }
@@ -67,72 +69,104 @@ class CustomerRepository(
             return localToken
         }
 
-        val refreshedToken = restClient.refreshAccessToken(localToken).toToken()
-        updateAuthenticationState(refreshedToken)
-        return refreshedToken
+        val refreshToken = localToken.refreshToken
+        if (refreshToken == null) {
+            clearSession()
+            return null
+        }
+
+        return restClient.refreshAccessToken(refreshToken).toToken(
+            previousToken = localToken,
+            expectedNonce = null,
+            clearOnFailure = true,
+        )
     }
 
     /**
      * Creates a new access token and stores it locally
      */
-    suspend fun createCustomerAccessToken(code: String, codeVerifier: String): AccessToken? {
-        val customerAccessToken = localTokenStore.find()
-        if (customerAccessToken != null) {
-            Timber.i("Locally stored customer access token found")
-            if (!customerAccessToken.hasExpired()) {
-                Timber.i("Returning locally stored customer access token")
-                return customerAccessToken
-            } else {
-                Timber.i("Locally stored customer access token expired, refreshing")
-                val refreshedToken = restClient.refreshAccessToken(customerAccessToken).toToken()
-                updateAuthenticationState(refreshedToken)
-                return refreshedToken
-            }
-        }
-
-        Timber.i("No locally stored token found, fetching remote token")
-        val newToken = restClient.fetchAccessToken(code, codeVerifier).toToken()
-        updateAuthenticationState(newToken)
-        return newToken
+    suspend fun createCustomerAccessToken(code: String, codeVerifier: String, expectedNonce: String): AccessToken? {
+        return restClient.fetchAccessToken(code, codeVerifier).toToken(
+            previousToken = null,
+            expectedNonce = expectedNonce,
+            clearOnFailure = false,
+        )
     }
 
     suspend fun logout() {
-        val idToken = getCustomerAccessToken()?.idToken ?: ""
-        Timber.i("Logging out and deleting stored token")
-        restClient.logout(idToken)
-        if (!localTokenStore.delete()) {
-            Timber.w("Unable to delete stored customer access token")
+        val idToken = localTokenStore.find()?.idToken
+        try {
+            if (idToken != null) {
+                restClient.logout(idToken)
+            }
+        } finally {
+            clearSession()
         }
+    }
+
+    suspend fun clearSession() {
+        localTokenStore.delete()
         updateAuthenticationState()
     }
 
-    private suspend fun OAuthTokenResult.toToken(): AccessToken? {
+    private suspend fun OAuthTokenResult.toToken(
+        previousToken: AccessToken?,
+        expectedNonce: String?,
+        clearOnFailure: Boolean,
+    ): AccessToken? {
         return when (this) {
             is OAuthTokenResult.Success -> {
-                Timber.i("Customer Account API token retrieved, expires at ${this.token.expiresAt}")
-                if (localTokenStore.save(this.token)) {
-                    this.token
-                } else {
-                    Timber.w("Unable to persist Customer Account API token")
-                    if (!localTokenStore.delete()) {
-                        Timber.w("Unable to delete stored customer access token")
-                    }
+                val responseToken = token
+                val token = responseToken.copy(
+                    refreshToken = responseToken.refreshToken ?: previousToken?.refreshToken,
+                    idToken = responseToken.idToken ?: previousToken?.idToken,
+                )
+                val idToken = token.idToken
+                if (idToken == null) {
+                    Timber.w("Customer Account token response did not include an ID token")
+                    if (clearOnFailure) clearSession()
                     null
+                } else {
+                    try {
+                        if (expectedNonce != null || responseToken.idToken != null) {
+                            idTokenValidator.validate(idToken, expectedNonce)
+                        }
+                        if (!localTokenStore.save(token)) {
+                            Timber.w("Customer Account token could not be stored")
+                            if (clearOnFailure) clearSession()
+                            return null
+                        }
+                        updateAuthenticationState()
+                        Timber.i("Customer Account API token stored")
+                        token
+                    } catch (error: Exception) {
+                        Timber.w(error, "Customer Account ID token validation failed")
+                        if (clearOnFailure) clearSession()
+                        null
+                    }
                 }
             }
 
             is OAuthTokenResult.Error -> {
-                Timber.i("Failed to fetch Customer Account API token")
+                Timber.w("Failed to fetch Customer Account API token: ${this.message}")
+                if (clearOnFailure) clearSession()
                 null
             }
         }
     }
 
     private suspend fun updateAuthenticationState() {
-        updateAuthenticationState(localTokenStore.find())
+        val token = localTokenStore.find()
+        _authenticationState.value = if (token != null && !token.hasExpired()) {
+            AuthenticationState.Authenticated
+        } else {
+            AuthenticationState.Unauthenticated
+        }
     }
+}
 
-    private fun updateAuthenticationState(token: AccessToken?) {
-        _isAuthenticated.value = token != null && !token.hasExpired()
-    }
+sealed interface AuthenticationState {
+    data object Loading : AuthenticationState
+    data object Authenticated : AuthenticationState
+    data object Unauthenticated : AuthenticationState
 }

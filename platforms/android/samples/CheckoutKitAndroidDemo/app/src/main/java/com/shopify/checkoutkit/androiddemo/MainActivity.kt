@@ -14,8 +14,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.content.ContextCompat
 import com.shopify.checkoutkit.androiddemo.e2e.E2EControlLinkHandler
+import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationCoordinator
+import com.shopify.checkoutkit.androiddemo.settings.authentication.LocalBrowserAuthenticationLauncher
 import timber.log.Timber
 import timber.log.Timber.DebugTree
 
@@ -23,6 +26,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
     private lateinit var showFileChooserLauncher: ActivityResultLauncher<FileChooserParams>
     private lateinit var geolocationLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var browserAuthenticationCoordinator: BrowserAuthenticationCoordinator
 
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private var fileChooserParams: FileChooserParams? = null
@@ -43,9 +47,7 @@ class MainActivity : ComponentActivity() {
             Timber.plant(DebugTree())
         }
 
-        setContent {
-            CheckoutKitApp()
-        }
+        browserAuthenticationCoordinator = BrowserAuthenticationCoordinator(this)
 
         E2EControlLinkHandler.handle(this, intent)
 
@@ -69,12 +71,31 @@ class MainActivity : ComponentActivity() {
             geolocationPermissionCallback = null
             geolocationOrigin = null
         }
+
+        setContent {
+            CompositionLocalProvider(
+                LocalBrowserAuthenticationLauncher provides browserAuthenticationCoordinator,
+            ) {
+                CheckoutKitApp()
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-
+        setIntent(intent)
         E2EControlLinkHandler.handle(this, intent)
+        intent.data?.let(browserAuthenticationCoordinator::onNewIntent)
+    }
+
+    override fun onPause() {
+        browserAuthenticationCoordinator.onPause()
+        super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        browserAuthenticationCoordinator.onResume()
     }
 
     fun onShowFileChooser(filePathCallback: ValueCallback<Array<Uri>>, fileChooserParams: FileChooserParams): Boolean {

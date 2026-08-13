@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -24,11 +25,14 @@ fun LoginView(
     navController: NavController,
     loginViewModel: LoginViewModel = koinViewModel(),
 ) {
-    val uiState = loginViewModel.uiState.collectAsState().value
 
-    LaunchedEffect(key1 = true) {
+    val uiState = loginViewModel.uiState.collectAsState().value
+    val browserAuthenticationLauncher = LocalBrowserAuthenticationLauncher.current
+    val locale = Locale.current.toString()
+
+    LaunchedEffect(Unit) {
         // Check if the buyer is already logged in
-        loginViewModel.checkLoginState(Locale.current)
+        loginViewModel.checkLoginState(locale)
     }
 
     Column {
@@ -38,14 +42,25 @@ fun LoginView(
             }
 
             is Status.LoggedOut -> {
-                // Show the login WebView if not yet logged in
-                LoginWebView(
-                    url = uiState.status.loginUrl,
-                    customerAccountApiRedirectUri = uiState.status.redirectUri,
-                    onCodeParamIntercepted = { code: String ->
-                        loginViewModel.codeParamIntercepted(code)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .padding(horizontal = 15.dp, vertical = 20.dp)
+                        .fillMaxWidth(),
+                ) {
+                    Button(
+                        onClick = {
+                            browserAuthenticationLauncher.launch(uiState.status.authorizationContext.browserRequest) { result ->
+                                loginViewModel.browserAuthenticationCompleted(result)
+                            }
+                        },
+                    ) {
+                        BodyMedium(
+                            text = stringResource(id = R.string.login),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
+                        )
                     }
-                )
+                }
             }
 
             is Status.LoggedIn -> {
@@ -61,8 +76,13 @@ fun LoginView(
                         .padding(horizontal = 15.dp, vertical = 20.dp)
                         .fillMaxWidth(),
                 ) {
-                    // A retry mechanism should be added for this case
                     BodyMedium(text = stringResource(id = R.string.login_error))
+                    Button(onClick = { loginViewModel.checkLoginState(locale) }) {
+                        BodyMedium(
+                            text = stringResource(id = R.string.login_retry),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
                 }
             }
         }

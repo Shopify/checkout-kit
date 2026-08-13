@@ -23,6 +23,7 @@ import com.shopify.checkoutkit.androiddemo.common.logs.LogLevel
 import com.shopify.checkoutkit.androiddemo.common.logs.Logger
 import com.shopify.checkoutkit.androiddemo.common.navigation.Screen
 import com.shopify.checkoutkit.androiddemo.settings.PreferencesManager
+import com.shopify.checkoutkit.androiddemo.settings.authentication.data.AuthenticationState
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.CustomerRepository
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
 import com.shopify.checkoutkit.androiddemo.settings.data.WindowOpenHandler
@@ -33,6 +34,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -72,6 +76,17 @@ class CartViewModel(
                 _checkoutPresentationMode.value = it.checkoutPresentationMode
                 windowOpenHandler = it.windowOpenHandler
             }
+        }
+        // A cart's buyer identity is fixed when it is created. Discard carts and preloaded
+        // checkout state whenever Customer Account authentication changes.
+        viewModelScope.launch {
+            customerRepository.authenticationState
+                .filter { it != AuthenticationState.Loading }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect {
+                    clearCart()
+                }
         }
     }
 
