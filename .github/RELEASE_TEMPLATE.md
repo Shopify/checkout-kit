@@ -18,11 +18,11 @@ Replace "None." when additive changes are present.
 
 None.
 
-## Behavior changes
+## Behaviour changes
 
 <!--
-List other consumer-visible behavior changes, fixes, and deprecations. Include
-focused code examples or diffs where useful. Replace "None." when behavior
+List other consumer-visible behaviour changes, fixes, and deprecations. Include
+focused code examples or diffs where useful. Replace "None." when behaviour
 changes are present.
 -->
 

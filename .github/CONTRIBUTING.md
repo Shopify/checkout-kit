@@ -142,7 +142,7 @@ Shopify employees get this through `dev up`. External contributors can copy
 
 The Release package workflow prepends `.github/RELEASE_TEMPLATE.md` to GitHub's
 generated release notes. Before publishing a draft release, complete the
-breaking, additive, and behavior change sections, including focused code diffs
+breaking, additive, and behaviour change sections, including focused code diffs
 where they help consumers understand the change or migrate. Keep `None.` for
 sections that do not apply. The generated list of included pull requests and
 contributors remains below the curated sections.
