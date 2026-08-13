@@ -71,21 +71,6 @@ class AuthenticationHelper(
 
     fun tokenUrl(): String = "$issuer/oauth/token"
 
-    fun logoutRequest(idToken: String): BrowserAuthenticationRequest {
-        validateConfiguration()
-        val logoutUri = "$issuer/logout".toUri().buildUpon()
-            .appendQueryParameter("id_token_hint", idToken)
-            .appendQueryParameter("post_logout_redirect_uri", redirectUri)
-            .build()
-        return BrowserAuthenticationRequest(logoutUri, redirectUri.toUri())
-    }
-
-    fun validateLogoutCallback(callbackUri: Uri) {
-        if (!callbackUri.matchesRedirect(redirectUri.toUri())) {
-            throw AuthenticationException("Invalid logout callback")
-        }
-    }
-
     private fun validateConfiguration() {
         val issuerUri = issuer.toUri()
         val callbackUri = redirectUri.toUri()

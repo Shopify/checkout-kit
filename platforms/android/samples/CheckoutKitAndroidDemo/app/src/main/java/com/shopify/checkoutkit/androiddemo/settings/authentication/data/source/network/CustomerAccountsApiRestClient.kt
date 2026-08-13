@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.FormBody
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import timber.log.Timber
@@ -62,6 +63,29 @@ class CustomerAccountsApiRestClient(
             .addHeader("Content-Type", "application/x-www-form-urlencoded")
             .build()
         return executeOAuthTokenRequest(request)
+    }
+
+    suspend fun logout(idToken: String) {
+        val logoutUrl = helper.issuer.toHttpUrl().newBuilder()
+            .addPathSegment("logout")
+            .addQueryParameter("id_token_hint", idToken)
+            .build()
+        val request = Request.Builder()
+            .url(logoutUrl)
+            .get()
+            .build()
+
+        withContext(Dispatchers.IO) {
+            try {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        Timber.w("Customer Account logout failed with HTTP ${response.code}")
+                    }
+                }
+            } catch (error: IOException) {
+                Timber.w(error, "Customer Account logout request failed")
+            }
+        }
     }
 
     private suspend fun executeOAuthTokenRequest(request: Request): OAuthTokenResult {

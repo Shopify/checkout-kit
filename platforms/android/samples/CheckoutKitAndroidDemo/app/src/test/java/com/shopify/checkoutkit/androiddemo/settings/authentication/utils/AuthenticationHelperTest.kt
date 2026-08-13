@@ -75,16 +75,6 @@ class AuthenticationHelperTest {
             .hasMessageContaining("access_denied")
     }
 
-    @Test
-    fun `logout request returns through the configured redirect`() {
-        val request = helper.logoutRequest("id-token")
-
-        assertThat(request.url.path).isEqualTo("/authentication/123/logout")
-        assertThat(request.url.getQueryParameter("id_token_hint")).isEqualTo("id-token")
-        assertThat(request.url.getQueryParameter("post_logout_redirect_uri")).isEqualTo(REDIRECT_URI)
-        assertThat(request.redirectUri.toString()).isEqualTo(REDIRECT_URI)
-    }
-
     private companion object {
         const val CLIENT_ID = "customer-account-client"
         const val ISSUER = "https://shopify.com/authentication/123"

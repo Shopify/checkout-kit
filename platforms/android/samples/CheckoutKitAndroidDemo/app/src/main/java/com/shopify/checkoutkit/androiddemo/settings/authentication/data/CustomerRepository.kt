@@ -5,9 +5,6 @@ import com.shopify.checkoutkit.androiddemo.settings.authentication.data.source.n
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.source.network.CustomerAccountsApiRestClient
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.source.network.CustomerResponse
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.source.network.OAuthTokenResult
-import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationRequest
-import com.shopify.checkoutkit.androiddemo.settings.authentication.BrowserAuthenticationResult
-import com.shopify.checkoutkit.androiddemo.settings.authentication.utils.AuthenticationHelper
 import com.shopify.checkoutkit.androiddemo.settings.authentication.utils.IDTokenValidator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +22,6 @@ class CustomerRepository(
     private val restClient: CustomerAccountsApiRestClient,
     private val graphQLClient: CustomerAccountsApiGraphQLClient,
     private val localTokenStore: CustomerAccessTokenStore,
-    private val authenticationHelper: AuthenticationHelper,
     private val idTokenValidator: IDTokenValidator,
 ) {
 
@@ -97,22 +93,12 @@ class CustomerRepository(
         )
     }
 
-    suspend fun prepareLogout(): BrowserAuthenticationRequest? {
+    suspend fun logout() {
         val idToken = localTokenStore.find()?.idToken
-        if (idToken == null) {
-            clearSession()
-            return null
-        }
-        return authenticationHelper.logoutRequest(idToken)
-    }
-
-    suspend fun completeLogout(result: BrowserAuthenticationResult) {
         try {
-            if (result is BrowserAuthenticationResult.Redirect) {
-                authenticationHelper.validateLogoutCallback(result.uri)
+            if (idToken != null) {
+                restClient.logout(idToken)
             }
-        } catch (error: Exception) {
-            Timber.w(error, "Customer Account browser logout did not complete")
         } finally {
             clearSession()
         }
