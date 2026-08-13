@@ -23,6 +23,13 @@ class IDTokenValidator(
     private val clock: () -> Instant = Instant::now,
 ) {
     fun validate(idToken: String, expectedNonce: String?) {
+        val claims = parseClaims(idToken)
+        validateIdentityClaims(claims)
+        validateTemporalClaims(claims)
+        validateNonce(claims, expectedNonce)
+    }
+
+    private fun parseClaims(idToken: String): TokenClaims {
         val sections = idToken.split('.')
         if (sections.size != 3 || sections.any(String::isEmpty)) {
             throw AuthenticationException("Invalid ID token")
@@ -35,35 +42,70 @@ class IDTokenValidator(
             throw AuthenticationException("Invalid ID token")
         }
 
-        val subject = (claims["sub"] as? JsonPrimitive)?.contentOrNull
-        val tokenIssuer = (claims["iss"] as? JsonPrimitive)?.contentOrNull
-        val audience = when (val value = claims["aud"]) {
-            is JsonArray -> value.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
-            is JsonPrimitive -> value.contentOrNull?.let(::listOf).orEmpty()
-            else -> emptyList()
-        }
-        val authorizedParty = (claims["azp"] as? JsonPrimitive)?.contentOrNull
-        val expiration = (claims["exp"] as? JsonPrimitive)?.doubleOrNull
-        val issuedAt = (claims["iat"] as? JsonPrimitive)?.doubleOrNull
+        return TokenClaims(
+            subject = claims.stringClaim("sub"),
+            issuer = claims.stringClaim("iss"),
+            audience = claims.audienceClaim(),
+            authorizedParty = claims.stringClaim("azp"),
+            expiration = claims.numericClaim("exp"),
+            issuedAt = claims.numericClaim("iat"),
+            nonce = claims.stringClaim("nonce"),
+        )
+    }
 
-        if (subject.isNullOrBlank()) throw AuthenticationException("Invalid ID token subject")
-        if (tokenIssuer != issuer) throw AuthenticationException("Invalid ID token issuer")
-        if (!audience.contains(clientId)) throw AuthenticationException("Invalid ID token audience")
-        if ((audience.size > 1 || authorizedParty != null) && authorizedParty != clientId) {
+    private fun validateIdentityClaims(claims: TokenClaims) {
+        if (claims.subject.isNullOrBlank()) throw AuthenticationException("Invalid ID token subject")
+        if (claims.issuer != issuer) throw AuthenticationException("Invalid ID token issuer")
+        if (!claims.audience.contains(clientId)) throw AuthenticationException("Invalid ID token audience")
+        if ((claims.audience.size > 1 || claims.authorizedParty != null) && claims.authorizedParty != clientId) {
             throw AuthenticationException("Invalid ID token authorized party")
         }
-        if (expiration == null || Instant.ofEpochSecond(expiration.toLong()).plusSeconds(CLOCK_SKEW_SECONDS).isBefore(clock())) {
+    }
+
+    private fun validateTemporalClaims(claims: TokenClaims) {
+        if (
+            claims.expiration == null ||
+            Instant.ofEpochSecond(claims.expiration.toLong()).plusSeconds(CLOCK_SKEW_SECONDS).isBefore(clock())
+        ) {
             throw AuthenticationException("Expired ID token")
         }
-        if (issuedAt == null || Instant.ofEpochSecond(issuedAt.toLong()).minusSeconds(CLOCK_SKEW_SECONDS).isAfter(clock())) {
+        if (
+            claims.issuedAt == null ||
+            Instant.ofEpochSecond(claims.issuedAt.toLong()).minusSeconds(CLOCK_SKEW_SECONDS).isAfter(clock())
+        ) {
             throw AuthenticationException("Invalid ID token issue time")
         }
-        if (expectedNonce != null && (claims["nonce"] as? JsonPrimitive)?.contentOrNull != expectedNonce) {
+    }
+
+    private fun validateNonce(claims: TokenClaims, expectedNonce: String?) {
+        if (expectedNonce != null && claims.nonce != expectedNonce) {
             throw AuthenticationException("Invalid ID token nonce")
         }
+    }
+
+    private fun JsonObject.stringClaim(name: String): String? =
+        (this[name] as? JsonPrimitive)?.contentOrNull
+
+    private fun JsonObject.numericClaim(name: String): Double? =
+        (this[name] as? JsonPrimitive)?.doubleOrNull
+
+    private fun JsonObject.audienceClaim(): List<String> = when (val value = this["aud"]) {
+        is JsonArray -> value.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+        is JsonPrimitive -> value.contentOrNull?.let(::listOf).orEmpty()
+        else -> emptyList()
     }
 
     private companion object {
         const val CLOCK_SKEW_SECONDS = 60L
     }
 }
+
+private data class TokenClaims(
+    val subject: String?,
+    val issuer: String?,
+    val audience: List<String>,
+    val authorizedParty: String?,
+    val expiration: Double?,
+    val issuedAt: Double?,
+    val nonce: String?,
+)
