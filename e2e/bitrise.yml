@@ -334,6 +334,14 @@ workflows:
       - bundle::bootstrap-mint:
           inputs:
             - mintfile_dir: platforms/swift
+      # Both samples build the root package and Apollo iOS from source. Neither changes
+      # between most pull requests, so DerivedData carries that work across builds. The key
+      # holds the resolved dependency graph: a pin change rebuilds rather than reuses.
+      # Xcode's incremental build owns correctness for the source that did change.
+      - restore-cache@3:
+          inputs:
+            - key: &swift_samples_derived_data_cache_key |-
+                swift-samples-derived-data-{{ .OS }}-{{ .Arch }}-{{ checksum "Package.resolved" }}
       - script@1:
           title: Build and test the Swift sample apps
           timeout: 5400
@@ -350,6 +358,10 @@ workflows:
                 ./scripts/setup_storefront_env --skip-optional-prompts
                 cd platforms/swift
                 ./Scripts/build_and_test_samples
+      - save-cache@1:
+          inputs:
+            - key: *swift_samples_derived_data_cache_key
+            - paths: ~/Library/Developer/Xcode/DerivedData
 
   ci-ios-react-native-build-ios:
     meta:
@@ -373,6 +385,12 @@ workflows:
       - bundle::install-node-modules: {}
       - bundle::install-ruby-gems: {}
       - bundle::install-cocoapods: {}
+      # The 89 pods here are the React Native New Architecture C++ core. They dominate the
+      # build and only change when the lockfile or the Swift package pins do.
+      - restore-cache@3:
+          inputs:
+            - key: &rn_sample_derived_data_cache_key |-
+                rn-sample-derived-data-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}-{{ checksum "Package.resolved" }}
       - script@1:
           title: Build the React Native iOS sample
           timeout: 5400
@@ -383,6 +401,10 @@ workflows:
                 cd platforms/react-native
                 pnpm module build
                 pnpm sample build:ios
+      - save-cache@1:
+          inputs:
+            - key: *rn_sample_derived_data_cache_key
+            - paths: ~/Library/Developer/Xcode/DerivedData
 
   ci-ios-react-native-test-ios:
     meta:

@@ -91,6 +91,28 @@ class BitriseConfigTest < Minitest::Test
     assert_empty offenders, "Bitrise evaluates changed_files.regex with RE2:\n#{offenders.join("\n")}"
   end
 
+  # A restore with no matching save warms nothing: the key never gets written, so every
+  # build pays full price while looking cached. YAML resolves the anchors both sides share,
+  # so comparing the resolved key strings catches a save that drifted onto a different key.
+  def test_every_restored_cache_is_also_saved
+    containers = workflows.merge(config.fetch("step_bundles", {}))
+
+    unsaved = containers.flat_map do |name, definition|
+      restored = cache_keys(definition["steps"], "restore-cache@")
+      saved = cache_keys(definition["steps"], "save-cache@")
+      (restored - saved).map { |key| "#{name}: #{key}" }
+    end
+
+    assert_empty unsaved, "These caches are restored but never saved:\n#{unsaved.join("\n")}"
+  end
+
+  def cache_keys(steps, prefix)
+    Array(steps).flat_map(&:to_a)
+      .select { |id, _step| id.start_with?(prefix) }
+      .flat_map { |_id, step| Array(step["inputs"]).filter_map { |input| input["key"] } }
+      .map(&:strip)
+  end
+
   def test_every_triggered_pipeline_reports_a_status_unique_to_itself
     anonymous = triggered_pipelines.reject do |pipeline|
       pipelines.dig(pipeline, "status_report_name").to_s.include?("<target_id>")

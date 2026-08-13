@@ -30,7 +30,7 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
 fi
 
 run_xcodebuild() {
-    xcodebuild clean build \
+    xcodebuild build \
         -workspace CheckoutKitReactNativeDemo.xcworkspace \
         -scheme CheckoutKitReactNativeDemo \
         -sdk iphonesimulator \
