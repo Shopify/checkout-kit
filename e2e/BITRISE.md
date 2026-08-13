@@ -52,6 +52,31 @@ For example, editing `platforms/react-native/README.md` matches the coarse `chan
 
 The GitHub checks are kept non-blocking while the suite stabilizes; they become merge-blocking only once the "Checkout Kit E2E" check is marked required in branch protection.
 
+## The `ci-ios` pipeline
+
+`ci-ios` is the second pipeline in `e2e/bitrise.yml`. It runs the four macOS jobs that used to run on GitHub Actions: the Swift package tests, the Swift sample build and test, the React Native iOS sample build, and the React Native iOS tests. It is separate from `e2e` rather than a set of extra workflows inside it, because Bitrise reports one status per pipeline: sharing one would tie a merge gate to the BrowserStack device flake that the E2E checks deliberately keep non-blocking.
+
+### Its trigger carries no `changed_files`
+
+Unlike `e2e`, the `ci-ios` `trigger_map` entry has no filter at all. `ci-ios` is a merge-blocking check, and a required check that never posts leaves a pull request permanently unmergeable — so the pipeline has to start on every pull request, including a docs-only one.
+
+Selection happens inside the pipeline instead. The Linux `ci-ios-plan` workflow reads the pull request's changed files, applies the shared filter groups in `.ci/changed-file-filters.yml` through `e2e/config/ios_ci.yml`, and publishes one `CI_IOS_*` variable per job with `share-pipeline-variable`. Each macOS workflow guards on its own variable with `run_if`. A change that needs no macOS job runs the Linux plan and the report, and nothing else.
+
+This is the same two-layer idea as `e2e` — a cheap first pass, then a precise runtime decision — with the first layer set to "always".
+
+### The check is self-posted
+
+`ci-ios-report` runs with `should_always_run: workflow` and posts the `Checkout Kit iOS` Check Run itself, through `e2e/scripts/report_ios_ci_results`. Bitrise's own pipeline status cannot tell the two kinds of not-run apart:
+
+- a job the plan did not select is a **pass** — there was nothing to build
+- a job the plan did select but that never finished is a **failure**
+
+The reporter also fails when `ci-ios-plan` itself fails, rather than reporting green off an empty selection. `e2e/test/ios_ci_reporter_test.rb` pins all three cases.
+
+### Changing which files select which job
+
+Edit `e2e/config/ios_ci.yml`, not the workflows. `e2e/test/ios_ci_run_plan_test.rb` asserts set equality between the variables the plan emits and the `run_if` expressions parsed out of `e2e/bitrise.yml`, so a job added on one side and not the other fails the Ruby tests.
+
 ## Duplicate PR build cancellation
 
 Duplicate in-progress PR pipelines are cancelled by Bitrise native Rolling builds rather than a repo-owned cancellation script. Under **Project settings > Builds > Build strategy**, **Abort builds triggered by pull requests** and **Abort running builds** are enabled, so a newer PR build cancels the older one.
@@ -175,4 +200,6 @@ The pipeline uses Bitrise cache steps for key-based pnpm/CocoaPods/Gradle cache 
 
 Do not add `activate-build-cache-for-xcode` or `activate-build-cache-for-gradle`; the Bitrise Build Cache add-on is disabled for Shopify Bitrise apps.
 
-Ruby and Node versions are pinned in `e2e/bitrise.yml` via the Bitrise `tools:` configuration (`ruby: 3.3.6`, `nodejs: 22.14.0`), which Bitrise installs before each workflow runs. Pin exact versions that the target stacks preinstall so setup stays fast and reproducible; a version the stack does not ship is installed on demand and is slower. pnpm is pinned separately through Corepack via the `packageManager` field in `platforms/react-native/package.json`.
+The `ci-ios` macOS jobs add two more caches. DerivedData is keyed on `Package.resolved` and the relevant `Podfile.lock`, and the build scripts no longer pass `xcodebuild clean`, which would delete the restored copy. ccache is keyed on the branch and commit, with branch-then-architecture prefixes as fallbacks, so each build starts from the last one on its branch. `restore-cache` takes a single `key` input holding one key per line in priority order; there is no plural `keys` input, and `bitrise validate` does not catch that mistake, so `e2e/test/bitrise_config_test.rb` does.
+
+Ruby and Node versions are pinned in `e2e/bitrise.yml` via the Bitrise `tools:` configuration (`ruby: "3.4:installed"`, `nodejs: 22.14.0`), which Bitrise installs before each workflow runs. The `:installed` suffix tells each stack to use its own preinstalled 3.4.x rather than compiling one from source. Pin exact versions that the target stacks preinstall so setup stays fast and reproducible; a version the stack does not ship is installed on demand and is slower. pnpm is pinned separately through Corepack via the `packageManager` field in `platforms/react-native/package.json`.
