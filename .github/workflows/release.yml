@@ -125,7 +125,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          args=("$TAG" --target "$GITHUB_SHA" --title "$RELEASE_TITLE" --generate-notes)
+          RELEASE_NOTES_TEMPLATE="$(cat .github/RELEASE_TEMPLATE.md)"
+          args=(
+            "$TAG"
+            --target "$GITHUB_SHA"
+            --title "$RELEASE_TITLE"
+            --notes "$RELEASE_NOTES_TEMPLATE"
+            --generate-notes
+          )
           if [ "$DRAFT" = "true" ]; then
             args+=(--draft)
           fi

@@ -138,6 +138,15 @@ Shopify employees get this through `dev up`. External contributors can copy
 `.env.example` to `.env`, fill in local storefront values, then run
 `scripts/setup_storefront_env` from the repo root.
 
+## Release notes
+
+The Release package workflow prepends `.github/RELEASE_TEMPLATE.md` to GitHub's
+generated release notes. Before publishing a draft release, complete the
+breaking, additive, and behavior change sections, including focused code diffs
+where they help consumers understand the change or migrate. Keep `None.` for
+sections that do not apply. The generated list of included pull requests and
+contributors remains below the curated sections.
+
 ---
 
 ## Swift (`platforms/swift/`)
