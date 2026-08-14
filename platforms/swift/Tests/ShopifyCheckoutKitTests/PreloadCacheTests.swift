@@ -24,6 +24,7 @@ class PreloadCacheTests: XCTestCase {
     override func tearDown() async throws {
         CheckoutWebView.invalidate()
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
         try await super.tearDown()
     }
 
@@ -102,6 +103,45 @@ class PreloadCacheTests: XCTestCase {
 
         await fulfillment(of: [failed], timeout: 2.0)
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
+    }
+
+    func test_MessageRejectionDoesNotFailBackgroundedPreload() {
+        let entry = storeCacheEntry()
+        entry.loadedCheckoutURL = url
+        entry.messageOrigin = { _ in
+            MessageOrigin(scheme: "https", host: "evil.example.com", port: nil)
+        }
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        let delegate = MockCheckoutWebViewDelegate()
+        entry.viewDelegate = delegate
+
+        entry.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecReadyBody())
+        )
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(entry))
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .loading)
+        XCTAssertNil(delegate.errorReceived)
+    }
+
+    func test_ChildFrameRejectionDoesNotFailBackgroundedPreload() {
+        let entry = storeCacheEntry()
+        entry.messageIsMainFrame = { _ in false }
+        entry.messageOrigin = { _ in
+            MessageOrigin(scheme: "https", host: "checkout.example.com", port: nil)
+        }
+        let delegate = MockCheckoutWebViewDelegate()
+        entry.viewDelegate = delegate
+
+        entry.userContentController(
+            WKUserContentController(),
+            didReceive: MockScriptMessage(body: ecReadyBody())
+        )
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(entry))
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .loading)
+        XCTAssertNil(delegate.errorReceived)
     }
 
     func test_TerminalErrorOnBackgroundedPreloadDoesNotDeliverLifecycleFailure() async {
@@ -259,6 +299,7 @@ class PreloadCacheTests: XCTestCase {
     private func storeCacheEntry() -> CheckoutWebView {
         let entry = CheckoutWebView(entryPoint: nil)
         entry.messageIsMainFrame = { _ in true }
+        entry.messageRequestURL = { _ in nil }
         _ = CheckoutWebView.preloadCache.store(entry, for: PreloadKey(url: url, entryPoint: nil))
         return entry
     }
@@ -275,6 +316,10 @@ class PreloadCacheTests: XCTestCase {
         """
         {"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":{"currency":"USD","id":"c-1","line_items":[],"links":[],"status":"completed","totals":[],"ucp":{"payment_handlers":{},"version":"\(EmbeddedCheckoutProtocol.specVersion)"}}}}
         """
+    }
+
+    private func ecReadyBody() -> String {
+        #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
     }
 
     private func preloadFailureExpectation(for preload: CheckoutPreload) -> XCTestExpectation {

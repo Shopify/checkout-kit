@@ -289,9 +289,10 @@ must not include credentials, paths, queries, or fragments. For example,
 `https://example.com/` is accepted, while `https://user@example.com` and
 `https://example.com/path` are ignored.
 
-Messages dropped by origin validation are never silently discarded: each
-rejection is logged as a warning with the message origin and the reason it was
-dropped. The message body is untrusted and is not logged.
+Rejected messages are dropped and logged at warning level. A rejected message is
+untrusted input, not evidence that checkout failed, so it does not fail a preload
+or call `.onFail` or `checkoutDidFail(error:)` during presentation. The message
+body is untrusted and is not logged.
 
 ### Current configuration
 
