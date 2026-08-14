@@ -218,7 +218,7 @@ class E2EMatrixToBrowserStackRunPlan
   # BrowserStack runs Maestro against this path inside the uploaded test suite, and Maestro
   # resolves the `flows:` glob in config.yaml relative to it. scripts/zip_e2e_tests puts
   # config.yaml, tests/, and flows/ side by side at the suite root, so the root is the
-  # only path where that glob resolves.
+  # only path where that glob resolves. The local runners pass the same value.
   def workspace_path
     "."
   end

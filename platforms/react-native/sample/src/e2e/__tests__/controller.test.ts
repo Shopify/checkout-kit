@@ -5,6 +5,7 @@ class E2ECommandTargetSpy implements E2ECommandTarget {
   calls: string[] = [];
   variantIdError: Error | null = null;
   addCartLineError: Error | null = null;
+  onResetCart: (() => Promise<void>) | null = null;
 
   async selectBuyerIdentityMode(mode: BuyerIdentityMode) {
     this.calls.push(`selectBuyerIdentityMode(${mode})`);
@@ -12,6 +13,7 @@ class E2ECommandTargetSpy implements E2ECommandTarget {
 
   async resetCart() {
     this.calls.push('resetCart');
+    await this.onResetCart?.();
   }
 
   async variantId(productIndex: number) {
@@ -41,10 +43,21 @@ class E2ECommandTargetSpy implements E2ECommandTarget {
   }
 }
 
+function controlLink(path: string) {
+  return `com.shopify.checkoutkit.reactnativedemo://e2e${path}`;
+}
+
 function handle(path: string, target: E2ECommandTargetSpy) {
-  return new E2EController(target).handle(
-    `com.shopify.checkoutkit.reactnativedemo://e2e${path}`,
-  );
+  return new E2EController(target).handle(controlLink(path));
+}
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>(value => {
+    resolve = value;
+  });
+
+  return {promise, resolve};
 }
 
 describe('E2EController', () => {
@@ -133,5 +146,33 @@ describe('E2EController', () => {
     await handle('/signIn', target);
 
     expect(target.calls).toEqual(['report(signIn is not implemented yet)']);
+  });
+
+  it('serializes concurrent commands', async () => {
+    const target = new E2ECommandTargetSpy();
+    const controller = new E2EController(target);
+    const firstResetStarted = deferred();
+    const releaseFirstReset = deferred();
+    let resetCount = 0;
+
+    target.onResetCart = async () => {
+      resetCount += 1;
+      if (resetCount === 1) {
+        firstResetStarted.resolve();
+        await releaseFirstReset.promise;
+      }
+    };
+
+    const first = controller.handle(controlLink('/reset'));
+    await firstResetStarted.promise;
+    const second = controller.handle(controlLink('/reset'));
+    await Promise.resolve();
+
+    expect(target.calls).toEqual(['resetCart']);
+
+    releaseFirstReset.resolve();
+    await Promise.all([first, second]);
+
+    expect(target.calls).toEqual(['resetCart', 'resetCart']);
   });
 });

@@ -19,7 +19,13 @@ function message(error: unknown) {
 }
 
 export class E2EController {
-  constructor(private readonly target: E2ECommandTarget) {}
+  private tail: Promise<void> = Promise.resolve();
+
+  constructor(private target: E2ECommandTarget) {}
+
+  setTarget(target: E2ECommandTarget) {
+    this.target = target;
+  }
 
   async handle(url: string): Promise<boolean> {
     let link: E2EControlLink | null;
@@ -35,40 +41,49 @@ export class E2EController {
       return false;
     }
 
-    await this.perform(link);
+    const target = this.target;
+    await this.enqueue(() => this.perform(link, target));
 
     return true;
   }
 
-  private async perform(link: E2EControlLink) {
+  private async enqueue(command: () => Promise<void>) {
+    const task = this.tail.then(command);
+    this.tail = task.catch(() => undefined);
+    await task;
+  }
+
+  private async perform(link: E2EControlLink, target: E2ECommandTarget) {
     try {
       switch (link.command) {
         case 'reset':
-          await this.target.resetCart();
+          await target.resetCart();
           break;
         case 'cart':
-          await this.seedCart(link);
+          await this.seedCart(link, target);
           break;
         case 'signIn':
           throw new Error('signIn is not implemented yet');
       }
     } catch (error) {
-      await this.target.report(message(error));
+      await target.report(message(error));
     }
   }
 
-  private async seedCart(command: E2ECartCommand) {
+  private async seedCart(
+    command: E2ECartCommand,
+    target: E2ECommandTarget,
+  ) {
     if (command.buyerIdentityMode) {
-      await this.target.selectBuyerIdentityMode(command.buyerIdentityMode);
+      await target.selectBuyerIdentityMode(command.buyerIdentityMode);
     }
 
-    await this.target.resetCart();
+    await target.resetCart();
 
     const variantId =
-      command.variantId ??
-      (await this.target.variantId(command.productIndex ?? 0));
+      command.variantId ?? (await target.variantId(command.productIndex ?? 0));
 
-    await this.target.addCartLine(variantId, command.quantity);
-    await this.target.showCart();
+    await target.addCartLine(variantId, command.quantity);
+    await target.showCart();
   }
 }

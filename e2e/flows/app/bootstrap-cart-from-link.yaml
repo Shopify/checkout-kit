@@ -1,21 +1,33 @@
 appId: ${E2E_APP_ID}
 ---
-- launchApp:
-    clearState: true
-    arguments:
-      # iOS-only launch arguments; Android ignores them.
-      AppleLocale: en_US
-      AppleLanguages: "(en)"
-- extendedWaitUntil:
-    visible:
-      id: ${E2E_READY_MARKER}
-    timeout: 10000
-# Reset app data before testing the deep-link cold-start path. The app is
-# stopped so openLink is the launch that seeds the cart.
-- stopApp
-- openLink: "${E2E_CONTROL_LINK}/cart?productIndex=0&quantity=1&buyerIdentityMode=${BUYER_IDENTITY_MODE}"
-- waitForAnimationToEnd
-- extendedWaitUntil:
-    visible:
-      id: cart-checkout-ready
-    timeout: 10000
+- runFlow: launch.yaml
+# The wait above can match a view hierarchy the dying process left behind, which sends the
+# link seconds before the new activity exists. Android then drops it, because a deep link
+# has no delivery guarantee. One repeat covers that, and the command is safe to repeat:
+# every cart command resets the cart before it seeds one.
+- retry:
+    maxRetries: 1
+    commands:
+      # The link goes to the running app. launchApp cleared the state above, so the cart is
+      # already empty, and a running app is what the account journey needs later: iOS delivers
+      # a cold-start URL through the scene connect options and Android through the launch
+      # intent, so a stopped app would need a second entry point on every platform.
+      # Each test supplies E2E_CART_PARAMS, so tests that do not care about buyer
+      # identity leave the app's configured mode alone.
+      - openLink: "${E2E_CONTROL_LINK}/cart?${E2E_CART_PARAMS}"
+      - waitForAnimationToEnd
+      # iOS asks the user to confirm before it hands a custom scheme to an app. Android
+      # does not, so the tap is conditional rather than platform-gated.
+      - runFlow:
+          when:
+            visible: "Open"
+          commands:
+            - tapOn: "Open"
+            - waitForAnimationToEnd
+      # The cart marker only appears after the controller resolved a variant, created a
+      # cart, added the line, and navigated. Reaching it proves the whole command path.
+      # That is two network round trips, so the timeout covers a slow device on a slow shop.
+      - extendedWaitUntil:
+          visible:
+            id: cart-checkout-ready
+          timeout: 60000

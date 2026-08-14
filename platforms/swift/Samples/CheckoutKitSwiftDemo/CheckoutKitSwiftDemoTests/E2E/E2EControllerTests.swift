@@ -85,9 +85,52 @@ class E2EControllerTests: XCTestCase {
         XCTAssertEqual(target.calls, ["report(signIn is not implemented yet)"])
     }
 
+    func testSerializesConcurrentHandleCallsSoTheSecondDoesNotStartUntilTheFirstFinishes() async {
+        let target = E2ECommandTargetSpy()
+        let controller = E2EController(target: target)
+        let firstResetStarted = Gate()
+        let releaseFirstReset = Gate()
+        target.onResetCart = {
+            await firstResetStarted.open()
+            await releaseFirstReset.wait()
+        }
+
+        let first = Task { await controller.handle(url: "com.shopify.checkoutkit.swiftdemo://e2e/reset") }
+        await firstResetStarted.wait()
+
+        let second = Task { await controller.handle(url: "com.shopify.checkoutkit.swiftdemo://e2e/reset") }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
+        XCTAssertEqual(target.calls, ["resetCart"])
+
+        await releaseFirstReset.open()
+        _ = await first.value
+        _ = await second.value
+
+        XCTAssertEqual(target.calls, ["resetCart", "resetCart"])
+    }
+
     @discardableResult
     private func handle(_ path: String, _ target: E2ECommandTargetSpy) async -> Bool {
         await E2EController(target: target).handle(url: "com.shopify.checkoutkit.swiftdemo://e2e\(path)")
+    }
+}
+
+private actor Gate {
+    private var isOpen = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func open() {
+        isOpen = true
+        continuation?.resume()
+        continuation = nil
+    }
+
+    func wait() async {
+        if isOpen {
+            return
+        }
+        await withCheckedContinuation { continuation = $0 }
     }
 }
 
@@ -96,6 +139,7 @@ private class E2ECommandTargetSpy: E2ECommandTarget {
     var calls: [String] = []
     var variantIdError: Error?
     var addCartLineError: Error?
+    var onResetCart: (() async -> Void)?
 
     func selectBuyerIdentityMode(_ mode: BuyerIdentityMode) async {
         calls.append("selectBuyerIdentityMode(\(mode.rawValue))")
@@ -103,6 +147,7 @@ private class E2ECommandTargetSpy: E2ECommandTarget {
 
     func resetCart() async {
         calls.append("resetCart")
+        await onResetCart?()
     }
 
     func variantId(atProductIndex index: Int) async throws -> String {

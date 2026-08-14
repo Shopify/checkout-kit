@@ -1,5 +1,8 @@
 package com.shopify.checkoutkit.androiddemo.e2e
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 interface E2ECommandTarget {
     suspend fun selectBuyerIdentityMode(mode: E2EBuyerIdentityMode)
 
@@ -16,6 +19,12 @@ interface E2ECommandTarget {
 
 class E2EController(private val target: E2ECommandTarget) {
 
+    companion object {
+        // Each incoming deep link creates a new E2EController, so the lock has to live here
+        // rather than on the instance to serialize across every link the app receives.
+        private val mutex = Mutex()
+    }
+
     suspend fun handle(url: String): Boolean {
         val link = try {
             E2EControlLink.parse(url)
@@ -28,7 +37,7 @@ class E2EController(private val target: E2ECommandTarget) {
             return false
         }
 
-        perform(link)
+        mutex.withLock { perform(link) }
 
         return true
     }

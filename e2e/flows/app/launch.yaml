@@ -1,0 +1,45 @@
+appId: ${E2E_APP_ID}
+---
+# Clearing state is the default. Set CLEAR_STATE to "false" only when a test needs to
+# preserve state from an earlier launch.
+- runFlow:
+    when:
+      true: ${typeof CLEAR_STATE === 'undefined' || CLEAR_STATE != 'false'}
+    commands:
+      - launchApp:
+          clearState: true
+          arguments:
+            # iOS-only launch arguments; Android ignores them.
+            AppleLocale: en_US
+            AppleLanguages: "(en)"
+- runFlow:
+    when:
+      true: ${typeof CLEAR_STATE !== 'undefined' && CLEAR_STATE == 'false'}
+    commands:
+      - launchApp:
+          arguments:
+            AppleLocale: en_US
+            AppleLanguages: "(en)"
+# Avoid relaunching healthy apps. BrowserStack can report the state-clearing reinstall and
+# launch as complete while iOS remains on SpringBoard, so probe briefly before recovering.
+- extendedWaitUntil:
+    visible:
+      id: ${E2E_READY_MARKER}
+    timeout: 10000
+    optional: true
+- runFlow:
+    when:
+      notVisible:
+        id: ${E2E_READY_MARKER}
+    commands:
+      - retry:
+          maxRetries: 1
+          commands:
+            - launchApp:
+                arguments:
+                  AppleLocale: en_US
+                  AppleLanguages: "(en)"
+            - extendedWaitUntil:
+                visible:
+                  id: ${E2E_READY_MARKER}
+                timeout: 60000

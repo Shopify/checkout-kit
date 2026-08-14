@@ -4,8 +4,4 @@ tags:
   - launch
   - smoke
 ---
-- launchApp
-- extendedWaitUntil:
-    visible:
-      id: ${E2E_READY_MARKER}
-    timeout: 60000
+- runFlow: ../../flows/app/launch.yaml
