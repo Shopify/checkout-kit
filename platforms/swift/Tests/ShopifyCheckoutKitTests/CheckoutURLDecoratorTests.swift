@@ -1,3 +1,4 @@
+import EmbeddedCheckoutProtocol
 import Foundation
 @testable import ShopifyCheckoutKit
 import Testing
@@ -11,22 +12,26 @@ struct CheckoutURLDecoratorTests {
         let url = try #require(URL(string: "https://shop.com/cart/c/abc?key=cart_token"))
         let items = queryItems(CheckoutURLDecorator.decorate(url, configuration: configuration))
 
-        #expect(items.first(where: { $0.name == "key" })?.value == "cart_token")
-        #expect(items.first(where: { $0.name == "ec_color_scheme" })?.value == "dark")
-        #expect(items.first(where: { $0.name == "ck_branding" })?.value == "app")
+        #expect(items.filter { $0.name == "key" }.map(\.value) == ["cart_token"])
+        #expect(items.filter { $0.name == "ec_version" }.map(\.value) == [EmbeddedCheckoutProtocol.specVersion])
+        #expect(items.filter { $0.name == "ec_delegate" }.map(\.value) == ["window.open"])
+        #expect(items.filter { $0.name == "ec_color_scheme" }.map(\.value) == ["dark"])
+        #expect(items.filter { $0.name == "ck_branding" }.map(\.value) == ["app"])
     }
 
     @Test func replacesCallerSuppliedBrandingAndIsIdempotent() throws {
         var configuration = Configuration()
         configuration.appearance = .app(.light)
 
-        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ck_branding=app&ec_color_scheme=dark"))
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=stale&ec_delegate=custom&ck_branding=shop&ec_color_scheme=dark"))
         let once = CheckoutURLDecorator.decorate(url, configuration: configuration)
         let twice = CheckoutURLDecorator.decorate(once, configuration: configuration)
         let items = queryItems(twice)
 
-        #expect(items.filter { $0.name == "ck_branding" }.map(\.value) == ["app"])
+        #expect(items.filter { $0.name == "ec_version" }.map(\.value) == [EmbeddedCheckoutProtocol.specVersion])
+        #expect(items.filter { $0.name == "ec_delegate" }.map(\.value) == ["window.open"])
         #expect(items.filter { $0.name == "ec_color_scheme" }.map(\.value) == ["light"])
+        #expect(items.filter { $0.name == "ck_branding" }.map(\.value) == ["app"])
     }
 
     @Test func derivesCheckoutParamsForEachAppearance() throws {

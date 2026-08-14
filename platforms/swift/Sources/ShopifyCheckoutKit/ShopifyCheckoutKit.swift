@@ -65,8 +65,7 @@ public func invalidate() {
 @MainActor
 @discardableResult
 public func present(checkout url: URL, from: UIViewController, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
-    let decorated = CheckoutURLDecorator.decorate(url)
-    let viewController = CheckoutViewController(checkout: decorated, delegate: delegate, client: client)
+    let viewController = CheckoutViewController(checkout: url, delegate: delegate, client: client)
     from.present(viewController, animated: true)
     return viewController
 }
@@ -74,8 +73,7 @@ public func present(checkout url: URL, from: UIViewController, delegate: (any Ch
 @MainActor
 @discardableResult
 package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
-    let decorated = CheckoutURLDecorator.decorate(url)
-    let viewController = CheckoutViewController(checkout: decorated, delegate: delegate, client: client, entryPoint: entryPoint)
+    let viewController = CheckoutViewController(checkout: url, delegate: delegate, client: client, entryPoint: entryPoint)
     from.present(viewController, animated: true)
     return viewController
 }
