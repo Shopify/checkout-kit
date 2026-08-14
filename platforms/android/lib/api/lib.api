@@ -494,12 +494,10 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun component5 ()Lcom/shopify/checkoutkit/Preloading;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Ljava/util/Set;
-	public final fun component8 ()Lkotlin/jvm/functions/Function1;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllowedMessageOrigins ()Ljava/util/Set;
 	public final fun getAppearance ()Lcom/shopify/checkoutkit/CheckoutAppearance;
 	public final fun getLogLevel ()Lcom/shopify/checkoutkit/LogLevel;
-	public final fun getOnMessageRejected ()Lkotlin/jvm/functions/Function1;
 	public final fun getPlatform ()Lcom/shopify/checkoutkit/Platform;
 	public final fun getPreloading ()Lcom/shopify/checkoutkit/Preloading;
 	public final fun getSheet ()Lcom/shopify/checkoutkit/CheckoutSheetOptions;
@@ -508,7 +506,6 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun setAllowedMessageOrigins (Ljava/util/Set;)V
 	public final fun setAppearance (Lcom/shopify/checkoutkit/CheckoutAppearance;)V
 	public final fun setLogLevel (Lcom/shopify/checkoutkit/LogLevel;)V
-	public final fun setOnMessageRejected (Lkotlin/jvm/functions/Function1;)V
 	public final fun setPlatform (Lcom/shopify/checkoutkit/Platform;)V
 	public final fun setPreloading (Lcom/shopify/checkoutkit/Preloading;)V
 	public final fun setSheet (Lcom/shopify/checkoutkit/CheckoutSheetOptions;)V
@@ -678,21 +675,6 @@ public final class com/shopify/checkoutkit/Preloading {
 	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Preloading;ZILjava/lang/Object;)Lcom/shopify/checkoutkit/Preloading;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEnabled ()Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/shopify/checkoutkit/RejectedMessage {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/RejectedMessage;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/RejectedMessage;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/RejectedMessage;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getMessage ()Ljava/lang/String;
-	public final fun getOrigin ()Ljava/lang/String;
-	public final fun getReason ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

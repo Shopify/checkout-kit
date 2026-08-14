@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import android.os.Looper
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View.VISIBLE
 import android.webkit.GeolocationPermissions
@@ -27,6 +28,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -60,7 +62,6 @@ class CheckoutWebViewTest {
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel
             it.allowedMessageOrigins = initialConfiguration.allowedMessageOrigins
-            it.onMessageRejected = initialConfiguration.onMessageRejected
         }
     }
 
@@ -315,11 +316,9 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `web message from an untrusted origin is dropped and reported when an allowlist is configured`() {
-        val rejected = mutableListOf<RejectedMessage>()
+    fun `web message from an untrusted origin is dropped and logged when an allowlist is configured`() {
         ShopifyCheckoutKit.configure {
             it.allowedMessageOrigins = setOf("https://allowed.example.com")
-            it.onMessageRejected = { rejected.add(it) }
         }
         val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123")
@@ -340,31 +339,16 @@ class CheckoutWebViewTest {
             assertThat(sentinelReceived).isTrue()
         }
         assertThat(received).isFalse()
-        assertThat(rejected).singleElement().satisfies({
-            assertThat(it.origin).isEqualTo("https://evil.example.com")
-            assertThat(it.reason).contains("not in the allowlist")
-        })
-    }
-
-    @Test
-    fun `callback failures do not interrupt later trusted messages`() {
-        ShopifyCheckoutKit.configure {
-            it.allowedMessageOrigins = setOf("https://allowed.example.com")
-            it.onMessageRejected = { error("callback failed") }
-        }
-        val view = checkoutWebView(activity)
-        view.loadCheckout("https://checkout.shopify.com/cart/123")
-        ShadowLooper.shadowMainLooper().runToEndOfTasks()
-        var received = false
-        view.setClient(CheckoutProtocol.Client().on(CheckoutProtocol.start) { received = true })
-
-        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = "https://evil.example.com")
-        webMessageTransport.dispatchMessage(ecStartMessage(), sourceOrigin = "https://checkout.shopify.com")
-
-        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
-            assertThat(received).isTrue()
-        }
+        // Drops are logged as warnings at the default log level, with the verified
+        // origin and reason but never the untrusted message body.
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.WARN &&
+                    it.msg.contains("https://evil.example.com") &&
+                    it.msg.contains("not in the allowlist")
+            }
+        ).isTrue()
+        assertThat(ShadowLog.getLogs().none { it.msg.contains("ec.messages.change") }).isTrue()
     }
 
     // endregion

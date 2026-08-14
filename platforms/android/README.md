@@ -293,7 +293,6 @@ ShopifyCheckoutKit.configure {
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
 | `title` | `null` | Runtime override for the checkout sheet header title. When `null`, the SDK uses the localized `checkout_web_view_title` string resource. |
 | `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
-| `onMessageRejected` | `null` | Observes messages rejected by origin validation. |
 
 ### Color schemes
 
@@ -444,11 +443,12 @@ ShopifyCheckoutKit.configure {
         "https://checkout.example.com",
         "https://*.example.org",
     )
-    it.onMessageRejected = { rejection ->
-        reportRejectedOrigin(rejection.origin, rejection.reason)
-    }
 }
 ```
+
+Messages dropped by origin validation are never silently discarded: each rejection is logged as a
+warning with the message origin and the reason it was dropped. The message body is untrusted and is
+not logged.
 
 Exact entries accept an optional trailing slash, but not credentials, paths, queries, or fragments.
 For example, `https://checkout.example.com/` is accepted, while
