@@ -60,11 +60,6 @@ public struct Configuration: Sendable {
     /// An optional trailing slash is accepted. Credentials, paths, queries,
     /// and fragments are not valid in configured origin patterns.
     public var allowedMessageOrigins: [String] = []
-
-    /// Invoked when an incoming checkout message is rejected during origin
-    /// validation. Defaults to logging a debug message; rejected messages are
-    /// never silently dropped.
-    public var onMessageRejected: (@Sendable (MessageRejection) -> Void)?
 }
 
 extension Configuration {
