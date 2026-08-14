@@ -59,6 +59,15 @@ public class InteropTest {
     }
 
     @Test
+    public void canSubscribeToDiagnosticsFromJava() {
+        List<CheckoutDiagnosticEvent> events = new ArrayList<>();
+        CheckoutDiagnostics.Subscription subscription = ShopifyCheckoutKit.diagnostics.subscribe(events::add);
+
+        assertThat(subscription).isNotNull();
+        subscription.close();
+    }
+
+    @Test
     public void canConstructCheckoutExceptionWithJavaOverloads() {
         CheckoutException withoutOptionalFields = new CheckoutException(
                 CheckoutErrorCode.UNKNOWN,

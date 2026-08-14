@@ -42,6 +42,7 @@ internal class EmbeddedCheckoutProtocolBridge(
     private val webMessageTransport: WebMessageTransport,
     @Volatile private var client: CheckoutProtocol.Client? = null,
     private val protocolMessageExecutor: Executor = ProtocolMessageExecutor.executor,
+    private val diagnostics: CheckoutDiagnostics = ShopifyCheckoutKit.diagnostics,
 ) {
     private var isTransportAttached = false
     private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
@@ -92,45 +93,21 @@ internal class EmbeddedCheckoutProtocolBridge(
     }
 
     private fun receiveWebMessage(message: String, sourceOrigin: String, isMainFrame: Boolean) {
-        if (!isMainFrame) {
-            log.d(LOG_TAG, "Ignoring ECP WebMessage from a child frame.")
-            return
-        }
-
-        if (!isOriginAllowed(sourceOrigin)) {
-            rejectMessage(sourceOrigin, message)
-            return
-        }
-
-        receiveMessage(message)
-    }
-
-    /**
-     * Origin validation runs here (not at the WebView layer) so [ALLOWED_MESSAGE_ORIGIN_RULES] can
-     * stay `"*"` and deliver every message with its verified origin. That lets the kit surface
-     * drops through [Configuration.onMessageRejected] instead of the WebView silently discarding
-     * them.
-     */
-    private fun isOriginAllowed(sourceOrigin: String): Boolean {
-        val configuration = ShopifyCheckoutKit.configuration
-        val patterns = OriginAllowlist.effectivePatterns(
-            checkoutOrigin = view.checkoutOrigin,
-            configured = configuration.allowedMessageOrigins,
+        val incomingMessage = IncomingCheckoutMessage(
+            body = message,
+            origin = sourceOrigin,
+            isMainFrame = isMainFrame,
         )
-        return OriginAllowlist.isAllowed(sourceOrigin, patterns)
-    }
+        val ingressPolicy = CheckoutMessageIngressPolicy(
+            configuredOrigins = ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            checkoutOrigin = view.checkoutOrigin,
+        )
 
-    private fun rejectMessage(sourceOrigin: String, message: String) {
-        val reason = "origin \"$sourceOrigin\" is not in the allowlist"
-        val callback = ShopifyCheckoutKit.configuration.onMessageRejected
-        if (callback != null) {
-            try {
-                callback(RejectedMessage(origin = sourceOrigin, message = message, reason = reason))
-            } catch (error: Exception) {
-                log.e(LOG_TAG, "onMessageRejected callback threw", error)
+        when (val decision = ingressPolicy.evaluate(incomingMessage)) {
+            CheckoutMessageIngressPolicy.Decision.Accepted -> receiveMessage(incomingMessage.body)
+            is CheckoutMessageIngressPolicy.Decision.Rejected -> {
+                diagnostics.emit(CheckoutDiagnosticEvent.MessageRejected(decision.rejection))
             }
-        } else {
-            log.d(LOG_TAG, "Dropped ECP WebMessage: $reason")
         }
     }
 

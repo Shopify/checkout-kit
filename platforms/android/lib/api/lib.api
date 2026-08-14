@@ -67,6 +67,37 @@ public final class com/shopify/checkoutkit/CheckoutAppearance$Storefront$Compani
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public abstract interface class com/shopify/checkoutkit/CheckoutDiagnosticEvent {
+}
+
+public final class com/shopify/checkoutkit/CheckoutDiagnosticEvent$MessageRejected : com/shopify/checkoutkit/CheckoutDiagnosticEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/CheckoutMessageRejection;)V
+	public final fun component1 ()Lcom/shopify/checkoutkit/CheckoutMessageRejection;
+	public final fun copy (Lcom/shopify/checkoutkit/CheckoutMessageRejection;)Lcom/shopify/checkoutkit/CheckoutDiagnosticEvent$MessageRejected;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutDiagnosticEvent$MessageRejected;Lcom/shopify/checkoutkit/CheckoutMessageRejection;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutDiagnosticEvent$MessageRejected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRejection ()Lcom/shopify/checkoutkit/CheckoutMessageRejection;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/CheckoutDiagnostics {
+	public final fun subscribe (Lcom/shopify/checkoutkit/CheckoutDiagnostics$Listener;)Lcom/shopify/checkoutkit/CheckoutDiagnostics$Subscription;
+}
+
+public abstract interface class com/shopify/checkoutkit/CheckoutDiagnostics$Listener {
+	public abstract fun onDiagnosticEvent (Lcom/shopify/checkoutkit/CheckoutDiagnosticEvent;)V
+}
+
+public abstract interface class com/shopify/checkoutkit/CheckoutDiagnostics$Subscription : java/lang/AutoCloseable {
+	public abstract fun cancel ()V
+	public abstract fun close ()V
+}
+
+public final class com/shopify/checkoutkit/CheckoutDiagnostics$Subscription$DefaultImpls {
+	public static fun close (Lcom/shopify/checkoutkit/CheckoutDiagnostics$Subscription;)V
+}
+
 public final class com/shopify/checkoutkit/CheckoutErrorCode : java/lang/Enum {
 	public static final field CART_COMPLETED Lcom/shopify/checkoutkit/CheckoutErrorCode;
 	public static final field CART_EXPIRED Lcom/shopify/checkoutkit/CheckoutErrorCode;
@@ -105,6 +136,28 @@ public abstract interface class com/shopify/checkoutkit/CheckoutListener {
 	public abstract fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
 	public abstract fun onPermissionRequest (Landroid/webkit/PermissionRequest;)V
 	public abstract fun onShowFileChooser (Landroid/webkit/WebView;Landroid/webkit/ValueCallback;Landroid/webkit/WebChromeClient$FileChooserParams;)Z
+}
+
+public final class com/shopify/checkoutkit/CheckoutMessageRejection {
+	public fun <init> (Ljava/lang/String;Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;
+	public final fun copy (Ljava/lang/String;Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;)Lcom/shopify/checkoutkit/CheckoutMessageRejection;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/CheckoutMessageRejection;Ljava/lang/String;Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutMessageRejection;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOrigin ()Ljava/lang/String;
+	public final fun getReason ()Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/CheckoutMessageRejection$Reason : java/lang/Enum {
+	public static final field CHILD_FRAME Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;
+	public static final field ORIGIN_NOT_ALLOWED Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;
+	public static final field UNSUPPORTED_PORT Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;
+	public static fun values ()[Lcom/shopify/checkoutkit/CheckoutMessageRejection$Reason;
 }
 
 public final class com/shopify/checkoutkit/CheckoutPreload {
@@ -494,12 +547,10 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun component5 ()Lcom/shopify/checkoutkit/Preloading;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Ljava/util/Set;
-	public final fun component8 ()Lkotlin/jvm/functions/Function1;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllowedMessageOrigins ()Ljava/util/Set;
 	public final fun getAppearance ()Lcom/shopify/checkoutkit/CheckoutAppearance;
 	public final fun getLogLevel ()Lcom/shopify/checkoutkit/LogLevel;
-	public final fun getOnMessageRejected ()Lkotlin/jvm/functions/Function1;
 	public final fun getPlatform ()Lcom/shopify/checkoutkit/Platform;
 	public final fun getPreloading ()Lcom/shopify/checkoutkit/Preloading;
 	public final fun getSheet ()Lcom/shopify/checkoutkit/CheckoutSheetOptions;
@@ -508,7 +559,6 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun setAllowedMessageOrigins (Ljava/util/Set;)V
 	public final fun setAppearance (Lcom/shopify/checkoutkit/CheckoutAppearance;)V
 	public final fun setLogLevel (Lcom/shopify/checkoutkit/LogLevel;)V
-	public final fun setOnMessageRejected (Lkotlin/jvm/functions/Function1;)V
 	public final fun setPlatform (Lcom/shopify/checkoutkit/Platform;)V
 	public final fun setPreloading (Lcom/shopify/checkoutkit/Preloading;)V
 	public final fun setSheet (Lcom/shopify/checkoutkit/CheckoutSheetOptions;)V
@@ -682,21 +732,6 @@ public final class com/shopify/checkoutkit/Preloading {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/shopify/checkoutkit/RejectedMessage {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/shopify/checkoutkit/RejectedMessage;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/RejectedMessage;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/shopify/checkoutkit/RejectedMessage;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getMessage ()Ljava/lang/String;
-	public final fun getOrigin ()Ljava/lang/String;
-	public final fun getReason ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class com/shopify/checkoutkit/ShopifyCheckout : android/widget/FrameLayout {
 	public static final field Companion Lcom/shopify/checkoutkit/ShopifyCheckout$Companion;
 	public fun <init> (Landroid/content/Context;Ljava/lang/String;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)V
@@ -712,6 +747,7 @@ public final class com/shopify/checkoutkit/ShopifyCheckout$Companion {
 public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/ShopifyCheckoutKit;
 	public static final field VERSION Ljava/lang/String;
+	public static final field diagnostics Lcom/shopify/checkoutkit/CheckoutDiagnostics;
 	public static final fun configure (Lcom/shopify/checkoutkit/ConfigurationUpdater;)V
 	public static final fun getConfiguration ()Lcom/shopify/checkoutkit/Configuration;
 	public static final fun invalidate ()V

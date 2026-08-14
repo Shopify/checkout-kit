@@ -293,7 +293,6 @@ ShopifyCheckoutKit.configure {
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
 | `title` | `null` | Runtime override for the checkout sheet header title. When `null`, the SDK uses the localized `checkout_web_view_title` string resource. |
 | `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
-| `onMessageRejected` | `null` | Observes messages rejected by origin validation. |
 
 ### Color schemes
 
@@ -444,11 +443,24 @@ ShopifyCheckoutKit.configure {
         "https://checkout.example.com",
         "https://*.example.org",
     )
-    it.onMessageRejected = { rejection ->
-        reportRejectedOrigin(rejection.origin, rejection.reason)
+}
+
+val diagnosticSubscription = ShopifyCheckoutKit.diagnostics.subscribe { event ->
+    when (event) {
+        is CheckoutDiagnosticEvent.MessageRejected -> {
+            val rejection = event.rejection
+            reportRejectedOrigin(rejection.origin, rejection.reason)
+        }
     }
 }
+
+// Cancel when the observing application component is destroyed.
+diagnosticSubscription.cancel()
 ```
+
+Diagnostics are process-wide, hot events and do not replay. Subscribe before preloading if the
+application needs to observe rejections from a background checkout WebView. Rejected message bodies
+are intentionally omitted because they are untrusted and may contain sensitive data.
 
 Exact entries accept an optional trailing slash, but not credentials, paths, queries, or fragments.
 For example, `https://checkout.example.com/` is accepted, while

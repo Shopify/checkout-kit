@@ -13,6 +13,10 @@ public object ShopifyCheckoutKit {
 
     internal val log = LogWrapper()
 
+    /** SDK-wide diagnostics emitted by Checkout Kit. */
+    @JvmField
+    public val diagnostics: CheckoutDiagnostics = CheckoutDiagnostics()
+
     /**
      * Returns the current version of ShopifyCheckoutKit.
 

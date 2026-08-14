@@ -38,6 +38,7 @@ class CheckoutWebViewTest {
     private lateinit var activity: ComponentActivity
     private lateinit var initialConfiguration: Configuration
     private lateinit var webMessageTransport: FakeWebMessageTransport
+    private val diagnosticSubscriptions = mutableListOf<CheckoutDiagnostics.Subscription>()
 
     @Before
     fun setUp() {
@@ -53,6 +54,8 @@ class CheckoutWebViewTest {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
         CheckoutWebView.cacheClock = PreloadCache.Clock()
+        diagnosticSubscriptions.forEach(CheckoutDiagnostics.Subscription::cancel)
+        diagnosticSubscriptions.clear()
         ShopifyCheckoutKit.configure {
             it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
@@ -60,7 +63,6 @@ class CheckoutWebViewTest {
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel
             it.allowedMessageOrigins = initialConfiguration.allowedMessageOrigins
-            it.onMessageRejected = initialConfiguration.onMessageRejected
         }
     }
 
@@ -316,10 +318,14 @@ class CheckoutWebViewTest {
 
     @Test
     fun `web message from an untrusted origin is dropped and reported when an allowlist is configured`() {
-        val rejected = mutableListOf<RejectedMessage>()
+        val rejected = mutableListOf<CheckoutMessageRejection>()
+        diagnosticSubscriptions += ShopifyCheckoutKit.diagnostics.subscribe { event ->
+            if (event is CheckoutDiagnosticEvent.MessageRejected) {
+                rejected += event.rejection
+            }
+        }
         ShopifyCheckoutKit.configure {
             it.allowedMessageOrigins = setOf("https://allowed.example.com")
-            it.onMessageRejected = { rejected.add(it) }
         }
         val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123")
@@ -342,15 +348,15 @@ class CheckoutWebViewTest {
         assertThat(received).isFalse()
         assertThat(rejected).singleElement().satisfies({
             assertThat(it.origin).isEqualTo("https://evil.example.com")
-            assertThat(it.reason).contains("not in the allowlist")
+            assertThat(it.reason).isEqualTo(CheckoutMessageRejection.Reason.ORIGIN_NOT_ALLOWED)
         })
     }
 
     @Test
-    fun `callback failures do not interrupt later trusted messages`() {
+    fun `diagnostic listener failures do not interrupt later trusted messages`() {
+        diagnosticSubscriptions += ShopifyCheckoutKit.diagnostics.subscribe { error("listener failed") }
         ShopifyCheckoutKit.configure {
             it.allowedMessageOrigins = setOf("https://allowed.example.com")
-            it.onMessageRejected = { error("callback failed") }
         }
         val view = checkoutWebView(activity)
         view.loadCheckout("https://checkout.shopify.com/cart/123")
