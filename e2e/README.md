@@ -35,15 +35,15 @@ Each command runs the tests in `tests/shared/` and its target namespace under
 `tests/`. Narrow a run with `--tags`:
 
 ```bash
-dev swift e2e --tags cart
+dev swift e2e --tags checkout
 dev rn e2e ios --tags checkout
-dev android e2e --tags cart,checkout
+dev android e2e --tags launch,checkout
 ```
 
 Both options match **any** listed tag, because that is how Maestro filters.
-`--tags cart,checkout` runs the cart tests and the checkout tests. `--exclude-tags`
-skips tests carrying any listed tag. `config.yaml` quarantines `flaky` and `wip`
-for every run, so those need no command line option.
+`--tags launch,checkout` runs the launch tests and the checkout tests.
+`--exclude-tags` skips tests carrying any listed tag. `config.yaml` quarantines
+`flaky` and `wip` for every run, so those need no command line option.
 
 ### Tags
 
@@ -146,8 +146,8 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `tests/shared/` holds the tests every target runs through the CI matrix.
 - `tests/<platform>/` holds platform-local tests. The matrix may ignore their tags.
 - `tests/shared/launch-smoke.yaml` is the shared launch smoke test.
-- `tests/shared/cart-from-control-link.yaml` seeds a cart through the control link
-  and waits for the cart marker.
+- `tests/shared/checkout-present-and-close.yaml` seeds a cart through the control
+  link, presents checkout, closes it, and asserts dismissal.
 - `tests/react-native/checkout-guest.yaml` composes the React Native guest
   checkout smoke test from those subflows.
 - `tests/react-native/checkout-hardcoded-buyer-identity.yaml` verifies checkout

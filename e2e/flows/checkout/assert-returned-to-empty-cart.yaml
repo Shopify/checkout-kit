@@ -1,20 +1,6 @@
 appId: ${E2E_APP_ID}
 ---
-# RN E2E runs against released native SDK artifacts. Android 4.0.0-alpha.2
-# still exposes checkoutKitCloseBtn; #333 normalized the source id to
-# shopify_checkout_kit_close_button. When RN nativeSdkVersions point at native
-# SDK releases containing #333, replace this platform split with that id.
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - tapOn:
-          id: checkoutKitCloseBtn
-- runFlow:
-    when:
-      platform: ios
-    commands:
-      - tapOn: "Close"
+- runFlow: close.yaml
 
 - extendedWaitUntil:
     visible:
