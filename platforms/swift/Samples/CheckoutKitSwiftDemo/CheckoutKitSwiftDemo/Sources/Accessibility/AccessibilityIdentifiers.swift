@@ -1,4 +1,4 @@
-enum E2ETestIds {
+enum AccessibilityIdentifiers {
     static let appReady = "checkout-kit-sample-ready"
 
     enum Cart {

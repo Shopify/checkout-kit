@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.shopify.checkoutkit.androiddemo.R
+import com.shopify.checkoutkit.androiddemo.accessibility.AccessibilityIdentifiers
 import com.shopify.checkoutkit.androiddemo.cart.data.CartAmount
 import com.shopify.checkoutkit.androiddemo.cart.data.CartLine
 import com.shopify.checkoutkit.androiddemo.cart.data.CartState
@@ -50,7 +51,6 @@ import com.shopify.checkoutkit.androiddemo.common.components.MoneyText
 import com.shopify.checkoutkit.androiddemo.common.components.ProgressIndicator
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.horizontalPadding
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.verticalPadding
-import com.shopify.checkoutkit.androiddemo.e2e.E2ETestIds
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
 
 @Composable
@@ -244,7 +244,7 @@ private fun CheckoutButton(
         Button(
             shape = RectangleShape,
             onClick = onClick,
-            modifier = Modifier.testTag(E2ETestIds.Cart.CHECKOUT_BUTTON),
+            modifier = Modifier.testTag(AccessibilityIdentifiers.Cart.CHECKOUT_BUTTON),
         ) {
             Column {
                 Text(
@@ -255,7 +255,7 @@ private fun CheckoutButton(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
-                        .testTag(E2ETestIds.Cart.CHECKOUT_READY)
+                        .testTag(AccessibilityIdentifiers.Cart.CHECKOUT_READY)
                 )
             }
         }

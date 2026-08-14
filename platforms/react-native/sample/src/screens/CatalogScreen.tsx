@@ -19,7 +19,7 @@ import {useCart} from '../context/Cart';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../App';
 import {currency} from '../utils';
-import {E2ETestIds} from '../e2e/testIds';
+import {AccessibilityIdentifiers} from '../accessibility/accessibilityIdentifiers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CatalogScreen'>;
 
@@ -65,7 +65,7 @@ function CatalogScreen({navigation}: Props) {
             <Product
               key={node.id}
               product={node}
-              testID={E2ETestIds.catalog.productGridItem(index)}
+              testID={AccessibilityIdentifiers.catalog.productGridItem(index)}
               onPress={() => {
                 navigation.navigate('ProductDetails', {
                   product: node,

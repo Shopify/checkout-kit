@@ -24,7 +24,7 @@ import {
 } from '@shopify/checkout-kit-react-native';
 import {useConfig} from '../context/Config';
 import {useShopifyEventHandlers} from '../hooks/useCheckoutEventHandlers';
-import {E2ETestIds} from '../e2e/testIds';
+import {AccessibilityIdentifiers} from '../accessibility/accessibilityIdentifiers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetails'>;
 
@@ -116,7 +116,9 @@ function ProductDetails({
 
           <Pressable
             testID={
-              loading ? undefined : E2ETestIds.productDetails.addToCartButton
+              loading
+                ? undefined
+                : AccessibilityIdentifiers.productDetails.addToCartButton
             }
             disabled={loading}
             style={styles.addToCartButton}

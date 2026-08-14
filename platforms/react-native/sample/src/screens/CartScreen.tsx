@@ -31,7 +31,7 @@ import {
   useShopifyEventHandlers,
   useShopifyProtocolEventHandlers,
 } from '../hooks/useCheckoutEventHandlers';
-import {E2ETestIds} from '../e2e/testIds';
+import {AccessibilityIdentifiers} from '../accessibility/accessibilityIdentifiers';
 
 function CartScreen(): React.JSX.Element {
   const {present, preload} = useShopifyCheckout();
@@ -155,7 +155,9 @@ function CartScreen(): React.JSX.Element {
     return (
       <View style={styles.loading}>
         <Icon name="shopping-bag" size={60} color="#bbc1d6" />
-        <Text testID={E2ETestIds.cart.emptyMessage} style={styles.loadingText}>
+        <Text
+          testID={AccessibilityIdentifiers.cart.emptyMessage}
+          style={styles.loadingText}>
           Your cart is empty.
         </Text>
       </View>
@@ -220,7 +222,7 @@ function CartScreen(): React.JSX.Element {
               />
 
               <Pressable
-                testID={E2ETestIds.cart.checkoutButton}
+                testID={AccessibilityIdentifiers.cart.checkoutButton}
                 style={[
                   styles.cartButton,
                   cartMutationInProgress ? styles.cartButtonDisabled : null,
@@ -228,7 +230,7 @@ function CartScreen(): React.JSX.Element {
                 disabled={totalQuantity === 0 || cartMutationInProgress}
                 onPress={presentCheckout}>
                 <Text
-                  testID={E2ETestIds.cart.checkoutReady}
+                  testID={AccessibilityIdentifiers.cart.checkoutReady}
                   style={styles.cartButtonText}>
                   Checkout
                 </Text>

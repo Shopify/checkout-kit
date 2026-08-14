@@ -1,6 +1,6 @@
-package com.shopify.checkoutkit.androiddemo.e2e
+package com.shopify.checkoutkit.androiddemo.accessibility
 
-object E2ETestIds {
+object AccessibilityIdentifiers {
     const val APP_READY = "checkout-kit-sample-ready"
 
     object Cart {
