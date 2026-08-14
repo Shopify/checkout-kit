@@ -283,6 +283,818 @@
       },
       {
         "kind": "TypeDecl",
+        "name": "CheckoutDiagnosticEvent",
+        "printedName": "CheckoutDiagnosticEvent",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "messageRejected",
+            "printedName": "messageRejected",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutDiagnosticEvent.Type) -> (ShopifyCheckoutKit.CheckoutMessageRejection) -> ShopifyCheckoutKit.CheckoutDiagnosticEvent",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.CheckoutMessageRejection) -> ShopifyCheckoutKit.CheckoutDiagnosticEvent",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutDiagnosticEvent",
+                        "printedName": "ShopifyCheckoutKit.CheckoutDiagnosticEvent",
+                        "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutMessageRejection",
+                        "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection",
+                        "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.CheckoutDiagnosticEvent.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutDiagnosticEvent",
+                        "printedName": "ShopifyCheckoutKit.CheckoutDiagnosticEvent",
+                        "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO15messageRejectedyAcA0B16MessageRejectionVcACmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B15DiagnosticEventO15messageRejectedyAcA0B16MessageRejectionVcACmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Function",
+            "name": "__derived_enum_equals",
+            "printedName": "__derived_enum_equals(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutDiagnosticEvent",
+                "printedName": "ShopifyCheckoutKit.CheckoutDiagnosticEvent",
+                "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutDiagnosticEvent",
+                "printedName": "ShopifyCheckoutKit.CheckoutDiagnosticEvent",
+                "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO21__derived_enum_equalsySbAC_ACtFZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B15DiagnosticEventO21__derived_enum_equalsySbAC_ACtFZ",
+            "moduleName": "ShopifyCheckoutKit",
+            "static": true,
+            "implicit": true,
+            "declAttributes": [
+              "Implements"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO",
+        "mangledName": "$s18ShopifyCheckoutKit0B15DiagnosticEventO",
+        "moduleName": "ShopifyCheckoutKit",
+        "isEnumExhaustive": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CheckoutMessageRejection",
+        "printedName": "CheckoutMessageRejection",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "origin",
+            "printedName": "origin",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6originSSvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6originSSvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6originSSvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6originSSvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "reason",
+            "printedName": "reason",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Reason",
+                "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6reasonAC6ReasonOvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6reasonAC6ReasonOvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Reason",
+                    "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                    "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6reasonAC6ReasonOvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6reasonAC6ReasonOvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(origin:reason:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutMessageRejection",
+                "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Reason",
+                "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6origin6reasonACSS_AC6ReasonOtcfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6origin6reasonACSS_AC6ReasonOtcfc",
+            "moduleName": "ShopifyCheckoutKit",
+            "isInternal": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "TypeDecl",
+            "name": "Reason",
+            "printedName": "Reason",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "childFrame",
+                "printedName": "childFrame",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.CheckoutMessageRejection.Reason.Type) -> ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Reason",
+                        "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                        "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Reason",
+                            "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                            "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO10childFrameyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO10childFrameyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Var",
+                "name": "unsupportedPort",
+                "printedName": "unsupportedPort",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.CheckoutMessageRejection.Reason.Type) -> ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Reason",
+                        "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                        "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Reason",
+                            "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                            "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO15unsupportedPortyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO15unsupportedPortyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Var",
+                "name": "originNotAllowed",
+                "printedName": "originNotAllowed",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.CheckoutMessageRejection.Reason.Type) -> ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Reason",
+                        "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                        "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Reason",
+                            "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                            "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO16originNotAllowedyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO16originNotAllowedyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Function",
+                "name": "__derived_enum_equals",
+                "printedName": "__derived_enum_equals(_:_:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Reason",
+                    "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                    "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Reason",
+                    "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection.Reason",
+                    "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO21__derived_enum_equalsySbAE_AEtFZ",
+                "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO21__derived_enum_equalsySbAE_AEtFZ",
+                "moduleName": "ShopifyCheckoutKit",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Implements"
+                ],
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Function",
+                "name": "hash",
+                "printedName": "hash(into:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Hasher",
+                    "printedName": "Swift.Hasher",
+                    "paramValueOwnership": "InOut",
+                    "usr": "s:s6HasherV"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO4hash4intoys6HasherVz_tF",
+                "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO4hash4intoys6HasherVz_tF",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Var",
+                "name": "hashValue",
+                "printedName": "hashValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO9hashValueSivp",
+                "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO9hashValueSivp",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO9hashValueSivg",
+                    "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO9hashValueSivg",
+                    "moduleName": "ShopifyCheckoutKit",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO",
+            "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV6ReasonO",
+            "moduleName": "ShopifyCheckoutKit",
+            "isEnumExhaustive": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Hashable",
+                "printedName": "Hashable",
+                "usr": "s:SH",
+                "mangledName": "$sSH"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              }
+            ]
+          },
+          {
+            "kind": "Function",
+            "name": "__derived_struct_equals",
+            "printedName": "__derived_struct_equals(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutMessageRejection",
+                "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutMessageRejection",
+                "printedName": "ShopifyCheckoutKit.CheckoutMessageRejection",
+                "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV23__derived_struct_equalsySbAC_ACtFZ",
+            "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV23__derived_struct_equalsySbAC_ACtFZ",
+            "moduleName": "ShopifyCheckoutKit",
+            "static": true,
+            "implicit": true,
+            "declAttributes": [
+              "Implements"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:18ShopifyCheckoutKit0B16MessageRejectionV",
+        "mangledName": "$s18ShopifyCheckoutKit0B16MessageRejectionV",
+        "moduleName": "ShopifyCheckoutKit",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CheckoutDiagnostics",
+        "printedName": "CheckoutDiagnostics",
+        "children": [
+          {
+            "kind": "TypeDecl",
+            "name": "Subscription",
+            "printedName": "Subscription",
+            "children": [
+              {
+                "kind": "Function",
+                "name": "cancel",
+                "printedName": "cancel()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsC12SubscriptionC6cancelyyF",
+                "mangledName": "$s18ShopifyCheckoutKit0B11DiagnosticsC12SubscriptionC6cancelyyF",
+                "moduleName": "ShopifyCheckoutKit",
+                "declAttributes": [
+                  "Final",
+                  "Custom"
+                ],
+                "funcSelfKind": "NonMutating"
+              }
+            ],
+            "declKind": "Class",
+            "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsC12SubscriptionC",
+            "mangledName": "$s18ShopifyCheckoutKit0B11DiagnosticsC12SubscriptionC",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Final",
+              "Custom"
+            ],
+            "hasMissingDesignatedInitializers": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              }
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutDiagnostics",
+                "printedName": "ShopifyCheckoutKit.CheckoutDiagnostics",
+                "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsC"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsCACycfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B11DiagnosticsCACycfc",
+            "moduleName": "ShopifyCheckoutKit",
+            "isInternal": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "subscribe",
+            "printedName": "subscribe(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Subscription",
+                "printedName": "ShopifyCheckoutKit.CheckoutDiagnostics.Subscription",
+                "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsC12SubscriptionC"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutDiagnosticEvent) -> Swift.Void",
+                "children": [
+                  {
+                    "kind": "TypeNameAlias",
+                    "name": "Void",
+                    "printedName": "Swift.Void",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Void",
+                        "printedName": "()"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutDiagnosticEvent",
+                    "printedName": "ShopifyCheckoutKit.CheckoutDiagnosticEvent",
+                    "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsC9subscribeyAC12SubscriptionCyAA0B15DiagnosticEventOYbScMYccF",
+            "mangledName": "$s18ShopifyCheckoutKit0B11DiagnosticsC9subscribeyAC12SubscriptionCyAA0B15DiagnosticEventOYbScMYccF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Final",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "emit",
+            "printedName": "emit(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutDiagnosticEvent",
+                "printedName": "ShopifyCheckoutKit.CheckoutDiagnosticEvent",
+                "usr": "s:18ShopifyCheckoutKit0B15DiagnosticEventO"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsC4emityyAA0B15DiagnosticEventOF",
+            "mangledName": "$s18ShopifyCheckoutKit0B11DiagnosticsC4emityyAA0B15DiagnosticEventOF",
+            "moduleName": "ShopifyCheckoutKit",
+            "isInternal": true,
+            "declAttributes": [
+              "Final",
+              "Custom"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsC",
+        "mangledName": "$s18ShopifyCheckoutKit0B11DiagnosticsC",
+        "moduleName": "ShopifyCheckoutKit",
+        "declAttributes": [
+          "Final"
+        ],
+        "hasMissingDesignatedInitializers": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
         "name": "CheckoutErrorCode",
         "printedName": "CheckoutErrorCode",
         "children": [
@@ -4627,160 +5439,6 @@
             ]
           },
           {
-            "kind": "Var",
-            "name": "onMessageRejected",
-            "printedName": "onMessageRejected",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "((ShopifyCheckoutKit.MessageRejection) -> Swift.Void)?",
-                "children": [
-                  {
-                    "kind": "TypeFunc",
-                    "name": "Function",
-                    "printedName": "(ShopifyCheckoutKit.MessageRejection) -> Swift.Void",
-                    "children": [
-                      {
-                        "kind": "TypeNameAlias",
-                        "name": "Void",
-                        "printedName": "Swift.Void",
-                        "children": [
-                          {
-                            "kind": "TypeNominal",
-                            "name": "Void",
-                            "printedName": "()"
-                          }
-                        ]
-                      },
-                      {
-                        "kind": "TypeNominal",
-                        "name": "MessageRejection",
-                        "printedName": "ShopifyCheckoutKit.MessageRejection",
-                        "usr": "s:18ShopifyCheckoutKit16MessageRejectionV"
-                      }
-                    ]
-                  }
-                ],
-                "usr": "s:Sq"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit13ConfigurationV17onMessageRejectedyAA0F9RejectionVYbcSgvp",
-            "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV17onMessageRejectedyAA0F9RejectionVYbcSgvp",
-            "moduleName": "ShopifyCheckoutKit",
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "((ShopifyCheckoutKit.MessageRejection) -> Swift.Void)?",
-                    "children": [
-                      {
-                        "kind": "TypeFunc",
-                        "name": "Function",
-                        "printedName": "(ShopifyCheckoutKit.MessageRejection) -> Swift.Void",
-                        "children": [
-                          {
-                            "kind": "TypeNameAlias",
-                            "name": "Void",
-                            "printedName": "Swift.Void",
-                            "children": [
-                              {
-                                "kind": "TypeNominal",
-                                "name": "Void",
-                                "printedName": "()"
-                              }
-                            ]
-                          },
-                          {
-                            "kind": "TypeNominal",
-                            "name": "MessageRejection",
-                            "printedName": "ShopifyCheckoutKit.MessageRejection",
-                            "usr": "s:18ShopifyCheckoutKit16MessageRejectionV"
-                          }
-                        ]
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV17onMessageRejectedyAA0F9RejectionVYbcSgvg",
-                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV17onMessageRejectedyAA0F9RejectionVYbcSgvg",
-                "moduleName": "ShopifyCheckoutKit",
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "accessorKind": "get"
-              },
-              {
-                "kind": "Accessor",
-                "name": "Set",
-                "printedName": "Set()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Void",
-                    "printedName": "()"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Optional",
-                    "printedName": "((ShopifyCheckoutKit.MessageRejection) -> Swift.Void)?",
-                    "children": [
-                      {
-                        "kind": "TypeFunc",
-                        "name": "Function",
-                        "printedName": "(ShopifyCheckoutKit.MessageRejection) -> Swift.Void",
-                        "children": [
-                          {
-                            "kind": "TypeNameAlias",
-                            "name": "Void",
-                            "printedName": "Swift.Void",
-                            "children": [
-                              {
-                                "kind": "TypeNominal",
-                                "name": "Void",
-                                "printedName": "()"
-                              }
-                            ]
-                          },
-                          {
-                            "kind": "TypeNominal",
-                            "name": "MessageRejection",
-                            "printedName": "ShopifyCheckoutKit.MessageRejection",
-                            "usr": "s:18ShopifyCheckoutKit16MessageRejectionV"
-                          }
-                        ]
-                      }
-                    ],
-                    "usr": "s:Sq"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV17onMessageRejectedyAA0F9RejectionVYbcSgvs",
-                "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV17onMessageRejectedyAA0F9RejectionVYbcSgvs",
-                "moduleName": "ShopifyCheckoutKit",
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "accessorKind": "set"
-              }
-            ]
-          },
-          {
             "kind": "TypeDecl",
             "name": "Appearance",
             "printedName": "Appearance",
@@ -6712,221 +7370,6 @@
       },
       {
         "kind": "TypeDecl",
-        "name": "MessageRejection",
-        "printedName": "MessageRejection",
-        "children": [
-          {
-            "kind": "Var",
-            "name": "origin",
-            "printedName": "origin",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit16MessageRejectionV6originSSvp",
-            "mangledName": "$s18ShopifyCheckoutKit16MessageRejectionV6originSSvp",
-            "moduleName": "ShopifyCheckoutKit",
-            "declAttributes": [
-              "HasStorage"
-            ],
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit16MessageRejectionV6originSSvg",
-                "mangledName": "$s18ShopifyCheckoutKit16MessageRejectionV6originSSvg",
-                "moduleName": "ShopifyCheckoutKit",
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "Var",
-            "name": "message",
-            "printedName": "message",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit16MessageRejectionV7messageSSvp",
-            "mangledName": "$s18ShopifyCheckoutKit16MessageRejectionV7messageSSvp",
-            "moduleName": "ShopifyCheckoutKit",
-            "declAttributes": [
-              "HasStorage"
-            ],
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit16MessageRejectionV7messageSSvg",
-                "mangledName": "$s18ShopifyCheckoutKit16MessageRejectionV7messageSSvg",
-                "moduleName": "ShopifyCheckoutKit",
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "Var",
-            "name": "reason",
-            "printedName": "reason",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit16MessageRejectionV6reasonSSvp",
-            "mangledName": "$s18ShopifyCheckoutKit16MessageRejectionV6reasonSSvp",
-            "moduleName": "ShopifyCheckoutKit",
-            "declAttributes": [
-              "HasStorage"
-            ],
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit16MessageRejectionV6reasonSSvg",
-                "mangledName": "$s18ShopifyCheckoutKit16MessageRejectionV6reasonSSvg",
-                "moduleName": "ShopifyCheckoutKit",
-                "implicit": true,
-                "declAttributes": [
-                  "Transparent"
-                ],
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
-            "kind": "Constructor",
-            "name": "init",
-            "printedName": "init(origin:message:reason:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "MessageRejection",
-                "printedName": "ShopifyCheckoutKit.MessageRejection",
-                "usr": "s:18ShopifyCheckoutKit16MessageRejectionV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              }
-            ],
-            "declKind": "Constructor",
-            "usr": "s:18ShopifyCheckoutKit16MessageRejectionV6origin7message6reasonACSS_S2Stcfc",
-            "mangledName": "$s18ShopifyCheckoutKit16MessageRejectionV6origin7message6reasonACSS_S2Stcfc",
-            "moduleName": "ShopifyCheckoutKit",
-            "init_kind": "Designated"
-          }
-        ],
-        "declKind": "Struct",
-        "usr": "s:18ShopifyCheckoutKit16MessageRejectionV",
-        "mangledName": "$s18ShopifyCheckoutKit16MessageRejectionV",
-        "moduleName": "ShopifyCheckoutKit",
-        "conformances": [
-          {
-            "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          }
-        ]
-      },
-      {
-        "kind": "TypeDecl",
         "name": "MetaData",
         "printedName": "MetaData",
         "children": [
@@ -8147,6 +8590,29 @@
         "declKind": "Var",
         "usr": "s:18ShopifyCheckoutKit7versionSSvp",
         "mangledName": "$s18ShopifyCheckoutKit7versionSSvp",
+        "moduleName": "ShopifyCheckoutKit",
+        "declAttributes": [
+          "HasInitialValue",
+          "HasStorage"
+        ],
+        "isLet": true,
+        "hasStorage": true
+      },
+      {
+        "kind": "Var",
+        "name": "diagnostics",
+        "printedName": "diagnostics",
+        "children": [
+          {
+            "kind": "TypeNominal",
+            "name": "CheckoutDiagnostics",
+            "printedName": "ShopifyCheckoutKit.CheckoutDiagnostics",
+            "usr": "s:18ShopifyCheckoutKit0B11DiagnosticsC"
+          }
+        ],
+        "declKind": "Var",
+        "usr": "s:18ShopifyCheckoutKit11diagnosticsAA0B11DiagnosticsCvp",
+        "mangledName": "$s18ShopifyCheckoutKit11diagnosticsAA0B11DiagnosticsCvp",
         "moduleName": "ShopifyCheckoutKit",
         "declAttributes": [
           "HasInitialValue",

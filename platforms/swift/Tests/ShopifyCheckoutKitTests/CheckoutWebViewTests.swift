@@ -1071,7 +1071,6 @@ class CheckoutWebViewTests: XCTestCase {
 
     private func resetOriginValidationConfig() {
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
-        ShopifyCheckoutKit.configuration.onMessageRejected = nil
     }
 
     private func stubMessageOrigin(_ origin: String) {
@@ -1121,16 +1120,22 @@ class CheckoutWebViewTests: XCTestCase {
         view.loadedCheckoutURL = url
         stubMessageOrigin("https://evil.example.com")
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
-        let rejection = LockedValue<MessageRejection?>(nil)
-        ShopifyCheckoutKit.configuration.onMessageRejected = { rejection.set($0) }
+        let diagnostics = CheckoutDiagnostics()
+        view.diagnostics = diagnostics
+        var event: CheckoutDiagnosticEvent?
+        let subscription = diagnostics.subscribe { event = $0 }
         let message = MockScriptMessage(body: Self.readyBody)
 
         view.userContentController(WKUserContentController(), didReceive: message)
 
+        subscription.cancel()
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
-        XCTAssertEqual(rejection.get()?.origin, "https://evil.example.com")
-        XCTAssertEqual(rejection.get()?.message, Self.readyBody)
-        XCTAssertEqual(rejection.get()?.reason, "origin is not in the allowlist")
+        XCTAssertEqual(
+            event,
+            .messageRejected(
+                CheckoutMessageRejection(origin: "https://evil.example.com", reason: .originNotAllowed)
+            )
+        )
     }
 
     @MainActor
@@ -1140,18 +1145,24 @@ class CheckoutWebViewTests: XCTestCase {
         stubMessageOrigin("https://trusted.example.com")
         view.messageRequestURL = { _ in URL(string: "https://trusted.example.com:0")! }
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
-        let rejection = LockedValue<MessageRejection?>(nil)
-        ShopifyCheckoutKit.configuration.onMessageRejected = { rejection.set($0) }
+        let diagnostics = CheckoutDiagnostics()
+        view.diagnostics = diagnostics
+        var event: CheckoutDiagnosticEvent?
+        let subscription = diagnostics.subscribe { event = $0 }
 
         view.userContentController(
             WKUserContentController(),
             didReceive: MockScriptMessage(body: Self.readyBody)
         )
 
+        subscription.cancel()
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
-        XCTAssertEqual(rejection.get()?.origin, "https://trusted.example.com")
-        XCTAssertEqual(rejection.get()?.message, Self.readyBody)
-        XCTAssertEqual(rejection.get()?.reason, "origin uses unsupported port 0")
+        XCTAssertEqual(
+            event,
+            .messageRejected(
+                CheckoutMessageRejection(origin: "https://trusted.example.com", reason: .unsupportedPort)
+            )
+        )
     }
 
     @MainActor
@@ -1160,17 +1171,24 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = nil
         stubMessageOrigin("https://checkout.example.com")
         view.messageIsMainFrame = { _ in false }
-        let rejection = LockedValue<MessageRejection?>(nil)
-        ShopifyCheckoutKit.configuration.onMessageRejected = { rejection.set($0) }
+        let diagnostics = CheckoutDiagnostics()
+        view.diagnostics = diagnostics
+        var event: CheckoutDiagnosticEvent?
+        let subscription = diagnostics.subscribe { event = $0 }
 
         view.userContentController(
             WKUserContentController(),
             didReceive: MockScriptMessage(body: Self.readyBody)
         )
 
+        subscription.cancel()
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
-        XCTAssertEqual(rejection.get()?.message, Self.readyBody)
-        XCTAssertEqual(rejection.get()?.reason, "message was sent from a child frame")
+        XCTAssertEqual(
+            event,
+            .messageRejected(
+                CheckoutMessageRejection(origin: "https://checkout.example.com", reason: .childFrame)
+            )
+        )
     }
 
     @MainActor

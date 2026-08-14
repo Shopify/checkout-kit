@@ -6,6 +6,12 @@ import UIKit
 /// The version of the `ShopifyCheckoutKit` library.
 public let version = "4.0.0-alpha.4"
 
+/// SDK-wide diagnostics emitted by Checkout Kit.
+///
+/// Diagnostics are observational and may be safely ignored. Subscribe before
+/// preloading to observe events emitted by a background checkout WebView.
+public let diagnostics = CheckoutDiagnostics()
+
 private let lockedCheckoutKitConfiguration = LockedValue(Configuration())
 
 /// The configuration options for the `ShopifyCheckoutKit` library.

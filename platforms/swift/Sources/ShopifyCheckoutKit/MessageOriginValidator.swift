@@ -1,23 +1,6 @@
 import Foundation
 import WebKit
 
-/// Details about an incoming checkout message that was rejected during origin
-/// validation. Surfaced through `Configuration.onMessageRejected`.
-public struct MessageRejection: Sendable {
-    /// The origin the message was received from, e.g. `https://example.com`.
-    public let origin: String
-    /// The raw message body as received from the checkout surface.
-    public let message: String
-    /// Human-readable reason the message was rejected.
-    public let reason: String
-
-    public init(origin: String, message: String, reason: String) {
-        self.origin = origin
-        self.message = message
-        self.reason = reason
-    }
-}
-
 /// A normalized representation of a message origin (scheme + host + port).
 struct MessageOrigin: Equatable {
     let scheme: String

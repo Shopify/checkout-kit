@@ -260,7 +260,6 @@ ShopifyCheckoutKit.configure {
 | `logLevel` | `.warn` | SDK logging verbosity. Threshold-ordered `.debug` → `.warn` → `.error` → `.none`; use `.debug` during integration. |
 | `preloading.enabled` | `true` | Enables best-effort checkout preloading before presentation. |
 | `allowedMessageOrigins` | `[]` | Origins trusted to send incoming checkout messages. Empty trusts every origin (open by default). See [Incoming message origin validation](#incoming-message-origin-validation). |
-| `onMessageRejected` | `nil` | Closure invoked when a message is dropped by origin validation. Defaults to logging at debug level. |
 
 To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.
 
@@ -290,21 +289,23 @@ must not include credentials, paths, queries, or fragments. For example,
 `https://example.com/` is accepted, while `https://user@example.com` and
 `https://example.com/path` are ignored.
 
-Messages dropped by origin validation are logged at debug level. To observe
-them instead, set `onMessageRejected`:
+Messages dropped by the ingress policy are always logged at debug level. To
+forward structured diagnostics to telemetry, retain an SDK-wide diagnostics
+subscription before preloading or presenting checkout:
 
 ```swift
-ShopifyCheckoutKit.configure {
-  $0.onMessageRejected = { rejection in
-    print("Dropped \(rejection.origin): \(rejection.message)")
-  }
+let diagnosticsSubscription = ShopifyCheckoutKit.diagnostics.subscribe { event in
+  guard case let .messageRejected(rejection) = event else { return }
+  print("Dropped \(rejection.origin): \(rejection.reason)")
 }
+
+// Stop observing when the owning component is destroyed.
+diagnosticsSubscription.cancel()
 ```
 
 > [!WARNING]
-> The `MessageRejection` payload is untrusted — it was dropped precisely because
-> its origin was not in the allowlist. Incoming messages are advisory and are
-> never treated as an authoritative source of checkout state.
+> Rejected messages are untrusted and never enter checkout protocol dispatch.
+> The diagnostic intentionally omits the raw message body.
 
 ### Current configuration
 
