@@ -22,6 +22,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
         ShopifyCheckoutKit.configuration.logLevel = LogLevel.warn
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
     }
 
     private func getShopifyCheckoutKit() -> RCTShopifyCheckoutKit {
@@ -97,6 +98,21 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
         XCTAssertEqual(result?["title"] as? String, "Custom Checkout")
+    }
+
+    func testAllowedMessageOriginsRoundTrip() {
+        shopifyCheckoutKit.setConfig(["allowedMessageOrigins": ["https://example.com", "https://*.example.com"]])
+
+        XCTAssertEqual(
+            ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            ["https://example.com", "https://*.example.com"]
+        )
+
+        let result = shopifyCheckoutKit.getConfig() as? [String: Any]
+        XCTAssertEqual(
+            result?["allowedMessageOrigins"] as? [String],
+            ["https://example.com", "https://*.example.com"]
+        )
     }
 
     func testConfigureWithInvalidColors() {

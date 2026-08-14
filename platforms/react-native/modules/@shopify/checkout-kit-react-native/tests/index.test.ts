@@ -209,6 +209,18 @@ describe('ShopifyCheckoutKit', () => {
       instance.setConfig(configWithTitle);
       expect(NativeModule.setConfig).toHaveBeenCalledWith(configWithTitle);
     });
+
+    it('calls `setConfig` with allowedMessageOrigins configuration', () => {
+      const instance = new ShopifyCheckout();
+      const configWithAllowedOrigins: Configuration = {
+        colorScheme: ColorScheme.automatic,
+        allowedMessageOrigins: ['https://example.com', 'https://*.example.com'],
+      };
+      instance.setConfig(configWithAllowedOrigins);
+      expect(NativeModule.setConfig).toHaveBeenCalledWith(
+        configWithAllowedOrigins,
+      );
+    });
   });
 
   describe('preload', () => {
@@ -667,6 +679,24 @@ describe('ShopifyCheckoutKit', () => {
 
       expect(result.logLevel).toBe('trace');
       expect(result.colorScheme).toBe('sepia');
+    });
+
+    it('returns configured allowed message origins', () => {
+      NativeModule.getConfig.mockReturnValueOnce({
+        colorScheme: 'automatic',
+        logLevel: 'error',
+        preloading: true,
+        allowedMessageOrigins: ['https://example.com'],
+      });
+
+      const instance = new ShopifyCheckout();
+
+      expect(instance.getConfig()).toStrictEqual({
+        colorScheme: ColorScheme.automatic,
+        logLevel: LogLevel.error,
+        preloading: true,
+        allowedMessageOrigins: ['https://example.com'],
+      });
     });
   });
 
