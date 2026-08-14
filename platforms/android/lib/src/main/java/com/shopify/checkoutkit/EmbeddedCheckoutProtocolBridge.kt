@@ -92,39 +92,32 @@ internal class EmbeddedCheckoutProtocolBridge(
     }
 
     private fun receiveWebMessage(message: String, sourceOrigin: String, isMainFrame: Boolean) {
-        if (!isMainFrame) {
-            log.d(LOG_TAG, "Ignoring ECP WebMessage from a child frame.")
-            return
-        }
-
-        if (!isOriginAllowed(sourceOrigin)) {
-            rejectMessage(sourceOrigin)
-            return
-        }
-
-        receiveMessage(message)
-    }
-
-    /**
-     * Origin validation runs here (not at the WebView layer) so [ALLOWED_MESSAGE_ORIGIN_RULES] can
-     * stay `"*"` and deliver every message with its verified origin. That lets the kit log drops
-     * with the verified origin instead of the WebView silently discarding them.
-     */
-    private fun isOriginAllowed(sourceOrigin: String): Boolean {
-        val configuration = ShopifyCheckoutKit.configuration
-        val patterns = OriginAllowlist.effectivePatterns(
-            checkoutOrigin = view.checkoutOrigin,
-            configured = configuration.allowedMessageOrigins,
+        val incomingMessage = IncomingCheckoutMessage(
+            origin = sourceOrigin,
+            isMainFrame = isMainFrame,
         )
-        return OriginAllowlist.isAllowed(sourceOrigin, patterns)
+        val ingressPolicy = CheckoutMessageIngressPolicy(
+            configuredOrigins = ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            checkoutOrigin = view.checkoutOrigin,
+        )
+
+        when (val decision = ingressPolicy.evaluate(incomingMessage)) {
+            CheckoutMessageIngressPolicy.Decision.Accepted -> receiveMessage(message)
+            is CheckoutMessageIngressPolicy.Decision.Rejected -> handleMessageRejection(decision.rejection)
+        }
     }
 
-    /**
-     * Rejected messages are never silently dropped: each rejection is logged as a warning with the
-     * verified origin and reason. The message body is untrusted and intentionally not logged.
-     */
-    private fun rejectMessage(sourceOrigin: String) {
-        log.w(LOG_TAG, "Dropped ECP WebMessage: origin \"$sourceOrigin\" is not in the allowlist")
+    /** Rejected messages are untrusted input, not checkout lifecycle failures. */
+    private fun handleMessageRejection(rejection: CheckoutMessageRejection) {
+        // Child frames are expected ambient traffic during payment flows. Keep them at debug
+        // while warning for origin-validation failures that integrators may need to diagnose.
+        when (rejection.reason) {
+            CheckoutMessageRejection.Reason.CHILD_FRAME ->
+                log.d(LOG_TAG, "Ignoring ECP WebMessage from a child frame.")
+            CheckoutMessageRejection.Reason.UNSUPPORTED_PORT,
+            CheckoutMessageRejection.Reason.ORIGIN_NOT_ALLOWED,
+            -> log.w(LOG_TAG, "Rejected ECP WebMessage from ${rejection.origin}: ${rejection.reason.logDescription}")
+        }
     }
 
     internal fun receiveMessage(message: String) {
@@ -312,6 +305,11 @@ internal class EmbeddedCheckoutProtocolBridge(
         /** Global JS object the checkout uses to receive responses. */
         private const val ECP_RESPONSE_GLOBAL = "EmbeddedCheckoutProtocol"
 
+        /**
+         * Keep the transport open to every origin so AndroidX WebKit delivers each message with
+         * its verified source origin. [CheckoutMessageIngressPolicy] owns admission; narrowing
+         * this rule would silently discard messages before the policy can validate or log them.
+         */
         private val ALLOWED_MESSAGE_ORIGIN_RULES = setOf("*")
 
         private const val CODE_PARSE_ERROR = -32700
