@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
 
+import packageJson from "../package.json";
+
 import "./checkout-web-component";
 import { CK_VERSION } from "./checkout";
 
@@ -315,8 +317,8 @@ describe("<shopify-checkout>", () => {
       expect(url.searchParams.get("ck_version")).toBe(CK_VERSION);
     });
 
-    it("uses the documented constant value", () => {
-      expect(CK_VERSION).toBe("4.0.0");
+    it("uses the package version", () => {
+      expect(CK_VERSION).toBe(packageJson.version);
     });
 
     it("includes ck_version on the overlay link", () => {

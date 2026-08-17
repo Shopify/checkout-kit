@@ -8,6 +8,8 @@ import {
   type WindowOpenResult,
 } from "@shopify/checkout-kit-protocol";
 
+import packageJson from "../package.json";
+
 import stylesText from "./checkout.css?inline";
 import { Logger, coerceLogLevel } from "./logger";
 import { createTemplate, html, safe } from "./utils";
@@ -26,7 +28,7 @@ import type {
 
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
-export const CK_VERSION = "4.0.0";
+export const CK_VERSION: string = packageJson.version;
 
 /**
  * Trusted origin always allowed to post messages, alongside the cart URL
