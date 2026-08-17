@@ -1,5 +1,5 @@
 [versions]
-checkoutKitAndroid = "4.0.0-alpha.4"
+checkoutKitAndroid = "4.0.0-alpha.5"
 embeddedCheckoutProtocolAndroid = "2026.04.08.1-alpha.2"
 
 androidApplicationGradlePlugin = "9.3.1"
