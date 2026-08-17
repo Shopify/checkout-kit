@@ -270,15 +270,37 @@ internal class CheckoutWebView private constructor(
             errorResponse: WebResourceResponse?
         ) {
             val isMainFrame = request?.isForMainFrame == true
+            val retryAfterHeader = errorResponse?.responseHeaders
+                ?.entries
+                ?.firstOrNull { it.key.equals("Retry-After", ignoreCase = true) }
+                ?.value
+            val retryAfterSeconds = RetryAfter.seconds(retryAfterHeader)
             if (isMainFrame) {
                 val statusCode = errorResponse?.statusCode ?: 0
-                preloadCache.evict(
-                    PreloadState.Failed(
-                        PreloadState.FailureReason.HttpError(statusCode),
-                        "HTTP response returned status code $statusCode.",
-                    ),
-                    view = this@CheckoutWebView,
-                )
+                val managedThrottle = isPreloadRequest &&
+                    !isPresented &&
+                    statusCode == HTTP_TOO_MANY_REQUESTS &&
+                    retryAfterSeconds != null &&
+                    ShopifyCheckoutKit.configuration.preloading.throttlePolicy ==
+                    Preloading.ThrottlePolicy.MANAGED
+                if (managedThrottle) {
+                    preloadCache.evict(
+                        PreloadState.Failed(
+                            PreloadState.FailureReason.Throttled,
+                            PreloadCache.THROTTLED_MESSAGE,
+                        ),
+                        view = this@CheckoutWebView,
+                        suppressPreloadsForSeconds = retryAfterSeconds,
+                    )
+                } else {
+                    preloadCache.evict(
+                        PreloadState.Failed(
+                            PreloadState.FailureReason.HttpError(statusCode, retryAfterSeconds),
+                            "HTTP response returned status code $statusCode.",
+                        ),
+                        view = this@CheckoutWebView,
+                    )
+                }
             }
             super.onReceivedHttpError(view, request, errorResponse)
             errorResponse?.let {
@@ -286,6 +308,7 @@ internal class CheckoutWebView private constructor(
                     request,
                     it.statusCode,
                     it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
+                    retryAfterSeconds,
                 )
             }
             if (isMainFrame) {
@@ -358,6 +381,7 @@ internal class CheckoutWebView private constructor(
             request: WebResourceRequest?,
             statusCode: Int,
             errorDescription: String,
+            retryAfterSeconds: Long?,
         ) {
             if (request?.isForMainFrame != true) return
 
@@ -367,7 +391,7 @@ internal class CheckoutWebView private constructor(
                     "statusCode: $statusCode, errorDescription: $errorDescription"
             )
             listener.onCheckoutViewFailedWithError(
-                CheckoutException.http(statusCode, errorDescription),
+                CheckoutException.http(statusCode, errorDescription, retryAfterSeconds),
             )
         }
     }
@@ -386,6 +410,7 @@ internal class CheckoutWebView private constructor(
     companion object {
         private const val SHOPIFY_PURPOSE_HEADER = "Shopify-Purpose"
         private const val PREFETCH_PURPOSE = "prefetch"
+        private const val HTTP_TOO_MANY_REQUESTS = 429
         private val RETRYABLE_CHECKOUT_ERROR_CODES = setOf(
             ERROR_TIMEOUT,
             ERROR_CONNECT,
@@ -440,14 +465,26 @@ internal class CheckoutWebView private constructor(
                 }
                 else -> try {
                     runOnUiThreadBlocking(activity) {
-                        val view = CheckoutWebView(activity, webMessageTransport)
                         val handle = CheckoutPreload(preloadCache)
-                        view.apply {
-                            loadCheckout(url, isPreload = true)
-                            log.d(LOG_TAG, "Pausing preloaded WebView.")
-                            onPause()
+                        if (ShopifyCheckoutKit.configuration.preloading.throttlePolicy ==
+                            Preloading.ThrottlePolicy.MANAGED &&
+                            preloadCache.isThrottleActive
+                        ) {
+                            preloadCache.evict(
+                                PreloadState.Failed(
+                                    PreloadState.FailureReason.Throttled,
+                                    PreloadCache.THROTTLED_MESSAGE,
+                                ),
+                            )
+                        } else {
+                            val view = CheckoutWebView(activity, webMessageTransport)
+                            view.apply {
+                                loadCheckout(url, isPreload = true)
+                                log.d(LOG_TAG, "Pausing preloaded WebView.")
+                                onPause()
+                            }
+                            preloadCache.store(PreloadKey.forUrl(url), view, activity)
                         }
-                        preloadCache.store(PreloadKey.forUrl(url), view, activity)
                         handle.listener = listener
                         handle
                     }

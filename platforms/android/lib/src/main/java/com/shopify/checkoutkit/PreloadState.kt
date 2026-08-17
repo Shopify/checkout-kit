@@ -25,8 +25,22 @@ public sealed class PreloadState {
      * with exhaustive `when` expressions to handle an additional case when recompiling.
      */
     public sealed class FailureReason {
-        /** The preload received an HTTP response that prevented it from loading. */
-        public data class HttpError(public val statusCode: Int) : FailureReason()
+        /**
+         * The preload was throttled and Checkout Kit is suppressing further preload requests
+         * until the server-provided `Retry-After` delay elapses.
+         */
+        public data object Throttled : FailureReason()
+
+        /**
+         * The preload received an HTTP response that prevented it from loading.
+         *
+         * Under the [Preloading.ThrottlePolicy.PASSTHROUGH] policy, [retryAfterSeconds] is the
+         * server-provided delay when a throttling response includes a valid `Retry-After` header.
+         */
+        public data class HttpError @JvmOverloads public constructor(
+            public val statusCode: Int,
+            public val retryAfterSeconds: Long? = null,
+        ) : FailureReason()
 
         /** Preload navigation failed. */
         public data object NavigationFailed : FailureReason()

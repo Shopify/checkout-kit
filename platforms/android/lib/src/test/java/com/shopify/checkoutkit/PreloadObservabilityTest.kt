@@ -35,7 +35,12 @@ class PreloadObservabilityTest {
         webMessageTransport = FakeWebMessageTransport()
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
-        ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = true) }
+        ShopifyCheckoutKit.configure {
+            it.preloading = Preloading(
+                enabled = true,
+                throttlePolicy = Preloading.ThrottlePolicy.MANAGED,
+            )
+        }
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
     }
 
@@ -337,7 +342,11 @@ class PreloadObservabilityTest {
     }
 
     @Test
-    fun `http error transitions cached preload to failed`() {
+    fun `managed throttle suppresses preloads until retry-after elapses`() {
+        var now = 1_000L
+        CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
+            override fun elapsedRealtime(): Long = now
+        }
         val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
         ShadowLooper.shadowMainLooper().idle()
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
@@ -347,8 +356,9 @@ class PreloadObservabilityTest {
             whenever(it.url).thenReturn(Uri.parse(url))
         }
         val response = mock<WebResourceResponse> {
-            whenever(it.statusCode).thenReturn(500)
-            whenever(it.reasonPhrase).thenReturn("Internal Server Error")
+            whenever(it.statusCode).thenReturn(429)
+            whenever(it.reasonPhrase).thenReturn("Too Many Requests")
+            whenever(it.responseHeaders).thenReturn(mutableMapOf("Retry-After" to "120"))
         }
         shadowOf(view).webViewClient.onReceivedHttpError(view, request, response)
         ShadowLooper.shadowMainLooper().idle()
@@ -356,10 +366,60 @@ class PreloadObservabilityTest {
         assertThat(preload.state)
             .isEqualTo(
                 PreloadState.Failed(
-                    PreloadState.FailureReason.HttpError(500),
-                    "HTTP response returned status code 500.",
+                    PreloadState.FailureReason.Throttled,
+                    PreloadCache.THROTTLED_MESSAGE,
                 ),
             )
+
+        val suppressed = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        assertThat(suppressed.state).isEqualTo(
+            PreloadState.Failed(
+                PreloadState.FailureReason.Throttled,
+                PreloadCache.THROTTLED_MESSAGE,
+            ),
+        )
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+
+        now += 120_001L
+        val resumed = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        assertThat(resumed.state).isEqualTo(PreloadState.Loading)
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isTrue()
+    }
+
+    @Test
+    fun `passthrough throttle returns http metadata without suppressing another preload`() {
+        ShopifyCheckoutKit.configure {
+            it.preloading = Preloading(throttlePolicy = Preloading.ThrottlePolicy.PASSTHROUGH)
+        }
+        val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val request = mock<WebResourceRequest> {
+            whenever(it.isForMainFrame).thenReturn(true)
+            whenever(it.url).thenReturn(Uri.parse(url))
+        }
+        val response = mock<WebResourceResponse> {
+            whenever(it.statusCode).thenReturn(429)
+            whenever(it.reasonPhrase).thenReturn("Too Many Requests")
+            whenever(it.responseHeaders).thenReturn(mutableMapOf("Retry-After" to "120"))
+        }
+
+        shadowOf(view).webViewClient.onReceivedHttpError(view, request, response)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(preload.state).isEqualTo(
+            PreloadState.Failed(
+                PreloadState.FailureReason.HttpError(429, 120),
+                "HTTP response returned status code 429.",
+            ),
+        )
+
+        val replacement = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        assertThat(replacement.state).isEqualTo(PreloadState.Loading)
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isTrue()
     }
 
     @Test

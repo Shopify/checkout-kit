@@ -69,10 +69,18 @@ public class InteropTest {
                 "Checkout request failed",
                 500
         );
+        CheckoutException withRetryAfter = new CheckoutException(
+                CheckoutErrorCode.HTTP_ERROR,
+                "Checkout request throttled",
+                429,
+                null,
+                120L
+        );
 
         assertThat(withoutOptionalFields.getCode()).isEqualTo(CheckoutErrorCode.UNKNOWN);
         assertThat(withoutOptionalFields.getHttpStatusCode()).isNull();
         assertThat(withHttpStatusCode.getHttpStatusCode()).isEqualTo(500);
+        assertThat(withRetryAfter.getRetryAfterSeconds()).isEqualTo(120L);
     }
 
     @Test
@@ -122,12 +130,14 @@ public class InteropTest {
     @Test
     public void canConfigurePreloading() {
         ShopifyCheckoutKit.configure(configuration -> {
-            configuration.setPreloading(new Preloading(false));
+            configuration.setPreloading(new Preloading(false, Preloading.ThrottlePolicy.PASSTHROUGH));
         });
 
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
 
         assertThat(configuration.getPreloading().getEnabled()).isFalse();
+        assertThat(configuration.getPreloading().getThrottlePolicy())
+                .isEqualTo(Preloading.ThrottlePolicy.PASSTHROUGH);
     }
 
     @Test

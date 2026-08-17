@@ -41,6 +41,20 @@ class CheckoutExceptionAssert(actual: CheckoutException) :
 
         return this
     }
+
+    fun hasRetryAfterSeconds(retryAfterSeconds: Long): CheckoutExceptionAssert {
+        isNotNull()
+
+        if (actual.retryAfterSeconds != retryAfterSeconds) {
+            failWithMessage(
+                "Expected retry-after seconds <%s>, but was <%s>",
+                retryAfterSeconds,
+                actual.retryAfterSeconds,
+            )
+        }
+
+        return this
+    }
 }
 
 fun noopDefaultCheckoutListener(): DefaultCheckoutListener = object : DefaultCheckoutListener() {

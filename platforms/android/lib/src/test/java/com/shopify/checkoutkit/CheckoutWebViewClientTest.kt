@@ -272,6 +272,25 @@ class CheckoutWebViewClientTest {
     }
 
     @Test
+    fun `HTTP error includes retry-after response metadata`() {
+        val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com"), true)
+        val mockResponse = mockWebResourceResponse(
+            status = 429,
+            description = "Too Many Requests",
+            headers = mutableMapOf("retry-after" to "120"),
+        )
+
+        triggerOnReceivedHttpError(mockRequest, mockResponse)
+
+        val captor = argumentCaptor<CheckoutException>()
+        verify(checkoutWebViewListener).onCheckoutViewFailedWithError(captor.capture())
+        assertThat(captor.firstValue)
+            .hasCode(CheckoutErrorCode.HTTP_ERROR)
+            .hasHttpStatusCode(429)
+            .hasRetryAfterSeconds(120)
+    }
+
+    @Test
     fun `should call event processor calls onCheckoutViewFailedWithError on http error for main frame - 504`() {
         val mockRequest = mockWebRequest(Uri.parse("https://checkout-sdk.myshopify.com"), true)
         val mockResponse = mockWebResourceResponse(
