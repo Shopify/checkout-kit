@@ -18,6 +18,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   /** The JavaScript name for {@link CheckoutAppearance.Storefront}, which has no native id. */
@@ -28,6 +31,8 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   private CheckoutHandle checkoutSheet;
 
   private CustomCheckoutListener checkoutListener;
+
+  private CheckoutPreload checkoutPreload;
 
   public ShopifyCheckoutKitModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -98,16 +103,71 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void preload(String checkoutURL) {
+  public void preload(String checkoutURL, String requestId) {
+    if (checkoutPreload != null) {
+      checkoutPreload.setListener(null);
+      checkoutPreload = null;
+    }
+
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      ShopifyCheckoutKit.preload(checkoutURL, (ComponentActivity) currentActivity);
+      checkoutPreload = ShopifyCheckoutKit.preload(
+          checkoutURL,
+          (ComponentActivity) currentActivity,
+          state -> emitPreloadStateChange(requestId, state));
+
+      if (checkoutPreload == null) {
+        emitPreloadStateChange(requestId, PreloadState.Idle.INSTANCE);
+      }
+    } else {
+      emitPreloadStateChange(requestId, PreloadState.Idle.INSTANCE);
     }
   }
 
   @ReactMethod
   public void invalidateCache() {
     ShopifyCheckoutKit.invalidate();
+    checkoutPreload = null;
+  }
+
+  private void emitPreloadStateChange(String requestId, PreloadState state) {
+    JSONObject event = new JSONObject();
+
+    try {
+      event.put("requestId", requestId);
+
+      if (state instanceof PreloadState.Idle) {
+        event.put("type", "idle");
+      } else if (state instanceof PreloadState.Loading) {
+        event.put("type", "loading");
+      } else if (state instanceof PreloadState.Ready) {
+        event.put("type", "ready");
+      } else if (state instanceof PreloadState.Expired) {
+        event.put("type", "expired");
+      } else if (state instanceof PreloadState.Failed) {
+        PreloadState.FailureReason reason = ((PreloadState.Failed) state).getReason();
+        event.put("type", "failed");
+
+        if (reason instanceof PreloadState.FailureReason.HttpError) {
+          event.put("reason", "httpError");
+          event.put("statusCode", ((PreloadState.FailureReason.HttpError) reason).getStatusCode());
+        } else if (reason instanceof PreloadState.FailureReason.NavigationFailed) {
+          event.put("reason", "navigationFailed");
+        } else if (reason instanceof PreloadState.FailureReason.WebContentProcessTerminated) {
+          event.put("reason", "webContentProcessTerminated");
+        } else if (reason instanceof PreloadState.FailureReason.ProtocolError) {
+          event.put("reason", "protocolError");
+        } else {
+          event.put("reason", "unknown");
+        }
+      } else {
+        return;
+      }
+    } catch (JSONException exception) {
+      throw new IllegalStateException("Failed to serialize preload state", exception);
+    }
+
+    emitOnPreloadStateChange(event.toString());
   }
 
   private void releaseCheckoutListener() {

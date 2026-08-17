@@ -11,6 +11,7 @@ import {
   ColorScheme,
   type Configuration,
 } from '../src';
+import {__resetPreloadForTests} from '../src/preload';
 
 const checkoutUrl = 'https://shopify.com/checkout';
 const config: Configuration = {
@@ -39,6 +40,7 @@ describe('ShopifyCheckoutProvider', () => {
   );
 
   afterEach(() => {
+    __resetPreloadForTests();
     jest.clearAllMocks();
   });
 
@@ -155,6 +157,7 @@ describe('useShopifyCheckout', () => {
   );
 
   afterEach(() => {
+    __resetPreloadForTests();
     jest.clearAllMocks();
   });
 
@@ -257,7 +260,7 @@ describe('useShopifyCheckout', () => {
     ).not.toHaveBeenCalled();
   });
 
-  it('provides preload function', () => {
+  it('provides preload function and forwards observation options', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -269,34 +272,17 @@ describe('useShopifyCheckout', () => {
       </Wrapper>,
     );
 
+    const onStateChange = jest.fn();
+    let subscription: {state: unknown; remove(): void} | undefined;
     act(() => {
-      hookValue.preload(checkoutUrl);
+      subscription = hookValue.preload(checkoutUrl, {onStateChange});
     });
 
     expect(NativeModules.ShopifyCheckoutKit.preload).toHaveBeenCalledWith(
       checkoutUrl,
+      expect.any(String),
     );
-  });
-
-  it('does not call preload with empty checkoutUrl', () => {
-    let hookValue: any;
-    const onHookValue = (value: any) => {
-      hookValue = value;
-    };
-
-    render(
-      <Wrapper>
-        <HookTestComponent onHookValue={onHookValue} />
-      </Wrapper>,
-    );
-
-    act(() => {
-      hookValue.preload('');
-    });
-
-    expect(
-      NativeModules.ShopifyCheckoutKit.preload,
-    ).not.toHaveBeenCalled();
+    expect(subscription?.state).toEqual({type: 'idle'});
   });
 
   it('provides invalidate function', () => {

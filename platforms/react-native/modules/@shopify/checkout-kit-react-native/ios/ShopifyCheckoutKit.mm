@@ -20,7 +20,8 @@ RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration)
 RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
                   subscribedMethods:(NSArray *)subscribedMethods)
 
-RCT_EXTERN_METHOD(preload:(NSString *)checkoutURL)
+RCT_EXTERN_METHOD(preload:(NSString *)checkoutURL
+                  requestId:(NSString *)requestId)
 
 RCT_EXTERN_METHOD(invalidateCache)
 
@@ -56,6 +57,19 @@ static const void *RCTShopifyCheckoutKitEventEmitterCallbackKey =
   }
 
   eventEmitterCallbackWrapper->_eventEmitterCallback("onDispatch", value);
+}
+
+- (void)emitOnPreloadStateChangeFromSwift:(NSString *)value
+{
+  EventEmitterCallbackWrapper *eventEmitterCallbackWrapper =
+      (EventEmitterCallbackWrapper *)objc_getAssociatedObject(
+          self, RCTShopifyCheckoutKitEventEmitterCallbackKey);
+
+  if (eventEmitterCallbackWrapper == nil) {
+    return;
+  }
+
+  eventEmitterCallbackWrapper->_eventEmitterCallback("onPreloadStateChange", value);
 }
 
 @end

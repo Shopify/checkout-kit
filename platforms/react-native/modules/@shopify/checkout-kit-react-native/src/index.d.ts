@@ -198,6 +198,48 @@ export interface PresentCallbacks {
   onGeolocationRequest?: (event: GeolocationRequestEvent) => void;
 }
 
+/** A stable, machine-readable reason why a preload failed. */
+export type PreloadFailureReason =
+  | 'httpError'
+  | 'navigationFailed'
+  | 'keepAliveLost'
+  | 'webContentProcessTerminated'
+  | 'protocolError'
+  | 'unknown';
+
+/** The observable lifecycle state of a preloaded checkout. */
+export type PreloadState =
+  | {type: 'idle'}
+  | {type: 'loading'}
+  | {type: 'ready'}
+  | {type: 'expired'}
+  | {
+      type: 'failed';
+      reason: PreloadFailureReason;
+      statusCode?: number;
+    };
+
+/** Optional callbacks for a single `preload(...)` invocation. */
+export interface PreloadOptions {
+  /**
+   * Fires immediately with the initial native state and whenever it changes.
+   * Preload failures are performance signals and do not prevent a later
+   * `present(...)` call from loading checkout normally.
+   */
+  onStateChange?: (state: PreloadState) => void;
+}
+
+/** Observation returned by `preload(...)`. */
+export interface CheckoutPreloadSubscription {
+  /** The latest state delivered by the native SDK. */
+  readonly state: PreloadState;
+  /**
+   * Stops delivering state changes to this observer. This does not cancel or
+   * invalidate the cached checkout.
+   */
+  remove(): void;
+}
+
 /**
  * Customer information for personalized accelerated checkout.
  *
@@ -285,8 +327,12 @@ export interface ShopifyCheckoutKit {
    * Preload the checkout for faster presentation.
    *
    * @param checkoutURL The URL of the checkout to preload.
+   * @param options Optional callbacks for observing preload state.
    */
-  preload(checkoutURL: string): void;
+  preload(
+    checkoutURL: string,
+    options?: PreloadOptions,
+  ): CheckoutPreloadSubscription;
   /**
    * Clear any checkout cached by `preload`.
    */

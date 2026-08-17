@@ -22,6 +22,10 @@ import type {
   GeolocationRequestEvent,
   IosColors,
   PresentCallbacks,
+  PreloadFailureReason,
+  PreloadOptions,
+  PreloadState,
+  CheckoutPreloadSubscription,
   ShopifyCheckoutKit,
 } from './index.d';
 import {AcceleratedCheckoutWallet} from './enums';
@@ -43,6 +47,7 @@ import type {
   ErrorResponse,
   ProtocolHandlers,
 } from './protocol';
+import {preload as preloadCheckout} from './preload';
 
 const defaultFeatures: Features = {
   handleGeolocationRequests: true,
@@ -52,6 +57,8 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   private features: Features;
 
   private dispatchSubscription?: {remove: () => void};
+
+  private preloadSubscription?: CheckoutPreloadSubscription;
 
   private _acceleratedCheckoutsReady = false;
 
@@ -109,8 +116,13 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * Preloads checkout for a given URL to improve presentation performance.
    * @param checkoutUrl The URL of the checkout to preload
    */
-  public preload(checkoutUrl: string): void {
-    RNShopifyCheckoutKit.preload(checkoutUrl);
+  public preload(
+    checkoutUrl: string,
+    options?: PreloadOptions,
+  ): CheckoutPreloadSubscription {
+    const subscription = preloadCheckout(checkoutUrl, options);
+    this.preloadSubscription = subscription;
+    return subscription;
   }
 
   /**
@@ -178,11 +190,12 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
 
   /**
    * Cleans up resources and event listeners used by the checkout sheet.
-   * Currently a no-op — retained as part of the public API for forward
-   * compatibility with future protocol-client subscriptions.
+   * Stops callbacks retained by this instance without invalidating preload.
    */
   public teardown() {
     this.releaseDispatchSubscription();
+    this.preloadSubscription?.remove();
+    this.preloadSubscription = undefined;
   }
 
   /**
@@ -413,6 +426,10 @@ export type {
   GeolocationRequestEvent,
   IosColors,
   PresentCallbacks,
+  PreloadFailureReason,
+  PreloadOptions,
+  PreloadState,
+  CheckoutPreloadSubscription,
   ProtocolHandlers,
   RenderStateChangeEvent,
 };

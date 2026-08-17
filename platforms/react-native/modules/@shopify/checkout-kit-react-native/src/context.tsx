@@ -1,7 +1,13 @@
 import React, {useCallback, useMemo, useRef, useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {ShopifyCheckout} from './index';
-import type {Configuration, Features, PresentCallbacks} from './index.d';
+import type {
+  CheckoutPreloadSubscription,
+  Configuration,
+  Features,
+  PreloadOptions,
+  PresentCallbacks,
+} from './index.d';
 import type {ProtocolHandlers} from './protocol';
 
 type Maybe<T> = T | undefined;
@@ -15,7 +21,10 @@ interface Context {
     callbacks?: PresentCallbacks,
     protocol?: ProtocolHandlers,
   ) => void;
-  preload: (checkoutUrl: string) => void;
+  preload: (
+    checkoutUrl: string,
+    options?: PreloadOptions,
+  ) => CheckoutPreloadSubscription;
   invalidate: () => void;
   dismiss: () => void;
   version: Maybe<string>;
@@ -67,11 +76,11 @@ export function ShopifyCheckoutProvider({
     [],
   );
 
-  const preload = useCallback((checkoutUrl: string) => {
-    if (checkoutUrl) {
-      instance.current?.preload(checkoutUrl);
-    }
-  }, []);
+  const preload = useCallback(
+    (checkoutUrl: string, options?: PreloadOptions) =>
+      instance.current!.preload(checkoutUrl, options),
+    [],
+  );
 
   const invalidate = useCallback(() => {
     instance.current?.invalidate();

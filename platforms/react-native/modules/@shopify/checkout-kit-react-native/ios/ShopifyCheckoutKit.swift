@@ -24,6 +24,7 @@ class RCTShopifyCheckoutKit: NSObject {
     private static let storefrontColorScheme = "storefront"
 
     internal var checkoutSheet: UIViewController?
+    private var checkoutPreload: CheckoutPreload?
     private var acceleratedCheckoutsConfiguration: Any?
     private var acceleratedCheckoutsApplePayConfiguration: Any?
 
@@ -92,6 +93,7 @@ class RCTShopifyCheckoutKit: NSObject {
     @objc func invalidateCache() {
         DispatchQueue.main.async {
             ShopifyCheckoutKit.invalidate()
+            self.checkoutPreload = nil
         }
     }
 
@@ -123,11 +125,25 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    @objc func preload(_ checkoutURL: String) {
+    @objc func preload(_ checkoutURL: String, requestId: String) {
         DispatchQueue.main.async {
-            guard let url = URL(string: checkoutURL) else { return }
+            self.checkoutPreload?.onStateChange = nil
+            self.checkoutPreload = nil
 
-            ShopifyCheckoutKit.preload(checkout: url)
+            guard let url = URL(string: checkoutURL) else {
+                self.emitPreloadStateChange(requestId: requestId, state: .idle)
+                return
+            }
+
+            guard let checkoutPreload = ShopifyCheckoutKit.preload(checkout: url) else {
+                self.emitPreloadStateChange(requestId: requestId, state: .idle)
+                return
+            }
+
+            self.checkoutPreload = checkoutPreload
+            checkoutPreload.onStateChange = { [weak self] state in
+                self?.emitPreloadStateChange(requestId: requestId, state: state)
+            }
         }
     }
 
@@ -341,6 +357,47 @@ extension RCTShopifyCheckoutKit: CheckoutDelegate {
 extension RCTShopifyCheckoutKit {
     private func emitDispatchEvent(_ json: String) {
         perform(NSSelectorFromString("emitOnDispatchFromSwift:"), with: json)
+    }
+
+    private func emitPreloadStateChange(requestId: String, state: PreloadState) {
+        var event: [String: Any] = ["requestId": requestId]
+
+        switch state {
+        case .idle:
+            event["type"] = "idle"
+        case .loading:
+            event["type"] = "loading"
+        case .ready:
+            event["type"] = "ready"
+        case .expired:
+            event["type"] = "expired"
+        case let .failed(reason):
+            event["type"] = "failed"
+            event.merge(serializePreloadFailure(reason)) { _, new in new }
+        }
+
+        do {
+            let data = try JSONSerialization.data(withJSONObject: event, options: [])
+            guard let json = String(data: data, encoding: .utf8) else { return }
+            perform(NSSelectorFromString("emitOnPreloadStateChangeFromSwift:"), with: json)
+        } catch {
+            NSLog("[ShopifyCheckoutKit] Failed to serialize preload state: \(error)")
+        }
+    }
+
+    private func serializePreloadFailure(_ reason: PreloadState.FailureReason) -> [String: Any] {
+        switch reason {
+        case let .httpError(statusCode):
+            return ["reason": "httpError", "statusCode": statusCode]
+        case .navigationFailed:
+            return ["reason": "navigationFailed"]
+        case .keepAliveLost:
+            return ["reason": "keepAliveLost"]
+        case .webContentProcessTerminated:
+            return ["reason": "webContentProcessTerminated"]
+        case .protocolError:
+            return ["reason": "protocolError"]
+        }
     }
 
     /// Builds a `{ "type": ..., "payload": ... }` envelope and forwards

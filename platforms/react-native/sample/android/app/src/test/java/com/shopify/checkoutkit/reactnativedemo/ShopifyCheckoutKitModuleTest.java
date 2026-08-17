@@ -13,8 +13,10 @@ import com.facebook.react.bridge.WritableMap;
 import com.shopify.checkoutkit.CheckoutAppearance;
 import com.shopify.checkoutkit.CheckoutErrorCode;
 import com.shopify.checkoutkit.CheckoutException;
+import com.shopify.checkoutkit.CheckoutPreload;
 import com.shopify.checkoutkit.ShopifyCheckoutKit;
 import com.shopify.checkoutkit.LogLevel;
+import com.shopify.checkoutkit.PreloadStateListener;
 import com.shopify.checkoutkit.Preloading;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
 import com.shopify.reactnative.checkoutkit.CustomCheckoutListener;
@@ -137,10 +139,20 @@ public class ShopifyCheckoutKitModuleTest {
     try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
         .mockStatic(ShopifyCheckoutKit.class)) {
       String checkoutUrl = "https://shopify.com";
+      CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
+      mockedShopifyCheckoutKit
+          .when(() -> ShopifyCheckoutKit.preload(
+              eq(checkoutUrl),
+              eq(mockComponentActivity),
+              any(PreloadStateListener.class)))
+          .thenReturn(checkoutPreload);
 
-      shopifyCheckoutKitModule.preload(checkoutUrl);
+      shopifyCheckoutKitModule.preload(checkoutUrl, "preload-request");
 
-      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckoutKit.preload(checkoutUrl, mockComponentActivity));
+      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckoutKit.preload(
+          eq(checkoutUrl),
+          eq(mockComponentActivity),
+          any(PreloadStateListener.class)));
     }
   }
 
@@ -150,7 +162,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
         .mockStatic(ShopifyCheckoutKit.class)) {
-      shopifyCheckoutKitModule.preload("https://shopify.com");
+      shopifyCheckoutKitModule.preload("https://shopify.com", "preload-request");
 
       mockedShopifyCheckoutKit.verifyNoInteractions();
     }
