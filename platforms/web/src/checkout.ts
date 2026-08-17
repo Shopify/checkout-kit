@@ -24,9 +24,11 @@ import type {
   MessageRejectedDetail,
 } from "./checkout.types";
 
+declare const CHECKOUT_KIT_PACKAGE_VERSION: string;
+
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
-export const CK_VERSION = "4.0.0";
+export const CK_VERSION: string = CHECKOUT_KIT_PACKAGE_VERSION;
 
 /**
  * Trusted origin always allowed to post messages, alongside the cart URL

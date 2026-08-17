@@ -4,10 +4,15 @@ import {resolve} from 'node:path';
 import {defineConfig} from 'vitest/config';
 import dts from 'vite-plugin-dts';
 
+import packageJson from './package.json';
+
 const root = fileURLToPath(new URL('.', import.meta.url));
 const fromRoot = (...parts: string[]) => resolve(root, ...parts);
 
 export default defineConfig({
+  define: {
+    CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
+  },
   plugins: [
     dts({
       entryRoot: fromRoot('src'),
