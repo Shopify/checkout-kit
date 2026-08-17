@@ -1,0 +1,10 @@
+appId: ${E2E_APP_ID}
+---
+- tapOn:
+    id: apple-pay-button
+    enabled: true
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: payment-sheet
+    timeout: 10000

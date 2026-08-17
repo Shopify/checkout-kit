@@ -12,7 +12,8 @@ Usage: $DEV_COMMAND [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
 
 Runs the shared and $TARGET_DESCRIPTION-specific Maestro tests. Tags come from the
 taxonomy: journey (launch, cart, checkout, account), cost tier (smoke, full),
-quarantine (flaky, wip) and platform capability (ios-only, android-only).
+quarantine (flaky, wip), platform capability (ios-only, android-only), and
+feature (apple-pay).
 
 Options:
   --tags TAG[,TAG...]           Run only tests carrying any of these tags.
@@ -117,6 +118,28 @@ parse_maestro_tag_args() {
         ;;
     esac
   done
+}
+
+select_run_profile() {
+  case ",${INCLUDE_TAGS}," in
+    *",apple-pay,"*)
+      # Other targets stay on the normal profile, where run_maestro excludes
+      # Apple Pay. Only the Swift iOS sample can opt into this profile.
+      [ "$TARGET" = "swift-ios" ] || return 0
+
+      if [ "$INCLUDE_TAGS" != "apple-pay" ]; then
+        echo "--tags apple-pay must be requested by itself" >&2
+        return 1
+      fi
+      case ",${EXCLUDE_TAGS}," in
+        *",apple-pay,"*)
+          echo "apple-pay cannot be both included and excluded" >&2
+          return 1
+          ;;
+      esac
+      RUN_PROFILE="swift-apple-pay"
+      ;;
+  esac
 }
 
 metro_running() {
@@ -245,10 +268,16 @@ main() {
 
   INCLUDE_TAGS=""
   EXCLUDE_TAGS=""
+  RUN_PROFILE="normal"
   METRO_PID=""
   E2E_ENV_FILE=""
 
   parse_maestro_tag_args "$@"
+  select_run_profile
+
+  if [ "$RUN_PROFILE" = "swift-apple-pay" ]; then
+    "$REPO_ROOT/e2e/scripts/check_swift_apple_pay_config"
+  fi
 
   "$REPO_ROOT/e2e/scripts/maestro_bin" >/dev/null
   trap cleanup EXIT
@@ -258,6 +287,7 @@ main() {
   build_and_install
 
   E2E_DEVICE_ID="$DEVICE_ID" \
+    E2E_RUN_PROFILE="$RUN_PROFILE" \
     "$REPO_ROOT/e2e/scripts/run_maestro" \
     "$PLATFORM" "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS" "$TEST_NAMESPACE"
 }

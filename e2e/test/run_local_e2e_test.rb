@@ -111,6 +111,63 @@ class RunLocalE2ETest < Minitest::Test
     refute_includes swift_arguments, "."
   end
 
+  def selected_profile(target, include_tags, exclude_tags = "")
+    output, error, status = Open3.capture3(
+      "bash",
+      "-c",
+      <<~'SH',
+        source "$1"
+        configure_target "$2"
+        INCLUDE_TAGS="$3"
+        EXCLUDE_TAGS="$4"
+        RUN_PROFILE="normal"
+        select_run_profile
+        printf '%s\n' "$RUN_PROFILE"
+      SH
+      "run-local-e2e-test",
+      RUNNER,
+      target,
+      include_tags,
+      exclude_tags
+    )
+
+    [output.lines.map(&:chomp), error, status]
+  end
+
+  def test_swift_apple_pay_selects_its_profile
+    selected, error, status = selected_profile("swift-ios", "apple-pay")
+
+    assert status.success?, error
+    assert_equal ["swift-apple-pay"], selected
+  end
+
+  def test_swift_apple_pay_rejects_mixed_or_excluded_tags
+    _selected, error, status = selected_profile("swift-ios", "apple-pay,checkout")
+    refute status.success?
+    assert_includes error, "must be requested by itself"
+
+    _selected, error, status = selected_profile("swift-ios", "apple-pay", "apple-pay")
+    refute status.success?
+    assert_includes error, "cannot be both included and excluded"
+  end
+
+  def test_non_swift_target_stays_on_the_normal_profile
+    selected, error, status = selected_profile("kotlin-android", "apple-pay")
+
+    assert status.success?, error
+    assert_equal ["normal"], selected
+  end
+
+  def test_apple_pay_config_is_checked_before_the_swift_build
+    script = File.read(RUNNER)
+    check_index = script.index('"$REPO_ROOT/e2e/scripts/check_swift_apple_pay_config"')
+    build_index = script.index("  build_and_install\n", check_index)
+
+    refute_nil check_index
+    refute_nil build_index
+    assert_operator check_index, :<, build_index
+  end
+
   def test_target_specific_and_old_named_runners_are_removed
     REMOVED_RUNNERS.each do |path|
       refute_path_exists File.join(REPO_ROOT, path)

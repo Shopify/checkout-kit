@@ -10,6 +10,8 @@ tags:
   exclude:
     - flaky
     - wip
+    # Wallet tests require an explicitly configured, provisioned application row.
+    - apple-pay
 applications:
   - id: react-native-ios
     target: react-native

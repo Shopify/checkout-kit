@@ -9,7 +9,8 @@ class MaestroTestTagsTest < Minitest::Test
   COST_TIER_TAGS = ["smoke", "full"].freeze
   QUARANTINE_TAGS = ["flaky", "wip"].freeze
   PLATFORM_TAGS = ["ios-only", "android-only"].freeze
-  KNOWN_TAGS = (JOURNEY_TAGS + COST_TIER_TAGS + QUARANTINE_TAGS + PLATFORM_TAGS).freeze
+  FEATURE_TAGS = ["apple-pay"].freeze
+  KNOWN_TAGS = (JOURNEY_TAGS + COST_TIER_TAGS + QUARANTINE_TAGS + PLATFORM_TAGS + FEATURE_TAGS).freeze
 
   def test_files
     Dir.glob("tests/**/*.yaml", base: E2E_ROOT).sort

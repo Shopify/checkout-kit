@@ -51,8 +51,8 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     android_run = run_for("kotlin-android")
 
     assert_equal ["launch", "checkout"], default_run.fetch("include_tags")
-    assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
-    assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
+    assert_equal ["flaky", "wip", "apple-pay", "android-only"], ios_run.fetch("exclude_tags")
+    assert_equal ["flaky", "wip", "apple-pay", "ios-only"], android_run.fetch("exclude_tags")
   end
 
   # Only the Swift and Kotlin samples expose the PreloadState callbacks the preload journey
@@ -69,6 +69,12 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
     refute_includes run_for("react-native-ios").fetch("include_tags"), "preload"
     refute_includes run_for("react-native-android").fetch("include_tags"), "preload"
+  end
+
+  def test_apple_pay_is_excluded_from_every_application_by_default
+    plan.expand.each do |run|
+      assert_includes run.fetch("exclude_tags"), "apple-pay", run.fetch("application_id")
+    end
   end
 
   def test_an_application_overrides_the_default_tags

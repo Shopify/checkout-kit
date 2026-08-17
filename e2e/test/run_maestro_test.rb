@@ -18,7 +18,7 @@ class RunMaestroTest < Minitest::Test
   # tag arguments and supplies a namespace rather than repeating both at every call.
   DEFAULT_TEST_NAMESPACE = "swift"
 
-  def run_script(*args)
+  def run_script(*args, profile: nil)
     args = args.dup
     args << "" while args.length < 5
     args << DEFAULT_TEST_NAMESPACE while args.length < 6
@@ -39,6 +39,7 @@ class RunMaestroTest < Minitest::Test
         "E2E_CUSTOMER_ACCOUNT_EMAIL" => "maestro@example.com",
         "E2E_CUSTOMER_ACCOUNT_CODE" => "000000"
       }
+      env["E2E_RUN_PROFILE"] = profile if profile
       stdout, stderr, status = Open3.capture3(env, SCRIPT, *args)
 
       {
@@ -59,26 +60,26 @@ class RunMaestroTest < Minitest::Test
     result = run_script("ios", "app.id", "ready")
 
     assert_predicate result.fetch(:status), :success?
-    assert_equal "android-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
+    assert_equal "apple-pay,android-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
   end
 
   def test_android_excludes_ios_only
     result = run_script("android", "app.id", "ready")
 
     assert_predicate result.fetch(:status), :success?
-    assert_equal "ios-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
+    assert_equal "apple-pay,ios-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
   end
 
   def test_caller_exclusions_are_preserved
     result = run_script("ios", "app.id", "ready", "", "slow")
 
-    assert_equal "slow,android-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
+    assert_equal "slow,apple-pay,android-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
   end
 
   def test_mandatory_exclusion_is_not_duplicated
     result = run_script("android", "app.id", "ready", "", "ios-only")
 
-    assert_equal "ios-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
+    assert_equal "ios-only,apple-pay", flag_value(result.fetch(:maestro_args), "--exclude-tags")
   end
 
   def test_incompatible_tag_leaves_compatible_requested_tags
@@ -86,7 +87,7 @@ class RunMaestroTest < Minitest::Test
 
     assert_predicate result.fetch(:status), :success?
     assert_equal "checkout", flag_value(result.fetch(:maestro_args), "--include-tags")
-    assert_equal "ios-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
+    assert_equal "apple-pay,ios-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
   end
 
   # Maestro treats an empty include list as "run everything". If the caller explicitly
@@ -97,6 +98,58 @@ class RunMaestroTest < Minitest::Test
     assert_predicate result.fetch(:status), :success?
     assert_nil result.fetch(:maestro_args)
     assert_includes result.fetch(:stderr), "nothing runs"
+  end
+
+  def test_normal_profile_excludes_an_explicit_apple_pay_request
+    result = run_script("ios", "com.shopify.checkoutkit.swiftdemo", "ready", "apple-pay")
+
+    assert_predicate result.fetch(:status), :success?
+    assert_nil result.fetch(:maestro_args)
+    assert_includes result.fetch(:stderr), "nothing runs"
+  end
+
+  def test_swift_apple_pay_profile_allows_only_the_apple_pay_tag
+    result = run_script(
+      "ios",
+      "com.shopify.checkoutkit.swiftdemo",
+      "ready",
+      "apple-pay",
+      profile: "swift-apple-pay"
+    )
+
+    assert_predicate result.fetch(:status), :success?
+    assert_equal "apple-pay", flag_value(result.fetch(:maestro_args), "--include-tags")
+    assert_equal "android-only", flag_value(result.fetch(:maestro_args), "--exclude-tags")
+  end
+
+  def test_swift_apple_pay_profile_rejects_another_app
+    result = run_script("ios", "com.example.other", "ready", "apple-pay", profile: "swift-apple-pay")
+
+    refute_predicate result.fetch(:status), :success?
+    assert_nil result.fetch(:maestro_args)
+    assert_includes result.fetch(:stderr), "requires the Swift iOS sample app"
+  end
+
+  def test_swift_apple_pay_profile_rejects_mixed_tags
+    result = run_script(
+      "ios",
+      "com.shopify.checkoutkit.swiftdemo",
+      "ready",
+      "apple-pay,smoke",
+      profile: "swift-apple-pay"
+    )
+
+    refute_predicate result.fetch(:status), :success?
+    assert_nil result.fetch(:maestro_args)
+    assert_includes result.fetch(:stderr), "requires --tags apple-pay by itself"
+  end
+
+  def test_unknown_profile_fails_before_maestro
+    result = run_script("ios", "app.id", "ready", profile: "unknown")
+
+    refute_predicate result.fetch(:status), :success?
+    assert_nil result.fetch(:maestro_args)
+    assert_includes result.fetch(:stderr), "profile must be normal or swift-apple-pay"
   end
 
   def test_unknown_platform_fails_before_maestro
