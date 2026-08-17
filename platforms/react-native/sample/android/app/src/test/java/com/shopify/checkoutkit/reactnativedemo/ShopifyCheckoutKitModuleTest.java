@@ -13,8 +13,11 @@ import com.facebook.react.bridge.WritableMap;
 import com.shopify.checkoutkit.CheckoutAppearance;
 import com.shopify.checkoutkit.CheckoutErrorCode;
 import com.shopify.checkoutkit.CheckoutException;
+import com.shopify.checkoutkit.CheckoutPreload;
 import com.shopify.checkoutkit.ShopifyCheckoutKit;
 import com.shopify.checkoutkit.LogLevel;
+import com.shopify.checkoutkit.PreloadState;
+import com.shopify.checkoutkit.PreloadStateListener;
 import com.shopify.checkoutkit.Preloading;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
 import com.shopify.reactnative.checkoutkit.CustomCheckoutListener;
@@ -50,7 +53,7 @@ public class ShopifyCheckoutKitModuleTest {
   @Captor
   private ArgumentCaptor<String> stringCaptor;
 
-  private ShopifyCheckoutKitModule shopifyCheckoutKitModule;
+  private TestShopifyCheckoutKitModule shopifyCheckoutKitModule;
   private AutoCloseable mocks;
 
   // Store initial configuration to restore after each test
@@ -73,6 +76,19 @@ public class ShopifyCheckoutKitModuleTest {
   private static final String DARK_HEADER_BACKGROUND_COLOR = "#000000";
   private static final String DARK_HEADER_TEXT_COLOR = "#FFFFFF";
 
+  private static final class TestShopifyCheckoutKitModule extends ShopifyCheckoutKitModule {
+    private String preloadStateEvent;
+
+    TestShopifyCheckoutKitModule(ReactApplicationContext reactContext) {
+      super(reactContext);
+    }
+
+    @Override
+    protected void emitPreloadStateEvent(String event) {
+      preloadStateEvent = event;
+    }
+  }
+
   @Before
   public void setup() {
     mocks = MockitoAnnotations.openMocks(this);
@@ -82,7 +98,7 @@ public class ShopifyCheckoutKitModuleTest {
         .thenAnswer(invocation -> JavaOnlyArray.from(invocation.getArgument(0)));
 
     when(mockReactContext.getCurrentActivity()).thenReturn(mockComponentActivity);
-    shopifyCheckoutKitModule = new ShopifyCheckoutKitModule(mockReactContext);
+    shopifyCheckoutKitModule = new TestShopifyCheckoutKitModule(mockReactContext);
 
     // Capture initial configuration state to restore after each test
     initialAppearance = ShopifyCheckoutKitModule.checkoutConfig.getAppearance();
@@ -139,22 +155,66 @@ public class ShopifyCheckoutKitModuleTest {
     try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
         .mockStatic(ShopifyCheckoutKit.class)) {
       String checkoutUrl = "https://shopify.com";
+      CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
+      mockedShopifyCheckoutKit
+          .when(() -> ShopifyCheckoutKit.preload(
+              eq(checkoutUrl),
+              eq(mockComponentActivity),
+              any(PreloadStateListener.class)))
+          .thenReturn(checkoutPreload);
 
-      shopifyCheckoutKitModule.preload(checkoutUrl);
+      shopifyCheckoutKitModule.preload(checkoutUrl, "preload-request");
 
-      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckoutKit.preload(checkoutUrl, mockComponentActivity));
+      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckoutKit.preload(
+          eq(checkoutUrl),
+          eq(mockComponentActivity),
+          any(PreloadStateListener.class)));
     }
   }
 
   @Test
-  public void testPreloadDoesNothingWithoutComponentActivity() {
+  public void testPreloadSerializesWebContentProcessTerminated() {
+    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckoutKit.class)) {
+      String checkoutUrl = "https://shopify.com";
+      CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
+      ArgumentCaptor<PreloadStateListener> listenerCaptor =
+          ArgumentCaptor.forClass(PreloadStateListener.class);
+      mockedShopifyCheckoutKit
+          .when(() -> ShopifyCheckoutKit.preload(
+              eq(checkoutUrl),
+              eq(mockComponentActivity),
+              any(PreloadStateListener.class)))
+          .thenReturn(checkoutPreload);
+
+      shopifyCheckoutKitModule.preload(checkoutUrl, "preload-request");
+
+      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckoutKit.preload(
+          eq(checkoutUrl),
+          eq(mockComponentActivity),
+          listenerCaptor.capture()));
+      listenerCaptor.getValue().onStateChanged(new PreloadState.Failed(
+          PreloadState.FailureReason.WebContentProcessTerminated.INSTANCE));
+
+      assertThat(shopifyCheckoutKitModule.preloadStateEvent)
+          .contains("\"requestId\":\"preload-request\"")
+          .contains("\"type\":\"failed\"")
+          .contains("\"reason\":\"webContentProcessTerminated\"");
+    }
+  }
+
+  @Test
+  public void testPreloadEmitsIdleWithoutComponentActivity() {
     when(mockReactContext.getCurrentActivity()).thenReturn(null);
 
     try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
         .mockStatic(ShopifyCheckoutKit.class)) {
-      shopifyCheckoutKitModule.preload("https://shopify.com");
+      shopifyCheckoutKitModule.preload("https://shopify.com", "preload-request");
 
       mockedShopifyCheckoutKit.verifyNoInteractions();
+      assertThat(shopifyCheckoutKitModule.preloadStateEvent)
+          .contains("\"requestId\":\"preload-request\"")
+          .contains("\"type\":\"idle\"");
     }
   }
 
@@ -162,9 +222,38 @@ public class ShopifyCheckoutKitModuleTest {
   public void testCanInvalidatePreloadCache() {
     try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
         .mockStatic(ShopifyCheckoutKit.class)) {
+      CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
+      mockedShopifyCheckoutKit
+          .when(() -> ShopifyCheckoutKit.preload(
+              anyString(),
+              eq(mockComponentActivity),
+              any(PreloadStateListener.class)))
+          .thenReturn(checkoutPreload);
+
+      shopifyCheckoutKitModule.preload("https://shopify.com", "preload-request");
       shopifyCheckoutKitModule.invalidateCache();
 
+      verify(checkoutPreload).setListener(null);
       mockedShopifyCheckoutKit.verify(ShopifyCheckoutKit::invalidate);
+    }
+  }
+
+  @Test
+  public void testModuleInvalidationDetachesPreloadListener() {
+    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckoutKit.class)) {
+      CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
+      mockedShopifyCheckoutKit
+          .when(() -> ShopifyCheckoutKit.preload(
+              anyString(),
+              eq(mockComponentActivity),
+              any(PreloadStateListener.class)))
+          .thenReturn(checkoutPreload);
+
+      shopifyCheckoutKitModule.preload("https://shopify.com", "preload-request");
+      shopifyCheckoutKitModule.invalidate();
+
+      verify(checkoutPreload).setListener(null);
     }
   }
 

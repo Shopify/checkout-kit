@@ -172,6 +172,12 @@ export type CheckoutNativeError = {
     statusCode?: number;
 };
 
+// @public
+export interface CheckoutPreloadSubscription {
+    remove(): void;
+    readonly state: PreloadState;
+}
+
 // @public (undocumented)
 export const CheckoutProtocol: {
     readonly complete: "ec.complete";
@@ -265,6 +271,32 @@ export enum LogLevel {
 }
 
 // @public
+export type PreloadFailureReason =
+| 'httpError'
+| 'navigationFailed'
+| 'keepAliveLost'
+| 'webContentProcessTerminated'
+| 'protocolError'
+| 'unknown';
+
+// @public
+export interface PreloadOptions {
+    onStateChange?: (state: PreloadState) => void;
+}
+
+// @public
+export type PreloadState =
+| {type: 'idle'}
+| {type: 'loading'}
+| {type: 'ready'}
+| {type: 'expired'}
+| {
+    type: 'failed';
+    reason: PreloadFailureReason;
+    statusCode?: number;
+};
+
+// @public
 export interface PresentCallbacks {
     onClose?: () => void;
     onFail?: (error: CheckoutException) => void;
@@ -304,7 +336,7 @@ export class ShopifyCheckout implements ShopifyCheckoutKit {
     getConfig(): Configuration;
     invalidate(): void;
     isAcceleratedCheckoutAvailable(): boolean;
-    preload(checkoutUrl: string): void;
+    preload(checkoutUrl: string, options?: PreloadOptions): CheckoutPreloadSubscription;
     present(checkoutUrl: string, callbacks?: PresentCallbacks, protocol?: ProtocolHandlers): void;
     setConfig(configuration: Configuration): void;
     teardown(): void;

@@ -331,7 +331,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
   func testPreloadWithInvalidURLDoesNotRetainCheckoutSheet() {
     let preloadAttemptCompleted = expectation(description: "preload attempt completed")
 
-    shopifyCheckoutKit.preload("")
+    shopifyCheckoutKit.preload("", requestId: "invalid-url")
 
     DispatchQueue.main.async {
       XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)

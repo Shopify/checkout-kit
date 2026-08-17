@@ -52,12 +52,13 @@ type ConfigurationResultSpec = {
 
 export interface Spec extends TurboModule {
   readonly onDispatch: CodegenTypes.EventEmitter<string>;
+  readonly onPreloadStateChange: CodegenTypes.EventEmitter<string>;
 
   present(
     checkoutUrl: string,
     subscribedMethods: string[],
   ): void;
-  preload(checkoutUrl: string): void;
+  preload(checkoutUrl: string, requestId: string): void;
   dismiss(): void;
   invalidateCache(): void;
   setConfig(configuration: ConfigurationSpec): void;

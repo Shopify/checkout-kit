@@ -645,6 +645,98 @@ const shopifyCheckout = new ShopifyCheckout();
 shopifyCheckout.preload(checkoutUrl);
 ```
 
+### Observe preload state
+
+Pass `onStateChange` when the application needs preload diagnostics or wants to
+reflect its progress. The callback receives the current native state immediately
+and every subsequent transition for that preload.
+
+```tsx
+const preloadSubscription = shopifyCheckout.preload(checkoutUrl, {
+  onStateChange(state) {
+    if (state.type === 'ready') {
+      reportPreloadReady();
+    }
+
+    if (state.type === 'failed') {
+      reportPreloadFailure(state.reason, state.statusCode);
+    }
+  },
+});
+
+// Stops state callbacks without invalidating the cached checkout.
+preloadSubscription.remove();
+```
+
+`preloadSubscription.state` contains the latest observed state. Calling
+`preload(...)` again replaces the previous preload observer, so repeated calls
+do not accumulate native or JavaScript event subscriptions. A previous
+subscription retains its last state but receives no further callbacks.
+
+| State     | Meaning                                                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------ |
+| `idle`    | No checkout is currently being preloaded.                                                              |
+| `loading` | Checkout is loading in the background.                                                                 |
+| `ready`   | The matching checkout is ready for presentation.                                                       |
+| `expired` | The cached checkout reached its lifetime and was discarded.                                            |
+| `failed`  | Preload could not retain usable checkout content. Inspect `reason` and the optional HTTP `statusCode`. |
+
+Preload state is not presentation lifecycle state. Do not disable checkout while
+waiting for `ready`, and do not automatically retry from `failed` or `expired`.
+Calling `present(checkoutUrl)` still loads checkout normally when a preload is
+unavailable or incomplete.
+
+### Respond to cart activity
+
+Applications should preload when buyer intent is strong and after successful
+cart mutations, using the cart returned by the Storefront API mutation. A
+typical integration calls the same helper when the buyer enters the cart,
+changes an item quantity, or removes an item:
+
+```tsx
+let preloadSubscription: CheckoutPreloadSubscription | undefined;
+
+function preloadCart(cart: Cart) {
+  if (!cart.checkoutUrl || cart.totalQuantity === 0) {
+    shopifyCheckout.invalidate();
+    return;
+  }
+
+  preloadSubscription = shopifyCheckout.preload(cart.checkoutUrl, {
+    onStateChange(state) {
+      reportPreloadState(state);
+    },
+  });
+}
+
+function onCartScreenEntered(cart: Cart) {
+  preloadCart(cart);
+}
+
+async function changeQuantity(lineId: string, quantity: number) {
+  const updatedCart = await updateCartLine(lineId, quantity);
+  preloadCart(updatedCart);
+}
+
+async function removeItem(lineId: string) {
+  const updatedCart = await removeCartLine(lineId);
+  preloadCart(updatedCart);
+}
+
+function onCartScreenDisposed() {
+  preloadSubscription?.remove();
+}
+```
+
+Each explicit `preload(...)` call refreshes the cached checkout, even when the
+`checkoutUrl` is unchanged. No separate `invalidate()` call is needed after a
+successful cart mutation.
+
+Removing the subscription only stops observation. It intentionally leaves the
+preloaded checkout available so navigation from the cart to checkout can reuse
+it. Use `invalidate()` when the cart becomes empty or the cached checkout is no
+longer applicable.
+
 ### Important considerations
 
 1. Initiating preload results in background network requests and additional

@@ -1,7 +1,13 @@
 import React, {useCallback, useMemo, useRef, useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {ShopifyCheckout} from './index';
-import type {Configuration, Features, PresentCallbacks} from './index.d';
+import type {
+  CheckoutPreloadSubscription,
+  Configuration,
+  Features,
+  PreloadOptions,
+  PresentCallbacks,
+} from './index.d';
 import type {ProtocolHandlers} from './protocol';
 
 type Maybe<T> = T | undefined;
@@ -15,7 +21,10 @@ interface Context {
     callbacks?: PresentCallbacks,
     protocol?: ProtocolHandlers,
   ) => void;
-  preload: (checkoutUrl: string) => void;
+  preload: (
+    checkoutUrl: string,
+    options?: PreloadOptions,
+  ) => CheckoutPreloadSubscription | undefined;
   invalidate: () => void;
   dismiss: () => void;
   version: Maybe<string>;
@@ -42,17 +51,16 @@ export function ShopifyCheckoutProvider({
   if (!instance.current) {
     instance.current = new ShopifyCheckout(configuration, features);
   }
+  const checkout = instance.current;
 
   useEffect(() => {
-    if (!instance.current || !configuration) {
+    if (!configuration) {
       return;
     }
 
-    instance.current.setConfig(configuration);
-    setAcceleratedCheckoutsAvailable(
-      instance.current.acceleratedCheckoutsReady,
-    );
-  }, [configuration]);
+    checkout.setConfig(configuration);
+    setAcceleratedCheckoutsAvailable(checkout.acceleratedCheckoutsReady);
+  }, [checkout, configuration]);
 
   const present = useCallback(
     (
@@ -61,33 +69,41 @@ export function ShopifyCheckoutProvider({
       protocol?: ProtocolHandlers,
     ) => {
       if (checkoutUrl) {
-        instance.current?.present(checkoutUrl, callbacks, protocol);
+        checkout.present(checkoutUrl, callbacks, protocol);
       }
     },
-    [],
+    [checkout],
   );
 
-  const preload = useCallback((checkoutUrl: string) => {
-    if (checkoutUrl) {
-      instance.current?.preload(checkoutUrl);
-    }
-  }, []);
+  const preload = useCallback(
+    (checkoutUrl: string, options?: PreloadOptions) => {
+      if (checkoutUrl) {
+        return checkout.preload(checkoutUrl, options);
+      }
+
+      return undefined;
+    },
+    [checkout],
+  );
 
   const invalidate = useCallback(() => {
-    instance.current?.invalidate();
-  }, []);
+    checkout.invalidate();
+  }, [checkout]);
 
   const dismiss = useCallback(() => {
-    instance.current?.dismiss();
-  }, []);
+    checkout.dismiss();
+  }, [checkout]);
 
-  const setConfig = useCallback((config: Configuration) => {
-    instance.current?.setConfig(config);
-  }, []);
+  const setConfig = useCallback(
+    (config: Configuration) => {
+      checkout.setConfig(config);
+    },
+    [checkout],
+  );
 
   const getConfig = useCallback(() => {
-    return instance.current?.getConfig();
-  }, []);
+    return checkout.getConfig();
+  }, [checkout]);
 
   const context = useMemo((): Context => {
     return {
@@ -98,10 +114,11 @@ export function ShopifyCheckoutProvider({
       getConfig,
       present,
       preload,
-      version: instance.current?.version,
+      version: checkout.version,
     };
   }, [
     acceleratedCheckoutsAvailable,
+    checkout,
     dismiss,
     getConfig,
     invalidate,

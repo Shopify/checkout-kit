@@ -17,6 +17,7 @@ import {
   type AcceleratedCheckoutCustomer,
 } from '../src';
 import {__resetDispatchEventParityForTests} from '../src/dispatch-events';
+import {__resetPreloadForTests} from '../src/preload';
 import type {ApplePayContactField} from '../src/index.d';
 import {TurboModuleRegistry, PermissionsAndroid, Platform} from 'react-native';
 
@@ -154,8 +155,31 @@ function lastDispatch(): Dispatch {
   return dispatch;
 }
 
+type PreloadDispatch = (eventJson: string) => void;
+
+function preloadDispatch(): PreloadDispatch {
+  const dispatch = NativeModule.onPreloadStateChange.mock.calls[0]?.[0] as
+    | PreloadDispatch
+    | undefined;
+  if (!dispatch) {
+    throw new Error('Expected preload() to subscribe to preload state events');
+  }
+  return dispatch;
+}
+
+function preloadRequestId(call = 0): string {
+  const requestId = NativeModule.preload.mock.calls[call]?.[1] as
+    | string
+    | undefined;
+  if (!requestId) {
+    throw new Error('Expected preload() to receive a request ID');
+  }
+  return requestId;
+}
+
 describe('ShopifyCheckoutKit', () => {
   afterEach(() => {
+    __resetPreloadForTests();
     NativeModule.setConfig.mockReset();
     jest.clearAllMocks();
   });
@@ -226,10 +250,112 @@ describe('ShopifyCheckoutKit', () => {
   describe('preload', () => {
     it('calls `preload` with a checkout URL', () => {
       const instance = new ShopifyCheckout();
-      instance.preload(checkoutUrl);
+      const subscription = instance.preload(checkoutUrl);
 
       expect(NativeModule.preload).toHaveBeenCalledTimes(1);
-      expect(NativeModule.preload).toHaveBeenCalledWith(checkoutUrl);
+      expect(NativeModule.preload).toHaveBeenCalledWith(
+        checkoutUrl,
+        expect.any(String),
+      );
+      expect(subscription.state).toEqual({type: 'idle'});
+    });
+
+    it('delivers native preload state changes and updates the state snapshot', () => {
+      const onStateChange = jest.fn();
+      const instance = new ShopifyCheckout();
+      const subscription = instance.preload(checkoutUrl, {onStateChange});
+      const requestId = preloadRequestId();
+
+      preloadDispatch()(JSON.stringify({requestId, type: 'loading'}));
+      preloadDispatch()(JSON.stringify({requestId, type: 'ready'}));
+
+      expect(onStateChange).toHaveBeenNthCalledWith(1, {type: 'loading'});
+      expect(onStateChange).toHaveBeenNthCalledWith(2, {type: 'ready'});
+      expect(subscription.state).toEqual({type: 'ready'});
+    });
+
+    it('normalizes preload failures with HTTP status codes', () => {
+      const onStateChange = jest.fn();
+      const instance = new ShopifyCheckout();
+      const subscription = instance.preload(checkoutUrl, {onStateChange});
+
+      preloadDispatch()(
+        JSON.stringify({
+          requestId: preloadRequestId(),
+          type: 'failed',
+          reason: 'httpError',
+          statusCode: 503,
+        }),
+      );
+
+      expect(onStateChange).toHaveBeenCalledWith({
+        type: 'failed',
+        reason: 'httpError',
+        statusCode: 503,
+      });
+      expect(subscription.state).toEqual({
+        type: 'failed',
+        reason: 'httpError',
+        statusCode: 503,
+      });
+    });
+
+    it('normalizes terminated web content process preload failures', () => {
+      const onStateChange = jest.fn();
+      const instance = new ShopifyCheckout();
+      const subscription = instance.preload(checkoutUrl, {onStateChange});
+
+      preloadDispatch()(
+        JSON.stringify({
+          requestId: preloadRequestId(),
+          type: 'failed',
+          reason: 'webContentProcessTerminated',
+        }),
+      );
+
+      expect(onStateChange).toHaveBeenCalledWith({
+        type: 'failed',
+        reason: 'webContentProcessTerminated',
+      });
+      expect(subscription.state).toEqual({
+        type: 'failed',
+        reason: 'webContentProcessTerminated',
+      });
+    });
+
+    it('uses one native event subscription across repeated preload calls', () => {
+      const firstOnStateChange = jest.fn();
+      const secondOnStateChange = jest.fn();
+      const instance = new ShopifyCheckout();
+
+      instance.preload(checkoutUrl, {onStateChange: firstOnStateChange});
+      const firstRequestId = preloadRequestId(0);
+      instance.preload(checkoutUrl, {onStateChange: secondOnStateChange});
+      const secondRequestId = preloadRequestId(1);
+
+      preloadDispatch()(
+        JSON.stringify({requestId: firstRequestId, type: 'ready'}),
+      );
+      preloadDispatch()(
+        JSON.stringify({requestId: secondRequestId, type: 'ready'}),
+      );
+
+      expect(NativeModule.onPreloadStateChange).toHaveBeenCalledTimes(1);
+      expect(firstOnStateChange).not.toHaveBeenCalled();
+      expect(secondOnStateChange).toHaveBeenCalledWith({type: 'ready'});
+    });
+
+    it('stops delivering state changes after remove', () => {
+      const onStateChange = jest.fn();
+      const instance = new ShopifyCheckout();
+      const subscription = instance.preload(checkoutUrl, {onStateChange});
+      const requestId = preloadRequestId();
+
+      subscription.remove();
+      preloadDispatch()(JSON.stringify({requestId, type: 'ready'}));
+
+      expect(onStateChange).not.toHaveBeenCalled();
+      expect(subscription.state).toEqual({type: 'idle'});
     });
   });
 

@@ -82,6 +82,12 @@ const ShopifyCheckoutKit = {
   onDispatch: jest.fn((callback: (envelopeJson: string) => void) =>
     shopifyCheckoutKitEventEmitter.addListener('onDispatch', callback),
   ),
+  onPreloadStateChange: jest.fn((callback: (eventJson: string) => void) =>
+    shopifyCheckoutKitEventEmitter.addListener(
+      'onPreloadStateChange',
+      callback,
+    ),
+  ),
   preload: jest.fn(),
   present: jest.fn(),
   dismiss: jest.fn(),
