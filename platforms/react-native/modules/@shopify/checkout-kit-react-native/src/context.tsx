@@ -24,7 +24,7 @@ interface Context {
   preload: (
     checkoutUrl: string,
     options?: PreloadOptions,
-  ) => CheckoutPreloadSubscription;
+  ) => CheckoutPreloadSubscription | undefined;
   invalidate: () => void;
   dismiss: () => void;
   version: Maybe<string>;
@@ -76,8 +76,13 @@ export function ShopifyCheckoutProvider({
   );
 
   const preload = useCallback(
-    (checkoutUrl: string, options?: PreloadOptions) =>
-      checkout.preload(checkoutUrl, options),
+    (checkoutUrl: string, options?: PreloadOptions) => {
+      if (checkoutUrl) {
+        return checkout.preload(checkoutUrl, options);
+      }
+
+      return undefined;
+    },
     [checkout],
   );
 

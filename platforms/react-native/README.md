@@ -704,6 +704,10 @@ function onCartScreenDisposed() {
 }
 ```
 
+Each explicit `preload(...)` call refreshes the cached checkout, even when the
+`checkoutUrl` is unchanged. No separate `invalidate()` call is needed after a
+successful cart mutation.
+
 Removing the subscription only stops observation. It intentionally leaves the
 preloaded checkout available so navigation from the cart to checkout can reuse
 it. Use `invalidate()` when the cart becomes empty or the cached checkout is no

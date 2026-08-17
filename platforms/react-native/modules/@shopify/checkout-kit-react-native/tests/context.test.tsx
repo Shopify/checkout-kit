@@ -285,6 +285,27 @@ describe('useShopifyCheckout', () => {
     expect(subscription?.state).toEqual({type: 'idle'});
   });
 
+  it('does not preload an empty checkout URL', () => {
+    let hookValue: any;
+    const onHookValue = (value: any) => {
+      hookValue = value;
+    };
+
+    render(
+      <Wrapper>
+        <HookTestComponent onHookValue={onHookValue} />
+      </Wrapper>,
+    );
+
+    let subscription;
+    act(() => {
+      subscription = hookValue.preload('');
+    });
+
+    expect(subscription).toBeUndefined();
+    expect(NativeModules.ShopifyCheckoutKit.preload).not.toHaveBeenCalled();
+  });
+
   it('provides invalidate function', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {

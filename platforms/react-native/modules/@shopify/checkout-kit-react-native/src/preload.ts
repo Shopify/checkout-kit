@@ -26,6 +26,14 @@ let activeSubscription: PreloadSubscription | undefined;
 let nativeSubscription: {remove: () => void} | undefined;
 let requestSequence = 0;
 
+function isTerminal(state: PreloadState): boolean {
+  return (
+    state.type === 'idle' ||
+    state.type === 'expired' ||
+    state.type === 'failed'
+  );
+}
+
 class PreloadSubscription implements CheckoutPreloadSubscription {
   private currentState: PreloadState = {type: 'idle'};
   private onStateChange?: (state: PreloadState) => void;
@@ -50,11 +58,7 @@ class PreloadSubscription implements CheckoutPreloadSubscription {
     this.currentState = state;
     this.onStateChange?.(state);
 
-    if (
-      state.type === 'idle' ||
-      state.type === 'expired' ||
-      state.type === 'failed'
-    ) {
+    if (isTerminal(state)) {
       this.remove();
     }
   }

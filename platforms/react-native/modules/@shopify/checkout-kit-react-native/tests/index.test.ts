@@ -288,6 +288,29 @@ describe('ShopifyCheckoutKit', () => {
       });
     });
 
+    it('normalizes terminated web content process preload failures', () => {
+      const onStateChange = jest.fn();
+      const instance = new ShopifyCheckout();
+      const subscription = instance.preload(checkoutUrl, {onStateChange});
+
+      preloadDispatch()(
+        JSON.stringify({
+          requestId: preloadRequestId(),
+          type: 'failed',
+          reason: 'webContentProcessTerminated',
+        }),
+      );
+
+      expect(onStateChange).toHaveBeenCalledWith({
+        type: 'failed',
+        reason: 'webContentProcessTerminated',
+      });
+      expect(subscription.state).toEqual({
+        type: 'failed',
+        reason: 'webContentProcessTerminated',
+      });
+    });
+
     it('uses one native event subscription across repeated preload calls', () => {
       const firstOnStateChange = jest.fn();
       const secondOnStateChange = jest.fn();

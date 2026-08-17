@@ -44,6 +44,13 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @Override
+  public void invalidate() {
+    releaseCheckoutListener();
+    releaseCheckoutPreload();
+    super.invalidate();
+  }
+
+  @Override
   protected Map<String, Object> getTypedExportedConstants() {
     final Map<String, Object> constants = new HashMap<>();
     constants.put("version", ShopifyCheckoutKit.VERSION);
@@ -104,10 +111,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   @ReactMethod
   public void preload(String checkoutURL, String requestId) {
-    if (checkoutPreload != null) {
-      checkoutPreload.setListener(null);
-      checkoutPreload = null;
-    }
+    releaseCheckoutPreload();
 
     Activity currentActivity = getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
@@ -126,8 +130,8 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   @ReactMethod
   public void invalidateCache() {
+    releaseCheckoutPreload();
     ShopifyCheckoutKit.invalidate();
-    checkoutPreload = null;
   }
 
   private void emitPreloadStateChange(String requestId, PreloadState state) {
@@ -178,6 +182,13 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     if (checkoutListener != null) {
       checkoutListener.release();
       checkoutListener = null;
+    }
+  }
+
+  private void releaseCheckoutPreload() {
+    if (checkoutPreload != null) {
+      checkoutPreload.setListener(null);
+      checkoutPreload = null;
     }
   }
 
