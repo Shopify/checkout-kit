@@ -13,6 +13,8 @@ struct PreloadKey: Hashable {
 
 @MainActor
 final class PreloadCache {
+    static let throttledMessage = "Preload throttled until the server-provided Retry-After delay elapses."
+
     private struct Entry {
         let key: PreloadKey
         let view: CheckoutWebView
@@ -40,6 +42,7 @@ final class PreloadCache {
     private var entry: Entry?
     private var keepAliveTimer: Timer?
     private var expiryTimer: Timer?
+    private var throttleDeadline: Date?
 
     private(set) var state: PreloadState = .idle
 
@@ -77,6 +80,26 @@ final class PreloadCache {
 
         state = newState
         observer?.receive(newState)
+    }
+
+    func beginThrottle(for delay: TimeInterval) {
+        throttleDeadline = Date().addingTimeInterval(delay)
+        evict(with: .failed(reason: .throttled, message: Self.throttledMessage))
+    }
+
+    func isThrottleActive(at date: Date = Date()) -> Bool {
+        guard let throttleDeadline else {
+            return false
+        }
+        guard date < throttleDeadline else {
+            self.throttleDeadline = nil
+            return false
+        }
+        return true
+    }
+
+    func clearThrottle() {
+        throttleDeadline = nil
     }
 
     /// Evicts the cached view, then notifies observers of the resulting `state`.
@@ -403,6 +426,16 @@ class CheckoutWebView: WKWebView {
 
     static func preload(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil, createdAt: Date = Date()) {
         guard ShopifyCheckoutKit.configuration.preloading.enabled else {
+            return
+        }
+
+        if ShopifyCheckoutKit.configuration.preloading.throttlePolicy == .managed,
+           preloadCache.isThrottleActive()
+        {
+            preloadCache.transition(to: .failed(
+                reason: .throttled,
+                message: PreloadCache.throttledMessage
+            ))
             return
         }
 
@@ -827,6 +860,7 @@ extension CheckoutWebView: WKNavigationDelegate {
 
     func handleResponse(_ response: HTTPURLResponse) -> WKNavigationResponsePolicy {
         let statusCode = response.statusCode
+        let retryAfter = RetryAfter.seconds(from: response)
         let errorMessageForStatusCode = HTTPURLResponse.localizedString(
             forStatusCode: statusCode
         )
@@ -836,15 +870,28 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         if statusCode >= 400 {
-            handleCachedViewFailure(
-                .httpError(statusCode: statusCode),
-                message: "HTTP response returned status code \(statusCode)."
-            )
+            let message = "HTTP response returned status code \(statusCode)."
+            if isPreloadBackgrounded,
+               statusCode == 429,
+               let retryAfter,
+               ShopifyCheckoutKit.configuration.preloading.throttlePolicy == .managed
+            {
+                CheckoutWebView.preloadCache.beginThrottle(for: retryAfter)
+            } else {
+                handleCachedViewFailure(
+                    .httpError(statusCode: statusCode, retryAfter: retryAfter),
+                    message: message
+                )
+            }
 
             OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
 
             viewDelegate?.checkoutViewDidFailWithError(
-                error: CheckoutError.http(statusCode: statusCode, message: errorMessageForStatusCode)
+                error: CheckoutError.http(
+                    statusCode: statusCode,
+                    message: errorMessageForStatusCode,
+                    retryAfter: retryAfter
+                )
             )
 
             return .cancel

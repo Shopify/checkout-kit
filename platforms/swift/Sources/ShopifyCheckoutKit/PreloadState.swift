@@ -26,8 +26,15 @@ public enum PreloadState: Equatable {
 
     /// Reason a preload cache entry was not available.
     public enum FailureReason: Equatable {
+        /// The preload was throttled and Checkout Kit is suppressing further preload requests
+        /// until the server-provided `Retry-After` delay elapses.
+        case throttled
+
         /// The preload received an HTTP response that prevented it from loading.
-        case httpError(statusCode: Int)
+        ///
+        /// Under the `.passthrough` throttle policy, `retryAfter` is the server-provided delay,
+        /// in seconds, when a throttling response includes a valid `Retry-After` header.
+        case httpError(statusCode: Int, retryAfter: TimeInterval? = nil)
 
         /// Preload navigation failed.
         case navigationFailed

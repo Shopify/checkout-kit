@@ -242,6 +242,31 @@ class CheckoutWebViewTests: XCTestCase {
         }
     }
 
+    func test429ResponseIncludesRetryAfterOnPresentationError() throws {
+        try view.load(checkout: XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123")))
+        let link = try XCTUnwrap(view.url)
+        let didFailWithErrorExpectation = expectation(description: "checkoutViewDidFailWithError was called")
+        mockDelegate.didFailWithErrorExpectation = didFailWithErrorExpectation
+        view.viewDelegate = mockDelegate
+
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: link,
+                statusCode: 429,
+                httpVersion: nil,
+                headerFields: ["Retry-After": "120"]
+            )
+        )
+
+        XCTAssertEqual(view.handleResponse(response), .cancel)
+        wait(for: [didFailWithErrorExpectation], timeout: 3)
+
+        let error = try XCTUnwrap(mockDelegate.errorReceived)
+        XCTAssertEqual(error.code, .httpError)
+        XCTAssertEqual(error.httpStatusCode, 429)
+        XCTAssertEqual(error.retryAfter, 120)
+    }
+
     func testNormalresponseOnNonCheckoutURLCodeDelegation() throws {
         let link = try XCTUnwrap(URL(string: "https://shopify.com/resource_url"))
         let didFailWithErrorExpectation = expectation(description: "checkoutViewDidFailWithError was not called")
