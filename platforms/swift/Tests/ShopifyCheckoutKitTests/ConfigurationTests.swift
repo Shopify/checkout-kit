@@ -55,15 +55,6 @@ class ConfigurationTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.allowedMessageOrigins, ["https://example.com", "*"])
     }
 
-    func testOnMessageRejectedDefaultsToNil() {
-        XCTAssertNil(ShopifyCheckoutKit.configuration.onMessageRejected)
-    }
-
-    func testOnMessageRejectedCanBeSet() {
-        ShopifyCheckoutKit.configuration.onMessageRejected = { _ in }
-        XCTAssertNotNil(ShopifyCheckoutKit.configuration.onMessageRejected)
-    }
-
     func testPreloadingCanBeDisabled() async throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 

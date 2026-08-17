@@ -615,17 +615,18 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         guard messageIsMainFrame(message) else {
-            rejectMessage(message, body: body, reason: "message was sent from a child frame")
+            // Child-frame messages are ambient noise, not a validation failure.
+            OSLogger.shared.debug("Ignoring checkout message from a child frame.")
             return
         }
 
         guard !shouldRejectExplicitPortZero(message) else {
-            rejectMessage(message, body: body, reason: "origin uses unsupported port 0")
+            rejectMessage(message, reason: "origin uses unsupported port 0")
             return
         }
 
         guard isMessageOriginAllowed(message) else {
-            rejectMessage(message, body: body, reason: "origin is not in the allowlist")
+            rejectMessage(message, reason: "origin is not in the allowlist")
             return
         }
 
@@ -716,16 +717,11 @@ private struct TerminalErrorNotification: Decodable {
 }
 
 extension CheckoutWebView {
-    private func rejectMessage(_ message: WKScriptMessage, body: String, reason: String) {
-        let rejection = MessageRejection(
-            origin: messageOrigin(message).description,
-            message: body,
-            reason: reason
-        )
-        let onRejected = ShopifyCheckoutKit.configuration.onMessageRejected ?? { rejection in
-            OSLogger.shared.debug("Rejected checkout message from \(rejection.origin): \(rejection.reason)")
-        }
-        onRejected(rejection)
+    /// Rejected messages are never silently dropped: each rejection is logged as
+    /// a warning with the trusted origin and reason. The message body is untrusted
+    /// and intentionally not logged.
+    private func rejectMessage(_ message: WKScriptMessage, reason: String) {
+        OSLogger.shared.warn("Rejected checkout message from \(messageOrigin(message).description): \(reason)")
     }
 
     /// Validates the origin of an incoming checkout message against the effective

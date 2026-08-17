@@ -1071,7 +1071,15 @@ class CheckoutWebViewTests: XCTestCase {
 
     private func resetOriginValidationConfig() {
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
-        ShopifyCheckoutKit.configuration.onMessageRejected = nil
+    }
+
+    /// Captures rejection logs at the default `.warn` level, verifying that
+    /// dropped messages surface without opting into debug logging.
+    private func captureWarnLogs() -> (logger: TestableOSLogger, restore: () -> Void) {
+        let originalLogger = OSLogger.shared
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .warn)
+        OSLogger.shared = logger.logger
+        return (logger, { OSLogger.shared = originalLogger })
     }
 
     private func stubMessageOrigin(_ origin: String) {
@@ -1121,16 +1129,18 @@ class CheckoutWebViewTests: XCTestCase {
         view.loadedCheckoutURL = url
         stubMessageOrigin("https://evil.example.com")
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
-        let rejection = LockedValue<MessageRejection?>(nil)
-        ShopifyCheckoutKit.configuration.onMessageRejected = { rejection.set($0) }
+        let (logger, restoreLogger) = captureWarnLogs()
+        defer { restoreLogger() }
         let message = MockScriptMessage(body: Self.readyBody)
 
         view.userContentController(WKUserContentController(), didReceive: message)
 
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
-        XCTAssertEqual(rejection.get()?.origin, "https://evil.example.com")
-        XCTAssertEqual(rejection.get()?.message, Self.readyBody)
-        XCTAssertEqual(rejection.get()?.reason, "origin is not in the allowlist")
+        let combinedLogs = logger.capturedMessages.map(\.message).joined(separator: "\n")
+        XCTAssertTrue(combinedLogs.contains("(Warning)"))
+        XCTAssertTrue(combinedLogs.contains("https://evil.example.com"))
+        XCTAssertTrue(combinedLogs.contains("origin is not in the allowlist"))
+        XCTAssertFalse(combinedLogs.contains(Self.readyBody))
     }
 
     @MainActor
@@ -1140,8 +1150,8 @@ class CheckoutWebViewTests: XCTestCase {
         stubMessageOrigin("https://trusted.example.com")
         view.messageRequestURL = { _ in URL(string: "https://trusted.example.com:0")! }
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
-        let rejection = LockedValue<MessageRejection?>(nil)
-        ShopifyCheckoutKit.configuration.onMessageRejected = { rejection.set($0) }
+        let (logger, restoreLogger) = captureWarnLogs()
+        defer { restoreLogger() }
 
         view.userContentController(
             WKUserContentController(),
@@ -1149,19 +1159,21 @@ class CheckoutWebViewTests: XCTestCase {
         )
 
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
-        XCTAssertEqual(rejection.get()?.origin, "https://trusted.example.com")
-        XCTAssertEqual(rejection.get()?.message, Self.readyBody)
-        XCTAssertEqual(rejection.get()?.reason, "origin uses unsupported port 0")
+        let combinedLogs = logger.capturedMessages.map(\.message).joined(separator: "\n")
+        XCTAssertTrue(combinedLogs.contains("https://trusted.example.com"))
+        XCTAssertTrue(combinedLogs.contains("origin uses unsupported port 0"))
     }
 
     @MainActor
-    func testOriginValidationRejectsChildFrameMessages() {
+    func testOriginValidationIgnoresChildFrameMessages() {
         defer { resetOriginValidationConfig() }
         view.client = nil
         stubMessageOrigin("https://checkout.example.com")
         view.messageIsMainFrame = { _ in false }
-        let rejection = LockedValue<MessageRejection?>(nil)
-        ShopifyCheckoutKit.configuration.onMessageRejected = { rejection.set($0) }
+        let originalLogger = OSLogger.shared
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
+        OSLogger.shared = logger.logger
+        defer { OSLogger.shared = originalLogger }
 
         view.userContentController(
             WKUserContentController(),
@@ -1169,8 +1181,8 @@ class CheckoutWebViewTests: XCTestCase {
         )
 
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
-        XCTAssertEqual(rejection.get()?.message, Self.readyBody)
-        XCTAssertEqual(rejection.get()?.reason, "message was sent from a child frame")
+        let combinedLogs = logger.capturedMessages.map(\.message).joined(separator: "\n")
+        XCTAssertTrue(combinedLogs.contains("Ignoring checkout message from a child frame."))
     }
 
     @MainActor
