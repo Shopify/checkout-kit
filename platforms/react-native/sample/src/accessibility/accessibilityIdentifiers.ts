@@ -28,6 +28,7 @@ export class AccessibilityIdentifiers {
     emptyMessage: 'cart-empty-message',
     checkoutReady: 'cart-checkout-ready',
     checkoutButton: 'checkout-button',
+    preloadState: 'cart-preload-state',
   } as const;
 
   static readonly settings = {
