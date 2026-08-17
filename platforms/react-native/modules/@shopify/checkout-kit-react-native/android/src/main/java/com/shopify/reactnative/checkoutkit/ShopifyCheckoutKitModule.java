@@ -76,7 +76,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   public void present(String checkoutURL, ReadableArray subscribedMethods) {
     releaseCheckoutListener();
 
-    Activity currentActivity = getCurrentActivity();
+    Activity currentActivity = getReactApplicationContext().getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
       DispatchHandle dispatch = new DispatchHandle(json -> emitOnDispatch(json));
       CustomCheckoutListener listener = new CustomCheckoutListener(dispatch);
@@ -115,7 +115,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   public void preload(String checkoutURL, String requestId) {
     releaseCheckoutPreload();
 
-    Activity currentActivity = getCurrentActivity();
+    Activity currentActivity = getReactApplicationContext().getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
       checkoutPreload = ShopifyCheckoutKit.preload(
           checkoutURL,
