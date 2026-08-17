@@ -1,4 +1,4 @@
-export class E2ETestIds {
+export class AccessibilityIdentifiers {
   private static kebabCase(value: string) {
     return value
       .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
@@ -33,13 +33,13 @@ export class E2ETestIds {
   static readonly settings = {
     screen: 'settings-screen',
     section: (section: string) =>
-      `settings-section-${E2ETestIds.kebabCase(section)}`,
+      `settings-section-${AccessibilityIdentifiers.kebabCase(section)}`,
     buyerIdentityOption: (mode: string) =>
-      `settings-buyer-identity-option-${E2ETestIds.kebabCase(mode)}`,
+      `settings-buyer-identity-option-${AccessibilityIdentifiers.kebabCase(mode)}`,
     themeOption: (scheme: string) =>
-      `settings-theme-option-${E2ETestIds.kebabCase(scheme)}`,
+      `settings-theme-option-${AccessibilityIdentifiers.kebabCase(scheme)}`,
     applePayStyleOption: (style: string) =>
-      `settings-apple-pay-style-option-${E2ETestIds.kebabCase(style)}`,
+      `settings-apple-pay-style-option-${AccessibilityIdentifiers.kebabCase(style)}`,
     checkoutPreloadingSwitch: 'settings-checkout-preloading-switch',
     buyerIdentityDetails: 'settings-buyer-identity-details',
     buyerIdentitySignInLink: 'settings-buyer-identity-sign-in-link',

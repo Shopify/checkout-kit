@@ -73,7 +73,7 @@ struct CartView: View {
                             HStack {
                                 Text("Check out")
                                     .fontWeight(.bold)
-                                    .accessibilityIdentifier(E2ETestIds.Cart.checkoutReady)
+                                    .accessibilityIdentifier(AccessibilityIdentifiers.Cart.checkoutReady)
                                 Spacer()
                                 if let amount = cartManager.cart?.cost.totalAmount,
                                    let total = MoneyV2(amount: amount.amount, currencyCode: amount.currencyCode).formattedString()
@@ -90,7 +90,7 @@ struct CartView: View {
                     )
                     .disabled(isBusy)
                     .foregroundColor(.white)
-                    .accessibilityIdentifier(E2ETestIds.Cart.checkoutButton)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.Cart.checkoutButton)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)

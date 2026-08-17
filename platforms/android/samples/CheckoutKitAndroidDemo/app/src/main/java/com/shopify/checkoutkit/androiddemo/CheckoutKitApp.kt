@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.ColorScheme
+import com.shopify.checkoutkit.androiddemo.accessibility.AccessibilityIdentifiers
 import com.shopify.checkoutkit.androiddemo.cart.AppOwnedCheckoutSheet
 import com.shopify.checkoutkit.androiddemo.cart.CartViewModel
 import com.shopify.checkoutkit.androiddemo.cart.data.totalQuantity
@@ -54,7 +55,6 @@ import com.shopify.checkoutkit.androiddemo.common.navigation.CheckoutKitNavHost
 import com.shopify.checkoutkit.androiddemo.common.navigation.Screen
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.CheckoutKitSampleTheme
 import com.shopify.checkoutkit.androiddemo.e2e.E2ENavigationEffect
-import com.shopify.checkoutkit.androiddemo.e2e.E2ETestIds
 import com.shopify.checkoutkit.androiddemo.logs.LogsViewModel
 import com.shopify.checkoutkit.androiddemo.settings.SettingsUiState
 import com.shopify.checkoutkit.androiddemo.settings.SettingsViewModel
@@ -94,7 +94,7 @@ fun CheckoutKitAppRoot(
             modifier = Modifier
                 .fillMaxSize()
                 .semantics { testTagsAsResourceId = true }
-                .testTag(E2ETestIds.APP_READY),
+                .testTag(AccessibilityIdentifiers.APP_READY),
         ) {
             val navController = rememberNavController()
 

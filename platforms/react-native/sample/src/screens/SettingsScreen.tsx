@@ -21,7 +21,7 @@ import {useTheme} from '../context/Theme';
 import {useNavigation} from '@react-navigation/native';
 import {useAuth} from '../context/Auth';
 import {BuyerIdentityMode, BuyerIdentityModeDisplayNames} from '../auth/types';
-import {E2ETestIds} from '../e2e/testIds';
+import {AccessibilityIdentifiers} from '../accessibility/accessibilityIdentifiers';
 
 enum SectionType {
   Switch = 'switch',
@@ -269,7 +269,7 @@ function SettingsScreen() {
   return (
     <SafeAreaView>
       <SectionList
-        testID={E2ETestIds.settings.screen}
+        testID={AccessibilityIdentifiers.settings.screen}
         sections={sections}
         keyExtractor={item => item.title}
         renderItem={({item, section}) => {
@@ -303,7 +303,9 @@ function SettingsScreen() {
           return null;
         }}
         renderSectionHeader={({section: {id, title}}) => (
-          <View testID={E2ETestIds.settings.section(id)} style={styles.section}>
+          <View
+            testID={AccessibilityIdentifiers.settings.section(id)}
+            style={styles.section}>
             <Text style={styles.sectionText}>{title}</Text>
           </View>
         )}
@@ -355,7 +357,7 @@ function SwitchSettingItem({item, styles}: SwitchSettingItemProps) {
     <View style={styles.listItem}>
       <Text style={styles.listItemText}>{item.title}</Text>
       <Switch
-        testID={E2ETestIds.settings.checkoutPreloadingSwitch}
+        testID={AccessibilityIdentifiers.settings.checkoutPreloadingSwitch}
         value={item.value}
         onValueChange={item.onValueChange}
       />
@@ -388,13 +390,19 @@ function selectItemTestID(
 ) {
   switch (sectionId) {
     case 'authentication':
-      return E2ETestIds.settings.buyerIdentityOption(String(item.value));
+      return AccessibilityIdentifiers.settings.buyerIdentityOption(
+        String(item.value),
+      );
     case 'theme':
-      return E2ETestIds.settings.themeOption(String(item.value));
+      return AccessibilityIdentifiers.settings.themeOption(String(item.value));
     case 'apple-pay-style':
-      return E2ETestIds.settings.applePayStyleOption(String(item.value));
+      return AccessibilityIdentifiers.settings.applePayStyleOption(
+        String(item.value),
+      );
     default:
-      return E2ETestIds.settings.section(`${sectionId}-${item.value}`);
+      return AccessibilityIdentifiers.settings.section(
+        `${sectionId}-${item.value}`,
+      );
   }
 }
 
@@ -421,7 +429,7 @@ function BuyerIdentityDetails({
     case BuyerIdentityMode.Hardcoded:
       return (
         <View
-          testID={E2ETestIds.settings.buyerIdentityDetails}
+          testID={AccessibilityIdentifiers.settings.buyerIdentityDetails}
           style={styles.sectionFooter}>
           <Text style={styles.sectionFooterText}>
             Populates Cart Buyer Identity with values from .env
@@ -432,7 +440,7 @@ function BuyerIdentityDetails({
       if (authenticated) {
         return (
           <View
-            testID={E2ETestIds.settings.buyerIdentityDetails}
+            testID={AccessibilityIdentifiers.settings.buyerIdentityDetails}
             style={styles.sectionFooter}>
             <Text style={[styles.sectionFooterText, styles.warningText]}>
               Changing Buyer Identity will log you out.
@@ -442,7 +450,9 @@ function BuyerIdentityDetails({
                 User: {email ?? 'Unknown'}
               </Text>
               <Pressable
-                testID={E2ETestIds.settings.buyerIdentityChangeUserLink}
+                testID={
+                  AccessibilityIdentifiers.settings.buyerIdentityChangeUserLink
+                }
                 onPress={() => navigation.navigate('Account' as never)}>
                 <Text style={styles.linkText}>Change user</Text>
               </Pressable>
@@ -457,10 +467,10 @@ function BuyerIdentityDetails({
       }
       return (
         <View
-          testID={E2ETestIds.settings.buyerIdentityDetails}
+          testID={AccessibilityIdentifiers.settings.buyerIdentityDetails}
           style={styles.sectionFooter}>
           <Pressable
-            testID={E2ETestIds.settings.buyerIdentitySignInLink}
+            testID={AccessibilityIdentifiers.settings.buyerIdentitySignInLink}
             style={styles.detailRow}
             onPress={() => navigation.navigate('Account' as never)}>
             <Text style={styles.sectionFooterText}>Sign in on the</Text>

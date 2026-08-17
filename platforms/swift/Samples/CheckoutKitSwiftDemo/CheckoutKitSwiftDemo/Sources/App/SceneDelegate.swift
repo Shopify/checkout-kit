@@ -55,7 +55,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         tabBarController.viewControllers = viewControllers.compactMap { $0 }
 
-        tabBarController.view.accessibilityIdentifier = E2ETestIds.appReady
+        tabBarController.view.accessibilityIdentifier = AccessibilityIdentifiers.appReady
 
         let window = createWindow(windowScene: windowScene, rootViewController: tabBarController)
 

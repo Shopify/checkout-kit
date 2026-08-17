@@ -51,7 +51,7 @@ import env from 'react-native-config';
 import {createDebugLogger} from './utils';
 import {useShopifyEventHandlers} from './hooks/useCheckoutEventHandlers';
 import {useE2ECartBootstrap} from './e2e/useE2ECartBootstrap';
-import {E2ETestIds} from './e2e/testIds';
+import {AccessibilityIdentifiers} from './accessibility/accessibilityIdentifiers';
 
 const log = createDebugLogger('ENV');
 
@@ -263,7 +263,9 @@ function CartIcon({onPress}: {onPress: () => void}) {
   const theme = useTheme();
 
   return (
-    <Pressable onPress={onPress} testID={E2ETestIds.catalog.headerCartIcon}>
+    <Pressable
+      onPress={onPress}
+      testID={AccessibilityIdentifiers.catalog.headerCartIcon}>
       <Icon name="shopping-basket" size={24} color={theme.colors.secondary} />
     </Pressable>
   );
@@ -510,14 +512,14 @@ function Routes() {
   return (
     <View
       style={styles.routes}
-      testID={linkingReady ? E2ETestIds.appReady : undefined}>
+      testID={linkingReady ? AccessibilityIdentifiers.appReady : undefined}>
       <Tab.Navigator>
         <Tab.Screen
           name="Catalog"
           component={CatalogStack}
           options={{
             headerShown: false,
-            tabBarButtonTestID: E2ETestIds.tabs.catalog,
+            tabBarButtonTestID: AccessibilityIdentifiers.tabs.catalog,
             tabBarIcon: createNavigationIcon('shop'),
           }}
         />
@@ -525,7 +527,7 @@ function Routes() {
           name="Cart"
           component={CartScreen}
           options={{
-            tabBarButtonTestID: E2ETestIds.tabs.cart,
+            tabBarButtonTestID: AccessibilityIdentifiers.tabs.cart,
             tabBarIcon: createNavigationIcon('shopping-bag'),
             tabBarBadge: totalQuantity > 0 ? totalQuantity : undefined,
           }}
@@ -535,7 +537,7 @@ function Routes() {
           component={AccountStackScreen}
           options={{
             headerShown: false,
-            tabBarButtonTestID: E2ETestIds.tabs.account,
+            tabBarButtonTestID: AccessibilityIdentifiers.tabs.account,
             tabBarIcon: createNavigationIcon('user'),
           }}
         />
@@ -543,7 +545,7 @@ function Routes() {
           name="Settings"
           component={SettingsScreen}
           options={{
-            tabBarButtonTestID: E2ETestIds.tabs.settings,
+            tabBarButtonTestID: AccessibilityIdentifiers.tabs.settings,
             tabBarIcon: createNavigationIcon('cog'),
           }}
         />
