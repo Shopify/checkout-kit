@@ -53,8 +53,10 @@ final class PreloadCache {
     }
 
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
-        if let entry, entry.key == key, !entry.isStale {
-            return true
+        // A preload is only a background optimization. Never replace the cached
+        // view while it is backing a live checkout session.
+        guard entry?.view.isPresented != true else {
+            return false
         }
 
         invalidate()
@@ -407,11 +409,6 @@ class CheckoutWebView: WKWebView {
         }
 
         let key = PreloadKey(url: url, entryPoint: entryPoint)
-        guard !preloadCache.hasEntry(for: key) else {
-            OSLogger.shared.debug("Preload cache already has matching entry")
-            return
-        }
-
         let view = CheckoutWebView(entryPoint: entryPoint)
         // Keep the preloaded webview out of any window. WebKit derives
         // `document.visibilityState` from window membership, so an unparented webview reports
@@ -437,6 +434,10 @@ class CheckoutWebView: WKWebView {
     /// presented view is a live session, so its navigation events must no
     /// longer drive preload state, even after dismissal or reuse.
     var hasBeenPresented = false
+
+    /// Tracks whether this view is currently backing a presented checkout.
+    /// Background preload requests must not replace or reload a live session.
+    var isPresented = false
 
     /// Ensures one terminal failure is handled per checkout session, regardless
     /// of whether it originated from `ec.error` or WebKit process termination.

@@ -309,7 +309,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertNotNil(cached.url)
     }
 
-    func testRepeatedPreloadForMatchingCheckoutDoesNotReloadCachedWebView() {
+    func testRepeatedPreloadForMatchingCheckoutReplacesCachedWebView() {
         let webView = LoadedRequestObservableWebView()
         let checkoutURL = EmbeddedCheckoutProtocol.url(for: url)
         _ = CheckoutWebView.preloadCache.store(webView, for: PreloadKey(url: checkoutURL, entryPoint: nil))
@@ -317,6 +317,21 @@ class CheckoutWebViewTests: XCTestCase {
         CheckoutWebView.preload(checkout: checkoutURL)
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertFalse(CheckoutWebView.preloadCache.contains(webView))
+        XCTAssertFalse(webView.isBridgeAttached)
+        XCTAssertNil(webView.lastLoadedURLRequest)
+    }
+
+    func testRepeatedPreloadDoesNotReplacePresentedCheckout() {
+        let webView = LoadedRequestObservableWebView()
+        let checkoutURL = EmbeddedCheckoutProtocol.url(for: url)
+        _ = CheckoutWebView.preloadCache.store(webView, for: PreloadKey(url: checkoutURL, entryPoint: nil))
+        webView.isPresented = true
+
+        CheckoutWebView.preload(checkout: checkoutURL)
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(webView))
+        XCTAssertTrue(webView.isBridgeAttached)
         XCTAssertNil(webView.lastLoadedURLRequest)
     }
 

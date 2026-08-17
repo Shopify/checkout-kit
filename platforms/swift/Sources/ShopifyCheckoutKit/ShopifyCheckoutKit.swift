@@ -42,7 +42,8 @@ private func applyConfigurationChange(configuration: Configuration, previousConf
 }
 
 /// Preloads the checkout for faster presentation and returns a handle for
-/// observing preload state. Retain the handle to keep observing.
+/// observing preload state. Each call refreshes the cached checkout, even when
+/// the URL is unchanged. Retain the handle to keep observing.
 @MainActor
 @discardableResult
 public func preload(checkout url: URL) -> CheckoutPreload? {

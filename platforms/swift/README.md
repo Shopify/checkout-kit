@@ -169,6 +169,8 @@ Call `preload` when your app has a strong signal that the buyer is likely to che
 ShopifyCheckoutKit.preload(checkout: checkoutURL)
 ```
 
+Each call refreshes the cached checkout, even when `checkoutURL` is unchanged. Call `preload` again after cart changes so the preloaded checkout reflects the latest cart state. A preload request made while checkout is presented leaves the active checkout session untouched.
+
 `preload` returns an optional `CheckoutPreload` handle. You can ignore it when preloading is only a performance hint, or retain it to observe the preload lifecycle:
 
 ```swift
