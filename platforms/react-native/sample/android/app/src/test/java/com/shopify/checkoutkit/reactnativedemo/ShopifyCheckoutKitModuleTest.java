@@ -52,7 +52,7 @@ public class ShopifyCheckoutKitModuleTest {
   @Captor
   private ArgumentCaptor<String> stringCaptor;
 
-  private ShopifyCheckoutKitModule shopifyCheckoutKitModule;
+  private TestShopifyCheckoutKitModule shopifyCheckoutKitModule;
   private AutoCloseable mocks;
 
   // Store initial configuration to restore after each test
@@ -75,6 +75,19 @@ public class ShopifyCheckoutKitModuleTest {
   private static final String DARK_HEADER_BACKGROUND_COLOR = "#000000";
   private static final String DARK_HEADER_TEXT_COLOR = "#FFFFFF";
 
+  private static final class TestShopifyCheckoutKitModule extends ShopifyCheckoutKitModule {
+    private String preloadStateEvent;
+
+    TestShopifyCheckoutKitModule(ReactApplicationContext reactContext) {
+      super(reactContext);
+    }
+
+    @Override
+    protected void emitPreloadStateEvent(String event) {
+      preloadStateEvent = event;
+    }
+  }
+
   @Before
   public void setup() {
     mocks = MockitoAnnotations.openMocks(this);
@@ -82,7 +95,7 @@ public class ShopifyCheckoutKitModuleTest {
     mockedArguments.when(Arguments::createMap).thenAnswer(invocation -> new JavaOnlyMap());
 
     when(mockReactContext.getCurrentActivity()).thenReturn(mockComponentActivity);
-    shopifyCheckoutKitModule = new ShopifyCheckoutKitModule(mockReactContext);
+    shopifyCheckoutKitModule = new TestShopifyCheckoutKitModule(mockReactContext);
 
     // Capture initial configuration state to restore after each test
     initialAppearance = ShopifyCheckoutKitModule.checkoutConfig.getAppearance();
@@ -157,7 +170,7 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testPreloadDoesNothingWithoutComponentActivity() {
+  public void testPreloadEmitsIdleWithoutComponentActivity() {
     when(mockReactContext.getCurrentActivity()).thenReturn(null);
 
     try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
@@ -165,6 +178,9 @@ public class ShopifyCheckoutKitModuleTest {
       shopifyCheckoutKitModule.preload("https://shopify.com", "preload-request");
 
       mockedShopifyCheckoutKit.verifyNoInteractions();
+      assertThat(shopifyCheckoutKitModule.preloadStateEvent)
+          .contains("\"requestId\":\"preload-request\"")
+          .contains("\"type\":\"idle\"");
     }
   }
 

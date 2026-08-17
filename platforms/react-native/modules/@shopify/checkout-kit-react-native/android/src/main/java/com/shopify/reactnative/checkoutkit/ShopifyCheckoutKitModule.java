@@ -167,7 +167,11 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
       throw new IllegalStateException("Failed to serialize preload state", exception);
     }
 
-    emitOnPreloadStateChange(event.toString());
+    emitPreloadStateEvent(event.toString());
+  }
+
+  protected void emitPreloadStateEvent(String event) {
+    emitOnPreloadStateChange(event);
   }
 
   private void releaseCheckoutListener() {
