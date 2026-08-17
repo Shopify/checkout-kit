@@ -30,7 +30,7 @@ This repository contains the Checkout Kit implementations, samples, and protocol
 | `ShopifyCheckoutKit` | `4.0.0-alpha.5` | Swift Package Manager, CocoaPods | Alpha | iOS checkout presentation SDK. | [Swift](platforms/swift/README.md) |
 | `ShopifyAcceleratedCheckouts` | `4.0.0-alpha.5` | Swift Package Manager, CocoaPods subspec | Alpha | SwiftUI Shop Pay and Apple Pay accelerated checkout buttons for iOS 16+. | [Swift](platforms/swift/README.md#accelerated-checkouts) |
 | `com.shopify:checkout-kit` | `4.0.0-alpha.5` | Maven Central | Alpha | Android checkout presentation SDK. | [Android](platforms/android/README.md) |
-| `@shopify/checkout-kit-react-native` | `4.0.0-alpha.3` | npm `next` dist-tag | Alpha | React Native wrapper for the iOS and Android native SDKs. | [React Native](platforms/react-native/README.md) |
+| `@shopify/checkout-kit-react-native` | `4.0.0-alpha.4` | npm `next` dist-tag | Alpha | React Native wrapper for the iOS and Android native SDKs. | [React Native](platforms/react-native/README.md) |
 | `@shopify/checkout-kit` | `4.0.0-alpha.3` | npm `next` dist-tag | Alpha | Web component for opening Shopify checkout from a web page. | [Web](platforms/web/README.md) |
 | `EmbeddedCheckoutProtocol` | Source package | Swift Package Manager | Internal/supporting | Swift client for Embedded Checkout Protocol messages. | [Protocol Swift](protocol/languages/swift/README.md) |
 | `com.shopify:embedded-checkout-protocol` | `2026.04.08.1-alpha.2` | Maven Central | Internal/supporting | Kotlin client for Embedded Checkout Protocol messages. | [Protocol Android](protocol/languages/kotlin/embedded-checkout-protocol/README.md) |
@@ -81,7 +81,7 @@ Use the Shopify.dev guides for broader product workflows:
 
 Checkout Kit is the current home for the SDKs that were previously published as Checkout Sheet Kit. The renamed packages use a shared `4.0.0-alpha.X` version format while the new package line settles:
 
-- Swift and Android are currently `4.0.0-alpha.5`; React Native is currently `4.0.0-alpha.3`.
+- Swift and Android are currently `4.0.0-alpha.5`; React Native is currently `4.0.0-alpha.4`.
 - Web prereleases use the npm `next` dist-tag.
 - React Native requires React Native New Architecture.
 - Stable releases will continue on the same `4.x` package line after the alpha period.
