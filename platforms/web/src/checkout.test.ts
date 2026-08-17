@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
 
-import packageJson from "../package.json";
+import { version } from "../package.json";
 
 import "./checkout-web-component";
 import { CK_VERSION } from "./checkout";
@@ -318,7 +318,7 @@ describe("<shopify-checkout>", () => {
     });
 
     it("uses the package version", () => {
-      expect(CK_VERSION).toBe(packageJson.version);
+      expect(CK_VERSION).toBe(version);
     });
 
     it("includes ck_version on the overlay link", () => {
