@@ -4,6 +4,8 @@ import ShopifyCheckoutKit
 import XCTest
 
 class ShopifyCheckoutKitTests: XCTestCase {
+    private static let sdkDefaultTintColor = UIColor(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
+
     private var shopifyCheckoutKit: RCTShopifyCheckoutKit!
 
     override func setUp() {
@@ -156,6 +158,48 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     // closeButtonTintColor should remain nil when not specified (uses system default)
     XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+  }
+
+  func testConfigureWithoutIosColorsRestoresTheDefaults() {
+    shopifyCheckoutKit.setConfig([
+      "colorScheme": "dark",
+      "colors": [
+        "ios": [
+          "tintColor": "#FF0000",
+          "backgroundColor": "#0000FF",
+          "closeButtonColor": "#00FF00"
+        ]
+      ]
+    ])
+
+    shopifyCheckoutKit.setConfig([
+      "colorScheme": "automatic",
+      "colors": [
+        "android": [
+          "backgroundColor": "#0000FF"
+        ]
+      ]
+    ])
+
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.automatic))
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, Self.sdkDefaultTintColor)
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, .systemBackground)
+    XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+  }
+
+  func testConfigureWithoutColorsRestoresTheDefaults() {
+    shopifyCheckoutKit.setConfig([
+      "colorScheme": "dark",
+      "colors": [
+        "ios": [
+          "backgroundColor": "#0000FF"
+        ]
+      ]
+    ])
+
+    shopifyCheckoutKit.setConfig(["logLevel": "debug"])
+
+    XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, .systemBackground)
   }
 
   func testGetConfigIncludesCloseButtonColor() {

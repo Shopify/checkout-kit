@@ -1,12 +1,12 @@
 import type {PropsWithChildren, ReactNode} from 'react';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  Appearance,
   Linking,
   Pressable,
   StatusBar,
   StyleSheet,
   View,
+  useColorScheme,
 } from 'react-native';
 import {
   NavigationContainer,
@@ -35,10 +35,8 @@ import {ConfigProvider, useConfig} from './context/Config';
 import {BuyerIdentityMode} from './auth/types';
 import {
   ThemeProvider,
-  darkColors,
-  getColors,
+  getCheckoutKitColors,
   getNavigationTheme,
-  lightColors,
   useTheme,
 } from './context/Theme';
 import {CartProvider, useCart} from './context/Cart';
@@ -200,7 +198,6 @@ class StorefrontURL {
 const checkoutKitConfigDefaults: Configuration = {
   title: 'Plant Store',
   logLevel: LogLevel.debug,
-  colorScheme: ColorScheme.dark,
 };
 
 function AppWithContext({children}: PropsWithChildren) {
@@ -310,58 +307,21 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
     fetchAccessToken();
   }, [fetchAccessToken]);
 
-  const updatedColors = getColors(
-    appConfig.colorScheme,
-    Appearance.getColorScheme(),
+  const osColorScheme = useColorScheme();
+
+  const checkoutKitThemeConfig: Configuration = useMemo(
+    () =>
+      appConfig.colorScheme === ColorScheme.automatic
+        ? {colorScheme: ColorScheme.automatic}
+        : {
+            colorScheme: appConfig.colorScheme,
+            colors: getCheckoutKitColors(
+              appConfig.colorScheme,
+              osColorScheme,
+            ),
+          },
+    [appConfig.colorScheme, osColorScheme],
   );
-
-  const checkoutKitThemeConfig: Configuration = useMemo(() => {
-    if (appConfig.colorScheme === ColorScheme.automatic) {
-      return {
-        colorScheme: ColorScheme.automatic,
-        colors: {
-          ios: {
-            backgroundColor: updatedColors.webviewBackgroundColor,
-            tintColor: updatedColors.webViewProgressIndicator,
-          },
-          android: {
-            light: {
-              backgroundColor: lightColors.webviewBackgroundColor,
-              progressIndicator: lightColors.webViewProgressIndicator,
-              headerBackgroundColor: lightColors.webviewBackgroundColor,
-              headerTextColor: lightColors.webviewHeaderTextColor,
-              closeButtonColor: lightColors.webviewCloseButtonColor,
-            },
-            dark: {
-              backgroundColor: darkColors.webviewBackgroundColor,
-              progressIndicator: darkColors.webViewProgressIndicator,
-              headerBackgroundColor: darkColors.webviewBackgroundColor,
-              headerTextColor: darkColors.webviewHeaderTextColor,
-              closeButtonColor: darkColors.webviewCloseButtonColor,
-            },
-          },
-        },
-      };
-    }
-
-    return {
-      colorScheme: appConfig.colorScheme,
-      colors: {
-        ios: {
-          backgroundColor: updatedColors.webviewBackgroundColor,
-          tintColor: updatedColors.webViewProgressIndicator,
-          closeButtonColor: updatedColors.webviewCloseButtonColor,
-        },
-        android: {
-          backgroundColor: updatedColors.webviewBackgroundColor,
-          progressIndicator: updatedColors.webViewProgressIndicator,
-          headerBackgroundColor: updatedColors.webviewBackgroundColor,
-          headerTextColor: updatedColors.webviewHeaderTextColor,
-          closeButtonColor: updatedColors.webviewCloseButtonColor,
-        },
-      },
-    };
-  }, [appConfig.colorScheme, updatedColors]);
 
   const checkoutKitConfig: Configuration = useMemo(() => {
     const customer =

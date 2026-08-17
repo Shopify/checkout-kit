@@ -60,7 +60,9 @@ export const ConfigProvider: React.FC<
           return;
         }
       } catch {}
-      setColorScheme(config?.colorScheme ?? ColorScheme.automatic);
+      const seeded: AppConfig = {...defaultAppConfig, ...config};
+      setInternalAppConfig(seeded);
+      setColorScheme(seeded.colorScheme);
     }
     restoreConfig();
   }, [config, setColorScheme]);

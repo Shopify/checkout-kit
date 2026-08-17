@@ -405,6 +405,9 @@ behavior can be customized via the `colorScheme` property:
 The `colors` configuration property can be used to provide overrides for iOS and
 Android applications separately.
 
+Each `setConfig` call replaces the color overrides for the platform. Omit a
+color to restore the SDK default for it.
+
 ```tsx
 const config: Configuration = {
   colorScheme: ColorScheme.light,

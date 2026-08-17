@@ -22,6 +22,9 @@ enum DispatchEventType: String, CaseIterable {
 class RCTShopifyCheckoutKit: NSObject {
     /// The JavaScript name for `Configuration.Appearance.storefront`, which has no native raw value.
     private static let storefrontColorScheme = "storefront"
+    /// The colors held by the host application before React Native first configured the library.
+    /// A `setConfig` call that omits a color restores it to this value.
+    private static let initialConfiguration = ShopifyCheckoutKit.configuration
 
     internal var checkoutSheet: UIViewController?
     private var acceleratedCheckoutsConfiguration: Any?
@@ -155,37 +158,35 @@ class RCTShopifyCheckoutKit: NSObject {
     @objc func setConfig(_ configuration: [AnyHashable: Any]) {
         let colorConfig = configuration["colors"] as? [AnyHashable: Any]
         let iosConfig = colorConfig?["ios"] as? [String: String]
+        let initialConfiguration = Self.initialConfiguration
 
-        if let title = configuration["title"] as? String {
-            ShopifyCheckoutKit.configuration.title = title
-        }
+        ShopifyCheckoutKit.configure { config in
+            if let title = configuration["title"] as? String {
+                config.title = title
+            }
 
-        if let preloading = configuration["preloading"] as? Bool {
-            ShopifyCheckoutKit.configuration.preloading.enabled = preloading
-        }
+            if let preloading = configuration["preloading"] as? Bool {
+                config.preloading.enabled = preloading
+            }
 
-        if let colorScheme = configuration["colorScheme"] as? String,
-           let appearance = appearanceFor(colorScheme)
-        {
-            ShopifyCheckoutKit.configuration.appearance = appearance
-        }
+            if let colorScheme = configuration["colorScheme"] as? String,
+               let appearance = appearanceFor(colorScheme)
+            {
+                config.appearance = appearance
+            }
 
-        if let tintColorHex = iosConfig?["tintColor"] as? String {
-            ShopifyCheckoutKit.configuration.tintColor = UIColor(hex: tintColorHex)
-        }
+            config.tintColor = iosConfig?["tintColor"].map(UIColor.init(hex:))
+                ?? initialConfiguration.tintColor
+            config.backgroundColor = iosConfig?["backgroundColor"].map(UIColor.init(hex:))
+                ?? initialConfiguration.backgroundColor
+            config.closeButtonTintColor = iosConfig?["closeButtonColor"].map(UIColor.init(hex:))
+                ?? initialConfiguration.closeButtonTintColor
 
-        if let backgroundColorHex = iosConfig?["backgroundColor"] as? String {
-            ShopifyCheckoutKit.configuration.backgroundColor = UIColor(hex: backgroundColorHex)
-        }
-
-        if let closeButtonColorHex = iosConfig?["closeButtonColor"] as? String {
-            ShopifyCheckoutKit.configuration.closeButtonTintColor = UIColor(hex: closeButtonColorHex)
-        }
-
-        if let logLevel = configuration["logLevel"] as? String,
-           let parsedLogLevel = LogLevel(rawValue: logLevel.lowercased())
-        {
-            ShopifyCheckoutKit.configuration.logLevel = parsedLogLevel
+            if let logLevel = configuration["logLevel"] as? String,
+               let parsedLogLevel = LogLevel(rawValue: logLevel.lowercased())
+            {
+                config.logLevel = parsedLogLevel
+            }
         }
 
         NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
