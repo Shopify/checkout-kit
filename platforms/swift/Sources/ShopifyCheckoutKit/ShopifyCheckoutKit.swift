@@ -4,7 +4,7 @@
 import UIKit
 
 /// The version of the `ShopifyCheckoutKit` library.
-public let version = "4.0.0-alpha.4"
+public let version = "4.0.0-alpha.5"
 
 private let lockedCheckoutKitConfiguration = LockedValue(Configuration())
 
