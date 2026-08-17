@@ -7,6 +7,7 @@ require "tempfile"
 class CheckSwiftApplePayConfigTest < Minitest::Test
   REPO_ROOT = File.expand_path("../..", __dir__)
   SCRIPT = File.join(REPO_ROOT, "e2e", "scripts", "check_swift_apple_pay_config")
+  BUILD_SCRIPT = File.join(REPO_ROOT, "e2e", "scripts", "build_swift_ios")
   SYNTHETIC_IDENTIFIER = "merchant.com.example.e2e"
 
   def test_script_is_executable_bash
@@ -57,6 +58,19 @@ class CheckSwiftApplePayConfigTest < Minitest::Test
       assert_empty error
       refute_includes "#{output}#{error}", SYNTHETIC_IDENTIFIER
     end
+  end
+
+  def test_bitrise_swift_build_checks_config_after_generating_it
+    script = File.read(BUILD_SCRIPT)
+    configure_index = script.index("e2e_configure_storefront")
+    check_index = script.index('"$script_dir/check_swift_apple_pay_config"')
+    xcodegen_index = script.index("platforms/swift/Scripts/generate_xcode_projects")
+
+    refute_nil configure_index
+    refute_nil check_index
+    refute_nil xcodegen_index
+    assert_operator configure_index, :<, check_index
+    assert_operator check_index, :<, xcodegen_index
   end
 
   private
