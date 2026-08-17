@@ -29,6 +29,39 @@ MAESTRO="$("$E2E_ROOT/scripts/maestro_bin")"
 # than passed. e2e/lib/e2e_matrix_to_browserstack_run_plan.rb derives it the same way for CI.
 CONTROL_LINK="${APP_ID}://e2e"
 
+# Remove excluded tags from includes so Maestro receives unambiguous filters.
+exclude_tag() {
+  local tag="$1"
+
+  INCLUDE_TAGS="$(printf '%s' "$INCLUDE_TAGS" | tr ',' '\n' | { grep -vx "$tag" || true; } | paste -sd, -)"
+
+  case ",${EXCLUDE_TAGS}," in
+    *",${tag},"*) ;;
+    *) EXCLUDE_TAGS="${EXCLUDE_TAGS:+${EXCLUDE_TAGS},}${tag}" ;;
+  esac
+}
+
+REQUESTED_TAGS="$INCLUDE_TAGS"
+
+# Every local target executes the shared tests folder. A platform capability tag marks
+# a test that cannot run on the other platform, so derive the mandatory exclusion from
+# the platform instead of repeating it in four wrappers.
+case "$PLATFORM" in
+  ios) exclude_tag "android-only" ;;
+  android) exclude_tag "ios-only" ;;
+  *)
+    echo "run_maestro: platform must be ios or android, got '${PLATFORM}'" >&2
+    exit 1
+    ;;
+esac
+
+# An empty include list means "run everything", so a caller whose requested tags were
+# all excluded must run nothing instead of falling through to the whole suite.
+if [ -n "$REQUESTED_TAGS" ] && [ -z "$INCLUDE_TAGS" ]; then
+  echo "run_maestro: every requested tag is excluded on this run, so nothing runs" >&2
+  exit 0
+fi
+
 MAESTRO_ARGS=(--platform "$PLATFORM" test --config config.yaml)
 TEST_DIRECTORIES=(tests/shared)
 TEST_FILES=()
