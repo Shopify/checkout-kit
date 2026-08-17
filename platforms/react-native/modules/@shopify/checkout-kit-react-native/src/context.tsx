@@ -51,17 +51,16 @@ export function ShopifyCheckoutProvider({
   if (!instance.current) {
     instance.current = new ShopifyCheckout(configuration, features);
   }
+  const checkout = instance.current;
 
   useEffect(() => {
-    if (!instance.current || !configuration) {
+    if (!configuration) {
       return;
     }
 
-    instance.current.setConfig(configuration);
-    setAcceleratedCheckoutsAvailable(
-      instance.current.acceleratedCheckoutsReady,
-    );
-  }, [configuration]);
+    checkout.setConfig(configuration);
+    setAcceleratedCheckoutsAvailable(checkout.acceleratedCheckoutsReady);
+  }, [checkout, configuration]);
 
   const present = useCallback(
     (
@@ -70,33 +69,36 @@ export function ShopifyCheckoutProvider({
       protocol?: ProtocolHandlers,
     ) => {
       if (checkoutUrl) {
-        instance.current?.present(checkoutUrl, callbacks, protocol);
+        checkout.present(checkoutUrl, callbacks, protocol);
       }
     },
-    [],
+    [checkout],
   );
 
   const preload = useCallback(
     (checkoutUrl: string, options?: PreloadOptions) =>
-      instance.current!.preload(checkoutUrl, options),
-    [],
+      checkout.preload(checkoutUrl, options),
+    [checkout],
   );
 
   const invalidate = useCallback(() => {
-    instance.current?.invalidate();
-  }, []);
+    checkout.invalidate();
+  }, [checkout]);
 
   const dismiss = useCallback(() => {
-    instance.current?.dismiss();
-  }, []);
+    checkout.dismiss();
+  }, [checkout]);
 
-  const setConfig = useCallback((config: Configuration) => {
-    instance.current?.setConfig(config);
-  }, []);
+  const setConfig = useCallback(
+    (config: Configuration) => {
+      checkout.setConfig(config);
+    },
+    [checkout],
+  );
 
   const getConfig = useCallback(() => {
-    return instance.current?.getConfig();
-  }, []);
+    return checkout.getConfig();
+  }, [checkout]);
 
   const context = useMemo((): Context => {
     return {
@@ -107,10 +109,11 @@ export function ShopifyCheckoutProvider({
       getConfig,
       present,
       preload,
-      version: instance.current?.version,
+      version: checkout.version,
     };
   }, [
     acceleratedCheckoutsAvailable,
+    checkout,
     dismiss,
     getConfig,
     invalidate,
