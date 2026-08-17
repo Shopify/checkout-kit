@@ -98,7 +98,7 @@ internal class EmbeddedCheckoutProtocolBridge(
         }
 
         if (!isOriginAllowed(sourceOrigin)) {
-            rejectMessage(sourceOrigin, message)
+            rejectMessage(sourceOrigin)
             return
         }
 
@@ -107,9 +107,8 @@ internal class EmbeddedCheckoutProtocolBridge(
 
     /**
      * Origin validation runs here (not at the WebView layer) so [ALLOWED_MESSAGE_ORIGIN_RULES] can
-     * stay `"*"` and deliver every message with its verified origin. That lets the kit surface
-     * drops through [Configuration.onMessageRejected] instead of the WebView silently discarding
-     * them.
+     * stay `"*"` and deliver every message with its verified origin. That lets the kit log drops
+     * with the verified origin instead of the WebView silently discarding them.
      */
     private fun isOriginAllowed(sourceOrigin: String): Boolean {
         val configuration = ShopifyCheckoutKit.configuration
@@ -120,18 +119,12 @@ internal class EmbeddedCheckoutProtocolBridge(
         return OriginAllowlist.isAllowed(sourceOrigin, patterns)
     }
 
-    private fun rejectMessage(sourceOrigin: String, message: String) {
-        val reason = "origin \"$sourceOrigin\" is not in the allowlist"
-        val callback = ShopifyCheckoutKit.configuration.onMessageRejected
-        if (callback != null) {
-            try {
-                callback(RejectedMessage(origin = sourceOrigin, message = message, reason = reason))
-            } catch (error: Exception) {
-                log.e(LOG_TAG, "onMessageRejected callback threw", error)
-            }
-        } else {
-            log.d(LOG_TAG, "Dropped ECP WebMessage: $reason")
-        }
+    /**
+     * Rejected messages are never silently dropped: each rejection is logged as a warning with the
+     * verified origin and reason. The message body is untrusted and intentionally not logged.
+     */
+    private fun rejectMessage(sourceOrigin: String) {
+        log.w(LOG_TAG, "Dropped ECP WebMessage: origin \"$sourceOrigin\" is not in the allowlist")
     }
 
     internal fun receiveMessage(message: String) {

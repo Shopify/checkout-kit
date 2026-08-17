@@ -12,9 +12,7 @@ import android.content.Context
  * effective allowlist is these origins plus the cart URL origin and `shop.app` (including its
  * subdomains). Entries may be exact origins (`https://example.com`), scheme-qualified wildcard
  * subdomains (`https://&#42;.example.com`), or `"*"` to explicitly trust every origin.
- * @property onMessageRejected Invoked when an incoming message is dropped by origin validation. When
- * null, drops are logged at debug level. Treat the payload as untrusted — it was dropped precisely
- * because its origin was not in the allowlist.
+ * Messages dropped by origin validation are logged as warnings.
  */
 @ConsistentCopyVisibility
 public data class Configuration internal constructor(
@@ -25,20 +23,6 @@ public data class Configuration internal constructor(
     var preloading: Preloading = Preloading(),
     var title: String? = null,
     var allowedMessageOrigins: Set<String> = emptySet(),
-    var onMessageRejected: ((RejectedMessage) -> Unit)? = null,
-)
-
-/**
- * Details of an incoming message dropped by origin validation.
- *
- * @property origin Origin the dropped message was posted from.
- * @property message Raw message payload. Treat as untrusted.
- * @property reason Human-readable reason the message was dropped.
- */
-public data class RejectedMessage(
-    val origin: String,
-    val message: String,
-    val reason: String,
 )
 
 /**
