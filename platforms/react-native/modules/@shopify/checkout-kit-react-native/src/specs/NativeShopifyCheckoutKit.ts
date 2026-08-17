@@ -35,6 +35,7 @@ type ConfigurationSpec = {
   colorScheme?: string;
   logLevel?: string;
   preloading?: boolean;
+  allowedMessageOrigins?: string[];
   colors?: ColorsSpec;
 };
 
@@ -46,6 +47,7 @@ type ConfigurationResultSpec = {
   tintColor?: string;
   backgroundColor?: string;
   closeButtonColor?: string;
+  allowedMessageOrigins: string[];
 };
 
 export interface Spec extends TurboModule {

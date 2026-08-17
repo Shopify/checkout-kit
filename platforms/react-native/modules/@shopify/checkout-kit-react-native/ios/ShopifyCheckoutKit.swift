@@ -164,6 +164,10 @@ class RCTShopifyCheckoutKit: NSObject {
             ShopifyCheckoutKit.configuration.preloading.enabled = preloading
         }
 
+        if let allowedMessageOrigins = configuration["allowedMessageOrigins"] as? [String] {
+            ShopifyCheckoutKit.configuration.allowedMessageOrigins = allowedMessageOrigins
+        }
+
         if let colorScheme = configuration["colorScheme"] as? String,
            let appearance = appearanceFor(colorScheme)
         {
@@ -199,6 +203,7 @@ class RCTShopifyCheckoutKit: NSObject {
             "tintColor": ShopifyCheckoutKit.configuration.tintColor,
             "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
             "closeButtonColor": ShopifyCheckoutKit.configuration.closeButtonTintColor,
+            "allowedMessageOrigins": ShopifyCheckoutKit.configuration.allowedMessageOrigins,
             "logLevel": logLevelToString(ShopifyCheckoutKit.configuration.logLevel)
         ]
     }

@@ -78,6 +78,8 @@ public class ShopifyCheckoutKitModuleTest {
     mocks = MockitoAnnotations.openMocks(this);
     mockedArguments = Mockito.mockStatic(Arguments.class);
     mockedArguments.when(Arguments::createMap).thenAnswer(invocation -> new JavaOnlyMap());
+    mockedArguments.when(() -> Arguments.fromList(anyList()))
+        .thenAnswer(invocation -> JavaOnlyArray.from(invocation.getArgument(0)));
 
     when(mockReactContext.getCurrentActivity()).thenReturn(mockComponentActivity);
     shopifyCheckoutKitModule = new ShopifyCheckoutKitModule(mockReactContext);
@@ -315,6 +317,22 @@ public class ShopifyCheckoutKitModuleTest {
 
     assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("storefront");
+  }
+
+  @Test
+  public void testAllowedMessageOriginsRoundTrip() {
+    JavaOnlyMap config = new JavaOnlyMap();
+    JavaOnlyArray allowedMessageOrigins = new JavaOnlyArray();
+    allowedMessageOrigins.pushString("https://example.com");
+    allowedMessageOrigins.pushString("https://*.example.com");
+    config.putArray("allowedMessageOrigins", allowedMessageOrigins);
+
+    shopifyCheckoutKitModule.setConfig(config);
+
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getAllowedMessageOrigins())
+        .containsExactlyInAnyOrder("https://example.com", "https://*.example.com");
+    assertThat(shopifyCheckoutKitModule.getConfig().getArray("allowedMessageOrigins").toArrayList())
+        .containsExactlyInAnyOrder("https://example.com", "https://*.example.com");
   }
 
   @Test

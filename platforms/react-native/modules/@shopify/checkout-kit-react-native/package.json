@@ -19,8 +19,8 @@
   },
   "checkoutKit": {
     "nativeSdkVersions": {
-      "ios": "4.0.0-alpha.4",
-      "android": "4.0.0-alpha.4"
+      "ios": "4.0.0-alpha.5",
+      "android": "4.0.0-alpha.5"
     }
   },
   "scripts": {

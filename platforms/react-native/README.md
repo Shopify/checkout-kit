@@ -347,6 +347,7 @@ instance of the `ShopifyCheckout` class.
 | `preloading`  |          | `true`      | Enable/disable [preloading](#preloading).                                                                                                                      |
 | `colors`      |          | `{}`        | An object with `ios` and `android` properties to override the colors for iOS and Android platforms individually. See [`colors`](#colors) for more information. |
 | `logLevel`    |          | `error`     | Sets the log level for the native SDK. Use `LogLevel.debug` for verbose logging during development, or `LogLevel.error` for production.                        |
+| `allowedMessageOrigins` |          | `[]`        | Extra origins trusted to send incoming checkout messages. See [Incoming message origin validation](#incoming-message-origin-validation).                       |
 
 Here's an example of how a fully customized configuration object might look:
 
@@ -467,6 +468,29 @@ function AppWithContext() {
   );
 }
 ```
+
+### Incoming message origin validation
+
+Native checkout accepts messages from every origin by default. To restrict
+messages, configure one or more exact origins or wildcard subdomains. The
+checkout URL's origin and `shop.app` remain trusted automatically.
+
+```tsx
+const config: Configuration = {
+  allowedMessageOrigins: [
+    'https://checkout.example.com',
+    'https://*.example.org',
+  ],
+};
+```
+
+Entries may be exact origins (`https://example.com`), wildcard subdomains
+(`https://*.example.com`, matching subdomains but not the apex), or `'*'` to
+explicitly disable origin validation.
+
+Messages dropped by origin validation are never silently discarded: the native
+SDK logs each rejection as a warning with the message origin and the reason it
+was dropped. The message body is untrusted and is not logged.
 
 ### Localization
 
