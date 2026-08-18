@@ -612,6 +612,15 @@ EOF
 # Buyer identity defaults
 EOF
   write_env_assignment EMAIL "$EMAIL_VALUE"
+  write_env_assignment ADDRESS_1 "$ADDRESS_1_VALUE"
+  write_env_assignment ADDRESS_2 "$ADDRESS_2_VALUE"
+  write_env_assignment CITY "$CITY_VALUE"
+  write_env_assignment COMPANY "$COMPANY_VALUE"
+  write_env_assignment COUNTRY "$COUNTRY_VALUE"
+  write_env_assignment FIRST_NAME "$FIRST_NAME_VALUE"
+  write_env_assignment LAST_NAME "$LAST_NAME_VALUE"
+  write_env_assignment PROVINCE "$PROVINCE_VALUE"
+  write_env_assignment ZIP "$ZIP_VALUE"
   write_env_assignment PHONE "$PHONE_VALUE"
 }
 
