@@ -19,6 +19,7 @@ import {
   ApplePayLabel,
   AcceleratedCheckoutWallet,
 } from '@shopify/checkout-kit-react-native';
+import type {PreloadState} from '@shopify/checkout-kit-react-native';
 import {useIsFocused} from '@react-navigation/native';
 import {useConfig} from '../context/Config';
 import useShopify from '../hooks/useShopify';
@@ -37,6 +38,9 @@ function CartScreen(): React.JSX.Element {
   const {present, preload} = useShopifyCheckout();
   const isFocused = useIsFocused();
   const [refreshing, setRefreshing] = React.useState(false);
+  const [preloadState, setPreloadState] = React.useState<PreloadState>({
+    type: 'idle',
+  });
   const {
     cartId,
     checkoutURL,
@@ -91,10 +95,17 @@ function CartScreen(): React.JSX.Element {
       !checkoutURL ||
       totalQuantity === 0
     ) {
+      setPreloadState({type: 'idle'});
       return;
     }
 
-    preload(checkoutURL);
+    const subscription = preload(checkoutURL, {
+      onStateChange: setPreloadState,
+    });
+
+    // Each call observes one preload request. Stop observing it when the cart
+    // changes or leaves focus; this does not invalidate the preloaded checkout.
+    return () => subscription?.remove();
   }, [
     preload,
     isFocused,
@@ -239,6 +250,14 @@ function CartScreen(): React.JSX.Element {
                 </Text>
               </Pressable>
 
+              {appConfig.checkoutPreloadingEnabled && (
+                <Text
+                  testID={AccessibilityIdentifiers.cart.preloadState}
+                  style={styles.preloadState}>
+                  Checkout preload: {formatPreloadState(preloadState)}
+                </Text>
+              )}
+
               {/* Empty wallets, should not render anything */}
               <AcceleratedCheckoutButtons
                 {...acceleratedCheckoutEventHandlers}
@@ -261,6 +280,15 @@ function price(value: {amount: string; currencyCode: string}) {
 
   const {amount, currencyCode} = value;
   return currency(amount, currencyCode);
+}
+
+function formatPreloadState(state: PreloadState) {
+  if (state.type === 'failed') {
+    const statusCode = state.statusCode ? ` (${state.statusCode})` : '';
+    return `Failed: ${state.reason}${statusCode}`;
+  }
+
+  return state.type.charAt(0).toUpperCase() + state.type.slice(1);
 }
 
 function CartItem({
@@ -367,6 +395,11 @@ function createStyles(colors: Colors, cornerRadius: number) {
       textAlign: 'center',
       color: colors.textSubdued,
       fontWeight: 'bold',
+    },
+    preloadState: {
+      color: colors.textSubdued,
+      fontSize: 12,
+      textAlign: 'center',
     },
     productList: {
       marginVertical: 20,
