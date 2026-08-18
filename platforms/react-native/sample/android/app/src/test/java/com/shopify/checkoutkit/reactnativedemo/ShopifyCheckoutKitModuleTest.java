@@ -173,7 +173,7 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testPreloadSerializesWebContentProcessTerminated() {
+  public void testPreloadSerializesWebContentUnavailable() {
     try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
         .mockStatic(ShopifyCheckoutKit.class)) {
       String checkoutUrl = "https://shopify.com";
@@ -194,12 +194,13 @@ public class ShopifyCheckoutKitModuleTest {
           eq(mockComponentActivity),
           listenerCaptor.capture()));
       listenerCaptor.getValue().onStateChanged(new PreloadState.Failed(
-          PreloadState.FailureReason.WebContentProcessTerminated.INSTANCE));
+          PreloadState.FailureReason.WebContentUnavailable.INSTANCE,
+          "Web content process terminated."));
 
       assertThat(shopifyCheckoutKitModule.preloadStateEvent)
           .contains("\"requestId\":\"preload-request\"")
           .contains("\"type\":\"failed\"")
-          .contains("\"reason\":\"webContentProcessTerminated\"");
+          .contains("\"reason\":\"webContentUnavailable\"");
     }
   }
 

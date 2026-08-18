@@ -376,7 +376,7 @@ extension RCTShopifyCheckoutKit {
             event["type"] = "ready"
         case .expired:
             event["type"] = "expired"
-        case let .failed(reason):
+        case let .failed(reason, _):
             event["type"] = "failed"
             event.merge(serializePreloadFailure(reason)) { _, new in new }
         }
@@ -390,16 +390,14 @@ extension RCTShopifyCheckoutKit {
         }
     }
 
-    private func serializePreloadFailure(_ reason: PreloadState.FailureReason) -> [String: Any] {
+    func serializePreloadFailure(_ reason: PreloadState.FailureReason) -> [String: Any] {
         switch reason {
         case let .httpError(statusCode):
             return ["reason": "httpError", "statusCode": statusCode]
         case .navigationFailed:
             return ["reason": "navigationFailed"]
-        case .keepAliveLost:
-            return ["reason": "keepAliveLost"]
-        case .webContentProcessTerminated:
-            return ["reason": "webContentProcessTerminated"]
+        case .webContentUnavailable:
+            return ["reason": "webContentUnavailable"]
         case .protocolError:
             return ["reason": "protocolError"]
         }

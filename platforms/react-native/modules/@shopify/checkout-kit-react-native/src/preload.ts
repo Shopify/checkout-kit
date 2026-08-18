@@ -16,8 +16,7 @@ type NativePreloadStateEvent = {
 const failureReasons = new Set<PreloadFailureReason>([
   'httpError',
   'navigationFailed',
-  'keepAliveLost',
-  'webContentProcessTerminated',
+  'webContentUnavailable',
   'protocolError',
   'unknown',
 ]);

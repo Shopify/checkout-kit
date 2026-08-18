@@ -218,8 +218,7 @@ export interface PresentCallbacks {
 export type PreloadFailureReason =
   | 'httpError'
   | 'navigationFailed'
-  | 'keepAliveLost'
-  | 'webContentProcessTerminated'
+  | 'webContentUnavailable'
   | 'protocolError'
   | 'unknown';
 

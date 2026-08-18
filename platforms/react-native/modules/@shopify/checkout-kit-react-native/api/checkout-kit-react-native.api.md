@@ -274,8 +274,7 @@ export enum LogLevel {
 export type PreloadFailureReason =
 | 'httpError'
 | 'navigationFailed'
-| 'keepAliveLost'
-| 'webContentProcessTerminated'
+| 'webContentUnavailable'
 | 'protocolError'
 | 'unknown';
 

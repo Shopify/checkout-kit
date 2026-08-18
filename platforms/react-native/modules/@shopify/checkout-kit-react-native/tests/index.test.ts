@@ -300,7 +300,7 @@ describe('ShopifyCheckoutKit', () => {
       });
     });
 
-    it('normalizes terminated web content process preload failures', () => {
+    it('normalizes unavailable web content preload failures', () => {
       const onStateChange = jest.fn();
       const instance = new ShopifyCheckout();
       const subscription = instance.preload(checkoutUrl, {onStateChange});
@@ -309,17 +309,17 @@ describe('ShopifyCheckoutKit', () => {
         JSON.stringify({
           requestId: preloadRequestId(),
           type: 'failed',
-          reason: 'webContentProcessTerminated',
+          reason: 'webContentUnavailable',
         }),
       );
 
       expect(onStateChange).toHaveBeenCalledWith({
         type: 'failed',
-        reason: 'webContentProcessTerminated',
+        reason: 'webContentUnavailable',
       });
       expect(subscription.state).toEqual({
         type: 'failed',
-        reason: 'webContentProcessTerminated',
+        reason: 'webContentUnavailable',
       });
     });
 
