@@ -37,7 +37,7 @@ appId: ${E2E_APP_ID}
       - inputText: "${BILLING_CITY}"
       - runFlow: dismiss-active-field.yaml
       - tapOn:
-          text: "^Postal code$"
+          text: "^${BILLING_POSTAL_FIELD_LABEL}$"
       - inputText: "${BILLING_POSTAL_CODE}"
       - runFlow: dismiss-active-field.yaml
       - waitForAnimationToEnd
