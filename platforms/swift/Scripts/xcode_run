@@ -117,7 +117,7 @@ fi
 
 if command -v xcbeautify >/dev/null 2>&1; then
     xcbeautify_args=""
-    if [ "$CI" = "true" ]; then
+    if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
         xcbeautify_args="--renderer github-actions"
     fi
     eval "$xcodebuild_cmd" | xcbeautify $xcbeautify_args

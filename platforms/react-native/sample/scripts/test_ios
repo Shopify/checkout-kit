@@ -35,17 +35,24 @@ else
 fi
 
 xcbeautify_args=""
-if [ "$CI" = "true" ]; then
+if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
     xcbeautify_args="--renderer github-actions"
 fi
 
-xcodebuild test \
-    -workspace RCTIntegrationApp.xcworkspace \
-    -scheme RCTIntegrationApp \
-    -destination "$dest" \
-    -skipPackagePluginValidation \
-    -disableAutomaticPackageResolution \
-    -sdk iphonesimulator \
-    ASSETCATALOG_COMPILER_OPTIMIZATION=time \
-    COMPILER_INDEX_STORE_ENABLE=NO \
-| xcbeautify $xcbeautify_args
+run_xcodebuild() {
+    xcodebuild test \
+        -workspace RCTIntegrationApp.xcworkspace \
+        -scheme RCTIntegrationApp \
+        -destination "$dest" \
+        -skipPackagePluginValidation \
+        -disableAutomaticPackageResolution \
+        -sdk iphonesimulator \
+        ASSETCATALOG_COMPILER_OPTIMIZATION=time \
+        COMPILER_INDEX_STORE_ENABLE=NO
+}
+
+if command -v xcbeautify >/dev/null 2>&1; then
+    run_xcodebuild | xcbeautify $xcbeautify_args
+else
+    run_xcodebuild
+fi

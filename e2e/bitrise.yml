@@ -42,6 +42,11 @@ trigger_map:
 
 pipelines:
   e2e:
+    # Bitrise's default report name is ci/bitrise/<project_slug>/<event_type>,
+    # which is identical for every pipeline on this app. A second triggered
+    # pipeline would then overwrite this one's commit status. <target_id>
+    # expands to the pipeline id, so each pipeline owns its own check.
+    status_report_name: "ci/bitrise/<target_id>/<event_type>"
     workflows:
       e2e-produce-browserstack-run-plan: {}
       e2e-build-react-native-ios:
@@ -451,6 +456,7 @@ workflows:
       - script@1:
           title: Decide whether the nightly build runs
           timeout: 300
+          no_output_timeout: 150
           inputs:
             - content: |-
                 set -euo pipefail

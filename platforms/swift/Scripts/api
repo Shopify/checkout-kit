@@ -41,9 +41,14 @@ build_for_digester() {
         SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
     )
 
+    local xcbeautify_args=""
+    if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+        xcbeautify_args="--renderer github-actions"
+    fi
+
     cd "$PACKAGE_ROOT"
     if command -v xcbeautify >/dev/null 2>&1; then
-        "${cmd[@]}" | xcbeautify --renderer github-actions
+        "${cmd[@]}" | xcbeautify $xcbeautify_args
     else
         "${cmd[@]}"
     fi
