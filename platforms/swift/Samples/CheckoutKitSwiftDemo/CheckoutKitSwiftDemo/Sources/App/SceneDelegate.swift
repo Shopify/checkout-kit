@@ -101,6 +101,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Cart (UI Kit)
         swiftUICartController.tabBarItem.image = UIImage(systemName: "cart")
         swiftUICartController.tabBarItem.title = "Cart"
+        swiftUICartController.tabBarItem.accessibilityIdentifier = AccessibilityIdentifiers.Tabs.cart
         swiftUICartController.navigationItem.title = "Cart (SwiftUI)"
 
         // Account

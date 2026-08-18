@@ -175,6 +175,7 @@ struct EmptyState: View {
                 .padding(.bottom, 6)
             Text("Your cart is empty.")
                 .font(.caption)
+                .accessibilityIdentifier(AccessibilityIdentifiers.Cart.emptyMessage)
         }
     }
 }

@@ -9,5 +9,10 @@ class AccessibilityIdentifiersTests: XCTestCase {
     func testCartMarkersMatchTheMaestroFlows() {
         XCTAssertEqual(AccessibilityIdentifiers.Cart.checkoutReady, "cart-checkout-ready")
         XCTAssertEqual(AccessibilityIdentifiers.Cart.checkoutButton, "checkout-button")
+        XCTAssertEqual(AccessibilityIdentifiers.Cart.emptyMessage, "cart-empty-message")
+    }
+
+    func testTabMarkersMatchTheMaestroFlows() {
+        XCTAssertEqual(AccessibilityIdentifiers.Tabs.cart, "cart-tab")
     }
 }

@@ -9,8 +9,9 @@ appId: ${E2E_APP_ID}
     text: "^Card number$"
 - waitForAnimationToEnd
 - inputText: "${CARD_NUMBER}"
+# Checkout groups the digits, so the field never reads back the value the test typed.
 - extendedWaitUntil:
-    visible: "^${CARD_NUMBER}$"
+    visible: "^${CARD_NUMBER_DISPLAY}$"
 - runFlow: dismiss-active-field.yaml
 - scrollUntilVisible:
     element:
@@ -30,5 +31,11 @@ appId: ${E2E_APP_ID}
     text: "^Security code$"
 - waitForAnimationToEnd
 - inputText: "${CARD_SECURITY_CODE}"
+- runFlow: dismiss-active-field.yaml
+- tapOn:
+    text: "^Name on card$"
+- waitForAnimationToEnd
+- eraseText
+- inputText: "${CARD_HOLDER_NAME}"
 - runFlow: dismiss-active-field.yaml
 - waitForAnimationToEnd

@@ -3,6 +3,9 @@ name: React Native checkout - guest
 tags:
   - checkout
   - full
+  # Only React Native runs this today, and every row now runs the whole tests folder.
+  # The shared guest test replaces this file, and this tag goes with it.
+  - wip
 
 env:
   # Sample app buyer identity configuration
