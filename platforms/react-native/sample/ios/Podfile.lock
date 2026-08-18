@@ -2578,7 +2578,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNShopifyCheckoutKit (4.0.0-alpha.3):
+  - RNShopifyCheckoutKit (4.0.0-alpha.4):
     - boost
     - DoubleConversion
     - fast_float
@@ -2996,7 +2996,7 @@ SPEC CHECKSUMS:
   RNGestureHandler: eeb622199ef1fb3a076243131095df1c797072f0
   RNReanimated: 237d420b7bb4378ef1dacc7d7a5c674fddb4b5d2
   RNScreens: 3fc29af06302e1f1c18a7829fe57cbc2c0259912
-  RNShopifyCheckoutKit: 25f8126109e2af64a90429370ef0436a2871fbdc
+  RNShopifyCheckoutKit: f7855358ff15db951f458320526ebd9ce2f91405
   RNVectorIcons: be4d047a76ad307ffe54732208fb0498fcb8477f
   ShopifyCheckoutKit: 7874c8866e6c889d86194398c97e00388111d972
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
