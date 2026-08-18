@@ -25,6 +25,7 @@ env:
   BILLING_LAST_NAME: "Shopify"
   BILLING_ADDRESS_LINE1: "620 King Street West"
   BILLING_CITY: "Toronto"
+  BILLING_POSTAL_FIELD_LABEL: "Postal code"
   BILLING_POSTAL_CODE: "M5V 1M7"
 
   # Accepted successful checkout states for this smoke test.
