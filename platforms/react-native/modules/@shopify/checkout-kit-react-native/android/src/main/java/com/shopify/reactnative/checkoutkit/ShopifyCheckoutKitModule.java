@@ -159,8 +159,8 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
           event.put("statusCode", ((PreloadState.FailureReason.HttpError) reason).getStatusCode());
         } else if (reason instanceof PreloadState.FailureReason.NavigationFailed) {
           event.put("reason", "navigationFailed");
-        } else if (reason instanceof PreloadState.FailureReason.WebContentProcessTerminated) {
-          event.put("reason", "webContentProcessTerminated");
+        } else if (reason instanceof PreloadState.FailureReason.WebContentUnavailable) {
+          event.put("reason", "webContentUnavailable");
         } else if (reason instanceof PreloadState.FailureReason.ProtocolError) {
           event.put("reason", "protocolError");
         } else {

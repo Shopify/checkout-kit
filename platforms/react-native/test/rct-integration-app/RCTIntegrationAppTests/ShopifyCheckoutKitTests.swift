@@ -328,6 +328,12 @@ class ShopifyCheckoutKitTests: XCTestCase {
     XCTAssertEqual(result?["preloading"] as? Bool, false)
   }
 
+  func testSerializePreloadFailureMapsUnavailableWebContent() {
+    let result = shopifyCheckoutKit.serializePreloadFailure(.webContentUnavailable)
+
+    XCTAssertEqual(result["reason"] as? String, "webContentUnavailable")
+  }
+
   func testPreloadWithInvalidURLDoesNotRetainCheckoutSheet() {
     let preloadAttemptCompleted = expectation(description: "preload attempt completed")
 
