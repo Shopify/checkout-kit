@@ -53,13 +53,12 @@ final class PreloadCache {
     }
 
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
-        // A preload is only a background optimization. Never replace the cached
-        // view while it is backing a live checkout session.
-        guard entry?.view.isPresented != true else {
-            return false
-        }
-
-        invalidate()
+        // Refresh the cache without reloading the checkout the buyer is currently using.
+        // Once presented, the controller owns the old view until dismissal, so it is safe to
+        // remove that view from the cache as long as its bridge remains attached. The replacement
+        // can then preload the latest cart state in the background for the buyer's next checkout.
+        let shouldPreservePresentedView = entry?.view.isPresented == true
+        invalidate(disconnect: !shouldPreservePresentedView)
 
         let entry = Entry(key: key, view: view, createdAt: createdAt)
         guard !entry.isStale else {
@@ -346,8 +345,26 @@ class CheckoutWebView: WKWebView {
             ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
         }
         .on(CheckoutProtocol.complete) { [weak self] _ in
-            guard let self, CheckoutWebView.preloadCache.contains(self) else { return }
-            CheckoutWebView.preloadCache.evict(with: .idle, disconnect: false)
+            guard let self else { return }
+
+            let cacheContainsCompletedView = CheckoutWebView.preloadCache.contains(self)
+            let cacheContainsItsReplacement = if let loadedCheckoutURL, isPresented {
+                CheckoutWebView.preloadCache.hasEntry(for: PreloadKey(
+                    url: loadedCheckoutURL,
+                    entryPoint: entryPoint
+                ))
+            } else {
+                false
+            }
+
+            // A preload requested during presentation moves the visible view out of the cache.
+            // If the buyer then completes that checkout, discard its background replacement too;
+            // otherwise the completed cart could be shown when checkout is opened again.
+            guard cacheContainsCompletedView || cacheContainsItsReplacement else { return }
+            CheckoutWebView.preloadCache.evict(
+                with: .idle,
+                disconnect: !cacheContainsCompletedView
+            )
         }
         .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
             guard let target = request.parsedURL else {

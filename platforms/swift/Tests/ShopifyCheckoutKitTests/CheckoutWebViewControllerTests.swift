@@ -147,6 +147,31 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }
 
+    func test_viewDidDisappear_preservesReplacementPreloadWhenPresentedCheckoutIsDismissed() throws {
+        ShopifyCheckoutKit.invalidate()
+        defer { ShopifyCheckoutKit.invalidate() }
+        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.preload(checkout: url)
+        let checkoutURL = CheckoutURLDecorator.decorate(url)
+        let viewController = TestableCheckoutWebViewController(checkoutURL: checkoutURL, entryPoint: nil)
+        viewController.loadViewIfNeeded()
+        let presentedView = try XCTUnwrap(viewController.checkoutView)
+
+        ShopifyCheckoutKit.preload(checkout: url)
+        let replacementView = CheckoutWebView.for(checkout: checkoutURL)
+
+        XCTAssertFalse(replacementView === presentedView)
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(replacementView))
+        XCTAssertTrue(presentedView.isBridgeAttached)
+
+        viewController.testIsBeingDismissed = true
+        viewController.viewDidDisappear(false)
+
+        XCTAssertFalse(presentedView.isBridgeAttached)
+        XCTAssertTrue(replacementView.isBridgeAttached)
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(replacementView))
+    }
+
     func test_checkoutViewDidFailWithError_doesNotCleanUpBeforeViewDisappears() throws {
         let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
         viewController.loadViewIfNeeded()

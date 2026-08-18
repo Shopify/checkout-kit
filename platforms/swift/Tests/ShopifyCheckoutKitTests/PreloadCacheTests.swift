@@ -90,6 +90,23 @@ class PreloadCacheTests: XCTestCase {
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
     }
 
+    func test_CompleteOnPresentedViewClearsMatchingReplacementPreload() async {
+        let presented = storeCacheEntry()
+        presented.load(checkout: url)
+        presented.isPresented = true
+        let replacement = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(
+            replacement,
+            for: PreloadKey(url: url, entryPoint: nil)
+        )
+
+        _ = await presented.defaultsClient.process(ecCompleteBody())
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertFalse(replacement.isBridgeAttached)
+        XCTAssertTrue(presented.isBridgeAttached)
+    }
+
     func test_TerminalErrorOnSlotOccupantClearsSlot() async {
         let entry = storeCacheEntry()
         let preload = CheckoutPreload(cache: CheckoutWebView.preloadCache)
