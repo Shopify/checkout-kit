@@ -130,6 +130,15 @@ assert_file_is_unchanged() {
   cmp -s "$path" "$expected" || fail "file was rewritten but must stay byte-identical: $path"
 }
 
+assert_buyer_identity_keys() {
+  local path="$1"
+  local key
+
+  for key in EMAIL ADDRESS_1 ADDRESS_2 CITY COMPANY COUNTRY FIRST_NAME LAST_NAME PROVINCE ZIP PHONE; do
+    grep -Eq "^${key} ?=" "$path" || fail "buyer identity key is missing: $path: $key"
+  done
+}
+
 assert_output_is_sanitized() {
   local output_path="$1"
   local value
@@ -239,6 +248,10 @@ test_sync_and_check() {
   assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
   assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "EMAIL"
+
+  assert_buyer_identity_keys "$fixture/platforms/android/samples/CheckoutKitAndroidDemo/.env"
+  assert_buyer_identity_keys "$fixture/platforms/react-native/sample/.env"
+  assert_buyer_identity_keys "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
   assert_output_is_sanitized "$output"
