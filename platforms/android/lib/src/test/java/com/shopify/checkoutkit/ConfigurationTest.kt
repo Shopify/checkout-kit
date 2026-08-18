@@ -82,6 +82,12 @@ class ConfigurationTest {
     }
 
     @Test
+    fun `preloading throttle policy defaults to managed`() {
+        assertThat(ShopifyCheckoutKit.getConfiguration().preloading.throttlePolicy)
+            .isEqualTo(Preloading.ThrottlePolicy.MANAGED)
+    }
+
+    @Test
     fun `appearance defaults to storefront`() {
         assertThat(ShopifyCheckoutKit.getConfiguration().appearance).isEqualTo(CheckoutAppearance.Storefront())
     }

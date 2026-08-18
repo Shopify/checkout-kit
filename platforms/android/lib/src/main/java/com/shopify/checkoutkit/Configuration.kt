@@ -31,9 +31,19 @@ public data class Configuration internal constructor(
 internal fun Configuration.resolveCheckoutTitle(context: Context): String =
     title ?: context.getString(R.string.checkout_web_view_title)
 
-public data class Preloading(
+public data class Preloading @JvmOverloads constructor(
     public val enabled: Boolean = true,
-)
+    public val throttlePolicy: ThrottlePolicy = ThrottlePolicy.MANAGED,
+) {
+    /** Controls how Checkout Kit handles preload throttling responses. */
+    public enum class ThrottlePolicy {
+        /** Respect `Retry-After` and suppress preload requests until the delay elapses. */
+        MANAGED,
+
+        /** Surface the HTTP failure without suppressing subsequent preload requests. */
+        PASSTHROUGH,
+    }
+}
 
 public enum class LogLevel {
     DEBUG, WARN, ERROR, NONE

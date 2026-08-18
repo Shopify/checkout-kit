@@ -46,22 +46,25 @@ public enum class CheckoutErrorCode {
  * or [CheckoutPresentation.onFail].
  *
  * Use [code] for application behavior. Use [message] and [cause] only for debugging and logging.
- * [httpStatusCode] is present only when an HTTP response caused failure. Your app owns recovery
- * actions such as retrying, recreating a cart, authenticating a buyer, and reopening checkout.
+ * [httpStatusCode] is present only when an HTTP response caused failure. [retryAfterSeconds]
+ * contains the server-provided delay when one is available. Your app owns recovery actions such
+ * as retrying, recreating a cart, authenticating a buyer, and reopening checkout.
  *
  * @property code Stable code for this failure.
  * @property message Diagnostic description. Do not use it as a stable recovery or analytics key.
  * @property httpStatusCode HTTP status for an HTTP-response failure, otherwise `null`.
  * @param cause Native diagnostic cause, when one is available.
+ * @property retryAfterSeconds Server-provided delay before another request should be attempted.
  */
 public class CheckoutException @JvmOverloads constructor(
     public val code: CheckoutErrorCode,
     override val message: String,
     public val httpStatusCode: Int? = null,
     cause: Throwable? = null,
+    public val retryAfterSeconds: Long? = null,
 ) : Exception(message, cause) {
     internal companion object {
-        fun http(statusCode: Int, message: String): CheckoutException =
+        fun http(statusCode: Int, message: String, retryAfterSeconds: Long? = null): CheckoutException =
             CheckoutException(
                 code = if (statusCode == HttpURLConnection.HTTP_GONE) {
                     CheckoutErrorCode.CART_EXPIRED
@@ -70,6 +73,7 @@ public class CheckoutException @JvmOverloads constructor(
                 },
                 message = message,
                 httpStatusCode = statusCode,
+                retryAfterSeconds = retryAfterSeconds,
             )
 
         fun network(message: String, cause: Throwable? = null): CheckoutException =

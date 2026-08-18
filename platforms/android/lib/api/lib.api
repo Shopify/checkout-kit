@@ -88,10 +88,12 @@ public final class com/shopify/checkoutkit/CheckoutException : java/lang/Excepti
 	public fun <init> (Lcom/shopify/checkoutkit/CheckoutErrorCode;Ljava/lang/String;)V
 	public fun <init> (Lcom/shopify/checkoutkit/CheckoutErrorCode;Ljava/lang/String;Ljava/lang/Integer;)V
 	public fun <init> (Lcom/shopify/checkoutkit/CheckoutErrorCode;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Throwable;)V
-	public synthetic fun <init> (Lcom/shopify/checkoutkit/CheckoutErrorCode;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/shopify/checkoutkit/CheckoutErrorCode;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Throwable;Ljava/lang/Long;)V
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/CheckoutErrorCode;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Throwable;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getCode ()Lcom/shopify/checkoutkit/CheckoutErrorCode;
 	public final fun getHttpStatusCode ()Ljava/lang/Integer;
 	public fun getMessage ()Ljava/lang/String;
+	public final fun getRetryAfterSeconds ()Ljava/lang/Long;
 }
 
 public abstract interface class com/shopify/checkoutkit/CheckoutHandle {
@@ -611,10 +613,14 @@ public abstract class com/shopify/checkoutkit/PreloadState$FailureReason {
 
 public final class com/shopify/checkoutkit/PreloadState$FailureReason$HttpError : com/shopify/checkoutkit/PreloadState$FailureReason {
 	public fun <init> (I)V
+	public fun <init> (ILjava/lang/Long;)V
+	public synthetic fun <init> (ILjava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
-	public final fun copy (I)Lcom/shopify/checkoutkit/PreloadState$FailureReason$HttpError;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PreloadState$FailureReason$HttpError;IILjava/lang/Object;)Lcom/shopify/checkoutkit/PreloadState$FailureReason$HttpError;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun copy (ILjava/lang/Long;)Lcom/shopify/checkoutkit/PreloadState$FailureReason$HttpError;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/PreloadState$FailureReason$HttpError;ILjava/lang/Long;ILjava/lang/Object;)Lcom/shopify/checkoutkit/PreloadState$FailureReason$HttpError;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRetryAfterSeconds ()Ljava/lang/Long;
 	public final fun getStatusCode ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -629,6 +635,13 @@ public final class com/shopify/checkoutkit/PreloadState$FailureReason$Navigation
 
 public final class com/shopify/checkoutkit/PreloadState$FailureReason$ProtocolError : com/shopify/checkoutkit/PreloadState$FailureReason {
 	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$FailureReason$ProtocolError;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/PreloadState$FailureReason$Throttled : com/shopify/checkoutkit/PreloadState$FailureReason {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/PreloadState$FailureReason$Throttled;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -669,14 +682,25 @@ public abstract interface class com/shopify/checkoutkit/PreloadStateListener {
 public final class com/shopify/checkoutkit/Preloading {
 	public fun <init> ()V
 	public fun <init> (Z)V
-	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZLcom/shopify/checkoutkit/Preloading$ThrottlePolicy;)V
+	public synthetic fun <init> (ZLcom/shopify/checkoutkit/Preloading$ThrottlePolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Z
-	public final fun copy (Z)Lcom/shopify/checkoutkit/Preloading;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Preloading;ZILjava/lang/Object;)Lcom/shopify/checkoutkit/Preloading;
+	public final fun component2 ()Lcom/shopify/checkoutkit/Preloading$ThrottlePolicy;
+	public final fun copy (ZLcom/shopify/checkoutkit/Preloading$ThrottlePolicy;)Lcom/shopify/checkoutkit/Preloading;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Preloading;ZLcom/shopify/checkoutkit/Preloading$ThrottlePolicy;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Preloading;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEnabled ()Z
+	public final fun getThrottlePolicy ()Lcom/shopify/checkoutkit/Preloading$ThrottlePolicy;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/Preloading$ThrottlePolicy : java/lang/Enum {
+	public static final field MANAGED Lcom/shopify/checkoutkit/Preloading$ThrottlePolicy;
+	public static final field PASSTHROUGH Lcom/shopify/checkoutkit/Preloading$ThrottlePolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/shopify/checkoutkit/Preloading$ThrottlePolicy;
+	public static fun values ()[Lcom/shopify/checkoutkit/Preloading$ThrottlePolicy;
 }
 
 public final class com/shopify/checkoutkit/ShopifyCheckout : android/widget/FrameLayout {

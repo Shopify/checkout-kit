@@ -235,6 +235,23 @@ A successful background preload normally transitions from `Loading` to `Ready`. 
 | `Expired` | The cached preload reached its lifetime and was discarded before use. |
 | `Failed(reason)` | Checkout navigation, web content, or an HTTP response failed while preloading. |
 
+By default, a 429 response with a valid `Retry-After` header produces a `Throttled` failure.
+Checkout Kit suppresses further preload requests until the server-provided delay elapses; it does
+not retry automatically. Presentation is never suppressed.
+
+To manage preload backoff in your application instead, use the `PASSTHROUGH` throttle policy:
+
+```kotlin
+ShopifyCheckoutKit.configure {
+    it.preloading = Preloading(
+        throttlePolicy = Preloading.ThrottlePolicy.PASSTHROUGH,
+    )
+}
+```
+
+Under `PASSTHROUGH`, the failure is `HttpError(429, retryAfterSeconds)` and Checkout Kit does
+not suppress subsequent preload requests.
+
 `preload` returns `null` when preloading is disabled, the activity is finishing or destroyed, or the installed WebView does not support the required WebMessageListener API.
 
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
@@ -290,7 +307,7 @@ ShopifyCheckoutKit.configure {
 | `appearance` | `CheckoutAppearance.Storefront()` | Use the storefront's web checkout branding, or use the Checkout Kit style with `App(Automatic)`, `App(Light)`, or `App(Dark)`. |
 | `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
-| `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
+| `preloading` | `Preloading(enabled = true, throttlePolicy = MANAGED)` | Enables best-effort checkout preloading and controls whether Checkout Kit enforces server-provided backoff. |
 | `title` | `null` | Runtime override for the checkout sheet header title. When `null`, the SDK uses the localized `checkout_web_view_title` string resource. |
 | `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
 
@@ -498,8 +515,9 @@ The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed che
 
 A checkout lifecycle failure is delivered as a `CheckoutException` to `onFail` or
 `onCheckoutFailed`. It has a stable `code`, diagnostic `message`, optional
-`httpStatusCode`, and the optional native `cause`. Use the stable code for recovery
-and analytics. Use diagnostic text and causes only for debugging and logging.
+`httpStatusCode`, optional server-provided `retryAfterSeconds`, and the optional native `cause`.
+Use the stable code for recovery and analytics. Use diagnostic text and causes only for debugging
+and logging.
 
 | `CheckoutErrorCode` | Meaning | Suggested app action |
 | --- | --- | --- |
@@ -508,7 +526,7 @@ and analytics. Use diagnostic text and causes only for debugging and logging.
 | `CART_EXPIRED` | The cart or checkout session is no longer available. | Create a new cart and retry. |
 | `CART_COMPLETED` | The cart has already completed checkout. | Clear or create a new cart. |
 | `INVALID_CART` | The cart cannot continue checkout. | Create a new cart and retry. |
-| `HTTP_ERROR` | Checkout returned an HTTP error response. `httpStatusCode` is available. | Inspect `httpStatusCode`; retry only when it makes sense for your app. |
+| `HTTP_ERROR` | Checkout returned an HTTP error response. `httpStatusCode` and, when supplied by the server, `retryAfterSeconds` are available. | Inspect `httpStatusCode`; do not retry before `retryAfterSeconds`, and retry only when it makes sense for your app. |
 | `NETWORK_ERROR` | Checkout navigation failed before an HTTP response was available. | Offer a retry when connectivity is available. |
 | `WEB_VIEW_NOT_SUPPORTED` | The device WebView provider lacks a required capability. | WebView support is widely available, but offer a browser fallback when it is unavailable. |
 | `WEB_CONTENT_PROCESS_TERMINATED` | The WebView renderer was terminated or crashed. | Dismiss the current presentation, destroy an embedded `ShopifyCheckout` after removal, and let the buyer retry with a new checkout. |

@@ -18,6 +18,12 @@ internal data class PreloadKey(val url: String) {
 internal class PreloadCache(
     private val expiryScheduler: PreloadExpiryScheduler = HandlerPreloadExpiryScheduler(),
 ) : DefaultLifecycleObserver {
+    companion object {
+        const val THROTTLED_MESSAGE = "Preload throttled until the server-provided Retry-After delay elapses."
+        private const val LOG_TAG = "PreloadCache"
+        private const val PRELOAD_TTL_MS = 5 * 60 * 1000L
+        private const val MILLISECONDS_PER_SECOND = 1_000L
+    }
 
     /** Monotonic, sleep-inclusive clock used to measure preload time-to-live. */
     internal open class Clock {
@@ -41,6 +47,7 @@ internal class PreloadCache(
     var clock: Clock = Clock()
     private var entry: Entry? = null
     private var observer: CheckoutPreload? = null
+    private var throttleDeadline: Long? = null
 
     var state: PreloadState = PreloadState.Idle
         private set
@@ -82,6 +89,14 @@ internal class PreloadCache(
             observer = null
         }
     }
+
+    val isThrottleActive: Boolean
+        get() {
+            val deadline = throttleDeadline
+            val active = deadline != null && clock.elapsedRealtime() < deadline
+            if (!active) throttleDeadline = null
+            return active
+        }
 
     fun store(key: PreloadKey, view: CheckoutWebView, lifecycleOwner: LifecycleOwner) {
         invalidate()
@@ -170,8 +185,23 @@ internal class PreloadCache(
      * When view is provided, eviction only occurs if it is still the cached entry. Use this for
      * callbacks from a specific WebView so a stale callback cannot evict a replacement preload.
      */
-    fun evict(state: PreloadState, view: CheckoutWebView? = null) {
+    fun evict(
+        state: PreloadState,
+        view: CheckoutWebView? = null,
+        suppressPreloadsForSeconds: Long? = null,
+    ) {
         if (view != null && entry?.view !== view) return
+        suppressPreloadsForSeconds?.let { delaySeconds ->
+            val now = clock.elapsedRealtime()
+            val delayMillis = delaySeconds
+                .coerceAtMost(Long.MAX_VALUE / MILLISECONDS_PER_SECOND)
+                .times(MILLISECONDS_PER_SECOND)
+            throttleDeadline = if (delayMillis > Long.MAX_VALUE - now) {
+                Long.MAX_VALUE
+            } else {
+                now + delayMillis
+            }
+        }
         invalidate()
         transition(state)
     }
@@ -223,11 +253,6 @@ internal class PreloadCache(
             ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding preloaded WebView for destroyed lifecycle owner.")
             evict(PreloadState.Idle)
         }
-    }
-
-    private companion object {
-        private const val LOG_TAG = "PreloadCache"
-        private const val PRELOAD_TTL_MS = 5 * 60 * 1000L
     }
 }
 
