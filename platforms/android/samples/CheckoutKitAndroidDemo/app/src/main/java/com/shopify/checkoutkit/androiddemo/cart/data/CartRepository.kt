@@ -8,7 +8,6 @@ import com.shopify.checkoutkit.androiddemo.graphql.type.CartDeliveryInput
 import com.shopify.checkoutkit.androiddemo.graphql.type.CartInput
 import com.shopify.checkoutkit.androiddemo.graphql.type.CartLineInput
 import com.shopify.checkoutkit.androiddemo.graphql.type.CartLineUpdateInput
-import com.shopify.checkoutkit.androiddemo.graphql.type.CountryCode
 import timber.log.Timber
 
 class CartRepository(
@@ -82,25 +81,31 @@ class CartRepository(
                     )
                 )
             ),
-            buyerIdentity = Optional.present(buyerIdentity(demoBuyerIdentityEnabled, customerAccessToken)),
+            buyerIdentity = buyerIdentity(demoBuyerIdentityEnabled, customerAccessToken),
             delivery = delivery(demoBuyerIdentityEnabled, customerAccessToken),
         )
 
+        // A guest carries nothing, so the cart takes the market of the shop. A country here
+        // would pick the market instead, and the market decides the currency, the address
+        // form and its labels. The Swift and React Native samples send nothing either.
         private fun buyerIdentity(
             demoBuyerIdentityEnabled: Boolean,
             customerAccessToken: String?,
-        ): CartBuyerIdentityInput {
+        ): Optional<CartBuyerIdentityInput> {
             if (customerAccessToken != null) {
                 Timber.i("Setting a customer access token in buyer identity")
-                return CartBuyerIdentityInput(customerAccessToken = Optional.present(customerAccessToken))
+                return Optional.present(
+                    CartBuyerIdentityInput(customerAccessToken = Optional.present(customerAccessToken))
+                )
             }
 
-            return if (demoBuyerIdentityEnabled) {
-                Timber.i("Using demo buyer identity data to prefill checkout")
-                DemoBuyerIdentity.value
-            } else {
-                CartBuyerIdentityInput(countryCode = Optional.present(CountryCode.CA))
+            if (!demoBuyerIdentityEnabled) {
+                return Optional.Absent
             }
+
+            Timber.i("Using demo buyer identity data to prefill checkout")
+
+            return Optional.present(DemoBuyerIdentity.value)
         }
 
         // A signed in customer picks from the addresses the account already holds, so only the
