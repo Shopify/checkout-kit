@@ -40,26 +40,26 @@ appId: ${E2E_APP_ID}
       - tapOn:
           text: "^${COUNTRY_LABEL}$"
       - waitForAnimationToEnd
-- scrollUntilVisible:
-    element:
-      text: "Address"
-    direction: DOWN
-    centerElement: true
-- tapOn:
-    text: "Address"
-- waitForAnimationToEnd
-- inputText: "${ADDRESS_LINE1}"
-- runFlow: dismiss-active-field.yaml
-- scrollUntilVisible:
-    element:
-      text: "^City$"
-    direction: DOWN
-    centerElement: true
-- tapOn:
-    text: "^City$"
-- waitForAnimationToEnd
-- inputText: "${CITY}"
-- runFlow: dismiss-active-field.yaml
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "^First name( \\(optional\\))?$"
+      TEXT_TO_INPUT: "${FIRST_NAME}"
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "^Last name$"
+      TEXT_TO_INPUT: "${LAST_NAME}"
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "Address"
+      TEXT_TO_INPUT: "${ADDRESS_LINE1}"
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "^City$"
+      TEXT_TO_INPUT: "${CITY}"
 - scrollUntilVisible:
     element:
       text: "^${STATE_FIELD_LABEL}$"
@@ -68,38 +68,14 @@ appId: ${E2E_APP_ID}
 - tapOn:
     text: "^${STATE_FIELD_LABEL}$"
 - waitForAnimationToEnd
-- runFlow:
-    when:
-      notVisible: "^${STATE_LABEL}$"
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "^${STATE_LABEL}$"
-          direction: DOWN
-          centerElement: true
-          optional: true
-- runFlow:
-    when:
-      notVisible: "^${STATE_LABEL}$"
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "^${STATE_LABEL}$"
-          direction: UP
-          centerElement: true
 - tapOn:
     text: "^${STATE_LABEL}$"
 - waitForAnimationToEnd
-- scrollUntilVisible:
-    element:
-      text: "^${POSTAL_FIELD_LABEL}$"
-    direction: DOWN
-    centerElement: true
-- tapOn:
-    text: "^${POSTAL_FIELD_LABEL}$"
-- waitForAnimationToEnd
-- inputText: "${POSTAL_CODE}"
-- runFlow: dismiss-active-field.yaml
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "^${POSTAL_FIELD_LABEL}$"
+      TEXT_TO_INPUT: "${POSTAL_CODE}"
 
 # A shop decides whether the delivery address asks for a phone number, and it can make
 # that field required. The scroll is optional so a shop without the field still passes.

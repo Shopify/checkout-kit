@@ -16,7 +16,7 @@ env:
   CARD_NUMBER: "1"
   CARD_NUMBER_DISPLAY: "1"
   CARD_SECURITY_CODE: "123"
-  CARD_HOLDER_NAME: "Maestro Shopify"
+  CARD_HOLDER_NAME: "Evelyn Hartley"
 
   # Checkout billing fixture. The cart supplies a one-time delivery address, which the
   # billing section cannot copy, so the test types a billing address of its own. Country

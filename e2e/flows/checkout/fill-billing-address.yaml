@@ -15,29 +15,29 @@ appId: ${E2E_APP_ID}
     commands:
       # Country/Region and Province already hold the shop defaults, so this flow leaves
       # them alone and supplies an address that suits those defaults.
-      - scrollUntilVisible:
-          element:
-            text: "^First name( \\(optional\\))?$"
-          direction: DOWN
-          centerElement: true
-      - tapOn:
-          text: "^First name( \\(optional\\))?$"
-      - inputText: "${BILLING_FIRST_NAME}"
-      - runFlow: dismiss-active-field.yaml
-      - tapOn:
-          text: "^Last name$"
-      - inputText: "${BILLING_LAST_NAME}"
-      - runFlow: dismiss-active-field.yaml
-      - tapOn:
-          text: "^Address$"
-      - inputText: "${BILLING_ADDRESS_LINE1}"
-      - runFlow: dismiss-active-field.yaml
-      - tapOn:
-          text: "^City$"
-      - inputText: "${BILLING_CITY}"
-      - runFlow: dismiss-active-field.yaml
-      - tapOn:
-          text: "^${BILLING_POSTAL_FIELD_LABEL}$"
-      - inputText: "${BILLING_POSTAL_CODE}"
-      - runFlow: dismiss-active-field.yaml
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^First name( \\(optional\\))?$"
+            TEXT_TO_INPUT: "${BILLING_FIRST_NAME}"
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^Last name$"
+            TEXT_TO_INPUT: "${BILLING_LAST_NAME}"
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^Address$"
+            TEXT_TO_INPUT: "${BILLING_ADDRESS_LINE1}"
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^City$"
+            TEXT_TO_INPUT: "${BILLING_CITY}"
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^${BILLING_POSTAL_FIELD_LABEL}$"
+            TEXT_TO_INPUT: "${BILLING_POSTAL_CODE}"
       - waitForAnimationToEnd

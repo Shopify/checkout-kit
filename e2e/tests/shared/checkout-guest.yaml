@@ -31,8 +31,8 @@ env:
 
   # Checkout payment fixture. The shop runs its credit card gateway in test mode, which
   # accepts this number only. Checkout groups the digits, so the flow needs both forms.
-  CARD_NUMBER: "4242424242424242"
-  CARD_NUMBER_DISPLAY: "4242 4242 4242 4242"
+  CARD_NUMBER: "1"
+  CARD_NUMBER_DISPLAY: "1"
   CARD_SECURITY_CODE: "123"
   CARD_HOLDER_NAME: "Maestro Shopify"
 

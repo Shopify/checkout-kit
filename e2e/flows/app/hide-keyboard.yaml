@@ -21,3 +21,17 @@ appId: ${E2E_APP_ID}
     commands:
       - tapOn: "selected"
       - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: ios
+      visible: "Done"
+    commands:
+      - hideKeyboard
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: ios
+      visible: "selected"
+    commands:
+      - hideKeyboard
+      - waitForAnimationToEnd
