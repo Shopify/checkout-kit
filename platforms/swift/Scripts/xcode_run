@@ -43,6 +43,14 @@ if [[ "$SCHEME" == "ShopifyCheckoutKit-Package" && "$ACTION" == *"build"* && "$A
     xcodebuild_cmd="$xcodebuild_cmd SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
 fi
 
+if [[ "$CI" == "true" && ( "$ACTION" == *"build"* || "$ACTION" == *"test"* ) ]]; then
+    result_bundle_dir="$(cd "$SCRIPT_DIR/../../.." && pwd)/.xcresults"
+    result_bundle_path="$result_bundle_dir/$SCHEME.xcresult"
+    rm -rf "$result_bundle_path"
+    mkdir -p "$result_bundle_dir"
+    xcodebuild_cmd="$xcodebuild_cmd -resultBundlePath \"$result_bundle_path\""
+fi
+
 # Package.swift lives at the monorepo root. For SwiftPM package schemes
 # (Xcode's auto-generated "-Package" suffix), cd up to the directory that
 # contains it before invoking xcodebuild — xcodebuild discovers SwiftPM
