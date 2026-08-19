@@ -235,7 +235,7 @@ final class PreloadCache {
         evict(with: .idle(reason: .expired))
     }
 
-    func evict() {
+    private func evictForMemoryPressure() {
         guard let entry, !entry.view.isPresented else {
             return
         }
@@ -247,17 +247,26 @@ final class PreloadCache {
         let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical, .normal], queue: .main)
         source.setEventHandler { [weak self] in
             Task { @MainActor in
-                guard let self else { return }
-                if self.memoryPressureSource?.data == .normal {
-                    self.isUnderMemoryPressure = false
-                } else {
-                    self.isUnderMemoryPressure = true
-                    self.evict()
-                }
+                guard let self, let event = self.memoryPressureSource?.data else { return }
+                self.handleMemoryPressure(event)
             }
         }
         source.resume()
         memoryPressureSource = source
+    }
+
+    func handleMemoryPressure(_ event: DispatchSource.MemoryPressureEvent) {
+        // Dispatch sources may coalesce events. Treat any pressure flag as
+        // authoritative even if `.normal` is delivered in the same callback.
+        if event.contains(.warning) || event.contains(.critical) {
+            isUnderMemoryPressure = true
+            evictForMemoryPressure()
+            return
+        }
+
+        if event.contains(.normal) {
+            isUnderMemoryPressure = false
+        }
     }
 
     func keepAliveDidFail() {
