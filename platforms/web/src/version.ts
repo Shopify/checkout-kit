@@ -1,0 +1,3 @@
+declare const CHECKOUT_KIT_PACKAGE_VERSION: string;
+
+export const CK_VERSION: string = CHECKOUT_KIT_PACKAGE_VERSION;

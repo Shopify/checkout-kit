@@ -36,6 +36,7 @@ Check out our blog to
   - [`target`](#target)
   - [`appearance`](#appearance)
   - [`log-level`](#log-level)
+  - [`telemetry-enabled`](#telemetry-enabled)
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
 - [Checkout lifecycle](#checkout-lifecycle)
@@ -224,6 +225,7 @@ declare module 'react' {
         target?: string;
         appearance?: string;
         'log-level'?: 'debug' | 'warn' | 'error' | 'none';
+        'telemetry-enabled'?: 'true' | 'false';
       };
     }
   }
@@ -427,6 +429,29 @@ Wildcard entries match subdomains only, not the apex domain. For example,
 > [!CAUTION]
 > Setting `allowed-origins="*"` disables the message-origin allowlist. Use it
 > only for controlled debugging, never in production.
+
+### `telemetry-enabled`
+
+Controls anonymous diagnostic metrics sent to Shopify. Telemetry is enabled by
+default. Checkout Kit reports limited diagnostic metrics, including checkout
+errors, protocol decoding failures, and checkout navigation timing (web has no
+navigation retries). Diagnostics never
+include checkout URLs, message payloads, buyer data, or checkout, order,
+customer, or shop identifiers. Set the attribute or property to `false` to opt
+out; changing it at runtime also discards buffered measurements.
+
+On web, navigation duration starts when Checkout Kit opens the popup and ends
+when checkout sends `ec.start`, because the host page cannot reliably observe
+cross-origin checkout page-finish. `ec.start` means checkout is loaded and
+interactive.
+
+```html
+<shopify-checkout src="..." telemetry-enabled="false" />
+```
+
+```ts
+checkout.telemetryEnabled = false;
+```
 
 ### Popup dimensions
 
