@@ -608,25 +608,48 @@ private final class ScriptMessageHandlerRegistration {
     }
 }
 
+extension CheckoutMessageIngressPolicy {
+    /// Adapts WebKit's authenticated transport metadata into the policy's testable input model.
+    @MainActor
+    fileprivate func evaluate(_ message: WKScriptMessage, in webView: CheckoutWebView) -> Decision {
+        let resolveOrigin = webView.messageOrigin
+        let resolveRequestURL = webView.messageRequestURL
+
+        return evaluate(
+            IncomingCheckoutMessage(
+                isMainFrame: webView.messageIsMainFrame(message),
+                resolveOrigin: { resolveOrigin(message) },
+                resolveRequestURL: { resolveRequestURL(message) }
+            )
+        )
+    }
+}
+
 extension CheckoutWebView: WKScriptMessageHandler {
     func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? String else {
             return
         }
 
-        guard messageIsMainFrame(message) else {
-            // Child-frame messages are ambient noise, not a validation failure.
-            OSLogger.shared.debug("Ignoring checkout message from a child frame.")
-            return
-        }
+        let ingressPolicy = CheckoutMessageIngressPolicy(
+            configuredOrigins: ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            checkoutURL: loadedCheckoutURL
+        )
 
-        guard !shouldRejectExplicitPortZero(message) else {
-            rejectMessage(message, reason: "origin uses unsupported port 0")
-            return
-        }
-
-        guard isMessageOriginAllowed(message) else {
-            rejectMessage(message, reason: "origin is not in the allowlist")
+        switch ingressPolicy.evaluate(message, in: self) {
+        case .accepted:
+            break
+        case let .rejected(rejection):
+            // Child frames are expected ambient traffic during payment flows. Keep them at debug
+            // while warning for origin-validation failures that integrators may need to diagnose.
+            switch rejection.reason {
+            case .childFrame:
+                OSLogger.shared.debug("Ignoring checkout message from a child frame.")
+            case .unsupportedPort, .originNotAllowed:
+                OSLogger.shared.warn(
+                    "Rejected checkout message from \(rejection.origin): \(rejection.reason.logDescription)"
+                )
+            }
             return
         }
 
@@ -714,40 +737,6 @@ extension CheckoutWebView: WKScriptMessageHandler {
 
 private struct TerminalErrorNotification: Decodable {
     let params: JSONRPCErrorParams
-}
-
-extension CheckoutWebView {
-    /// Rejected messages are never silently dropped: each rejection is logged as
-    /// a warning with the trusted origin and reason. The message body is untrusted
-    /// and intentionally not logged.
-    private func rejectMessage(_ message: WKScriptMessage, reason: String) {
-        OSLogger.shared.warn("Rejected checkout message from \(messageOrigin(message).description): \(reason)")
-    }
-
-    /// Validates the origin of an incoming checkout message against the effective
-    /// allowlist. When validation is disabled (native default with no configured
-    /// allowlist, or the `"*"` escape hatch) the message origin is not inspected.
-    func isMessageOriginAllowed(_ message: WKScriptMessage) -> Bool {
-        let patterns = MessageOriginValidator.effectiveAllowlist(
-            configuredOrigins: ShopifyCheckoutKit.configuration.allowedMessageOrigins,
-            checkoutURL: loadedCheckoutURL
-        )
-        guard let patterns else { return true }
-
-        return MessageOriginValidator.isAllowed(origin: messageOrigin(message), patterns: patterns)
-    }
-
-    /// `WKSecurityOrigin` reports both an omitted port and an explicit port 0 as
-    /// zero. Use the frame request URL to reject the explicit form when origin
-    /// validation is enabled, while preserving native's open-by-default behavior.
-    private func shouldRejectExplicitPortZero(_ message: WKScriptMessage) -> Bool {
-        let patterns = MessageOriginValidator.effectiveAllowlist(
-            configuredOrigins: ShopifyCheckoutKit.configuration.allowedMessageOrigins,
-            checkoutURL: loadedCheckoutURL
-        )
-        guard patterns != nil else { return false }
-        return messageRequestURL(message)?.port == 0
-    }
 }
 
 extension UIApplication {

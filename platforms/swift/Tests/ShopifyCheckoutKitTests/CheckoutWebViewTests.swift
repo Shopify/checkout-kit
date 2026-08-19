@@ -1082,6 +1082,14 @@ class CheckoutWebViewTests: XCTestCase {
         return (logger, { OSLogger.shared = originalLogger })
     }
 
+    /// Captures ambient child-frame drops, which remain debug-only to avoid noisy default logs.
+    private func captureDebugLogs() -> (logger: TestableOSLogger, restore: () -> Void) {
+        let originalLogger = OSLogger.shared
+        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
+        OSLogger.shared = logger.logger
+        return (logger, { OSLogger.shared = originalLogger })
+    }
+
     private func stubMessageOrigin(_ origin: String) {
         let parsed = URL(string: origin)!
         view.messageOrigin = { _ in
@@ -1141,6 +1149,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(combinedLogs.contains("https://evil.example.com"))
         XCTAssertTrue(combinedLogs.contains("origin is not in the allowlist"))
         XCTAssertFalse(combinedLogs.contains(Self.readyBody))
+        XCTAssertNil(mockDelegate.errorReceived)
     }
 
     @MainActor
@@ -1162,19 +1171,17 @@ class CheckoutWebViewTests: XCTestCase {
         let combinedLogs = logger.capturedMessages.map(\.message).joined(separator: "\n")
         XCTAssertTrue(combinedLogs.contains("https://trusted.example.com"))
         XCTAssertTrue(combinedLogs.contains("origin uses unsupported port 0"))
+        XCTAssertNil(mockDelegate.errorReceived)
     }
 
     @MainActor
-    func testOriginValidationIgnoresChildFrameMessages() {
+    func testOriginValidationRejectsChildFrameMessages() {
         defer { resetOriginValidationConfig() }
         view.client = nil
         stubMessageOrigin("https://checkout.example.com")
         view.messageIsMainFrame = { _ in false }
-        let originalLogger = OSLogger.shared
-        let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
-        OSLogger.shared = logger.logger
-        defer { OSLogger.shared = originalLogger }
-
+        let (logger, restoreLogger) = captureDebugLogs()
+        defer { restoreLogger() }
         view.userContentController(
             WKUserContentController(),
             didReceive: MockScriptMessage(body: Self.readyBody)
@@ -1182,7 +1189,10 @@ class CheckoutWebViewTests: XCTestCase {
 
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
         let combinedLogs = logger.capturedMessages.map(\.message).joined(separator: "\n")
+        XCTAssertTrue(combinedLogs.contains("(Debug)"))
         XCTAssertTrue(combinedLogs.contains("Ignoring checkout message from a child frame."))
+        XCTAssertFalse(combinedLogs.contains(Self.readyBody))
+        XCTAssertNil(mockDelegate.errorReceived)
     }
 
     @MainActor
