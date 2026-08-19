@@ -13,10 +13,18 @@ public sealed class PreloadState {
     public data object Ready : PreloadState()
     public data object Expired : PreloadState()
 
+    public data class Evicted(public val reason: EvictionReason) : PreloadState()
+
     public data class Failed(
         public val reason: FailureReason,
         public val message: String,
     ) : PreloadState()
+
+    /** Explains why a valid preload was discarded before it could be reused. */
+    public sealed class EvictionReason {
+        /** The system reported low running memory. */
+        public data object MemoryPressure : EvictionReason()
+    }
 
     /**
      * Explains why a preload failed.

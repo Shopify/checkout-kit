@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color.TRANSPARENT
@@ -35,6 +36,7 @@ import androidx.webkit.WebViewFeature
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
 import java.util.concurrent.CountDownLatch
 
+@Suppress("TooManyFunctions")
 internal class CheckoutWebView private constructor(
     context: Context,
     attributeSet: AttributeSet?,
@@ -68,6 +70,9 @@ internal class CheckoutWebView private constructor(
     internal var hasHandledTerminalFailure = false
 
     private val touchHandler = CheckoutWebViewTouchHandler()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var pendingLoad: Runnable? = null
+    private var disposed = false
 
     /** Origin of the loaded checkout URL, trusted as a safe default for incoming-message validation. */
     internal var checkoutOrigin: String? = null
@@ -127,7 +132,8 @@ internal class CheckoutWebView private constructor(
         embeddedCheckoutProtocol.detach()
     }
 
-    fun loadCheckout(url: String, isPreload: Boolean = false) {
+    fun loadCheckout(url: String, isPreload: Boolean = false): Boolean {
+        if (disposed) return false
         if (!OriginAllowlist.isHttpsUrl(url)) {
             throw insecureCheckoutUrlException(url)
         }
@@ -138,7 +144,10 @@ internal class CheckoutWebView private constructor(
         loadComplete = false
         isPreloadRequest = isPreload
         checkoutOrigin = OriginAllowlist.originFromUrl(url)
-        Handler(Looper.getMainLooper()).post {
+        pendingLoad?.let(mainHandler::removeCallbacks)
+        val load = Runnable {
+            pendingLoad = null
+            if (disposed) return@Runnable
             hasHandledTerminalFailure = false
             val request = CheckoutRequest(
                 url = CheckoutUrlDecorator.decorate(url),
@@ -152,6 +161,17 @@ internal class CheckoutWebView private constructor(
             didRetryCheckoutRequest = false
             loadCheckoutRequest(request)
         }
+        pendingLoad = load
+        mainHandler.post(load)
+        return true
+    }
+
+    override fun destroy() {
+        if (disposed) return
+        disposed = true
+        pendingLoad?.let(mainHandler::removeCallbacks)
+        pendingLoad = null
+        super.destroy()
     }
 
     private fun loadCheckoutRequest(request: CheckoutRequest) {
@@ -383,6 +403,7 @@ internal class CheckoutWebView private constructor(
 
     private fun isOnConfirmationPage(): Boolean = url?.let(Uri::parse).isConfirmationPage()
 
+    @Suppress("TooManyFunctions")
     companion object {
         private const val SHOPIFY_PURPOSE_HEADER = "Shopify-Purpose"
         private const val PREFETCH_PURPOSE = "prefetch"
@@ -391,7 +412,7 @@ internal class CheckoutWebView private constructor(
             ERROR_CONNECT,
             ERROR_HOST_LOOKUP,
         )
-        private val preloadCache = PreloadCache()
+        internal val preloadCache = PreloadCache()
 
         internal fun evictForTerminalFailure(
             view: CheckoutWebView,
@@ -439,16 +460,27 @@ internal class CheckoutWebView private constructor(
                     }
                 }
                 else -> try {
+                    preloadCache.startMemoryPressureMonitoring(activity.applicationContext)
+                    preloadCache.isUnderMemoryPressure = activity.isUnderMemoryPressure()
+                    if (preloadCache.isUnderMemoryPressure) {
+                        log.d(LOG_TAG, "Under memory pressure, declining to preload.")
+                        return null
+                    }
                     runOnUiThreadBlocking(activity) {
                         val view = CheckoutWebView(activity, webMessageTransport)
                         val handle = CheckoutPreload(preloadCache)
-                        view.apply {
-                            loadCheckout(url, isPreload = true)
-                            log.d(LOG_TAG, "Pausing preloaded WebView.")
-                            onPause()
+                        if (preloadCache.store(PreloadKey.forUrl(url), view, activity)) {
+                            handle.listener = listener
+                            if (view.loadCheckout(url, isPreload = true)) {
+                                log.d(LOG_TAG, "Pausing preloaded WebView.")
+                                view.onPause()
+                            }
+                        } else {
+                            preloadCache.clearObserver(handle)
+                            view.removeFromParent()
+                            view.destroy()
+                            return@runOnUiThreadBlocking null
                         }
-                        preloadCache.store(PreloadKey.forUrl(url), view, activity)
-                        handle.listener = listener
                         handle
                     }
                 } catch (_: UnsupportedWebViewException) {
@@ -489,6 +521,12 @@ internal class CheckoutWebView private constructor(
             }
         }
 
+        fun invalidatePreload() {
+            runOnMainThread {
+                preloadCache.invalidatePreload()
+            }
+        }
+
         fun clearCache() {
             if (!preloadCache.hasEntry) return
             invalidate()
@@ -513,6 +551,13 @@ internal class CheckoutWebView private constructor(
 
         internal fun hasCacheEntryForTesting(): Boolean = preloadCache.hasEntry
     }
+}
+
+private fun Context.isUnderMemoryPressure(): Boolean {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return false
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return memoryInfo.lowMemory
 }
 
 private const val LOG_TAG = "CheckoutWebView"

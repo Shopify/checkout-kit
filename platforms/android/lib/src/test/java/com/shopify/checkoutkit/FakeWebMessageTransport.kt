@@ -4,6 +4,7 @@ import android.webkit.WebView
 
 internal class FakeWebMessageTransport(
     var supported: Boolean = true,
+    private val onAttach: () -> Unit = {},
 ) : WebMessageTransport {
     data class Attachment(
         val webView: WebView,
@@ -40,6 +41,7 @@ internal class FakeWebMessageTransport(
         allowedOriginRules: Set<String>,
         onMessage: (message: String, sourceOrigin: String, isMainFrame: Boolean) -> Unit,
     ): Boolean {
+        onAttach()
         attachCount += 1
         val attachment = Attachment(webView, jsObjectName, allowedOriginRules.toSet())
         lastAttachAttempt = attachment

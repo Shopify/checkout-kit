@@ -1,5 +1,6 @@
 package com.shopify.checkoutkit
 
+import android.content.ComponentCallbacks2
 import android.net.Uri
 import android.os.Looper
 import android.webkit.RenderProcessGoneDetail
@@ -22,6 +23,7 @@ import org.robolectric.shadows.ShadowLooper
 import java.lang.ref.WeakReference
 
 @RunWith(RobolectricTestRunner::class)
+@Suppress("DEPRECATION")
 class PreloadObservabilityTest {
 
     private lateinit var activity: ComponentActivity
@@ -34,6 +36,7 @@ class PreloadObservabilityTest {
         initialConfiguration = ShopifyCheckoutKit.getConfiguration()
         webMessageTransport = FakeWebMessageTransport()
         CheckoutWebView.clearCache()
+        CheckoutWebView.preloadCache.isUnderMemoryPressure = false
         ShadowLooper.shadowMainLooper().idle()
         ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = true) }
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
@@ -42,6 +45,7 @@ class PreloadObservabilityTest {
     @After
     fun tearDown() {
         CheckoutWebView.clearCache()
+        CheckoutWebView.preloadCache.isUnderMemoryPressure = false
         ShadowLooper.shadowMainLooper().idle()
         CheckoutWebView.cacheClock = PreloadCache.Clock()
         ShopifyCheckoutKit.configure {
@@ -468,6 +472,55 @@ class PreloadObservabilityTest {
         assertThat(replacementView).isNotNull().isNotSameAs(failedView)
         shadowOf(replacementView!!).webViewClient.onPageFinished(replacementView, url)
         assertThat(replacementStates).containsExactly(PreloadState.Loading, PreloadState.Ready)
+    }
+
+    @Test
+    fun `critical running memory pressure evicts idle preload`() {
+        val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+
+        CheckoutWebView.preloadCache.handleTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+
+        assertThat(preload.state)
+            .isEqualTo(PreloadState.Evicted(PreloadState.EvictionReason.MemoryPressure))
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+    }
+
+    @Test
+    fun `background trim does not evict preload`() {
+        val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+
+        CheckoutWebView.preloadCache.handleTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
+
+        assertThat(preload.state).isEqualTo(PreloadState.Loading)
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isTrue()
+    }
+
+    @Test
+    fun `memory pressure during presentation evicts on dismissal`() {
+        val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+
+        CheckoutWebView.preloadCache.handleTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isTrue()
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isFalse()
+        assertThat(preload.state).isEqualTo(PreloadState.Loading)
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+    }
+
+    @Test
+    fun `preload is rejected while memory pressure remains active`() {
+        CheckoutWebView.preloadCache.isUnderMemoryPressure = true
+        val view = CheckoutWebView(activity, webMessageTransport)
+
+        val stored = CheckoutWebView.preloadCache.store(PreloadKey.forUrl(url), view, activity)
+
+        assertThat(stored).isFalse()
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
     }
 
     private fun callbackOnlyPreload(states: MutableList<PreloadState>): WeakReference<CheckoutPreload> {
