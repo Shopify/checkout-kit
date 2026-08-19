@@ -69,9 +69,10 @@ class ConfigurationTests: XCTestCase {
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
     }
 
-    func testChangingConfigurationWithoutChangingPreloadingDoesNotInvalidatePreload() async throws {
+    func testChangingConfigurationWithoutChangingPreloadingInvalidatesPreload() async throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
+        await Task.yield()
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
@@ -79,11 +80,11 @@ class ConfigurationTests: XCTestCase {
             $0.title = "Thank you!"
         }
 
-        for _ in 0 ..< 10 {
+        for _ in 0 ..< 10 where CheckoutWebView.preloadCache.hasEntry() {
             await Task.yield()
         }
 
-        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
     }
 
     func testAppearanceCanBeSetDirectly() {
