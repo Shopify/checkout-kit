@@ -85,7 +85,6 @@ public class ShopifyCheckout @MainThread internal constructor(
     private var destroyed = false
     private var webViewResumed = false
     private var headerBorderIsVisible = false
-    internal var retainPreloadOnDestroy = false
     internal var initializationError: CheckoutException? = null
         private set
 
@@ -165,13 +164,9 @@ public class ShopifyCheckout @MainThread internal constructor(
             pauseWebView()
             webView.clearBottomSheetScrollHandoff()
             webView.removeFromParent()
-            if (retainPreloadOnDestroy && CheckoutWebView.retainAfterPresentation(webView)) {
-                log.d(LOG_TAG, "Retaining preloaded checkout WebView after dismissal.")
-            } else {
-                CheckoutWebView.discardAfterPresentation(webView)
-                log.d(LOG_TAG, "Destroying checkout WebView.")
-                webView.destroy()
-            }
+            CheckoutWebView.discardAfterPresentation(webView)
+            log.d(LOG_TAG, "Destroying checkout WebView.")
+            webView.destroy()
         }
         checkoutWebView = null
     }

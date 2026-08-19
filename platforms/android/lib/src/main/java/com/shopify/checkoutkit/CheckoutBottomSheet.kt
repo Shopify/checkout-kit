@@ -238,7 +238,6 @@ internal class CheckoutBottomSheet(
     private fun destroyPresentedCheckoutView() {
         presentedCheckoutView?.let { checkoutView ->
             log.d(LOG_TAG, "Releasing presented checkout view.")
-            checkoutView.retainPreloadOnDestroy = true
             checkoutView.destroy()
             presentedCheckoutView = null
         }

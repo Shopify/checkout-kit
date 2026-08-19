@@ -316,26 +316,6 @@ class PreloadObservabilityTest {
         )
     }
 
-    @Config(sdk = [26])
-    @Test
-    fun `renderer termination of retained post-presentation checkout does not update consumed preload handle`() {
-        val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
-        ShadowLooper.shadowMainLooper().idle()
-        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
-        view.markPresented()
-        assertThat(CheckoutWebView.retainAfterPresentation(view)).isTrue()
-        assertThat(view.isPreloadRequest).isFalse()
-        val detail = mock<RenderProcessGoneDetail> {
-            whenever(it.didCrash()).thenReturn(false)
-        }
-
-        shadowOf(view).webViewClient.onRenderProcessGone(view, detail)
-        ShadowLooper.shadowMainLooper().idle()
-
-        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
-        assertThat(preload.state).isEqualTo(PreloadState.Loading)
-    }
-
     @Test
     fun `http error transitions cached preload to failed`() {
         val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!

@@ -136,24 +136,23 @@ class ShopifyCheckoutKitTest {
     }
 
     @Test
-    fun `releasing the lifecycle observer keeps the preloaded checkout view reusable`() {
+    fun `present uses a fresh WebView after dismissing a preloaded checkout`() {
         Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
             val activity = activityController.get()
-            val registry = activity.lifecycle as LifecycleRegistry
             preload(PRELOAD_URL, activity)
-            ShadowLooper.shadowMainLooper().runToEndOfTasks()
+            ShadowLooper.shadowMainLooper().idle()
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
-            val observerCountBeforePresent = registry.observerCount
 
             val first = presentCheckout(activity, PRELOAD_URL)
             layoutLatestSheet()
+            assertThat(latestSheetCheckoutWebView()).isSameAs(cachedView)
+
             first?.dismiss()
             ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
             presentCheckout(activity, PRELOAD_URL)
 
-            assertThat(shadowOf(cachedView).wasDestroyCalled()).isFalse()
-            assertThat(latestSheetCheckoutWebView()).isSameAs(cachedView)
-            assertThat(registry.observerCount).isEqualTo(observerCountBeforePresent + 1)
+            assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+            assertThat(latestSheetCheckoutWebView()).isNotSameAs(cachedView)
         }
     }
 

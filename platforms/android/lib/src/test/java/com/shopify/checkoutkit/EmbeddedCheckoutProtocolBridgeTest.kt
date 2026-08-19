@@ -635,22 +635,6 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `terminal ec error of retained post-presentation checkout does not update consumed preload handle`() {
-        val preload = CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)!!
-        shadowOf(Looper.getMainLooper()).idle()
-        val view = CheckoutWebView.checkoutViewFor("https://shopify.dev/cart/123", activity, webMessageTransport)
-        view.markPresented()
-        assertThat(CheckoutWebView.retainAfterPresentation(view)).isTrue()
-        val bridge = EmbeddedCheckoutProtocolBridge(view, webMessageTransport, protocolMessageExecutor = directExecutor)
-
-        bridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
-        shadowOf(Looper.getMainLooper()).idle()
-
-        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
-        assertThat(preload.state).isEqualTo(PreloadState.Loading)
-    }
-
-    @Test
     fun `terminal error from foreign view does not evict active cached preload`() {
         CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
         shadowOf(Looper.getMainLooper()).idle()
