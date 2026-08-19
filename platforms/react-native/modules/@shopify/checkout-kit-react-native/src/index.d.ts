@@ -129,6 +129,12 @@ interface CommonConfiguration {
    * @default [] (all origins trusted)
    */
   allowedMessageOrigins?: string[];
+  /**
+   * Sends anonymous diagnostic metrics to Shopify. Set to `false` to opt out.
+   *
+   * @default true
+   */
+  telemetry?: boolean;
 }
 
 export type Configuration = CommonConfiguration & {

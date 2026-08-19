@@ -345,9 +345,17 @@ instance of the `ShopifyCheckout` class.
 | `title`       |          | `Checkout`  | Sets the title of the checkout sheet at runtime on both iOS and Android. For per-locale localization, use the platform resource files. See [Localization](#localization). |
 | `colorScheme` |          | `automatic` | Sets the color scheme for the checkout.                                                                                                                        |
 | `preloading`  |          | `true`      | Enable/disable [preloading](#preloading).                                                                                                                      |
+| `telemetry`   |          | `true`      | Sends anonymous diagnostic metrics to Shopify on iOS and Android. Set to `false` to opt out.                                                                   |
 | `colors`      |          | `{}`        | An object with `ios` and `android` properties to override the colors for iOS and Android platforms individually. See [`colors`](#colors) for more information. |
 | `logLevel`    |          | `error`     | Sets the log level for the native SDK. Use `LogLevel.debug` for verbose logging during development, or `LogLevel.error` for production.                        |
 | `allowedMessageOrigins` |          | `[]`        | Extra origins trusted to send incoming checkout messages. See [Incoming message origin validation](#incoming-message-origin-validation).                       |
+
+Checkout Kit reports limited, anonymous diagnostic metrics, including checkout
+errors, protocol decoding failures, navigation retries, and checkout navigation
+timing. These diagnostics never include checkout URLs, message payloads, buyer
+data, or checkout, order, customer, or shop identifiers. Disabling telemetry stops new
+collection and discards measurements that have not already been handed to the
+operating system for delivery.
 
 Here's an example of how a fully customized configuration object might look:
 

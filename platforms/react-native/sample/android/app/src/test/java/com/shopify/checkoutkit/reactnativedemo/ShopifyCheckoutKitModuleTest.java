@@ -14,11 +14,12 @@ import com.shopify.checkoutkit.CheckoutAppearance;
 import com.shopify.checkoutkit.CheckoutErrorCode;
 import com.shopify.checkoutkit.CheckoutException;
 import com.shopify.checkoutkit.CheckoutPreload;
-import com.shopify.checkoutkit.ShopifyCheckoutKit;
 import com.shopify.checkoutkit.LogLevel;
 import com.shopify.checkoutkit.PreloadState;
 import com.shopify.checkoutkit.PreloadStateListener;
 import com.shopify.checkoutkit.Preloading;
+import com.shopify.checkoutkit.ShopifyCheckoutKit;
+import com.shopify.checkoutkit.Telemetry;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
 import com.shopify.reactnative.checkoutkit.CustomCheckoutListener;
 import com.shopify.reactnative.checkoutkit.DispatchCallback;
@@ -60,6 +61,7 @@ public class ShopifyCheckoutKitModuleTest {
   private CheckoutAppearance initialAppearance;
   private LogLevel initialLogLevel;
   private Preloading initialPreloading;
+  private Telemetry initialTelemetry;
 
   // Mock for Arguments.createMap() to avoid native library loading
   private MockedStatic<Arguments> mockedArguments;
@@ -104,6 +106,7 @@ public class ShopifyCheckoutKitModuleTest {
     initialAppearance = ShopifyCheckoutKitModule.checkoutConfig.getAppearance();
     initialLogLevel = ShopifyCheckoutKitModule.checkoutConfig.getLogLevel();
     initialPreloading = ShopifyCheckoutKitModule.checkoutConfig.getPreloading();
+    initialTelemetry = ShopifyCheckoutKitModule.checkoutConfig.getTelemetry();
   }
 
   @After
@@ -121,6 +124,7 @@ public class ShopifyCheckoutKitModuleTest {
       configuration.setAppearance(initialAppearance);
       configuration.setLogLevel(initialLogLevel);
       configuration.setPreloading(initialPreloading);
+      configuration.setTelemetry(initialTelemetry);
       ShopifyCheckoutKitModule.checkoutConfig = configuration;
     });
   }
@@ -687,6 +691,28 @@ public class ShopifyCheckoutKitModuleTest {
 
     assertThat(result).isNotNull();
     assertThat(result.getBoolean("preloading")).isFalse();
+  }
+
+  @Test
+  public void testCanDisableTelemetry() {
+    JavaOnlyMap config = new JavaOnlyMap();
+    config.putBoolean("telemetry", false);
+
+    shopifyCheckoutKitModule.setConfig(config);
+
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getTelemetry().getEnabled())
+        .isFalse();
+  }
+
+  @Test
+  public void testGetConfigIncludesTelemetry() {
+    JavaOnlyMap config = new JavaOnlyMap();
+    config.putBoolean("telemetry", false);
+    shopifyCheckoutKitModule.setConfig(config);
+
+    WritableMap result = shopifyCheckoutKitModule.getConfig();
+
+    assertThat(result.getBoolean("telemetry")).isFalse();
   }
 
   @Test

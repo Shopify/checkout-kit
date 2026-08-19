@@ -63,6 +63,12 @@ describe('Type contracts', () => {
 
     expect(
       acceptsConfiguration({
+        telemetry: false,
+      }).telemetry,
+    ).toBe(false);
+
+    expect(
+      acceptsConfiguration({
         acceleratedCheckouts: {
           storefrontDomain: 'test-shop.myshopify.com',
           storefrontAccessToken: 'shpat_test_token',
@@ -137,6 +143,22 @@ describe('Exports', () => {
         'dark',
         'storefront',
       ]);
+    });
+  });
+
+  describe('CheckoutErrorCode enum', () => {
+    it('exports current native checkout error codes', () => {
+      expect(CheckoutErrorCode.customerAccountRequired).toBe(
+        'customer_account_required',
+      );
+      expect(CheckoutErrorCode.networkError).toBe('network_error');
+      expect(CheckoutErrorCode.webViewNotSupported).toBe(
+        'web_view_not_supported',
+      );
+      expect(CheckoutErrorCode.webContentProcessTerminated).toBe(
+        'web_content_process_terminated',
+      );
+      expect(CheckoutErrorCode.sdkError).toBe('sdk_error');
     });
   });
 });
@@ -777,6 +799,7 @@ describe('ShopifyCheckoutKit', () => {
         colorScheme: ColorScheme.automatic,
         logLevel: LogLevel.error,
         preloading: true,
+        telemetry: true,
       });
       expect(NativeModule.getConfig).toHaveBeenCalledTimes(1);
     });

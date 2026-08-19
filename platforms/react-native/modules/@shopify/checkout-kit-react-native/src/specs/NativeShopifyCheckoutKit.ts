@@ -36,6 +36,7 @@ type ConfigurationSpec = {
   logLevel?: string;
   preloading?: boolean;
   allowedMessageOrigins?: string[];
+  telemetry?: boolean;
   colors?: ColorsSpec;
 };
 
@@ -43,6 +44,7 @@ type ConfigurationResultSpec = {
   colorScheme: string;
   logLevel: string;
   preloading: boolean;
+  telemetry: boolean;
   title?: string;
   tintColor?: string;
   backgroundColor?: string;

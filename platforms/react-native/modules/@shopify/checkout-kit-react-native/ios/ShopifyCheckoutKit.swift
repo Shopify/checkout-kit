@@ -184,6 +184,10 @@ class RCTShopifyCheckoutKit: NSObject {
             ShopifyCheckoutKit.configuration.allowedMessageOrigins = allowedMessageOrigins
         }
 
+        if let telemetry = configuration["telemetry"] as? Bool {
+            ShopifyCheckoutKit.configuration.telemetry.enabled = telemetry
+        }
+
         if let colorScheme = configuration["colorScheme"] as? String,
            let appearance = appearanceFor(colorScheme)
         {
@@ -216,6 +220,7 @@ class RCTShopifyCheckoutKit: NSObject {
             "title": ShopifyCheckoutKit.configuration.title,
             "colorScheme": colorSchemeStringFor(ShopifyCheckoutKit.configuration.appearance),
             "preloading": ShopifyCheckoutKit.configuration.preloading.enabled,
+            "telemetry": ShopifyCheckoutKit.configuration.telemetry.enabled,
             "tintColor": ShopifyCheckoutKit.configuration.tintColor,
             "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
             "closeButtonColor": ShopifyCheckoutKit.configuration.closeButtonTintColor,

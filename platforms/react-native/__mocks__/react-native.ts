@@ -49,6 +49,7 @@ const exampleConfig = {
   colorScheme: 'automatic',
   logLevel: 'error',
   preloading: true,
+  telemetry: true,
 };
 const shopifyCheckoutKitEventEmitter = createMockEmitter();
 

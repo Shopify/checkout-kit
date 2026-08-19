@@ -384,6 +384,7 @@ describe('useShopifyCheckout', () => {
       colorScheme: 'automatic',
       logLevel: 'error',
       preloading: true,
+      telemetry: true,
     });
 
     expect(NativeModules.ShopifyCheckoutKit.getConfig).toHaveBeenCalled();

@@ -7,7 +7,7 @@ SWIFT_PATHS=(
 )
 MODE="${1:-check}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SWIFT_TOOLS_DIR="$REPO_ROOT/platforms/swift"
 SWIFT_MINT="$REPO_ROOT/scripts/swift_mint"
 

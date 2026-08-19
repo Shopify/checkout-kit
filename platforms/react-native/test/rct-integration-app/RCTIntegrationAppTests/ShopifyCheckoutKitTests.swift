@@ -23,6 +23,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         ShopifyCheckoutKit.configuration.logLevel = LogLevel.warn
         ShopifyCheckoutKit.configuration.preloading.enabled = true
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
+        ShopifyCheckoutKit.configuration.telemetry.enabled = true
     }
 
     private func getShopifyCheckoutKit() -> RCTShopifyCheckoutKit {
@@ -332,6 +333,20 @@ class ShopifyCheckoutKitTests: XCTestCase {
     let result = shopifyCheckoutKit.serializePreloadFailure(.webContentUnavailable)
 
     XCTAssertEqual(result["reason"] as? String, "webContentUnavailable")
+  }
+
+  func testConfigureCanDisableTelemetry() {
+    shopifyCheckoutKit.setConfig(["telemetry": false])
+
+    XCTAssertFalse(ShopifyCheckoutKit.configuration.telemetry.enabled)
+  }
+
+  func testGetConfigIncludesTelemetry() {
+    shopifyCheckoutKit.setConfig(["telemetry": false])
+
+    let result = shopifyCheckoutKit.getConfig() as? [String: Any]
+
+    XCTAssertEqual(result?["telemetry"] as? Bool, false)
   }
 
   func testPreloadWithInvalidURLDoesNotRetainCheckoutSheet() {
