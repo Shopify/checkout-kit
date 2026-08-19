@@ -11,18 +11,50 @@ appId: ${E2E_APP_ID}
 - inputText: "${CARD_NUMBER}"
 # Checkout groups the digits, so the field never reads back the value the test typed.
 - extendedWaitUntil:
-    visible: "^${CARD_NUMBER_DISPLAY}$"
-- tapOn:
-    text: "^Expiration date \\(MM / YY\\)$"
+    visible:
+      text: "^${CARD_NUMBER_DISPLAY}$"
+      below:
+        text: "^Card number$"
+      above:
+        text: "^Expiration date \\(MM / YY\\)$"
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - tapOn:
+          text: "^Field container for: Expiration date \\(MM / YY\\)$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - tapOn:
+          text: "^Expiration date \\(MM / YY\\)$"
 - waitForAnimationToEnd
 - inputText: "1"
 - inputText: "2"
 - waitForAnimationToEnd
 - inputText: "3"
 - inputText: "0"
+- extendedWaitUntil:
+    visible:
+      text: "^12 / 30$"
+      below:
+        text: "^Expiration date \\(MM / YY\\)$"
+      above:
+        text: "^Security code$"
 - runFlow: dismiss-active-field.yaml
-- tapOn:
-    text: "^Security code$"
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - tapOn:
+          text: "^Field container for: Security code$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - tapOn:
+          text: "^Security code$"
 - waitForAnimationToEnd
 - inputText: "${CARD_SECURITY_CODE}"
 - runFlow: dismiss-active-field.yaml
@@ -44,5 +76,10 @@ appId: ${E2E_APP_ID}
       below:
         text: "^Security code$"
 - extendedWaitUntil:
-    visible: "^${CARD_NUMBER_DISPLAY}$"
+    visible:
+      text: "^${CARD_NUMBER_DISPLAY}$"
+      below:
+        text: "^Card number$"
+      above:
+        text: "^Expiration date \\(MM / YY\\)$"
 - waitForAnimationToEnd
