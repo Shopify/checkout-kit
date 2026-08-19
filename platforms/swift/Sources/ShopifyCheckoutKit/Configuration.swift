@@ -23,6 +23,9 @@ public struct Configuration: Sendable {
 
     public var preloading = Configuration.Preloading()
 
+    /// Controls anonymous diagnostic metrics sent by Checkout Kit.
+    public var telemetry = Configuration.Telemetry()
+
     public var tintColor: UIColor = .init(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
 
     @available(*, renamed: "tintColor", message: "spinnerColor has been superseded by tintColor")
@@ -92,6 +95,13 @@ extension Configuration {
 
 extension Configuration {
     public struct Preloading: Sendable {
+        public var enabled: Bool = true
+    }
+}
+
+extension Configuration {
+    public struct Telemetry: Sendable {
+        /// Set to `false` to prevent Checkout Kit from recording or sending diagnostic metrics.
         public var enabled: Bool = true
     }
 }

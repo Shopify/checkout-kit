@@ -1,3 +1,4 @@
+import CheckoutKitTelemetry
 import Combine
 import EmbeddedCheckoutProtocol
 @testable import ShopifyCheckoutKit
@@ -7,9 +8,12 @@ import XCTest
 @MainActor
 class PreloadObservabilityTests: XCTestCase {
     private var url = URL(string: "https://shopify1.shopify.com/checkouts/cn/123")!
+    private var telemetryRecorder: PreloadTelemetryRecorder!
 
     override func setUp() async throws {
         try await super.setUp()
+        telemetryRecorder = PreloadTelemetryRecorder()
+        CheckoutTelemetry.overrideRecorderForTesting(telemetryRecorder)
         ShopifyCheckoutKit.configuration.preloading.enabled = true
         CheckoutWebView.invalidate()
     }
@@ -17,6 +21,7 @@ class PreloadObservabilityTests: XCTestCase {
     override func tearDown() async throws {
         CheckoutWebView.invalidate()
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        CheckoutTelemetry.overrideRecorderForTesting(nil)
         try await super.tearDown()
     }
 
@@ -153,6 +158,12 @@ class PreloadObservabilityTests: XCTestCase {
                 .failed(reason: .webContentUnavailable, message: "Preload keep-alive failed.")
             )
         }
+        XCTAssertEqual(telemetryRecorder.errors.count, 1)
+        XCTAssertEqual(telemetryRecorder.errors.first?.category, .navigation)
+        XCTAssertEqual(telemetryRecorder.errors.first?.stage, .load)
+        XCTAssertEqual(telemetryRecorder.errors.first?.code, .connectionLost)
+        XCTAssertEqual(telemetryRecorder.errors.first?.retryable, false)
+        XCTAssertEqual(telemetryRecorder.errors.first?.isRetry, false)
     }
 
     func testHTTPErrorTransitionsToFailed() throws {
@@ -267,4 +278,23 @@ class PreloadObservabilityTests: XCTestCase {
             XCTAssertEqual(preload?.state, .idle)
         }
     }
+}
+
+final class PreloadTelemetryRecorder: CheckoutTelemetryRecording, @unchecked Sendable {
+    private(set) var errors: [TelemetryErrorMetric] = []
+
+    func recordError(_ metric: TelemetryErrorMetric) {
+        errors.append(metric)
+    }
+
+    func recordProtocolDecodeError(_: TelemetryProtocolDecodeErrorMetric) {}
+    func recordNavigationRetry(_: TelemetryNavigationRetryMetric) {}
+    func recordNavigationDuration(_: TelemetryNavigationDurationMetric) {}
+}
+
+struct NoOpTestTelemetryRecorder: CheckoutTelemetryRecording {
+    func recordError(_: TelemetryErrorMetric) {}
+    func recordProtocolDecodeError(_: TelemetryProtocolDecodeErrorMetric) {}
+    func recordNavigationRetry(_: TelemetryNavigationRetryMetric) {}
+    func recordNavigationDuration(_: TelemetryNavigationDurationMetric) {}
 }

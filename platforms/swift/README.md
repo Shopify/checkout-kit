@@ -249,6 +249,7 @@ ShopifyCheckoutKit.configure {
   $0.backgroundColor = .systemBackground
   $0.closeButtonTintColor = nil
   $0.logLevel = .debug
+  $0.telemetry.enabled = false
 }
 ```
 
@@ -262,6 +263,14 @@ ShopifyCheckoutKit.configure {
 | `logLevel` | `.warn` | SDK logging verbosity. Threshold-ordered `.debug` → `.warn` → `.error` → `.none`; use `.debug` during integration. |
 | `preloading.enabled` | `true` | Enables best-effort checkout preloading before presentation. |
 | `allowedMessageOrigins` | `[]` | Origins trusted to send incoming checkout messages. Empty trusts every origin (open by default). See [Incoming message origin validation](#incoming-message-origin-validation). |
+| `telemetry.enabled` | `true` | Sends anonymous diagnostic metrics to Shopify. Set to `false` to opt out. |
+
+Checkout Kit reports limited, anonymous diagnostic metrics, including checkout
+errors, protocol decoding failures, navigation retries, and checkout navigation
+timing. These diagnostics never include checkout URLs, message payloads, buyer
+data, or checkout, order, customer, or shop identifiers. Disabling telemetry stops new
+collection and discards measurements that have not already been handed to the
+operating system for delivery.
 
 To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.
 

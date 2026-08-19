@@ -1,4 +1,5 @@
 #if !COCOAPODS
+    import CheckoutKitTelemetry
     import EmbeddedCheckoutProtocol
 #endif
 import SafariServices
@@ -202,6 +203,15 @@ final class PreloadCache {
     }
 
     func keepAliveDidFail() {
+        entry?.view.telemetry.recordError(
+            .init(
+                category: .navigation,
+                stage: .load,
+                code: .connectionLost,
+                retryable: false,
+                isRetry: false
+            )
+        )
         evict(with: .failed(
             reason: .webContentUnavailable,
             message: "Preload keep-alive failed."
@@ -291,10 +301,14 @@ class CheckoutWebView: WKWebView {
     private static let purposeHeader = "Shopify-Purpose"
     private static let prefetchPurpose = "prefetch"
 
-    var timer: Date?
+    private let navigationClock: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+    private var navigationStartedAt: TimeInterval?
+    private var didRecordInitialNavigationDuration = false
 
     private(set) var checkoutNavigation: WKNavigation?
     private var didRetryCheckoutNavigation = false
+    private var navigationRetryReason: TelemetryNavigationRetryReason?
+    private var didCancelNavigationForHTTPError = false
     private var checkoutRequest: URLRequest?
 
     var checkoutBridge: CheckoutBridgeProtocol.Type = CheckoutBridge.self
@@ -331,9 +345,15 @@ class CheckoutWebView: WKWebView {
     ///     in-app browser surface, and routes non-web URLs through `externalURLHandler`
     ///     (consumers may still override via their own client).
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
-        .onDecodeError { method, error, params in
+        .onDecodeError { [entryPoint] method, error, params in
             OSLogger.shared.error("Failed to decode \(method) payload: \(error)")
             OSLogger.shared.debug("Raw \(method) params: \(String(bytes: params, encoding: .utf8) ?? "")")
+            // Resolve the recorder per event; snapshotting it in the capture
+            // list would pin whichever client existed when this closure was
+            // first built, outliving telemetry disable/re-enable.
+            CheckoutTelemetry.recorder(for: entryPoint).recordProtocolDecodeError(
+                .init(method: .init(method: method), failureType: .params)
+            )
         }
         .on(CheckoutProtocol.ready) { _ in
             ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
@@ -461,6 +481,14 @@ class CheckoutWebView: WKWebView {
     var loadedCheckoutURL: URL?
     private var entryPoint: MetaData.EntryPoint?
 
+    /// A product-scoped view onto the single global telemetry client, resolved
+    /// on every access so runtime opt-out and re-enable are always honored.
+    /// The view supplies only its entry point; all buffering, export, and
+    /// lifecycle state lives in the shared client.
+    var telemetry: any CheckoutTelemetryRecording {
+        CheckoutTelemetry.recorder(for: entryPoint)
+    }
+
     // MARK: Initializers
 
     convenience init(frame: CGRect = .zero, entryPoint: MetaData.EntryPoint? = nil) {
@@ -560,6 +588,8 @@ class CheckoutWebView: WKWebView {
         checkoutRequest = request
         didRetryCheckoutNavigation = false
         hasHandledTerminalFailure = false
+        navigationRetryReason = nil
+        didCancelNavigationForHTTPError = false
         checkoutNavigation = load(request)
     }
 
@@ -702,6 +732,11 @@ extension CheckoutWebView: WKScriptMessageHandler {
     /// unrecoverable error message selects the stable lifecycle code; no qualifying message maps to
     /// `.unknown`. Malformed terminal payloads map to `.sdkError`.
     private func handleTerminalProtocolError(_ body: String, malformedEnvelope: Bool = false) {
+        if malformedEnvelope {
+            telemetry.recordProtocolDecodeError(
+                .init(method: .init(method: "ec.error"), failureType: .envelope)
+            )
+        }
         Task { @MainActor in
             let composedClient = ComposedCheckoutCommunicationClient(
                 merchant: client,
@@ -715,15 +750,23 @@ extension CheckoutWebView: WKScriptMessageHandler {
 
             // `ec.error` denotes a terminal session error. Message severity selects the public
             // lifecycle code, but does not keep the embedded session alive.
-            let failure = if !malformedEnvelope,
-                             let notification = try? JSONDecoder().decode(
-                                 TerminalErrorNotification.self,
-                                 from: Data(body.utf8)
-                             )
+            let failure: CheckoutError
+            if !malformedEnvelope,
+               let notification = try? JSONDecoder().decode(
+                   TerminalErrorNotification.self,
+                   from: Data(body.utf8)
+               )
             {
-                CheckoutError.terminalProtocol(error: notification.params.error)
+                failure = CheckoutError.terminalProtocol(error: notification.params.error)
             } else {
-                CheckoutError.sdk(message: "Embedded checkout sent an invalid terminal error.")
+                if !malformedEnvelope {
+                    // Valid envelope with undecodable params; the envelope case
+                    // was already recorded before this method was called.
+                    telemetry.recordProtocolDecodeError(
+                        .init(method: .init(method: "ec.error"), failureType: .params)
+                    )
+                }
+                failure = CheckoutError.sdk(message: "Embedded checkout sent an invalid terminal error.")
             }
 
             let wasBackgroundedPreload = isPreloadBackgrounded
@@ -734,6 +777,16 @@ extension CheckoutWebView: WKScriptMessageHandler {
             hasHandledTerminalFailure = true
             guard !wasBackgroundedPreload else { return }
 
+            telemetry.recordError(
+                .init(
+                    category: .protocol,
+                    stage: .message,
+                    code: .unknown,
+                    retryable: false,
+                    isRetry: navigationRetryReason != nil
+                )
+            )
+            recordNavigationDuration(result: .failure)
             viewDelegate?.checkoutViewDidFailWithError(error: failure)
         }
     }
@@ -845,6 +898,18 @@ extension CheckoutWebView: WKNavigationDelegate {
                 .httpError(statusCode: statusCode),
                 message: "HTTP response returned status code \(statusCode)."
             )
+            let isServerError = statusCode >= 500
+            telemetry.recordError(
+                .init(
+                    category: .http,
+                    stage: .load,
+                    code: isServerError ? .server : .client,
+                    retryable: isServerError,
+                    isRetry: navigationRetryReason != nil
+                )
+            )
+            recordNavigationDuration(result: .failure)
+            didCancelNavigationForHTTPError = true
 
             OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
 
@@ -861,17 +926,25 @@ extension CheckoutWebView: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation _: WKNavigation!) {
         let url = LogSafeURL.string(webView.url)
         OSLogger.shared.info("Started provisional navigation - url:\(url)")
-        timer = Date()
+        if navigationStartedAt == nil, !didRecordInitialNavigationDuration {
+            navigationStartedAt = navigationClock()
+        }
+        didCancelNavigationForHTTPError = false
         viewDelegate?.checkoutViewDidStartNavigation()
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        timer = nil
-
         let nsError = error as NSError
         let url = LogSafeURL.string(webView.url)
 
+        if didCancelNavigationForHTTPError {
+            didCancelNavigationForHTTPError = false
+            OSLogger.shared.debug("Ignoring provisional navigation cancelled by HTTP response policy - url:\(url)")
+            return
+        }
+
         if isCancelledNavigationError(nsError) {
+            navigationStartedAt = nil
             OSLogger.shared.debug("Ignoring cancelled provisional navigation - url:\(url)")
             return
         }
@@ -890,11 +963,17 @@ extension CheckoutWebView: WKNavigationDelegate {
         OSLogger.shared.warn("Retrying checkout navigation - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
 
         guard let retryNavigation = load(checkoutRequest) else {
+            telemetry.recordNavigationRetry(.init(error: nsError, result: .notAttempted))
             OSLogger.shared.error("Checkout navigation retry failed to start - domain:\(nsError.domain) code:\(nsError.code) url:\(url)")
             failNavigation(with: error)
             return
         }
 
+        let retry = TelemetryNavigationRetryMetric(error: nsError, result: .started)
+        telemetry.recordNavigationRetry(retry)
+        // Remember the reason so the later `.failed` event and `is_retry`
+        // flags report the same one across delegate callbacks.
+        navigationRetryReason = retry.reason
         checkoutNavigation = retryNavigation
     }
 
@@ -903,14 +982,13 @@ extension CheckoutWebView: WKNavigationDelegate {
 
         viewDelegate?.checkoutViewDidFinishNavigation()
 
-        if let startTime = timer {
-            let endTime = Date()
-            let diff = endTime.timeIntervalSince(startTime)
+        if let startTime = navigationStartedAt {
+            let diff = milliseconds(from: startTime) / 1000
             let message = "Loaded checkout in \(String(format: "%.2f", diff))s"
 
             ShopifyCheckoutKit.configuration.logger.log(message)
         }
-        timer = nil
+        recordNavigationDuration(result: .success)
 
         if navigation === checkoutNavigation {
             resetProvisionalNavigationRetryState()
@@ -920,7 +998,9 @@ extension CheckoutWebView: WKNavigationDelegate {
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         guard !hasHandledTerminalFailure else { return }
         hasHandledTerminalFailure = true
-        timer = nil
+        // Capture before the reset below so a crash during a retried
+        // navigation still reports is_retry.
+        let wasRetry = navigationRetryReason != nil
         resetProvisionalNavigationRetryState()
         let wasBackgroundedPreload = isPreloadBackgrounded
         handleCachedViewFailure(
@@ -928,8 +1008,21 @@ extension CheckoutWebView: WKNavigationDelegate {
             message: "Web content process terminated."
         )
 
-        guard !wasBackgroundedPreload else { return }
+        guard !wasBackgroundedPreload else {
+            navigationStartedAt = nil
+            return
+        }
 
+        telemetry.recordError(
+            .init(
+                category: .renderProcess,
+                stage: .presentation,
+                code: .unknown,
+                retryable: false,
+                isRetry: wasRetry
+            )
+        )
+        recordNavigationDuration(result: .failure)
         OSLogger.shared.error("Web content process terminated - url:\(LogSafeURL.string(webView.url))")
         viewDelegate?.checkoutViewDidFailWithError(
             error: CheckoutError.webContentProcessTerminated(
@@ -939,11 +1032,16 @@ extension CheckoutWebView: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail _: WKNavigation!, withError error: Error) {
-        timer = nil
-
         let nsError = error as NSError
 
+        if didCancelNavigationForHTTPError {
+            didCancelNavigationForHTTPError = false
+            OSLogger.shared.debug("Ignoring committed navigation cancelled by HTTP response policy")
+            return
+        }
+
         if isCancelledNavigationError(nsError) {
+            navigationStartedAt = nil
             OSLogger.shared.debug("Ignoring cancelled committed navigation - code:NSURLErrorCancelled")
             return
         }
@@ -976,11 +1074,27 @@ extension CheckoutWebView: WKNavigationDelegate {
         checkoutRequest = nil
         checkoutNavigation = nil
         didRetryCheckoutNavigation = false
+        navigationRetryReason = nil
     }
 
     private func failNavigation(with error: Error) {
-        resetProvisionalNavigationRetryState()
         let nsError = error as NSError
+        if let navigationRetryReason {
+            telemetry.recordNavigationRetry(
+                .init(reason: navigationRetryReason, result: .failed)
+            )
+        }
+        telemetry.recordError(
+            .init(
+                category: .navigation,
+                stage: .load,
+                code: CheckoutTelemetry.errorCode(for: nsError),
+                retryable: isRetryableProvisionalNavigationError(nsError),
+                isRetry: navigationRetryReason != nil
+            )
+        )
+        recordNavigationDuration(result: .failure)
+        resetProvisionalNavigationRetryState()
         handleCachedViewFailure(
             .navigationFailed,
             message: "Navigation failed (error code: \(nsError.code))."
@@ -989,6 +1103,23 @@ extension CheckoutWebView: WKNavigationDelegate {
             ? CheckoutError.network(message: error.localizedDescription, underlyingError: error)
             : CheckoutError.unknown(message: error.localizedDescription, underlyingError: error)
         viewDelegate?.checkoutViewDidFailWithError(error: failure)
+    }
+
+    private func recordNavigationDuration(result: TelemetryNavigationDurationResult) {
+        guard let startTime = navigationStartedAt else { return }
+        navigationStartedAt = nil
+        didRecordInitialNavigationDuration = true
+        telemetry.recordNavigationDuration(
+            .init(
+                milliseconds: milliseconds(from: startTime),
+                result: result,
+                preloaded: isPreloadRequest
+            )
+        )
+    }
+
+    private func milliseconds(from startTime: TimeInterval) -> Double {
+        return (navigationClock() - startTime) * 1000
     }
 
     private func isCheckout(url: URL?) -> Bool {

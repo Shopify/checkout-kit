@@ -1,3 +1,4 @@
+import CheckoutKitTelemetry
 import EmbeddedCheckoutProtocol
 @testable import ShopifyCheckoutKit
 import WebKit
@@ -7,10 +8,13 @@ import XCTest
 class CheckoutWebViewTests: XCTestCase {
     private var view: CheckoutWebView!
     private var mockDelegate: MockCheckoutWebViewDelegate!
+    private var telemetryRecorder: MockCheckoutTelemetryRecorder!
     private var url = URL(string: "https://shopify1.shopify.com/checkouts/cn/123")!
 
     override func setUp() async throws {
         try await super.setUp()
+        telemetryRecorder = MockCheckoutTelemetryRecorder()
+        CheckoutTelemetry.overrideRecorderForTesting(telemetryRecorder)
         ShopifyCheckoutKit.configuration.preloading.enabled = true
         CheckoutWebView.invalidate()
         view = CheckoutWebView.for(checkout: url)
@@ -26,12 +30,28 @@ class CheckoutWebViewTests: XCTestCase {
         view.viewDelegate = nil
         CheckoutWebView.invalidate()
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        CheckoutTelemetry.overrideRecorderForTesting(nil)
         try await super.tearDown()
     }
 
     func testCorrectlyConfiguresWebview() {
         XCTAssertEqual(view.configuration.applicationNameForUserAgent, CheckoutBridge.applicationName)
         XCTAssertTrue(view.configuration.allowsInlineMediaPlayback)
+    }
+
+    func testRecordsHTTPFailureWithoutResponseData() throws {
+        view.load(checkout: url)
+        let link = try XCTUnwrap(view.url)
+        let response = try XCTUnwrap(HTTPURLResponse(url: link, statusCode: 503, httpVersion: nil, headerFields: nil))
+
+        _ = view.handleResponse(response)
+
+        XCTAssertEqual(telemetryRecorder.errors.count, 1)
+        XCTAssertEqual(telemetryRecorder.errors[0].category, .http)
+        XCTAssertEqual(telemetryRecorder.errors[0].stage, .load)
+        XCTAssertEqual(telemetryRecorder.errors[0].code, .server)
+        XCTAssertTrue(telemetryRecorder.errors[0].retryable)
+        XCTAssertFalse(telemetryRecorder.errors[0].isRetry)
     }
 
     func testImplementsWKNavigationDelegatePolicySelectors() {
@@ -636,6 +656,52 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertNil(error.underlyingError)
     }
 
+    func testWebContentProcessTerminationDuringRetryRecordsIsRetry() throws {
+        view.load(checkout: url)
+        let initialNavigation = try XCTUnwrap(view.checkoutNavigation)
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: nil)
+        view.webView(view, didFailProvisionalNavigation: initialNavigation, withError: error)
+        XCTAssertEqual(telemetryRecorder.navigationRetries.map(\.result), [.started])
+
+        view.webViewWebContentProcessDidTerminate(view)
+
+        let metric = try XCTUnwrap(telemetryRecorder.errors.last(where: { $0.category == .renderProcess }))
+        XCTAssertTrue(metric.isRetry)
+    }
+
+    @MainActor
+    func testDecodeErrorUsesRecorderInstalledAtEventTime() async throws {
+        _ = view.defaultsClient // Builds the decode-error closure under the setUp recorder.
+        let lateRecorder = MockCheckoutTelemetryRecorder()
+        CheckoutTelemetry.overrideRecorderForTesting(lateRecorder)
+
+        let body = #"{"jsonrpc":"2.0","method":"ec.complete","params":{"unexpected":true}}"#
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
+
+        for _ in 0 ..< 100 where lateRecorder.decodeErrors.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        XCTAssertEqual(lateRecorder.decodeErrors.map(\.failureType), [.params])
+        XCTAssertTrue(
+            telemetryRecorder.decodeErrors.isEmpty,
+            "Decode errors must reach the recorder installed at event time, not capture time"
+        )
+    }
+
+    @MainActor
+    func testTerminalErrorWithMalformedParamsRecordsParamsDecodeError() async throws {
+        let body = #"{"jsonrpc":"2.0","method":"ec.error","params":{"bogus":true}}"#
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: body))
+
+        for _ in 0 ..< 100 where telemetryRecorder.decodeErrors.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        XCTAssertEqual(telemetryRecorder.decodeErrors.map(\.failureType), [.params])
+        XCTAssertEqual(telemetryRecorder.decodeErrors.first?.method.rawValue, "ec.error")
+    }
+
     func testWebViewDoesNotEmitDidFailForCancelledRedirect() throws {
         let url = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
         let view = CheckoutWebView.for(checkout: url)
@@ -664,6 +730,10 @@ class CheckoutWebViewTests: XCTestCase {
         view.webView(view, didFailProvisionalNavigation: retryNavigation, withError: error)
 
         wait(for: [didFailWithErrorExpectation], timeout: 5)
+        XCTAssertEqual(telemetryRecorder.navigationRetries.map(\.result), [.started, .failed])
+        XCTAssertEqual(telemetryRecorder.navigationRetries.map(\.reason), [.timeout, .timeout])
+        let finalError = try XCTUnwrap(telemetryRecorder.errors.last(where: { $0.category == .navigation }))
+        XCTAssertTrue(finalError.isRetry, "A failure on the retried navigation must report is_retry")
     }
 
     func testWebViewFailsWhenRetryLoadDoesNotReturnNavigation() throws {
@@ -680,6 +750,8 @@ class CheckoutWebViewTests: XCTestCase {
         retryView.webView(retryView, didFailProvisionalNavigation: initialNavigation, withError: error)
 
         wait(for: [didFailWithErrorExpectation], timeout: 5)
+        XCTAssertEqual(telemetryRecorder.navigationRetries.map(\.result), [.notAttempted])
+        XCTAssertEqual(telemetryRecorder.navigationRetries.map(\.reason), [.timeout])
     }
 
     func testWebViewDoesNotRetryCancelledProvisionalNavigation() throws {
@@ -1156,6 +1228,42 @@ class CheckoutWebViewTests: XCTestCase {
 
         await fulfillment(of: [failed], timeout: 2.0)
         XCTAssertEqual(mockDelegate.failureCount, 1)
+        // Stray HTTP records can arrive from neighboring tests' in-flight
+        // real navigations; count only this scenario's category.
+        XCTAssertEqual(telemetryRecorder.errors.filter { $0.category == .protocol }.count, 1)
+    }
+
+    func testHTTPPolicyCancellationDoesNotRecordDuplicateNavigationError() throws {
+        view.load(checkout: url)
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
+        let link = try XCTUnwrap(view.url)
+        let response = try XCTUnwrap(HTTPURLResponse(url: link, statusCode: 500, httpVersion: nil, headerFields: nil))
+
+        XCTAssertEqual(view.handleResponse(response), .cancel)
+        view.webView(
+            view,
+            didFailProvisionalNavigation: navigation,
+            withError: NSError(
+                domain: WKError.errorDomain,
+                code: 102
+            )
+        )
+
+        XCTAssertEqual(telemetryRecorder.errors.count, 1)
+        XCTAssertEqual(telemetryRecorder.errors.first?.category, .http)
+    }
+
+    func testNavigationDurationRecordsSuccessOnce() throws {
+        view.load(checkout: url)
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
+        view.webView(view, didStartProvisionalNavigation: navigation)
+
+        view.webView(view, didFinish: navigation)
+        view.webView(view, didFinish: navigation)
+
+        XCTAssertEqual(telemetryRecorder.navigationDurations.count, 1)
+        XCTAssertEqual(telemetryRecorder.navigationDurations.first?.result, .success)
+        XCTAssertGreaterThanOrEqual(telemetryRecorder.navigationDurations.first?.milliseconds ?? -1, 0)
     }
 
     // MARK: - Incoming message origin validation
@@ -1369,6 +1477,41 @@ class CheckoutWebViewTests: XCTestCase {
         view.userContentController(WKUserContentController(), didReceive: message)
 
         XCTAssertFalse(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    func testNavigationDurationIgnoresSubsequentMainFrameNavigation() throws {
+        view.load(checkout: url)
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
+        view.webView(view, didStartProvisionalNavigation: navigation)
+        view.webView(view, didFinish: navigation)
+
+        view.webView(view, didStartProvisionalNavigation: navigation)
+        view.webView(view, didFinish: navigation)
+
+        XCTAssertEqual(telemetryRecorder.navigationDurations.count, 1)
+    }
+}
+
+private final class MockCheckoutTelemetryRecorder: CheckoutTelemetryRecording, @unchecked Sendable {
+    private(set) var errors: [TelemetryErrorMetric] = []
+    private(set) var decodeErrors: [TelemetryProtocolDecodeErrorMetric] = []
+    private(set) var navigationRetries: [TelemetryNavigationRetryMetric] = []
+    private(set) var navigationDurations: [TelemetryNavigationDurationMetric] = []
+
+    func recordError(_ metric: TelemetryErrorMetric) {
+        errors.append(metric)
+    }
+
+    func recordProtocolDecodeError(_ metric: TelemetryProtocolDecodeErrorMetric) {
+        decodeErrors.append(metric)
+    }
+
+    func recordNavigationRetry(_ metric: TelemetryNavigationRetryMetric) {
+        navigationRetries.append(metric)
+    }
+
+    func recordNavigationDuration(_ metric: TelemetryNavigationDurationMetric) {
+        navigationDurations.append(metric)
     }
 }
 
