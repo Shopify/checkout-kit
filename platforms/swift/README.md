@@ -226,6 +226,12 @@ Clear unused preloaded checkout work with `invalidate`:
 ShopifyCheckoutKit.invalidate()
 ```
 
+Updating configuration through `ShopifyCheckoutKit.configure {}` or a direct
+mutation such as `ShopifyCheckoutKit.configuration.title = "Checkout"` triggers
+`ShopifyCheckoutKit.invalidate()`. Discarding cached preloads avoids presenting a
+stale checkout. If a preload may already have run when configuration changes,
+call `preload` again.
+
 Preloading is enabled by default. Disable it when appropriate, for example for data-saver modes or app-specific runtime conditions:
 
 ```swift
@@ -250,7 +256,7 @@ ShopifyCheckoutKit.configure {
 }
 ```
 
-SwiftUI modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` override these defaults only for that `ShopifyCheckout` value. They do not mutate `ShopifyCheckoutKit.configuration` or invalidate a cached preload.
+`ShopifyCheckout` uses the global configuration as its defaults. When present, modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` take precedence over the corresponding `ShopifyCheckoutKit.configuration` values for that checkout.
 
 | Option | Default | Purpose |
 | --- | --- | --- |

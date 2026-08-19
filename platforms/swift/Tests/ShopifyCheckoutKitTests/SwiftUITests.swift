@@ -83,7 +83,7 @@ class CheckoutConfigurableTests: XCTestCase {
         try await super.tearDown()
     }
 
-    func testBackgroundColorIsCapturedWithoutChangingGlobalConfiguration() {
+    func testBackgroundColorOverridesWithoutChangingGlobalConfiguration() {
         let globalColor = ShopifyCheckoutKit.configuration.backgroundColor
         let color = UIColor.red
 
@@ -94,7 +94,7 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, globalColor)
     }
 
-    func testAppearanceIsCapturedWithoutChangingGlobalConfiguration() {
+    func testAppearanceOverridesWithoutChangingGlobalConfiguration() {
         let globalAppearance = ShopifyCheckoutKit.configuration.appearance
         let appearance = ShopifyCheckoutKit.Configuration.Appearance.app(.light)
 
@@ -105,7 +105,7 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, globalAppearance)
     }
 
-    func testAppearanceDecoratesCheckoutURLFromCapturedConfiguration() throws {
+    func testAppearanceDecoratesCheckoutURLFromResolvedConfiguration() throws {
         let sheet = shopifyCheckout.appearance(.app(.dark))
         let items = try XCTUnwrap(URLComponents(url: sheet.decoratedCheckoutURL, resolvingAgainstBaseURL: false)?.queryItems)
 
@@ -113,7 +113,7 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "app")
     }
 
-    func testTintColorIsCapturedWithoutChangingGlobalConfiguration() {
+    func testTintColorOverridesWithoutChangingGlobalConfiguration() {
         let globalColor = ShopifyCheckoutKit.configuration.tintColor
         let color = UIColor.blue
 
@@ -124,7 +124,7 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, globalColor)
     }
 
-    func testTitleIsCapturedWithoutChangingGlobalConfiguration() {
+    func testTitleOverridesWithoutChangingGlobalConfiguration() {
         let globalTitle = ShopifyCheckoutKit.configuration.title
         let title = "Test Title"
 
@@ -135,7 +135,7 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.title, globalTitle)
     }
 
-    func testCloseButtonTintColorIsCapturedWithoutChangingGlobalConfiguration() {
+    func testCloseButtonTintColorOverridesWithoutChangingGlobalConfiguration() {
         let globalColor = ShopifyCheckoutKit.configuration.closeButtonTintColor
         let color = UIColor.green
 
@@ -169,5 +169,54 @@ class CheckoutConfigurableTests: XCTestCase {
         await Task.yield()
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testUnmodifiedValuesResolveFromLatestGlobalConfiguration() {
+        let sheet = shopifyCheckout.appearance(.app(.dark))
+
+        ShopifyCheckoutKit.configuration.title = "Updated global title"
+
+        XCTAssertEqual(sheet.configuration.title, "Updated global title")
+        XCTAssertEqual(sheet.configuration.appearance, .app(.dark))
+    }
+
+    func testModifierTakesPrecedenceOverLatestGlobalConfiguration() {
+        let sheet = shopifyCheckout.title("Instance title")
+
+        ShopifyCheckoutKit.configuration.title = "Updated global title"
+
+        XCTAssertEqual(sheet.configuration.title, "Instance title")
+    }
+
+    func testUpdatedGlobalTitleReconfiguresPresentedCheckout() throws {
+        let viewController = CheckoutViewController(checkout: shopifyCheckout.decoratedCheckoutURL)
+        shopifyCheckout.configureWebViewController(viewController)
+        let webViewController = try XCTUnwrap(
+            viewController.viewControllers.compactMap { $0 as? CheckoutWebViewController }.first
+        )
+        let checkoutView = try XCTUnwrap(webViewController.checkoutView)
+
+        ShopifyCheckoutKit.configure { $0.title = "Updated global title" }
+        shopifyCheckout.configureWebViewController(viewController)
+
+        XCTAssertEqual(webViewController.title, "Updated global title")
+        XCTAssertIdentical(webViewController.checkoutView, checkoutView)
+    }
+
+    func testUpdatedTitleModifierReconfiguresPresentedCheckout() throws {
+        let initial = shopifyCheckout.title("Initial title")
+        let viewController = CheckoutViewController(checkout: initial.decoratedCheckoutURL)
+        initial.configureWebViewController(viewController)
+        let webViewController = try XCTUnwrap(
+            viewController.viewControllers.compactMap { $0 as? CheckoutWebViewController }.first
+        )
+        let checkoutView = try XCTUnwrap(webViewController.checkoutView)
+        XCTAssertEqual(webViewController.title, "Initial title")
+
+        let updated = shopifyCheckout.title("Updated title")
+        updated.configureWebViewController(viewController)
+
+        XCTAssertEqual(webViewController.title, "Updated title")
+        XCTAssertIdentical(webViewController.checkoutView, checkoutView)
     }
 }
