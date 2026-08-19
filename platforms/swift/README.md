@@ -179,8 +179,10 @@ preload?.onStateChange = { state in
     showPreloadProgress()
   case .ready:
     enableCheckoutAffordance()
-  case .failed(let reason):
-    recordPreloadFailure(reason)
+  case .evicted(let reason):
+    recordPreloadEviction(reason)
+  case .failed(let reason, let message):
+    recordPreloadFailure(reason, message)
   case .expired, .idle:
     break
   }
@@ -194,7 +196,7 @@ if preload == nil {
 
 `onStateChange` receives the current state immediately, followed by state changes. The preload cache has one weak observer, so a later `preload` call replaces the observer associated with an earlier handle; retain the latest handle for as long as you need to observe state. When `present` reuses a preload, its handle also stops receiving updates and retains its last observed state, which may be `.loading`.
 
-A successful background preload normally transitions from `.loading` to `.ready`. `.idle` means the preload was intentionally abandoned or became inapplicable, such as after explicit invalidation, disabling preloading, activity destruction, or a checkout URL mismatch. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+A successful background preload normally transitions from `.loading` to `.ready`. `.idle` means the preload was intentionally abandoned or became inapplicable, such as after explicit invalidation, disabling preloading, activity destruction, or a checkout URL mismatch. `.evicted` means the SDK proactively released an otherwise valid preload because of memory pressure or WebKit content-process termination. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
 
 | State | Meaning |
 | --- | --- |
@@ -202,9 +204,12 @@ A successful background preload normally transitions from `.loading` to `.ready`
 | `.ready` | The preload finished and can be used for the matching checkout URL. |
 | `.idle` | The preload was invalidated or otherwise cleared. |
 | `.expired` | The cached preload exceeded its lifetime before it could be used. |
-| `.failed(reason:)` | An HTTP, navigation, or web-content failure occurred while preloading. |
+| `.evicted(reason:)` | The SDK proactively released the preload because of memory pressure or WebKit content-process termination. |
+| `.failed(reason:message:)` | An HTTP, navigation, or web-content failure occurred while preloading. |
 
 `preload` returns `nil` when preloading is disabled.
+
+Under memory pressure, Checkout Kit evicts an idle preload and temporarily declines new preload work until the system reports normal memory conditions. A checkout that is currently presented remains active and is evicted after dismissal if pressure continues. Presentation still works without a preload, so callers do not need to synchronously recreate an evicted preload.
 
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
