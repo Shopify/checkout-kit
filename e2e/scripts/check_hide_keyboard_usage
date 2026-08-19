@@ -2,17 +2,19 @@
 
 set -euo pipefail
 
+# Lint rule: E2E tests and flows must call flows/app/hide-keyboard.yaml instead of invoking
+# hideKeyboard directly, so platform-specific safety checks stay centralized.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 e2e_root="${1:-$(cd "$script_dir/.." && pwd)}"
 e2e_root="${e2e_root%/}"
 allowed_path="$e2e_root/flows/app/hide-keyboard.yaml"
 violations=()
 
-while IFS= read -r path; do
-  if [ -n "$path" ] && [ "$path" != "$allowed_path" ]; then
+while IFS= read -r -d '' path; do
+  if [ "$path" != "$allowed_path" ] && grep -Eq '^[[:space:]]*-[[:space:]]*hideKeyboard([[:space:]]|$)' "$path"; then
     violations+=("${path#"$e2e_root/"}")
   fi
-done < <(rg --files-with-matches --glob '*.yaml' --glob '*.yml' '^[[:space:]]*-[[:space:]]*hideKeyboard([[:space:]]|$)' "$e2e_root" || true)
+done < <(find "$e2e_root" -type f \( -name '*.yaml' -o -name '*.yml' \) -print0)
 
 if [ "${#violations[@]}" -eq 0 ]; then
   exit 0
