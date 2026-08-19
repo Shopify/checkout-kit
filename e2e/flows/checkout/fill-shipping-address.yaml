@@ -56,6 +56,12 @@ appId: ${E2E_APP_ID}
       LOCATOR: "Address"
       TEXT_TO_INPUT: "${ADDRESS_LINE1}"
 - runFlow:
+    when:
+      visible: "Close suggestions"
+    commands:
+      - tapOn: "Close suggestions"
+      - waitForAnimationToEnd
+- runFlow:
     file: fill-text-field.yaml
     env:
       LOCATOR: "^City$"
@@ -68,6 +74,15 @@ appId: ${E2E_APP_ID}
 - tapOn:
     text: "^${STATE_FIELD_LABEL}$"
 - waitForAnimationToEnd
+- runFlow:
+    when:
+      notVisible: "^${STATE_LABEL}$"
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^${STATE_LABEL}$"
+          direction: UP
+          centerElement: true
 - tapOn:
     text: "^${STATE_LABEL}$"
 - waitForAnimationToEnd

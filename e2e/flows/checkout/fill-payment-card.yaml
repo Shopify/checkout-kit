@@ -26,8 +26,23 @@ appId: ${E2E_APP_ID}
 - waitForAnimationToEnd
 - inputText: "${CARD_SECURITY_CODE}"
 - runFlow: dismiss-active-field.yaml
+- runFlow:
+    when:
+      notVisible:
+        text: "^${CARD_HOLDER_NAME}$"
+        below:
+          text: "^Security code$"
+    commands:
+      - tapOn:
+          text: "^Name on card$"
+      - waitForAnimationToEnd
+      - inputText: "${CARD_HOLDER_NAME}"
+      - runFlow: dismiss-active-field.yaml
 - extendedWaitUntil:
-    visible: "^${CARD_HOLDER_NAME}$"
+    visible:
+      text: "^${CARD_HOLDER_NAME}$"
+      below:
+        text: "^Security code$"
 - extendedWaitUntil:
     visible: "^${CARD_NUMBER_DISPLAY}$"
 - waitForAnimationToEnd
