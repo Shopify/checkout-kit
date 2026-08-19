@@ -433,9 +433,10 @@ val configuration = ShopifyCheckoutKit.getConfiguration()
 
 ### Incoming message origin validation
 
-Native checkout accepts messages from every origin by default. To restrict messages, configure one
-or more exact origins or wildcard subdomains. The checkout URL's origin and `shop.app` remain
-trusted automatically.
+The native WebView is a private, app-controlled runtime, so Checkout Kit is **open by default**:
+with an empty `allowedMessageOrigins`, incoming checkout-protocol messages from any origin are
+accepted. Provide one or more origins to restrict which origins are trusted; the loaded checkout
+origin and `shop.app` (including its subdomains) are always trusted as well.
 
 ```kotlin
 ShopifyCheckoutKit.configure {
@@ -455,6 +456,14 @@ For example, `https://checkout.example.com/` is accepted, while
 `https://user@checkout.example.com` and `https://checkout.example.com/path` are ignored. Wildcard
 entries require the scheme and match subdomains only; `https://*.example.org` does not match
 `https://example.org`. Use `"*"` to explicitly disable origin validation.
+
+`CheckoutMessageIngressPolicy` evaluates the WebView's authenticated source origin and frame
+metadata before a message reaches the protocol client. This keeps transport trust decisions at the
+native WebView boundary while ensuring the protocol client only handles admitted checkout messages.
+
+Rejected messages are dropped and logged at warning level. A rejected message is untrusted input,
+not evidence that checkout failed, so it does not fail a preload or invoke `onFail` or
+`onCheckoutFailed` during presentation.
 
 ## Checkout lifecycle
 

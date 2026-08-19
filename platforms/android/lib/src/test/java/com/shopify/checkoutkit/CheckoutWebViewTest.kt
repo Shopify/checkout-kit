@@ -274,9 +274,22 @@ class CheckoutWebViewTest {
 
     @Test
     fun `web message from child frame is ignored`() {
+        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.DEBUG }
+
         assertWebMessageIgnored {
             webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), isMainFrame = false)
         }
+
+        assertThat(
+            ShadowLog.getLogs().any {
+                it.type == Log.DEBUG && it.msg == "Ignoring ECP WebMessage from a child frame."
+            }
+        ).isTrue()
+        assertThat(
+            ShadowLog.getLogs().none {
+                it.type == Log.WARN && it.msg.contains("child frame")
+            }
+        ).isTrue()
     }
 
     @Test
@@ -316,11 +329,18 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `web message from an untrusted origin is dropped and logged when an allowlist is configured`() {
+    fun `web message from an untrusted origin is logged and dropped without failing checkout`() {
         ShopifyCheckoutKit.configure {
             it.allowedMessageOrigins = setOf("https://allowed.example.com")
         }
         val view = checkoutWebView(activity)
+        var failure: CheckoutException? = null
+        view.setListener(
+            CheckoutWebViewListener(
+                listener = NoopCheckoutListener(),
+                closeCheckoutWithError = { failure = it },
+            ),
+        )
         view.loadCheckout("https://checkout.shopify.com/cart/123")
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
         var received = false
@@ -338,6 +358,7 @@ class CheckoutWebViewTest {
             ShadowLooper.shadowMainLooper().runToEndOfTasks()
             assertThat(sentinelReceived).isTrue()
         }
+
         assertThat(received).isFalse()
         // Drops are logged as warnings at the default log level, with the verified
         // origin and reason but never the untrusted message body.
@@ -349,6 +370,24 @@ class CheckoutWebViewTest {
             }
         ).isTrue()
         assertThat(ShadowLog.getLogs().none { it.msg.contains("ec.messages.change") }).isTrue()
+        assertThat(failure).isNull()
+    }
+
+    @Test
+    fun `web message from untrusted origin does not fail backgrounded preload`() {
+        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        val preload = CheckoutWebView.preload(
+            "https://checkout.shopify.com/cart/123",
+            activity,
+            webMessageTransport,
+        )!!
+        ShadowLooper.shadowMainLooper().idle()
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), sourceOrigin = "https://evil.example.com")
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNotNull()
+        assertThat(preload.state).isEqualTo(PreloadState.Loading)
     }
 
     // endregion
