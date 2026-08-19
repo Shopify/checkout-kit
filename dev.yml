@@ -61,6 +61,7 @@ check:
   ejson-plaintext: ./scripts/ejson_lint
   storefront-env-tests: ./scripts/test_setup_storefront_env
   ruby-script-tests: ./scripts/test_ruby
+  maestro-hide-keyboard-lint: ./e2e/scripts/check_hide_keyboard_usage
   android-detekt: platforms/android/gradlew -p platforms/android detekt
   android-lint: |
     scripts/check_storefront_env

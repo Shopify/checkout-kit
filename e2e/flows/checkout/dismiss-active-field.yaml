@@ -1,26 +1,6 @@
 appId: ${E2E_APP_ID}
 ---
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - hideKeyboard
-# iOS keeps the keyboard above the page until the accessory bar closes it. The next field
-# then stays behind the keyboard, and the tap that follows lands on a key instead.
-- runFlow:
-    when:
-      platform: ios
-      visible: "Done"
-    commands:
-      - tapOn: "Done"
-      - waitForAnimationToEnd
-- runFlow:
-    when:
-      platform: ios
-      visible: "selected"
-    commands:
-      - tapOn: "selected"
-      - waitForAnimationToEnd
+- runFlow: ../app/hide-keyboard.yaml
 - runFlow:
     when:
       visible: "Close suggestions"
