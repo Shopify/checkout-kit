@@ -229,6 +229,7 @@ jobs:
         with:
           ruby-version: .ruby-version
       - run: ./scripts/test_ruby
+      - run: ./e2e/scripts/check_hide_keyboard_usage
 
   breaking-changes:
     name: Breaking Changes

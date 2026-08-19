@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+e2e_root="${1:-$(cd "$script_dir/.." && pwd)}"
+e2e_root="${e2e_root%/}"
+allowed_path="$e2e_root/flows/app/hide-keyboard.yaml"
+violations=()
+
+while IFS= read -r path; do
+  if [ -n "$path" ] && [ "$path" != "$allowed_path" ]; then
+    violations+=("${path#"$e2e_root/"}")
+  fi
+done < <(rg --files-with-matches --glob '*.yaml' --glob '*.yml' '^[[:space:]]*-[[:space:]]*hideKeyboard([[:space:]]|$)' "$e2e_root" || true)
+
+if [ "${#violations[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+printf '%s\n' 'Direct hideKeyboard commands are only allowed in flows/app/hide-keyboard.yaml.' >&2
+printf '%s\n' 'Call the reusable hide-keyboard flow instead:' >&2
+printf '  %s\n' "${violations[@]}" >&2
+exit 1
