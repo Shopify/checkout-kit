@@ -5,18 +5,38 @@ appId: ${E2E_APP_ID}
       text: "^Card number$"
     direction: DOWN
     centerElement: true
-- tapOn:
-    text: "^Card number$"
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - tapOn:
+          text: "^Field container for: Card number$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - tapOn:
+          text: "^Card number$"
 - waitForAnimationToEnd
 - inputText: "${CARD_NUMBER}"
 # Checkout groups the digits, so the field never reads back the value the test typed.
-- extendedWaitUntil:
-    visible:
-      text: "^${CARD_NUMBER_DISPLAY}$"
-      below:
-        text: "^Card number$"
-      above:
-        text: "^Expiration date \\(MM / YY\\)$"
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "^${CARD_NUMBER_DISPLAY}$"
+            below:
+              text: "^Card number$"
+            above:
+              text: "^Expiration date \\(MM / YY\\)$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - extendedWaitUntil:
+          visible: "^${CARD_NUMBER_DISPLAY}$"
 - runFlow:
     when:
       platform: ios
@@ -35,13 +55,23 @@ appId: ${E2E_APP_ID}
 - waitForAnimationToEnd
 - inputText: "3"
 - inputText: "0"
-- extendedWaitUntil:
-    visible:
-      text: "^12 / 30$"
-      below:
-        text: "^Expiration date \\(MM / YY\\)$"
-      above:
-        text: "^Security code$"
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "^12 / 30$"
+            below:
+              text: "^Expiration date \\(MM / YY\\)$"
+            above:
+              text: "^Security code$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - extendedWaitUntil:
+          visible: "^12 / 30$"
 - runFlow: dismiss-active-field.yaml
 - runFlow:
     when:
@@ -75,11 +105,21 @@ appId: ${E2E_APP_ID}
       text: "^${CARD_HOLDER_NAME}$"
       below:
         text: "^Security code$"
-- extendedWaitUntil:
-    visible:
-      text: "^${CARD_NUMBER_DISPLAY}$"
-      below:
-        text: "^Card number$"
-      above:
-        text: "^Expiration date \\(MM / YY\\)$"
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "^${CARD_NUMBER_DISPLAY}$"
+            below:
+              text: "^Card number$"
+            above:
+              text: "^Expiration date \\(MM / YY\\)$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - extendedWaitUntil:
+          visible: "^${CARD_NUMBER_DISPLAY}$"
 - waitForAnimationToEnd
