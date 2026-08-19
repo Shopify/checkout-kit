@@ -10,7 +10,9 @@ import {
 
 import stylesText from "./checkout.css?inline";
 import { Logger, coerceLogLevel } from "./logger";
+import { createTelemetry, telemetryProtocolMethod, type CheckoutKitTelemetry } from "./telemetry";
 import { createTemplate, html, safe } from "./utils";
+import { CK_VERSION } from "./version";
 import type {
   CheckoutAttributes,
   CheckoutMethods,
@@ -24,11 +26,9 @@ import type {
   MessageRejectedDetail,
 } from "./checkout.types";
 
-declare const CHECKOUT_KIT_PACKAGE_VERSION: string;
-
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
-export const CK_VERSION: string = CHECKOUT_KIT_PACKAGE_VERSION;
+export { CK_VERSION } from "./version";
 
 /**
  * Trusted origin always allowed to post messages, alongside the cart URL
@@ -182,7 +182,7 @@ export class ShopifyCheckout
   extends HTMLElement
   implements CheckoutAttributes, CheckoutMethods, CheckoutProperties
 {
-  static observedAttributes = ["src", "target", "appearance"] as const;
+  static observedAttributes = ["src", "target", "appearance", "telemetry"] as const;
 
   constructor() {
     super();
@@ -201,6 +201,8 @@ export class ShopifyCheckout
   #checkoutProtocolController: { controller: AbortController } | null = null;
   // Shared protocol client that decodes messages and dispatches to handlers
   #client!: EmbeddedCheckoutProtocol.Client;
+  #telemetryClient?: CheckoutKitTelemetry;
+  #navigationStartedAt?: number;
 
   /* ------------------------------------------------------------
    * Read/write properties (reflected with attributes)
@@ -263,6 +265,27 @@ export class ShopifyCheckout
   }
 
   #logger = new Logger("<shopify-checkout>", () => this.logLevel);
+
+  get telemetry(): boolean {
+    return this.getAttribute("telemetry")?.toLowerCase() !== "false";
+  }
+
+  set telemetry(value: boolean | undefined) {
+    // `#setAttribute` removes boolean `false`, which would restore the enabled default.
+    if (value === undefined || value === null) {
+      this.removeAttribute("telemetry");
+      return;
+    }
+    // Normalize untyped input to the canonical strings. Strings follow the
+    // attribute contract (anything but "false" enables); other values coerce as booleans.
+    const enabled = typeof value === "string" ? value.toLowerCase() !== "false" : Boolean(value);
+    this.setAttribute("telemetry", String(enabled));
+  }
+
+  get #recorder() {
+    if (!this.telemetry) return undefined;
+    return (this.#telemetryClient ??= createTelemetry());
+  }
 
   get target(): CheckoutTarget | string {
     return this.getAttribute("target") ?? "auto";
@@ -395,6 +418,13 @@ export class ShopifyCheckout
 
     if (!src) {
       this.#logger.warn("src property is empty or invalid, cannot open checkout");
+      this.#recorder?.recordError({
+        category: "navigation",
+        stage: "initialization",
+        code: "invalid_url",
+        retryable: false,
+        isRetry: false,
+      });
       return;
     }
 
@@ -404,6 +434,7 @@ export class ShopifyCheckout
     }
 
     let checkoutWindow: WindowProxy | null = null;
+    const navigationStartedAt = performance.now();
 
     switch (target) {
       case "popup": {
@@ -494,6 +525,7 @@ export class ShopifyCheckout
     }
 
     abortController.signal.addEventListener("abort", () => {
+      this.#navigationStartedAt = undefined;
       checkoutWindow?.close();
       this.#checkoutWindow = null;
       this.#currentOpen = null;
@@ -521,12 +553,42 @@ export class ShopifyCheckout
 
     this.#currentOpen = { controller: abortController };
     this.#checkoutWindow = checkoutWindow;
+    this.#navigationStartedAt = checkoutWindow && this.telemetry ? navigationStartedAt : undefined;
+
+    if (!checkoutWindow) {
+      this.#recorder?.recordError({
+        category: "navigation",
+        stage: "presentation",
+        code: "blocked",
+        retryable: false,
+        isRetry: false,
+      });
+    }
   }
 
   close(): void {
     if (this.#currentOpen) {
       this.#currentOpen.controller.abort();
     }
+  }
+
+  #recordNavigationSuccess(): void {
+    this.#recordNavigationDuration("success");
+  }
+
+  #recordNavigationFailure(): void {
+    this.#recordNavigationDuration("failure");
+  }
+
+  #recordNavigationDuration(result: "success" | "failure"): void {
+    const startedAt = this.#navigationStartedAt;
+    if (startedAt === undefined) return;
+    this.#navigationStartedAt = undefined;
+    this.#recorder?.recordNavigationDuration({
+      milliseconds: performance.now() - startedAt,
+      result,
+      preloaded: false,
+    });
   }
 
   override focus(): void {
@@ -674,6 +736,13 @@ export class ShopifyCheckout
     window.addEventListener("message", this.#handleMessage, {
       signal: this.#checkoutProtocolController.controller.signal,
     });
+    window.addEventListener(
+      "pagehide",
+      () => void this.#telemetryClient?.flush({ keepalive: true }),
+      {
+        signal: this.#checkoutProtocolController.controller.signal,
+      },
+    );
   }
 
   #handleMessage = (event: MessageEvent) => {
@@ -698,6 +767,10 @@ export class ShopifyCheckout
           error instanceof Error ? error.message : String(error)
         }`,
       );
+      this.#recorder?.recordProtocolDecodeError({
+        method: "unknown",
+        failureType: "serialization",
+      });
       return;
     }
 
@@ -720,6 +793,10 @@ export class ShopifyCheckout
           `dropped ${method}: failed to decode payload`,
           error instanceof Error ? error.message : String(error),
         );
+        this.#recorder?.recordProtocolDecodeError({
+          method: telemetryProtocolMethod(method),
+          failureType: "params",
+        });
       })
       .on(Event.ready, () => ({
         ucp: {
@@ -728,6 +805,9 @@ export class ShopifyCheckout
         },
       }))
       .on(Event.start, ({ params: { checkout } }) => {
+        // Web cannot reliably observe cross-origin popup page-finish, so the
+        // success duration ends at `ec.start`: checkout is loaded and interactive.
+        this.#recordNavigationSuccess();
         this.#checkout = checkout;
         this.dispatchEvent(new ShopifyCheckoutStartEvent({ checkout }));
       })
@@ -736,16 +816,19 @@ export class ShopifyCheckout
         this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout }));
       })
       .on(Event.error, ({ params: { error } }) => {
+        this.#recorder?.recordError({
+          category: "protocol",
+          stage: "message",
+          code: "unknown",
+          retryable: false,
+          isRetry: false,
+        });
         this.#error = error;
         this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
-        // Per UCP spec, `unrecoverable` means no valid resource exists to act on —
-        // the kit closes so consumers don't have to wire dismissal in every handler.
-        if (
-          Array.isArray(error.messages) &&
-          error.messages.some((m) => m.severity === "unrecoverable")
-        ) {
-          this.close();
-        }
+        // `ec.error` is terminal for the embedded session. Message severity is
+        // payload detail for the checkout error, not a host-side recovery signal.
+        this.#recordNavigationFailure();
+        this.close();
       })
       .on(Event.fulfillmentChange, ({ params: { checkout } }) => {
         this.#checkout = checkout;
@@ -824,6 +907,7 @@ export class ShopifyCheckout
    */
 
   connectedCallback(): void {
+    this.#recorder?.start();
     this.#applyTargetClass();
 
     this.#initCheckoutProtocol();
@@ -833,12 +917,15 @@ export class ShopifyCheckout
     this.#checkoutProtocolController?.controller.abort();
     this.#checkoutProtocolController = null;
     this.close();
+    const telemetryClient = this.#telemetryClient;
+    this.#telemetryClient = undefined;
+    if (telemetryClient) void telemetryClient.shutdown({ keepalive: true });
   }
 
   attributeChangedCallback(
     name: (typeof ShopifyCheckout.observedAttributes)[number],
-    oldValue: string,
-    newValue: string,
+    oldValue: string | null,
+    newValue: string | null,
   ): void {
     if (oldValue === newValue) return;
 
@@ -851,6 +938,17 @@ export class ShopifyCheckout
         this.#removeTargetClass(oldValue);
         this.#applyTargetClass();
 
+        break;
+      }
+      case "telemetry": {
+        if (this.telemetry) {
+          if (this.isConnected) this.#recorder?.start();
+        } else {
+          this.#navigationStartedAt = undefined;
+          const telemetryClient = this.#telemetryClient;
+          this.#telemetryClient = undefined;
+          if (telemetryClient) void telemetryClient.shutdown({ discardPending: true });
+        }
         break;
       }
     }

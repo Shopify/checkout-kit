@@ -19,10 +19,12 @@ export type TelemetryErrorStage =
 export type TelemetryErrorCode =
   | '4xx'
   | '5xx'
+  | 'blocked'
   | 'cancelled'
   | 'connection_lost'
   | 'cannot_connect'
   | 'dns'
+  | 'invalid_url'
   | 'timeout'
   | 'unknown';
 
