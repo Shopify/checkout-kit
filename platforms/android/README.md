@@ -282,6 +282,7 @@ ShopifyCheckoutKit.configure {
         ),
     )
     it.logLevel = LogLevel.ERROR
+    it.telemetry = Telemetry(enabled = false)
 }
 ```
 
@@ -293,6 +294,14 @@ ShopifyCheckoutKit.configure {
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
 | `title` | `null` | Runtime override for the checkout sheet header title. When `null`, the SDK uses the localized `checkout_web_view_title` string resource. |
 | `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
+| `telemetry` | `Telemetry(enabled = true)` | Sends anonymous diagnostic metrics to Shopify. Set `enabled` to `false` to opt out. |
+
+Checkout Kit reports limited, anonymous diagnostic metrics, including checkout
+errors, protocol decoding failures, navigation retries, and checkout navigation
+timing. These diagnostics never include checkout URLs, message payloads, buyer
+data, or checkout, order, customer, or shop identifiers. Disabling telemetry stops new
+collection and discards measurements that have not already been handed to the
+operating system for delivery.
 
 ### Color schemes
 

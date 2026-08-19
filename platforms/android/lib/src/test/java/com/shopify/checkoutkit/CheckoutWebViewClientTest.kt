@@ -44,6 +44,7 @@ class CheckoutWebViewClientTest {
 
     @Before
     fun setUp() {
+        CheckoutTelemetry.overrideRecorderForTesting(NoOpTestCheckoutTelemetryRecorder)
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
         // Mirror real-Android behavior: startActivity throws ActivityNotFoundException when
         // no activity resolves the intent. Robolectric defaults to silently recording the
@@ -53,6 +54,7 @@ class CheckoutWebViewClientTest {
 
     @After
     fun tearDown() {
+        CheckoutTelemetry.overrideRecorderForTesting(null)
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
     }
