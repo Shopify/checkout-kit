@@ -145,6 +145,7 @@ commands:
       /opt/dev/bin/dev react-native lint
       /opt/dev/bin/dev web lint
       /opt/dev/bin/dev protocol lint
+      /opt/dev/bin/dev telemetry typecheck
 
   test:
     desc: Run tests across all supported workspaces
@@ -155,6 +156,7 @@ commands:
       /opt/dev/bin/dev react-native test
       /opt/dev/bin/dev web test
       /opt/dev/bin/dev protocol test typescript
+      /opt/dev/bin/dev telemetry test typescript
 
   apollo:
     desc: "Apollo GraphQL schema and code generation commands"
@@ -245,6 +247,55 @@ commands:
       check-tools:
         desc: Verify protocol codegen tools match protocol/package.json
         run: ./protocol/scripts/check_codegen_tools.sh "$@"
+
+  telemetry:
+    desc: "Checkout telemetry package commands"
+    subcommands:
+      test:
+        desc: "Run telemetry tests for every language, or a single one. Usage: dev telemetry test [typescript|swift|kotlin]"
+        syntax: "[typescript|swift|kotlin]"
+        run: |
+          set -e
+          run_typescript() { (cd telemetry/languages/typescript && pnpm test); }
+          run_swift() {
+            # xcode_run only auto-discovers test targets under
+            # platforms/swift/Tests, so pass the telemetry target/suite
+            # pair explicitly.
+            (cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package CheckoutKitTelemetryTests/CheckoutKitTelemetryTests)
+          }
+          run_kotlin() {
+            platforms/android/gradlew -p platforms/android :lib:testDebugUnitTest \
+              --tests "com.shopify.checkoutkit.telemetry.*" \
+              --tests "com.shopify.checkoutkit.Telemetry*" \
+              --console=plain
+          }
+          case "${1:-all}" in
+            typescript|ts) run_typescript ;;
+            swift|ios) run_swift ;;
+            kotlin|android) run_kotlin ;;
+            all) run_typescript; run_swift; run_kotlin ;;
+            *) echo "Usage: dev telemetry test [typescript|swift|kotlin]"; exit 1 ;;
+          esac
+      typecheck:
+        desc: "Type-check the TypeScript telemetry package"
+        run: cd telemetry/languages/typescript && pnpm typecheck
+      lint:
+        desc: "Lint the TypeScript and Swift telemetry sources (Kotlin lives in the Android lib and is covered by dev android lint)"
+        run: |
+          set -e
+          (cd telemetry/languages/typescript && pnpm lint)
+          # SwiftLint's scope comes from .swiftlint.yml's `included`, which
+          # covers the telemetry Swift sources. Use the Mintfile-pinned
+          # binary so results match CI.
+          swiftlint_bin="$(cd platforms/swift && mint which swiftlint)"
+          "$swiftlint_bin" lint --strict --no-cache --quiet
+      check:
+        desc: "Type-check, lint, and test the telemetry packages in every language"
+        run: |
+          set -e
+          /opt/dev/bin/dev telemetry typecheck
+          /opt/dev/bin/dev telemetry lint
+          /opt/dev/bin/dev telemetry test
 
   # Android
   android:

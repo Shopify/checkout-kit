@@ -35,6 +35,7 @@ jobs:
       reactNativeIos: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' }}
       reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       web: ${{ steps.platform.outputs.web == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
+      telemetry: ${{ steps.platform.outputs.telemetry == 'true' || steps.infra.outputs.telemetry == 'true' }}
       protocol: ${{ steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.protocol == 'true' }}
       scripts: ${{ steps.infra.outputs.scripts == 'true' }}
     steps:
@@ -98,6 +99,11 @@ jobs:
               - '.github/workflows/rn-build-android.yml'
             web:
               - '.github/workflows/web.yml'
+              - '.github/actions/setup/**'
+              - '.ci/changed-file-filters.yml'
+              - '.github/workflows/ci.yml'
+            telemetry:
+              - '.github/workflows/telemetry-test.yml'
               - '.github/actions/setup/**'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
@@ -209,6 +215,14 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/web.yml
 
+  telemetry-test:
+    name: Telemetry
+    needs: changes
+    if: needs.changes.outputs.telemetry == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/telemetry-test.yml
+
   protocol-test:
     name: Protocol
     needs: changes
@@ -266,6 +280,7 @@ jobs:
       - rn-check-packed-files
       - rn-lint
       - web
+      - telemetry-test
       - protocol-test
       - scripts-test
       - breaking-changes

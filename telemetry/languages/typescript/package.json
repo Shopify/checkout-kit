@@ -1,0 +1,24 @@
+{
+  "name": "@shopify/checkout-kit-telemetry",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --report-unused-disable-directives --max-warnings 0 src test"
+  },
+  "dependencies": {
+    "@shopify/checkout-kit-protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "oxlint": "^1.62.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

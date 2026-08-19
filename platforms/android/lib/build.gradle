@@ -121,7 +121,6 @@ dependencies {
     mockitoAgent libs.mockito.core
 
     api project(':embedded-checkout-protocol')
-
     testImplementation libs.junit
     testImplementation libs.robolectric
     testImplementation libs.mockito.core

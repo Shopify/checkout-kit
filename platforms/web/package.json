@@ -75,6 +75,7 @@
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
     "@shopify/checkout-kit-protocol": "workspace:*",
+    "@shopify/checkout-kit-telemetry": "workspace:*",
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^4.1.0",
     "happy-dom": "^20.8.9",
