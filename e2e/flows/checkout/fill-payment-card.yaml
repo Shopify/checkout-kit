@@ -20,23 +20,8 @@ appId: ${E2E_APP_ID}
 - waitForAnimationToEnd
 - inputText: "${CARD_NUMBER}"
 # Checkout groups the digits, so the field never reads back the value the test typed.
-- runFlow:
-    when:
-      platform: ios
-    commands:
-      - extendedWaitUntil:
-          visible:
-            text: "^${CARD_NUMBER_DISPLAY}$"
-            below:
-              text: "^Card number$"
-            above:
-              text: "^Expiration date \\(MM / YY\\)$"
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - extendedWaitUntil:
-          visible: "^${CARD_NUMBER_DISPLAY}$"
+- extendedWaitUntil:
+    visible: "^${CARD_NUMBER_DISPLAY}$"
 - runFlow:
     when:
       platform: ios
@@ -109,6 +94,25 @@ appId: ${E2E_APP_ID}
     when:
       platform: ios
     commands:
+      - scrollUntilVisible:
+          element:
+            text: "^Field container for: Card number$"
+          direction: UP
+          centerElement: true
+      - runFlow:
+          when:
+            notVisible:
+              text: "^${CARD_NUMBER_DISPLAY}$"
+              below:
+                text: "^Card number$"
+              above:
+                text: "^Expiration date \\(MM / YY\\)$"
+          commands:
+            - tapOn:
+                text: "^Field container for: Card number$"
+            - waitForAnimationToEnd
+            - inputText: "${CARD_NUMBER}"
+            - runFlow: dismiss-active-field.yaml
       - extendedWaitUntil:
           visible:
             text: "^${CARD_NUMBER_DISPLAY}$"
