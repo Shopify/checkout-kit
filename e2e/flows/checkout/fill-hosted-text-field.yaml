@@ -1,0 +1,77 @@
+appId: ${E2E_APP_ID}
+---
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^Field container for: ${FIELD_LABEL}$"
+          direction: DOWN
+          centerElement: true
+      - assertVisible:
+          text: "^Field container for: ${FIELD_LABEL}$"
+          enabled: true
+      - tapOn:
+          text: "^Field container for: ${FIELD_LABEL}$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "^${ANDROID_FIELD_ID}$"
+          direction: DOWN
+          centerElement: true
+      - assertVisible:
+          id: "^${ANDROID_FIELD_ID}$"
+          enabled: true
+      - tapOn:
+          id: "^${ANDROID_FIELD_ID}$"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - assertVisible: "^(Done|selected)$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - assertVisible:
+          id: "^${ANDROID_FIELD_ID}$"
+          enabled: true
+          focused: true
+- inputText: "${TEXT_TO_INPUT}"
+- runFlow:
+    when:
+      true: ${TEXT_TO_INPUT_AFTER_WAIT != ''}
+    commands:
+      - waitForAnimationToEnd
+      - inputText: "${TEXT_TO_INPUT_AFTER_WAIT}"
+- runFlow: dismiss-active-field.yaml
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^Field container for: ${FIELD_LABEL}$"
+          direction: UP
+          centerElement: true
+      - extendedWaitUntil:
+          visible:
+            text: "^${EXPECTED_TEXT}$"
+            below:
+              text: "^${FIELD_LABEL}$"
+            above:
+              text: "^${NEXT_FIELD_LABEL}$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "^${ANDROID_FIELD_ID}$"
+            text: "^${EXPECTED_TEXT}$"
+            enabled: true

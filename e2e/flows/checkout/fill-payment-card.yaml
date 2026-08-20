@@ -1,119 +1,32 @@
 appId: ${E2E_APP_ID}
 ---
 - runFlow:
-    when:
-      platform: ios
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "^Field container for: Card number$"
-          direction: DOWN
-          centerElement: true
-      - tapOn:
-          text: "^Field container for: Card number$"
+    file: fill-hosted-text-field.yaml
+    env:
+      FIELD_LABEL: "Card number"
+      NEXT_FIELD_LABEL: "Expiration date \\(MM / YY\\)"
+      ANDROID_FIELD_ID: "number"
+      TEXT_TO_INPUT: "${CARD_NUMBER}"
+      TEXT_TO_INPUT_AFTER_WAIT: ""
+      EXPECTED_TEXT: "${CARD_NUMBER_DISPLAY}"
 - runFlow:
-    when:
-      platform: android
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "^Card number$"
-          direction: DOWN
-          centerElement: true
-      - tapOn:
-          text: "^Card number$"
-- waitForAnimationToEnd
-- inputText: "${CARD_NUMBER}"
-# Checkout groups the digits, so the field never reads back the value the test typed.
+    file: fill-hosted-text-field.yaml
+    env:
+      FIELD_LABEL: "Expiration date \\(MM / YY\\)"
+      NEXT_FIELD_LABEL: "Security code"
+      ANDROID_FIELD_ID: "expiry"
+      TEXT_TO_INPUT: "12"
+      TEXT_TO_INPUT_AFTER_WAIT: "30"
+      EXPECTED_TEXT: "12 / 30"
 - runFlow:
-    when:
-      platform: ios
-    commands:
-      - runFlow:
-          when:
-            visible: "^(Done|selected)$"
-          commands:
-            - runFlow: dismiss-active-field.yaml
-      - scrollUntilVisible:
-          element:
-            text: "^Field container for: Card number$"
-          direction: UP
-          centerElement: true
-      - runFlow:
-          when:
-            notVisible:
-              text: "^${CARD_NUMBER_DISPLAY}$"
-              below:
-                text: "^Card number$"
-              above:
-                text: "^Expiration date \\(MM / YY\\)$"
-          commands:
-            - tapOn:
-                text: "^Field container for: Card number$"
-            - waitForAnimationToEnd
-            - inputText: "${CARD_NUMBER}"
-            - runFlow: dismiss-active-field.yaml
-      - extendedWaitUntil:
-          visible:
-            text: "^${CARD_NUMBER_DISPLAY}$"
-            below:
-              text: "^Card number$"
-            above:
-              text: "^Expiration date \\(MM / YY\\)$"
-      - tapOn:
-          text: "^Field container for: Expiration date \\(MM / YY\\)$"
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - extendedWaitUntil:
-          visible: "^${CARD_NUMBER_DISPLAY}$"
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - tapOn:
-          text: "^Expiration date \\(MM / YY\\)$"
-- waitForAnimationToEnd
-- inputText: "1"
-- inputText: "2"
-- waitForAnimationToEnd
-- inputText: "3"
-- inputText: "0"
-- runFlow:
-    when:
-      platform: ios
-    commands:
-      - runFlow: dismiss-active-field.yaml
-      - extendedWaitUntil:
-          visible:
-            text: "^12 / 30$"
-            below:
-              text: "^Expiration date \\(MM / YY\\)$"
-            above:
-              text: "^Security code$"
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - extendedWaitUntil:
-          visible: "^12 / 30$"
-      - runFlow: dismiss-active-field.yaml
-- runFlow:
-    when:
-      platform: ios
-    commands:
-      - tapOn:
-          text: "^Field container for: Security code$"
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - tapOn:
-          text: "^Security code$"
-- waitForAnimationToEnd
-- inputText: "${CARD_SECURITY_CODE}"
-- runFlow: dismiss-active-field.yaml
+    file: fill-hosted-text-field.yaml
+    env:
+      FIELD_LABEL: "Security code"
+      NEXT_FIELD_LABEL: "Name on card"
+      ANDROID_FIELD_ID: "verification_value"
+      TEXT_TO_INPUT: "${CARD_SECURITY_CODE}"
+      TEXT_TO_INPUT_AFTER_WAIT: ""
+      EXPECTED_TEXT: "${CARD_SECURITY_CODE}"
 - runFlow:
     when:
       notVisible:
@@ -131,41 +44,4 @@ appId: ${E2E_APP_ID}
       text: "^${CARD_HOLDER_NAME}$"
       below:
         text: "^Security code$"
-- runFlow:
-    when:
-      platform: ios
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "^Field container for: Card number$"
-          direction: UP
-          centerElement: true
-      - runFlow:
-          when:
-            notVisible:
-              text: "^${CARD_NUMBER_DISPLAY}$"
-              below:
-                text: "^Card number$"
-              above:
-                text: "^Expiration date \\(MM / YY\\)$"
-          commands:
-            - tapOn:
-                text: "^Field container for: Card number$"
-            - waitForAnimationToEnd
-            - eraseText
-            - inputText: "${CARD_NUMBER}"
-            - runFlow: dismiss-active-field.yaml
-      - extendedWaitUntil:
-          visible:
-            text: "^${CARD_NUMBER_DISPLAY}$"
-            below:
-              text: "^Card number$"
-            above:
-              text: "^Expiration date \\(MM / YY\\)$"
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - extendedWaitUntil:
-          visible: "^${CARD_NUMBER_DISPLAY}$"
 - waitForAnimationToEnd
