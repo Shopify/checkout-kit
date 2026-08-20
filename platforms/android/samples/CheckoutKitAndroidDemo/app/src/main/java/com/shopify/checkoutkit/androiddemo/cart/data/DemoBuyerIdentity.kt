@@ -39,7 +39,6 @@ object DemoBuyerIdentity {
                         )
                     ),
                     selected = Optional.present(true),
-                    oneTimeUse = Optional.present(true),
                 )
             )
         )

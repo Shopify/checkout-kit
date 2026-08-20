@@ -36,15 +36,6 @@ env:
   CARD_SECURITY_CODE: "123"
   CARD_HOLDER_NAME: "Maestro Shopify"
 
-  # Checkout billing fixture. A guest types the delivery address into checkout itself, so
-  # checkout can copy it and the billing section stays closed. These values cover the
-  # target that opens the section anyway.
-  BILLING_FIRST_NAME: "Maestro"
-  BILLING_LAST_NAME: "Shopify"
-  BILLING_ADDRESS_LINE1: "700 S Flower St"
-  BILLING_CITY: "Los Angeles"
-  BILLING_POSTAL_CODE: "90017"
-
   # Accepted successful checkout states for this smoke test.
   POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
 ---
@@ -53,7 +44,7 @@ env:
 - runFlow: ../../flows/checkout/fill-contact.yaml
 - runFlow: ../../flows/checkout/fill-shipping-address.yaml
 - runFlow: ../../flows/checkout/fill-payment-card.yaml
-- runFlow: ../../flows/checkout/fill-billing-address.yaml
+- runFlow: ../../flows/checkout/use-shipping-address-as-billing-address.yaml
 - runFlow: ../../flows/checkout/submit.yaml
 - runFlow: ../../flows/checkout/assert-complete.yaml
 - runFlow: ../../flows/checkout/assert-returned-to-empty-cart.yaml

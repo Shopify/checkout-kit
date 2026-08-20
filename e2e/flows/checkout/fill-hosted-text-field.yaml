@@ -8,11 +8,16 @@ appId: ${E2E_APP_ID}
           when:
             true: ${SCROLL_TO_FIELD == 'true'}
           commands:
-            - scrollUntilVisible:
-                element:
-                  text: "^Field container for: ${FIELD_LABEL}$"
-                direction: DOWN
-                centerElement: true
+            - runFlow:
+                file: scroll-until-visible-bidirectional.yaml
+                env:
+                  LOCATOR: "^Field container for: ${FIELD_LABEL}$"
+                  INITIAL_DIRECTION: "DOWN"
+            # The first post-scroll tap positions the hosted container. The second gives
+            # its iframe input focus before text entry.
+            - tapOn:
+                text: "^Field container for: ${FIELD_LABEL}$"
+            - waitForAnimationToEnd
       - tapOn:
           text: "^Field container for: ${FIELD_LABEL}$"
 - runFlow:
@@ -23,11 +28,11 @@ appId: ${E2E_APP_ID}
           when:
             true: ${SCROLL_TO_FIELD == 'true'}
           commands:
-            - scrollUntilVisible:
-                element:
-                  text: "^${FIELD_LABEL}$"
-                direction: DOWN
-                centerElement: true
+            - runFlow:
+                file: scroll-until-visible-bidirectional.yaml
+                env:
+                  LOCATOR: "^${FIELD_LABEL}$"
+                  INITIAL_DIRECTION: "DOWN"
       - tapOn:
           text: "^${FIELD_LABEL}$"
 - waitForAnimationToEnd

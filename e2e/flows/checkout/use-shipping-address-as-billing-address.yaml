@@ -1,0 +1,8 @@
+appId: ${E2E_APP_ID}
+---
+- scrollUntilVisible:
+    element:
+      text: "^Use shipping address as billing address$"
+    direction: DOWN
+    centerElement: true
+- assertVisible: "^Use shipping address as billing address$"

@@ -17,12 +17,12 @@ class DemoBuyerIdentityTest {
     }
 
     @Test
-    fun `delivery carries one pre-selected one-time address`() {
+    fun `delivery carries one pre-selected reusable address`() {
         val addresses = DemoBuyerIdentity.delivery.addresses.getOrThrow()!!
 
         assertThat(addresses).hasSize(1)
         assertThat(addresses.first().selected.getOrThrow()).isTrue()
-        assertThat(addresses.first().oneTimeUse.getOrThrow()).isTrue()
+        assertThat(addresses.first().oneTimeUse.getOrNull()).isNull()
     }
 
     @Test

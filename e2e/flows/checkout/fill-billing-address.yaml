@@ -1,9 +1,7 @@
 appId: ${E2E_APP_ID}
 ---
-# Checkout offers a "use the shipping address" control only when it can copy the address
-# the cart supplied. The samples build their carts through different mutations, so one
-# target gets the control and another gets an empty billing form. The scroll below stops
-# at whichever the target shows, and the branch fills the form only when there is one.
+# Checkout may offer the shipping address or display an open billing form. Stop at
+# whichever state the journey presents and fill the form only when it is open.
 - scrollUntilVisible:
     element:
       text: "^(Billing address|Use shipping address as billing address)$"

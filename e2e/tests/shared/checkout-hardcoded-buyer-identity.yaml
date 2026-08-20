@@ -6,9 +6,8 @@ tags:
   - full
 
 env:
-  # The cart carries the contact and the delivery address, so checkout asks for payment
-  # only. That makes this the shortest real order, and the first one to fix when checkout
-  # breaks.
+  # The cart carries the contact and a selected reusable delivery address, so checkout
+  # uses that address for billing and asks for payment only.
   E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=hardcoded"
 
   # Checkout payment fixture. The shop runs the bogus gateway, which rejects real card
@@ -18,23 +17,13 @@ env:
   CARD_SECURITY_CODE: "123"
   CARD_HOLDER_NAME: "Evelyn Hartley"
 
-  # Checkout billing fixture. The cart supplies a one-time delivery address, which the
-  # billing section cannot copy, so the test types a billing address of its own. Country
-  # and province keep the shop defaults, so this address stays in Canada.
-  BILLING_FIRST_NAME: "Maestro"
-  BILLING_LAST_NAME: "Shopify"
-  BILLING_ADDRESS_LINE1: "620 King Street West"
-  BILLING_CITY: "Toronto"
-  BILLING_POSTAL_FIELD_LABEL: "Postal code"
-  BILLING_POSTAL_CODE: "M5V 1M7"
-
   # Accepted successful checkout states for this smoke test.
   POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
 ---
 - runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
 - runFlow: ../../flows/checkout/present.yaml
 - runFlow: ../../flows/checkout/fill-payment-card.yaml
-- runFlow: ../../flows/checkout/fill-billing-address.yaml
+- runFlow: ../../flows/checkout/use-shipping-address-as-billing-address.yaml
 - runFlow: ../../flows/checkout/submit.yaml
 - runFlow: ../../flows/checkout/assert-complete.yaml
 - runFlow: ../../flows/checkout/assert-returned-to-empty-cart.yaml
