@@ -177,8 +177,13 @@ class BrowserStackRunnerExecutor
       FileUtils.cp_r(File.join(@workspace, "."), workspace)
       launch_path = File.join(workspace, "flows/app/launch.yaml")
       launch_flow = File.read(launch_path)
-      updated_flow = launch_flow.sub(/^(\s*)clearState: true$/, "\\1clearState: true\n\\1newSession: true")
-      raise "could not enable Appium newSession in #{launch_path}" if updated_flow == launch_flow
+      replacement = if @run.fetch("platform") == "ios"
+        "\\1clearState: false"
+      else
+        "\\1clearState: true\n\\1newSession: true"
+      end
+      updated_flow = launch_flow.sub(/^(\s*)clearState: true$/, replacement)
+      raise "could not adapt Appium launch in #{launch_path}" if updated_flow == launch_flow
 
       File.write(launch_path, updated_flow)
       yield workspace

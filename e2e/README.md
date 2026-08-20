@@ -148,9 +148,10 @@ to run the previous BrowserStack-hosted Maestro executor for comparison.
 The Appium executor uploads only the app artifact, writes the runner's JSON, JUnit,
 HTML, screenshots, hierarchy, logs, and session IDs into the run result artifact,
 and preserves the normalized `result.json` contract used by GitHub reporting. It
-uses a temporary copy of the E2E workspace to enable `launchApp.newSession`, which
-cleans physical iOS state without adding a maestro-runner-only property to the
-shared flows consumed by hosted Maestro.
+uses a temporary copy of the E2E workspace to enable `launchApp.newSession` on
+Android. On iOS it relies on BrowserStack's clean physical-device session and skips
+the simulator-only `clearState` command that BrowserStack cannot execute. The
+shared flows consumed by hosted Maestro remain unchanged.
 
 ## Files
 

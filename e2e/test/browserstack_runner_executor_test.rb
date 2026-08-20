@@ -132,6 +132,7 @@ class BrowserStackRunnerExecutorTest < Minitest::Test
       FileUtils.mkdir_p(File.dirname(launch_path))
       File.write(launch_path, "- launchApp:\n    clearState: true\n    arguments: {}\n")
       @executor.instance_variable_set(:@workspace, source)
+      @executor.instance_variable_set(:@run, {"platform" => "android"})
 
       @executor.send(:with_runner_workspace) do |workspace|
         copied_launch = File.read(File.join(workspace, "flows/app/launch.yaml"))
@@ -139,6 +140,24 @@ class BrowserStackRunnerExecutorTest < Minitest::Test
       end
 
       refute_includes File.read(launch_path), "newSession"
+    end
+  end
+
+  def test_ios_runner_workspace_skips_the_simulator_only_clear_state_command
+    Dir.mktmpdir do |source|
+      launch_path = File.join(source, "flows/app/launch.yaml")
+      FileUtils.mkdir_p(File.dirname(launch_path))
+      File.write(launch_path, "- launchApp:\n    clearState: true\n    arguments: {}\n")
+      @executor.instance_variable_set(:@workspace, source)
+      @executor.instance_variable_set(:@run, {"platform" => "ios"})
+
+      @executor.send(:with_runner_workspace) do |workspace|
+        copied_launch = File.read(File.join(workspace, "flows/app/launch.yaml"))
+        assert_includes copied_launch, "clearState: false"
+        refute_includes copied_launch, "newSession"
+      end
+
+      assert_includes File.read(launch_path), "clearState: true"
     end
   end
 
