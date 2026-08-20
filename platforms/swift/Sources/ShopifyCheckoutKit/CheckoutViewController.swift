@@ -6,15 +6,23 @@ import UIKit
 
 @MainActor
 public class CheckoutViewController: UINavigationController {
-    public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
-        super.init(rootViewController: rootViewController)
-        configureNavigationBar()
-        presentationController?.delegate = rootViewController
+    public convenience init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil) {
+        self.init(
+            checkout: url,
+            configuration: ShopifyCheckoutKit.configuration,
+            delegate: delegate
+        )
     }
 
-    package init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: entryPoint)
+    /// Shared initializer that lets SwiftUI inject instance-scoped configuration while package callers use the global default.
+    package init(checkout url: URL, configuration: Configuration = ShopifyCheckoutKit.configuration, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
+        let rootViewController = CheckoutWebViewController(
+            checkoutURL: url,
+            configuration: configuration,
+            delegate: delegate,
+            client: client,
+            entryPoint: entryPoint
+        )
         super.init(rootViewController: rootViewController)
         configureNavigationBar()
         presentationController?.delegate = rootViewController
@@ -40,6 +48,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL
+    var configuration: Configuration
     var onStartAction: ((CheckoutStartEvent) -> Void)?
     var onUpdateAction: ((CheckoutUpdateEvent) -> Void)?
     var onCompleteAction: ((CheckoutCompleteEvent) -> Void)?
@@ -49,14 +58,18 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
     public init(checkout url: URL) {
         checkoutURL = url
+        configuration = ShopifyCheckoutKit.configuration
     }
 
     var decoratedCheckoutURL: URL {
-        CheckoutURLDecorator.decorate(checkoutURL)
+        CheckoutURLDecorator.decorate(checkoutURL, configuration: configuration)
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
-        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL)
+        let viewController = CheckoutViewController(
+            checkout: decoratedCheckoutURL,
+            configuration: configuration
+        )
         configureWebViewController(viewController)
         return viewController
     }
@@ -141,27 +154,31 @@ public protocol CheckoutConfigurable {
 
 extension CheckoutConfigurable {
     @discardableResult public func backgroundColor(_ color: UIColor) -> Self {
-        ShopifyCheckoutKit.configuration.backgroundColor = color
-        return self
+        modifyingConfiguration { $0.backgroundColor = color }
     }
 
     @discardableResult public func appearance(_ appearance: ShopifyCheckoutKit.Configuration.Appearance) -> Self {
-        ShopifyCheckoutKit.configuration.appearance = appearance
-        return self
+        modifyingConfiguration { $0.appearance = appearance }
     }
 
     @discardableResult public func tintColor(_ color: UIColor) -> Self {
-        ShopifyCheckoutKit.configuration.tintColor = color
-        return self
+        modifyingConfiguration { $0.tintColor = color }
     }
 
     @discardableResult public func title(_ title: String) -> Self {
-        ShopifyCheckoutKit.configuration.title = title
-        return self
+        modifyingConfiguration { $0.title = title }
     }
 
     @discardableResult public func closeButtonTintColor(_ color: UIColor?) -> Self {
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = color
-        return self
+        modifyingConfiguration { $0.closeButtonTintColor = color }
+    }
+
+    private func modifyingConfiguration(_ update: (inout Configuration) -> Void) -> Self {
+        guard var copy = self as? ShopifyCheckout else {
+            return self
+        }
+
+        update(&copy.configuration)
+        return copy as? Self ?? self
     }
 }
