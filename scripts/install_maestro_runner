@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VERSIONS_ROOT="${MAESTRO_RUNNER_VERSIONS_ROOT:-$HOME/.maestro-runner-versions}"
+version="$(tr -d '[:space:]' <"$REPO_ROOT/e2e/.maestro-runner-version")"
+destination="$VERSIONS_ROOT/$version"
+binary="$destination/maestro-runner"
+mode="install"
+
+if [ "${1:-}" = "--check" ]; then
+  mode="check"
+elif [ "$#" -ne 0 ]; then
+  echo "Usage: scripts/install_maestro_runner [--check]" >&2
+  exit 1
+fi
+
+installed_version() {
+  if [ ! -x "$binary" ]; then
+    return 1
+  fi
+  "$binary" --version 2>/dev/null | head -1 | awk '{print $2}'
+}
+
+if [ "$mode" = "check" ]; then
+  found="$(installed_version || true)"
+  if [ "$found" != "$version" ]; then
+    echo "install_maestro_runner: expected $version at $binary, found ${found:-nothing}." >&2
+    exit 1
+  fi
+  exit 0
+fi
+
+if [ "$(installed_version || true)" = "$version" ]; then
+  echo "maestro-runner $version is installed at $binary"
+  exit 0
+fi
+
+case "$(uname -s)" in
+  Darwin) os="darwin" ;;
+  Linux) os="linux" ;;
+  *) echo "install_maestro_runner: unsupported OS $(uname -s)" >&2; exit 1 ;;
+esac
+
+case "$(uname -m)" in
+  x86_64|amd64) arch="amd64" ;;
+  arm64|aarch64) arch="arm64" ;;
+  *) echo "install_maestro_runner: unsupported architecture $(uname -m)" >&2; exit 1 ;;
+esac
+
+asset="maestro-runner-$version-$os-$arch.tar.gz"
+expected_checksum="$(awk -v asset="$asset" '$2 == asset { print $1 }' "$REPO_ROOT/e2e/.maestro-runner-checksums")"
+if [ -z "$expected_checksum" ]; then
+  echo "install_maestro_runner: no checksum pinned for $asset" >&2
+  exit 1
+fi
+
+scratch="$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-maestro-runner.XXXXXX")"
+trap 'rm -rf "$scratch"' EXIT
+archive="$scratch/$asset"
+curl -fsSL "https://github.com/devicelab-dev/maestro-runner/releases/download/v$version/$asset" -o "$archive"
+if command -v shasum >/dev/null 2>&1; then
+  actual_checksum="$(shasum -a 256 "$archive" | awk '{print $1}')"
+else
+  actual_checksum="$(sha256sum "$archive" | awk '{print $1}')"
+fi
+if [ "$actual_checksum" != "$expected_checksum" ]; then
+  echo "install_maestro_runner: checksum mismatch for $asset" >&2
+  exit 1
+fi
+
+mkdir -p "$destination"
+tar -xzf "$archive" -C "$scratch"
+extracted="$(find "$scratch" -type f -name maestro-runner -perm -111 | head -1)"
+if [ -z "$extracted" ]; then
+  echo "install_maestro_runner: $asset did not contain an executable" >&2
+  exit 1
+fi
+install -m 755 "$extracted" "$binary"
+
+if [ "$(installed_version || true)" != "$version" ]; then
+  echo "install_maestro_runner: $binary does not report $version" >&2
+  exit 1
+fi
+
+echo "maestro-runner $version is installed at $binary"

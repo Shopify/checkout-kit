@@ -50,6 +50,16 @@ class BrowserStackClient
     @client.execute(request)
   end
 
+  def upload_app_automate_app(file_path, custom_id)
+    upload("/app-automate/upload", file_path, custom_id)
+  end
+
+  def find_build_by_name(name)
+    builds = @client.get("/automate/builds.json?limit=100")
+    match = builds.find { |entry| entry.dig("automation_build", "name") == name }
+    match&.fetch("automation_build")
+  end
+
   def start_build(platform, body)
     @client.post_json("/app-automate/maestro/v2/#{platform}/build", body)
   end

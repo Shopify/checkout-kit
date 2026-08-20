@@ -404,16 +404,33 @@ workflows:
                 envman add --key E2E_BROWSERSTACK_RESULTS_DIR --value "$results_dir"
                 : "${BROWSERSTACK_USERNAME:?BROWSERSTACK_USERNAME is required}"
                 : "${BROWSERSTACK_ACCESS_KEY:?BROWSERSTACK_ACCESS_KEY is required}"
-                : "${E2E_TESTS_ZIP:?E2E_TESTS_ZIP is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 run_artifact_env="$(ruby -rjson -e 'run_plan = JSON.parse(File.read(ARGV.fetch(0))); puts run_plan.fetch(Integer(ARGV.fetch(1))).fetch("artifact_env")' "$E2E_BROWSERSTACK_RUN_PLAN_JSON" "$run_index")"
                 : "${!run_artifact_env:?${run_artifact_env} is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
-                e2e_log "Executing BrowserStack run plan row ${run_index}"
-                e2e/scripts/execute_browserstack_run \
-                  --index "$run_index" \
-                  --run-plan "$E2E_BROWSERSTACK_RUN_PLAN_JSON" \
-                  --tests-zip "$E2E_TESTS_ZIP" \
-                  --output-dir "$results_dir"
+                executor="${E2E_BROWSERSTACK_EXECUTOR:-maestro-runner}"
+                case "$executor" in
+                  maestro-runner)
+                    scripts/install_maestro_runner
+                    e2e_log "Executing BrowserStack run plan row ${run_index} with maestro-runner"
+                    e2e/scripts/execute_browserstack_runner_run \
+                      --index "$run_index" \
+                      --run-plan "$E2E_BROWSERSTACK_RUN_PLAN_JSON" \
+                      --output-dir "$results_dir"
+                    ;;
+                  hosted-maestro)
+                    : "${E2E_TESTS_ZIP:?E2E_TESTS_ZIP is required for hosted-maestro}"
+                    e2e_log "Executing BrowserStack run plan row ${run_index} with hosted Maestro"
+                    e2e/scripts/execute_browserstack_run \
+                      --index "$run_index" \
+                      --run-plan "$E2E_BROWSERSTACK_RUN_PLAN_JSON" \
+                      --tests-zip "$E2E_TESTS_ZIP" \
+                      --output-dir "$results_dir"
+                    ;;
+                  *)
+                    e2e_log "Unsupported E2E_BROWSERSTACK_EXECUTOR: $executor"
+                    exit 1
+                    ;;
+                esac
       - deploy-to-bitrise-io@2:
           is_always_run: true
           inputs:
