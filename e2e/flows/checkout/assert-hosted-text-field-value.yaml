@@ -1,0 +1,42 @@
+appId: ${E2E_APP_ID}
+---
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^Field container for: ${FIELD_LABEL}$"
+          direction: UP
+          centerElement: true
+      - runFlow:
+          when:
+            true: ${HAS_NEXT_FIELD == 'true'}
+          commands:
+            - extendedWaitUntil:
+                visible:
+                  text: "^${EXPECTED_TEXT}$"
+                  below:
+                    text: "^${FIELD_LABEL}$"
+                  above:
+                    text: "^${NEXT_FIELD_LABEL}$"
+      - runFlow:
+          when:
+            true: ${HAS_NEXT_FIELD == 'false'}
+          commands:
+            - extendedWaitUntil:
+                visible:
+                  text: "^${EXPECTED_TEXT}$"
+                  below:
+                    text: "^${FIELD_LABEL}$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^${FIELD_LABEL}$"
+          direction: UP
+          centerElement: true
+      - extendedWaitUntil:
+          visible: "^${EXPECTED_TEXT}$"
