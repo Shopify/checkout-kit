@@ -114,7 +114,6 @@ class BrowserStackRunnerExecutor
         "projectName" => "Checkout Kit E2E",
         "buildName" => build_name,
         "sessionName" => run.fetch("id"),
-        "appiumVersion" => "latest",
         "debug" => true,
         "video" => true,
         "deviceLogs" => true,

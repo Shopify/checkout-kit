@@ -42,6 +42,7 @@ class BrowserStackRunnerExecutorTest < Minitest::Test
     assert_equal "key", browserstack.fetch("accessKey")
     assert_equal "checkout-kit maestro-runner 123", browserstack.fetch("buildName")
     assert_equal "kotlin-android-latest", browserstack.fetch("sessionName")
+    refute browserstack.key?("appiumVersion")
     refute browserstack.key?("language")
     refute browserstack.key?("locale")
   end
