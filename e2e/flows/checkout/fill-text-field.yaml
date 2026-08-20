@@ -12,3 +12,13 @@ appId: ${E2E_APP_ID}
 - runFlow: dismiss-active-field.yaml
 - extendedWaitUntil:
     visible: "^${TEXT_TO_INPUT}$"
+- runFlow:
+    when:
+      true: ${typeof DISMISS_SUGGESTIONS !== 'undefined' && DISMISS_SUGGESTIONS == 'true'}
+    commands:
+      - runFlow:
+          when:
+            visible: "Close suggestions"
+          commands:
+            - tapOn: "Close suggestions"
+            - waitForAnimationToEnd

@@ -55,12 +55,7 @@ appId: ${E2E_APP_ID}
     env:
       LOCATOR: "Address"
       TEXT_TO_INPUT: "${ADDRESS_LINE1}"
-- runFlow:
-    when:
-      visible: "Close suggestions"
-    commands:
-      - tapOn: "Close suggestions"
-      - waitForAnimationToEnd
+      DISMISS_SUGGESTIONS: "true"
 - runFlow:
     file: fill-text-field.yaml
     env:
