@@ -2232,12 +2232,12 @@
             "declAttributes": [
               "Custom"
             ],
-            "init_kind": "Designated"
+            "init_kind": "Convenience"
           },
           {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(checkout:delegate:client:entryPoint:)",
+            "printedName": "init(checkout:configuration:delegate:client:entryPoint:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -2250,6 +2250,13 @@
                 "name": "URL",
                 "printedName": "Foundation.URL",
                 "usr": "s:10Foundation3URLV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Configuration",
+                "printedName": "ShopifyCheckoutKit.Configuration",
+                "hasDefaultArg": true,
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
               },
               {
                 "kind": "TypeNominal",
@@ -2298,8 +2305,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6client10entryPointAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgAA8MetaDataO05EntryJ0OSgtcfc",
-            "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6client10entryPointAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgAA8MetaDataO05EntryJ0OSgtcfc",
+            "usr": "s:18ShopifyCheckoutKit0B14ViewControllerC8checkout13configuration8delegate6client10entryPointAC10Foundation3URLV_AA13ConfigurationVAA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgAA8MetaDataO05EntryK0OSgtcfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout13configuration8delegate6client10entryPointAC10Foundation3URLV_AA13ConfigurationVAA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgAA8MetaDataO05EntryK0OSgtcfc",
             "moduleName": "ShopifyCheckoutKit",
             "isInternal": true,
             "declAttributes": [
