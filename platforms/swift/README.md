@@ -250,6 +250,8 @@ ShopifyCheckoutKit.configure {
 }
 ```
 
+SwiftUI modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` override these defaults only for that `ShopifyCheckout` value. They do not mutate `ShopifyCheckoutKit.configuration` or invalidate a cached preload.
+
 | Option | Default | Purpose |
 | --- | --- | --- |
 | `appearance` | `.storefront` | Match the storefront's web checkout branding with a light color scheme, or use the Checkout Kit style with `.app(.automatic)`, `.app(.light)`, or `.app(.dark)`. |

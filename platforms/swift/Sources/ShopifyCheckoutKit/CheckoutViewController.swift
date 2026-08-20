@@ -7,14 +7,39 @@ import UIKit
 @MainActor
 public class CheckoutViewController: UINavigationController {
     public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: nil)
+        let rootViewController = CheckoutWebViewController(
+            checkoutURL: url,
+            configuration: ShopifyCheckoutKit.configuration,
+            delegate: delegate,
+            client: client,
+            entryPoint: nil
+        )
         super.init(rootViewController: rootViewController)
         configureNavigationBar()
         presentationController?.delegate = rootViewController
     }
 
     package init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: entryPoint)
+        let rootViewController = CheckoutWebViewController(
+            checkoutURL: url,
+            configuration: ShopifyCheckoutKit.configuration,
+            delegate: delegate,
+            client: client,
+            entryPoint: entryPoint
+        )
+        super.init(rootViewController: rootViewController)
+        configureNavigationBar()
+        presentationController?.delegate = rootViewController
+    }
+
+    init(checkout url: URL, configuration: Configuration, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
+        let rootViewController = CheckoutWebViewController(
+            checkoutURL: url,
+            configuration: configuration,
+            delegate: delegate,
+            client: client,
+            entryPoint: entryPoint
+        )
         super.init(rootViewController: rootViewController)
         configureNavigationBar()
         presentationController?.delegate = rootViewController
@@ -40,20 +65,26 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL
+    var configuration: Configuration
     var client: (any CheckoutCommunicationProtocol)?
     var onDismissAction: (() -> Void)?
     var onFailAction: ((CheckoutError) -> Void)?
 
     public init(checkout url: URL) {
         checkoutURL = url
+        configuration = ShopifyCheckoutKit.configuration
     }
 
     var decoratedCheckoutURL: URL {
-        CheckoutURLDecorator.decorate(checkoutURL)
+        CheckoutURLDecorator.decorate(checkoutURL, configuration: configuration)
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
-        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL, client: client)
+        let viewController = CheckoutViewController(
+            checkout: decoratedCheckoutURL,
+            configuration: configuration,
+            client: client
+        )
         configureWebViewController(viewController)
         return viewController
     }
@@ -111,27 +142,31 @@ public protocol CheckoutConfigurable {
 
 extension CheckoutConfigurable {
     @discardableResult public func backgroundColor(_ color: UIColor) -> Self {
-        ShopifyCheckoutKit.configuration.backgroundColor = color
-        return self
+        modifyingConfiguration { $0.backgroundColor = color }
     }
 
     @discardableResult public func appearance(_ appearance: ShopifyCheckoutKit.Configuration.Appearance) -> Self {
-        ShopifyCheckoutKit.configuration.appearance = appearance
-        return self
+        modifyingConfiguration { $0.appearance = appearance }
     }
 
     @discardableResult public func tintColor(_ color: UIColor) -> Self {
-        ShopifyCheckoutKit.configuration.tintColor = color
-        return self
+        modifyingConfiguration { $0.tintColor = color }
     }
 
     @discardableResult public func title(_ title: String) -> Self {
-        ShopifyCheckoutKit.configuration.title = title
-        return self
+        modifyingConfiguration { $0.title = title }
     }
 
     @discardableResult public func closeButtonTintColor(_ color: UIColor?) -> Self {
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = color
-        return self
+        modifyingConfiguration { $0.closeButtonTintColor = color }
+    }
+
+    private func modifyingConfiguration(_ update: (inout Configuration) -> Void) -> Self {
+        guard var copy = self as? ShopifyCheckout else {
+            return self
+        }
+
+        update(&copy.configuration)
+        return copy as? Self ?? self
     }
 }
