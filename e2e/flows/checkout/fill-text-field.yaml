@@ -1,10 +1,10 @@
 appId: ${E2E_APP_ID}
 ---
-- scrollUntilVisible:
-    element:
-      text: "${LOCATOR}"
-    direction: DOWN
-    centerElement: true
+- runFlow:
+    file: scroll-until-visible-bidirectional.yaml
+    env:
+      LOCATOR: "${LOCATOR}"
+      INITIAL_DIRECTION: "DOWN"
 - tapOn:
     text: "${LOCATOR}"
 - waitForAnimationToEnd

@@ -19,24 +19,10 @@ appId: ${E2E_APP_ID}
           text: "Country/Region"
       - waitForAnimationToEnd
       - runFlow:
-          when:
-            notVisible: "^${COUNTRY_LABEL}$"
-          commands:
-            - scrollUntilVisible:
-                element:
-                  text: "^${COUNTRY_LABEL}$"
-                direction: DOWN
-                centerElement: true
-                optional: true
-      - runFlow:
-          when:
-            notVisible: "^${COUNTRY_LABEL}$"
-          commands:
-            - scrollUntilVisible:
-                element:
-                  text: "^${COUNTRY_LABEL}$"
-                direction: UP
-                centerElement: true
+          file: scroll-until-visible-bidirectional.yaml
+          env:
+            LOCATOR: "^${COUNTRY_LABEL}$"
+            INITIAL_DIRECTION: "DOWN"
       - tapOn:
           text: "^${COUNTRY_LABEL}$"
       - waitForAnimationToEnd
@@ -70,14 +56,10 @@ appId: ${E2E_APP_ID}
     text: "^${STATE_FIELD_LABEL}$"
 - waitForAnimationToEnd
 - runFlow:
-    when:
-      notVisible: "^${STATE_LABEL}$"
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "^${STATE_LABEL}$"
-          direction: UP
-          centerElement: true
+    file: scroll-until-visible-bidirectional.yaml
+    env:
+      LOCATOR: "^${STATE_LABEL}$"
+      INITIAL_DIRECTION: "UP"
 - tapOn:
     text: "^${STATE_LABEL}$"
 - waitForAnimationToEnd
