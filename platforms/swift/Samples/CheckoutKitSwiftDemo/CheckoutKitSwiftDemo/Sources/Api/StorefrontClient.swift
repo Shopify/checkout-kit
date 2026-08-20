@@ -90,8 +90,7 @@ class StorefrontInputFactory {
                         address: Storefront.CartAddressInput(
                             deliveryAddress: .some(deliveryAddress)
                         ),
-                        selected: .some(true),
-                        oneTimeUse: .some(true)
+                        selected: .some(true)
                     )
                 ])
             )

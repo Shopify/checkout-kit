@@ -10,14 +10,6 @@ appId: ${E2E_APP_ID}
 - runFlow:
     when:
       platform: ios
-      visible: "Done"
     commands:
-      - tapOn: "Done"
-      - waitForAnimationToEnd
-- runFlow:
-    when:
-      platform: ios
-      visible: "selected"
-    commands:
-      - tapOn: "selected"
+      - tapOn: "^(Done|selected)$"
       - waitForAnimationToEnd

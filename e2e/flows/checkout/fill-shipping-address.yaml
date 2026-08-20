@@ -1,9 +1,13 @@
 appId: ${E2E_APP_ID}
 ---
+# Every scroll below asks for `centerElement`. A `visibilityPercentage` under 100 rounds
+# down to zero instead, which lets the scroll stop before it moves, and the tap that
+# follows then lands on whatever already sat there.
 - scrollUntilVisible:
     element:
       text: "Country/Region"
     direction: DOWN
+    centerElement: true
 
 # If the country is already selected and visible, skip this. Otherwise open the
 # picker, only scroll if needed, then select the configured country.
@@ -15,47 +19,34 @@ appId: ${E2E_APP_ID}
           text: "Country/Region"
       - waitForAnimationToEnd
       - runFlow:
-          when:
-            notVisible: "^${COUNTRY_LABEL}$"
-          commands:
-            - scrollUntilVisible:
-                element:
-                  text: "^${COUNTRY_LABEL}$"
-                direction: DOWN
-                visibilityPercentage: 10
-                optional: true
-      - runFlow:
-          when:
-            notVisible: "^${COUNTRY_LABEL}$"
-          commands:
-            - scrollUntilVisible:
-                element:
-                  text: "^${COUNTRY_LABEL}$"
-                direction: UP
-                visibilityPercentage: 10
+          file: scroll-until-visible-bidirectional.yaml
+          env:
+            LOCATOR: "^${COUNTRY_LABEL}$"
+            INITIAL_DIRECTION: "DOWN"
       - tapOn:
           text: "^${COUNTRY_LABEL}$"
       - waitForAnimationToEnd
-- scrollUntilVisible:
-    element:
-      text: "Address"
-    direction: DOWN
-    centerElement: true
-- tapOn:
-    text: "Address"
-- waitForAnimationToEnd
-- inputText: "${ADDRESS_LINE1}"
-- runFlow: dismiss-active-field.yaml
-- scrollUntilVisible:
-    element:
-      text: "^City$"
-    direction: DOWN
-    centerElement: true
-- tapOn:
-    text: "^City$"
-- waitForAnimationToEnd
-- inputText: "${CITY}"
-- runFlow: dismiss-active-field.yaml
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "^First name( \\(optional\\))?$"
+      TEXT_TO_INPUT: "${FIRST_NAME}"
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "^Last name$"
+      TEXT_TO_INPUT: "${LAST_NAME}"
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "Address"
+      TEXT_TO_INPUT: "${ADDRESS_LINE1}"
+      DISMISS_SUGGESTIONS: "true"
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "^City$"
+      TEXT_TO_INPUT: "${CITY}"
 - scrollUntilVisible:
     element:
       text: "^${STATE_FIELD_LABEL}$"
@@ -65,29 +56,33 @@ appId: ${E2E_APP_ID}
     text: "^${STATE_FIELD_LABEL}$"
 - waitForAnimationToEnd
 - runFlow:
-    when:
-      notVisible: "^${STATE_LABEL}$"
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "^${STATE_LABEL}$"
-          direction: DOWN
-          visibilityPercentage: 10
-          optional: true
-- runFlow:
-    when:
-      notVisible: "^${STATE_LABEL}$"
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "^${STATE_LABEL}$"
-          direction: UP
-          visibilityPercentage: 10
+    file: scroll-until-visible-bidirectional.yaml
+    env:
+      LOCATOR: "^${STATE_LABEL}$"
+      INITIAL_DIRECTION: "UP"
 - tapOn:
     text: "^${STATE_LABEL}$"
 - waitForAnimationToEnd
-- tapOn:
-    text: "^${POSTAL_FIELD_LABEL}$"
-- waitForAnimationToEnd
-- inputText: "${POSTAL_CODE}"
-- runFlow: dismiss-active-field.yaml
+- runFlow:
+    file: fill-text-field.yaml
+    env:
+      LOCATOR: "^${POSTAL_FIELD_LABEL}$"
+      TEXT_TO_INPUT: "${POSTAL_CODE}"
+
+# A shop decides whether the delivery address asks for a phone number, and it can make
+# that field required. The scroll is optional so a shop without the field still passes.
+- scrollUntilVisible:
+    element:
+      text: "^Phone$"
+    direction: DOWN
+    centerElement: true
+    optional: true
+- runFlow:
+    when:
+      visible: "^Phone$"
+    commands:
+      - tapOn:
+          text: "^Phone$"
+      - waitForAnimationToEnd
+      - inputText: "${PHONE}"
+      - runFlow: dismiss-active-field.yaml

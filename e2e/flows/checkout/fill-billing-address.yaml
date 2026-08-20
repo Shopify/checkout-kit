@@ -1,9 +1,7 @@
 appId: ${E2E_APP_ID}
 ---
-# Checkout offers a "use the shipping address" control only when it can copy the address
-# the cart supplied. The samples build their carts through different mutations, so one
-# target gets the control and another gets an empty billing form. The scroll below stops
-# at whichever the target shows, and the branch fills the form only when there is one.
+# Checkout may offer the shipping address or display an open billing form. Stop at
+# whichever state the journey presents and fill the form only when it is open.
 - scrollUntilVisible:
     element:
       text: "^(Billing address|Use shipping address as billing address)$"
@@ -15,29 +13,30 @@ appId: ${E2E_APP_ID}
     commands:
       # Country/Region and Province already hold the shop defaults, so this flow leaves
       # them alone and supplies an address that suits those defaults.
-      - scrollUntilVisible:
-          element:
-            text: "^First name( \\(optional\\))?$"
-          direction: DOWN
-          centerElement: true
-      - tapOn:
-          text: "^First name( \\(optional\\))?$"
-      - inputText: "${BILLING_FIRST_NAME}"
-      - runFlow: dismiss-active-field.yaml
-      - tapOn:
-          text: "^Last name$"
-      - inputText: "${BILLING_LAST_NAME}"
-      - runFlow: dismiss-active-field.yaml
-      - tapOn:
-          text: "^Address$"
-      - inputText: "${BILLING_ADDRESS_LINE1}"
-      - runFlow: dismiss-active-field.yaml
-      - tapOn:
-          text: "^City$"
-      - inputText: "${BILLING_CITY}"
-      - runFlow: dismiss-active-field.yaml
-      - tapOn:
-          text: "^${BILLING_POSTAL_FIELD_LABEL}$"
-      - inputText: "${BILLING_POSTAL_CODE}"
-      - runFlow: dismiss-active-field.yaml
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^First name( \\(optional\\))?$"
+            TEXT_TO_INPUT: "${BILLING_FIRST_NAME}"
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^Last name$"
+            TEXT_TO_INPUT: "${BILLING_LAST_NAME}"
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^Address$"
+            TEXT_TO_INPUT: "${BILLING_ADDRESS_LINE1}"
+            DISMISS_SUGGESTIONS: "true"
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^City$"
+            TEXT_TO_INPUT: "${BILLING_CITY}"
+      - runFlow:
+          file: fill-text-field.yaml
+          env:
+            LOCATOR: "^${BILLING_POSTAL_FIELD_LABEL}$"
+            TEXT_TO_INPUT: "${BILLING_POSTAL_CODE}"
       - waitForAnimationToEnd

@@ -1,0 +1,32 @@
+appId: ${E2E_APP_ID}
+---
+- runFlow:
+    when:
+      true: ${INITIAL_DIRECTION == 'UP'}
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "${LOCATOR}"
+          direction: UP
+          centerElement: true
+          optional: true
+      - scrollUntilVisible:
+          element:
+            text: "${LOCATOR}"
+          direction: DOWN
+          centerElement: true
+- runFlow:
+    when:
+      true: ${INITIAL_DIRECTION == 'DOWN'}
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "${LOCATOR}"
+          direction: DOWN
+          centerElement: true
+          optional: true
+      - scrollUntilVisible:
+          element:
+            text: "${LOCATOR}"
+          direction: UP
+          centerElement: true

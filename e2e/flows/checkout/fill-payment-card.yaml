@@ -1,41 +1,81 @@
 appId: ${E2E_APP_ID}
 ---
-- scrollUntilVisible:
-    element:
-      text: "^Card number$"
-    direction: DOWN
-    centerElement: true
-- tapOn:
-    text: "^Card number$"
-- waitForAnimationToEnd
-- inputText: "${CARD_NUMBER}"
-# Checkout groups the digits, so the field never reads back the value the test typed.
-- extendedWaitUntil:
-    visible: "^${CARD_NUMBER_DISPLAY}$"
-- runFlow: dismiss-active-field.yaml
-- scrollUntilVisible:
-    element:
-      text: "^Expiration date \\(MM / YY\\)$"
-    direction: DOWN
-    centerElement: true
-- tapOn:
-    text: "^Expiration date \\(MM / YY\\)$"
-- waitForAnimationToEnd
-- inputText: "1"
+# Enter Card number and dismiss its keyboard before moving to Expiration.
+- runFlow:
+    file: fill-hosted-text-field.yaml
+    env:
+      FIELD_LABEL: "Card number"
+      SCROLL_TO_FIELD: "true"
+      TEXT_TO_INPUT: "${CARD_NUMBER}"
+- runFlow:
+    when:
+      platform: ios
+      visible: "^(Done|selected)$"
+    commands:
+      - runFlow: dismiss-active-field.yaml
+
+# Enter expiration in two pairs so Checkout has time to format the separator.
+- runFlow:
+    file: fill-hosted-text-field.yaml
+    env:
+      FIELD_LABEL: "Expiration date \\(MM / YY\\)"
+      SCROLL_TO_FIELD: "false"
+      TEXT_TO_INPUT: "1"
 - inputText: "2"
 - waitForAnimationToEnd
 - inputText: "3"
 - inputText: "0"
 - runFlow: dismiss-active-field.yaml
-- tapOn:
-    text: "^Security code$"
-- waitForAnimationToEnd
-- inputText: "${CARD_SECURITY_CODE}"
+
+- runFlow:
+    file: fill-hosted-text-field.yaml
+    env:
+      FIELD_LABEL: "Security code"
+      SCROLL_TO_FIELD: "false"
+      TEXT_TO_INPUT: "${CARD_SECURITY_CODE}"
 - runFlow: dismiss-active-field.yaml
-- tapOn:
-    text: "^Name on card$"
-- waitForAnimationToEnd
-- eraseText
-- inputText: "${CARD_HOLDER_NAME}"
-- runFlow: dismiss-active-field.yaml
+
+# Preserve Checkout's cardholder prefill and only supply the name when it is absent.
+- runFlow:
+    when:
+      notVisible:
+        text: "^${CARD_HOLDER_NAME}$"
+        below:
+          text: "^Security code$"
+    commands:
+      - tapOn:
+          text: "^Name on card$"
+      - waitForAnimationToEnd
+      - inputText: "${CARD_HOLDER_NAME}"
+      - runFlow: dismiss-active-field.yaml
+
+# Validate every hosted field from the bottom up after input is complete.
+- runFlow:
+    file: assert-hosted-text-field-value.yaml
+    env:
+      FIELD_LABEL: "Name on card"
+      NEXT_FIELD_LABEL: ""
+      HAS_NEXT_FIELD: "false"
+      EXPECTED_TEXT: "${CARD_HOLDER_NAME}"
+- runFlow:
+    file: assert-hosted-text-field-value.yaml
+    env:
+      FIELD_LABEL: "Security code"
+      NEXT_FIELD_LABEL: "Name on card"
+      HAS_NEXT_FIELD: "true"
+      EXPECTED_TEXT: "${CARD_SECURITY_CODE}"
+- runFlow:
+    file: assert-hosted-text-field-value.yaml
+    env:
+      FIELD_LABEL: "Expiration date \\(MM / YY\\)"
+      NEXT_FIELD_LABEL: "Security code"
+      HAS_NEXT_FIELD: "true"
+      EXPECTED_TEXT: "12 / 30"
+- runFlow:
+    file: assert-hosted-text-field-value.yaml
+    env:
+      FIELD_LABEL: "Card number"
+      NEXT_FIELD_LABEL: "Expiration date \\(MM / YY\\)"
+      HAS_NEXT_FIELD: "true"
+      EXPECTED_TEXT: "${CARD_NUMBER_DISPLAY}"
 - waitForAnimationToEnd

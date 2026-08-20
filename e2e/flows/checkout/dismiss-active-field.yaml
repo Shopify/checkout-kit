@@ -1,9 +1,3 @@
 appId: ${E2E_APP_ID}
 ---
 - runFlow: ../app/hide-keyboard.yaml
-- runFlow:
-    when:
-      visible: "Close suggestions"
-    commands:
-      - tapOn: "Close suggestions"
-      - waitForAnimationToEnd

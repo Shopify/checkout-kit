@@ -27,20 +27,27 @@ export function createBuyerIdentityCartInput(
       return {
         buyerIdentity: {
           email: EMAIL,
-          deliveryAddressPreferences: {
-            deliveryAddress: {
-              address1: ADDRESS_1,
-              address2: ADDRESS_2,
-              city: CITY,
-              company: COMPANY,
-              country: COUNTRY,
-              firstName: FIRST_NAME,
-              lastName: LAST_NAME,
-              phone: PHONE,
-              province: PROVINCE,
-              zip: ZIP,
+        },
+        delivery: {
+          addresses: [
+            {
+              address: {
+                deliveryAddress: {
+                  address1: ADDRESS_1,
+                  address2: ADDRESS_2,
+                  city: CITY,
+                  company: COMPANY,
+                  countryCode: COUNTRY,
+                  firstName: FIRST_NAME,
+                  lastName: LAST_NAME,
+                  phone: PHONE,
+                  provinceCode: PROVINCE,
+                  zip: ZIP,
+                },
+              },
+              selected: true,
             },
-          },
+          ],
         },
       };
     case BuyerIdentityMode.CustomerAccount:
