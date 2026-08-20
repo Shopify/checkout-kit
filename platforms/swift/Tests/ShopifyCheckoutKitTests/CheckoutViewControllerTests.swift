@@ -56,6 +56,14 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertEqual(viewController.title, "Custom title")
     }
 
+    func testViewWillAppearAppliesLatestGlobalConfigurationToImperativeCheckout() {
+        ShopifyCheckoutKit.configuration.title = "Updated global title"
+
+        viewController.viewWillAppear(false)
+
+        XCTAssertEqual(viewController.title, "Updated global title")
+    }
+
     func testInstanceConfigurationIsAppliedToCheckoutChrome() throws {
         var configuration = Configuration()
         configuration.backgroundColor = .red

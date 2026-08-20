@@ -258,6 +258,11 @@ Clear unused preloaded checkout work with `invalidate`:
 ShopifyCheckoutKit.invalidate()
 ```
 
+Updating configuration through `ShopifyCheckoutKit.configure {}` triggers
+`ShopifyCheckoutKit.invalidate()`. Discarding cached preloads avoids presenting a
+stale checkout. If a preload may already have run when configuration changes,
+call `preload` again.
+
 Preloading is enabled by default. Disable it when appropriate, for example for data-saver modes or app-specific runtime conditions:
 
 ```kotlin

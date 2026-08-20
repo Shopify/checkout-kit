@@ -9,7 +9,6 @@ public class CheckoutViewController: UINavigationController {
     public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) {
         let rootViewController = CheckoutWebViewController(
             checkoutURL: url,
-            configuration: ShopifyCheckoutKit.configuration,
             delegate: delegate,
             client: client,
             entryPoint: nil
@@ -22,7 +21,6 @@ public class CheckoutViewController: UINavigationController {
     package init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         let rootViewController = CheckoutWebViewController(
             checkoutURL: url,
-            configuration: ShopifyCheckoutKit.configuration,
             delegate: delegate,
             client: client,
             entryPoint: entryPoint
@@ -65,14 +63,19 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL
-    var configuration: Configuration
+    var configurationModifiers: [(inout Configuration) -> Void] = []
     var client: (any CheckoutCommunicationProtocol)?
     var onDismissAction: (() -> Void)?
     var onFailAction: ((CheckoutError) -> Void)?
 
     public init(checkout url: URL) {
         checkoutURL = url
-        configuration = ShopifyCheckoutKit.configuration
+    }
+
+    var configuration: Configuration {
+        var configuration = ShopifyCheckoutKit.configuration
+        configurationModifiers.forEach { $0(&configuration) }
+        return configuration
     }
 
     var decoratedCheckoutURL: URL {
@@ -80,6 +83,8 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
+        let configuration = configuration
+        let decoratedCheckoutURL = CheckoutURLDecorator.decorate(checkoutURL, configuration: configuration)
         let viewController = CheckoutViewController(
             checkout: decoratedCheckoutURL,
             configuration: configuration,
@@ -93,7 +98,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         configureWebViewController(uiViewController)
     }
 
-    private func configureWebViewController(_ navigationController: CheckoutViewController) {
+    func configureWebViewController(_ navigationController: CheckoutViewController) {
         guard
             let webViewController = navigationController
             .viewControllers
@@ -103,6 +108,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
             return
         }
 
+        webViewController.apply(configuration: configuration)
         webViewController.client = client
         webViewController.checkoutView?.client = client
         webViewController.onDismiss = onDismissAction
@@ -161,12 +167,12 @@ extension CheckoutConfigurable {
         modifyingConfiguration { $0.closeButtonTintColor = color }
     }
 
-    private func modifyingConfiguration(_ update: (inout Configuration) -> Void) -> Self {
+    private func modifyingConfiguration(_ update: @escaping (inout Configuration) -> Void) -> Self {
         guard var copy = self as? ShopifyCheckout else {
             return self
         }
 
-        update(&copy.configuration)
+        copy.configurationModifiers.append(update)
         return copy as? Self ?? self
     }
 }

@@ -9,35 +9,29 @@ public let version = "4.0.0-alpha.5"
 private let lockedCheckoutKitConfiguration = LockedValue(Configuration())
 
 /// The configuration options for the `ShopifyCheckoutKit` library.
+///
+/// Assigning configuration invalidates any cached preload.
 public var configuration: Configuration {
     get { lockedCheckoutKitConfiguration.get() }
     set {
-        let previousConfiguration = lockedCheckoutKitConfiguration.get()
         lockedCheckoutKitConfiguration.set(newValue)
-        applyConfigurationChange(
-            configuration: newValue,
-            previousConfiguration: previousConfiguration
-        )
+        applyConfigurationChange(newValue)
     }
 }
 
-/// A convienence function for configuring the `ShopifyCheckoutKit` library.
+/// A convenience function for configuring the `ShopifyCheckoutKit` library.
+///
+/// Calling this function invalidates any cached preload.
 public func configure(_ block: (inout Configuration) -> Void) {
-    let previousConfiguration = lockedCheckoutKitConfiguration.get()
     lockedCheckoutKitConfiguration.update(block)
-    applyConfigurationChange(
-        configuration: lockedCheckoutKitConfiguration.get(),
-        previousConfiguration: previousConfiguration
-    )
+    applyConfigurationChange(lockedCheckoutKitConfiguration.get())
 }
 
-private func applyConfigurationChange(configuration: Configuration, previousConfiguration: Configuration) {
+private func applyConfigurationChange(_ configuration: Configuration) {
     OSLogger.shared.logLevel = configuration.logLevel
 
-    if configuration.preloading.enabled != previousConfiguration.preloading.enabled {
-        Task { @MainActor in
-            invalidate()
-        }
+    Task { @MainActor in
+        invalidate()
     }
 }
 

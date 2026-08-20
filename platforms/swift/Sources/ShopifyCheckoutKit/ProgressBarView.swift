@@ -10,10 +10,8 @@ class ProgressBarView: UIView {
     }()
 
     private var progressAnimation: UIViewPropertyAnimator?
-    private let configuredTintColor: UIColor
 
     init(frame: CGRect, tintColor: UIColor) {
-        configuredTintColor = tintColor
         super.init(frame: frame)
 
         addSubview(progressBar)
@@ -23,7 +21,7 @@ class ProgressBarView: UIView {
             progressBar.heightAnchor.constraint(equalToConstant: 1)
         ])
 
-        progressBar.tintColor = configuredTintColor
+        progressBar.tintColor = tintColor
     }
 
     override func didMoveToSuperview() {

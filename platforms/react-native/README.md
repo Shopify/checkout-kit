@@ -767,7 +767,15 @@ Instead, a better approach is to call `preload()` when you have a strong enough 
 
 ### Cache invalidation
 
-Should you wish to manually clear the preload cache, call `invalidate()` on your `ShopifyCheckout` instance or the value returned by `useShopifyCheckout()`.
+To manually clear the preload cache, call `invalidate()` on your `ShopifyCheckout`
+instance or the value returned by `useShopifyCheckout()`.
+
+Updating configuration through `shopifyCheckout.setConfig(...)` or the
+`configuration` prop on `ShopifyCheckoutProvider` triggers
+`shopifyCheckout.invalidate()`. Discarding cached preloads avoids presenting a
+stale checkout. If a preload may already have run when configuration changes,
+call `preload` again. Keep a provider's configuration object stable across renders to
+avoid unintentionally invalidating preloads.
 
 ## Checkout lifecycle
 

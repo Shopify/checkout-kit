@@ -35,6 +35,8 @@ public object ShopifyCheckoutKit {
     /**
      * Allows configuring ShopifyCheckoutKit.
      *
+     * Calling this function invalidates any cached preload.
+     *
      * Kotlin example:
      * {@code ShopifyCheckoutKit.configure { it.appearance = CheckoutAppearance.App(ColorScheme.Dark()) }}
      *

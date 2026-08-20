@@ -15,7 +15,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     var checkoutView: CheckoutWebView?
 
     lazy var progressBar: ProgressBarView = {
-        let progressBar = ProgressBarView(frame: .zero, tintColor: configuration.tintColor)
+        let progressBar = ProgressBarView(frame: .zero, tintColor: resolvedConfiguration.tintColor)
         progressBar.translatesAutoresizingMaskIntoConstraints = false
         return progressBar
     }()
@@ -23,55 +23,26 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     var initialNavigation: Bool = true
 
     private let checkoutURL: URL
-    private let configuration: Configuration
+    private var configurationOverride: Configuration?
 
-    private lazy var closeBarButtonItem: UIBarButtonItem = {
-        if let closeButtonTintColor = configuration.closeButtonTintColor {
-            var item: UIBarButtonItem
-
-            if #available(iOS 26.0, *) {
-                item = UIBarButtonItem(
-                    image: UIImage(systemName: "xmark"),
-                    style: .plain,
-                    target: self,
-                    action: #selector(close)
-                )
-            } else {
-                item = UIBarButtonItem(
-                    image: UIImage(systemName: "xmark.circle.fill"),
-                    style: .plain,
-                    target: self,
-                    action: #selector(close)
-                )
-            }
-
-            item.tintColor = closeButtonTintColor
-            item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
-            return item
-        }
-
-        let item = UIBarButtonItem(
-            barButtonSystemItem: .close,
-            target: self,
-            action: #selector(close)
-        )
-        item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
-        return item
-    }()
+    private var resolvedConfiguration: Configuration {
+        configurationOverride ?? ShopifyCheckoutKit.configuration
+    }
 
     var progressObserver: NSKeyValueObservation?
 
     // MARK: Initializers
 
-    public init(checkoutURL url: URL, configuration: Configuration = ShopifyCheckoutKit.configuration, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
+    public init(checkoutURL url: URL, configuration: Configuration? = nil, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         checkoutURL = url
-        self.configuration = configuration
+        configurationOverride = configuration
         self.delegate = delegate
         self.client = client
 
+        let resolvedConfiguration = configuration ?? ShopifyCheckoutKit.configuration
         let checkoutView = CheckoutWebView.for(checkout: url, entryPoint: entryPoint)
-        checkoutView.backgroundColor = configuration.backgroundColor
-        checkoutView.underPageBackgroundColor = configuration.backgroundColor
+        checkoutView.backgroundColor = resolvedConfiguration.backgroundColor
+        checkoutView.underPageBackgroundColor = resolvedConfiguration.backgroundColor
         checkoutView.translatesAutoresizingMaskIntoConstraints = false
         checkoutView.scrollView.contentInsetAdjustmentBehavior = .automatic
         checkoutView.client = client
@@ -79,13 +50,55 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         super.init(nibName: nil, bundle: nil)
 
-        title = configuration.title
-
-        navigationItem.rightBarButtonItem = closeBarButtonItem
-
         checkoutView.viewDelegate = self
+        applyPresentationConfiguration(resolvedConfiguration)
+    }
 
+    func apply(configuration: Configuration) {
+        configurationOverride = configuration
+        applyPresentationConfiguration(configuration)
+    }
+
+    private func applyPresentationConfiguration(_ configuration: Configuration) {
+        title = configuration.title
         view.backgroundColor = configuration.backgroundColor
+        checkoutView?.backgroundColor = configuration.backgroundColor
+        checkoutView?.underPageBackgroundColor = configuration.backgroundColor
+        progressBar.progressBar.tintColor = configuration.tintColor
+        navigationItem.rightBarButtonItem = closeBarButtonItem(tintColor: configuration.closeButtonTintColor)
+    }
+
+    private func closeBarButtonItem(tintColor: UIColor?) -> UIBarButtonItem {
+        guard let tintColor else {
+            let item = UIBarButtonItem(
+                barButtonSystemItem: .close,
+                target: self,
+                action: #selector(close)
+            )
+            item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
+            return item
+        }
+
+        let item: UIBarButtonItem
+        if #available(iOS 26.0, *) {
+            item = UIBarButtonItem(
+                image: UIImage(systemName: "xmark"),
+                style: .plain,
+                target: self,
+                action: #selector(close)
+            )
+        } else {
+            item = UIBarButtonItem(
+                image: UIImage(systemName: "xmark.circle.fill"),
+                style: .plain,
+                target: self,
+                action: #selector(close)
+            )
+        }
+
+        item.tintColor = tintColor
+        item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
+        return item
     }
 
     @available(*, unavailable)
@@ -98,7 +111,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        view.backgroundColor = configuration.backgroundColor
+        applyPresentationConfiguration(resolvedConfiguration)
     }
 
     override public func viewDidLoad() {
