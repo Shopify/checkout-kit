@@ -49,6 +49,20 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
+    func testManualInvalidateDoesNotDetachPresentedCheckout() {
+        let view = CheckoutWebView(entryPoint: nil)
+        view.isPresented = true
+        _ = CheckoutWebView.preloadCache.store(
+            view,
+            for: PreloadKey(url: url, entryPoint: nil)
+        )
+
+        ShopifyCheckoutKit.invalidate()
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertTrue(view.isBridgeAttached)
+    }
+
     func testOnStateChangeReceivesTransitions() {
         var states: [PreloadState] = []
 
