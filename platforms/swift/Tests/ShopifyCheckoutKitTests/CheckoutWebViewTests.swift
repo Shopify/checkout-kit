@@ -51,6 +51,19 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertFalse(view.isBridgeAttached)
     }
 
+    func testDetachBridgeWaitsUntilCheckoutIsNoLongerPresented() {
+        view.isPresented = true
+
+        view.detachBridge()
+
+        XCTAssertTrue(view.isBridgeAttached)
+
+        view.isPresented = false
+        view.detachBridge()
+
+        XCTAssertFalse(view.isBridgeAttached)
+    }
+
     func testHTTPSLinkIsAllowed() throws {
         let link = try XCTUnwrap(URL(string: "https://www.shopify.com/legal/privacy/app-users"))
         let received = expectation(description: "policy decided")

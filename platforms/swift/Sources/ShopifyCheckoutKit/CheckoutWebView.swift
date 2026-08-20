@@ -125,10 +125,7 @@ final class PreloadCache {
         stopExpiryTimer()
         entry = nil
 
-        // Once presented, the controller owns the view and its bridge until dismissal.
-        if cachedView?.isPresented != true {
-            cachedView?.detachBridge()
-        }
+        cachedView?.detachBridge()
     }
 
     func hasEntry() -> Bool {
@@ -506,6 +503,8 @@ class CheckoutWebView: WKWebView {
     }
 
     public func detachBridge() {
+        // Once presented, the controller owns the view and its bridge until dismissal.
+        guard !isPresented else { return }
         guard isBridgeAttached else { return }
 
         OSLogger.shared.debug("Detaching bridge")
