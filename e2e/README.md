@@ -140,10 +140,10 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 
 ## BrowserStack executors
 
-The Bitrise run stage defaults to the checksum-verified `maestro-runner` pin in
-`.maestro-runner-version`. It runs on the Bitrise worker and connects to BrowserStack
-real devices through the Appium hub. Set `E2E_BROWSERSTACK_EXECUTOR=hosted-maestro`
-to run the previous BrowserStack-hosted Maestro executor for comparison.
+The Bitrise run stage defaults to BrowserStack-hosted Maestro. Set
+`E2E_BROWSERSTACK_EXECUTOR=maestro-runner` to use the checksum-verified pin in
+`.maestro-runner-version`; it runs on the Bitrise worker and connects to BrowserStack
+real devices through the Appium hub.
 
 The Appium executor uploads only the app artifact, writes the runner's JSON, JUnit,
 HTML, screenshots, hierarchy, logs, and session IDs into the run result artifact,

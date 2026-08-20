@@ -407,7 +407,7 @@ workflows:
                 : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
                 run_artifact_env="$(ruby -rjson -e 'run_plan = JSON.parse(File.read(ARGV.fetch(0))); puts run_plan.fetch(Integer(ARGV.fetch(1))).fetch("artifact_env")' "$E2E_BROWSERSTACK_RUN_PLAN_JSON" "$run_index")"
                 : "${!run_artifact_env:?${run_artifact_env} is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
-                executor="${E2E_BROWSERSTACK_EXECUTOR:-maestro-runner}"
+                executor="${E2E_BROWSERSTACK_EXECUTOR:-hosted-maestro}"
                 case "$executor" in
                   maestro-runner)
                     scripts/install_maestro_runner
