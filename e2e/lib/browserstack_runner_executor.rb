@@ -53,6 +53,8 @@ class BrowserStackRunnerExecutor
     write_result(failure_result(error))
     warn "BrowserStack maestro-runner execution failed: #{error.message}"
     false
+  ensure
+    redact_artifacts
   end
 
   private
@@ -113,8 +115,6 @@ class BrowserStackRunnerExecutor
         "buildName" => build_name,
         "sessionName" => run.fetch("id"),
         "appiumVersion" => "latest",
-        "language" => "en",
-        "locale" => "US",
         "debug" => true,
         "video" => true,
         "deviceLogs" => true,
@@ -191,13 +191,28 @@ class BrowserStackRunnerExecutor
     File.open(log_path, "w") do |log|
       Open3.popen2e(*command, chdir: workspace) do |_stdin, output, wait_thread|
         output.each do |line|
-          $stdout.write(line)
-          log.write(line)
+          safe_line = redact(line)
+          $stdout.write(safe_line)
+          log.write(safe_line)
         end
         success = wait_thread.value.success?
       end
     end
     success
+  end
+
+  def redact(value)
+    [username, access_key].reject(&:empty?).reduce(value) { |text, secret| text.gsub(secret, "[REDACTED]") }
+  end
+
+  def redact_artifacts
+    return unless @output_dir && File.directory?(@output_dir)
+
+    Dir.glob(File.join(@output_dir, "**", "*.{html,json,jsonl,log,txt,xml}")).each do |path|
+      contents = File.binread(path)
+      redacted = redact(contents)
+      File.binwrite(path, redacted) if redacted != contents
+    end
   end
 
   def read_report(runner_output)

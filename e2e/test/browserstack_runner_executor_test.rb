@@ -42,8 +42,8 @@ class BrowserStackRunnerExecutorTest < Minitest::Test
     assert_equal "key", browserstack.fetch("accessKey")
     assert_equal "checkout-kit maestro-runner 123", browserstack.fetch("buildName")
     assert_equal "kotlin-android-latest", browserstack.fetch("sessionName")
-    assert_equal "en", browserstack.fetch("language")
-    assert_equal "US", browserstack.fetch("locale")
+    refute browserstack.key?("language")
+    refute browserstack.key?("locale")
   end
 
   def test_ios_capabilities_use_xcuitest_and_the_bundle_identifier
@@ -112,6 +112,17 @@ class BrowserStackRunnerExecutorTest < Minitest::Test
       "--env", "EMPTY=",
       "tests/shared"
     ], command
+  end
+
+  def test_redaction_removes_browserstack_credentials_from_runner_output
+    @executor.instance_variable_set(:@env, {
+      "BROWSERSTACK_USERNAME" => "browserstack-user",
+      "BROWSERSTACK_ACCESS_KEY" => "browserstack-key"
+    })
+
+    redacted = @executor.send(:redact, "user=browserstack-user key=browserstack-key")
+
+    assert_equal "user=[REDACTED] key=[REDACTED]", redacted
   end
 
   def test_runner_workspace_enables_a_fresh_appium_session_without_changing_the_shared_flow
