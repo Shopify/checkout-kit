@@ -45,6 +45,15 @@ const StyleSheet = {
   flatten: jest.fn(style => style),
 };
 
+const Alert = {
+  alert: jest.fn(),
+};
+
+const Linking = {
+  canOpenURL: jest.fn(async () => true),
+  openURL: jest.fn(async () => undefined),
+};
+
 const exampleConfig = {
   colorScheme: 'automatic',
   logLevel: 'error',
@@ -104,6 +113,8 @@ const ShopifyCheckoutKit = {
 
 // CommonJS export for Jest manual mock resolution
 module.exports = {
+  Alert,
+  Linking,
   Platform: {OS: 'ios'},
   PermissionsAndroid: {
     requestMultiple: jest.fn(async () => ({})),
