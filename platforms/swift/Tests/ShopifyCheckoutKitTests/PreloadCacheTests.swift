@@ -79,7 +79,7 @@ class PreloadCacheTests: XCTestCase {
         entry.webViewWebContentProcessDidTerminate(entry)
 
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
-        XCTAssertEqual(CheckoutWebView.preloadCache.state, .idle)
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .idle(reason: .invalidated))
         XCTAssertEqual(try XCTUnwrap(delegate.errorReceived).code, .webContentProcessTerminated)
     }
 

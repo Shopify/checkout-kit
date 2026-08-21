@@ -7,7 +7,10 @@ import Foundation
 /// ``CheckoutDelegate/checkoutDidFail(error:)``; a later presentation can load checkout normally.
 public enum PreloadState: Equatable {
     /// No checkout is currently cached for preload.
-    case idle
+    ///
+    /// A reason is present when a previously cached checkout became unavailable through an
+    /// expected lifecycle transition. The initial state has no reason.
+    case idle(reason: IdleReason? = nil)
 
     /// The cached checkout is loading in the background.
     case loading
@@ -15,14 +18,20 @@ public enum PreloadState: Equatable {
     /// The cached checkout is ready for a matching presentation.
     case ready
 
-    /// The cached checkout passed its time-to-live and was evicted.
-    case expired
-
     /// The cached checkout could not be retained for the associated reason.
     ///
     /// The message contains best-effort diagnostic context. It is not a stable, machine-readable
     /// value; use ``FailureReason`` to determine how to handle the failure.
     case failed(reason: FailureReason, message: String)
+
+    /// Reason no checkout is currently cached for preload.
+    public enum IdleReason: Equatable {
+        /// The preload was explicitly invalidated or became inapplicable.
+        case invalidated
+
+        /// The cached preload passed its time-to-live.
+        case expired
+    }
 
     /// Reason a preload cache entry was not available.
     public enum FailureReason: Equatable {

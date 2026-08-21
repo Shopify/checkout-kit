@@ -6920,13 +6920,41 @@
               {
                 "kind": "TypeFunc",
                 "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.PreloadState.Type) -> ShopifyCheckoutKit.PreloadState",
+                "printedName": "(ShopifyCheckoutKit.PreloadState.Type) -> (ShopifyCheckoutKit.PreloadState.IdleReason?) -> ShopifyCheckoutKit.PreloadState",
                 "children": [
                   {
-                    "kind": "TypeNominal",
-                    "name": "PreloadState",
-                    "printedName": "ShopifyCheckoutKit.PreloadState",
-                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.IdleReason?) -> ShopifyCheckoutKit.PreloadState",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "PreloadState",
+                        "printedName": "ShopifyCheckoutKit.PreloadState",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Tuple",
+                        "printedName": "(reason: ShopifyCheckoutKit.PreloadState.IdleReason?)",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Optional",
+                            "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason?",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "IdleReason",
+                                "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason",
+                                "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO"
+                              }
+                            ],
+                            "usr": "s:Sq"
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
                     "kind": "TypeNominal",
@@ -6945,8 +6973,8 @@
               }
             ],
             "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit12PreloadStateO4idleyA2CmF",
-            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO4idleyA2CmF",
+            "usr": "s:18ShopifyCheckoutKit12PreloadStateO4idleyA2C10IdleReasonOSg_tcACmF",
+            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO4idleyA2C10IdleReasonOSg_tcACmF",
             "moduleName": "ShopifyCheckoutKit"
           },
           {
@@ -7025,43 +7053,6 @@
           },
           {
             "kind": "Var",
-            "name": "expired",
-            "printedName": "expired",
-            "children": [
-              {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.PreloadState.Type) -> ShopifyCheckoutKit.PreloadState",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "PreloadState",
-                    "printedName": "ShopifyCheckoutKit.PreloadState",
-                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyCheckoutKit.PreloadState.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "PreloadState",
-                        "printedName": "ShopifyCheckoutKit.PreloadState",
-                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ],
-            "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit12PreloadStateO7expiredyA2CmF",
-            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO7expiredyA2CmF",
-            "moduleName": "ShopifyCheckoutKit"
-          },
-          {
-            "kind": "Var",
             "name": "failed",
             "printedName": "failed",
             "children": [
@@ -7122,6 +7113,221 @@
             "usr": "s:18ShopifyCheckoutKit12PreloadStateO6failedyA2C13FailureReasonO_SStcACmF",
             "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO6failedyA2C13FailureReasonO_SStcACmF",
             "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "TypeDecl",
+            "name": "IdleReason",
+            "printedName": "IdleReason",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "invalidated",
+                "printedName": "invalidated",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.IdleReason.Type) -> ShopifyCheckoutKit.PreloadState.IdleReason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "IdleReason",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "IdleReason",
+                            "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason",
+                            "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO11invalidatedyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO10IdleReasonO11invalidatedyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Var",
+                "name": "expired",
+                "printedName": "expired",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.IdleReason.Type) -> ShopifyCheckoutKit.PreloadState.IdleReason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "IdleReason",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "IdleReason",
+                            "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason",
+                            "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO7expiredyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO10IdleReasonO7expiredyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Function",
+                "name": "__derived_enum_equals",
+                "printedName": "__derived_enum_equals(_:_:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "IdleReason",
+                    "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason",
+                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "IdleReason",
+                    "printedName": "ShopifyCheckoutKit.PreloadState.IdleReason",
+                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO21__derived_enum_equalsySbAE_AEtFZ",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO10IdleReasonO21__derived_enum_equalsySbAE_AEtFZ",
+                "moduleName": "ShopifyCheckoutKit",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Implements"
+                ],
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Function",
+                "name": "hash",
+                "printedName": "hash(into:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Hasher",
+                    "printedName": "Swift.Hasher",
+                    "paramValueOwnership": "InOut",
+                    "usr": "s:s6HasherV"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO4hash4intoys6HasherVz_tF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO10IdleReasonO4hash4intoys6HasherVz_tF",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Var",
+                "name": "hashValue",
+                "printedName": "hashValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO9hashValueSivp",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO10IdleReasonO9hashValueSivp",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO9hashValueSivg",
+                    "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO10IdleReasonO9hashValueSivg",
+                    "moduleName": "ShopifyCheckoutKit",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO",
+            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO10IdleReasonO",
+            "moduleName": "ShopifyCheckoutKit",
+            "isEnumExhaustive": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Hashable",
+                "printedName": "Hashable",
+                "usr": "s:SH",
+                "mangledName": "$sSH"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              }
+            ]
           },
           {
             "kind": "TypeDecl",

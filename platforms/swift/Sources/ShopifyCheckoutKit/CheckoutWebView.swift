@@ -41,7 +41,7 @@ final class PreloadCache {
     private var keepAliveTimer: Timer?
     private var expiryTimer: Timer?
 
-    private(set) var state: PreloadState = .idle
+    private(set) var state: PreloadState = .idle()
 
     /// The cache notifies a single observer. Each `preload(checkout:)` call
     /// replaces it, so only the most recently returned `CheckoutPreload` handle
@@ -92,7 +92,7 @@ final class PreloadCache {
             let missed = entry
             invalidate()
             if let missed {
-                transition(to: missed.isStale ? .expired : .idle)
+                transition(to: .idle(reason: missed.isStale ? .expired : .invalidated))
             }
             return nil
         }
@@ -204,7 +204,7 @@ final class PreloadCache {
     }
 
     func expire() {
-        evict(with: .expired)
+        evict(with: .idle(reason: .expired))
     }
 
     func keepAliveDidFail() {
@@ -345,7 +345,7 @@ class CheckoutWebView: WKWebView {
         }
         .on(CheckoutProtocol.complete) { [weak self] _ in
             guard let self, CheckoutWebView.preloadCache.contains(self) else { return }
-            CheckoutWebView.preloadCache.evict(with: .idle, disconnect: false)
+            CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated), disconnect: false)
         }
         .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
             guard let target = request.parsedURL else {
@@ -558,7 +558,7 @@ class CheckoutWebView: WKWebView {
         guard CheckoutWebView.preloadCache.contains(self) else { return }
 
         if hasBeenPresented {
-            CheckoutWebView.preloadCache.evict(with: .idle)
+            CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
         } else {
             CheckoutWebView.preloadCache.evict(with: .failed(reason: reason, message: message))
         }
