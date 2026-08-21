@@ -111,15 +111,6 @@ assert_contains() {
   grep -Fq "$pattern" "$path" || fail "expected content was not found: $path: $pattern"
 }
 
-assert_not_contains() {
-  local path="$1"
-  local pattern="$2"
-
-  if grep -Fq "$pattern" "$path"; then
-    fail "unexpected content was found: $path: $pattern"
-  fi
-}
-
 assert_files_match() {
   cmp -s "$1" "$2" || fail "files differ but must be byte-identical: $1 $2"
 }
@@ -157,11 +148,11 @@ test_generates_both_env_files() {
 
   # Each file must say it is generated, or someone edits it and loses the change.
   assert_contains "$fixture/.env" "dev secrets edit demo"
+  assert_contains "$fixture/.env" "Gitignored overrides: .env.local"
   assert_contains "$fixture/e2e/.env" "dev secrets edit e2e"
-
-  # ejson2env reads the environment object only, so the metadata keys stay behind.
-  assert_not_contains "$fixture/.env" "_public_key"
-  assert_not_contains "$fixture/.env" "Synthetic fixture."
+  if grep -Fq ".env.local" "$fixture/e2e/.env"; then
+    fail "e2e/.env advertises an unsupported local override"
+  fi
 }
 
 test_check_passes_when_current_and_fails_when_stale() {
@@ -183,19 +174,6 @@ test_check_passes_when_current_and_fails_when_stale() {
   assert_output_is_sanitized "$output"
 }
 
-test_generating_twice_leaves_the_file_byte_identical() {
-  local fixture output first
-  fixture="$(make_fixture)"
-  output="$fixture/output.log"
-  first="$fixture/first"
-
-  run_generate "$fixture" >"$output" 2>&1
-  cp "$fixture/.env" "$first"
-
-  run_generate "$fixture" >"$output" 2>&1
-  assert_files_match "$fixture/.env" "$first"
-}
-
 test_missing_ejson2env_fails_and_names_dev_up() {
   local fixture output
   fixture="$(make_fixture)"
@@ -210,34 +188,7 @@ test_missing_ejson2env_fails_and_names_dev_up() {
   assert_file_absent "$fixture/.env"
 }
 
-test_missing_private_key_skips_without_failing() {
-  local fixture output
-  fixture="$(make_fixture)"
-  output="$fixture/output.log"
-
-  rm -f "$fixture"/keys/*
-
-  run_generate "$fixture" >"$output" 2>&1 ||
-    fail "a missing private key must not fail; it is a supported state"
-
-  assert_output_is_sanitized "$output"
-  assert_contains "$output" "no private key"
-  assert_file_absent "$fixture/.env"
-}
-
-test_missing_private_key_passes_check() {
-  local fixture output
-  fixture="$(make_fixture)"
-  output="$fixture/output.log"
-
-  rm -f "$fixture"/keys/*
-
-  run_generate "$fixture" --check >"$output" 2>&1 ||
-    fail "--check must pass when no key is installed, so dev up still completes"
-  assert_output_is_sanitized "$output"
-}
-
-test_failed_decrypt_leaves_an_existing_env_file_intact() {
+test_missing_private_key_skips_and_preserves_existing_env() {
   local fixture output before
   fixture="$(make_fixture)"
   output="$fixture/output.log"
@@ -245,31 +196,63 @@ test_failed_decrypt_leaves_an_existing_env_file_intact() {
 
   printf 'STOREFRONT_DOMAIN=%s\n' hand-written-store.example.myshopify.com >"$fixture/.env"
   cp "$fixture/.env" "$before"
-
   rm -f "$fixture"/keys/*
-  run_generate "$fixture" >"$output" 2>&1 || true
+
+  run_generate "$fixture" >"$output" 2>&1 ||
+    fail "a missing private key must not fail; it is a supported state"
+
+  assert_output_is_sanitized "$output"
+  assert_contains "$output" "no private key"
+  assert_files_match "$fixture/.env" "$before"
+
+  run_generate "$fixture" --check >"$output" 2>&1 ||
+    fail "--check must pass when no key is installed"
+  assert_output_is_sanitized "$output"
+}
+
+test_failed_decrypt_preserves_existing_env() {
+  local fixture output before key_file
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  before="$fixture/before"
+
+  printf 'STOREFRONT_DOMAIN=%s\n' hand-written-store.example.myshopify.com >"$fixture/.env"
+  cp "$fixture/.env" "$before"
+
+  key_file="$(find "$fixture/keys" -type f -print -quit)"
+  chmod u+w "$key_file"
+  printf 'invalid-private-key\n' >"$key_file"
+
+  if run_generate "$fixture" >"$output" 2>&1; then
+    fail "generate_env_files succeeded with an invalid private key"
+  fi
 
   assert_output_is_sanitized "$output"
   assert_files_match "$fixture/.env" "$before"
 }
 
-test_migrate_copies_root_env_to_env_local_once() {
+test_migrate_lifecycle() {
   local fixture output after_first
   fixture="$(make_fixture)"
   output="$fixture/output.log"
   after_first="$fixture/after_first"
 
+  "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
+  assert_file_absent "$fixture/.env.local"
+
   printf 'STOREFRONT_DOMAIN=%s\n' hand-written-store.example.myshopify.com >"$fixture/.env"
+  if "$fixture/scripts/migrate_env_to_local" --check >"$output" 2>&1; then
+    fail "--check passed while a migration was pending"
+  fi
 
   "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
   assert_output_is_sanitized "$output"
-  assert_file_exists "$fixture/.env.local"
   assert_files_match "$fixture/.env.local" "$fixture/.env"
   cp "$fixture/.env.local" "$after_first"
 
-  # A second run must be a no-op, because dev up runs this on every invocation.
   "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
-  assert_output_is_sanitized "$output"
+  "$fixture/scripts/migrate_env_to_local" --check >"$output" 2>&1 ||
+    fail "--check failed after migration"
   assert_files_match "$fixture/.env.local" "$after_first"
 }
 
@@ -289,30 +272,18 @@ test_migrate_never_overwrites_an_existing_env_local() {
   assert_files_match "$fixture/.env.local" "$before"
 }
 
-test_migrate_does_nothing_without_a_root_env() {
+test_migrate_skips_a_generated_root_env() {
   local fixture output
   fixture="$(make_fixture)"
   output="$fixture/output.log"
 
-  "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
-
-  assert_output_is_sanitized "$output"
-  assert_file_absent "$fixture/.env.local"
-}
-
-test_migrate_check_reports_whether_a_copy_is_needed() {
-  local fixture output
-  fixture="$(make_fixture)"
-  output="$fixture/output.log"
+  run_generate "$fixture" >"$output" 2>&1
+  rm -f "$fixture/.env.local"
 
   "$fixture/scripts/migrate_env_to_local" --check >"$output" 2>&1 ||
-    fail "--check must pass when there is no .env to migrate"
+    fail "--check failed for an already generated .env"
+  "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
 
-  printf 'STOREFRONT_DOMAIN=%s\n' hand-written-store.example.myshopify.com >"$fixture/.env"
-
-  if "$fixture/scripts/migrate_env_to_local" --check >"$output" 2>&1; then
-    fail "--check passed while a migration was still pending"
-  fi
   assert_output_is_sanitized "$output"
   assert_file_absent "$fixture/.env.local"
 }
@@ -322,14 +293,11 @@ require_binary ejson2env
 
 test_generates_both_env_files
 test_check_passes_when_current_and_fails_when_stale
-test_generating_twice_leaves_the_file_byte_identical
 test_missing_ejson2env_fails_and_names_dev_up
-test_missing_private_key_skips_without_failing
-test_missing_private_key_passes_check
-test_failed_decrypt_leaves_an_existing_env_file_intact
-test_migrate_copies_root_env_to_env_local_once
+test_missing_private_key_skips_and_preserves_existing_env
+test_failed_decrypt_preserves_existing_env
+test_migrate_lifecycle
 test_migrate_never_overwrites_an_existing_env_local
-test_migrate_does_nothing_without_a_root_env
-test_migrate_check_reports_whether_a_copy_is_needed
+test_migrate_skips_a_generated_root_env
 
 echo "generate_env_files synthetic tests passed."

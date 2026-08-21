@@ -528,6 +528,32 @@ EOF
   assert_file_is_unchanged "$fixture/.env.local" "$local_before"
 }
 
+test_blank_env_local_values_clear_customer_account_config() {
+  local fixture output android_env
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  android_env="$(android_env_of "$fixture")"
+
+  write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+  assert_contains "$android_env" "CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client"
+  assert_contains "$android_env" "CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop"
+
+  cat >"$fixture/.env.local" <<'EOF'
+CUSTOMER_ACCOUNT_API_CLIENT_ID=
+CUSTOMER_ACCOUNT_API_SHOP_ID=
+EOF
+
+  "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+
+  assert_contains "$android_env" "CUSTOMER_ACCOUNT_API_CLIENT_ID="
+  assert_contains "$android_env" "CUSTOMER_ACCOUNT_API_SHOP_ID="
+  assert_not_contains "$android_env" "synthetic-client"
+  assert_not_contains "$android_env" "synthetic-shop"
+  assert_not_contains "$android_env" "CUSTOMER_ACCOUNT_API_REDIRECT_URI"
+}
+
 test_env_local_warning_names_only_keys() {
   local fixture output
   fixture="$(make_fixture)"
@@ -613,6 +639,7 @@ test_development_team_follows_env_and_clears
 test_existing_platform_config_seeds_the_missing_values
 test_duplicate_keys_resolve_last_wins
 test_env_local_overrides_root_env
+test_blank_env_local_values_clear_customer_account_config
 test_env_local_warning_names_only_keys
 test_env_local_is_never_baked_into_root_env
 test_legacy_merchant_identifier_configures_both_samples_without_rewriting_root_env

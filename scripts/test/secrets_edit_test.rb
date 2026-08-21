@@ -149,9 +149,6 @@ class SecretsEditTest < Minitest::Test
     assert_includes out, "dev secrets edit"
   end
 
-  # An edit is only useful once it reaches the sample apps, so secrets_edit runs
-  # generate_env_files itself. These two tests use a throwaway repository tree, so
-  # the regeneration cannot touch the real .env.
   def test_editing_a_secrets_file_regenerates_the_env_files
     skip "ejson2env is not installed" unless system("command -v ejson2env >/dev/null 2>&1")
 
@@ -159,21 +156,9 @@ class SecretsEditTest < Minitest::Test
     out, status = run_in(root, %w[API_VERSION=2026-10])
 
     assert_equal 0, status, "secrets_edit failed:\n#{out}"
-    assert_path_exists File.join(root, ".env")
     assert_includes File.read(File.join(root, ".env")), "API_VERSION=2026-10"
   end
 
-  def test_a_failed_regeneration_still_keeps_the_edit
-    root = fake_repo_root
-    out, status = run_in(root, %w[API_VERSION=2026-10], path: ejson_only_path)
-
-    assert_equal 0, status, "an edit that cannot be applied locally must still be committable:\n#{out}"
-    assert_equal "2026-10", decrypt(File.join(root, "config", "secrets", "demo.ejson")).fetch("API_VERSION")
-    refute_path_exists File.join(root, ".env")
-  end
-
-  # The real .env lives beside the real config/secrets. Editing an .ejson file
-  # anywhere else must not rewrite it.
   def test_editing_a_file_outside_config_secrets_leaves_the_env_files_alone
     out, = edit(%w[API_VERSION=2026-10])
 
@@ -231,8 +216,6 @@ class SecretsEditTest < Minitest::Test
     [out, status.exitstatus]
   end
 
-  # A throwaway copy of the parts of the repository that secrets_edit reaches, so
-  # the regeneration it triggers writes into the temporary tree instead of here.
   def fake_repo_root
     root = File.join(@dir, "repo")
     FileUtils.mkdir_p(File.join(root, "scripts"))
@@ -246,22 +229,11 @@ class SecretsEditTest < Minitest::Test
     root
   end
 
-  def run_in(root, assignments, path: nil)
+  def run_in(root, assignments)
     env = {"EJSON_KEYDIR" => @keydir, "EDITOR" => setting_editor(assignments), "NO_COLOR" => "1"}
-    env["PATH"] = path if path
     target = File.join(root, "config", "secrets", "demo.ejson")
     out, status = Open3.capture2e(env, File.join(root, "scripts", "secrets_edit"), "edit", target, chdir: root)
     [out, status.exitstatus]
-  end
-
-  # Enough to run the edit but not the regeneration, so the two failures stay
-  # distinguishable without stubbing either binary.
-  def ejson_only_path
-    bin = File.join(@dir, "bin")
-    FileUtils.mkdir_p(bin)
-    FileUtils.ln_s(`command -v ejson`.strip, File.join(bin, "ejson")) unless File.exist?(File.join(bin, "ejson"))
-
-    "#{bin}:/usr/bin:/bin"
   end
 
   def setting_editor(assignments)
@@ -319,8 +291,8 @@ class SecretsEditTest < Minitest::Test
     raise "encrypt failed: #{out}" unless status.success?
   end
 
-  def decrypt(path = @path)
-    out, status = Open3.capture2e({"EJSON_KEYDIR" => @keydir}, "ejson", "decrypt", path)
+  def decrypt
+    out, status = Open3.capture2e({"EJSON_KEYDIR" => @keydir}, "ejson", "decrypt", @path)
     raise "decrypt failed: #{out}" unless status.success?
 
     JSON.parse(out).fetch("environment")

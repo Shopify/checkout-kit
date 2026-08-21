@@ -269,6 +269,22 @@ root_or_source_nonempty_value() {
   first_config_value "$@"
 }
 
+root_or_source_clearable_value() {
+  local key="$1"
+  shift
+  local local_value
+
+  if env_has_key "$key" "$ROOT_ENV_LOCAL"; then
+    local_value="$(read_env_value "$key" "$ROOT_ENV_LOCAL")"
+    if ! is_placeholder_value "$local_value"; then
+      printf '%s' "$local_value"
+      return 0
+    fi
+  fi
+
+  root_or_source_nonempty_value "$key" "$@"
+}
+
 derive_customer_account_api_shop_id() {
   local value
 
@@ -377,16 +393,13 @@ load_values() {
     "$(read_env_value APPLE_PAY_MERCHANT_IDENTIFIER "$SWIFT_DEMO_XCCONFIG")" \
     "$(read_env_value STOREFRONT_MERCHANT_IDENTIFIER "$SWIFT_DEMO_XCCONFIG")")"
 
-  # Nonempty, not plain: a blank line in .env means ejson has no value yet, so the
-  # process environment must still be able to supply one. Neither chain ends in a
-  # default, so a key that is genuinely unset still resolves to blank.
-  CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE="$(root_or_source_nonempty_value CUSTOMER_ACCOUNT_API_CLIENT_ID \
+  CUSTOMER_ACCOUNT_API_CLIENT_ID_VALUE="$(root_or_source_clearable_value CUSTOMER_ACCOUNT_API_CLIENT_ID \
     "$(env_fallback CUSTOMER_ACCOUNT_API_CLIENT_ID)" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$ANDROID_ENV")" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$REACT_NATIVE_ENV")" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_CLIENT_ID "$SWIFT_DEMO_XCCONFIG")")"
 
-  CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE="$(root_or_source_nonempty_value CUSTOMER_ACCOUNT_API_SHOP_ID \
+  CUSTOMER_ACCOUNT_API_SHOP_ID_VALUE="$(root_or_source_clearable_value CUSTOMER_ACCOUNT_API_SHOP_ID \
     "$(env_fallback CUSTOMER_ACCOUNT_API_SHOP_ID)" \
     "$(derive_customer_account_api_shop_id)" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_SHOP_ID "$REACT_NATIVE_ENV")" \

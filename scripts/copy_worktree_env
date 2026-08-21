@@ -2,17 +2,8 @@
 
 set -euo pipefail
 
-# Copies root-level machine-local configuration from the main checkout into the
-# current git worktree: .env.local, .dev.env, and local.properties. Generated
-# files such as .env and e2e/.env are deliberately not copied.
-#
-# Runs automatically as a `dev up` step. With --check it reports (without
-# copying) whether the current worktree is missing any of those files: exit 0
-# when nothing is needed (main checkout, or already seeded) and non-zero when a
-# copy is required, so it can serve as a `dev up` met? probe.
-#
-# This command prints file paths and status only; it never prints configured
-# values.
+# Copies gitignored machine-local configuration from the main checkout into the
+# current worktree. Generated env files are excluded because `dev up` rebuilds them.
 
 mode="copy"
 if [[ "${1:-}" == "--check" ]]; then
@@ -27,22 +18,13 @@ COMMON_GIT_DIR="$(git rev-parse --path-format=absolute --git-common-dir)"
 MAIN_ROOT="$(dirname "${COMMON_GIT_DIR}")"
 
 if [[ "${CURRENT_ROOT}" == "${MAIN_ROOT}" ]]; then
-  # In the main checkout there is never anything to copy.
   [[ "${mode}" == "check" ]] && exit 0
   echo "Already in the main checkout (${CURRENT_ROOT}); nothing to copy."
   exit 0
 fi
 
-# Root-level, gitignored files that nothing generates. Anything generated is left
-# out, because `dev up` rebuilds it in this worktree anyway:
-#
-#   .env       scripts/generate_env_files, from config/secrets/demo.ejson
-#   e2e/.env   scripts/generate_env_files, from config/secrets/e2e.ejson
-#   sample app config  scripts/setup_storefront_env, from .env
-#
-# Copying a generated .env would be worse than useless: the next step,
-# scripts/migrate_env_to_local, would read it as hand-written and freeze that
-# stale copy as .env.local, which then overrides the real one for good.
+# Copying .env would let migrate_env_to_local preserve stale generated values as
+# local overrides before this worktree regenerates them.
 ROOT_FILES=(
   ".env.local"
   ".dev.env"
@@ -65,7 +47,6 @@ for rel in "${ROOT_FILES[@]}"; do
     continue
   fi
 
-  # A source file exists in the main checkout but is missing here.
   if [[ "${mode}" == "check" ]]; then
     echo "missing: ${rel}"
     exit 1
@@ -76,7 +57,6 @@ for rel in "${ROOT_FILES[@]}"; do
   copied_any="true"
 done
 
-# Check mode reached here with nothing missing: the worktree is already seeded.
 [[ "${mode}" == "check" ]] && exit 0
 
 if [[ "${copied_any}" != "true" ]]; then

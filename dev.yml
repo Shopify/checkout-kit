@@ -32,7 +32,7 @@ up:
       met?: ./scripts/secrets_setup --check
       meet: "true"
   - custom:
-      name: Copy .env, .dev.env, local.properties into worktree
+      name: Copy .env.local, .dev.env, local.properties into worktree
       met?: ./scripts/copy_worktree_env --check
       meet: ./scripts/copy_worktree_env
   - custom:
