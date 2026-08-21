@@ -7053,6 +7053,63 @@
           },
           {
             "kind": "Var",
+            "name": "evicted",
+            "printedName": "evicted",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.PreloadState.Type) -> (ShopifyCheckoutKit.PreloadState.EvictionReason) -> ShopifyCheckoutKit.PreloadState",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.EvictionReason) -> ShopifyCheckoutKit.PreloadState",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "PreloadState",
+                        "printedName": "ShopifyCheckoutKit.PreloadState",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Tuple",
+                        "printedName": "(reason: ShopifyCheckoutKit.PreloadState.EvictionReason)",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "EvictionReason",
+                            "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason",
+                            "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.PreloadState.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "PreloadState",
+                        "printedName": "ShopifyCheckoutKit.PreloadState",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit12PreloadStateO7evictedyA2C14EvictionReasonO_tcACmF",
+            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO7evictedyA2C14EvictionReasonO_tcACmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
             "name": "failed",
             "printedName": "failed",
             "children": [
@@ -7296,6 +7353,221 @@
             "declKind": "Enum",
             "usr": "s:18ShopifyCheckoutKit12PreloadStateO10IdleReasonO",
             "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO10IdleReasonO",
+            "moduleName": "ShopifyCheckoutKit",
+            "isEnumExhaustive": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Hashable",
+                "printedName": "Hashable",
+                "usr": "s:SH",
+                "mangledName": "$sSH"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              }
+            ]
+          },
+          {
+            "kind": "TypeDecl",
+            "name": "EvictionReason",
+            "printedName": "EvictionReason",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "memoryPressure",
+                "printedName": "memoryPressure",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.EvictionReason.Type) -> ShopifyCheckoutKit.PreloadState.EvictionReason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "EvictionReason",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "EvictionReason",
+                            "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason",
+                            "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO14memoryPressureyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO14memoryPressureyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Var",
+                "name": "webContentProcessTerminated",
+                "printedName": "webContentProcessTerminated",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyCheckoutKit.PreloadState.EvictionReason.Type) -> ShopifyCheckoutKit.PreloadState.EvictionReason",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "EvictionReason",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason",
+                        "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "EvictionReason",
+                            "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason",
+                            "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO27webContentProcessTerminatedyA2EmF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO27webContentProcessTerminatedyA2EmF",
+                "moduleName": "ShopifyCheckoutKit"
+              },
+              {
+                "kind": "Function",
+                "name": "__derived_enum_equals",
+                "printedName": "__derived_enum_equals(_:_:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "EvictionReason",
+                    "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason",
+                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "EvictionReason",
+                    "printedName": "ShopifyCheckoutKit.PreloadState.EvictionReason",
+                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO21__derived_enum_equalsySbAE_AEtFZ",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO21__derived_enum_equalsySbAE_AEtFZ",
+                "moduleName": "ShopifyCheckoutKit",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Implements"
+                ],
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Function",
+                "name": "hash",
+                "printedName": "hash(into:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Hasher",
+                    "printedName": "Swift.Hasher",
+                    "paramValueOwnership": "InOut",
+                    "usr": "s:s6HasherV"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO4hash4intoys6HasherVz_tF",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO4hash4intoys6HasherVz_tF",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Var",
+                "name": "hashValue",
+                "printedName": "hashValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO9hashValueSivp",
+                "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO9hashValueSivp",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO9hashValueSivg",
+                    "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO9hashValueSivg",
+                    "moduleName": "ShopifyCheckoutKit",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO",
+            "mangledName": "$s18ShopifyCheckoutKit12PreloadStateO14EvictionReasonO",
             "moduleName": "ShopifyCheckoutKit",
             "isEnumExhaustive": true,
             "conformances": [

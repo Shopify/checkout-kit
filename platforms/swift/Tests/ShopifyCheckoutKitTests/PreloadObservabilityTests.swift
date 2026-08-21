@@ -11,6 +11,7 @@ class PreloadObservabilityTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        CheckoutWebView.preloadCache.isUnderMemoryPressure = false
         CheckoutWebView.invalidate()
     }
 
@@ -261,5 +262,173 @@ class PreloadObservabilityTests: XCTestCase {
         withExtendedLifetime(preload) {
             XCTAssertEqual(preload?.state, .idle(reason: .invalidated))
         }
+    }
+
+    func testMemoryPressureEvictsIdlePreload() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        CheckoutWebView.preloadCache.handleMemoryPressure(.critical)
+
+        withExtendedLifetime(preload) {
+            XCTAssertTrue(CheckoutWebView.preloadCache.isUnderMemoryPressure)
+            XCTAssertEqual(preload?.state, .evicted(reason: .memoryPressure))
+            XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        }
+    }
+
+    func testMemoryPressureSparesPresentedCheckout() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        view.isPresented = true
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        CheckoutWebView.preloadCache.handleMemoryPressure(.warning)
+
+        withExtendedLifetime(preload) {
+            XCTAssertTrue(CheckoutWebView.preloadCache.isUnderMemoryPressure)
+            XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+            XCTAssertNotEqual(preload?.state, .evicted(reason: .memoryPressure))
+        }
+    }
+
+    func testMemoryPressureDuringPresentationEvictsOnDismissalAndRecoversOnNormal() throws {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let controller = CheckoutWebViewController(checkoutURL: url)
+
+        XCTAssertIdentical(try XCTUnwrap(controller.checkoutView), view)
+        CheckoutWebView.preloadCache.handleMemoryPressure(.warning)
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.isUnderMemoryPressure)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+
+        controller.cleanUpCheckoutView()
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload?.state, .evicted(reason: .memoryPressure))
+            XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        }
+
+        XCTAssertFalse(
+            CheckoutWebView.preloadCache.store(
+                CheckoutWebView(entryPoint: nil),
+                for: PreloadKey(url: url, entryPoint: nil)
+            )
+        )
+
+        CheckoutWebView.preloadCache.handleMemoryPressure(.normal)
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.isUnderMemoryPressure)
+        XCTAssertTrue(
+            CheckoutWebView.preloadCache.store(
+                CheckoutWebView(entryPoint: nil),
+                for: PreloadKey(url: url, entryPoint: nil)
+            )
+        )
+    }
+
+    func testWarningTakesPrecedenceWhenMemoryPressureEventsAreCoalesced() {
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        CheckoutWebView.preloadCache.handleMemoryPressure([.normal, .warning])
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.isUnderMemoryPressure)
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testWebContentProcessTerminationEvictsIdlePreload() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        view.webViewWebContentProcessDidTerminate(view)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload?.state, .evicted(reason: .webContentProcessTerminated))
+            XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        }
+    }
+
+    func testWebContentProcessTerminationSurfacesErrorForPresentedCheckout() {
+        let delegate = MockCheckoutWebViewDelegate()
+        let view = CheckoutWebView(entryPoint: nil)
+        view.isPresented = true
+        view.viewDelegate = delegate
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        view.webViewWebContentProcessDidTerminate(view)
+
+        XCTAssertNotNil(delegate.errorReceived)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testInvalidateSparesPresentedCheckout() {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        view.isPresented = true
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        ShopifyCheckoutKit.invalidate()
+
+        withExtendedLifetime(preload) {
+            XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+            XCTAssertTrue(view.isBridgeAttached)
+        }
+    }
+
+    func testInvalidateClearsIdlePreload() {
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        ShopifyCheckoutKit.invalidate()
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testDismissalWithoutMemoryPressurePreservesCachedCheckout() {
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let controller = CheckoutWebViewController(checkoutURL: url)
+
+        controller.cleanUpCheckoutView()
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testDismissalUnderMemoryPressureEvictsCachedCheckout() {
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let controller = CheckoutWebViewController(checkoutURL: url)
+        CheckoutWebView.preloadCache.isUnderMemoryPressure = true
+
+        controller.cleanUpCheckoutView()
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testDismissalAfterWebContentTerminationEvictsCachedCheckout() throws {
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let controller = CheckoutWebViewController(checkoutURL: url)
+        let presented = try XCTUnwrap(controller.checkoutView)
+
+        presented.webViewWebContentProcessDidTerminate(presented)
+        controller.cleanUpCheckoutView()
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testPreloadDeclinedWhileUnderMemoryPressure() {
+        CheckoutWebView.preloadCache.isUnderMemoryPressure = true
+        let view = CheckoutWebView(entryPoint: nil)
+
+        let stored = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        XCTAssertFalse(stored)
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
     }
 }
