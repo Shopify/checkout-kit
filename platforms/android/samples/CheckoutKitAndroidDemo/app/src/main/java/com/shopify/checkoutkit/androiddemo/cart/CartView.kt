@@ -62,6 +62,7 @@ fun CartView(
     val state = cartViewModel.cartState.collectAsState().value
     val loading = cartViewModel.loadingState.collectAsState().value
     val checkoutPresentationMode = cartViewModel.checkoutPresentationMode.collectAsState().value
+    val preloadStateTestId = cartViewModel.preloadStateTestId.collectAsState().value
 
     val activity = LocalActivity.current as ComponentActivity
     var mutableQuantity by remember { mutableStateOf<Map<String, Int>>(mutableMapOf()) }
@@ -90,7 +91,12 @@ fun CartView(
                     it.title to it.quantity
                 }
 
-                Column(modifier = Modifier.padding(top = 4.dp)) {
+                // Exposes the current preload state as a preload identifier.
+                Column(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .testTag(preloadStateTestId)
+                ) {
                     CartLines(
                         lines = state.cartLines,
                         loading = loading,
