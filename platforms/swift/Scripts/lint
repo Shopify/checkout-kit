@@ -25,6 +25,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+SWIFT_MINT="$REPO_ROOT/scripts/swift_mint"
 if ! "$SCRIPT_DIR/check_sample_package_paths"; then
 	exit 1
 fi
@@ -41,8 +42,8 @@ print_install_instructions() {
 	echo "   See: https://github.com/yonaskolb/Mint"
 }
 
-if ! command -v mint >/dev/null; then
-	echo "❌ Mint is not installed"
+if ! "$SWIFT_MINT" --version >/dev/null 2>&1; then
+	echo "❌ Swift Mint is not installed"
 	print_install_instructions
 	exit 1
 fi
@@ -65,7 +66,7 @@ mint_package_has_version() {
 	local package_name=$1
 	local package_version=$2
 
-	mint list | awk -v package_name="$package_name" -v package_version="$package_version" '
+	"$SWIFT_MINT" list | awk -v package_name="$package_name" -v package_version="$package_version" '
 		$1 == package_name { in_package = 1; next }
 		in_package && $1 !~ /^-/ { exit 1 }
 		in_package && $1 == "-" && $2 == package_version { found = 1; exit 0 }
@@ -85,8 +86,8 @@ if ! mint_package_has_version "SwiftFormat" "$expected_swiftformat"; then
 	exit 1
 fi
 
-swiftlint_bin="$(mint which swiftlint)"
-swiftformat_bin="$(mint which swiftformat)"
+swiftlint_bin="$("$SWIFT_MINT" which swiftlint)"
+swiftformat_bin="$("$SWIFT_MINT" which swiftformat)"
 
 if [ "$("$swiftlint_bin" version)" != "$expected_swiftlint" ]; then
 	echo "❌ SwiftLint version mismatch. Expected $expected_swiftlint, found $("$swiftlint_bin" version)"

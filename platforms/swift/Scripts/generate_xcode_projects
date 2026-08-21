@@ -4,6 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SWIFT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SWIFT_MINT="$SWIFT_DIR/../../scripts/swift_mint"
 
 mode="generate"
 selected_specs=()
@@ -60,12 +61,7 @@ required_outputs=(
 )
 
 ensure_xcodegen_available() {
-    if ! command -v mint >/dev/null 2>&1; then
-        echo "Mint is required to run XcodeGen. Run dev up from the repo root." >&2
-        exit 1
-    fi
-
-    if ! (cd "$SWIFT_DIR" && mint which xcodegen >/dev/null 2>&1); then
+    if ! (cd "$SWIFT_DIR" && "$SWIFT_MINT" which xcodegen >/dev/null 2>&1); then
         echo "XcodeGen is not installed through Mint. Run dev up from the repo root." >&2
         exit 1
     fi
@@ -98,7 +94,7 @@ generate_projects() {
     fi
 
     for spec in "${specs[@]}"; do
-        (cd "$SWIFT_DIR" && mint run xcodegen xcodegen generate --spec "$spec" --quiet)
+        (cd "$SWIFT_DIR" && "$SWIFT_MINT" run xcodegen xcodegen generate --spec "$spec" --quiet)
     done
 }
 

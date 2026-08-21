@@ -202,9 +202,9 @@ setup_swift() {
       expected_swiftlint="$(sed -n "s#^realm/SwiftLint@##p" Mintfile)"
       expected_swiftformat="$(sed -n "s#^nicklockwood/SwiftFormat@##p" Mintfile)"
       expected_xcodegen="$(sed -n "s#^yonaskolb/XcodeGen@##p" Mintfile)"
-      swiftlint_bin="$(mint which swiftlint)"
-      swiftformat_bin="$(mint which swiftformat)"
-      xcodegen_bin="$(mint which xcodegen)"
+      swiftlint_bin="$(../../scripts/swift_mint which swiftlint)"
+      swiftformat_bin="$(../../scripts/swift_mint which swiftformat)"
+      xcodegen_bin="$(../../scripts/swift_mint which xcodegen)"
       test -n "$expected_swiftlint"
       test -n "$expected_swiftformat"
       test -n "$expected_xcodegen"
@@ -215,7 +215,7 @@ setup_swift() {
     run_shell "XcodeGen projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects --check' || true
   else
     run_bundle_step "Swift bundle packages" 'BUNDLE_GEMFILE=platforms/swift/Gemfile bundle check || BUNDLE_GEMFILE=platforms/swift/Gemfile bundle install'
-    run_shell "Swift Mint packages" 'cd platforms/swift && mint bootstrap' || true
+    run_shell "Swift Mint packages" 'cd platforms/swift && ../../scripts/swift_mint bootstrap' || true
     run_shell "XcodeGen projects" 'cd platforms/swift && ./Scripts/generate_xcode_projects' || true
   fi
 }

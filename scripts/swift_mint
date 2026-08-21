@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if swift_mint_prefix="$(brew --prefix mint 2>/dev/null)"; then
+	exec "$swift_mint_prefix/bin/mint" "$@"
+fi
+
+echo "Swift Mint is not installed." >&2
+if [[ -x /opt/dev/bin/dev ]]; then
+	echo "Run \`dev up\`." >&2
+else
+	echo "Install Swift Mint with \`brew install mint\`, then run \`mint bootstrap\` from \`platforms/swift\`." >&2
+fi
+exit 1
