@@ -12,6 +12,7 @@ struct CartView: View {
     @State var isCompleted: Bool = false
     @State var showCheckoutSheet: Bool = false
     @State private var checkoutPreload: CheckoutPreload?
+    @StateObject private var checkoutState = CheckoutState()
 
     @ObservedObject var cartManager: CartManager = .shared
 
@@ -98,14 +99,38 @@ struct CartView: View {
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
-                        .connect(client.on(CheckoutProtocol.complete) { checkout in
-                            // Set the flag here; defer the cart reset until the user dismisses
-                            // the sheet (in .onDismiss). Resetting now would nil the cart and
-                            // SwiftUI would auto-collapse this sheet, hiding the confirmation page.
-                            print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
-                            isCompleted = true
-                        })
+                        .connect(checkoutState.observing(client))
                         .appearance(.app(.automatic))
+                        .onChange(of: checkoutState.phase) { phase in
+                            switch phase {
+                            case .idle:
+                                print("[CheckoutState] Waiting for checkout to start")
+
+                            case .active:
+                                let itemCount = checkoutState.checkout?.lineItems.count ?? 0
+                                print("[CheckoutState] Checkout active with \(itemCount) line items")
+
+                            case let .unavailable(reason):
+                                switch reason {
+                                case .allItemsOutOfStock:
+                                    print("[CheckoutState] All items are out of stock; clearing the cart")
+                                    CartManager.shared.resetCart()
+                                    showCheckoutSheet = false
+                                }
+
+                            case .completed:
+                                // Defer the cart reset until dismissal so the order confirmation
+                                // remains visible inside checkout.
+                                let orderID = checkoutState.checkout?.order?.id ?? "unknown"
+                                print("[CheckoutState] Checkout completed: \(orderID)")
+                                isCompleted = true
+
+                            case .failed:
+                                let message = checkoutState.error?.messages.first?.content ?? "Unknown error"
+                                print("[CheckoutState] Checkout failed: \(message)")
+                                showCheckoutSheet = false
+                            }
+                        }
                         .onDismiss {
                             print("[CheckoutKitSwiftDemo] DISMISSED")
                             showCheckoutSheet = false
