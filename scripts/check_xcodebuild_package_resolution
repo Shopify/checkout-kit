@@ -25,7 +25,7 @@ for relative_path in tracked_files:
         continue
 
     path = root / relative_path
-    if path.suffix in {".md", ".resolved", ".json", ".lock", ".png", ".jpg", ".jpeg", ".gif", ".webp"}:
+    if path.suffix in {".md", ".resolved", ".json", ".lock", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".swift"}:
         continue
 
     try:
