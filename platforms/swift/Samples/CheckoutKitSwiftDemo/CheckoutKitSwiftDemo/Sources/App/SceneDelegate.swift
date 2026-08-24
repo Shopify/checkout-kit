@@ -1,4 +1,5 @@
 import Combine
+import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
 import SwiftUI
 import UIKit
@@ -17,9 +18,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var cancellables: Set<AnyCancellable> = []
 
     let uiKitCartController = CartViewController()
-    let swiftUICartController = UIHostingController(rootView: CartView())
-    let productGridController = UIHostingController(rootView: ProductGridView())
-    let productGalleryController = UIHostingController(rootView: ProductGalleryView())
+    let swiftUICartController = UIHostingController(
+        rootView: AcceleratedCheckoutsConfiguredView(content: CartView())
+    )
+    let productGridController = UIHostingController(
+        rootView: AcceleratedCheckoutsConfiguredView(content: ProductGridView())
+    )
+    let productGalleryController = UIHostingController(
+        rootView: AcceleratedCheckoutsConfiguredView(content: ProductGalleryView())
+    )
     let accountController = UIHostingController(rootView: AccountView())
     let settingsController = UIHostingController(rootView: SettingsView())
 
@@ -306,6 +313,31 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return nil
         }
         return tabBarVC.viewControllers?[index] as? UINavigationController
+    }
+}
+
+struct AcceleratedCheckoutsConfiguredView<Content: View>: View {
+    let content: Content
+
+    var body: some View {
+        if #available(iOS 16.0, *) {
+            content
+                .shopifyAcceleratedCheckouts(
+                    ShopifyAcceleratedCheckouts.Configuration(
+                        storefrontDomain: InfoDictionary.shared.domain,
+                        storefrontAccessToken: InfoDictionary.shared.accessToken
+                    )
+                )
+                .environment(
+                    \.shopifyApplePayConfiguration,
+                    ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+                        merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
+                        contactFields: [.email, .phone]
+                    )
+                )
+        } else {
+            content
+        }
     }
 }
 

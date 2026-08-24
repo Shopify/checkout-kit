@@ -1,5 +1,6 @@
 import Combine
 import PassKit
+import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
 import SwiftUI
 
@@ -33,6 +34,13 @@ struct SettingsView: View {
             ShopifyCheckoutKit.configure {
                 $0.logLevel = checkoutKitLogLevel
             }
+        }
+    }
+
+    @AppStorage(AppStorageKeys.acceleratedCheckoutsLogLevel.rawValue)
+    var acceleratedCheckoutsLogLevel: LogLevel = .debug {
+        didSet {
+            ShopifyAcceleratedCheckouts.logLevel = acceleratedCheckoutsLogLevel
         }
     }
 
@@ -150,6 +158,21 @@ struct SettingsView: View {
                         selection: Binding(
                             get: { checkoutKitLogLevel },
                             set: { checkoutKitLogLevel = $0 }
+                        )
+                    ) {
+                        ForEach(LogLevel.allCases, id: \.self) { level in
+                            Text(
+                                level.rawValue.capitalized(with: Locale.current)
+                            ).tag(level)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    Picker(
+                        "Accelerated Checkouts",
+                        selection: Binding(
+                            get: { acceleratedCheckoutsLogLevel },
+                            set: { acceleratedCheckoutsLogLevel = $0 }
                         )
                     ) {
                         ForEach(LogLevel.allCases, id: \.self) { level in
