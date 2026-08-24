@@ -352,15 +352,17 @@ describe("<shopify-checkout>", () => {
       expect(link!.getAttribute("target")).toBe("_blank");
     });
 
-    it("points to the parametrised checkout URL (matching what the popup would open)", () => {
+    it("points to a standalone checkout URL while preserving unrelated URL data", () => {
       const checkout = renderCheckout({
-        src: "https://shop.example.com/checkout",
+        src: "https://shop.example.com/checkout?existing=1&ec_version=stale&ec_delegate=custom&ec_auth=secret#payment",
       });
       const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link");
       const href = link!.getAttribute("href") ?? "";
       const url = new URL(href);
       expect(url.origin).toBe("https://shop.example.com");
-      expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
+      expect(url.searchParams.get("existing")).toBe("1");
+      expect([...url.searchParams.keys()].filter((key) => key.startsWith("ec_"))).toEqual([]);
+      expect(url.hash).toBe("#payment");
     });
   });
 

@@ -249,6 +249,24 @@ export class ShopifyCheckout
   }
 
   /**
+   * Returns the validated checkout URL without embedded checkout protocol
+   * parameters, for browser-managed navigation where no transport is available.
+   */
+  #srcAsStandaloneURL() {
+    const url = this.#srcAsURL();
+    if (!url) return undefined;
+
+    const queryKeys = Array.from(url.searchParams.keys());
+    for (const key of queryKeys) {
+      if (key.startsWith("ec_")) {
+        url.searchParams.delete(key);
+      }
+    }
+
+    return url;
+  }
+
+  /**
    * Console logging verbosity. Ordered as a threshold — `debug` is the most
    * verbose and `none` silences everything. Defaults to `'warn'`.
    */
@@ -478,6 +496,16 @@ export class ShopifyCheckout
           "click",
           (event: MouseEvent) => {
             event.preventDefault();
+
+            if (event.metaKey || event.ctrlKey) {
+              const openedWindow = window.open(src, "_blank");
+              if (openedWindow) {
+                checkoutWindow = openedWindow;
+                this.#checkoutWindow = openedWindow;
+              }
+              return;
+            }
+
             this.#checkoutWindow?.focus();
           },
           {
@@ -532,13 +560,13 @@ export class ShopifyCheckout
   }
 
   /**
-   * Sets the overlay link href to the validated, parametrised checkout
-   * URL (matching what the popup would open)
+   * Sets the overlay link href to a standalone checkout URL. Browser-managed
+   * navigation, such as "Open link in new tab", has no embedded transport.
    */
   #updateOverlayLink() {
     const link = this.#dialogLinkElement;
     if (!link) return;
-    const url = this.#srcAsURL();
+    const url = this.#srcAsStandaloneURL();
     if (url) {
       link.setAttribute("href", url.href);
     } else {
