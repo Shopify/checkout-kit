@@ -100,6 +100,8 @@ private struct ShopSettingsPrefetchIdentity: Equatable {
 @available(iOS 16.0, *)
 enum ShopSettingsPrefetcher {
     static func prefetch(configuration: ShopifyAcceleratedCheckouts.Configuration) async {
+        let startedAt = AcceleratedCheckoutDebugTiming.now
+        ShopifyAcceleratedCheckouts.logger.debug("Shop settings prefetch started.")
         let storefront = StorefrontAPI(
             storefrontDomain: configuration.storefrontDomain,
             storefrontAccessToken: configuration.storefrontAccessToken
@@ -107,8 +109,13 @@ enum ShopSettingsPrefetcher {
 
         do {
             _ = try await storefront.shop()
+            ShopifyAcceleratedCheckouts.logger.debug(
+                "Shop settings prefetch completed in \(AcceleratedCheckoutDebugTiming.elapsedMilliseconds(since: startedAt)) ms."
+            )
         } catch {
-            ShopifyAcceleratedCheckouts.logger.debug("Shop settings prefetch failed.")
+            ShopifyAcceleratedCheckouts.logger.debug(
+                "Shop settings prefetch failed after \(AcceleratedCheckoutDebugTiming.elapsedMilliseconds(since: startedAt)) ms."
+            )
         }
     }
 }

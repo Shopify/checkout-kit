@@ -119,6 +119,11 @@ public struct AcceleratedCheckoutButtons: View {
     private func loadShopSettings() async {
         guard identifier.isValid() else { return }
 
+        let startedAt = AcceleratedCheckoutDebugTiming.now
+        ShopifyAcceleratedCheckouts.logger.debug(
+            "Wallet button loading started (wallets: \(wallets.count), skeletons: \(loadingPresentation == .automatic ? wallets.count : 0))."
+        )
+
         do {
             currentRenderState = .loading
             let configuration = resolvedConfiguration
@@ -129,10 +134,16 @@ public struct AcceleratedCheckoutButtons: View {
             let shop = try await storefront.shop()
             shopSettings = ShopSettings(from: shop)
             currentRenderState = .rendered
+            ShopifyAcceleratedCheckouts.logger.debug(
+                "Wallet buttons rendered in \(AcceleratedCheckoutDebugTiming.elapsedMilliseconds(since: startedAt)) ms (wallets: \(wallets.count))."
+            )
         } catch {
             let reason = "Error loading shop settings: \(error)"
             ShopifyAcceleratedCheckouts.logger.error(reason)
             currentRenderState = .error(reason: reason)
+            ShopifyAcceleratedCheckouts.logger.debug(
+                "Wallet button loading failed after \(AcceleratedCheckoutDebugTiming.elapsedMilliseconds(since: startedAt)) ms."
+            )
         }
     }
 }

@@ -497,6 +497,10 @@ shop settings used by the wallet buttons. Requests are deduplicated across butto
 settings remain fresh for one hour and stale settings are served while they refresh in the
 background. Existing direct environment injection remains supported.
 
+Set `ShopifyAcceleratedCheckouts.logLevel = .debug` to inspect privacy-safe request, cache
+freshness, prefetch, and wallet button loading timings. These logs do not include shop
+configuration values or checkout identifiers.
+
 Use one customer mode at a time:
 
 ```swift
