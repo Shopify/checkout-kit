@@ -442,6 +442,8 @@ class CheckoutWebView: WKWebView {
     /// of whether it originated from `ec.error` or WebKit process termination.
     private var hasHandledTerminalFailure = false
 
+    private let cloudflareManagedChallengeHandler = CloudflareManagedChallengeHandler()
+
     /// The checkout URL passed to `load(checkout:)`. Used to derive the trusted
     /// cart-url origin for incoming message validation.
     var loadedCheckoutURL: URL?
@@ -808,13 +810,21 @@ extension CheckoutWebView: WKNavigationDelegate {
 
     func webView(_: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping @MainActor @Sendable (WKNavigationResponsePolicy) -> Void) {
         if let response = navigationResponse.response as? HTTPURLResponse {
-            decisionHandler(handleResponse(response))
+            decisionHandler(
+                handleResponse(
+                    response,
+                    isForMainFrame: navigationResponse.isForMainFrame
+                )
+            )
             return
         }
         decisionHandler(.allow)
     }
 
-    func handleResponse(_ response: HTTPURLResponse) -> WKNavigationResponsePolicy {
+    func handleResponse(
+        _ response: HTTPURLResponse,
+        isForMainFrame: Bool = true
+    ) -> WKNavigationResponsePolicy {
         let statusCode = response.statusCode
         let errorMessageForStatusCode = HTTPURLResponse.localizedString(
             forStatusCode: statusCode
@@ -822,6 +832,24 @@ extension CheckoutWebView: WKNavigationDelegate {
 
         guard isCheckout(url: response.url) else {
             return .allow
+        }
+
+        switch cloudflareManagedChallengeHandler.disposition(
+            for: response,
+            isForMainFrame: isForMainFrame,
+            isBackgroundedPreload: isPreloadBackgrounded
+        ) {
+        case .notChallenge:
+            break
+        case .render:
+            return .allow
+        case .discardPreload:
+            stopLoading()
+            handleCachedViewFailure(
+                .httpError(statusCode: statusCode),
+                message: "HTTP response returned status code \(statusCode)."
+            )
+            return .cancel
         }
 
         if statusCode >= 400 {
