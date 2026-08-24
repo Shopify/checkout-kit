@@ -396,15 +396,15 @@ describe("<shopify-checkout>", () => {
           expect(dialog).toBeTruthy();
         });
 
-        it("focuses the popup when the overlay link is clicked", () => {
+        it("focuses the popup when the overlay button is clicked", () => {
           const { checkout, mockWindow } = openWithRealOverlay();
-          const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link")!;
+          const button = checkout.shadowRoot!.querySelector<HTMLButtonElement>("#overlay-link")!;
 
           const event = new MouseEvent("click", {
             bubbles: true,
             cancelable: true,
           });
-          link.dispatchEvent(event);
+          button.dispatchEvent(event);
 
           expect(event.defaultPrevented).toBe(true);
           expect(mockWindow.focus).toHaveBeenCalled();

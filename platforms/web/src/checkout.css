@@ -94,6 +94,17 @@
   max-inline-size: 21em;
 }
 
+.overlay-focus-button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: LinkText;
+  text-decoration: underline;
+}
+
 .overlay-close-button {
   display: inline-flex;
   align-items: center;

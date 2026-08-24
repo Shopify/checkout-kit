@@ -128,7 +128,9 @@ const SHADOW_TEMPLATE = createTemplate(html`
             <div class="overlay-content-wrapper">
               <div class="overlay-content">
                 Continue your purchase in the <br />
-                <a target="_blank" rel="noopener noreferrer" id="overlay-link"> checkout window</a>
+                <button class="overlay-focus-button" id="overlay-link" type="button">
+                  checkout window
+                </button>
               </div>
               <button class="overlay-close-button" id="overlay-close-button">
                 Close
@@ -210,7 +212,6 @@ export class ShopifyCheckout
 
   set src(value: string | undefined) {
     this.#setAttribute("src", value);
-    // see also attributeChangedCallback
   }
 
   /**
@@ -246,24 +247,6 @@ export class ShopifyCheckout
     }
     finalUrl.searchParams.set("ck_version", CK_VERSION);
     return finalUrl;
-  }
-
-  /**
-   * Returns the validated checkout URL without embedded checkout protocol
-   * parameters, for browser-managed navigation where no transport is available.
-   */
-  #srcAsStandaloneURL() {
-    const url = this.#srcAsURL();
-    if (!url) return undefined;
-
-    const queryKeys = Array.from(url.searchParams.keys());
-    for (const key of queryKeys) {
-      if (key.startsWith("ec_")) {
-        url.searchParams.delete(key);
-      }
-    }
-
-    return url;
   }
 
   /**
@@ -389,7 +372,7 @@ export class ShopifyCheckout
     return this.shadowRoot?.querySelector("#overlay-close-button") ?? undefined;
   }
 
-  get #dialogLinkElement(): HTMLAnchorElement | undefined {
+  get #dialogButtonElement(): HTMLButtonElement | undefined {
     return this.shadowRoot?.querySelector("#overlay-link") ?? undefined;
   }
 
@@ -450,7 +433,7 @@ export class ShopifyCheckout
     const dialog = this.#dialogElement;
     const dialogBackground = this.#dialogBackgroundElement;
     const dialogCloseButton = this.#dialogCloseButtonElement;
-    const dialogLink = this.#dialogLinkElement;
+    const dialogButton = this.#dialogButtonElement;
 
     if (dialog && dialogBackground) {
       // By default we show the scrim.
@@ -492,7 +475,7 @@ export class ShopifyCheckout
           },
         );
 
-        dialogLink?.addEventListener(
+        dialogButton?.addEventListener(
           "click",
           (event: MouseEvent) => {
             event.preventDefault();
@@ -547,21 +530,6 @@ export class ShopifyCheckout
 
   override focus(): void {
     this.#checkoutWindow?.focus();
-  }
-
-  /**
-   * Sets the overlay link href to a standalone checkout URL. Browser-managed
-   * navigation, such as "Open link in new tab", has no embedded transport.
-   */
-  #updateOverlayLink() {
-    const link = this.#dialogLinkElement;
-    if (!link) return;
-    const url = this.#srcAsStandaloneURL();
-    if (url) {
-      link.setAttribute("href", url.href);
-    } else {
-      link.removeAttribute("href");
-    }
   }
 
   /**
@@ -852,7 +820,6 @@ export class ShopifyCheckout
 
   connectedCallback(): void {
     this.#applyTargetClass();
-    this.#updateOverlayLink();
 
     this.#initCheckoutProtocol();
   }
@@ -871,12 +838,6 @@ export class ShopifyCheckout
     if (oldValue === newValue) return;
 
     switch (name) {
-      case "src":
-        this.#updateOverlayLink();
-        break;
-      case "appearance":
-        this.#updateOverlayLink();
-        break;
       case "target": {
         if (oldValue !== newValue && this.#currentOpen) {
           this.close();
