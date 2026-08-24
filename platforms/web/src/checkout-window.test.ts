@@ -409,35 +409,6 @@ describe("<shopify-checkout>", () => {
           expect(event.defaultPrevented).toBe(true);
           expect(mockWindow.focus).toHaveBeenCalled();
         });
-
-        it("opens and tracks an embedded checkout for a modified overlay link click", () => {
-          const checkout = renderCheckout({ target: "popup" });
-          const initialWindow = createMockWindow();
-          const openedWindow = createMockWindow();
-          const windowOpenSpy = vi
-            .spyOn(window, "open")
-            .mockReturnValueOnce(initialWindow)
-            .mockReturnValueOnce(openedWindow);
-          vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
-
-          checkout.open();
-
-          const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link")!;
-          const event = new MouseEvent("click", {
-            bubbles: true,
-            cancelable: true,
-            metaKey: true,
-          });
-          link.dispatchEvent(event);
-
-          expect(event.defaultPrevented).toBe(true);
-          expect(windowOpenSpy).toHaveBeenNthCalledWith(2, expect.any(String), "_blank");
-          const openedUrl = new URL(windowOpenSpy.mock.calls[1]![0] as string);
-          expect(openedUrl.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
-
-          checkout.focus();
-          expect(openedWindow.focus).toHaveBeenCalled();
-        });
       });
 
       describe("when the popup is dismissed externally", () => {

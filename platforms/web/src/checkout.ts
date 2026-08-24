@@ -496,16 +496,6 @@ export class ShopifyCheckout
           "click",
           (event: MouseEvent) => {
             event.preventDefault();
-
-            if (event.metaKey || event.ctrlKey) {
-              const openedWindow = window.open(src, "_blank");
-              if (openedWindow) {
-                checkoutWindow = openedWindow;
-                this.#checkoutWindow = openedWindow;
-              }
-              return;
-            }
-
             this.#checkoutWindow?.focus();
           },
           {
