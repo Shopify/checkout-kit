@@ -2,11 +2,11 @@
 import WebKit
 import XCTest
 
-final class CloudflareManagedChallengeHandlerTests: XCTestCase {
-    private let handler = CloudflareManagedChallengeHandler()
+final class HTTPResponseHandlerTests: XCTestCase {
+    private let handler = HTTPResponseHandler()
     private let url = URL(string: "https://shopify1.shopify.com/checkouts/cn/123")!
 
-    func testReturnsNotChallengeWithoutManagedChallengeHeader() throws {
+    func testHandlesResponseNormallyWithoutManagedChallengeHeader() throws {
         let response = try response(headers: nil)
 
         XCTAssertEqual(
@@ -15,11 +15,11 @@ final class CloudflareManagedChallengeHandlerTests: XCTestCase {
                 isForMainFrame: true,
                 isBackgroundedPreload: true
             ),
-            .notChallenge
+            .handleNormally
         )
     }
 
-    func testReturnsNotChallengeForDifferentMitigationValue() throws {
+    func testHandlesResponseNormallyForDifferentMitigationValue() throws {
         let response = try response(headers: ["cf-mitigated": "block"])
 
         XCTAssertEqual(
@@ -28,11 +28,11 @@ final class CloudflareManagedChallengeHandlerTests: XCTestCase {
                 isForMainFrame: true,
                 isBackgroundedPreload: true
             ),
-            .notChallenge
+            .handleNormally
         )
     }
 
-    func testHeaderNameAndValueMatchingIsCaseInsensitiveAndTrimsWhitespace() throws {
+    func testManagedChallengeHeaderNameAndValueMatchingIsCaseInsensitiveAndTrimsWhitespace() throws {
         let response = try response(headers: ["CF-MITIGATED": "  ChAlLeNgE\t"])
 
         XCTAssertEqual(
@@ -45,7 +45,7 @@ final class CloudflareManagedChallengeHandlerTests: XCTestCase {
         )
     }
 
-    func testPresentedChallengeRenders() throws {
+    func testPresentedManagedChallengeRenders() throws {
         let response = try response(headers: ["cf-mitigated": "challenge"])
 
         XCTAssertEqual(
@@ -58,7 +58,7 @@ final class CloudflareManagedChallengeHandlerTests: XCTestCase {
         )
     }
 
-    func testSubframeChallengeDoesNotDiscardBackgroundedPreload() throws {
+    func testSubframeManagedChallengeDoesNotDiscardBackgroundedPreload() throws {
         let response = try response(headers: ["cf-mitigated": "challenge"])
 
         XCTAssertEqual(
