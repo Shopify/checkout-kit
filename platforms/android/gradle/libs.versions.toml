@@ -2,7 +2,7 @@
 checkoutKitAndroid = "4.0.0-alpha.5"
 embeddedCheckoutProtocolAndroid = "2026.04.08.1-alpha.2"
 
-androidApplicationGradlePlugin = "9.3.1"
+androidApplicationGradlePlugin = "9.3.2"
 androidLibraryGradlePlugin = "9.3.1"
 apollo = "5.0.1"
 apolloCache = "1.0.6"
