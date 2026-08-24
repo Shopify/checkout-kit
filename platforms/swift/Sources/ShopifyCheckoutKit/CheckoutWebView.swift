@@ -442,7 +442,7 @@ class CheckoutWebView: WKWebView {
     /// of whether it originated from `ec.error` or WebKit process termination.
     private var hasHandledTerminalFailure = false
 
-    private let cloudflareManagedChallengeHandler = CloudflareManagedChallengeHandler()
+    private let httpResponseHandler = HTTPResponseHandler()
 
     /// The checkout URL passed to `load(checkout:)`. Used to derive the trusted
     /// cart-url origin for incoming message validation.
@@ -834,12 +834,12 @@ extension CheckoutWebView: WKNavigationDelegate {
             return .allow
         }
 
-        switch cloudflareManagedChallengeHandler.disposition(
+        switch httpResponseHandler.disposition(
             for: response,
             isForMainFrame: isForMainFrame,
             isBackgroundedPreload: isPreloadBackgrounded
         ) {
-        case .notChallenge:
+        case .handleNormally:
             break
         case .render:
             return .allow
