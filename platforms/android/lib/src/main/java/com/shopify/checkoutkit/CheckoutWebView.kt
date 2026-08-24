@@ -82,6 +82,7 @@ internal class CheckoutWebView private constructor(
     private var checkoutRequestRetryReason: TelemetryNavigationRetryReason? = null
     private var navigationTiming: NavigationTiming? = null
     private val touchHandler = CheckoutWebViewTouchHandler()
+    private val httpResponseHandler = HttpResponseHandler()
 
     /** Origin of the loaded checkout URL, trusted as a safe default for incoming-message validation. */
     internal var checkoutOrigin: String? = null
@@ -367,38 +368,62 @@ internal class CheckoutWebView private constructor(
             errorResponse: WebResourceResponse?
         ) {
             val isMainFrame = request?.isForMainFrame == true
-            if (isMainFrame) {
-                val statusCode = errorResponse?.statusCode ?: 0
-                CheckoutTelemetry.recorder.recordError(
-                    TelemetryErrorMetric(
-                        category = TelemetryErrorCategory.Http,
-                        stage = TelemetryErrorStage.Load,
-                        code = when (statusCode) {
-                            in 400..499 -> TelemetryErrorCode.Client
-                            in 500..599 -> TelemetryErrorCode.Server
-                            else -> TelemetryErrorCode.Unknown
-                        },
-                        retryable = statusCode >= 500,
-                        isRetry = didRetryCheckoutRequest,
-                    ),
+            val statusCode = errorResponse?.statusCode ?: 0
+            val failureReason = PreloadState.FailureReason.HttpError(statusCode)
+            val failureMessage = "HTTP response returned status code $statusCode."
+            val isBackgroundedPreload =
+                preloadCache.contains(this@CheckoutWebView) && isPreloadRequest && !isPresented
+
+            when (
+                httpResponseHandler.disposition(
+                    responseHeaders = errorResponse?.responseHeaders,
+                    isForMainFrame = isMainFrame,
+                    isBackgroundedPreload = isBackgroundedPreload,
                 )
-                recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
-                preloadCache.evict(
-                    PreloadState.Failed(
-                        PreloadState.FailureReason.HttpError(statusCode),
-                        "HTTP response returned status code $statusCode.",
-                    ),
-                    view = this@CheckoutWebView,
-                )
+            ) {
+                HttpResponseHandler.Disposition.HANDLE_NORMALLY -> {
+                    if (isMainFrame) {
+                        CheckoutTelemetry.recorder.recordError(
+                            TelemetryErrorMetric(
+                                category = TelemetryErrorCategory.Http,
+                                stage = TelemetryErrorStage.Load,
+                                code = when (statusCode) {
+                                    in 400..499 -> TelemetryErrorCode.Client
+                                    in 500..599 -> TelemetryErrorCode.Server
+                                    else -> TelemetryErrorCode.Unknown
+                                },
+                                retryable = statusCode >= 500,
+                                isRetry = didRetryCheckoutRequest,
+                            ),
+                        )
+                        recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
+                        preloadCache.evict(
+                            PreloadState.Failed(
+                                failureReason,
+                                failureMessage,
+                            ),
+                            view = this@CheckoutWebView,
+                        )
+                    }
+                    errorResponse?.let {
+                        handleHttpError(
+                            request,
+                            it.statusCode,
+                            it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
+                        )
+                    }
+                }
+                HttpResponseHandler.Disposition.RENDER -> Unit
+                HttpResponseHandler.Disposition.DISCARD_PRELOAD -> {
+                    stopLoading()
+                    evictForTerminalFailure(
+                        this@CheckoutWebView,
+                        failureReason,
+                        failureMessage,
+                    )
+                }
             }
             super.onReceivedHttpError(view, request, errorResponse)
-            errorResponse?.let {
-                handleHttpError(
-                    request,
-                    it.statusCode,
-                    it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
-                )
-            }
             if (isMainFrame) {
                 resetCheckoutRequestRetryState()
             }
