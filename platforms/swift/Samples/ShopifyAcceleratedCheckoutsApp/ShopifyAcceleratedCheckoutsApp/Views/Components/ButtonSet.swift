@@ -77,13 +77,6 @@ private struct CheckoutSection<Content: View>: View {
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
 
-                if case .loading = renderState {
-                    VStack(spacing: 12) {
-                        SkeletonButton(cornerRadius: 8)
-                        SkeletonButton(cornerRadius: 8)
-                    }
-                }
-
                 if case .error = renderState {
                     VStack {
                         Image(systemName: "exclamationmark.triangle")

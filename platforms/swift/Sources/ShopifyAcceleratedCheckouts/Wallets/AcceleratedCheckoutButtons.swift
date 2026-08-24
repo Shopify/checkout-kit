@@ -9,6 +9,18 @@ public enum RenderState: Equatable {
     case error(reason: String)
 }
 
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts {
+    /// Controls how accelerated checkout buttons represent their initial loading state.
+    public enum LoadingPresentation: Sendable, Equatable {
+        /// Show neutral placeholders that match the configured wallet button layout.
+        case automatic
+
+        /// Render no loading UI. Use this when the containing app supplies its own loading state.
+        case hidden
+    }
+}
+
 /// Renders a Checkout buttons for a cart or product variant
 ///
 /// Note:
@@ -25,6 +37,7 @@ public struct AcceleratedCheckoutButtons: View {
     var eventHandlers: EventHandlers = .init()
     var cornerRadius: CGFloat?
     var clientContainer: CheckoutProtocolClientContainer = .init()
+    var loadingPresentation: ShopifyAcceleratedCheckouts.LoadingPresentation = .automatic
 
     /// The Apple Pay button type
     private var applePayButtonType: PKPaymentButtonType = .plain
@@ -61,30 +74,33 @@ public struct AcceleratedCheckoutButtons: View {
     }
 
     public var body: some View {
-        VStack {
+        VStack(spacing: WalletButtonLayout.spacing) {
             if let shopSettings {
-                VStack {
-                    ForEach(wallets, id: \.self) {
-                        switch $0 {
-                        case .applePay:
-                            ApplePayButton(
-                                identifier: identifier,
-                                eventHandlers: eventHandlers,
-                                cornerRadius: cornerRadius,
-                                buttonType: applePayButtonType,
-                                buttonStyle: applePayButtonStyle,
-                                client: clientContainer.client
-                            )
-                        case .shopPay:
-                            ShopPayButton(
-                                identifier: identifier,
-                                eventHandlers: eventHandlers,
-                                cornerRadius: cornerRadius,
-                                client: clientContainer.client
-                            )
-                        }
+                ForEach(wallets, id: \.self) {
+                    switch $0 {
+                    case .applePay:
+                        ApplePayButton(
+                            identifier: identifier,
+                            eventHandlers: eventHandlers,
+                            cornerRadius: cornerRadius,
+                            buttonType: applePayButtonType,
+                            buttonStyle: applePayButtonStyle,
+                            client: clientContainer.client
+                        )
+                    case .shopPay:
+                        ShopPayButton(
+                            identifier: identifier,
+                            eventHandlers: eventHandlers,
+                            cornerRadius: cornerRadius,
+                            client: clientContainer.client
+                        )
                     }
-                }.environmentObject(shopSettings)
+                }
+                .environmentObject(shopSettings)
+            } else if currentRenderState == .loading, loadingPresentation == .automatic {
+                ForEach(wallets, id: \.self) { _ in
+                    WalletButtonSkeleton(cornerRadius: cornerRadius)
+                }
             }
         }
         .task { await loadShopSettings() }
@@ -95,7 +111,7 @@ public struct AcceleratedCheckoutButtons: View {
 
     private var resolvedConfiguration: ShopifyAcceleratedCheckouts.Configuration {
         guard let configuration else {
-            fatalError("Missing ShopifyAcceleratedCheckouts.Configuration. Add .environment(\\.shopifyAcceleratedCheckoutsConfiguration, ...) to an ancestor view.")
+            fatalError("Missing ShopifyAcceleratedCheckouts.Configuration. Add .shopifyAcceleratedCheckouts(...) or .environment(\\.shopifyAcceleratedCheckoutsConfiguration, ...) to an ancestor view.")
         }
         return configuration
     }
@@ -125,6 +141,19 @@ public struct AcceleratedCheckoutButtons: View {
 
 @available(iOS 16.0, *)
 extension AcceleratedCheckoutButtons {
+    /// Controls the loading UI shown while shop settings are being fetched.
+    ///
+    /// The default `.automatic` presentation renders neutral placeholders matching the
+    /// number, height, spacing, and corner radius of the configured wallet buttons.
+    /// Use `.hidden` when the containing app provides its own loading UI.
+    public func loadingPresentation(
+        _ presentation: ShopifyAcceleratedCheckouts.LoadingPresentation
+    ) -> AcceleratedCheckoutButtons {
+        var newView = self
+        newView.loadingPresentation = presentation
+        return newView
+    }
+
     public func applePayButtonType(_ type: PKPaymentButtonType) -> AcceleratedCheckoutButtons {
         var view = self
         view.applePayButtonType = type

@@ -70,3 +70,58 @@ extension EnvironmentValues {
         set { self[ShopifyAcceleratedCheckoutsConfigurationKey.self] = newValue }
     }
 }
+
+@available(iOS 16.0, *)
+private struct ShopifyAcceleratedCheckoutsConfigurationModifier: ViewModifier {
+    let configuration: ShopifyAcceleratedCheckouts.Configuration
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.shopifyAcceleratedCheckoutsConfiguration, configuration)
+            .task(id: prefetchIdentity) {
+                await ShopSettingsPrefetcher.prefetch(configuration: configuration)
+            }
+    }
+
+    private var prefetchIdentity: ShopSettingsPrefetchIdentity {
+        ShopSettingsPrefetchIdentity(
+            storefrontDomain: configuration.storefrontDomain,
+            storefrontAccessToken: configuration.storefrontAccessToken
+        )
+    }
+}
+
+@available(iOS 16.0, *)
+private struct ShopSettingsPrefetchIdentity: Equatable {
+    let storefrontDomain: String
+    let storefrontAccessToken: String
+}
+
+@available(iOS 16.0, *)
+enum ShopSettingsPrefetcher {
+    static func prefetch(configuration: ShopifyAcceleratedCheckouts.Configuration) async {
+        let storefront = StorefrontAPI(
+            storefrontDomain: configuration.storefrontDomain,
+            storefrontAccessToken: configuration.storefrontAccessToken
+        )
+
+        do {
+            _ = try await storefront.shop()
+        } catch {
+            ShopifyAcceleratedCheckouts.logger.debug("Shop settings prefetch failed.")
+        }
+    }
+}
+
+@available(iOS 16.0, *)
+extension View {
+    /// Configures accelerated checkouts and prefetches shared shop settings.
+    ///
+    /// Apply this modifier to an ancestor view as soon as the shop configuration is known.
+    /// Accelerated checkout buttons reuse the prefetched result automatically.
+    public func shopifyAcceleratedCheckouts(
+        _ configuration: ShopifyAcceleratedCheckouts.Configuration
+    ) -> some View {
+        modifier(ShopifyAcceleratedCheckoutsConfigurationModifier(configuration: configuration))
+    }
+}

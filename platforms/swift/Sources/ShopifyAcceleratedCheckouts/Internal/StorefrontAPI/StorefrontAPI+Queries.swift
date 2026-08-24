@@ -42,20 +42,37 @@ extension StorefrontAPI {
 actor QueryCache {
     static let shared = QueryCache()
 
-    private var cache: [String: any Sendable] = [:]
+    static let defaultFreshnessInterval: TimeInterval = 60 * 60
+
+    private struct CacheEntry {
+        let value: any Sendable
+        let cachedAt: Date
+    }
+
+    private let freshnessInterval: TimeInterval
+    private var cache: [String: CacheEntry] = [:]
     private var inflightRequests: [String: any Sendable] = [:]
 
-    private init() {}
+    init(freshnessInterval: TimeInterval = defaultFreshnessInterval) {
+        self.freshnessInterval = freshnessInterval
+    }
 
-    /// Loads data with deduplication - multiple simultaneous calls will share the same request
+    /// Loads data with deduplication and stale-while-revalidate caching.
+    ///
+    /// Fresh values are returned from memory. Stale values are returned immediately while
+    /// one shared refresh runs in the background. Failed refreshes leave the stale value intact.
     func load<T: Sendable>(
         cacheKey: String,
         url: URL,
+        date: Date = Date(),
         query: @Sendable @escaping () async throws -> T
     ) async throws -> T {
         let key = buildCacheKey(queryKey: cacheKey, url: url)
 
-        if let cached = cache[key] as? T {
+        if let entry = cache[key], let cached = entry.value as? T {
+            if date.timeIntervalSince(entry.cachedAt) >= freshnessInterval {
+                refreshIfNeeded(key: key, date: date, query: query)
+            }
             return cached
         }
 
@@ -64,15 +81,14 @@ actor QueryCache {
         }
 
         let task = Task<T, Error> {
-            let result = try await query()
-            self.cache(result, for: key)
-            return result
+            try await query()
         }
 
         inflightRequests[key] = task
 
         do {
             let result = try await task.value
+            cache(result, for: key, date: date)
             inflightRequests.removeValue(forKey: key)
             return result
         } catch {
@@ -81,8 +97,31 @@ actor QueryCache {
         }
     }
 
-    private func cache(_ result: some Sendable, for key: String) {
-        cache[key] = result
+    private func refreshIfNeeded<T: Sendable>(
+        key: String,
+        date: Date,
+        query: @Sendable @escaping () async throws -> T
+    ) {
+        guard inflightRequests[key] == nil else { return }
+
+        let task = Task<T, Error> {
+            try await query()
+        }
+        inflightRequests[key] = task
+
+        Task {
+            do {
+                let result = try await task.value
+                cache(result, for: key, date: date)
+            } catch {
+                // Keep serving the stale value and retry on a future load.
+            }
+            inflightRequests.removeValue(forKey: key)
+        }
+    }
+
+    private func cache(_ result: some Sendable, for key: String, date: Date) {
+        cache[key] = CacheEntry(value: result, cachedAt: date)
     }
 
     private func buildCacheKey(queryKey: String, url: URL) -> String {

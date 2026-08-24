@@ -36,11 +36,23 @@ final class CheckoutProtocolClientContainer: Sendable {
 
 extension View {
     func walletButtonStyle(bg: Color = Color.black, cornerRadius: CGFloat? = nil) -> some View {
-        let defaultCornerRadius: CGFloat = 8
-        let radius = cornerRadius ?? defaultCornerRadius
-        return frame(height: 48)
+        let radius = WalletButtonLayout.resolvedCornerRadius(cornerRadius)
+        return frame(height: WalletButtonLayout.height)
             .background(bg)
-            .clipShape(RoundedRectangle(cornerRadius: radius >= 0 ? radius : defaultCornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: radius))
+    }
+}
+
+enum WalletButtonLayout {
+    static let height: CGFloat = 48
+    static let spacing: CGFloat = 8
+    static let defaultCornerRadius: CGFloat = 8
+
+    static func resolvedCornerRadius(_ cornerRadius: CGFloat?) -> CGFloat {
+        guard let cornerRadius, cornerRadius >= 0 else {
+            return defaultCornerRadius
+        }
+        return cornerRadius
     }
 }
 

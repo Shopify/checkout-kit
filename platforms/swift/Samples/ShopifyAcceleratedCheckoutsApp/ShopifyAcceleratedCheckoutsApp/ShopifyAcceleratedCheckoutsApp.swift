@@ -51,7 +51,7 @@ struct ShopifyAcceleratedCheckoutsApp: App {
                 ShopifyAcceleratedCheckouts.logLevel = logLevel
                 updateConfiguration()
             }
-            .environment(\.shopifyAcceleratedCheckoutsConfiguration, configuration)
+            .shopifyAcceleratedCheckouts(configuration)
             .environment(\.shopifyApplePayConfiguration, applePayConfiguration)
         }
         .environment(\.locale, Locale(identifier: locale))

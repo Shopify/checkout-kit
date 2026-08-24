@@ -461,7 +461,7 @@ iOS handles checkout geolocation permission prompts through the system prompt. I
 
 ### Configure accelerated checkouts
 
-Create shared configuration values and inject them into your SwiftUI hierarchy:
+Create shared configuration values and apply them to your SwiftUI hierarchy:
 
 ```swift
 import ShopifyAcceleratedCheckouts
@@ -484,12 +484,18 @@ struct YourApp: App {
   var body: some Scene {
     WindowGroup {
       ContentView()
-        .environment(\.shopifyAcceleratedCheckoutsConfiguration, checkoutConfig)
+        .shopifyAcceleratedCheckouts(checkoutConfig)
         .environment(\.shopifyApplePayConfiguration, applePayConfig)
     }
   }
 }
 ```
+
+Apply `.shopifyAcceleratedCheckouts(_:)` as soon as the shop configuration is available. The
+modifier preserves the configuration in the SwiftUI environment and automatically prefetches the
+shop settings used by the wallet buttons. Requests are deduplicated across button instances;
+settings remain fresh for one hour and stale settings are served while they refresh in the
+background. Existing direct environment injection remains supported.
 
 Use one customer mode at a time:
 
@@ -526,6 +532,15 @@ AcceleratedCheckoutButtons(cartID: cartID)
     // The buyer dismissed the accelerated checkout flow.
   }
   .connect(client)
+```
+
+While shop settings load, the SDK renders neutral placeholders matching the height, spacing,
+count, and corner radius of the configured wallet buttons. The placeholders respect Reduce Motion
+and are hidden from accessibility. To provide your own loading UI, disable the SDK presentation:
+
+```swift
+AcceleratedCheckoutButtons(cartID: cartID)
+  .loadingPresentation(.hidden)
 ```
 
 You can also render buttons for a single product variant:

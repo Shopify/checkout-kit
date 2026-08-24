@@ -882,6 +882,236 @@
           },
           {
             "kind": "TypeDecl",
+            "name": "LoadingPresentation",
+            "printedName": "LoadingPresentation",
+            "children": [
+              {
+                "kind": "Var",
+                "name": "automatic",
+                "printedName": "automatic",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation.Type) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "LoadingPresentation",
+                        "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                        "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "LoadingPresentation",
+                            "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                            "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO9automaticyA2DmF",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO9automaticyA2DmF",
+                "moduleName": "ShopifyAcceleratedCheckouts"
+              },
+              {
+                "kind": "Var",
+                "name": "hidden",
+                "printedName": "hidden",
+                "children": [
+                  {
+                    "kind": "TypeFunc",
+                    "name": "Function",
+                    "printedName": "(ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation.Type) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "LoadingPresentation",
+                        "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                        "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Metatype",
+                        "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation.Type",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "LoadingPresentation",
+                            "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                            "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "declKind": "EnumElement",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO6hiddenyA2DmF",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO6hiddenyA2DmF",
+                "moduleName": "ShopifyAcceleratedCheckouts"
+              },
+              {
+                "kind": "Function",
+                "name": "__derived_enum_equals",
+                "printedName": "__derived_enum_equals(_:_:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LoadingPresentation",
+                    "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "LoadingPresentation",
+                    "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO21__derived_enum_equalsySbAD_ADtFZ",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO21__derived_enum_equalsySbAD_ADtFZ",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Implements"
+                ],
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Function",
+                "name": "hash",
+                "printedName": "hash(into:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Hasher",
+                    "printedName": "Swift.Hasher",
+                    "paramValueOwnership": "InOut",
+                    "usr": "s:s6HasherV"
+                  }
+                ],
+                "declKind": "Func",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO4hash4intoys6HasherVz_tF",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO4hash4intoys6HasherVz_tF",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "implicit": true,
+                "funcSelfKind": "NonMutating"
+              },
+              {
+                "kind": "Var",
+                "name": "hashValue",
+                "printedName": "hashValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "declKind": "Var",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO9hashValueSivp",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO9hashValueSivp",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "implicit": true,
+                "accessors": [
+                  {
+                    "kind": "Accessor",
+                    "name": "Get",
+                    "printedName": "Get()",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                      }
+                    ],
+                    "declKind": "Accessor",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO9hashValueSivg",
+                    "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO9hashValueSivg",
+                    "moduleName": "ShopifyAcceleratedCheckouts",
+                    "implicit": true,
+                    "accessorKind": "get"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Enum",
+            "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO",
+            "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "isFromExtension": true,
+            "isEnumExhaustive": true,
+            "conformances": [
+              {
+                "kind": "Conformance",
+                "name": "Hashable",
+                "printedName": "Hashable",
+                "usr": "s:SH",
+                "mangledName": "$sSH"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
+              }
+            ]
+          },
+          {
+            "kind": "TypeDecl",
             "name": "RequiredContactFields",
             "printedName": "RequiredContactFields",
             "children": [
@@ -1938,6 +2168,35 @@
             "declAttributes": [
               "Available"
             ]
+          },
+          {
+            "kind": "Function",
+            "name": "loadingPresentation",
+            "printedName": "loadingPresentation(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "LoadingPresentation",
+                "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.LoadingPresentation",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO19LoadingPresentationO"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV19loadingPresentationyAc2AO07LoadingG0OF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV19loadingPresentationyAc2AO07LoadingG0OF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
           },
           {
             "kind": "Function",
@@ -3533,6 +3792,90 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "View",
+        "printedName": "View",
+        "children": [
+          {
+            "kind": "Function",
+            "name": "shopifyAcceleratedCheckouts",
+            "printedName": "shopifyAcceleratedCheckouts(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "OpaqueTypeArchetype",
+                "printedName": "some SwiftUI.View",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "View",
+                    "printedName": "SwiftUI.View",
+                    "usr": "s:7SwiftUI4ViewP"
+                  }
+                ]
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Configuration",
+                "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Configuration",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO13ConfigurationV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:7SwiftUI4ViewP27ShopifyAcceleratedCheckoutsE07shopifyeF0yQrA2DO13ConfigurationVF",
+            "mangledName": "$s7SwiftUI4ViewP27ShopifyAcceleratedCheckoutsE07shopifyeF0yQrA2DO13ConfigurationVF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "genericSig": "<Self where Self : SwiftUI.View>",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Protocol",
+        "usr": "s:7SwiftUI4ViewP",
+        "mangledName": "$s7SwiftUI4ViewP",
+        "moduleName": "SwiftUICore",
+        "genericSig": "<Self.Body : SwiftUI.View>",
+        "intro_Macosx": "10.15",
+        "intro_iOS": "13.0",
+        "intro_tvOS": "13.0",
+        "intro_watchOS": "6.0",
+        "declAttributes": [
+          "Preconcurrency",
+          "TypeEraser",
+          "TypeEraser",
+          "OriginallyDefinedIn",
+          "OriginallyDefinedIn",
+          "OriginallyDefinedIn",
+          "OriginallyDefinedIn",
+          "Available",
+          "Available",
+          "Available",
+          "Available",
+          "Custom"
+        ],
+        "isExternal": true,
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
           }
         ]
       },
