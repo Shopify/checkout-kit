@@ -20,6 +20,14 @@ class PreloadObservabilityTests: XCTestCase {
         try await super.tearDown()
     }
 
+    func testNewCacheStartsIdleWithoutReason() {
+        guard case let .idle(reason) = PreloadCache().state else {
+            return XCTFail("expected .idle")
+        }
+
+        XCTAssertNil(reason)
+    }
+
     func testPreloadReturnsHandleInLoadingState() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
 
@@ -44,9 +52,10 @@ class PreloadObservabilityTests: XCTestCase {
 
         ShopifyCheckoutKit.invalidate()
 
-        guard case .idle = preload?.state else {
+        guard case let .idle(reason) = preload?.state else {
             return XCTFail("expected .idle, got \(String(describing: preload?.state))")
         }
+        XCTAssertEqual(reason, .invalidated)
     }
 
     func testOnStateChangeReceivesTransitions() {
@@ -57,7 +66,7 @@ class PreloadObservabilityTests: XCTestCase {
         ShopifyCheckoutKit.invalidate()
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(states, [.loading, .idle])
+            XCTAssertEqual(states, [.loading, .idle(reason: .invalidated)])
         }
     }
 
@@ -74,7 +83,7 @@ class PreloadObservabilityTests: XCTestCase {
 
         withExtendedLifetime((first, second)) {
             XCTAssertEqual(firstStates, [.loading])
-            XCTAssertEqual(secondStates, [.loading, .idle])
+            XCTAssertEqual(secondStates, [.loading, .idle(reason: .invalidated)])
         }
     }
 
@@ -86,7 +95,7 @@ class PreloadObservabilityTests: XCTestCase {
         ShopifyCheckoutKit.invalidate()
 
         withExtendedLifetime((preload, cancellable)) {
-            XCTAssertEqual(states, [.loading, .idle])
+            XCTAssertEqual(states, [.loading, .idle(reason: .invalidated)])
         }
     }
 
@@ -118,13 +127,13 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testExpiryTransitionsToExpired() {
+    func testExpiryTransitionsToIdleWithExpiredReason() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
 
         CheckoutWebView.preloadCache.expire()
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload?.state, .expired)
+            XCTAssertEqual(preload?.state, .idle(reason: .expired))
         }
     }
 
@@ -218,14 +227,14 @@ class PreloadObservabilityTests: XCTestCase {
         _ = CheckoutWebView.preloadCache.view(for: PreloadKey(url: otherURL, entryPoint: nil))
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload?.state, .idle)
+            XCTAssertEqual(preload?.state, .idle(reason: .invalidated))
         }
     }
 
     func testExpireClearsCacheBeforeNotifyingSoReentrantPreloadSurvives() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
         preload?.onStateChange = { state in
-            if case .expired = state {
+            if case .idle(reason: .expired) = state {
                 _ = CheckoutWebView.preloadCache.store(
                     CheckoutWebView(entryPoint: nil),
                     for: PreloadKey(url: self.url, entryPoint: nil)
@@ -245,12 +254,12 @@ class PreloadObservabilityTests: XCTestCase {
 
         ShopifyCheckoutKit.configuration.preloading.enabled = false
 
-        for _ in 0 ..< 20 where preload?.state != .idle {
+        for _ in 0 ..< 20 where preload?.state != .idle(reason: .invalidated) {
             await Task.yield()
         }
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload?.state, .idle)
+            XCTAssertEqual(preload?.state, .idle(reason: .invalidated))
         }
     }
 }

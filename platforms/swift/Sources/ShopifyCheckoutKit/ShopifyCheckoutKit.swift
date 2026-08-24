@@ -59,7 +59,7 @@ public func preload(checkout url: URL) -> CheckoutPreload? {
 /// Invalidates any cached checkout created by preload calls.
 @MainActor
 public func invalidate() {
-    CheckoutWebView.preloadCache.evict(with: .idle, disconnect: true)
+    CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated), disconnect: true)
 }
 
 @MainActor
