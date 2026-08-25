@@ -350,6 +350,7 @@ class PreloadObservabilityTest {
         val response = mock<WebResourceResponse> {
             whenever(it.statusCode).thenReturn(500)
             whenever(it.reasonPhrase).thenReturn("Internal Server Error")
+            whenever(it.responseHeaders).thenReturn(mapOf("cf-mitigated" to "block"))
         }
         shadowOf(view).webViewClient.onReceivedHttpError(view, request, response)
         ShadowLooper.shadowMainLooper().idle()
@@ -377,7 +378,7 @@ class PreloadObservabilityTest {
         val response = mock<WebResourceResponse> {
             whenever(it.statusCode).thenReturn(403)
             whenever(it.reasonPhrase).thenReturn("Forbidden")
-            whenever(it.responseHeaders).thenReturn(mapOf("cf-mitigated" to "challenge"))
+            whenever(it.responseHeaders).thenReturn(mapOf("CF-MITIGATED" to "  ChAlLeNgE\t"))
         }
 
         shadowOf(view).webViewClient.onReceivedHttpError(view, request, response)
@@ -442,6 +443,35 @@ class PreloadObservabilityTest {
 
         assertThat(preload.state).isEqualTo(PreloadState.Loading)
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(view)
+        verifyNoInteractions(listener)
+    }
+
+    @Test
+    fun `cloudflare managed challenge discards dismissed cached view without checkout failure`() {
+        val preload = ShopifyCheckoutKit.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isTrue()
+        assertThat(view.isPresented).isFalse()
+        assertThat(view.isPreloadRequest).isFalse()
+        val listener = mock<CheckoutWebViewListener>()
+        view.setListener(listener)
+        val request = mock<WebResourceRequest> {
+            whenever(it.isForMainFrame).thenReturn(true)
+            whenever(it.url).thenReturn(Uri.parse(url))
+        }
+        val response = mock<WebResourceResponse> {
+            whenever(it.statusCode).thenReturn(403)
+            whenever(it.reasonPhrase).thenReturn("Forbidden")
+            whenever(it.responseHeaders).thenReturn(mapOf("cf-mitigated" to "challenge"))
+        }
+
+        shadowOf(view).webViewClient.onReceivedHttpError(view, request, response)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(preload.state).isEqualTo(PreloadState.Loading)
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
         verifyNoInteractions(listener)
     }
 
