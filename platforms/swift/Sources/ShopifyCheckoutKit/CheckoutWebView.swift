@@ -53,10 +53,6 @@ final class PreloadCache {
     }
 
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
-        if let entry, entry.key == key, !entry.isStale {
-            return true
-        }
-
         invalidate()
 
         let entry = Entry(key: key, view: view, createdAt: createdAt)
@@ -82,8 +78,8 @@ final class PreloadCache {
     /// Evicts the cached view, then notifies observers of the resulting `state`.
     /// Clearing before notifying ensures a preload started re-entrantly from the
     /// callback is not wiped by this invalidation.
-    func evict(with state: PreloadState, disconnect: Bool = true) {
-        invalidate(disconnect: disconnect)
+    func evict(with state: PreloadState) {
+        invalidate()
         transition(to: state)
     }
 
@@ -121,17 +117,15 @@ final class PreloadCache {
         return true
     }
 
-    func invalidate(disconnect: Bool = true) {
-        OSLogger.shared.debug("Invalidating preload cache, disconnect: \(disconnect)")
+    func invalidate() {
+        OSLogger.shared.debug("Invalidating preload cache")
 
         let cachedView = entry?.view
         stopKeepAlive()
         stopExpiryTimer()
         entry = nil
 
-        if disconnect {
-            cachedView?.detachBridge()
-        }
+        cachedView?.detachBridge()
     }
 
     func hasEntry() -> Bool {
@@ -344,8 +338,23 @@ class CheckoutWebView: WKWebView {
             ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
         }
         .on(CheckoutProtocol.complete) { [weak self] _ in
-            guard let self, CheckoutWebView.preloadCache.contains(self) else { return }
-            CheckoutWebView.preloadCache.evict(with: .idle, disconnect: false)
+            guard let self else { return }
+
+            let cacheContainsCompletedView = CheckoutWebView.preloadCache.contains(self)
+            let cacheContainsItsReplacement = if let loadedCheckoutURL, isPresented {
+                CheckoutWebView.preloadCache.hasEntry(for: PreloadKey(
+                    url: loadedCheckoutURL,
+                    entryPoint: entryPoint
+                ))
+            } else {
+                false
+            }
+
+            // A preload requested during presentation moves the visible view out of the cache.
+            // If the buyer then completes that checkout, discard its background replacement too;
+            // otherwise the completed cart could be shown when checkout is opened again.
+            guard cacheContainsCompletedView || cacheContainsItsReplacement else { return }
+            CheckoutWebView.preloadCache.evict(with: .idle)
         }
         .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
             guard let target = request.parsedURL else {
@@ -407,11 +416,6 @@ class CheckoutWebView: WKWebView {
         }
 
         let key = PreloadKey(url: url, entryPoint: entryPoint)
-        guard !preloadCache.hasEntry(for: key) else {
-            OSLogger.shared.debug("Preload cache already has matching entry")
-            return
-        }
-
         let view = CheckoutWebView(entryPoint: entryPoint)
         // Keep the preloaded webview out of any window. WebKit derives
         // `document.visibilityState` from window membership, so an unparented webview reports
@@ -423,8 +427,8 @@ class CheckoutWebView: WKWebView {
         }
     }
 
-    static func invalidate(disconnect: Bool = true) {
-        preloadCache.invalidate(disconnect: disconnect)
+    static func invalidate() {
+        preloadCache.invalidate()
     }
 
     // MARK: Properties
@@ -437,6 +441,10 @@ class CheckoutWebView: WKWebView {
     /// presented view is a live session, so its navigation events must no
     /// longer drive preload state, even after dismissal or reuse.
     var hasBeenPresented = false
+
+    /// Tracks whether this view is currently backing a presented checkout.
+    /// Background preload requests must not replace or reload a live session.
+    var isPresented = false
 
     /// Ensures one terminal failure is handled per checkout session, regardless
     /// of whether it originated from `ec.error` or WebKit process termination.
@@ -495,6 +503,8 @@ class CheckoutWebView: WKWebView {
     }
 
     public func detachBridge() {
+        // Once presented, the controller owns the view and its bridge until dismissal.
+        guard !isPresented else { return }
         guard isBridgeAttached else { return }
 
         OSLogger.shared.debug("Detaching bridge")

@@ -51,6 +51,19 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertFalse(view.isBridgeAttached)
     }
 
+    func testDetachBridgeWaitsUntilCheckoutIsNoLongerPresented() {
+        view.isPresented = true
+
+        view.detachBridge()
+
+        XCTAssertTrue(view.isBridgeAttached)
+
+        view.isPresented = false
+        view.detachBridge()
+
+        XCTAssertFalse(view.isBridgeAttached)
+    }
+
     func testHTTPSLinkIsAllowed() throws {
         let link = try XCTUnwrap(URL(string: "https://www.shopify.com/legal/privacy/app-users"))
         let received = expectation(description: "policy decided")
@@ -309,7 +322,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertNotNil(cached.url)
     }
 
-    func testRepeatedPreloadForMatchingCheckoutDoesNotReloadCachedWebView() {
+    func testRepeatedPreloadForMatchingCheckoutReplacesCachedWebView() {
         let webView = LoadedRequestObservableWebView()
         let checkoutURL = EmbeddedCheckoutProtocol.url(for: url)
         _ = CheckoutWebView.preloadCache.store(webView, for: PreloadKey(url: checkoutURL, entryPoint: nil))
@@ -317,6 +330,22 @@ class CheckoutWebViewTests: XCTestCase {
         CheckoutWebView.preload(checkout: checkoutURL)
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertFalse(CheckoutWebView.preloadCache.contains(webView))
+        XCTAssertFalse(webView.isBridgeAttached)
+        XCTAssertNil(webView.lastLoadedURLRequest)
+    }
+
+    func testRepeatedPreloadReplacesCacheWithoutDisconnectingPresentedCheckout() {
+        let webView = LoadedRequestObservableWebView()
+        let checkoutURL = EmbeddedCheckoutProtocol.url(for: url)
+        _ = CheckoutWebView.preloadCache.store(webView, for: PreloadKey(url: checkoutURL, entryPoint: nil))
+        webView.isPresented = true
+
+        CheckoutWebView.preload(checkout: checkoutURL)
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.contains(webView))
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertTrue(webView.isBridgeAttached)
         XCTAssertNil(webView.lastLoadedURLRequest)
     }
 

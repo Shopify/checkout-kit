@@ -42,7 +42,8 @@ private func applyConfigurationChange(configuration: Configuration, previousConf
 }
 
 /// Preloads the checkout for faster presentation and returns a handle for
-/// observing preload state. Retain the handle to keep observing.
+/// observing preload state. Each call refreshes the cached checkout, even when
+/// the URL is unchanged. Retain the handle to keep observing.
 @MainActor
 @discardableResult
 public func preload(checkout url: URL) -> CheckoutPreload? {
@@ -59,7 +60,7 @@ public func preload(checkout url: URL) -> CheckoutPreload? {
 /// Invalidates any cached checkout created by preload calls.
 @MainActor
 public func invalidate() {
-    CheckoutWebView.preloadCache.evict(with: .idle, disconnect: true)
+    CheckoutWebView.preloadCache.evict(with: .idle)
 }
 
 @MainActor
