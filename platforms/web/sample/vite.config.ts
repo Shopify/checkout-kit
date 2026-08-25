@@ -3,9 +3,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "vite";
 
+import packageJson from "../package.json";
+
 const here = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  define: {
+    CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
+  },
   // Treat `sample/` as the project root so vite serves `index.html` from here.
   root: here,
   resolve: {

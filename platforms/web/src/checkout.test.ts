@@ -264,22 +264,6 @@ describe("<shopify-checkout>", () => {
       expect(windowOpenSpy).not.toHaveBeenCalled();
     });
 
-    it.each([
-      "javascript:alert(1)",
-      "data:text/html,<script>alert(1)</script>",
-      "http://shop.example.com/checkout",
-      "blob:https://shop.example.com/abc",
-      "file:///etc/passwd",
-      "not a url",
-    ])("leaves overlay link without href when src is %s", (badSrc) => {
-      const checkout = renderCheckout({ src: badSrc });
-
-      expect(checkout.shadowRoot!.querySelector("iframe")).toBeNull();
-
-      const overlayLink = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link");
-      expect(overlayLink!.hasAttribute("href")).toBe(false);
-    });
-
     it("does not interpret HTML metacharacters in src as markup", () => {
       const src = 'https://shop.example.com/"><script>window.__xssed=true</script>';
       // The URL constructor accepts this (the `"` becomes part of the
@@ -321,15 +305,6 @@ describe("<shopify-checkout>", () => {
       expect(CK_VERSION).toBe(version);
     });
 
-    it("includes ck_version on the overlay link", () => {
-      const checkout = renderCheckout({
-        src: "https://shop.example.com/checkout",
-      });
-      const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link");
-      const url = new URL(link!.getAttribute("href") ?? "");
-      expect(url.searchParams.get("ck_version")).toBe(CK_VERSION);
-    });
-
     it("preserves caller-provided ck_version rather than appending a duplicate", () => {
       const checkout = renderCheckout({
         src: "https://shop.example.com/checkout?ck_version=old",
@@ -344,23 +319,13 @@ describe("<shopify-checkout>", () => {
     });
   });
 
-  describe("overlay link", () => {
-    it('has rel="noopener noreferrer" and target="_blank"', () => {
+  describe("overlay focus control", () => {
+    it("is a button without navigation attributes", () => {
       const checkout = renderCheckout();
-      const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link");
-      expect(link!.getAttribute("rel")).toBe("noopener noreferrer");
-      expect(link!.getAttribute("target")).toBe("_blank");
-    });
-
-    it("points to the parametrised checkout URL (matching what the popup would open)", () => {
-      const checkout = renderCheckout({
-        src: "https://shop.example.com/checkout",
-      });
-      const link = checkout.shadowRoot!.querySelector<HTMLAnchorElement>("#overlay-link");
-      const href = link!.getAttribute("href") ?? "";
-      const url = new URL(href);
-      expect(url.origin).toBe("https://shop.example.com");
-      expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
+      const button = checkout.shadowRoot!.querySelector<HTMLButtonElement>("#overlay-link");
+      expect(button!.type).toBe("button");
+      expect(button!.hasAttribute("href")).toBe(false);
+      expect(button!.hasAttribute("target")).toBe(false);
     });
   });
 
