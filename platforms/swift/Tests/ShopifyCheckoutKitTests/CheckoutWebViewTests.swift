@@ -154,6 +154,48 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(error.httpStatusCode, 403)
     }
 
+    func testCloudflareManagedChallengeRendersWithoutReportingCheckoutFailure() throws {
+        try view.load(checkout: XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123")))
+        view.checkoutIsVisible = true
+        let link = try XCTUnwrap(view.url)
+        let didFail = expectation(description: "checkout failure was not reported")
+        didFail.isInverted = true
+        mockDelegate.didFailWithErrorExpectation = didFail
+
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: link,
+                statusCode: 403,
+                httpVersion: nil,
+                headerFields: ["CF-MITIGATED": "  ChAlLeNgE\t"]
+            )
+        )
+
+        XCTAssertEqual(view.handleResponse(response), .allow)
+        wait(for: [didFail], timeout: 0.1)
+        XCTAssertNil(mockDelegate.errorReceived)
+    }
+
+    func testDifferentCloudflareMitigationValueUsesNormalHTTPErrorHandling() throws {
+        try view.load(checkout: url)
+        let link = try XCTUnwrap(view.url)
+        let didFail = expectation(description: "checkout failure was reported")
+        mockDelegate.didFailWithErrorExpectation = didFail
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: link,
+                statusCode: 403,
+                httpVersion: nil,
+                headerFields: ["cf-mitigated": "block"]
+            )
+        )
+
+        XCTAssertEqual(view.handleResponse(response), .cancel)
+
+        wait(for: [didFail], timeout: 2)
+        XCTAssertEqual(mockDelegate.errorReceived?.code, .httpError)
+    }
+
     func test401responseOnCheckoutURLCodeDelegation() throws {
         try view.load(checkout: XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123")))
         let link = try XCTUnwrap(view.url)

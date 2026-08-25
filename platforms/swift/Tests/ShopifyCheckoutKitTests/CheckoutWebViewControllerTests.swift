@@ -107,6 +107,19 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertEqual(delegate.didDismissCount, 1)
     }
 
+    func test_viewVisibility_isSetBeforePresentationAndResetAfterDisappearance() throws {
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        let checkoutView = try XCTUnwrap(viewController.checkoutView)
+
+        XCTAssertFalse(checkoutView.checkoutIsVisible)
+
+        viewController.viewWillAppear(false)
+        XCTAssertTrue(checkoutView.checkoutIsVisible)
+
+        viewController.viewDidDisappear(false)
+        XCTAssertFalse(checkoutView.checkoutIsVisible)
+    }
+
     func test_presentationControllerDidDismiss_doesNotCleanUpBeforeViewDisappears() throws {
         ShopifyCheckoutKit.configuration.preloading.enabled = true
         ShopifyCheckoutKit.preload(checkout: url)

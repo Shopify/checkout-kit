@@ -438,6 +438,11 @@ class CheckoutWebView: WKWebView {
     /// longer drive preload state, even after dismissal or reuse.
     var hasBeenPresented = false
 
+    /// Tracks whether checkout is currently visible. Unlike `hasBeenPresented`,
+    /// this resets when the presentation disappears so retained cached views
+    /// can discard challenges that cannot be completed in the background.
+    var checkoutIsVisible = false
+
     /// Ensures one terminal failure is handled per checkout session, regardless
     /// of whether it originated from `ec.error` or WebKit process termination.
     private var hasHandledTerminalFailure = false
@@ -808,13 +813,21 @@ extension CheckoutWebView: WKNavigationDelegate {
 
     func webView(_: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping @MainActor @Sendable (WKNavigationResponsePolicy) -> Void) {
         if let response = navigationResponse.response as? HTTPURLResponse {
-            decisionHandler(handleResponse(response))
+            decisionHandler(
+                handleResponse(
+                    response,
+                    isForMainFrame: navigationResponse.isForMainFrame
+                )
+            )
             return
         }
         decisionHandler(.allow)
     }
 
-    func handleResponse(_ response: HTTPURLResponse) -> WKNavigationResponsePolicy {
+    func handleResponse(
+        _ response: HTTPURLResponse,
+        isForMainFrame: Bool = true
+    ) -> WKNavigationResponsePolicy {
         let statusCode = response.statusCode
         let errorMessageForStatusCode = HTTPURLResponse.localizedString(
             forStatusCode: statusCode
@@ -822,6 +835,24 @@ extension CheckoutWebView: WKNavigationDelegate {
 
         guard isCheckout(url: response.url) else {
             return .allow
+        }
+
+        if isCloudflareManagedChallenge(response) {
+            guard isForMainFrame,
+                  CheckoutWebView.preloadCache.contains(self),
+                  !checkoutIsVisible
+            else {
+                OSLogger.shared.debug("Allowing Cloudflare managed challenge response to render")
+                return .allow
+            }
+
+            OSLogger.shared.debug("Discarding cached Cloudflare managed challenge response")
+            stopLoading()
+            handleCachedViewFailure(
+                .httpError(statusCode: statusCode),
+                message: "HTTP response returned status code \(statusCode)."
+            )
+            return .cancel
         }
 
         if statusCode >= 400 {
@@ -840,6 +871,12 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         return .allow
+    }
+
+    private func isCloudflareManagedChallenge(_ response: HTTPURLResponse) -> Bool {
+        response.value(forHTTPHeaderField: "cf-mitigated")?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .caseInsensitiveCompare("challenge") == .orderedSame
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation _: WKNavigation!) {
