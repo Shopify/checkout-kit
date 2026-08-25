@@ -438,11 +438,14 @@ class CheckoutWebView: WKWebView {
     /// longer drive preload state, even after dismissal or reuse.
     var hasBeenPresented = false
 
+    /// Tracks whether checkout is currently visible. Unlike `hasBeenPresented`,
+    /// this resets when the presentation disappears so retained cached views
+    /// can discard challenges that cannot be completed in the background.
+    var checkoutIsVisible = false
+
     /// Ensures one terminal failure is handled per checkout session, regardless
     /// of whether it originated from `ec.error` or WebKit process termination.
     private var hasHandledTerminalFailure = false
-
-    private let httpResponseHandler = HTTPResponseHandler()
 
     /// The checkout URL passed to `load(checkout:)`. Used to derive the trusted
     /// cart-url origin for incoming message validation.
@@ -834,16 +837,16 @@ extension CheckoutWebView: WKNavigationDelegate {
             return .allow
         }
 
-        switch httpResponseHandler.disposition(
-            for: response,
-            isForMainFrame: isForMainFrame,
-            isBackgroundedPreload: isPreloadBackgrounded
-        ) {
-        case .handleNormally:
-            break
-        case .render:
-            return .allow
-        case .discardPreload:
+        if isCloudflareManagedChallenge(response) {
+            guard isForMainFrame,
+                  CheckoutWebView.preloadCache.contains(self),
+                  !checkoutIsVisible
+            else {
+                OSLogger.shared.debug("Allowing Cloudflare managed challenge response to render")
+                return .allow
+            }
+
+            OSLogger.shared.debug("Discarding cached Cloudflare managed challenge response")
             stopLoading()
             handleCachedViewFailure(
                 .httpError(statusCode: statusCode),
@@ -868,6 +871,12 @@ extension CheckoutWebView: WKNavigationDelegate {
         }
 
         return .allow
+    }
+
+    private func isCloudflareManagedChallenge(_ response: HTTPURLResponse) -> Bool {
+        response.value(forHTTPHeaderField: "cf-mitigated")?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .caseInsensitiveCompare("challenge") == .orderedSame
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation _: WKNavigation!) {
