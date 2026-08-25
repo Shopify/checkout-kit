@@ -8,7 +8,7 @@ Usage: validate-release-version <platform> [expected-version] [expected-tag]
 Validates the selected SDK's checked-in version declarations, optional user
 version input, optional git tag, and prints GitHub Actions outputs to stdout.
 
-Platforms: iOS, Android, Embedded Checkout Protocol, React Native
+Platforms: iOS, Android, Embedded Checkout Protocol, React Native, Web
 USAGE
 }
 
