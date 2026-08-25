@@ -53,12 +53,22 @@ struct SettingsView: View {
         NavigationView {
             List {
                 Section(header: Text("Features")) {
-                    Toggle("Checkout preloading", isOn: $checkoutPreloadingEnabled)
-                        .onChange(of: checkoutPreloadingEnabled) { _ in
-                            ShopifyCheckoutKit.configure {
-                                $0.preloading.enabled = checkoutPreloadingEnabled
+                    // A whole-row Toggle exposes one full-width element whose center tap misses
+                    // the switch, so the label sits outside and the identifier tags the control.
+                    HStack {
+                        Text("Checkout preloading")
+                        Spacer()
+                        Toggle("Checkout preloading", isOn: $checkoutPreloadingEnabled)
+                            .labelsHidden()
+                            .accessibilityIdentifier(
+                                AccessibilityIdentifiers.Settings.checkoutPreloadingToggle
+                            )
+                            .onChange(of: checkoutPreloadingEnabled) { _ in
+                                ShopifyCheckoutKit.configure {
+                                    $0.preloading.enabled = checkoutPreloadingEnabled
+                                }
                             }
-                        }
+                    }
 
                     Picker("Window open handler", selection: $windowOpenHandler) {
                         ForEach(WindowOpenHandlerOption.allCases, id: \.self) { option in

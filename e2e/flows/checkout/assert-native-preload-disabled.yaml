@@ -1,0 +1,33 @@
+appId: ${E2E_APP_ID}
+---
+# Runs after the shared readiness flow, so disabling below acts on a proven Ready preload
+# instead of matching a not-ready state the app merely started in.
+- tapOn:
+    id: settings-tab
+- waitForAnimationToEnd
+
+- tapOn:
+    id: checkout-preloading-toggle
+    enabled: true
+- assertVisible:
+    id: checkout-preloading-toggle
+    checked: false
+
+- tapOn:
+    id: cart-tab
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible:
+      id: preload-state-not-ready
+    timeout: 30000
+
+- assertVisible:
+    id: preload-cache-hit-none
+
+- runFlow: present.yaml
+- runFlow: close.yaml
+
+# Disabled preload presents a fresh checkout, so the cache-hit marker must stay none.
+- assertVisible:
+    id: preload-cache-hit-none
