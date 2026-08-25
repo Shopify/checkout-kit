@@ -4,6 +4,7 @@ import android.net.Uri
 import android.os.Looper
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebViewClient.ERROR_FAILED_SSL_HANDSHAKE
 import android.webkit.WebViewClient.ERROR_IO
 import android.webkit.WebViewClient.ERROR_TIMEOUT
@@ -84,6 +85,51 @@ class TelemetryIntegrationTest {
         assertThat(recorder.errors.single().isRetry).isTrue()
         assertThat(recorder.durations.single().result)
             .isEqualTo(TelemetryNavigationDurationResult.Failure)
+    }
+
+    @Test
+    fun `records ordinary main frame HTTP errors as navigation failures`() {
+        val view = CheckoutWebView(activity, FakeWebMessageTransport())
+        view.loadCheckout("https://checkout-sdk.myshopify.com/cart/synthetic")
+        shadowOf(Looper.getMainLooper()).idle()
+        val request = mainFrameRequest(requireNotNull(shadowOf(view).lastLoadedUrl))
+        val response = mock<WebResourceResponse> {
+            whenever(it.statusCode).thenReturn(403)
+            whenever(it.reasonPhrase).thenReturn("Forbidden")
+            whenever(it.responseHeaders).thenReturn(mapOf("cf-mitigated" to "block"))
+        }
+
+        view.CheckoutWebViewClient().onReceivedHttpError(view, request, response)
+
+        assertThat(recorder.errors).hasSize(1)
+        assertThat(recorder.errors.single().category).isEqualTo(TelemetryErrorCategory.Http)
+        assertThat(recorder.errors.single().code).isEqualTo(TelemetryErrorCode.Client)
+        assertThat(recorder.durations.single().result).isEqualTo(TelemetryNavigationDurationResult.Failure)
+    }
+
+    @Test
+    fun `rendered managed challenge does not record HTTP or navigation failure`() {
+        val view = CheckoutWebView(activity, FakeWebMessageTransport())
+        view.loadCheckout("https://checkout-sdk.myshopify.com/cart/synthetic")
+        view.markPresented()
+        shadowOf(Looper.getMainLooper()).idle()
+        val loadedUrl = requireNotNull(shadowOf(view).lastLoadedUrl)
+        val request = mainFrameRequest(loadedUrl)
+        val response = mock<WebResourceResponse> {
+            whenever(it.statusCode).thenReturn(403)
+            whenever(it.reasonPhrase).thenReturn("Forbidden")
+            whenever(it.responseHeaders).thenReturn(mapOf("cf-mitigated" to "challenge"))
+        }
+        val client = view.CheckoutWebViewClient()
+
+        client.onReceivedHttpError(view, request, response)
+
+        assertThat(recorder.errors).isEmpty()
+        assertThat(recorder.durations).isEmpty()
+
+        client.onPageFinished(view, loadedUrl)
+
+        assertThat(recorder.durations.single().result).isEqualTo(TelemetryNavigationDurationResult.Success)
     }
 
     @Test

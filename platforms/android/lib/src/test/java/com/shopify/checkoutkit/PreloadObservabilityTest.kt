@@ -12,6 +12,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -332,6 +333,7 @@ class PreloadObservabilityTest {
         val response = mock<WebResourceResponse> {
             whenever(it.statusCode).thenReturn(500)
             whenever(it.reasonPhrase).thenReturn("Internal Server Error")
+            whenever(it.responseHeaders).thenReturn(mapOf("cf-mitigated" to "block"))
         }
         shadowOf(view).webViewClient.onReceivedHttpError(view, request, response)
         ShadowLooper.shadowMainLooper().idle()
@@ -352,6 +354,7 @@ class PreloadObservabilityTest {
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
         val listener = mock<CheckoutWebViewListener>()
         view.setListener(listener)
+        clearInvocations(listener)
         val request = mock<WebResourceRequest> {
             whenever(it.isForMainFrame).thenReturn(true)
             whenever(it.url).thenReturn(Uri.parse(url))
@@ -359,7 +362,7 @@ class PreloadObservabilityTest {
         val response = mock<WebResourceResponse> {
             whenever(it.statusCode).thenReturn(403)
             whenever(it.reasonPhrase).thenReturn("Forbidden")
-            whenever(it.responseHeaders).thenReturn(mapOf("cf-mitigated" to "challenge"))
+            whenever(it.responseHeaders).thenReturn(mapOf("CF-MITIGATED" to "  ChAlLeNgE\t"))
         }
 
         shadowOf(view).webViewClient.onReceivedHttpError(view, request, response)
@@ -384,6 +387,7 @@ class PreloadObservabilityTest {
         view.markPresented()
         val listener = mock<CheckoutWebViewListener>()
         view.setListener(listener)
+        clearInvocations(listener)
         val request = mock<WebResourceRequest> {
             whenever(it.isForMainFrame).thenReturn(true)
             whenever(it.url).thenReturn(Uri.parse(url))
@@ -409,6 +413,7 @@ class PreloadObservabilityTest {
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
         val listener = mock<CheckoutWebViewListener>()
         view.setListener(listener)
+        clearInvocations(listener)
         val request = mock<WebResourceRequest> {
             whenever(it.isForMainFrame).thenReturn(false)
             whenever(it.url).thenReturn(Uri.parse(url))

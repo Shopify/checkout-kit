@@ -82,7 +82,6 @@ internal class CheckoutWebView private constructor(
     private var checkoutRequestRetryReason: TelemetryNavigationRetryReason? = null
     private var navigationTiming: NavigationTiming? = null
     private val touchHandler = CheckoutWebViewTouchHandler()
-    private val httpResponseHandler = HttpResponseHandler()
 
     /** Origin of the loaded checkout URL, trusted as a safe default for incoming-message validation. */
     internal var checkoutOrigin: String? = null
@@ -371,55 +370,48 @@ internal class CheckoutWebView private constructor(
             val statusCode = errorResponse?.statusCode ?: 0
             val failureReason = PreloadState.FailureReason.HttpError(statusCode)
             val failureMessage = "HTTP response returned status code $statusCode."
-            val isBackgroundedPreload =
-                preloadCache.contains(this@CheckoutWebView) && isPreloadRequest && !isPresented
 
-            when (
-                httpResponseHandler.disposition(
-                    responseHeaders = errorResponse?.responseHeaders,
-                    isForMainFrame = isMainFrame,
-                    isBackgroundedPreload = isBackgroundedPreload,
-                )
-            ) {
-                HttpResponseHandler.Disposition.HANDLE_NORMALLY -> {
-                    if (isMainFrame) {
-                        CheckoutTelemetry.recorder.recordError(
-                            TelemetryErrorMetric(
-                                category = TelemetryErrorCategory.Http,
-                                stage = TelemetryErrorStage.Load,
-                                code = when (statusCode) {
-                                    in 400..499 -> TelemetryErrorCode.Client
-                                    in 500..599 -> TelemetryErrorCode.Server
-                                    else -> TelemetryErrorCode.Unknown
-                                },
-                                retryable = statusCode >= 500,
-                                isRetry = didRetryCheckoutRequest,
-                            ),
-                        )
-                        recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
-                        preloadCache.evict(
-                            PreloadState.Failed(
-                                failureReason,
-                                failureMessage,
-                            ),
-                            view = this@CheckoutWebView,
-                        )
-                    }
-                    errorResponse?.let {
-                        handleHttpError(
-                            request,
-                            it.statusCode,
-                            it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
-                        )
-                    }
-                }
-                HttpResponseHandler.Disposition.RENDER -> Unit
-                HttpResponseHandler.Disposition.DISCARD_PRELOAD -> {
+            if (errorResponse.isCloudflareManagedChallenge()) {
+                if (isMainFrame && preloadCache.contains(this@CheckoutWebView) && !isPresented) {
+                    log.d(LOG_TAG, "Discarding cached Cloudflare managed challenge response.")
                     stopLoading()
                     evictForTerminalFailure(
                         this@CheckoutWebView,
                         failureReason,
                         failureMessage,
+                    )
+                } else {
+                    log.d(LOG_TAG, "Allowing Cloudflare managed challenge response to render.")
+                }
+            } else {
+                if (isMainFrame) {
+                    CheckoutTelemetry.recorder.recordError(
+                        TelemetryErrorMetric(
+                            category = TelemetryErrorCategory.Http,
+                            stage = TelemetryErrorStage.Load,
+                            code = when (statusCode) {
+                                in 400..499 -> TelemetryErrorCode.Client
+                                in 500..599 -> TelemetryErrorCode.Server
+                                else -> TelemetryErrorCode.Unknown
+                            },
+                            retryable = statusCode >= 500,
+                            isRetry = didRetryCheckoutRequest,
+                        ),
+                    )
+                    recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
+                    preloadCache.evict(
+                        PreloadState.Failed(
+                            failureReason,
+                            failureMessage,
+                        ),
+                        view = this@CheckoutWebView,
+                    )
+                }
+                errorResponse?.let {
+                    handleHttpError(
+                        request,
+                        it.statusCode,
+                        it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
                     )
                 }
             }
@@ -427,6 +419,17 @@ internal class CheckoutWebView private constructor(
             if (isMainFrame) {
                 resetCheckoutRequestRetryState()
             }
+        }
+
+        private fun WebResourceResponse?.isCloudflareManagedChallenge(): Boolean {
+            val mitigation = this
+                ?.responseHeaders
+                ?.entries
+                ?.firstOrNull { (name) -> name.equals("cf-mitigated", ignoreCase = true) }
+                ?.value
+                ?.trim()
+
+            return mitigation.equals("challenge", ignoreCase = true)
         }
 
         override fun shouldOverrideUrlLoading(
