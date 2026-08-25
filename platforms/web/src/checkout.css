@@ -95,13 +95,14 @@
 }
 
 .overlay-focus-button {
+  display: inline;
   appearance: none;
   background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
   font: inherit;
-  color: LinkText;
+  color: inherit;
   text-decoration: underline;
 }
 
