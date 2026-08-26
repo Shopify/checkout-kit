@@ -358,15 +358,79 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }
 
+    func testMatchingPresentLogsTheCacheHitThroughTheConfiguredLoggerAtDebugLevel() {
+        withRecordingLogger(logLevel: .debug) { logger in
+            // Keep this literal independent from preloadCacheHitLogMessage: the sample parses
+            // this exact diagnostic across the SDK boundary.
+            let expectedMessage = "Presenting preloaded checkout from cache"
+            ShopifyCheckoutKit.preload(checkout: url)
+            CheckoutWebView.preloadCache.transition(to: .ready)
+
+            XCTAssertFalse(logger.messages.contains(expectedMessage))
+
+            _ = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(url))
+
+            XCTAssertEqual(logger.messages.filter { $0 == expectedMessage }.count, 1)
+        }
+    }
+
+    func testMatchingPresentDoesNotLogTheCacheHitBeforePreloadIsReady() {
+        withRecordingLogger(logLevel: .debug) { logger in
+            ShopifyCheckoutKit.preload(checkout: url)
+
+            _ = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(url))
+
+            XCTAssertFalse(logger.messages.contains(CheckoutWebView.preloadCacheHitLogMessage))
+        }
+    }
+
+    func testMatchingPresentDoesNotLogTheCacheHitThroughTheConfiguredLoggerAboveDebugLevel() {
+        withRecordingLogger(logLevel: .warn) { logger in
+            ShopifyCheckoutKit.preload(checkout: url)
+            CheckoutWebView.preloadCache.transition(to: .ready)
+
+            _ = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(url))
+
+            XCTAssertFalse(logger.messages.contains(CheckoutWebView.preloadCacheHitLogMessage))
+        }
+    }
+
+    func testFreshPresentDoesNotLogTheCacheHit() {
+        withRecordingLogger(logLevel: .debug) { logger in
+            _ = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(url))
+
+            XCTAssertFalse(logger.messages.contains(CheckoutWebView.preloadCacheHitLogMessage))
+        }
+    }
+
     func testPresentWithDifferentURLDoesNotReusePreloadedWebView() throws {
-        ShopifyCheckoutKit.preload(checkout: url)
-        let otherURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/456"))
+        try withRecordingLogger(logLevel: .debug) { logger in
+            ShopifyCheckoutKit.preload(checkout: url)
+            CheckoutWebView.preloadCache.transition(to: .ready)
+            let otherURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/456"))
 
-        let fresh = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: otherURL))
+            let fresh = CheckoutWebView.for(checkout: EmbeddedCheckoutProtocol.url(for: otherURL))
 
-        XCTAssertNil(fresh.url)
-        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
-        XCTAssertFalse(CheckoutWebView.preloadCache.hasActiveKeepAlive())
+            XCTAssertNil(fresh.url)
+            XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+            XCTAssertFalse(CheckoutWebView.preloadCache.hasActiveKeepAlive())
+            XCTAssertFalse(logger.messages.contains(CheckoutWebView.preloadCacheHitLogMessage))
+        }
+    }
+
+    private func withRecordingLogger(
+        logLevel: LogLevel,
+        perform: (RecordingLogger) throws -> Void
+    ) rethrows {
+        let originalConfiguration = ShopifyCheckoutKit.configuration
+        defer { ShopifyCheckoutKit.configuration = originalConfiguration }
+        let logger = RecordingLogger()
+        var configuration = originalConfiguration
+        configuration.logger = logger
+        configuration.logLevel = logLevel
+        ShopifyCheckoutKit.configuration = configuration
+
+        try perform(logger)
     }
 
     func testPresentWithDifferentEntryPointDoesNotReusePreloadedWebView() {
@@ -1323,6 +1387,27 @@ private actor RecordingBridgeClient: CheckoutCommunicationProtocol {
     func process(_ message: String) async -> String? {
         receivedMessages.append(message)
         return response
+    }
+}
+
+final class RecordingLogger: Logger, @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [String] = []
+
+    var messages: [String] {
+        lock.withLock { storage }
+    }
+
+    func log(_ message: String) {
+        lock.withLock {
+            storage.append(message)
+        }
+    }
+
+    func clearLogs() {
+        lock.withLock {
+            storage.removeAll()
+        }
     }
 }
 

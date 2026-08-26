@@ -13,6 +13,11 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 class PreloadCacheTest {
     @Test
+    fun `cache-hit diagnostic stays aligned with sample observers`() {
+        assertThat(PRELOAD_CACHE_HIT_LOG_MESSAGE).isEqualTo("Returning cached preloaded WebView.")
+    }
+
+    @Test
     fun `retaining after presentation schedules expiry for the remaining ttl`() {
         var now = 1_000L
         val scheduler = FakePreloadExpiryScheduler()

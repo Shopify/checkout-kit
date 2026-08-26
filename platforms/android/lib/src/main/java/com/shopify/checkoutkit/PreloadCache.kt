@@ -7,6 +7,8 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 
+internal const val PRELOAD_CACHE_HIT_LOG_MESSAGE = "Returning cached preloaded WebView."
+
 internal data class PreloadKey(val url: String) {
     companion object {
         fun forUrl(url: String): PreloadKey {
@@ -118,7 +120,7 @@ internal class PreloadCache(
                 ShopifyCheckoutKit.log.d(LOG_TAG, "Preloaded WebView is already presented; creating a new WebView.")
                 null
             } else {
-                ShopifyCheckoutKit.log.d(LOG_TAG, "Returning cached preloaded WebView.")
+                ShopifyCheckoutKit.log.d(LOG_TAG, PRELOAD_CACHE_HIT_LOG_MESSAGE)
                 observer = null
                 cached.view.markPreloadConsumed()
                 cached.view

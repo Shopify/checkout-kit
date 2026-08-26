@@ -15,6 +15,7 @@ struct CartView: View {
     @State private var preloadStateTestId = PreloadStateMarker.testId(for: .idle)
 
     @ObservedObject var cartManager: CartManager = .shared
+    @ObservedObject private var preloadCacheHitLog: PreloadCacheHitLog = .shared
 
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
@@ -24,6 +25,9 @@ struct CartView: View {
 
     @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
     var checkoutPreloadingEnabled = true
+
+    @AppStorage(AppStorageKeys.preloadObservabilityEnabled.rawValue)
+    private var preloadObservabilityEnabled = false
 
     private var client: CheckoutProtocol.Client {
         .with(windowOpen: windowOpenHandler)
@@ -40,6 +44,18 @@ struct CartView: View {
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(preloadStateTestId)
+
+                // Expose preload reuse state to accessibility-based diagnostic tooling only when
+                // preload observability is enabled. Keep this marker separate because stacking
+                // identifiers on one accessibility element hides one from the tooling.
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .allowsHitTesting(false)
+                    .accessibilityElement()
+                    .accessibilityHidden(!preloadObservabilityEnabled)
+                    .accessibilityIdentifier(
+                        PreloadCacheHitMarker.testId(observed: preloadCacheHitLog.observed)
+                    )
 
                 VStack(spacing: DesignSystem.buttonSpacing) {
                     if let cartID = cartManager.cart?.id {
