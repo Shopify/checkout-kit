@@ -1078,7 +1078,10 @@ describe('ShopifyCheckoutKit', () => {
 
     beforeEach(() => {
       Platform.OS = 'ios';
-      Platform.Version = '17.0';
+      Object.defineProperty(Platform, 'Version', {
+        configurable: true,
+        value: '17.0',
+      });
       NativeModule.configureAcceleratedCheckouts.mockReset();
       NativeModule.isAcceleratedCheckoutAvailable.mockReset();
     });

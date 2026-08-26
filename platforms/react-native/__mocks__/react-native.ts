@@ -121,10 +121,7 @@ module.exports = {
     }),
   },
   NativeModules: {
-    ShopifyCheckoutKit: {
-      ...ShopifyCheckoutKit,
-      eventEmitter: shopifyCheckoutKitEventEmitter,
-    },
+    ShopifyCheckoutKit,
   },
   StyleSheet,
 };

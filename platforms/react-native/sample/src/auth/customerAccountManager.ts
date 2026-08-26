@@ -211,7 +211,7 @@ export class CustomerAccountManager {
       throw new Error(`Token exchange failed: ${errorText}`);
     }
 
-    const data: TokenResponse = await response.json();
+    const data = (await response.json()) as TokenResponse;
 
     const tokens: OAuthTokenResult = {
       accessToken: data.access_token,
@@ -261,7 +261,7 @@ export class CustomerAccountManager {
       throw new Error(`Token refresh failed: ${errorText}`);
     }
 
-    const data: TokenResponse = await response.json();
+    const data = (await response.json()) as TokenResponse;
 
     const tokens: OAuthTokenResult = {
       accessToken: data.access_token,
