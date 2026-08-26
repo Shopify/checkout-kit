@@ -309,7 +309,7 @@ workflows:
         # only receive Xcode patch updates, so this pins Xcode 26.2 / iOS 26.2
         # (23C54) to match local development.
         stack: &macos_stack osx-xcode-26.2.x
-        machine_type_id: g2.mac.4large
+        machine_type_id: g2.mac.large
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
@@ -327,7 +327,7 @@ workflows:
     meta:
       bitrise.io:
         stack: *macos_stack
-        machine_type_id: g2.mac.4large
+        machine_type_id: g2.mac.large
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
