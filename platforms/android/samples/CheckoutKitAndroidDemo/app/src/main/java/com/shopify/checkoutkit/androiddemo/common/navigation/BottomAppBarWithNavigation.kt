@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.contentDescription
@@ -20,6 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.shopify.checkoutkit.androiddemo.R
+import com.shopify.checkoutkit.androiddemo.accessibility.AccessibilityIdentifiers
 import com.shopify.checkoutkit.androiddemo.common.components.BodySmall
 
 @Composable
@@ -54,6 +56,7 @@ fun BottomAppBarWithNavigation(
                 ImageVector.vectorResource(R.drawable.profile),
                 stringResource(id = R.string.navigation_log_in),
                 currentScreen,
+                modifier = Modifier.testTag(AccessibilityIdentifiers.Tabs.SETTINGS),
             )
         }
     }
@@ -66,6 +69,7 @@ fun NavigationItem(
     icon: ImageVector,
     label: String,
     currentScreen: Screen,
+    modifier: Modifier = Modifier,
 ) {
     val isActiveScreen = currentScreen == screen
     val color = if (isActiveScreen) {
@@ -77,7 +81,7 @@ fun NavigationItem(
     Column {
         IconButton(
             onClick = { navController.navigate(screen.route) },
-            modifier = Modifier.semantics {
+            modifier = modifier.semantics {
                 this.contentDescription = "$label icon"
             }
         ) {

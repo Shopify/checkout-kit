@@ -14,5 +14,10 @@ class AccessibilityIdentifiersTests: XCTestCase {
 
     func testTabMarkersMatchTheMaestroFlows() {
         XCTAssertEqual(AccessibilityIdentifiers.Tabs.cart, "cart-tab")
+        XCTAssertEqual(AccessibilityIdentifiers.Tabs.settings, "settings-tab")
+    }
+
+    func testSettingsMarkersMatchTheMaestroFlows() {
+        XCTAssertEqual(AccessibilityIdentifiers.Settings.checkoutPreloadingToggle, "checkout-preloading-toggle")
     }
 }

@@ -1,15 +1,14 @@
 appId: ${E2E_APP_ID}
-name: Native preload ready reuse
+name: Native preload disabled avoids reuse
 tags:
   - preload
   - smoke
 
 env:
   # Preload caches a checkout per buyer, so the identity is pinned rather than left to
-  # whatever the sample was last configured with. The cached entry this test asserts on
-  # is only reused when presentation resolves the same buyer the preload ran for.
+  # whatever the sample was last configured with.
   E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=guest"
 ---
 - runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
 - runFlow: ../../flows/checkout/assert-native-preload-ready.yaml
-- runFlow: ../../flows/checkout/assert-native-preload-cache-reuse.yaml
+- runFlow: ../../flows/checkout/assert-native-preload-disabled.yaml

@@ -11,5 +11,10 @@ enum AccessibilityIdentifiers {
 
     enum Tabs {
         static let cart = "cart-tab"
+        static let settings = "settings-tab"
+    }
+
+    enum Settings {
+        static let checkoutPreloadingToggle = "checkout-preloading-toggle"
     }
 }
