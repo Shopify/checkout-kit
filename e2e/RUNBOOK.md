@@ -121,11 +121,11 @@ build stays installable from the PR.
 `Checkout Kit iOS` comes from the `ci-ios` pipeline, described in `BITRISE.md`. Three
 layers can break, and the symptom tells you which one. Work down the list in order.
 
-**The check never appears.** The pipeline did not start. Its `trigger_map` entry has no
-file filter, so the usual cause is the branch head: Bitrise reads `trigger_map` from the
-pull request's own commit, and a branch older than the entry never triggers. Rebase on
-`main` and push. The entry also sets `draft_pull_request_enabled: false`, so a draft posts
-nothing until it is marked ready.
+**The check never appears.** The pipeline did not start. Its target-based pull request
+trigger has no file filter, so the usual cause is the branch head: Bitrise reads the
+pipeline trigger from the pull request's own commit, and a branch older than the trigger
+never starts it. Rebase on `main` and push. The trigger also sets `draft_enabled: false`,
+so a draft posts nothing until it is marked ready.
 
 **The check is red but every job says skipped.** `ci-ios-plan` failed, and the reporter
 refuses to call an empty selection green. Open that workflow's log. It fetches the changed

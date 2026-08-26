@@ -42,7 +42,7 @@ bitrise validate -c e2e/bitrise.yml
 
 ## PR trigger
 
-`e2e/bitrise.yml` maps pull requests to the `e2e` pipeline with `trigger_map`. The trigger uses Bitrise `changed_files.regex` as a coarse source-tree gate for Checkout Kit platform, protocol, shared filter, package, and E2E paths. Bitrise does not support the same named include/exclude filter objects as GitHub Actions, so `platforms` level filtering is enforced by `e2e/config/matrix.yml` and `e2e/scripts/e2e_matrix_to_browserstack_run_plan` after the pipeline starts (essentially fulfilling the same need that `dorny/paths-filter` holds in GitHub Actions).
+The `e2e` pipeline defines a target-based pull request trigger in `e2e/bitrise.yml`. The trigger uses Bitrise `changed_files.regex` as a coarse source-tree gate for Checkout Kit platform, protocol, shared filter, package, and E2E paths. Target-based triggers are defined on each pipeline so one pull request can start both `e2e` and `ci-ios`; the legacy project-level `trigger_map` starts only its first match and must not be restored. Bitrise does not support the same named include/exclude filter objects as GitHub Actions, so `platforms` level filtering is enforced by `e2e/config/matrix.yml` and `e2e/scripts/e2e_matrix_to_browserstack_run_plan` after the pipeline starts (essentially fulfilling the same need that `dorny/paths-filter` holds in GitHub Actions).
 
 Shared changed-file filter groups live in `.ci/changed-file-filters.yml` and are consumed by both GitHub Actions and Bitrise E2E. Each application in `e2e/config/matrix.yml` declares `changed_files_filters` by shared group name. The run-plan producer fetches the PR file list from GitHub, applies those groups, emits only matching application rows into the BrowserStack run plan, and shares `E2E_BUILD_*` variables that gate downstream Bitrise build workflows with `run_if`.
 
@@ -58,7 +58,7 @@ The GitHub checks are kept non-blocking while the suite stabilizes; they become 
 
 ### Its trigger carries no `changed_files`
 
-Unlike `e2e`, the `ci-ios` `trigger_map` entry has no filter at all. `ci-ios` is a merge-blocking check, and a required check that never posts leaves a pull request permanently unmergeable — so the pipeline has to start on every pull request, including a docs-only one.
+Unlike `e2e`, the `ci-ios` target-based pull request trigger has no file filter. `ci-ios` is a merge-blocking check, and a required check that never posts leaves a pull request permanently unmergeable — so the pipeline has to start on every pull request, including a docs-only one.
 
 Selection happens inside the pipeline instead. The Linux `ci-ios-plan` workflow reads the pull request's changed files, applies the shared filter groups in `.ci/changed-file-filters.yml` through `e2e/config/ios_ci.yml`, and publishes one `CI_IOS_*` variable per job with `share-pipeline-variable`. Each macOS workflow guards on its own variable with `run_if`. A change that needs no macOS job runs the Linux plan and the report, and nothing else.
 
@@ -90,7 +90,7 @@ Nightly pipelines ship the sample apps to the stores from the same E2E test stor
 | `nightly-swift-ios-testflight`        | `CheckoutKitSwiftDemo`       | TestFlight  |
 | `nightly-react-native-ios-testflight` | `CheckoutKitReactNativeDemo` | TestFlight  |
 
-These pipelines are deliberately absent from `trigger_map`, so nothing starts them on a pull request. Create a daily **scheduled build** under **Project settings > Scheduled builds**, targeting `main` and selecting the pipeline. The schedule is the one part of this design that Bitrise keeps outside the repository.
+These pipelines deliberately define no target-based triggers, so no code event starts them. Create a daily **scheduled build** under **Project settings > Scheduled builds**, targeting `main` and selecting the pipeline. The schedule is the one part of this design that Bitrise keeps outside the repository.
 
 ### Commit age gate
 
