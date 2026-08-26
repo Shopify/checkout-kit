@@ -1,6 +1,12 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTViewManager.h>
+#if __has_include(<CheckoutKitReactNativeCodegen/RNShopifyCheckoutKitSpec/RNShopifyCheckoutKitSpec.h>)
+#import <CheckoutKitReactNativeCodegen/RNShopifyCheckoutKitSpec/RNShopifyCheckoutKitSpec.h>
+#elif __has_include(<RNShopifyCheckoutKitSpec/RNShopifyCheckoutKitSpec.h>)
 #import <RNShopifyCheckoutKitSpec/RNShopifyCheckoutKitSpec.h>
+#else
+#import "generated/ReactCodegen/RNShopifyCheckoutKitSpec/RNShopifyCheckoutKitSpec.h"
+#endif
 #import <objc/runtime.h>
 
 // Registers the Swift module class (ShopifyCheckoutKit.swift) with the RN

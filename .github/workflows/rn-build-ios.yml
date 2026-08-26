@@ -11,7 +11,7 @@ jobs:
   build-ios:
     name: Build iOS Sample
     runs-on: ${{ vars.MACOS_RUNNER }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: platforms/react-native
@@ -71,3 +71,12 @@ jobs:
 
       - name: Build iOS sample
         run: pnpm sample build:ios
+
+      - name: Cache React Native SwiftPM artifacts
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Caches/ReactNative/spm-artifacts/0.87.0
+          key: ${{ runner.os }}-react-native-spm-${{ hashFiles('platforms/react-native/sample/package.json', 'platforms/react-native/pnpm-lock.yaml') }}
+
+      - name: Build iOS sample with experimental SwiftPM
+        run: pnpm sample build:ios:spm

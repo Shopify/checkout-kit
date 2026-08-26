@@ -1,10 +1,10 @@
 import Foundation
-#if COCOAPODS
+#if canImport(ShopifyCheckoutProtocol)
+    import ShopifyCheckoutProtocol
+#else
     import ShopifyCheckoutKit
 
     extension CheckoutProtocol.Client: @retroactive CheckoutCommunicationProtocol {}
-#else
-    import ShopifyCheckoutProtocol
 #endif
 
 struct DispatchEnvelope<Payload: Encodable>: Encodable {

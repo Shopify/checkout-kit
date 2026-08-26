@@ -23,5 +23,6 @@
     "verbatimModuleSyntax": true,
     "target": "esnext",
     "types": ["jest", "node"]
-  }
+  },
+  "exclude": ["node_modules", "sample/ios/build"]
 }

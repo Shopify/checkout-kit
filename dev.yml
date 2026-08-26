@@ -720,22 +720,36 @@ commands:
           optional: --local
         run: cd platforms/react-native && pnpm run pod-install -- "$@"
 
+      spm:
+        desc: Sync experimental SwiftPM dependencies for the iOS sample.
+        long_desc: |
+          Generates the gitignored Codegen, autolinking, and XCFramework package
+          trees required by the opt-in SwiftPM Xcode project. Run this after a
+          fresh clone or dependency update. React Native 0.87 SwiftPM support is
+          experimental; CocoaPods remains the default.
+        run: cd platforms/react-native && pnpm sample spm "$@"
+
+      build-spm:
+        desc: Build the iOS sample with experimental SwiftPM support.
+        run: cd platforms/react-native && pnpm sample build:ios:spm
+
       open:
         desc: Open the React Native workspace root or native sample projects
         long_desc: |
           Opens platforms/react-native in the editor set by DEV_EDITOR in
-          .dev.env, otherwise `open`. The --ios and --android flags open the
+          .dev.env, otherwise `open`. The native flags open the
           sample app's native projects.
 
             dev rn open                 Open platforms/react-native
-            dev rn open --ios           Open the sample iOS workspace in Xcode
+            dev rn open --ios           Open the CocoaPods sample workspace in Xcode
+            dev rn open --ios-spm       Open the experimental SwiftPM project in Xcode
             dev rn open --android       Open the sample Android project in Android Studio
         syntax:
-          optional: "[--ios|--android]"
+          optional: "[--ios|--ios-spm|--android]"
         run: |
           set -e
           if [ "$#" -gt 1 ]; then
-            echo "Usage: dev rn open [--ios|--android]" >&2
+            echo "Usage: dev rn open [--ios|--ios-spm|--android]" >&2
             exit 1
           fi
 
@@ -749,11 +763,14 @@ commands:
             --ios)
               xed platforms/react-native/sample/ios/CheckoutKitReactNativeDemo.xcworkspace
               ;;
+            --ios-spm)
+              xed platforms/react-native/sample/ios/CheckoutKitReactNativeDemoSPM.xcodeproj
+              ;;
             --android)
               open -a "Android Studio" platforms/react-native/sample/android
               ;;
             *)
-              echo "Usage: dev rn open [--ios|--android]" >&2
+              echo "Usage: dev rn open [--ios|--ios-spm|--android]" >&2
               exit 1
               ;;
           esac

@@ -29,14 +29,8 @@ module.exports = {
     'react-native-gesture-handler': {
       root: resolvePackageRoot('react-native-gesture-handler'),
     },
-    'react-native-nitro-modules': {
-      root: resolvePackageRoot('react-native-nitro-modules'),
-    },
-    'react-native-quick-base64': {
-      root: resolvePackageRoot('react-native-quick-base64'),
-    },
-    'react-native-quick-crypto': {
-      root: resolvePackageRoot('react-native-quick-crypto'),
+    'react-native-get-random-values': {
+      root: resolvePackageRoot('react-native-get-random-values'),
     },
     'react-native-safe-area-context': {
       root: resolvePackageRoot('react-native-safe-area-context'),

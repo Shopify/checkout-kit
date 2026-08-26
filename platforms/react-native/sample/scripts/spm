@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT="CheckoutKitReactNativeDemoSPM.xcodeproj"
+
+cd "$SCRIPT_DIR/.."
+rm -rf ios/build/generated
+react-native spm \
+  --xcodeproj "$PROJECT" \
+  --productName CheckoutKitReactNativeDemo \
+  "$@"
+
+node "$SCRIPT_DIR/normalize_spm_project.mjs" "ios/$PROJECT/project.pbxproj"

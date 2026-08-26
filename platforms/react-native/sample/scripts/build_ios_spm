@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -e -o pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/simulator"
+dest="$(get_sim_destination)"
+
+(cd "$SCRIPT_DIR/.." && pnpm spm)
+cd "$SCRIPT_DIR/../ios"
+
+xcbeautify_args=""
+if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    xcbeautify_args="--renderer github-actions"
+fi
+
+run_xcodebuild() {
+    xcodebuild build \
+        -project CheckoutKitReactNativeDemoSPM.xcodeproj \
+        -scheme CheckoutKitReactNativeDemo \
+        -sdk iphonesimulator \
+        -destination "$dest" \
+        -skipPackagePluginValidation \
+        -disableAutomaticPackageResolution \
+        GCC_PRECOMPILE_PREFIX_HEADER=YES \
+        ASSETCATALOG_COMPILER_OPTIMIZATION=time \
+        COMPILER_INDEX_STORE_ENABLE=NO
+}
+
+if command -v xcbeautify >/dev/null 2>&1; then
+    run_xcodebuild | xcbeautify $xcbeautify_args
+else
+    run_xcodebuild
+fi
