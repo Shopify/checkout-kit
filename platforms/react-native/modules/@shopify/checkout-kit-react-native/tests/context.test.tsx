@@ -1,6 +1,6 @@
 import React from 'react';
 import {render, act} from '@testing-library/react-native';
-import {NativeModules, Platform} from 'react-native';
+import {Platform, TurboModuleRegistry} from 'react-native';
 import {
   ShopifyCheckoutProvider,
   useShopifyCheckout,
@@ -19,6 +19,10 @@ const config: Configuration = {
 };
 
 jest.mock('react-native');
+
+const ShopifyCheckoutKit = TurboModuleRegistry.getEnforcing(
+  'ShopifyCheckoutKit',
+) as any;
 
 const HookTestComponent = ({
   onHookValue,
@@ -62,7 +66,7 @@ describe('ShopifyCheckoutProvider', () => {
     );
 
     expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
+      ShopifyCheckoutKit.setConfig,
     ).toHaveBeenCalledWith(config);
   });
 
@@ -74,18 +78,19 @@ describe('ShopifyCheckoutProvider', () => {
     );
 
     expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
+      ShopifyCheckoutKit.setConfig,
     ).not.toHaveBeenCalled();
     expect(
-      NativeModules.ShopifyCheckoutKit.configureAcceleratedCheckouts,
+      ShopifyCheckoutKit.configureAcceleratedCheckouts,
     ).not.toHaveBeenCalled();
   });
 
   it('configures accelerated checkouts when provided', async () => {
     (Platform as any).Version = '17.0';
     (
-      NativeModules.ShopifyCheckoutKit
-        .configureAcceleratedCheckouts as unknown as {mockReturnValue: any}
+      ShopifyCheckoutKit.configureAcceleratedCheckouts as unknown as {
+        mockReturnValue: any;
+      }
     ).mockReturnValue(true);
 
     const configWithAccelerated: Configuration = {
@@ -117,7 +122,7 @@ describe('ShopifyCheckoutProvider', () => {
     });
 
     expect(
-      NativeModules.ShopifyCheckoutKit.configureAcceleratedCheckouts,
+      ShopifyCheckoutKit.configureAcceleratedCheckouts,
     ).toHaveBeenCalledWith(
       'test-shop.myshopify.com',
       'shpat_test_token',
@@ -144,7 +149,7 @@ describe('ShopifyCheckoutProvider', () => {
     );
 
     expect(
-      NativeModules.ShopifyCheckoutKit.setConfig.mock.calls,
+      ShopifyCheckoutKit.setConfig.mock.calls,
     ).toHaveLength(2);
   });
 });
@@ -177,7 +182,7 @@ describe('useShopifyCheckout', () => {
       hookValue.present(checkoutUrl);
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+    expect(ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
       [],
     );
@@ -203,10 +208,10 @@ describe('useShopifyCheckout', () => {
       hookValue.present(checkoutUrl, {onClose, onFail, onGeolocationRequest});
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
+    expect(ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
       expect.any(Function),
     );
-    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+    expect(ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
       [],
     );
@@ -230,10 +235,10 @@ describe('useShopifyCheckout', () => {
       });
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
+    expect(ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
       expect.any(Function),
     );
-    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+    expect(ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
       [CheckoutProtocol.start],
     );
@@ -256,7 +261,7 @@ describe('useShopifyCheckout', () => {
     });
 
     expect(
-      NativeModules.ShopifyCheckoutKit.present,
+      ShopifyCheckoutKit.present,
     ).not.toHaveBeenCalled();
   });
 
@@ -278,7 +283,7 @@ describe('useShopifyCheckout', () => {
       subscription = hookValue.preload(checkoutUrl, {onStateChange});
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.preload).toHaveBeenCalledWith(
+    expect(ShopifyCheckoutKit.preload).toHaveBeenCalledWith(
       checkoutUrl,
       expect.any(String),
     );
@@ -303,7 +308,7 @@ describe('useShopifyCheckout', () => {
     });
 
     expect(subscription).toBeUndefined();
-    expect(NativeModules.ShopifyCheckoutKit.preload).not.toHaveBeenCalled();
+    expect(ShopifyCheckoutKit.preload).not.toHaveBeenCalled();
   });
 
   it('provides invalidate function', () => {
@@ -322,7 +327,7 @@ describe('useShopifyCheckout', () => {
       hookValue.invalidate();
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.invalidateCache).toHaveBeenCalled();
+    expect(ShopifyCheckoutKit.invalidateCache).toHaveBeenCalled();
   });
 
   it('provides dismiss function', () => {
@@ -341,7 +346,7 @@ describe('useShopifyCheckout', () => {
       hookValue.dismiss();
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.dismiss).toHaveBeenCalled();
+    expect(ShopifyCheckoutKit.dismiss).toHaveBeenCalled();
   });
 
   it('provides setConfig function', () => {
@@ -363,7 +368,7 @@ describe('useShopifyCheckout', () => {
     });
 
     expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
+      ShopifyCheckoutKit.setConfig,
     ).toHaveBeenCalledWith(newConfig);
   });
 
@@ -386,7 +391,7 @@ describe('useShopifyCheckout', () => {
       preloading: true,
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.getConfig).toHaveBeenCalled();
+    expect(ShopifyCheckoutKit.getConfig).toHaveBeenCalled();
   });
 
   it('provides version from the instance', () => {

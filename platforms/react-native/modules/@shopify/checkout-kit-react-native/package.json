@@ -69,6 +69,8 @@
   "devDependencies": {
     "@shopify/checkout-kit-protocol": "workspace:*",
     "@microsoft/api-extractor": "^7.58.7",
+    "react": "19.2.3",
+    "react-native": "0.87.0",
     "react-native-builder-bob": "^0.23.2",
     "typescript": "^5.9.2"
   },
