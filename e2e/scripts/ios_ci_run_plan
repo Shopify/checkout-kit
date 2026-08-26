@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require "yaml"
+require_relative "../lib/ios_ci_run_plan"
+require_relative "../../scripts/lib/cli_output"
+
+options = {
+  config: File.expand_path("../config/ios_ci.yml", __dir__)
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: e2e/scripts/ios_ci_run_plan validate|bitrise-env|selected-jobs|assert-pipeline-coverage [options]"
+  opts.on("--config PATH") { |path| options[:config] = path }
+  opts.on("--changed-files-file PATH") { |path| options[:changed_files_file] = path }
+  opts.on("--changed-file PATH") { |path| (options[:changed_files] ||= []) << path }
+  opts.on("--pipeline-config PATH") { |path| options[:pipeline_config] = path }
+end
+
+command = ARGV.shift
+parser.parse!(ARGV)
+
+unless ["validate", "bitrise-env", "selected-jobs", "assert-pipeline-coverage"].include?(command)
+  warn parser
+  CliOutput.die("Unknown command #{command.inspect}")
+end
+
+changed_files = []
+changed_files.concat(File.readlines(options.fetch(:changed_files_file), chomp: true)) if options.key?(:changed_files_file)
+changed_files.concat(options.fetch(:changed_files, []))
+changed_files = nil unless options.key?(:changed_files_file) || options.key?(:changed_files)
+
+run_plan = IOSCIRunPlan.load(options.fetch(:config), changed_files: changed_files)
+
+errors = run_plan.validation_errors
+CliOutput.die(errors.join("\n")) unless errors.empty?
+
+case command
+when "validate"
+  puts "iOS CI run plan is valid"
+when "bitrise-env"
+  run_plan.bitrise_env.each { |key, value| puts "#{key}=#{value}" }
+when "selected-jobs"
+  puts run_plan.selected_job_ids.join(",")
+when "assert-pipeline-coverage"
+  pipeline_config_path = options.fetch(:pipeline_config) { CliOutput.die("--pipeline-config PATH is required") }
+  pipeline_config = YAML.safe_load_file(pipeline_config_path, aliases: true) || {}
+  available_workflows = (pipeline_config.dig("pipelines", "ci-ios", "workflows") || {}).keys
+  coverage_errors = run_plan.missing_workflow_errors(available_workflows)
+  unless coverage_errors.empty?
+    CliOutput.die(coverage_errors.join("\n"), hint: IOSCIRunPlan::MISSING_WORKFLOW_HINT)
+  end
+  puts "ci-ios pipeline covers the run plan"
+end

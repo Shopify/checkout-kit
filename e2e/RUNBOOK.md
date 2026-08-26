@@ -115,3 +115,35 @@ The report keeps a single sticky PR comment, identified by a hidden marker, and 
 in place on every build, so green runs never add a second comment. Because that comment
 always carries the Tophat install links, it is posted even on a fully green run — a passing
 build stays installable from the PR.
+
+## The iOS check failed or never posted
+
+`Checkout Kit iOS` comes from the `ci-ios` pipeline, described in `BITRISE.md`. Three
+layers can break, and the symptom tells you which one. Work down the list in order.
+
+**The check never appears.** The pipeline did not start. Its `trigger_map` entry has no
+file filter, so the usual cause is the branch head: Bitrise reads `trigger_map` from the
+pull request's own commit, and a branch older than the entry never triggers. Rebase on
+`main` and push. The entry also sets `draft_pull_request_enabled: false`, so a draft posts
+nothing until it is marked ready.
+
+**The check is red but every job says skipped.** `ci-ios-plan` failed, and the reporter
+refuses to call an empty selection green. Open that workflow's log. It fetches the changed
+file list from GitHub and reads `e2e/config/ios_ci.yml`, so the usual causes are an expired
+build token or a malformed config file.
+
+**The check is red and names a job.** That macOS workflow failed or never finished. The
+reporter lists a selected job that produced no result as a failure, so a timeout and a
+compile error look different in the summary: a timeout shows as missing, a compile error
+shows as failed. Both link back to the Bitrise pipeline.
+
+**The check is green and every job says skipped.** Expected on a change that touches no
+iOS input — documentation, Android, or web. `ci-ios-plan` and `ci-ios-report` still run,
+which costs about a minute on Linux. To confirm the selection is right rather than empty by
+accident, run the plan locally against the same file list:
+
+```bash
+ruby e2e/scripts/ios_ci_run_plan selected-jobs --changed-file <path>
+```
+
+It prints a comma-separated job list, or nothing when no macOS job is needed.

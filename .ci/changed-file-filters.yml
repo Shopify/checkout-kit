@@ -50,3 +50,14 @@ e2e:
   - *exclude-docs-directory
 ciFilters:
   - '.ci/changed-file-filters.yml'
+# The macOS CI gate on Bitrise. Narrower than the e2e filter on purpose: these files
+# decide which macOS jobs run, so a change to one has to rerun them all, while a Maestro
+# flow edit under e2e/ must not.
+iosCiConfig:
+  - 'e2e/bitrise.yml'
+  - 'e2e/config/ios_ci.yml'
+  - 'e2e/lib/ios_ci_run_plan.rb'
+  - 'e2e/lib/ios_ci_reporter.rb'
+  - 'e2e/scripts/ios_ci_run_plan'
+  - 'e2e/scripts/report_ios_ci_results'
+  - 'e2e/scripts/bitrise_ci_helpers'
