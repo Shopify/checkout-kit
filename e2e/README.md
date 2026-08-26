@@ -52,7 +52,7 @@ enforces it.
 
 | Group | Tags | Rule |
 |---|---|---|
-| Journey | `launch`, `cart`, `checkout`, `account` | Exactly one per test |
+| Journey | `launch`, `cart`, `checkout`, `account`, `preload` | Exactly one per test |
 | Cost tier | `smoke`, `full` | Exactly one per test |
 | Quarantine | `flaky`, `wip` | Excluded by default, in `config.yaml` |
 | Platform capability | `ios-only`, `android-only` | Needs a `# Platform capability:` comment |
