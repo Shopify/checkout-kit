@@ -33,27 +33,18 @@ tools:
   ruby: 3.4:installed
   nodejs: 22.14.0
 
-trigger_map:
-  - pull_request_source_branch: "*"
-    draft_pull_request_enabled: false
-    changed_files:
-      # Bitrise evaluates this with Go's RE2 engine. Use only basic syntax
-      # (anchors, groups, alternation, character classes, quantifiers). Do not
-      # add lookahead (?=…), lookbehind, backreferences (\1), or atomic/possessive
-      # groups — RE2 cannot compile them and the trigger will fail to evaluate.
-      regex: '^(platforms/(swift|android|react-native)|protocol|e2e|\.ci)/.*|^Package\.(swift|resolved)$'
-    pipeline: e2e
-
-  # Deliberately unfiltered. ci-ios is a required check, and a required check that
-  # never posts leaves a pull request permanently unmergeable. The cheap Linux
-  # ci-ios-plan workflow decides which macOS jobs run, and ci-ios-report always posts
-  # — including for a change that needs no macOS job at all.
-  - pull_request_source_branch: "*"
-    draft_pull_request_enabled: false
-    pipeline: ci-ios
-
 pipelines:
   e2e:
+    triggers:
+      pull_request:
+        - source_branch: "*"
+          draft_enabled: false
+          changed_files:
+            # Bitrise evaluates this with Go's RE2 engine. Use only basic syntax
+            # (anchors, groups, alternation, character classes, quantifiers). Do not
+            # add lookahead (?=…), lookbehind, backreferences (\1), or atomic/possessive
+            # groups — RE2 cannot compile them and the trigger will fail to evaluate.
+            regex: '^(platforms/(swift|android|react-native)|protocol|e2e|\.ci)/.*|^Package\.(swift|resolved)$'
     # Bitrise's default report name is ci/bitrise/<project_slug>/<event_type>,
     # which is identical for every pipeline on this app. A second triggered
     # pipeline would then overwrite this one's commit status. <target_id>
@@ -102,6 +93,14 @@ pipelines:
   # status per pipeline, and sharing would tie the merge gate to the BrowserStack device
   # flake that e2e/BITRISE.md deliberately keeps non-blocking.
   ci-ios:
+    # Deliberately unfiltered. ci-ios is a required check, and a required check that
+    # never posts leaves a pull request permanently unmergeable. The cheap Linux
+    # ci-ios-plan workflow decides which macOS jobs run, and ci-ios-report always posts
+    # — including for a change that needs no macOS job at all.
+    triggers:
+      pull_request:
+        - source_branch: "*"
+          draft_enabled: false
     status_report_name: "ci/bitrise/<target_id>/<event_type>"
     workflows:
       ci-ios-plan: {}
@@ -135,10 +134,8 @@ pipelines:
           - ci-ios-react-native-test-ios
         should_always_run: workflow
 
-  # Deliberately absent from trigger_map: a scheduled build in the Bitrise UI is
-  # the only thing that starts this, alongside a manual start or the API. Do not
-  # add a `triggers:` block either — Bitrise rejects a config that mixes it with
-  # the legacy trigger_map above.
+  # Deliberately has no target-based triggers. A scheduled build in the Bitrise UI
+  # is the only automatic start, alongside a manual start or the API.
   nightly-swift-ios-testflight:
     workflows:
       nightly-decide-should-build: {}
