@@ -110,11 +110,29 @@ pipelines:
           expression: '{{ enveq "CI_IOS_SWIFT_PACKAGE_TESTS" "true" }}'
         depends_on:
           - ci-ios-plan
+      ci-ios-swift-samples:
+        run_if:
+          expression: '{{ enveq "CI_IOS_SWIFT_SAMPLES" "true" }}'
+        depends_on:
+          - ci-ios-plan
+      ci-ios-react-native-build-ios:
+        run_if:
+          expression: '{{ enveq "CI_IOS_REACT_NATIVE_BUILD_IOS" "true" }}'
+        depends_on:
+          - ci-ios-plan
+      ci-ios-react-native-test-ios:
+        run_if:
+          expression: '{{ enveq "CI_IOS_REACT_NATIVE_TEST_IOS" "true" }}'
+        depends_on:
+          - ci-ios-plan
       # No run_if: this workflow is the required check, so it posts on every build,
       # including one where ci-ios-plan selected nothing and every job was skipped.
       ci-ios-report:
         depends_on:
           - ci-ios-swift-package-tests
+          - ci-ios-swift-samples
+          - ci-ios-react-native-build-ios
+          - ci-ios-react-native-test-ios
         should_always_run: workflow
 
   # Deliberately absent from trigger_map: a scheduled build in the Bitrise UI is
@@ -280,6 +298,9 @@ workflows:
                 CI_IOS_HAS_JOBS
                 CI_IOS_SELECTED_JOBS
                 CI_IOS_SWIFT_PACKAGE_TESTS
+                CI_IOS_SWIFT_SAMPLES
+                CI_IOS_REACT_NATIVE_BUILD_IOS
+                CI_IOS_REACT_NATIVE_TEST_IOS
 
   ci-ios-swift-package-tests:
     meta:
@@ -301,6 +322,112 @@ workflows:
                 set -euo pipefail
                 cd platforms/swift
                 ./Scripts/xcode_run test ShopifyCheckoutKit-Package
+
+  ci-ios-swift-samples:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.4large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-ios-simulator: {}
+      - bundle::bootstrap-mint:
+          inputs:
+            - mintfile_dir: platforms/swift
+      - script@1:
+          title: Build and test the Swift sample apps
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                # The samples only need a well-formed storefront configuration to compile,
+                # so this job runs on placeholders rather than e2e_configure_storefront,
+                # which asserts the real secrets. Keeping it off them is what lets the job
+                # run on fork pull requests, where Bitrise withholds secrets.
+                export STOREFRONT_DOMAIN="${STOREFRONT_DOMAIN:-example.myshopify.com}"
+                export STOREFRONT_ACCESS_TOKEN="${STOREFRONT_ACCESS_TOKEN:-test-token}"
+                ./scripts/setup_storefront_env --skip-optional-prompts
+                cd platforms/swift
+                ./Scripts/build_and_test_samples
+
+  ci-ios-react-native-build-ios:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.4large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-ios-simulator: {}
+      - script@1:
+          title: Verify the sample lockfile resolves the published native SDK
+          timeout: 300
+          no_output_timeout: 150
+          inputs:
+            - content: |-
+                set -euo pipefail
+                # Runs before pod install: --deployment would also catch a local-path
+                # lockfile, but only as an opaque diff. This names the problem.
+                cd platforms/react-native
+                scripts/check_published_podfile_lock sample/ios/Podfile.lock
+      - bundle::install-node-modules: {}
+      - bundle::install-ruby-gems: {}
+      - bundle::install-cocoapods: {}
+      - script@1:
+          title: Build the React Native iOS sample
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/react-native
+                pnpm module build
+                pnpm sample build:ios
+
+  ci-ios-react-native-test-ios:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.4large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-ios-simulator: {}
+      - script@1:
+          title: Verify the integration app lockfile resolves the published native SDK
+          timeout: 300
+          no_output_timeout: 150
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/react-native
+                scripts/check_published_podfile_lock test/rct-integration-app/Podfile.lock
+      - bundle::install-node-modules: {}
+      - bundle::install-ruby-gems: {}
+      # xcodegen generates the integration app's project from project.yml.
+      - bundle::bootstrap-mint:
+          inputs:
+            - mintfile_dir: platforms/swift
+      # Not the install-cocoapods bundle: that one owns the sample app's Pods tree.
+      # test_ios runs `pod install` for the integration app itself, so this pair only
+      # carries the resulting Pods directory across builds.
+      - restore-cache@3:
+          inputs:
+            - key: &rct_integration_cocoapods_cache_key |-
+                rct-integration-cocoapods-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/test/rct-integration-app/Podfile.lock" }}
+      - script@1:
+          title: Run the React Native iOS tests
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/react-native
+                pnpm module build
+                pnpm sample test:ios
+      - save-cache@1:
+          inputs:
+            - key: *rct_integration_cocoapods_cache_key
+            - paths: platforms/react-native/test/rct-integration-app/Pods
 
   ci-ios-report:
     steps:
