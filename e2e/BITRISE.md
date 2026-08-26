@@ -85,26 +85,29 @@ Duplicate in-progress PR pipelines are cancelled by Bitrise native Rolling build
 
 Nightly pipelines ship the sample apps to the stores from the same E2E test storefront the PR pipeline uses, so they need no storefront configuration of their own.
 
-| Pipeline                              | App                          | Destination |
-| ------------------------------------- | ---------------------------- | ----------- |
-| `nightly-swift-ios-testflight`        | `CheckoutKitSwiftDemo`       | TestFlight  |
-| `nightly-react-native-ios-testflight` | `CheckoutKitReactNativeDemo` | TestFlight  |
+| Pipeline                              | App                          | Destination         |
+| ------------------------------------- | ---------------------------- | ------------------- |
+| `nightly-swift-ios-testflight`        | `CheckoutKitSwiftDemo`       | TestFlight          |
+| `nightly-react-native-ios-testflight` | `CheckoutKitReactNativeDemo` | TestFlight          |
+| `nightly-kotlin-android-play`         | `CheckoutKitAndroidDemo`     | Play internal track |
 
 These pipelines are deliberately absent from `trigger_map`, so nothing starts them on a pull request. Create a daily **scheduled build** under **Project settings > Scheduled builds**, targeting `main` and selecting the pipeline. The schedule is the one part of this design that Bitrise keeps outside the repository.
 
 ### Commit age gate
 
-Every nightly pipeline starts with `nightly-decide-should-build`, which runs on the default Linux stack and publishes `NIGHTLY_SHOULD_BUILD`. The release workflow is gated on it with `run_if`, so a night with no new commits never boots a macOS machine and never consumes a store build number.
+Every nightly pipeline starts with `nightly-decide-should-build`, which runs on the default Linux stack and publishes `NIGHTLY_SHOULD_BUILD`. The release workflow is gated on it with `run_if`, so a night with no new commits never boots a build machine and never consumes a store build number.
 
 The gate asks whether HEAD was committed inside `NIGHTLY_COMMIT_WINDOW`, which defaults to `24 hours`. **Keep this window equal to the schedule interval.** A window shorter than the interval skips commits, and a longer one re-uploads work that already shipped.
 
 ### Build numbers
 
-The build number is `$BITRISE_BUILD_NUMBER`, injected as an `xcodebuild` build-setting override. No committed file changes value, so nothing has to be bumped by hand and no two uploads can collide.
+Every nightly build numbers itself from `$BITRISE_BUILD_NUMBER`, injected at build time. No committed file changes value, so nothing has to be bumped by hand and no two uploads can collide.
 
-This only works because each sample binds `CFBundleVersion` to `$(CURRENT_PROJECT_VERSION)` rather than to a literal. `CheckoutKitSwiftDemo` binds it in its XcodeGen spec, and `CheckoutKitReactNativeDemo` binds it in its committed `Info.plist`. Without that binding the literal wins, the override is silently discarded, and App Store Connect rejects every upload after the first. Both build scripts call `e2e_assert_archived_build_number`, which re-reads the archived plist and fails the build if the number did not land.
+On iOS the value arrives as an `xcodebuild` build-setting override. This only works because each sample binds `CFBundleVersion` to `$(CURRENT_PROJECT_VERSION)` rather than to a literal. `CheckoutKitSwiftDemo` binds it in its XcodeGen spec, and `CheckoutKitReactNativeDemo` binds it in its committed `Info.plist`. Without that binding the literal wins, the override is silently discarded, and App Store Connect rejects every upload after the first. Both build scripts call `e2e_assert_archived_build_number`, which re-reads the archived plist and fails the build if the number did not land.
 
-### Signing
+On Android the value arrives as the Gradle property `-PcheckoutKitVersionCode`, which `app/build.gradle` reads for both `versionCode` and the derived `versionName`. The committed default is unchanged, so PR builds and local development are unaffected. The build script then calls `e2e_assert_android_version_code`, which re-reads the merged manifest and fails the build if the number did not land.
+
+### iOS signing and upload
 
 The nightly iOS build passes its signing arguments explicitly and calls `e2e_reject_ios_signing_overrides` first, because each `E2E_IOS_*` variable in the Code signing table below wins over the matching argument. Do not expose any of them to a nightly workflow; a release build would silently fall back to development signing.
 
@@ -124,6 +127,30 @@ Required Bitrise code signing assets, beyond the E2E development assets:
 | Profile capabilities              | The profile must carry every entitlement the XcodeGen spec declares, currently Apple Pay and Associated Domains.            |
 | App Store Connect connection      | An App Store Connect API key connection on the Bitrise app, so the upload step needs `connection: automatic` and no secret.  |
 | App Store Connect app record      | An app record for the bundle identifier. The upload cannot create one.                                                      |
+
+Both iOS samples declare `ITSAppUsesNonExemptEncryption` as `false`, so TestFlight accepts each build without asking for an export compliance answer. Both apps reach the network only through the system HTTPS stack, which is exempt. Remove the key if either app ever adds its own encryption.
+
+### Android signing and upload
+
+Signing stays out of Gradle. `buildTypes.release` in `app/build.gradle` declares no `signingConfig`, so `bundleRelease` writes an unsigned bundle and `sign-apk@2` signs it afterwards. That step reads the keystore already configured on the Bitrise app, so no secret name appears in `e2e/bitrise.yml` and the sample gains no release signing surface.
+
+`google-play-deploy@3` then uploads to the `internal` track with `status: completed`. It is passed an empty `mapping_file`, because the release build sets `minifyEnabled false` and R8 writes no mapping file; the step default points at one and fails when it is absent.
+
+The internal track is the only track that reaches testers with no manual step. Managed publishing does not cover it, and updates to it are not reviewed, so `status: completed` publishes to the tester list within minutes. The closed track is reviewed on every release, which no daily schedule can absorb.
+
+Two one-time exceptions apply. The app's **first** release is reviewed even on the internal track, and for up to 48 hours it shows a temporary name until that review completes. A release that follows a **rejection** is also reviewed. Every other nightly publishes automatically.
+
+Access is invite-only. A tester needs the opt-in link and a Google account on the tester list, and the app stays out of Play search. The internal track caps at 100 testers.
+
+| Asset                    | Requirement                                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Keystore                 | A release keystore under **Code signing**. `sign-apk@2` reads the Bitrise keystore variables by default.           |
+| Service account key      | The Play service-account JSON in **Generic file storage**, with env key exactly `SERVICE_ACCOUNT_JSON_KEY`.         |
+| Service account grant    | The *Release to testing tracks* permission in the Play Console.                                                    |
+| Play app record          | An app for the package name, with its **first release uploaded by hand**. The API cannot create the first release. |
+| Tester list              | An internal testing tester list, or the upload succeeds and nobody can install it.                                |
+
+`dry_run: "true"` on `google-play-deploy@3` validates the credentials and the app record without publishing. It is optional here, because every run takes a fresh `$BITRISE_BUILD_NUMBER` and no two `versionCode` values can collide.
 
 ## Required app environment variables
 

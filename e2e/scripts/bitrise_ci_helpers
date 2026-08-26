@@ -69,6 +69,22 @@ e2e_configure_storefront() {
   ./scripts/setup_storefront_env --skip-optional-prompts
 }
 
+# A wrong versionCode is otherwise only reported by Google Play, long after this
+# build has been marked green.
+e2e_assert_android_version_code() {
+  local merged_manifest="$1"
+  local expected="$2"
+
+  e2e_log "Verifying the merged manifest versionCode"
+  local merged
+  merged="$(sed -n 's/.*android:versionCode="\([0-9]*\)".*/\1/p' "$merged_manifest" | head -1)"
+  if [ "$merged" != "$expected" ]; then
+    e2e_log "Merged versionCode is ${merged}, expected ${expected}"
+    echo "Check that versionCode in ${merged_manifest##*/} still reads the checkoutKitVersionCode property." >&2
+    return 1
+  fi
+}
+
 e2e_nightly_commit_window() {
   printf '%s\n' "${NIGHTLY_COMMIT_WINDOW:-24 hours}"
 }
