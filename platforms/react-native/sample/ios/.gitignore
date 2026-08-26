@@ -1,0 +1,7 @@
+
+# SPM – auto-generated at build time (do not commit)
+Package.resolved
+!CheckoutKitReactNativeDemoSPM.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+build/generated/
+build/xcframeworks/
+.build/

@@ -16,7 +16,11 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => "15.0" }
   s.source       = { :git => "https://github.com/Shopify/checkout-kit.git", :tag => "react-native/#{s.version}" }
 
-  s.source_files = "ios/*.{h,m,mm,swift}"
+  s.source_files = [
+    "ios/*.{h,m,mm,swift}",
+    "ios/generated/ReactCodegen/**/*.{h,m,mm,cpp}"
+  ]
+  s.public_header_files = "ios/generated/ReactCodegen/**/*.h"
 
   s.dependency "React-Core"
 

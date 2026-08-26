@@ -1,6 +1,7 @@
 import Foundation
 import PassKit
 import React
+import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
 import SwiftUI
 import UIKit

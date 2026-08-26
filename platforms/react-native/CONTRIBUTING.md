@@ -55,6 +55,28 @@ pods need to be installed. The underlying
    pnpm sample android
    ```
 
+### Experimental SwiftPM sample
+
+React Native 0.87 includes an early SwiftPM preview. CocoaPods remains the
+default for the iOS sample, while the parallel
+`CheckoutKitReactNativeDemoSPM.xcodeproj` exercises the preview without
+changing the supported path.
+
+After a fresh clone or dependency update, generate the gitignored SwiftPM
+packages and React Native XCFramework links, then build the opt-in project:
+
+```sh
+dev rn spm
+dev rn build-spm
+```
+
+Use `dev rn open --ios-spm` to open the project in Xcode. The project's
+`Package.resolved` is committed so direct Xcode builds never update package
+pins; do not commit other generated files under `ios/build/` or `ios/.build/`.
+Community package manifests are committed as pnpm patches because
+React Native's preview requires every native dependency to provide a
+`Package.swift`.
+
 ## Local SDK development (`--local`)
 
 The RN module wraps the Shopify Swift and Android SDKs, which live in this same monorepo at `platforms/swift/` and `platforms/android/`. The sample app builds against the **published** artifacts on CocoaPods / Maven Central — the same path CI takes.

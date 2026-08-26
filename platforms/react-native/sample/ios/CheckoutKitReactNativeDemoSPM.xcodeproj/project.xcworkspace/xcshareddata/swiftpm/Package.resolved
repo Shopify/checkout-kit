@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "checkout-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Shopify/checkout-kit",
+      "state" : {
+        "revision" : "08e6494e12a7658aaede4e2990b68b1d659d26ed",
+        "version" : "4.0.0-alpha.5"
+      }
+    }
+  ],
+  "version" : 2
+}

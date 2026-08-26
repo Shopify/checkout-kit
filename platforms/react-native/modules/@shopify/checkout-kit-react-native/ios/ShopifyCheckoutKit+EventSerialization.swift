@@ -1,4 +1,5 @@
 import Foundation
+import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
 
 /**

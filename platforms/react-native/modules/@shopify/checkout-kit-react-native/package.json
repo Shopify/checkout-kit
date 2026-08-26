@@ -26,10 +26,12 @@
   "scripts": {
     "clean": "rm -rf lib",
     "build": "bob build",
-    "lint": "pnpm run typecheck && eslint src",
+    "lint": "pnpm run typecheck && eslint src && pnpm codegen:ios:check",
     "typecheck": "tsc --noEmit",
     "api:check": "pnpm build && node ./scripts/prepare-api-extract.mjs && api-extractor run --verbose",
-    "api:dump": "pnpm build && node ./scripts/prepare-api-extract.mjs && api-extractor run --local --verbose"
+    "api:dump": "pnpm build && node ./scripts/prepare-api-extract.mjs && api-extractor run --local --verbose",
+    "codegen:ios": "node ./scripts/generate-spm-codegen.mjs",
+    "codegen:ios:check": "node ./scripts/generate-spm-codegen.mjs --check"
   },
   "files": [
     "LICENSE",
@@ -40,7 +42,6 @@
     "android",
     "lib",
     "*.podspec",
-    "!ios/Package.swift",
     "!ios/Tests",
     "!ios/build",
     "!android/src/test",
@@ -78,6 +79,7 @@
     "name": "RNShopifyCheckoutKitSpec",
     "type": "all",
     "jsSrcsDir": "src/specs",
+    "includesGeneratedCode": true,
     "android": {
       "javaPackageName": "com.shopify.checkoutkit"
     },

@@ -9,6 +9,7 @@ for arg in "$@"; do
 done
 
 cd sample/ios
+rm -rf build/generated
 bundle check || bundle install
 
 if [ "${USE_LOCAL_SDK:-0}" = "1" ]; then
