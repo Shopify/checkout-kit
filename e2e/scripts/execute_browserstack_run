@@ -10,7 +10,16 @@ require_relative "../lib/browserstack_device_resolver"
 # Executes one row from the BrowserStack run plan, from artifact upload through
 # build polling and normalized result persistence.
 class BrowserStackRunExecutor
-  TERMINAL_STATUSES = %w[passed failed error timedout stopped done].freeze
+  TERMINAL_STATUSES = %w[completed passed failed error timedout stopped done].freeze
+  TESTCASE_STATUSES = %w[passed failed running queued skipped timedout error].freeze
+  TESTCASE_ARTIFACTS = {
+    "video" => "Video",
+    "screenshots" => "Screenshots",
+    "maestro_commands" => "Maestro commands",
+    "maestro_log" => "Maestro log",
+    "device_log" => "Device log",
+    "network_log" => "Network log"
+  }.freeze
 
   # BrowserStack builds the suite with its own Maestro. Without this parameter it picks a
   # default that is years old, and every iOS test that opens the control link fails on a
@@ -82,29 +91,39 @@ class BrowserStackRunExecutor
     value
   end
 
-  def initialize(options)
+  def initialize(options, client: nil, output: nil)
     @options = options
-    @client = BrowserStackClient.new(
+    @client = client || BrowserStackClient.new(
       username: ENV.fetch("BROWSERSTACK_USERNAME"),
       access_key: ENV.fetch("BROWSERSTACK_ACCESS_KEY"),
       retries: ENV.fetch("E2E_BROWSERSTACK_API_RETRIES", "1").to_i
     )
+    @output = output
+    @testcase_statuses = {}
   end
 
   def run
     FileUtils.mkdir_p(output_dir)
     @run = run_plan.fetch(run_index)
     app_path = ENV.fetch(@run.fetch("artifact_env"))
+    log_run_configuration(@run)
+    log "", "Resolving BrowserStack device..."
     @device = resolve_device(@run)
+    log "Resolved device: #{@device.fetch("browserstack_device")}"
+    log "Uploading application artifact..."
     @app = upload_file("/app-automate/maestro/v2/app", app_path, custom_id(@run, "app"))
+    log "Uploading Maestro test suite..."
     @suite = upload_file("/app-automate/maestro/v2/test-suite", tests_zip, custom_id(@run, "suite"))
+    log "Starting BrowserStack build..."
     @build = start_build(@run, @app.fetch("app_url"), @suite.fetch("test_suite_url"), @device.fetch("browserstack_device"))
-    puts "BrowserStack build: #{BrowserStackClient.build_url(@build.fetch("build_id"))}"
-    build_status = poll_build(@build.fetch("build_id"))
-    sessions = fetch_sessions(build_status)
+    log_build_started(@build.fetch("build_id"))
+    build_status, sessions = poll_build(@build.fetch("build_id"))
+    sessions = fetch_sessions(build_status) if sessions.empty?
     result = normalize_result(@run, @device, @app, @suite, @build, build_status, sessions)
     write_json("result.json", result)
+    log_completion(result, build_status, sessions)
   rescue StandardError => error
+    log "", "==> BrowserStack run error", "#{error.class}: #{error.message}"
     self.class.record_failure!(error, results_dir: output_dir, identifier: failure_identifier, context: failure_context)
   end
 
@@ -167,7 +186,9 @@ class BrowserStackRunExecutor
     loop do
       response = @client.get_build(build_id)
       write_json("build-status.json", response)
-      return response if TERMINAL_STATUSES.include?(response.fetch("status").to_s.downcase)
+      sessions = fetch_live_sessions(response)
+      log_poll_status(response, sessions)
+      return [response, sessions] if TERMINAL_STATUSES.include?(response.fetch("status").to_s.downcase)
       if Time.now >= deadline
         stop_build(build_id)
         raise "BrowserStack build timed out: #{build_id}"
@@ -221,7 +242,7 @@ class BrowserStackRunExecutor
       "test_suite_url" => suite.fetch("test_suite_url"),
       "build_id" => build.fetch("build_id"),
       "status" => status,
-      "passed" => status == "passed" && failed_tests.empty?,
+      "passed" => %w[completed passed].include?(status) && failed_tests.empty?,
       "failed_tests" => failed_tests
     }
   end
@@ -247,6 +268,146 @@ class BrowserStackRunExecutor
       "test_suite_url" => @suite && @suite["test_suite_url"],
       "build_id" => @build && @build["build_id"]
     }
+  end
+
+  def log_run_configuration(run)
+    log(
+      "==> BrowserStack E2E run",
+      "",
+      "Matrix row:       #{run_index + 1} of #{run_plan.length}",
+      "Run:              #{run.fetch("id")}",
+      "Application:      #{run.fetch("application_id")}",
+      "Target:           #{run.fetch("target")}",
+      "Platform:         #{run.fetch("platform")}",
+      "OS version tag:   #{run.fetch("os_version_tag")}",
+      "Device selector:  #{run.fetch("device_selector")}",
+      "App ID:           #{run.fetch("app_id")}",
+      "Tests path:       #{run.fetch("execute")}",
+      "Include tags:     #{run.fetch("include_tags").join(", ")}",
+      "Exclude tags:     #{run.fetch("exclude_tags").join(", ")}",
+      "Maestro version:  #{self.class.resolve_maestro_version(ENV)}",
+      "",
+      "BrowserStack environment:",
+      "  E2E_APP_ID=#{run.fetch("app_id")}",
+      "  E2E_READY_MARKER=#{run.fetch("ready_marker")}",
+      "  E2E_CONTROL_LINK=#{run.fetch("control_link")}"
+    )
+  end
+
+  def log_build_started(build_id)
+    log(
+      "",
+      "==> BrowserStack build started",
+      "",
+      "Build ID:         #{build_id}",
+      "Device:           #{@device.fetch("browserstack_device")}",
+      "Dashboard:        #{BrowserStackClient.build_url(build_id)}",
+      "Poll interval:    #{ENV.fetch("E2E_BROWSERSTACK_POLL_SECONDS", "30")} seconds",
+      "Run timeout:      #{ENV.fetch("E2E_BROWSERSTACK_TIMEOUT_SECONDS", "1800").to_i / 60} minutes",
+      ""
+    )
+  end
+
+  def fetch_live_sessions(build_status)
+    build_status.fetch("devices", []).flat_map do |device|
+      device.fetch("sessions", []).filter_map do |session|
+        session_id = session["id"]
+        @client.get_session(build_status.fetch("id"), session_id) unless session_id.to_s.empty?
+      end
+    end
+  rescue StandardError => error
+    log "[#{poll_timestamp}] session details unavailable: #{error.class}: #{error.message}"
+    []
+  end
+
+  def log_poll_status(build_status, sessions)
+    counts = testcase_counts(build_status, sessions)
+    total = TESTCASE_STATUSES.sum { |status| counts.fetch(status, 0) }
+    session_statuses = session_statuses(build_status, sessions)
+    summary = TESTCASE_STATUSES.map { |status| "#{status}=#{counts.fetch(status, 0)}" }.join(" ")
+    log "[#{poll_timestamp}] build=#{build_status.fetch("status")} session=#{session_statuses} tests=#{total} #{summary}"
+    log_testcase_transitions(sessions)
+  end
+
+  def testcase_counts(build_status, sessions)
+    sources = sessions.filter_map { |session| session.dig("testcases", "status") }
+    if sources.empty?
+      sources = build_status.fetch("devices", []).flat_map do |device|
+        device.fetch("sessions", []).filter_map { |session| session.dig("testcases", "status") }
+      end
+    end
+
+    TESTCASE_STATUSES.to_h do |status|
+      [status, sources.sum { |source| source.fetch(status, 0).to_i }]
+    end
+  end
+
+  def session_statuses(build_status, sessions)
+    statuses = sessions.filter_map { |session| session["status"] }
+    if statuses.empty?
+      statuses = build_status.fetch("devices", []).flat_map do |device|
+        device.fetch("sessions", []).filter_map { |session| session["status"] }
+      end
+    end
+    statuses.empty? ? "pending" : statuses.uniq.join(",")
+  end
+
+  def log_testcase_transitions(sessions)
+    sessions.each do |session|
+      session.dig("testcases", "data").to_a.each do |group|
+        group.fetch("testcases", []).each do |testcase|
+          status = testcase.fetch("status", "unknown")
+          key = testcase["id"] || [group["class"], testcase["name"]]
+          next if @testcase_statuses[key] == status
+
+          @testcase_statuses[key] = status
+          duration = testcase["duration"]
+          suffix = duration ? " (#{format_duration(duration)}s)" : ""
+          log "  [#{status}] #{testcase.fetch("name", group["class"] || "Unnamed test")}#{suffix}"
+          log_testcase_artifacts(testcase) if %w[failed skipped timedout error].include?(status)
+        end
+      end
+    end
+  end
+
+  def log_testcase_artifacts(testcase)
+    TESTCASE_ARTIFACTS.each do |key, label|
+      value = testcase[key]
+      log "    #{label}: #{value}" unless value.to_s.empty?
+    end
+  end
+
+  def format_duration(duration)
+    number = duration.to_f
+    number == number.to_i ? number.to_i : number.round(1)
+  end
+
+  def log_completion(result, build_status, sessions)
+    counts = testcase_counts(build_status, sessions)
+    outcome = result.fetch("passed") ? "passed" : "failed"
+    log(
+      "",
+      "==> BrowserStack build #{outcome}",
+      "",
+      "Status:           #{result.fetch("status")}",
+      "Duration:         #{format_duration(build_status.fetch("duration", 0) || 0)}s",
+      "Tests:            #{counts.fetch("passed")} passed, #{counts.fetch("failed")} failed, " \
+        "#{counts.fetch("skipped")} skipped, #{counts.fetch("timedout")} timed out, #{counts.fetch("error")} errors",
+      "Dashboard:        #{BrowserStackClient.build_url(result.fetch("build_id"))}"
+    )
+  end
+
+  def poll_timestamp
+    Time.now.utc.strftime("%H:%M:%S UTC")
+  end
+
+  def log(*lines)
+    output.puts(*lines)
+    output.flush
+  end
+
+  def output
+    @output || $stdout
   end
 
   def custom_id(run, suffix)
