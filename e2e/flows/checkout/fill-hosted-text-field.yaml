@@ -2,38 +2,14 @@ appId: ${E2E_APP_ID}
 ---
 - runFlow:
     when:
-      platform: ios
+      true: ${SCROLL_TO_FIELD == 'true'}
     commands:
       - runFlow:
-          when:
-            true: ${SCROLL_TO_FIELD == 'true'}
-          commands:
-            - runFlow:
-                file: scroll-until-visible-bidirectional.yaml
-                env:
-                  LOCATOR: "^${FIELD_LABEL}$"
-                  INITIAL_DIRECTION: "DOWN"
-            # The first post-scroll tap positions the hosted container. The second gives
-            # its iframe input focus before text entry.
-            - tapOn:
-                text: "^${FIELD_LABEL}$"
-            - waitForAnimationToEnd
-      - tapOn:
-          text: "^${FIELD_LABEL}$"
-- runFlow:
-    when:
-      platform: android
-    commands:
-      - runFlow:
-          when:
-            true: ${SCROLL_TO_FIELD == 'true'}
-          commands:
-            - runFlow:
-                file: scroll-until-visible-bidirectional.yaml
-                env:
-                  LOCATOR: "^${FIELD_LABEL}$"
-                  INITIAL_DIRECTION: "DOWN"
-      - tapOn:
-          text: "^${FIELD_LABEL}$"
+          file: scroll-until-visible-bidirectional.yaml
+          env:
+            LOCATOR: "^${FIELD_LABEL}$"
+            INITIAL_DIRECTION: "DOWN"
+- tapOn:
+    text: "^${FIELD_LABEL}$"
 - waitForAnimationToEnd
 - inputText: "${TEXT_TO_INPUT}"
