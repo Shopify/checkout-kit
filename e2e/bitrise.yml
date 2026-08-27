@@ -352,7 +352,7 @@ workflows:
                 # run on fork pull requests, where Bitrise withholds secrets.
                 export STOREFRONT_DOMAIN="${STOREFRONT_DOMAIN:-example.myshopify.com}"
                 export STOREFRONT_ACCESS_TOKEN="${STOREFRONT_ACCESS_TOKEN:-test-token}"
-                ./scripts/setup_storefront_env --skip-optional-prompts
+                ./scripts/setup_storefront_env
                 cd platforms/swift
                 ./Scripts/build_and_test_samples
       - save-cache@1:
