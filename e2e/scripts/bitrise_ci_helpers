@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+# Pinned on purpose. An unpinned install would change the decrypt path under CI
+# without a commit saying so.
+E2E_EJSON2ENV_VERSION="2.0.8"
+
 e2e_log() {
   printf '\n==> %s\n' "$*"
 }
@@ -61,12 +65,145 @@ e2e_export_github_token() {
   fi
 }
 
+e2e_sha256() {
+  ruby -rdigest -e 'puts Digest::SHA256.file(ARGV.fetch(0)).hexdigest' "$1"
+}
+
+# Neither Bitrise stack preinstalls ejson2env, and both are ephemeral, so every
+# workflow that decrypts installs it. Only ejson2env is needed: nothing in CI
+# encrypts, and scripts/ejson_lint reads the ciphertext without a binary.
+e2e_install_ejson2env() {
+  local installed_version host release_platform asset base archive expected actual dir
+
+  if command -v ejson2env >/dev/null 2>&1; then
+    installed_version="$(ejson2env --version 2>/dev/null | awk '{print $NF; exit}')"
+    if [ "$installed_version" = "$E2E_EJSON2ENV_VERSION" ]; then
+      e2e_log "ejson2env ${E2E_EJSON2ENV_VERSION} is already installed"
+      return 0
+    fi
+
+    echo "e2e_install_ejson2env: warning: found ejson2env ${installed_version:-with an unknown version}; expected ${E2E_EJSON2ENV_VERSION}. Installing the pinned version." >&2
+  fi
+
+  host="$(uname -s)/$(uname -m)"
+  case "$host" in
+  Darwin/*)
+    release_platform="darwin_all"
+    expected="98734569cde6075bb5cf43a2aa83ebec2ad91959a43eb077538fd8feda850af7"
+    ;;
+  Linux/x86_64)
+    release_platform="linux_amd64"
+    expected="d06d1090733658f2f493d20d6262c276bd776aff84f580e1d9e4acfd1d399398"
+    ;;
+  Linux/aarch64 | Linux/arm64)
+    release_platform="linux_arm64"
+    expected="95a5fd97c7390341e9c6ad2489c84e079ff9e97ddfa7e1a8e35b6a7b571afe1d"
+    ;;
+  *)
+    echo "e2e_install_ejson2env: no pinned archive for ${host}" >&2
+    return 1
+    ;;
+  esac
+
+  asset="ejson2env_${E2E_EJSON2ENV_VERSION}_${release_platform}.tar.gz"
+
+  base="https://github.com/Shopify/ejson2env/releases/download/v${E2E_EJSON2ENV_VERSION}"
+  archive="$(mktemp -d)/${asset}"
+
+  e2e_log "Installing ejson2env ${E2E_EJSON2ENV_VERSION} for ${host}"
+  curl -fsSL --retry 3 -o "$archive" "${base}/${asset}"
+
+  actual="$(e2e_sha256 "$archive")"
+  if [ "$expected" != "$actual" ]; then
+    echo "e2e_install_ejson2env: checksum mismatch for ${asset}" >&2
+    return 1
+  fi
+
+  dir="$HOME/.local/bin"
+  mkdir -p "$dir"
+  tar -xzf "$archive" -C "$dir" ejson2env
+  chmod +x "$dir/ejson2env"
+
+  installed_version="$("$dir/ejson2env" --version 2>/dev/null | awk '{print $NF; exit}')"
+  if [ "$installed_version" != "$E2E_EJSON2ENV_VERSION" ]; then
+    echo "e2e_install_ejson2env: installed version ${installed_version:-unknown}; expected ${E2E_EJSON2ENV_VERSION}" >&2
+    return 1
+  fi
+
+  export PATH="$dir:$PATH"
+  envman add --key PATH --value "$PATH"
+}
+
+# CI has no gcloud, so scripts/install_ejson_key cannot run here. Bitrise holds
+# the private key in one secret instead, and this writes it into a keydir that
+# the rest of the run inherits through EJSON_KEYDIR.
+#
+# The key reaches the file through a redirect, so it never enters an argument
+# list and never reaches the build log.
+e2e_install_ejson_key() {
+  local keydir public_keys public_key rendered
+
+  : "${EJSON_PRIVATE_KEY:?EJSON_PRIVATE_KEY is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
+
+  public_keys="$(sed -n 's/.*"_public_key"[[:space:]]*:[[:space:]]*"\([0-9a-f]\{64\}\)".*/\1/p' \
+    config/secrets/*.ejson | sort -u)"
+
+  # One secret can only hold one private key, so every committed file has to name
+  # the same public key. Rekeying one file alone would otherwise fail later with a
+  # decrypt error that says nothing about the cause.
+  if [ "$(printf '%s\n' "$public_keys" | grep -c .)" != "1" ]; then
+    echo "e2e_install_ejson_key: config/secrets holds more than one public key, so one" >&2
+    echo "e2e_install_ejson_key: EJSON_PRIVATE_KEY cannot decrypt them all. Re-encrypt them" >&2
+    echo "e2e_install_ejson_key: against a single keypair." >&2
+    return 1
+  fi
+
+  public_key="$public_keys"
+  keydir="$HOME/.ejson/keys"
+
+  export EJSON_KEYDIR="$keydir"
+  envman add --key EJSON_KEYDIR --value "$keydir"
+
+  # Idempotent: two workflows in one step both need the key, and the mode below
+  # makes the file unwritable, so a second attempt at the same redirect would fail.
+  if [ -s "$keydir/$public_key" ]; then
+    e2e_log "The private key for ${public_key} is already installed"
+    return 0
+  fi
+
+  e2e_log "Installing the ejson private key"
+  mkdir -p "$keydir"
+
+  # Written elsewhere and moved into place, so the mode is never briefly looser
+  # than ejson keygen's own 0440.
+  rendered="$(mktemp)"
+  printf '%s' "$EJSON_PRIVATE_KEY" >"$rendered"
+  chmod 440 "$rendered"
+  mv "$rendered" "$keydir/$public_key"
+
+  e2e_log "Installed the private key for ${public_key}"
+}
+
+e2e_generate_env_files() {
+  e2e_install_ejson2env
+  e2e_install_ejson_key
+
+  e2e_log "Generating env files from config/secrets"
+  ./scripts/generate_env_files
+}
+
+# The suite has its own shop, in config/secrets/e2e.ejson. The repo-root .env
+# comes from config/secrets/demo.ejson and a developer may point it at their own
+# shop, so reading it here would run the suite against whichever store happened
+# to be configured for manual testing.
+#
+# Ignoring generated platform config keeps a previous demo-store run from becoming
+# an input to this E2E-store run.
 e2e_configure_storefront() {
-  e2e_log "Checking storefront configuration secrets"
-  : "${STOREFRONT_DOMAIN:?STOREFRONT_DOMAIN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
-  : "${STOREFRONT_ACCESS_TOKEN:?STOREFRONT_ACCESS_TOKEN is required. Check https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/workflow_editor#!/secrets and enable Expose for pull requests.}"
-  e2e_log "Configuring storefront environment"
-  ./scripts/setup_storefront_env
+  e2e_generate_env_files
+
+  e2e_log "Configuring storefront environment from e2e/.env"
+  ./scripts/setup_storefront_env --env-file e2e/.env --ignore-generated
 }
 
 e2e_nightly_commit_window() {

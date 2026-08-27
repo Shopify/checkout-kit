@@ -13,6 +13,17 @@ Local runs call `scripts/run_local_e2e`, which builds and installs the target
 before delegating the Maestro invocation to `scripts/run_maestro`. CI applies the
 same environment contract through the BrowserStack run plan.
 
+## Encrypted environments
+
+`dev up` generates `.env` and `e2e/.env` from `config/secrets`.
+
+Use `dev secrets edit demo` or `dev secrets edit e2e` for shared changes, and
+`.env.local` for gitignored sample-app overrides. Run `./scripts/ejson_lint`
+before committing encrypted configuration changes.
+
+CI builds sample apps from `e2e/.env`; local Maestro runs use the configuration
+already generated for the sample app.
+
 ## Run locally
 
 Run `dev up` first to provision the local toolchain, including the pinned Maestro
@@ -155,6 +166,8 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 - `scripts/run_local_e2e` builds and installs any of the four local targets.
 - `scripts/run_maestro` is their single Maestro invocation. It holds the
   environment contract and target-specific test-file selection in one place.
+- `scripts/bitrise_ci_helpers` holds shared functions used by CI builds, including
+  EJSON setup and `e2e_configure_storefront`.
 - `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
   `scripts/` drive the BrowserStack run plan.
 

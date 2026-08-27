@@ -4,8 +4,6 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-ROOT_ENV="${ROOT_DIR}/.env"
-ROOT_ENV_LOCAL="${ROOT_DIR}/.env.local"
 ANDROID_ENV="${ROOT_DIR}/platforms/android/samples/CheckoutKitAndroidDemo/.env"
 SWIFT_DEMO_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
 SWIFT_ACCELERATED_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
@@ -17,26 +15,37 @@ DEFAULT_CUSTOMER_ACCOUNT_API_VERSION="2026-04"
 
 usage() {
   cat <<EOF
-Usage: scripts/setup_storefront_env [--check]
+Usage: scripts/setup_storefront_env [--check] [--env-file PATH] [--ignore-generated]
 
-Generates sample app storefront configuration from the repo-root .env, which
-.env.local overrides key by key.
+Generates sample app storefront configuration from .env, with .env.local as a
+key-by-key overlay.
 
-It never writes .env itself. Shopify employees get .env from
-scripts/generate_env_files, which decrypts config/secrets/demo.ejson. Everyone
-else copies .env.example and fills it in by hand. Either way this command only
-reads it, so a hand-written .env survives every run.
+--env-file PATH reads PATH and PATH.local instead.
+--ignore-generated excludes generated config files as fallback inputs.
 
 This command prints file paths and status only; it never prints configured values.
 EOF
 }
 
 mode="sync"
+env_file="${ROOT_DIR}/.env"
+IGNORE_GENERATED="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --check)
       mode="check"
+      ;;
+    --env-file)
+      if [[ $# -lt 2 || -z "$2" ]]; then
+        usage >&2
+        exit 1
+      fi
+      env_file="$2"
+      shift
+      ;;
+    --ignore-generated)
+      IGNORE_GENERATED="true"
       ;;
     -h | --help)
       usage
@@ -49,6 +58,14 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+ROOT_ENV="$env_file"
+ROOT_ENV_LOCAL="${env_file}.local"
+
+# Messages name the files the caller actually passed, so an E2E run never tells a
+# developer to edit .env.local when it is reading e2e/.env.local.
+ENV_LABEL="${ROOT_ENV#"${ROOT_DIR}/"}"
+ENV_LOCAL_LABEL="${ROOT_ENV_LOCAL#"${ROOT_DIR}/"}"
 
 trim() {
   sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
@@ -72,12 +89,31 @@ strip_outer_quotes() {
   printf '%s' "$value"
 }
 
+# Generated platform config doubles as a value source, so a developer who lost
+# .env keeps their store instead of silently blanking it. That inheritance is
+# wrong for a caller that wants configuration to be a pure function of the file
+# it passed: the generated files hold whatever the previous run wrote, which for
+# an E2E run is the demo store. --ignore-generated drops them as a source.
+is_generated_file() {
+  case "$1" in
+    "$ANDROID_ENV" | "$REACT_NATIVE_ENV" | "$REACT_NATIVE_XCCONFIG" | "$SWIFT_DEMO_XCCONFIG" | "$SWIFT_ACCELERATED_XCCONFIG")
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
 read_env_value() {
   local key="$1"
   local file="$2"
   local raw_value
 
   if [[ ! -f "$file" ]]; then
+    return 0
+  fi
+
+  if [[ "$IGNORE_GENERATED" == "true" ]] && is_generated_file "$file"; then
     return 0
   fi
 
@@ -173,8 +209,8 @@ report_local_overrides() {
   keys="$(env_keys "$ROOT_ENV_LOCAL" | paste -sd, - | sed -e 's/,/, /g')"
   [[ -n "$keys" ]] || return 0
 
-  echo ".env.local overrides .env for: ${keys}"
-  echo "Nothing writes to .env.local, so remove a line there to fall back to .env."
+  echo "${ENV_LOCAL_LABEL} overrides ${ENV_LABEL} for: ${keys}"
+  echo "Nothing writes to ${ENV_LOCAL_LABEL}, so remove a line there to fall back to ${ENV_LABEL}."
 }
 
 is_missing_required_value() {
@@ -435,11 +471,11 @@ load_values() {
 # checkout builds; the sample app then fails at its first network call instead.
 report_missing_required_values() {
   if is_missing_required_value "$STOREFRONT_DOMAIN_VALUE"; then
-    echo "No usable STOREFRONT_DOMAIN. Set it in .env.local, or run \`dev up\` to generate .env." >&2
+    echo "No usable STOREFRONT_DOMAIN. Set it in ${ENV_LOCAL_LABEL}, or run \`dev up\` to generate ${ENV_LABEL}." >&2
   fi
 
   if is_missing_required_value "$STOREFRONT_ACCESS_TOKEN_VALUE"; then
-    echo "No usable STOREFRONT_ACCESS_TOKEN. Set it in .env.local, or run \`dev up\` to generate .env." >&2
+    echo "No usable STOREFRONT_ACCESS_TOKEN. Set it in ${ENV_LOCAL_LABEL}, or run \`dev up\` to generate ${ENV_LABEL}." >&2
   fi
 }
 
@@ -458,16 +494,16 @@ write_xcconfig_assignment() {
 
 generate_platform_env_header() {
   cat <<EOF
-# Generated from the repo-root .env by scripts/setup_storefront_env.
-# Do not edit directly; change .env.local and rerun scripts/setup_storefront_env.
+# Generated from ${ENV_LABEL} by scripts/setup_storefront_env.
+# Do not edit directly; change ${ENV_LOCAL_LABEL} and rerun scripts/setup_storefront_env.
 
 EOF
 }
 
 generate_xcconfig_header() {
   cat <<EOF
-// Generated from the repo-root .env by scripts/setup_storefront_env.
-// Do not edit directly; change .env.local and rerun scripts/setup_storefront_env.
+// Generated from ${ENV_LABEL} by scripts/setup_storefront_env.
+// Do not edit directly; change ${ENV_LOCAL_LABEL} and rerun scripts/setup_storefront_env.
 
 EOF
 }

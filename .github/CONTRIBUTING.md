@@ -54,11 +54,21 @@ setup steps. Those repo-owned steps are summarized at the end so a Swift,
 Android, React Native, or Web setup failure is visible without hiding later
 platform results. If a setup step fails, fix it and rerun `dev up`.
 
-Setup creates or syncs sample app storefront configuration from the repo-root
-`.env`. If `.env` is missing, setup prompts for required storefront values and
-then generates the Android, Swift, and React Native sample config files.
-Optional Apple Pay and Customer Account API values are preserved if already set,
-but `dev up` leaves missing optional values blank instead of prompting.
+Setup generates the Android, Swift, and React Native sample config files from
+`.env`, with matching keys in `.env.local` taking precedence.
+
+**Shopify employees.** Run `dev up` to generate `.env` and `e2e/.env` from
+`config/secrets`. Use `dev secrets edit demo` or `dev secrets edit e2e` for shared
+changes, and `.env.local` for gitignored overrides.
+
+**External contributors.** Create `.env`, add your storefront details, then run
+setup from the repository root:
+
+```bash
+cp .env.example .env
+# Edit .env with your storefront details
+scripts/setup_storefront_env
+```
 
 Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, `dev react-native <command>` (or `dev rn`), and `dev web <command>` after setup. Protocol schema/model commands are available as `dev protocol <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
 
@@ -133,10 +143,9 @@ an `id`, `label`, and `recipes` (each a `platform`, `destination`, Bitrise
 `workflow`, and `artifact_name`). It automatically flows into the Quick Launch
 entries, the per-PR comment table, and `dev tophat`.
 
-Sample app storefront configuration is generated from the repo-root `.env`.
-Shopify employees get this through `dev up`. External contributors can copy
-`.env.example` to `.env`, fill in local storefront values, then run
-`scripts/setup_storefront_env` from the repo root.
+Sample app storefront configuration is generated from the repo-root `.env` and, when
+it exists, `.env.local`. See [Dev tooling](#dev-tooling) for how each audience gets
+those files.
 
 ## Release notes
 

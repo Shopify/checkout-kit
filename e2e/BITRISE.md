@@ -139,14 +139,30 @@ Each workflow's main `script` step sets its own wall-clock budget with the Bitri
 
 The `e2e-execute-browserstack-run` workflow fans out one parallel copy per BrowserStack run plan row. The `e2e-produce-browserstack-run-plan` workflow derives this count with `ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count` and publishes it as `E2E_BROWSERSTACK_RUN_PLAN_COUNT`, which the `e2e-execute-browserstack-run` `parallel` field reads, so it never needs manual alignment.
 
-## Storefront secrets
+## Encrypted storefront configuration
 
-These secrets are configured in Bitrise.io; they cannot live in the repository. `scripts/setup_storefront_env` reads them to configure the sample app before builds.
+Storefront values live encrypted in this repository under `config/secrets`, so
+Bitrise holds one secret instead of a list that can drift from what the build
+reads.
 
-| Secret                    | Purpose                                        |
-| ------------------------- | ---------------------------------------------- |
-| `STOREFRONT_DOMAIN`       | Storefront domain for sample app builds.       |
-| `STOREFRONT_ACCESS_TOKEN` | Storefront access token for sample app builds. |
+| Secret | Purpose |
+| --- | --- |
+| `EJSON_PRIVATE_KEY` | Decrypts `config/secrets/demo.ejson` and `config/secrets/e2e.ejson`. |
+
+Create the secret with both **Expose for pull requests** and **Protected** enabled.
+Because exposure also reaches fork builds, keep **Project settings > Builds >
+Manual approval** enabled so a Shopify admin must approve an outside contribution
+before any step can access the key.
+
+`e2e/scripts/bitrise_ci_helpers` requires the pinned `ejson2env` version. It
+warns and installs the pin if another version is present, verifies the archive
+against a checksum committed in the helper, writes the key into `EJSON_KEYDIR`,
+and runs `scripts/generate_env_files`. That generates `.env` and `e2e/.env`;
+neither the key nor decrypted values enter an argument list or build log.
+
+Both committed EJSON files must use the same keypair because one Bitrise secret
+cannot hold two private keys. To change a value, run `dev secrets edit demo` or
+`dev secrets edit e2e` and commit the encrypted file.
 
 ## BrowserStack secrets
 
