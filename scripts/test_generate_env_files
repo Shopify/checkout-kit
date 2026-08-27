@@ -1,0 +1,303 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Synthetic tests for scripts/generate_env_files and scripts/migrate_env_to_local.
+#
+# Every fixture gets its own ejson keypair in its own keydir, so these tests
+# exercise the real ejson and ejson2env binaries without ever touching the
+# repository keys or the committed ciphertext.
+#
+# Values here are synthetic. assert_output_is_sanitized fails the suite if any of
+# them reaches the command output, because these scripts must report key names
+# and paths only.
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Holds enough of the platform to run the scripts, but not enough to find the
+# real ejson2env, which is how the missing-binary path gets tested.
+MINIMAL_PATH="/usr/bin:/bin"
+
+fixtures=()
+
+cleanup() {
+  local fixture
+  if [[ "${#fixtures[@]}" -eq 0 ]]; then
+    return
+  fi
+
+  for fixture in "${fixtures[@]}"; do
+    rm -rf "$fixture"
+  done
+}
+
+trap cleanup EXIT
+
+fail() {
+  echo "test_generate_env_files: $1" >&2
+  exit 1
+}
+
+require_binary() {
+  command -v "$1" >/dev/null 2>&1 ||
+    fail "$1 is not installed, so these tests cannot run. Run \`dev up\`."
+}
+
+make_fixture() {
+  local fixture public_key
+  fixture="$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-generate-env.XXXXXX")"
+  fixtures+=("$fixture")
+
+  mkdir -p "$fixture/scripts" "$fixture/config/secrets" "$fixture/e2e" "$fixture/keys"
+
+  cp "$REPO_ROOT/scripts/generate_env_files" "$fixture/scripts/generate_env_files"
+  cp "$REPO_ROOT/scripts/migrate_env_to_local" "$fixture/scripts/migrate_env_to_local"
+  chmod +x "$fixture/scripts/generate_env_files" "$fixture/scripts/migrate_env_to_local"
+
+  public_key="$(EJSON_KEYDIR="$fixture/keys" ejson keygen -w)"
+
+  write_secrets_file "$fixture/config/secrets/demo.ejson" "$public_key" \
+    STOREFRONT_DOMAIN synthetic-store.example.myshopify.com \
+    STOREFRONT_ACCESS_TOKEN synthetic-token
+  write_secrets_file "$fixture/config/secrets/e2e.ejson" "$public_key" \
+    STOREFRONT_DOMAIN synthetic-e2e-store.example.myshopify.com \
+    E2E_CUSTOMER_ACCOUNT_EMAIL synthetic-e2e@example.com
+
+  printf '%s\n' "$fixture"
+}
+
+write_secrets_file() {
+  local path="$1"
+  local public_key="$2"
+  shift 2
+
+  {
+    printf '{\n'
+    printf '  "_public_key": "%s",\n' "$public_key"
+    printf '  "_description": "Synthetic fixture.",\n'
+    printf '  "environment": {\n'
+    while [[ $# -gt 0 ]]; do
+      printf '    "%s": "%s"' "$1" "$2"
+      shift 2
+      [[ $# -eq 0 ]] || printf ','
+      printf '\n'
+    done
+    printf '  }\n'
+    printf '}\n'
+  } >"$path"
+
+  ejson encrypt "$path" >/dev/null
+}
+
+run_generate() {
+  local fixture="$1"
+  shift
+
+  EJSON_KEYDIR="$fixture/keys" "$fixture/scripts/generate_env_files" "$@"
+}
+
+assert_file_exists() {
+  [[ -f "$1" ]] || fail "expected file is missing: $1"
+}
+
+assert_file_absent() {
+  [[ ! -e "$1" ]] || fail "file must not exist: $1"
+}
+
+assert_contains() {
+  local path="$1"
+  local pattern="$2"
+
+  grep -Fq "$pattern" "$path" || fail "expected content was not found: $path: $pattern"
+}
+
+assert_files_match() {
+  cmp -s "$1" "$2" || fail "files differ but must be byte-identical: $1 $2"
+}
+
+assert_output_is_sanitized() {
+  local output_path="$1"
+  local value
+
+  for value in \
+    synthetic-store.example.myshopify.com \
+    synthetic-token \
+    synthetic-e2e-store.example.myshopify.com \
+    synthetic-e2e@example.com \
+    hand-written-store.example.myshopify.com; do
+    if grep -Fq "$value" "$output_path"; then
+      fail "command output included a configured value"
+    fi
+  done
+}
+
+test_generates_both_env_files() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  run_generate "$fixture" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_file_exists "$fixture/.env"
+  assert_file_exists "$fixture/e2e/.env"
+
+  assert_contains "$fixture/.env" "STOREFRONT_DOMAIN=synthetic-store.example.myshopify.com"
+  assert_contains "$fixture/.env" "STOREFRONT_ACCESS_TOKEN=synthetic-token"
+  assert_contains "$fixture/e2e/.env" "E2E_CUSTOMER_ACCOUNT_EMAIL=synthetic-e2e@example.com"
+
+  # Each file must say it is generated, or someone edits it and loses the change.
+  assert_contains "$fixture/.env" "dev secrets edit demo"
+  assert_contains "$fixture/.env" "Gitignored overrides: .env.local"
+  assert_contains "$fixture/e2e/.env" "dev secrets edit e2e"
+  if grep -Fq ".env.local" "$fixture/e2e/.env"; then
+    fail "e2e/.env advertises an unsupported local override"
+  fi
+}
+
+test_check_passes_when_current_and_fails_when_stale() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  run_generate "$fixture" >"$output" 2>&1
+
+  run_generate "$fixture" --check >"$output" 2>&1 ||
+    fail "--check failed straight after a successful generate"
+  assert_output_is_sanitized "$output"
+
+  printf '%s\n' "STOREFRONT_DOMAIN=stale" >"$fixture/.env"
+
+  if run_generate "$fixture" --check >"$output" 2>&1; then
+    fail "--check passed with a stale .env"
+  fi
+  assert_output_is_sanitized "$output"
+}
+
+test_missing_ejson2env_fails_and_names_dev_up() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  if PATH="$MINIMAL_PATH" run_generate "$fixture" >"$output" 2>&1; then
+    fail "generate_env_files succeeded without ejson2env installed"
+  fi
+
+  assert_output_is_sanitized "$output"
+  assert_contains "$output" "dev up"
+  assert_file_absent "$fixture/.env"
+}
+
+test_missing_private_key_skips_and_preserves_existing_env() {
+  local fixture output before
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  before="$fixture/before"
+
+  printf 'STOREFRONT_DOMAIN=%s\n' hand-written-store.example.myshopify.com >"$fixture/.env"
+  cp "$fixture/.env" "$before"
+  rm -f "$fixture"/keys/*
+
+  run_generate "$fixture" >"$output" 2>&1 ||
+    fail "a missing private key must not fail; it is a supported state"
+
+  assert_output_is_sanitized "$output"
+  assert_contains "$output" "no private key"
+  assert_files_match "$fixture/.env" "$before"
+
+  run_generate "$fixture" --check >"$output" 2>&1 ||
+    fail "--check must pass when no key is installed"
+  assert_output_is_sanitized "$output"
+}
+
+test_failed_decrypt_preserves_existing_env() {
+  local fixture output before key_file
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  before="$fixture/before"
+
+  printf 'STOREFRONT_DOMAIN=%s\n' hand-written-store.example.myshopify.com >"$fixture/.env"
+  cp "$fixture/.env" "$before"
+
+  key_file="$(find "$fixture/keys" -type f -print -quit)"
+  chmod u+w "$key_file"
+  printf 'invalid-private-key\n' >"$key_file"
+
+  if run_generate "$fixture" >"$output" 2>&1; then
+    fail "generate_env_files succeeded with an invalid private key"
+  fi
+
+  assert_output_is_sanitized "$output"
+  assert_files_match "$fixture/.env" "$before"
+}
+
+test_migrate_lifecycle() {
+  local fixture output after_first
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  after_first="$fixture/after_first"
+
+  "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
+  assert_file_absent "$fixture/.env.local"
+
+  printf 'STOREFRONT_DOMAIN=%s\n' hand-written-store.example.myshopify.com >"$fixture/.env"
+  if "$fixture/scripts/migrate_env_to_local" --check >"$output" 2>&1; then
+    fail "--check passed while a migration was pending"
+  fi
+
+  "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
+  assert_output_is_sanitized "$output"
+  assert_files_match "$fixture/.env.local" "$fixture/.env"
+  cp "$fixture/.env.local" "$after_first"
+
+  "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
+  "$fixture/scripts/migrate_env_to_local" --check >"$output" 2>&1 ||
+    fail "--check failed after migration"
+  assert_files_match "$fixture/.env.local" "$after_first"
+}
+
+test_migrate_never_overwrites_an_existing_env_local() {
+  local fixture output before
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+  before="$fixture/before"
+
+  printf 'STOREFRONT_DOMAIN=%s\n' hand-written-store.example.myshopify.com >"$fixture/.env"
+  printf 'STOREFRONT_DOMAIN=%s\n' synthetic-store.example.myshopify.com >"$fixture/.env.local"
+  cp "$fixture/.env.local" "$before"
+
+  "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_files_match "$fixture/.env.local" "$before"
+}
+
+test_migrate_skips_a_generated_root_env() {
+  local fixture output
+  fixture="$(make_fixture)"
+  output="$fixture/output.log"
+
+  run_generate "$fixture" >"$output" 2>&1
+  rm -f "$fixture/.env.local"
+
+  "$fixture/scripts/migrate_env_to_local" --check >"$output" 2>&1 ||
+    fail "--check failed for an already generated .env"
+  "$fixture/scripts/migrate_env_to_local" >"$output" 2>&1
+
+  assert_output_is_sanitized "$output"
+  assert_file_absent "$fixture/.env.local"
+}
+
+require_binary ejson
+require_binary ejson2env
+
+test_generates_both_env_files
+test_check_passes_when_current_and_fails_when_stale
+test_missing_ejson2env_fails_and_names_dev_up
+test_missing_private_key_skips_and_preserves_existing_env
+test_failed_decrypt_preserves_existing_env
+test_migrate_lifecycle
+test_migrate_never_overwrites_an_existing_env_local
+test_migrate_skips_a_generated_root_env
+
+echo "generate_env_files synthetic tests passed."

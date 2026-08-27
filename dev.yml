@@ -32,17 +32,25 @@ up:
       met?: ./scripts/secrets_setup --check
       meet: "true"
   - custom:
-      name: Copy root env into worktree
+      name: Copy .env.local, .dev.env, local.properties into worktree
       met?: ./scripts/copy_worktree_env --check
       meet: ./scripts/copy_worktree_env
+  - custom:
+      name: Keep a hand-written .env as .env.local
+      met?: ./scripts/migrate_env_to_local --check
+      meet: ./scripts/migrate_env_to_local
+  - custom:
+      name: Generate env files from config/secrets
+      met?: ./scripts/generate_env_files --check
+      meet: ./scripts/generate_env_files
   - custom:
       name: Install the pinned Maestro version
       met?: ./scripts/install_maestro --check
       meet: ./scripts/install_maestro
   - custom:
       name: Run Checkout Kit workspace setup
-      met?: ./scripts/setup_dev_workspace --check --skip-optional-prompts
-      meet: ./scripts/setup_dev_workspace --skip-optional-prompts
+      met?: ./scripts/setup_dev_workspace --check
+      meet: ./scripts/setup_dev_workspace
   - tophat_mobile
   - custom:
       name: Configure Tophat Quick Launch items
@@ -59,6 +67,7 @@ open:
 
 check:
   ejson-plaintext: ./scripts/ejson_lint
+  generate-env-tests: ./scripts/test_generate_env_files
   storefront-env-tests: ./scripts/test_setup_storefront_env
   ruby-script-tests: ./scripts/test_ruby
   maestro-hide-keyboard-lint: ./e2e/scripts/check_hide_keyboard_usage
@@ -98,7 +107,7 @@ commands:
       esac
 
   copy-env:
-    desc: Copy the root .env into the current worktree so `dev up` can regenerate sample config
+    desc: Copy .dev.env, .env.local, local.properties into worktree
     run: ./scripts/copy_worktree_env
 
   secrets:

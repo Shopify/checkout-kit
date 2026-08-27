@@ -5,7 +5,6 @@ set -o pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 mode="sync"
-storefront_prompt_arg="--skip-optional-prompts"
 
 step_names=()
 step_statuses=()
@@ -18,7 +17,7 @@ gemfile_lock_aligned=1
 
 usage() {
   cat <<EOF
-Usage: scripts/setup_dev_workspace [--skip-optional-prompts|--prompt-optional]
+Usage: scripts/setup_dev_workspace [--check]
 
 Runs all repo-owned setup steps and prints a final summary. Unlike dev up's
 native provisioning tasks, this script keeps running independent setup steps
@@ -33,12 +32,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --check)
       mode="check"
-      ;;
-    --skip-optional-prompts)
-      storefront_prompt_arg="--skip-optional-prompts"
-      ;;
-    --prompt-optional)
-      storefront_prompt_arg="--prompt-optional"
       ;;
     -h | --help)
       usage
@@ -103,7 +96,7 @@ ensure_storefront_env() {
   if [[ "$mode" == "check" ]]; then
     run_shell "Sample storefront config" './scripts/setup_storefront_env --check'
   else
-    run_shell "Sample storefront config" "./scripts/setup_storefront_env ${storefront_prompt_arg}"
+    run_shell "Sample storefront config" './scripts/setup_storefront_env'
   fi
 
   storefront_status="$last_status"

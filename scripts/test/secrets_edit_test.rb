@@ -149,6 +149,23 @@ class SecretsEditTest < Minitest::Test
     assert_includes out, "dev secrets edit"
   end
 
+  def test_editing_a_secrets_file_regenerates_the_env_files
+    skip "ejson2env is not installed" unless system("command -v ejson2env >/dev/null 2>&1")
+
+    root = fake_repo_root
+    out, status = run_in(root, %w[API_VERSION=2026-10])
+
+    assert_equal 0, status, "secrets_edit failed:\n#{out}"
+    assert_includes File.read(File.join(root, ".env")), "API_VERSION=2026-10"
+  end
+
+  def test_editing_a_file_outside_config_secrets_leaves_the_env_files_alone
+    out, = edit(%w[API_VERSION=2026-10])
+
+    refute_includes out, "generate_env_files"
+    refute_path_exists File.join(@dir, ".env")
+  end
+
   def test_an_unknown_name_is_rejected
     out, status = run_script(editor: setting_editor([]), target: "nope")
 
@@ -196,6 +213,26 @@ class SecretsEditTest < Minitest::Test
   def run_script(editor:, target: @path, keydir: @keydir)
     env = {"EJSON_KEYDIR" => keydir, "EDITOR" => editor, "NO_COLOR" => "1"}
     out, status = Open3.capture2e(env, SCRIPT, "edit", target, chdir: REPO_ROOT)
+    [out, status.exitstatus]
+  end
+
+  def fake_repo_root
+    root = File.join(@dir, "repo")
+    FileUtils.mkdir_p(File.join(root, "scripts"))
+    FileUtils.mkdir_p(File.join(root, "config", "secrets"))
+
+    FileUtils.cp(SCRIPT, File.join(root, "scripts"))
+    FileUtils.cp(File.join(REPO_ROOT, "scripts", "generate_env_files"), File.join(root, "scripts"))
+    FileUtils.cp_r(File.join(REPO_ROOT, "scripts", "lib"), File.join(root, "scripts"))
+    FileUtils.cp(@path, File.join(root, "config", "secrets", "demo.ejson"))
+
+    root
+  end
+
+  def run_in(root, assignments)
+    env = {"EJSON_KEYDIR" => @keydir, "EDITOR" => setting_editor(assignments), "NO_COLOR" => "1"}
+    target = File.join(root, "config", "secrets", "demo.ejson")
+    out, status = Open3.capture2e(env, File.join(root, "scripts", "secrets_edit"), "edit", target, chdir: root)
     [out, status.exitstatus]
   end
 
