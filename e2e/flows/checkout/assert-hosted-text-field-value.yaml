@@ -6,7 +6,7 @@ appId: ${E2E_APP_ID}
     commands:
       - scrollUntilVisible:
           element:
-            text: "^Field container for: ${FIELD_LABEL}$"
+            text: "^${FIELD_LABEL}$"
           direction: UP
           centerElement: true
       - runFlow:

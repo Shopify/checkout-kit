@@ -11,15 +11,15 @@ appId: ${E2E_APP_ID}
             - runFlow:
                 file: scroll-until-visible-bidirectional.yaml
                 env:
-                  LOCATOR: "^Field container for: ${FIELD_LABEL}$"
+                  LOCATOR: "^${FIELD_LABEL}$"
                   INITIAL_DIRECTION: "DOWN"
             # The first post-scroll tap positions the hosted container. The second gives
             # its iframe input focus before text entry.
             - tapOn:
-                text: "^Field container for: ${FIELD_LABEL}$"
+                text: "^${FIELD_LABEL}$"
             - waitForAnimationToEnd
       - tapOn:
-          text: "^Field container for: ${FIELD_LABEL}$"
+          text: "^${FIELD_LABEL}$"
 - runFlow:
     when:
       platform: android
