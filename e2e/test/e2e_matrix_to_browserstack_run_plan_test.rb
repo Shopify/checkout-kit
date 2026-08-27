@@ -51,7 +51,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     android_run = run_for("kotlin-android")
 
     assert_equal ["launch", "checkout"], default_run.fetch("include_tags")
-    assert_equal ["flaky", "wip", "apple-pay", "android-only"], ios_run.fetch("exclude_tags")
+    assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
     assert_equal ["flaky", "wip", "apple-pay", "ios-only"], android_run.fetch("exclude_tags")
   end
 
@@ -71,9 +71,13 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     refute_includes run_for("react-native-android").fetch("include_tags"), "preload"
   end
 
-  def test_apple_pay_is_excluded_from_every_application_by_default
+  def test_only_the_swift_ios_application_allows_apple_pay
     plan.expand.each do |run|
-      assert_includes run.fetch("exclude_tags"), "apple-pay", run.fetch("application_id")
+      if run.fetch("application_id") == "swift-ios"
+        refute_includes run.fetch("exclude_tags"), "apple-pay"
+      else
+        assert_includes run.fetch("exclude_tags"), "apple-pay", run.fetch("application_id")
+      end
     end
   end
 

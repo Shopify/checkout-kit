@@ -143,10 +143,15 @@ The `e2e-execute-browserstack-run` workflow fans out one parallel copy per Brows
 
 These secrets are configured in Bitrise.io; they cannot live in the repository. `scripts/setup_storefront_env` reads them to configure the sample app before builds.
 
-| Secret                    | Purpose                                        |
-| ------------------------- | ---------------------------------------------- |
-| `STOREFRONT_DOMAIN`       | Storefront domain for sample app builds.       |
-| `STOREFRONT_ACCESS_TOKEN` | Storefront access token for sample app builds. |
+| Secret                                        | Purpose                                                   |
+| --------------------------------------------- | --------------------------------------------------------- |
+| `STOREFRONT_DOMAIN`                           | Storefront domain for sample app builds.                  |
+| `STOREFRONT_ACCESS_TOKEN`                     | Storefront access token for sample app builds.            |
+| `SWIFT_APPLE_PAY_MERCHANT_IDENTIFIER`         | Apple Pay entitlement for the Swift E2E application.      |
+
+Expose these secrets to pull-request builds. The Swift build fails before Xcode
+when the generated merchant identifier is missing or blank, and never prints its
+configured value.
 
 ## BrowserStack secrets
 

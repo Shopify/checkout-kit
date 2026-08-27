@@ -63,11 +63,15 @@ applications:
     app_id: com.shopify.checkoutkit.swiftdemo
     artifact_env: E2E_SWIFT_IOS_APP_PATH
     ready_marker: checkout-kit-sample-ready
-    # See kotlin-android: the override restates the defaults and adds the preload journey.
+    # This provisioned app carries the Apple Pay entitlement and is checked for a
+    # nonblank merchant identifier before it is built.
     include_tags:
       - launch
       - checkout
       - preload
+    exclude_tags:
+      - flaky
+      - wip
     changed_files_filters:
       - swift
       - protocolSwift

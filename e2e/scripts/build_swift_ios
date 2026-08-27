@@ -7,6 +7,7 @@ source "$script_dir/bitrise_ci_helpers"
 source "$script_dir/ios_build_helpers"
 
 e2e_configure_storefront
+"$script_dir/check_swift_apple_pay_config"
 
 e2e_log "Generating Swift sample Xcode projects"
 platforms/swift/Scripts/generate_xcode_projects
