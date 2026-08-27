@@ -278,7 +278,7 @@ workflows:
             - content: |-
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
-                e2e_log "Fetching pull request changed files"
+                e2e_log "Selecting files for the iOS CI run plan"
                 changed_files="$(e2e_changed_files_file)"
                 ruby e2e/scripts/ios_ci_run_plan validate --changed-files-file "$changed_files"
                 e2e_log "Asserting the pipeline can run every selected job"
@@ -481,7 +481,7 @@ workflows:
             - content: |-
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
-                e2e_log "Fetching pull request changed files"
+                e2e_log "Selecting files for the E2E run plan"
                 changed_files="$(e2e_changed_files_file)"
                 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate --changed-files-file "$changed_files"
                 e2e_log "Asserting the pipeline can build every selected target"
