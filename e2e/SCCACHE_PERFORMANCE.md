@@ -42,4 +42,29 @@ Remove the sample workflow's DerivedData restore and save steps. The sample will
 
 ## Experiment results
 
-Pending live Bitrise runs.
+| Workflow and run | Cache state | Full workflow | Build or test step | Compiler result |
+|---|---|---:|---:|---:|
+| [Sample build, branch fallback restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/45022046-086a-41cf-b369-5d4284d81314) | Warm | 3m 3s | 56.85s | 1,194/1,194 hits, 0 compilations |
+| [Sample build, exact restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/39ac4c5a-84cd-474f-a4fd-6ad609394795) | Warm | 3m 2s | 52.45s | 1,194/1,194 hits, 0 compilations |
+| [Integration tests, branch fallback restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/d3ae8ff6-c470-4fae-82a8-0aac98996f7a) | Warm | 2m 9s | 42.77s | 729/729 hits, 0 compilations |
+| [Integration tests, exact restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/4855009e-05d6-4fb7-afaa-e2ffb3d1193f) | Warm | 2m 6s | 40.16s | 729/729 hits, 0 compilations |
+
+Both sample runs reused every compiler result on separate Bitrise workers after the DerivedData cache was removed. This confirms that combining restored DerivedData with regenerated React Native inputs caused the post-rebase sample cache instability.
+
+## Comparison
+
+| Workflow and linked runs | Full workflow change | Build or test step change |
+|---|---:|---:|
+| Sample: [post-rebase exact restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/cb9b79e6-4954-4b05-82ce-190ef2ffbae7) → [experiment exact restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/39ac4c5a-84cd-474f-a4fd-6ad609394795) | 5m 41s → 3m 2s, 46.6% faster | 3.1m → 52.45s, 71.8% faster |
+| Sample: [historical successful warm run](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/d317c07b-ee08-44e6-81de-04e9421acb96) → [experiment exact restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/39ac4c5a-84cd-474f-a4fd-6ad609394795) | 3m 17s → 3m 2s, 7.6% faster | 44.79s → 52.45s, 17.1% slower |
+| Integration tests: [post-rebase exact restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/1f7b10c4-a20a-43a9-b89a-9551da5562a0) → [experiment exact restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/4855009e-05d6-4fb7-afaa-e2ffb3d1193f) | 2m 24s → 2m 6s, 12.5% faster | 48.60s → 40.16s, 17.4% faster |
+| Integration tests: [historical successful warm run](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/c0a1ea80-f128-4392-a3b1-4cbc7f292c05) → [experiment exact restore](https://app.bitrise.io/app/f51f9054-053e-40f1-81e9-ae727567ae76/build/4855009e-05d6-4fb7-afaa-e2ffb3d1193f) | 2m 36s → 2m 6s, 19.2% faster | 51.75s → 40.16s, 22.4% faster |
+
+The sample's exact-restore build step remains 7.66s slower than the linked historical build step, while its complete workflow is 15s faster. The integration workflow was unchanged by this experiment; its lower durations are normal run-to-run variation rather than an effect attributed to removing the sample's DerivedData cache.
+
+## Conclusion
+
+- The sample and integration workflows passed on both experiment runs.
+- The sample reused all compiler results across workers on both a branch fallback and an exact cache restore.
+- Removing the redundant sample DerivedData cache made the complete sample workflow faster than both linked post-rebase and historical warm runs.
+- Integration-test cache behavior remained stable and its experiment runs were faster than both linked baselines.
