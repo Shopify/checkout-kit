@@ -15,6 +15,7 @@ INCLUDE_TAGS="${4:-}"
 EXCLUDE_TAGS="${5:-}"
 TEST_NAMESPACE="${6:?test namespace is required}"
 DEVICE_ID="${E2E_DEVICE_ID:-}"
+RUN_PROFILE="${E2E_RUN_PROFILE:-normal}"
 
 E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$E2E_ROOT"
@@ -42,6 +43,34 @@ exclude_tag() {
 }
 
 REQUESTED_TAGS="$INCLUDE_TAGS"
+
+# Normal runs must never select Apple Pay accidentally. The Swift local runner opts in
+# only after confirming that its generated app configuration contains a merchant ID.
+case "$RUN_PROFILE" in
+  normal)
+    exclude_tag "apple-pay"
+    ;;
+  swift-apple-pay)
+    if [ "$PLATFORM" != "ios" ] || [ "$APP_ID" != "com.shopify.checkoutkit.swiftdemo" ]; then
+      echo "run_maestro: swift-apple-pay requires the Swift iOS sample app" >&2
+      exit 1
+    fi
+    if [ "$INCLUDE_TAGS" != "apple-pay" ]; then
+      echo "run_maestro: swift-apple-pay requires --tags apple-pay by itself" >&2
+      exit 1
+    fi
+    case ",${EXCLUDE_TAGS}," in
+      *",apple-pay,"*)
+        echo "run_maestro: swift-apple-pay cannot exclude apple-pay" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  *)
+    echo "run_maestro: profile must be normal or swift-apple-pay, got '${RUN_PROFILE}'" >&2
+    exit 1
+    ;;
+esac
 
 # Every local target executes the shared tests folder. A platform capability tag marks
 # a test that cannot run on the other platform, so derive the mandatory exclusion from

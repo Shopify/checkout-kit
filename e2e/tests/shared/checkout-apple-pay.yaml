@@ -1,0 +1,19 @@
+appId: ${E2E_APP_ID}
+name: Present and reopen Apple Pay
+# Platform capability: Apple Pay requires PassKit on iOS.
+tags:
+  - checkout
+  - smoke
+  - apple-pay
+  - ios-only
+
+env:
+  E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=guest"
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- runFlow: ../../flows/checkout/present-apple-pay.yaml
+- runFlow: ../../flows/checkout/close-apple-pay.yaml
+- runFlow: ../../flows/checkout/present-apple-pay.yaml
+- runFlow: ../../flows/checkout/close-apple-pay.yaml
+- assertVisible:
+    id: cart-checkout-ready

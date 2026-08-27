@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+CONFIG_PATH="${1:-${REPO_ROOT}/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig}"
+KEY="APPLE_PAY_MERCHANT_IDENTIFIER"
+
+if [ "$#" -gt 1 ]; then
+  echo "Usage: e2e/scripts/check_swift_apple_pay_config [xcconfig-path]" >&2
+  exit 1
+fi
+
+if [ ! -f "$CONFIG_PATH" ]; then
+  echo "Apple Pay E2E requires ${KEY} in ${CONFIG_PATH}, but that file does not exist." >&2
+  echo "Configure the Swift sample storefront before retrying." >&2
+  exit 1
+fi
+
+# Check the assignment without returning its value to the shell or printing it.
+if ! awk -v key="$KEY" '
+  /^[[:space:]]*\/\// || /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+  $0 !~ /=/ { next }
+  {
+    line = $0
+    candidate = line
+    sub(/^[[:space:]]*/, "", candidate)
+    sub(/[[:space:]]*=.*/, "", candidate)
+
+    if (candidate == key) {
+      sub(/^[^=]*=/, "", line)
+      sub(/^[[:space:]]*/, "", line)
+      sub(/[[:space:]]*$/, "", line)
+      found = 1
+      exit(line == "" ? 1 : 0)
+    }
+  }
+  END { if (!found) exit 1 }
+' "$CONFIG_PATH"; then
+  echo "Apple Pay E2E requires a nonblank ${KEY} assignment in ${CONFIG_PATH}." >&2
+  echo "Configure the Swift sample storefront before retrying." >&2
+  exit 1
+fi
