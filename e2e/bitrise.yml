@@ -434,12 +434,6 @@ workflows:
       - bundle::install-ruby-gems: {}
       - bundle::install-sccache: {}
       - bundle::install-cocoapods: {}
-      # The 89 pods here are the React Native New Architecture C++ core. They dominate the
-      # build and only change when the lockfile or the Swift package pins do.
-      - restore-cache@3:
-          inputs:
-            - key: &rn_sample_derived_data_cache_key |-
-                rn-sample-derived-data-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/react-native/sample/ios/Podfile.lock" }}-{{ checksum "Package.resolved" }}
       - bundle::restore-sccache:
           inputs:
             - cache_namespace: rn-sample
@@ -454,10 +448,6 @@ workflows:
                 pnpm module build
                 pnpm sample build:ios
                 sccache --show-stats
-      - save-cache@1:
-          inputs:
-            - key: *rn_sample_derived_data_cache_key
-            - paths: ~/Library/Developer/Xcode/DerivedData
       - bundle::save-sccache: {}
 
   ci-ios-react-native-test-ios:
