@@ -315,8 +315,18 @@ commands:
         run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
 
       e2e:
-        desc: Run the Android sample Maestro tests, filtered by tag
-        syntax: "[--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+        desc: Run Android sample end-to-end tests
+        long_desc: |
+          Runs the Kotlin Android application's coverage from the E2E matrix.
+          With no arguments, opens a picker in an interactive terminal or runs
+          all enabled coverage noninteractively. Pass matrix tags to select a
+          group or positional YAML files to run exact tests.
+
+          Examples:
+            dev android e2e
+            dev android e2e --tags preload
+            dev android e2e tests/shared/launch-smoke.yaml
+        syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
         run: ./e2e/scripts/run_local_e2e kotlin-android "$@"
 
       test:
@@ -467,8 +477,18 @@ commands:
           ../Scripts/xcode_run build CheckoutKitSwiftDemo
 
       e2e:
-        desc: Run the Swift sample Maestro tests, filtered by tag
-        syntax: "[--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+        desc: Run Swift sample end-to-end tests
+        long_desc: |
+          Runs the Swift iOS application's coverage from the E2E matrix.
+          With no arguments, opens a picker in an interactive terminal or runs
+          all enabled coverage noninteractively. Pass matrix tags to select a
+          group or positional YAML files to run exact tests.
+
+          Examples:
+            dev swift e2e
+            dev swift e2e --tags preload
+            dev swift e2e tests/shared/launch-smoke.yaml
+        syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
         run: ./e2e/scripts/run_local_e2e swift-ios "$@"
 
       test:
@@ -630,19 +650,43 @@ commands:
               cd sample/android
               ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
       e2e:
-        desc: Run React Native sample Maestro tests, filtered by tag
-        syntax: "{ios|android} [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+        desc: Run React Native sample end-to-end tests
+        long_desc: |
+          Runs a React Native application's coverage from the E2E matrix.
+          Choose ios or android, then use the interactive picker, matrix tags,
+          or positional YAML files to select coverage.
+        syntax: "{ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
         run: |
-          echo "Usage: dev rn e2e {ios|android} [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]" >&2
+          echo "Usage: dev rn e2e {ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]" >&2
           exit 1
         subcommands:
           ios:
-            desc: Run the React Native iOS Maestro tests
-            syntax: "[--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+            desc: Run React Native iOS end-to-end tests
+            long_desc: |
+              Runs the React Native iOS application's coverage from the E2E matrix.
+              With no arguments, opens a picker in an interactive terminal or runs
+              all enabled coverage noninteractively. Pass matrix tags to select a
+              group or positional YAML files to run exact tests.
+
+              Examples:
+                dev rn e2e ios
+                dev rn e2e ios --tags launch
+                dev rn e2e ios tests/shared/launch-smoke.yaml
+            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
             run: ./e2e/scripts/run_local_e2e react-native-ios "$@"
           android:
-            desc: Run the React Native Android Maestro tests
-            syntax: "[--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+            desc: Run React Native Android end-to-end tests
+            long_desc: |
+              Runs the React Native Android application's coverage from the E2E matrix.
+              With no arguments, opens a picker in an interactive terminal or runs
+              all enabled coverage noninteractively. Pass matrix tags to select a
+              group or positional YAML files to run exact tests.
+
+              Examples:
+                dev rn e2e android
+                dev rn e2e android --tags launch
+                dev rn e2e android tests/shared/launch-smoke.yaml
+            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
             run: ./e2e/scripts/run_local_e2e react-native-android "$@"
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)

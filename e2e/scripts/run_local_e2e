@@ -284,6 +284,77 @@ select_test_files() {
   fi
 }
 
+picker_entries() {
+  printf 'all\tall\tALL       Run all enabled tests\n'
+
+  local tag
+  while IFS= read -r tag; do
+    printf 'tag\t%s\tTAG       %s\n' "$tag" "$tag"
+  done < <(printf '%s\n' "$ENABLED_TAGS" | tr ',' '\n')
+
+  local test_file
+  for test_file in "${ELIGIBLE_TEST_FILES[@]}"; do
+    printf 'file\t%s\tFILE      %s\n' "$test_file" "$test_file"
+  done
+}
+
+interactive_terminal() {
+  [ -t 0 ] && [ -t 1 ]
+}
+
+print_reproducible_command() {
+  printf '\nRunning:\n  %s' "$DEV_COMMAND"
+  local test_file
+  for test_file in "${TEST_FILES[@]}"; do
+    printf ' %q' "$test_file"
+  done
+  [ "$HAS_EXPLICIT_TAGS" = true ] && printf ' --tags %q' "$INCLUDE_TAGS"
+  printf '\n\n'
+}
+
+run_picker() {
+  command -v fzf >/dev/null 2>&1 || {
+    echo "fzf is required for interactive E2E selection. Run dev up and retry." >&2
+    return 1
+  }
+
+  local selection
+  selection="$(picker_entries | fzf \
+    --multi \
+    --height 80% \
+    --reverse \
+    --delimiter $'\t' \
+    --with-nth 3 \
+    --prompt "$TARGET E2E > " \
+    --header $'Tab: select multiple • Enter: run • Esc: cancel\nChoose tag groups, exact tests, or Run all')" || return $?
+
+  INCLUDE_TAGS=""
+  TEST_FILES=()
+  local type
+  local value
+  local display
+  local selected_all=false
+
+  while IFS=$'\t' read -r type value display; do
+    case "$type" in
+      all) selected_all=true ;;
+      tag)
+        INCLUDE_TAGS="${INCLUDE_TAGS:+${INCLUDE_TAGS},}${value}"
+        HAS_EXPLICIT_TAGS=true
+        ;;
+      file) TEST_FILES+=("$value") ;;
+    esac
+  done <<< "$selection"
+
+  if [ "$selected_all" = true ]; then
+    INCLUDE_TAGS="$MATRIX_INCLUDE_TAGS"
+    HAS_EXPLICIT_TAGS=false
+    TEST_FILES=()
+  fi
+
+  print_reproducible_command
+}
+
 metro_running() {
   curl --silent --fail http://localhost:8081/status | grep -q "packager-status:running"
 }
@@ -407,6 +478,7 @@ main() {
 
   configure_target "$1"
   shift
+  SELECTOR_COUNT="$#"
 
   INCLUDE_TAGS=""
   EXCLUDE_TAGS=""
@@ -423,6 +495,9 @@ main() {
   load_application_tags
   load_eligible_test_files
   load_enabled_tags
+  if [ "$SELECTOR_COUNT" -eq 0 ] && interactive_terminal; then
+    run_picker
+  fi
   validate_explicit_tags
   select_test_files
 
