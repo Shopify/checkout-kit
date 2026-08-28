@@ -48,6 +48,10 @@ up:
       met?: ./scripts/install_maestro --check
       meet: ./scripts/install_maestro
   - custom:
+      name: Install the pinned maestro-runner version
+      met?: ./scripts/install_maestro_runner --check
+      meet: ./scripts/install_maestro_runner
+  - custom:
       name: Run Checkout Kit workspace setup
       met?: ./scripts/setup_dev_workspace --check
       meet: ./scripts/setup_dev_workspace

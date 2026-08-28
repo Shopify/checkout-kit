@@ -149,6 +149,21 @@ Count BrowserStack run plan rows:
 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
 ```
 
+## BrowserStack executors
+
+The Bitrise run stage defaults to BrowserStack-hosted Maestro. Set
+`E2E_BROWSERSTACK_EXECUTOR=maestro-runner` to use the checksum-verified pin in
+`.maestro-runner-version`; it runs on the Bitrise worker and connects to BrowserStack
+real devices through the Appium hub.
+
+The Appium executor uploads only the app artifact, writes the runner's JSON, JUnit,
+HTML, screenshots, hierarchy, logs, and session IDs into the run result artifact,
+and preserves the normalized `result.json` contract used by GitHub reporting. It
+uses a temporary copy of the E2E workspace to enable `launchApp.newSession` on
+Android. On iOS it relies on BrowserStack's clean physical-device session and skips
+the simulator-only `clearState` command that BrowserStack cannot execute. The
+shared flows consumed by hosted Maestro remain unchanged.
+
 ## Files
 
 - `config.yaml` configures Maestro for shared platform behavior and quarantines

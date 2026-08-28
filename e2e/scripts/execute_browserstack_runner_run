@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "optparse"
+require_relative "../lib/browserstack_client"
+require_relative "../lib/browserstack_runner_executor"
+
+options = {
+  run_plan_path: ENV["E2E_BROWSERSTACK_RUN_PLAN_JSON"] || "browserstack-run-plan.json",
+  run_index: ENV["BITRISE_IO_PARALLEL_INDEX"]&.to_i,
+  output_dir: ENV["E2E_BROWSERSTACK_RESULTS_DIR"] || File.join(Dir.pwd, "e2e-results")
+}
+
+OptionParser.new do |parser|
+  parser.on("--run-plan PATH") { |path| options[:run_plan_path] = path }
+  parser.on("--index INDEX", Integer) { |index| options[:run_index] = index }
+  parser.on("--output-dir PATH") { |path| options[:output_dir] = path }
+end.parse!
+
+raise ArgumentError, "run index is required" if options[:run_index].nil?
+
+run_plan = JSON.parse(File.read(options.fetch(:run_plan_path)))
+run = run_plan.fetch(options.fetch(:run_index))
+app_path = ENV.fetch(run.fetch("artifact_env"))
+runner_binary = `#{File.expand_path("maestro_runner_bin", __dir__)}`.strip
+raise "could not resolve maestro-runner" unless $?.success?
+
+client = BrowserStackClient.new(
+  username: ENV.fetch("BROWSERSTACK_USERNAME"),
+  access_key: ENV.fetch("BROWSERSTACK_ACCESS_KEY"),
+  retries: ENV.fetch("E2E_BROWSERSTACK_API_RETRIES", "1").to_i
+)
+
+BrowserStackRunnerExecutor.new(
+  client: client,
+  run: run,
+  app_path: app_path,
+  output_dir: options.fetch(:output_dir),
+  runner_binary: runner_binary
+).execute!
