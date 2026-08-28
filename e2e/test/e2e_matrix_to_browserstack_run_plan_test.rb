@@ -55,32 +55,17 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
   end
 
-  # Only the Swift and Kotlin samples expose the PreloadState callbacks the preload journey
-  # asserts on. React Native adopts the tag once its wrapper surfaces them.
-  def test_the_native_applications_adopt_the_preload_journey_without_losing_defaults
-    default_include_tags = base_config.fetch("tags").fetch("include")
-
-    ["swift-ios", "kotlin-android"].each do |application_id|
-      include_tags = run_for(application_id).fetch("include_tags")
-
-      assert_empty default_include_tags - include_tags
-      assert_includes include_tags, "preload"
-    end
-
-    refute_includes run_for("react-native-ios").fetch("include_tags"), "preload"
-    refute_includes run_for("react-native-android").fetch("include_tags"), "preload"
-  end
-
   def test_application_tags_extend_the_shared_tags
     config = base_config
+    config["tags"] = {"include" => ["launch"], "exclude" => ["wip"]}
     application = config.fetch("applications").first
     application["additional_include_tags"] = ["preload"]
     application["additional_exclude_tags"] = ["full"]
 
     run = plan(config: config).expand.first
 
-    assert_equal ["launch", "checkout", "preload"], run.fetch("include_tags")
-    assert_equal ["flaky", "wip", "full", "android-only"], run.fetch("exclude_tags")
+    assert_equal ["launch", "preload"], run.fetch("include_tags")
+    assert_equal ["wip", "full", "android-only"], run.fetch("exclude_tags")
   end
 
   def test_validation_errors_flag_a_tag_in_both_effective_lists

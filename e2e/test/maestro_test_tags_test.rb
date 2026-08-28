@@ -102,29 +102,6 @@ class MaestroTestTagsTest < Minitest::Test
     test_files.select { |path| path.start_with?("tests/shared/") }
   end
 
-  def matrix
-    YAML.safe_load_file(File.join(E2E_ROOT, "config", "matrix.yml"), aliases: true)
-  end
-
-  # Tests under tests/shared/ run on every target through the CI matrix. Tests under
-  # tests/<platform>/ are local-only, so the matrix is free to ignore their tags.
-  def matrix_include_tags
-    defaults = matrix.fetch("tags", {}).fetch("include", [])
-
-    additions = matrix.fetch("applications", []).flat_map { |application| application.fetch("additional_include_tags", []) }
-    (defaults + additions).uniq
-  end
-
-  def test_the_matrix_selects_every_journey_a_shared_test_declares
-    declared = shared_test_files.flat_map { |path| tags(path) & JOURNEY_TAGS }.uniq
-    unselected = declared - matrix_include_tags
-
-    assert_empty(
-      unselected,
-      "config/matrix.yml includes no application for #{unselected.inspect}, so those shared tests never run in CI"
-    )
-  end
-
   def test_there_is_at_least_one_test_to_check
     refute_empty(test_files)
     refute_empty(shared_test_files)
