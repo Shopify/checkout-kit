@@ -11,6 +11,18 @@ struct CheckoutProtocolTests {
         #expect(CheckoutProtocol.defaultDelegations == ["window.open"])
     }
 
+    @Test func urlDecoratesCheckoutForEmbeddedProtocol() throws {
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?key=cart_token"))
+        let decoratedURL = CheckoutProtocol.url(for: url)
+        let items = try #require(URLComponents(url: decoratedURL, resolvingAgainstBaseURL: false)?.queryItems)
+
+        #expect(items.filter { $0.name == "key" }.map(\.value) == ["cart_token"])
+        #expect(items.filter { $0.name == "ec_version" }.map(\.value) == [EmbeddedCheckoutProtocol.specVersion])
+        #expect(items.filter { $0.name == "ec_delegate" }.map(\.value) == ["window.open"])
+        #expect(items.filter { $0.name == "ec_color_scheme" }.count == 1)
+        #expect(items.filter { $0.name == "ck_branding" }.count == 1)
+    }
+
     @Test func supportedProtocolMethodsCoverReadyCuratedNotificationsAndWindowOpen() {
         #expect(CheckoutProtocol.supportedProtocolMethods == [
             "ec.ready",

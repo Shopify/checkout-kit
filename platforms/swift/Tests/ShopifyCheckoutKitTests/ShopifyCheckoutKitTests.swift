@@ -3,13 +3,14 @@ import XCTest
 
 @MainActor
 class ShopifyCheckoutKitTests: XCTestCase {
-    let checkoutURL = URL(string: "https://shop.example/checkouts/cn/123")!
+    let checkoutURL = URL(string: "https://shop.example/checkouts/cn/123?key=cart_token")!
 
     private var originalConfiguration: Configuration!
 
     override func setUp() async throws {
         try await super.setUp()
         originalConfiguration = ShopifyCheckoutKit.configuration
+        ShopifyCheckoutKit.configuration.appearance = .app(.dark)
         CheckoutWebView.invalidate()
     }
 
@@ -61,6 +62,15 @@ class ShopifyCheckoutKitTests: XCTestCase {
             originalLogger === newLogger,
             "Changing log level should create a new logger instance"
         )
+    }
+
+    func test_present_decoratesCheckoutURL() throws {
+        let viewController = ShopifyCheckoutKit.present(
+            checkout: checkoutURL,
+            from: UIViewController()
+        )
+
+        try assertDecoratedCheckoutURL(loadedCheckoutURL(from: viewController))
     }
 
     func test_present_propagatesDelegateAndClientToWebViewController() throws {
@@ -116,6 +126,20 @@ class ShopifyCheckoutKitTests: XCTestCase {
     func test_preload_returnsNilWhenDisabled() {
         ShopifyCheckoutKit.configuration.preloading.enabled = false
         XCTAssertNil(ShopifyCheckoutKit.preload(checkout: checkoutURL))
+    }
+
+    func test_preload_decoratesCheckoutURL() throws {
+        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        let expectedURL = CheckoutURLDecorator.decorate(checkoutURL)
+        let checkoutView = try XCTUnwrap(
+            CheckoutWebView.preloadCache.view(
+                for: PreloadKey(url: expectedURL, entryPoint: nil)
+            )
+        )
+
+        try assertDecoratedCheckoutURL(checkoutView.loadedCheckoutURL)
+        withExtendedLifetime(preload) {}
     }
 
     func test_preload_returnsPreloadWhenEnabled() {
