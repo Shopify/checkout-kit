@@ -63,30 +63,51 @@ class RunLocalE2ETest < Minitest::Test
     assert_equal './e2e/scripts/run_local_e2e react-native-android "$@"', commands.dig("react-native", "subcommands", "e2e", "subcommands", "android", "run")
   end
 
-  def test_runner_owns_tag_argument_parsing
+  def test_runner_parses_tags_and_positional_test_files
     output, error, status = Open3.capture3(
       "bash",
       "-c",
-      'source "$1"; INCLUDE_TAGS=""; EXCLUDE_TAGS=""; parse_maestro_tag_args --tags smoke,cart --exclude-tags flaky; printf "%s\n%s\n" "$INCLUDE_TAGS" "$EXCLUDE_TAGS"',
+      'source "$1"; INCLUDE_TAGS=""; EXCLUDE_TAGS=""; HAS_EXPLICIT_TAGS=false; TEST_FILES=(); parse_arguments exact-flow --tags launch --exclude-tags flaky; printf "%s\n%s\n%s\n" "$INCLUDE_TAGS" "$EXCLUDE_TAGS" "${TEST_FILES[*]}"',
       "run-local-e2e-test",
       RUNNER
     )
 
     assert status.success?, error
-    assert_equal ["smoke,cart", "flaky"], output.lines.map(&:chomp)
+    assert_equal ["launch", "flaky", "exact-flow"], output.lines.map(&:chomp)
   end
 
   def test_exclude_tags_requires_a_value
     _output, error, status = Open3.capture3(
       "bash",
       "-c",
-      'source "$1"; INCLUDE_TAGS=""; EXCLUDE_TAGS=""; parse_maestro_tag_args --exclude-tags',
+      'source "$1"; INCLUDE_TAGS=""; EXCLUDE_TAGS=""; HAS_EXPLICIT_TAGS=false; TEST_FILES=(); parse_arguments --exclude-tags',
       "run-local-e2e-test",
       RUNNER
     )
 
     refute status.success?
     assert_includes error, "--exclude-tags needs a comma separated tag list"
+  end
+
+  def test_no_selectors_choose_every_eligible_test
+    output, error, status = local_selection
+
+    assert status.success?, error
+    assert_equal ["tests/shared/presentation.yaml", "tests/swift/preload.yaml"], output.lines.map(&:chomp)
+  end
+
+  def test_tag_and_positional_selectors_form_a_union
+    output, error, status = local_selection("presentation", "--tags", "preload")
+
+    assert status.success?, error
+    assert_equal ["tests/swift/preload.yaml", "tests/shared/presentation.yaml"], output.lines.map(&:chomp)
+  end
+
+  def test_positional_selection_rejects_a_test_outside_application_coverage
+    _output, error, status = local_selection("completion")
+
+    refute status.success?
+    assert_includes error, "tests/shared/completion.yaml is not enabled for swift-ios"
   end
 
   def test_maestro_runs_shared_and_target_specific_test_files
@@ -111,6 +132,12 @@ class RunLocalE2ETest < Minitest::Test
     refute_includes swift_arguments, "."
   end
 
+  def test_maestro_runs_only_explicit_test_files_when_provided
+    arguments = maestro_arguments("swift", "tests/synthetic/exact-flow.yaml")
+
+    assert_equal ["tests/synthetic/exact-flow.yaml"], arguments.grep(%r{\Atests/})
+  end
+
   def test_target_specific_and_old_named_runners_are_removed
     REMOVED_RUNNERS.each do |path|
       refute_path_exists File.join(REPO_ROOT, path)
@@ -119,7 +146,46 @@ class RunLocalE2ETest < Minitest::Test
 
   private
 
-  def maestro_arguments(test_namespace)
+  def local_selection(*arguments)
+    Open3.capture3(
+      "bash",
+      "-c",
+      <<~'SH',
+        source "$1"
+        shift
+        configure_target swift-ios
+        INCLUDE_TAGS=""
+        EXCLUDE_TAGS=""
+        HAS_EXPLICIT_TAGS=false
+        TEST_FILES=()
+        CANDIDATE_TEST_FILES=(
+          tests/shared/presentation.yaml
+          tests/shared/completion.yaml
+          tests/swift/preload.yaml
+        )
+        ELIGIBLE_TEST_FILES=(
+          tests/shared/presentation.yaml
+          tests/swift/preload.yaml
+        )
+        RESOLVED_TEST_FILES=()
+        test_file_tags() {
+          case "$1" in
+            tests/shared/presentation.yaml) printf 'presentation,smoke\n' ;;
+            tests/shared/completion.yaml) printf 'completion,full\n' ;;
+            tests/swift/preload.yaml) printf 'preload,smoke\n' ;;
+          esac
+        }
+        parse_arguments "$@"
+        select_test_files
+        printf '%s\n' "${RESOLVED_TEST_FILES[@]}"
+      SH
+      "run-local-e2e-test",
+      RUNNER,
+      *arguments
+    )
+  end
+
+  def maestro_arguments(test_namespace, *test_files)
     Dir.mktmpdir do |directory|
       version = File.read(File.join(REPO_ROOT, "e2e", ".maestro-version")).strip
       binary = File.join(directory, version, "bin", "maestro")
@@ -135,7 +201,8 @@ class RunLocalE2ETest < Minitest::Test
         "ready-marker",
         "",
         "",
-        test_namespace
+        test_namespace,
+        *test_files
       )
 
       assert status.success?, error

@@ -42,19 +42,23 @@ on. Then run the matching command from the repo root.
 | React Native iOS | `dev rn e2e ios` |
 | React Native Android | `dev rn e2e android` |
 
-Each command runs the tests in `tests/shared/` and its target namespace under
-`tests/`. Narrow a run with `--tags`:
+Each command runs the tests enabled for its application in `config/matrix.yml`.
+With no selectors, it runs all enabled tests. Narrow a run with enabled tags or
+positional YAML files:
 
 ```bash
 dev swift e2e --tags checkout-presentation
-dev rn e2e ios --tags checkout-completion
-dev android e2e --tags launch,buyer-identity
+dev rn e2e ios tests/shared/checkout-present-and-close.yaml
+dev android e2e launch-smoke
+dev swift e2e launch-smoke --tags preload
 ```
 
-Both options match **any** listed tag, because that is how Maestro filters.
-`--tags launch,buyer-identity` runs the launch and buyer identity coverage.
-`--exclude-tags` skips tests carrying any listed tag. `config.yaml` quarantines
-`flaky` and `wip` for every run, so those need no command line option.
+Tag lists match **any** listed tag. Positional files select exact flows and may
+be paths, filenames, or basenames without `.yaml`. Tags and files form a union,
+so the last example runs both launch and preload coverage. A file must belong to
+the application namespace and carry coverage enabled for that application.
+`--exclude-tags` adds exclusions to those configured in the matrix. `flaky` and
+`wip` are already excluded from every application by default.
 
 ### Tags
 

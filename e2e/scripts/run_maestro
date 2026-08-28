@@ -2,7 +2,7 @@
 #
 # Runs the shared Maestro suite for one platform and one sample app.
 #
-# Usage: run_maestro <ios|android> <app_id> <ready_marker> [include_tags] [exclude_tags] <test_namespace>
+# Usage: run_maestro <ios|android> <app_id> <ready_marker> [include_tags] [exclude_tags] <test_namespace> [test_file...]
 #
 # Every platform runner calls this script, so the environment contract has exactly one
 # definition. Maestro exits non-zero when a tag or the flows glob matches nothing.
@@ -15,6 +15,8 @@ INCLUDE_TAGS="${4:-}"
 EXCLUDE_TAGS="${5:-}"
 TEST_NAMESPACE="${6:?test namespace is required}"
 DEVICE_ID="${E2E_DEVICE_ID:-}"
+shift 6
+EXPLICIT_TEST_FILES=("$@")
 
 E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$E2E_ROOT"
@@ -33,10 +35,14 @@ MAESTRO_ARGS=(--platform "$PLATFORM" test --config config.yaml)
 TEST_DIRECTORIES=(tests/shared)
 TEST_FILES=()
 
-[ -d "tests/$TEST_NAMESPACE" ] && TEST_DIRECTORIES+=("tests/$TEST_NAMESPACE")
-while IFS= read -r test_file; do
-  TEST_FILES+=("$test_file")
-done < <(find "${TEST_DIRECTORIES[@]}" -type f -name "*.yaml" | sort)
+if [ "${#EXPLICIT_TEST_FILES[@]}" -gt 0 ]; then
+  TEST_FILES=("${EXPLICIT_TEST_FILES[@]}")
+else
+  [ -d "tests/$TEST_NAMESPACE" ] && TEST_DIRECTORIES+=("tests/$TEST_NAMESPACE")
+  while IFS= read -r test_file; do
+    TEST_FILES+=("$test_file")
+  done < <(find "${TEST_DIRECTORIES[@]}" -type f -name "*.yaml" | sort)
+fi
 
 [ -n "$INCLUDE_TAGS" ] && MAESTRO_ARGS+=(--include-tags "$INCLUDE_TAGS")
 [ -n "$EXCLUDE_TAGS" ] && MAESTRO_ARGS+=(--exclude-tags "$EXCLUDE_TAGS")

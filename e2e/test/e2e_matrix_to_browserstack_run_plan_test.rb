@@ -80,6 +80,21 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal ["wip", "full"], run.fetch("exclude_tags")
   end
 
+  def test_application_config_matches_the_expanded_application_tags
+    expanded = plan.expand.first
+    application = plan.application_config(expanded.fetch("application_id"))
+
+    assert_equal expanded.fetch("application_id"), application.fetch("application_id")
+    assert_equal expanded.fetch("include_tags"), application.fetch("include_tags")
+    assert_equal expanded.fetch("exclude_tags"), application.fetch("exclude_tags")
+  end
+
+  def test_application_config_rejects_an_unknown_application
+    error = assert_raises(KeyError) { plan.application_config("unknown") }
+
+    assert_includes error.message, "unknown E2E application unknown"
+  end
+
   def test_validation_errors_flag_a_tag_in_both_configured_lists
     config = base_config
     config.fetch("applications").first["additional_include_tags"] = ["wip"]

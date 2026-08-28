@@ -69,6 +69,18 @@ class E2EMatrixToBrowserStackRunPlan
     applications.select { |application| application_matches_changed_files?(application) }
   end
 
+  def application_config(application_id)
+    ensure_valid!
+    application = applications.find { |candidate| candidate.fetch("id") == application_id }
+    raise KeyError, "unknown E2E application #{application_id}" unless application
+
+    {
+      "application_id" => application_id,
+      "include_tags" => application_tags(application, "include"),
+      "exclude_tags" => effective_tags(application)
+    }
+  end
+
   def bitrise_env
     ensure_valid!
     selected_ids = selected_applications.map { |application| application.fetch("id") }
