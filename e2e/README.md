@@ -48,7 +48,8 @@ positional YAML files:
 
 ```bash
 dev swift e2e --tags checkout-presentation
-dev rn e2e ios tests/shared/checkout-present-and-close.yaml
+dev rn e2e ios --tags apple-pay
+dev rn e2e ios tests/shared/checkout-apple-pay.yaml
 dev android e2e launch-smoke
 dev swift e2e launch-smoke --tags preload
 ```
@@ -70,7 +71,7 @@ Every test declares tags from this taxonomy.
 
 | Group | Tags | Rule |
 |---|---|---|
-| Coverage | `launch`, `cart`, `checkout-presentation`, `checkout-completion`, `buyer-identity`, `account`, `preload` | Exactly one per test |
+| Coverage | `launch`, `cart`, `checkout-presentation`, `checkout-completion`, `buyer-identity`, `apple-pay`, `account`, `preload` | Exactly one per test |
 | Cost tier | `smoke`, `full` | Exactly one per test |
 | Quarantine | `flaky`, `wip` | Excluded by default, in `config.yaml` |
 
@@ -169,6 +170,10 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
   already carries the contact and the delivery address.
 - `tests/shared/checkout-guest.yaml` orders from an empty identity, so checkout
   asks for the contact and the delivery address as well as the payment.
+- `tests/shared/checkout-apple-pay.yaml` presents, closes, and reopens Apple Pay
+  on both iOS applications.
+- `scripts/check_apple_pay_config` verifies that signed iOS builds received a
+  merchant identifier without printing its value.
 - `scripts/run_local_e2e` builds and installs any of the four local targets.
 - `scripts/run_maestro` is their single Maestro invocation. It holds the
   environment contract and target-specific test-file selection in one place.

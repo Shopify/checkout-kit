@@ -7,6 +7,7 @@ source "$script_dir/bitrise_ci_helpers"
 source "$script_dir/ios_build_helpers"
 
 e2e_configure_storefront
+"$script_dir/check_apple_pay_config" platforms/react-native/sample/ios/Config.xcconfig
 
 cd platforms/react-native/sample/ios
 

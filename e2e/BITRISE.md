@@ -165,7 +165,10 @@ and runs `scripts/generate_env_files`. That generates `.env` and `e2e/.env`;
 neither the key nor decrypted values enter an argument list or build log.
 
 Both committed EJSON files must use the same keypair because one Bitrise secret
-cannot hold two private keys. To change a value, run `dev secrets edit demo` or
+cannot hold two private keys. The E2E config supplies separate Apple Pay merchant
+identifiers for the signed Swift and React Native iOS applications. Both iOS build
+workflows verify that their generated xcconfig contains a nonblank identifier
+without printing it. To change a value, run `dev secrets edit demo` or
 `dev secrets edit e2e` and commit the encrypted file.
 
 ## BrowserStack secrets
@@ -181,9 +184,9 @@ BrowserStack artifact links in GitHub reports require access to BrowserStack App
 
 ## Code signing
 
-React Native iOS IPA generation uses Bitrise's certificate and profile installer before running `xcodebuild archive` and `xcodebuild -exportArchive`.
+Swift and React Native iOS IPA generation uses Bitrise's certificate and profile installer before running `xcodebuild archive` and `xcodebuild -exportArchive`.
 
-Upload the signing certificate and provisioning profile for the React Native sample app to the Bitrise app; the iOS artifact workflow installs them before archiving. The iOS build reads the following signing values with the defaults shown, and each can be overridden with a matching Bitrise environment variable:
+Upload signing certificates and Apple Pay-capable provisioning profiles for both sample apps to the Bitrise app; the iOS artifact workflows install them before archiving. The iOS build reads the following signing values with the defaults shown, and each can be overridden with a matching Bitrise environment variable:
 
 | Variable                                 | Default                                   | Purpose                                                                                                                                             |
 | ---------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
