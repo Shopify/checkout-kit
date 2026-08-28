@@ -43,18 +43,6 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal ".", run_for("swift-ios").fetch("execute")
   end
 
-  def test_runs_carry_default_tags_and_the_other_platform_exclusion
-    # The native rows override their include list to adopt the preload journey, so the
-    # defaults are asserted on a row that still inherits them.
-    default_run = run_for("react-native-ios")
-    ios_run = run_for("swift-ios")
-    android_run = run_for("kotlin-android")
-
-    assert_equal ["launch", "checkout"], default_run.fetch("include_tags")
-    assert_equal ["flaky", "wip", "android-only"], ios_run.fetch("exclude_tags")
-    assert_equal ["flaky", "wip", "ios-only"], android_run.fetch("exclude_tags")
-  end
-
   def test_application_tags_extend_the_shared_tags
     config = base_config
     config["tags"] = {"include" => ["launch"], "exclude" => ["wip"]}
@@ -65,16 +53,16 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     run = plan(config: config).expand.first
 
     assert_equal ["launch", "preload"], run.fetch("include_tags")
-    assert_equal ["wip", "full", "android-only"], run.fetch("exclude_tags")
+    assert_equal ["wip", "full"], run.fetch("exclude_tags")
   end
 
-  def test_validation_errors_flag_a_tag_in_both_effective_lists
+  def test_validation_errors_flag_a_tag_in_both_configured_lists
     config = base_config
-    config.fetch("applications").first["additional_include_tags"] = ["android-only"]
+    config.fetch("applications").first["additional_include_tags"] = ["wip"]
 
     errors = plan(config: config).validation_errors
 
-    assert_includes errors, "application react-native-ios includes and excludes [\"android-only\"]"
+    assert_includes errors, "application react-native-ios includes and excludes [\"wip\"]"
   end
 
   def test_a_control_link_follows_the_app_id_on_every_application

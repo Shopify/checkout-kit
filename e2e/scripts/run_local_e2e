@@ -10,9 +10,9 @@ usage() {
     cat <<EOF >&2
 Usage: $DEV_COMMAND [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
 
-Runs the shared and $TARGET_DESCRIPTION-specific Maestro tests. Tags come from the
-taxonomy: journey (launch, cart, checkout, account), cost tier (smoke, full),
-quarantine (flaky, wip) and platform capability (ios-only, android-only).
+Runs the shared and $TARGET_DESCRIPTION-specific Maestro tests. Coverage tags select
+the primary behavior under test. Cost tier tags are smoke and full, and flaky and
+wip quarantine tests from normal runs.
 
 Options:
   --tags TAG[,TAG...]           Run only tests carrying any of these tags.

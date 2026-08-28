@@ -1,7 +1,7 @@
 appId: ${E2E_APP_ID}
 name: Present checkout and close it
 tags:
-  - checkout
+  - checkout-presentation
   - smoke
 
 env:
