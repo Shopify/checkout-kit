@@ -53,8 +53,10 @@ dev android e2e launch-smoke
 dev swift e2e launch-smoke --tags preload
 ```
 
-Tag lists match **any** listed tag. Positional files select exact flows and may
-be paths, filenames, or basenames without `.yaml`. Tags and files form a union,
+Tag lists match **any** listed tag, including secondary tags such as `smoke` and
+`full` when they occur on tests enabled for the application. Positional files
+select exact flows and may be paths, filenames, or basenames without `.yaml`.
+Tags and files form a union,
 so the last example runs both launch and preload coverage. A file must belong to
 the application namespace and carry coverage enabled for that application.
 `--exclude-tags` adds exclusions to those configured in the matrix. `flaky` and

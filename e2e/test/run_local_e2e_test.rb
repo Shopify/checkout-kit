@@ -103,6 +103,30 @@ class RunLocalE2ETest < Minitest::Test
     assert_equal ["tests/swift/preload.yaml", "tests/shared/presentation.yaml"], output.lines.map(&:chomp)
   end
 
+  def test_secondary_tags_select_matching_eligible_tests
+    output, error, status = local_selection("--tags", "smoke")
+
+    assert status.success?, error
+    assert_equal ["tests/shared/presentation.yaml", "tests/swift/preload.yaml"], output.lines.map(&:chomp)
+  end
+
+  def test_unknown_tag_prints_enabled_tags
+    _output, error, status = local_selection("--tags", "unknown")
+
+    refute status.success?
+    assert_includes error, "Enabled tags: presentation,smoke,preload"
+  end
+
+  def test_unknown_file_prints_known_test_files
+    _output, error, status = local_selection("unknown")
+
+    refute status.success?
+    assert_includes error, "Known E2E test files:"
+    assert_includes error, "tests/shared/presentation.yaml"
+    assert_includes error, "tests/shared/completion.yaml"
+    assert_includes error, "tests/swift/preload.yaml"
+  end
+
   def test_positional_selection_rejects_a_test_outside_application_coverage
     _output, error, status = local_selection("completion")
 
@@ -167,6 +191,9 @@ class RunLocalE2ETest < Minitest::Test
           tests/shared/presentation.yaml
           tests/swift/preload.yaml
         )
+        MATRIX_INCLUDE_TAGS="presentation,preload"
+        MATRIX_EXCLUDE_TAGS="flaky,wip,android-only"
+        ENABLED_TAGS=""
         RESOLVED_TEST_FILES=()
         test_file_tags() {
           case "$1" in
@@ -176,6 +203,8 @@ class RunLocalE2ETest < Minitest::Test
           esac
         }
         parse_arguments "$@"
+        load_enabled_tags
+        validate_explicit_tags
         select_test_files
         printf '%s\n' "${RESOLVED_TEST_FILES[@]}"
       SH
