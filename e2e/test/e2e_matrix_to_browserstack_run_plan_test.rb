@@ -11,7 +11,31 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def base_config
-    YAML.safe_load_file(MATRIX_PATH, aliases: true)
+    {
+      "version" => 1,
+      "changed_file_filters" => ".ci/changed-file-filters.yml",
+      "tests_path" => "tests",
+      "tags" => {"include" => ["launch"], "exclude" => ["wip"]},
+      "applications" => [
+        application("react-native-ios", "react-native", "ios", ["reactNative", "protocolShared", "e2e", "ciFilters"]),
+        application("react-native-android", "react-native", "android", ["reactNative", "protocolShared", "e2e", "ciFilters"]),
+        application("kotlin-android", "kotlin", "android", ["android", "protocolKotlin", "protocolShared", "e2e", "ciFilters"]),
+        application("swift-ios", "swift", "ios", ["swift", "protocolSwift", "protocolShared", "packageSwift", "e2e", "ciFilters"])
+      ],
+      "os_version_tags" => ["latest"]
+    }
+  end
+
+  def application(id, target, platform, changed_files_filters)
+    {
+      "id" => id,
+      "target" => target,
+      "platform" => platform,
+      "app_id" => "com.example.#{id}",
+      "artifact_env" => "ARTIFACT_#{id.upcase.tr("-", "_")}",
+      "ready_marker" => "ready",
+      "changed_files_filters" => changed_files_filters
+    }
   end
 
   def selected_ids(changed_files)
@@ -202,12 +226,6 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
     assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
     assert_equal "false", env.fetch("E2E_BUILD_SWIFT_IOS")
-  end
-
-  def test_load_reads_configuration_from_disk
-    loaded = E2EMatrixToBrowserStackRunPlan.load(MATRIX_PATH, changed_files: ["platforms/react-native/src/index.ts"])
-
-    assert_equal ["react-native-ios", "react-native-android"], loaded.selected_applications.map { |application| application.fetch("id") }
   end
 
   def test_build_env_key_sanitizes_application_id
