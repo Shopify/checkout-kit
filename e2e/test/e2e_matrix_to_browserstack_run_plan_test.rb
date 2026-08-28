@@ -71,20 +71,21 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     refute_includes run_for("react-native-android").fetch("include_tags"), "preload"
   end
 
-  def test_an_application_overrides_the_default_tags
+  def test_application_tags_extend_the_shared_tags
     config = base_config
-    config.fetch("applications").first["include_tags"] = ["launch", "checkout"]
-    config.fetch("applications").first["exclude_tags"] = ["wip", "android-only"]
+    application = config.fetch("applications").first
+    application["additional_include_tags"] = ["preload"]
+    application["additional_exclude_tags"] = ["full"]
 
     run = plan(config: config).expand.first
 
-    assert_equal ["launch", "checkout"], run.fetch("include_tags")
-    assert_equal ["wip", "android-only"], run.fetch("exclude_tags")
+    assert_equal ["launch", "checkout", "preload"], run.fetch("include_tags")
+    assert_equal ["flaky", "wip", "full", "android-only"], run.fetch("exclude_tags")
   end
 
   def test_validation_errors_flag_a_tag_in_both_effective_lists
     config = base_config
-    config.fetch("applications").first["include_tags"] = ["launch", "android-only"]
+    config.fetch("applications").first["additional_include_tags"] = ["android-only"]
 
     errors = plan(config: config).validation_errors
 
@@ -110,22 +111,25 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_includes errors, "tags include 'teleport' but no test in tests/ carries it"
   end
 
-  def test_validation_errors_flags_an_application_include_tag_no_test_carries
+  def test_validation_errors_flags_an_additional_include_tag_no_test_carries
     config = base_config
-    config.fetch("applications").first["include_tags"] = ["teleport"]
+    config.fetch("applications").first["additional_include_tags"] = ["teleport"]
 
     errors = plan(config: config).validation_errors
 
-    assert_includes errors, "application react-native-ios include_tags 'teleport' but no test in tests/ carries it"
+    assert_includes errors, "application react-native-ios additional_include_tags 'teleport' but no test in tests/ carries it"
   end
 
-  def test_validation_errors_flags_non_array_include_tags
+  def test_validation_errors_flags_non_array_additional_tags
     config = base_config
-    config.fetch("applications").first["include_tags"] = "launch"
+    application = config.fetch("applications").first
+    application["additional_include_tags"] = "launch"
+    application["additional_exclude_tags"] = "wip"
 
     errors = plan(config: config).validation_errors
 
-    assert_includes errors, "application react-native-ios include_tags must be an array"
+    assert_includes errors, "application react-native-ios additional_include_tags must be an array"
+    assert_includes errors, "application react-native-ios additional_exclude_tags must be an array"
   end
 
   def test_validation_errors_flags_a_missing_tests_path

@@ -111,7 +111,8 @@ class MaestroTestTagsTest < Minitest::Test
   def matrix_include_tags
     defaults = matrix.fetch("tags", {}).fetch("include", [])
 
-    matrix.fetch("applications", []).flat_map { |application| application.fetch("include_tags", defaults) }.uniq
+    additions = matrix.fetch("applications", []).flat_map { |application| application.fetch("additional_include_tags", []) }
+    (defaults + additions).uniq
   end
 
   def test_the_matrix_selects_every_journey_a_shared_test_declares
