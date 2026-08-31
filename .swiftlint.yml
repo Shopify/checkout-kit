@@ -11,6 +11,8 @@ disabled_rules:
 included:
   - platforms/swift/Sources
   - platforms/swift/Tests
+  - telemetry/languages/swift/Sources
+  - telemetry/languages/swift/Tests
 
 excluded:
   - platforms/swift/Samples

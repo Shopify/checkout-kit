@@ -21,7 +21,7 @@ let package = Package(
         .library(
             name: "EmbeddedCheckoutProtocol",
             targets: ["EmbeddedCheckoutProtocol"]
-        )
+        ),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -36,8 +36,13 @@ let package = Package(
             path: "protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol"
         ),
         .target(
-            name: "ShopifyCheckoutKit",
+            name: "CheckoutKitTelemetry",
             dependencies: ["EmbeddedCheckoutProtocol"],
+            path: "telemetry/languages/swift/Sources/CheckoutKitTelemetry"
+        ),
+        .target(
+            name: "ShopifyCheckoutKit",
+            dependencies: ["EmbeddedCheckoutProtocol", "CheckoutKitTelemetry"],
             path: "platforms/swift/Sources/ShopifyCheckoutKit",
             resources: [.process("Assets.xcassets")]
         ),
@@ -54,8 +59,13 @@ let package = Package(
             resources: [.copy("Fixtures")]
         ),
         .testTarget(
+            name: "CheckoutKitTelemetryTests",
+            dependencies: ["CheckoutKitTelemetry"],
+            path: "telemetry/languages/swift/Tests/CheckoutKitTelemetryTests"
+        ),
+        .testTarget(
             name: "ShopifyCheckoutKitTests",
-            dependencies: ["ShopifyCheckoutKit"],
+            dependencies: ["ShopifyCheckoutKit", "CheckoutKitTelemetry"],
             path: "platforms/swift/Tests/ShopifyCheckoutKitTests"
         ),
         .testTarget(

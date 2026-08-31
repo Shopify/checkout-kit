@@ -6,6 +6,7 @@ android:
   - &exclude-docs-directory '!**/docs/**'
 swift:
   - 'platforms/swift/**'
+  - 'telemetry/languages/swift/**'
   - *exclude-markdown
   - *exclude-docs-directory
 reactNative:
@@ -14,7 +15,14 @@ reactNative:
   - *exclude-docs-directory
 web:
   - 'platforms/web/**'
+  - 'telemetry/languages/typescript/**'
+  - 'telemetry/contract/**'
   - *exclude-markdown
+  - *exclude-docs-directory
+# Markdown stays included here: the metrics contract is a markdown document
+# and contract changes must run the telemetry checks.
+telemetry:
+  - 'telemetry/**'
   - *exclude-docs-directory
 protocol:
   - 'protocol/**'

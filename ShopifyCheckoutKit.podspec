@@ -28,6 +28,7 @@ Pod::Spec.new do |s|
     core.source_files = [
       'platforms/swift/Sources/ShopifyCheckoutKit/**/*.swift',
       'protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/**/*.swift',
+      'telemetry/languages/swift/Sources/CheckoutKitTelemetry/**/*.swift',
     ]
     core.resource_bundles = {
       'ShopifyCheckoutKit' => ['platforms/swift/Sources/ShopifyCheckoutKit/Assets.xcassets']

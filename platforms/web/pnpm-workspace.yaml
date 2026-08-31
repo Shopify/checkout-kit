@@ -1,2 +1,3 @@
 packages:
   - '../../protocol/languages/typescript'
+  - '../../telemetry/languages/typescript'
