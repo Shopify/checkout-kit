@@ -206,6 +206,21 @@ A successful background preload normally transitions from `.loading` to `.ready`
 | `.expired` | The cached preload exceeded its lifetime before it could be used. |
 | `.failed(reason:)` | An HTTP, navigation, or web-content failure occurred while preloading. |
 
+By default, a 429 response with a valid `Retry-After` header produces a `.throttled` failure.
+Checkout Kit suppresses further preload requests until the server-provided delay elapses; it does
+not retry automatically. Presentation is never suppressed.
+
+To manage preload backoff in your application instead, use the `.passthrough` throttle policy:
+
+```swift
+ShopifyCheckoutKit.configure {
+  $0.preloading.throttlePolicy = .passthrough
+}
+```
+
+Under `.passthrough`, the failure is `.httpError(statusCode: 429, retryAfter:)` and Checkout Kit
+does not suppress subsequent preload requests.
+
 `preload` returns `nil` when preloading is disabled.
 
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
@@ -261,6 +276,7 @@ ShopifyCheckoutKit.configure {
 | `closeButtonTintColor` | `nil` | Optional tint for the close button. |
 | `logLevel` | `.warn` | SDK logging verbosity. Threshold-ordered `.debug` → `.warn` → `.error` → `.none`; use `.debug` during integration. |
 | `preloading.enabled` | `true` | Enables best-effort checkout preloading before presentation. |
+| `preloading.throttlePolicy` | `.managed` | Enforces server-provided preload backoff. Use `.passthrough` to receive the HTTP failure without suppressing preload requests. |
 | `allowedMessageOrigins` | `[]` | Origins trusted to send incoming checkout messages. Empty trusts every origin (open by default). See [Incoming message origin validation](#incoming-message-origin-validation). |
 
 To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.
@@ -357,9 +373,10 @@ Kit-owned link delegations such as `window.open` are offered to your connected p
 ### Error handling
 
 A checkout lifecycle failure is delivered as a `CheckoutError` to `checkoutDidFail(error:)`
-or `.onFail`. It has a stable `code`, diagnostic `message`, optional `httpStatusCode`, and an
-optional native `underlyingError`. Use the stable code for recovery and analytics. Use diagnostic
-text and underlying errors only for debugging and logging.
+or `.onFail`. It has a stable `code`, diagnostic `message`, optional `httpStatusCode`, optional
+server-provided `retryAfter` delay in seconds, and an optional native `underlyingError`. Use the
+stable code for recovery and analytics. Use diagnostic text and underlying errors only for
+debugging and logging.
 
 | `CheckoutErrorCode` | Meaning | Suggested app action |
 | --- | --- | --- |
@@ -368,7 +385,7 @@ text and underlying errors only for debugging and logging.
 | `.cartExpired` | The cart or checkout session is no longer available. | Create a new cart and retry. |
 | `.cartCompleted` | The cart has already completed checkout. | Clear or create a new cart. |
 | `.invalidCart` | The cart cannot continue checkout. | Create a new cart and retry. |
-| `.httpError` | Checkout returned an HTTP error response. `httpStatusCode` is available. | Inspect `httpStatusCode`; retry only when it makes sense for your app. |
+| `.httpError` | Checkout returned an HTTP error response. `httpStatusCode` and, when supplied by the server, `retryAfter` are available. | Inspect `httpStatusCode`; do not retry before `retryAfter`, and retry only when it makes sense for your app. |
 | `.networkError` | Checkout navigation failed before an HTTP response was available. | Offer a retry when connectivity is available. |
 | `.webContentProcessTerminated` | WebKit terminated the content process. | Let the buyer explicitly retry; Checkout Kit does not reload automatically. |
 | `.sdkError` | An internal Checkout Kit error has occurred (e.g. a protocol message could not be decoded). | Log diagnostic context and offer a browser fallback. |

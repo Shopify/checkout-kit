@@ -92,6 +92,18 @@ extension Configuration {
 
 extension Configuration {
     public struct Preloading: Sendable {
+        /// Controls how Checkout Kit handles preload throttling responses.
+        public enum ThrottlePolicy: Equatable, Sendable {
+            /// Respect the server's `Retry-After` value and suppress preload requests until it elapses.
+            case managed
+
+            /// Surface the HTTP failure without suppressing subsequent preload requests.
+            case passthrough
+        }
+
         public var enabled: Bool = true
+
+        /// The policy used when a preload receives a throttling response.
+        public var throttlePolicy: ThrottlePolicy = .managed
     }
 }

@@ -11,12 +11,16 @@ class PreloadObservabilityTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configuration.preloading.throttlePolicy = .managed
+        CheckoutWebView.preloadCache.clearThrottle()
         CheckoutWebView.invalidate()
     }
 
     override func tearDown() async throws {
         CheckoutWebView.invalidate()
+        CheckoutWebView.preloadCache.clearThrottle()
         ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configuration.preloading.throttlePolicy = .managed
         try await super.tearDown()
     }
 
@@ -155,25 +159,78 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testHTTPErrorTransitionsToFailed() throws {
+    func testManagedThrottleTransitionsToThrottledAndSuppressesAnotherPreload() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
         let view = CheckoutWebView(entryPoint: nil)
         _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
         view.load(checkout: url)
         let link = view.url ?? url
 
-        let response = try XCTUnwrap(HTTPURLResponse(url: link, statusCode: 500, httpVersion: nil, headerFields: nil))
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: link,
+                statusCode: 429,
+                httpVersion: nil,
+                headerFields: ["Retry-After": "120"]
+            )
+        )
         _ = view.handleResponse(response)
 
         withExtendedLifetime(preload) {
             XCTAssertEqual(
                 preload?.state,
                 .failed(
-                    reason: .httpError(statusCode: 500),
-                    message: "HTTP response returned status code 500."
+                    reason: .throttled,
+                    message: PreloadCache.throttledMessage
                 )
             )
         }
+
+        let suppressed = ShopifyCheckoutKit.preload(checkout: url)
+        XCTAssertEqual(
+            suppressed?.state,
+            .failed(
+                reason: .throttled,
+                message: PreloadCache.throttledMessage
+            )
+        )
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.isThrottleActive(at: .distantFuture))
+        let resumed = ShopifyCheckoutKit.preload(checkout: url)
+        XCTAssertEqual(resumed?.state, .loading)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testPassthroughThrottleReturnsHTTPMetadataWithoutSuppressingAnotherPreload() throws {
+        ShopifyCheckoutKit.configuration.preloading.throttlePolicy = .passthrough
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        view.load(checkout: url)
+        let link = view.url ?? url
+
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: link,
+                statusCode: 429,
+                httpVersion: nil,
+                headerFields: ["Retry-After": "120"]
+            )
+        )
+        _ = view.handleResponse(response)
+
+        XCTAssertEqual(
+            preload?.state,
+            .failed(
+                reason: .httpError(statusCode: 429, retryAfter: 120),
+                message: "HTTP response returned status code 429."
+            )
+        )
+
+        let replacement = ShopifyCheckoutKit.preload(checkout: url)
+        XCTAssertEqual(replacement?.state, .loading)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }
 
     func testNavigationFailureTransitionsToFailed() {

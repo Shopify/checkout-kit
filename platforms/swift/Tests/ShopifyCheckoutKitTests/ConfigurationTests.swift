@@ -42,6 +42,10 @@ class ConfigurationTests: XCTestCase {
         XCTAssertTrue(ShopifyCheckoutKit.configuration.preloading.enabled)
     }
 
+    func testPreloadingThrottlePolicyDefaultsToManaged() {
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.preloading.throttlePolicy, .managed)
+    }
+
     func testAppearanceDefaultsToStorefront() {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
     }

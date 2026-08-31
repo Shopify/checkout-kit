@@ -40,8 +40,9 @@ public enum CheckoutErrorCode: String, Codable, CaseIterable, Sendable {
 /// or ``ShopifyCheckout/onFail(_:)``.
 ///
 /// Use ``code`` for application behavior. Use ``message`` and ``underlyingError`` only for debugging
-/// and logging. ``httpStatusCode`` is present only when an HTTP response caused failure. Your app owns
-/// recovery actions such as retrying, recreating a cart, authenticating a buyer, and reopening checkout.
+/// and logging. ``httpStatusCode`` is present only when an HTTP response caused failure. ``retryAfter``
+/// contains the server-provided delay when one is available. Your app owns recovery actions such as
+/// retrying, recreating a cart, authenticating a buyer, and reopening checkout.
 public struct CheckoutError: LocalizedError {
     /// Stable code for this failure.
     public let code: CheckoutErrorCode
@@ -52,6 +53,9 @@ public struct CheckoutError: LocalizedError {
     /// HTTP status for an HTTP-response failure, otherwise `nil`.
     public let httpStatusCode: Int?
 
+    /// Server-provided delay, in seconds, before another request should be attempted.
+    public let retryAfter: TimeInterval?
+
     /// Native diagnostic cause, when one is available. This value is not guaranteed to be Sendable.
     public let underlyingError: (any Error)?
 
@@ -60,11 +64,13 @@ public struct CheckoutError: LocalizedError {
         code: CheckoutErrorCode,
         message: String,
         httpStatusCode: Int? = nil,
+        retryAfter: TimeInterval? = nil,
         underlyingError: (any Error)? = nil
     ) {
         self.code = code
         self.message = message
         self.httpStatusCode = httpStatusCode
+        self.retryAfter = retryAfter
         self.underlyingError = underlyingError
     }
 
@@ -79,11 +85,12 @@ public struct CheckoutError: LocalizedError {
 }
 
 extension CheckoutError {
-    internal static func http(statusCode: Int, message: String) -> CheckoutError {
+    internal static func http(statusCode: Int, message: String, retryAfter: TimeInterval? = nil) -> CheckoutError {
         CheckoutError(
             code: statusCode == 410 ? .cartExpired : .httpError,
             message: message,
-            httpStatusCode: statusCode
+            httpStatusCode: statusCode,
+            retryAfter: retryAfter
         )
     }
 
