@@ -146,10 +146,9 @@ class E2EMatrixToBrowserStackRunPlan
   end
 
   def application_tags(application, kind)
-    override = application.fetch("#{kind}_tags", nil)
-    return Array(override) if override
-
-    Array(default_tags.fetch(kind, nil))
+    shared_tags = Array(default_tags.fetch(kind, nil))
+    additional_tags = Array(application.fetch("additional_#{kind}_tags", nil))
+    (shared_tags + additional_tags).uniq
   end
 
   def effective_tags(application)
@@ -351,11 +350,12 @@ class E2EMatrixToBrowserStackRunPlan
     id = application.fetch("id", "<missing>")
 
     ["include", "exclude"].each do |kind|
-      tags = application.fetch("#{kind}_tags", nil)
+      key = "additional_#{kind}_tags"
+      tags = application.fetch(key, nil)
       next if tags.nil?
 
       unless tags.is_a?(Array)
-        errors << "application #{id} #{kind}_tags must be an array"
+        errors << "application #{id} #{key} must be an array"
         next
       end
 
@@ -363,7 +363,7 @@ class E2EMatrixToBrowserStackRunPlan
 
       errors.concat(
         unknown_include_tag_errors(tags) do |tag|
-          "application #{id} include_tags '#{tag}' but no test in tests/ carries it"
+          "application #{id} #{key} '#{tag}' but no test in tests/ carries it"
         end
       )
     end
