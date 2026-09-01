@@ -163,10 +163,10 @@ class PreloadCacheHitMarkerTest {
             val job = log.start(scope)
 
             try {
-                assertThat(reading.await(5, TimeUnit.SECONDS)).isTrue()
+                assertThat(reading.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
 
                 log.close()
-                withTimeout(5_000) { job.join() }
+                withTimeout(JOB_JOIN_TIMEOUT_MILLIS) { job.join() }
 
                 assertThat(streamClosed.get()).isTrue()
             } finally {
@@ -181,6 +181,8 @@ class PreloadCacheHitMarkerTest {
         "D PreloadObservability: $boundary"
 
     private companion object {
+        const val LATCH_TIMEOUT_SECONDS = 5L
+        const val JOB_JOIN_TIMEOUT_MILLIS = 5_000L
         const val CURRENT_BOUNDARY = "Observation started: current-run"
         const val OLD_BOUNDARY = "Observation started: old-run"
         const val CACHE_HIT_LINE =

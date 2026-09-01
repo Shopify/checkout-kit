@@ -91,7 +91,7 @@ class AuthenticationHelper(
     }
 
     private fun randomUrlSafeString(): String {
-        val bytes = ByteArray(32)
+        val bytes = ByteArray(RANDOM_URL_SAFE_BYTE_LENGTH)
         SecureRandom().nextBytes(bytes)
         return bytes.base64UrlEncode()
     }
@@ -135,6 +135,7 @@ class AuthenticationHelper(
     }
 
     companion object {
+        private const val RANDOM_URL_SAFE_BYTE_LENGTH = 32
         private val SUPPORTED_LOCALES = setOf(
             "en", "fr", "cs", "da", "de", "el", "es", "fi", "hi", "hr", "hu", "id", "it", "ja", "ko", "lt", "ms", "nb",
             "nl", "pl", "pt-BR", "pt-PT", "ro", "ru", "sk", "sl", "sv", "th", "tr", "vi", "zh-CN", "zh-TW",

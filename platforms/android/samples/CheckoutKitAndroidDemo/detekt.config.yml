@@ -1,4 +1,4 @@
-# The sample enforces formatting and function naming. Compose UI and JUnit test functions use
+# The sample enforces formatting, function naming, and magic-number checks. Compose UI and JUnit test functions use
 # idiomatic PascalCase and descriptive backticked names, respectively. Full static analysis is
 # enforced for the published library; enabling all default rules here would surface unrelated debt.
 naming:
@@ -7,6 +7,10 @@ naming:
     ignoreAnnotated: [ 'Composable', 'Test' ]
 
 style:
+  MagicNumber:
+    active: true
+    # A named property documents the meaning of a value; retain the check for inline literals.
+    ignorePropertyDeclaration: true
   MaxLineLength:
     active: true
     maxLineLength: 140

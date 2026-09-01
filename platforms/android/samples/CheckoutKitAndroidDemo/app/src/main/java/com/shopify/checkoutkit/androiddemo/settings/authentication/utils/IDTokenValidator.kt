@@ -31,12 +31,12 @@ class IDTokenValidator(
 
     private fun parseClaims(idToken: String): TokenClaims {
         val sections = idToken.split('.')
-        if (sections.size != 3 || sections.any(String::isEmpty)) {
+        if (sections.size != EXPECTED_ID_TOKEN_SECTION_COUNT || sections.any(String::isEmpty)) {
             throw AuthenticationException("Invalid ID token")
         }
 
         val claims = try {
-            val payload = Base64.getUrlDecoder().decode(sections[1])
+            val payload = Base64.getUrlDecoder().decode(sections[ID_TOKEN_PAYLOAD_SECTION_INDEX])
             json.parseToJsonElement(payload.decodeToString()) as JsonObject
         } catch (error: Exception) {
             throw AuthenticationException("Invalid ID token")
@@ -97,6 +97,8 @@ class IDTokenValidator(
 
     private companion object {
         const val CLOCK_SKEW_SECONDS = 60L
+        const val ID_TOKEN_PAYLOAD_SECTION_INDEX = 1
+        const val EXPECTED_ID_TOKEN_SECTION_COUNT = 3
     }
 }
 

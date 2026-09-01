@@ -277,6 +277,7 @@ private fun CheckoutButton(
     }
 }
 
+@Suppress("MagicNumber") // The layout proportions are visual design values.
 @Composable
 private fun EmptyCartMessage(
     modifier: Modifier,
