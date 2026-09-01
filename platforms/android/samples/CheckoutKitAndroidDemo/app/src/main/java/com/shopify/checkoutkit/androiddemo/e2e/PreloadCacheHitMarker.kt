@@ -110,9 +110,10 @@ class PreloadCacheHitLog(
 
                 writeBoundary(observationBoundary)
                 opened.lines.forEach(::record)
+            } catch (_: CancellationException) {
+                // Closing the observer cancels its reader; that is expected and not an error.
             } catch (error: Exception) {
-                val shouldReport = synchronized(resourceLock) { !closed } && error !is CancellationException
-                if (shouldReport) reportError(error)
+                if (synchronized(resourceLock) { !closed }) reportError(error)
             } finally {
                 closeStream()
             }
