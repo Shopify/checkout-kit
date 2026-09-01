@@ -37,6 +37,8 @@ sealed interface E2EControlLink {
         private val CART_PARAMETERS = setOf("variantId", "productIndex", "quantity", "buyerIdentityMode")
         private val SIGN_IN_PARAMETERS = setOf("email")
 
+        // Malformed external control links are intentionally treated as non-control links.
+        @Suppress("SwallowedException")
         fun parse(url: String): E2EControlLink? {
             val separatorIndex = url.indexOf(SCHEME_SEPARATOR)
 

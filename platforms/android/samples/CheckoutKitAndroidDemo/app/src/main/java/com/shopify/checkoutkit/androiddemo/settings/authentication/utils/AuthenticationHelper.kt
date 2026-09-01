@@ -105,6 +105,8 @@ class AuthenticationHelper(
         return Base64.encodeToString(this, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
+    // Invalid external callback data is intentionally reduced to a safe domain error.
+    @Suppress("SwallowedException")
     private fun Uri.singleValueQueryParameters(): Map<String, String> {
         return try {
             queryParameterNames.associateWith { name ->

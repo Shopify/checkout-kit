@@ -28,6 +28,8 @@ class BrowserAuthenticationCoordinator(
 
     private var pendingAuthentication: PendingBrowserAuthentication? = null
 
+    // Launch failures are intentionally mapped to safe browser-authentication results.
+    @Suppress("SwallowedException")
     override fun launch(
         request: BrowserAuthenticationRequest,
         onResult: (BrowserAuthenticationResult) -> Unit,

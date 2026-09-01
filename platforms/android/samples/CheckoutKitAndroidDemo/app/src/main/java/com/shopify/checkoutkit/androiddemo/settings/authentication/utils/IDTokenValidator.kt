@@ -29,6 +29,8 @@ class IDTokenValidator(
         validateNonce(claims, expectedNonce)
     }
 
+    // Invalid external token data is intentionally reduced to a safe domain error.
+    @Suppress("SwallowedException")
     private fun parseClaims(idToken: String): TokenClaims {
         val sections = idToken.split('.')
         if (sections.size != EXPECTED_ID_TOKEN_SECTION_COUNT || sections.any(String::isEmpty)) {
