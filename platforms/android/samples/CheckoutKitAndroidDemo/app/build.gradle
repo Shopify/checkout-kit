@@ -166,9 +166,9 @@ tasks.withType(KotlinJvmCompile).configureEach {
 }
 
 
-// The sample applies only auto-correctable formatting rules. Full Detekt static analysis remains
-// enabled for the published library; enabling default rules here would surface unrelated existing
-// sample debt rather than make this formatting check actionable.
+// The sample applies auto-correctable formatting and function-naming checks. Full Detekt static
+// analysis remains enabled for the published library; enabling all default rules here would surface
+// unrelated existing sample debt rather than make these checks actionable.
 detekt {
     buildUponDefaultConfig = false
     config.setFrom('../detekt.config.yml')

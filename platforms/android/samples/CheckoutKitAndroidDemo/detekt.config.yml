@@ -1,5 +1,11 @@
-# The sample intentionally applies only Detekt formatting rules. Full static analysis is enforced
-# for the published library, while this keeps sample lint adoption actionable without a baseline.
+# The sample enforces formatting and function naming. Compose UI and JUnit test functions use
+# idiomatic PascalCase and descriptive backticked names, respectively. Full static analysis is
+# enforced for the published library; enabling all default rules here would surface unrelated debt.
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated: [ 'Composable', 'Test' ]
+
 formatting:
   active: true
   autoCorrect: true

@@ -151,7 +151,7 @@ jobs:
           STOREFRONT_DOMAIN: example.myshopify.com
           STOREFRONT_ACCESS_TOKEN: test-token
 
-      - name: Sample formatting and Android Lint
+      - name: Sample formatting and linting
         run: |
           ./gradlew lintRelease
           ./gradlew -p samples/CheckoutKitAndroidDemo :app:detekt :app:lintRelease
