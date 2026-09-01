@@ -17,6 +17,8 @@ app:
     # (iPhone 17 Pro for Swift, iPhone 16 Pro for React Native); the port keeps a
     # single one so a runtime change cannot break half the jobs.
     - CI_IOS_SIMULATOR_DEVICE: iPhone 17 Pro
+    - E2E_ANDROID_DEVICE_OVERRIDE: Google Pixel 9-17.0
+    - E2E_IOS_DEVICE_OVERRIDE: iPhone 15-27 Beta
     - E2E_BROWSERSTACK_API_RETRIES: "1"
     - E2E_BROWSERSTACK_TIMEOUT_SECONDS: "1800"
     - E2E_BROWSERSTACK_POLL_SECONDS: "30"
