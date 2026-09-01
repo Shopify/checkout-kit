@@ -2,6 +2,9 @@ package com.shopify.checkoutkit
 
 import androidx.core.net.toUri
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.telemetry.TelemetryDecodeFailureType
+import com.shopify.checkoutkit.telemetry.TelemetryProtocolDecodeErrorMetric
+import com.shopify.checkoutkit.telemetry.TelemetryProtocolMethod
 import com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp
 import com.shopify.ucp.embedded.checkout.ReadyResult
 import com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus
@@ -44,7 +47,17 @@ internal class EmbeddedCheckoutProtocolBridge(
     private val protocolMessageExecutor: Executor = ProtocolMessageExecutor.executor,
 ) {
     private var isTransportAttached = false
-    private val defaultClient: CheckoutProtocol.Client = defaultDelegationClient()
+
+    /**
+     * True once a decode-error metric was recorded for the message currently
+     * being processed. The contract counts undecodable messages, not decode
+     * attempts, so a message decoded by several clients (merchant + kit
+     * default) or failing at both the envelope and params layer records once.
+     * Only touched on [protocolMessageExecutor]'s single thread.
+     */
+    private var decodeErrorRecordedForMessage = false
+    private val defaultClient: CheckoutProtocol.Client =
+        defaultDelegationClient().withDecodeErrorObserver(::recordParamsDecodeErrorOnce)
     private val defaultClientBindings: Map<String, DefaultClientBinding> = mapOf(
         CheckoutProtocol.ready.method to DefaultClientBinding(
             client = defaultClient,
@@ -61,7 +74,7 @@ internal class EmbeddedCheckoutProtocolBridge(
     )
     private val composedClient: ComposedCheckoutProtocolClient
         get() = ComposedCheckoutProtocolClient(
-            merchant = client,
+            merchant = client?.withDecodeErrorObserver(::recordParamsDecodeErrorOnce),
             defaults = defaultClientBindings,
         )
 
@@ -127,6 +140,7 @@ internal class EmbeddedCheckoutProtocolBridge(
     }
 
     private fun processMessage(message: String) {
+        decodeErrorRecordedForMessage = false
         try {
             val request = decodeProtocolRequest(message)
             val method = CheckoutProtocol.supportedProtocolMethod(request)
@@ -148,9 +162,11 @@ internal class EmbeddedCheckoutProtocolBridge(
             }
         } catch (e: SerializationException) {
             log.d(LOG_TAG, "Failed to decode ECP message: $e  raw=$message")
-            val isTerminalError = runCatching {
-                Json.parseToJsonElement(message).jsonObject["method"]?.jsonPrimitive?.content == CheckoutProtocol.error.method
-            }.getOrDefault(false)
+            val decodedMethod = runCatching {
+                Json.parseToJsonElement(message).jsonObject["method"]?.jsonPrimitive?.content
+            }.getOrNull()
+            recordDecodeErrorOnce(decodedMethod.orEmpty(), TelemetryDecodeFailureType.Envelope)
+            val isTerminalError = decodedMethod == CheckoutProtocol.error.method
             if (isTerminalError) {
                 handleTerminalError(message, null)
             } else {
@@ -215,6 +231,11 @@ internal class EmbeddedCheckoutProtocolBridge(
         handleClientMessage(CheckoutProtocol.error.method, message)
 
         val failure = runCatching { CheckoutProtocol.error.decode(params) }
+            .onFailure {
+                // A terminal error with a valid envelope but undecodable params is a
+                // malformed message even when nothing subscribes to `ec.error`.
+                recordParamsDecodeErrorOnce(CheckoutProtocol.error.method)
+            }
             .getOrNull()
             ?.let(CheckoutException::terminalProtocol)
             ?: CheckoutException.sdk("Embedded checkout sent an invalid terminal error.")
@@ -238,8 +259,24 @@ internal class EmbeddedCheckoutProtocolBridge(
             ) {
                 return@onMainThread
             }
+            view.recordTerminalProtocolFailureTelemetry()
             view.listener.onCheckoutViewFailedWithError(failure)
         }
+    }
+
+    private fun recordParamsDecodeErrorOnce(method: String) {
+        recordDecodeErrorOnce(method, TelemetryDecodeFailureType.Params)
+    }
+
+    private fun recordDecodeErrorOnce(method: String, failureType: TelemetryDecodeFailureType) {
+        if (decodeErrorRecordedForMessage) return
+        decodeErrorRecordedForMessage = true
+        CheckoutTelemetry.recorder.recordProtocolDecodeError(
+            TelemetryProtocolDecodeErrorMetric(
+                method = TelemetryProtocolMethod.fromMethod(method),
+                failureType = failureType,
+            ),
+        )
     }
 
     private fun sendError(id: JsonElement?, code: Int, message: String) {

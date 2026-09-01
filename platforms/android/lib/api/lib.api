@@ -494,6 +494,7 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun component5 ()Lcom/shopify/checkoutkit/Preloading;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Ljava/util/Set;
+	public final fun component8 ()Lcom/shopify/checkoutkit/Telemetry;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllowedMessageOrigins ()Ljava/util/Set;
 	public final fun getAppearance ()Lcom/shopify/checkoutkit/CheckoutAppearance;
@@ -501,6 +502,7 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun getPlatform ()Lcom/shopify/checkoutkit/Platform;
 	public final fun getPreloading ()Lcom/shopify/checkoutkit/Preloading;
 	public final fun getSheet ()Lcom/shopify/checkoutkit/CheckoutSheetOptions;
+	public final fun getTelemetry ()Lcom/shopify/checkoutkit/Telemetry;
 	public final fun getTitle ()Ljava/lang/String;
 	public fun hashCode ()I
 	public final fun setAllowedMessageOrigins (Ljava/util/Set;)V
@@ -509,6 +511,7 @@ public final class com/shopify/checkoutkit/Configuration {
 	public final fun setPlatform (Lcom/shopify/checkoutkit/Platform;)V
 	public final fun setPreloading (Lcom/shopify/checkoutkit/Preloading;)V
 	public final fun setSheet (Lcom/shopify/checkoutkit/CheckoutSheetOptions;)V
+	public final fun setTelemetry (Lcom/shopify/checkoutkit/Telemetry;)V
 	public final fun setTitle (Ljava/lang/String;)V
 	public fun toString ()Ljava/lang/String;
 }
@@ -708,5 +711,18 @@ public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 
 public abstract interface class com/shopify/checkoutkit/StorefrontCustomizer {
 	public abstract fun customize (Lcom/shopify/checkoutkit/ColorsBuilder;)V
+}
+
+public final class com/shopify/checkoutkit/Telemetry {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun copy (Z)Lcom/shopify/checkoutkit/Telemetry;
+	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Telemetry;ZILjava/lang/Object;)Lcom/shopify/checkoutkit/Telemetry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 

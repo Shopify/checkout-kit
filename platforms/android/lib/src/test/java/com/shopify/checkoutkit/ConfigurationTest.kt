@@ -21,6 +21,7 @@ class ConfigurationTest {
             it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
+            it.telemetry = initialConfiguration.telemetry
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel
         }
@@ -82,6 +83,11 @@ class ConfigurationTest {
     }
 
     @Test
+    fun `telemetry defaults to enabled`() {
+        assertThat(ShopifyCheckoutKit.getConfiguration().telemetry.enabled).isTrue()
+    }
+
+    @Test
     fun `appearance defaults to storefront`() {
         assertThat(ShopifyCheckoutKit.getConfiguration().appearance).isEqualTo(CheckoutAppearance.Storefront())
     }
@@ -99,6 +105,15 @@ class ConfigurationTest {
         }
 
         assertThat(ShopifyCheckoutKit.getConfiguration().preloading.enabled).isFalse()
+    }
+
+    @Test
+    fun `can disable telemetry via configure function`() {
+        ShopifyCheckoutKit.configure {
+            it.telemetry = Telemetry(enabled = false)
+        }
+
+        assertThat(ShopifyCheckoutKit.getConfiguration().telemetry.enabled).isFalse()
     }
 
     @Test

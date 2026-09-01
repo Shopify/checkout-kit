@@ -43,7 +43,11 @@ public object ShopifyCheckoutKit {
      */
     @JvmStatic
     public fun configure(setter: ConfigurationUpdater) {
+        val wasTelemetryEnabled = configuration.telemetry.enabled
         setter.configure(configuration)
+        if (wasTelemetryEnabled && !configuration.telemetry.enabled) {
+            CheckoutTelemetry.disable()
+        }
         CheckoutWebView.clearCache()
     }
 

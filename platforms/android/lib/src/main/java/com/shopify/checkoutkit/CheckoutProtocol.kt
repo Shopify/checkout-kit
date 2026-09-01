@@ -15,6 +15,7 @@ import com.shopify.ucp.embedded.checkout.WindowOpenResult
 import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
 import com.shopify.ucp.embedded.checkout.hasValidJsonRpcRequestId
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.JsonElement
 import java.util.concurrent.CountDownLatch
 import com.shopify.ucp.embedded.checkout.Client as ProtocolClient
 
@@ -120,10 +121,25 @@ public object CheckoutProtocol {
     ) {
         public constructor() : this(
             ProtocolClient().onDecodeError { method, error, params ->
-                log.e(LOG_TAG, "Failed to decode $method params", error)
-                log.d(LOG_TAG, "Raw $method params: $params")
+                logDecodeError(method, error, params)
             },
         )
+
+        /**
+         * Rebinds decode-failure observation to [observer], keeping the kit logging.
+         *
+         * The bridge uses this to record the decode-error telemetry once per
+         * inbound message, rather than once per client instance that attempts a
+         * decode — a message processed by both a merchant client and a kit
+         * default client must not count twice.
+         */
+        internal fun withDecodeErrorObserver(observer: (method: String) -> Unit): Client =
+            Client(
+                delegate.onDecodeError { method, error, params ->
+                    logDecodeError(method, error, params)
+                    observer(method)
+                },
+            )
 
         public fun <P : Any> on(
             descriptor: NotificationDescriptor<P>,
@@ -145,6 +161,11 @@ public object CheckoutProtocol {
     }
 
     private const val LOG_TAG: String = ECP_LOG_TAG
+
+    private fun logDecodeError(method: String, error: Throwable, params: JsonElement?) {
+        log.e(LOG_TAG, "Failed to decode $method params", error)
+        log.d(LOG_TAG, "Raw $method params: $params")
+    }
 
     private fun <R> invokeOnMainThread(block: () -> R): R {
         if (Looper.myLooper() == Looper.getMainLooper()) return block()

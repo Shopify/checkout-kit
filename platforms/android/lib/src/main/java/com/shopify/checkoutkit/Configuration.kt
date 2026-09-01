@@ -23,6 +23,7 @@ public data class Configuration internal constructor(
     var preloading: Preloading = Preloading(),
     var title: String? = null,
     var allowedMessageOrigins: Set<String> = emptySet(),
+    var telemetry: Telemetry = Telemetry(),
 )
 
 /**
@@ -32,6 +33,12 @@ internal fun Configuration.resolveCheckoutTitle(context: Context): String =
     title ?: context.getString(R.string.checkout_web_view_title)
 
 public data class Preloading(
+    public val enabled: Boolean = true,
+)
+
+/** Controls anonymous diagnostic metrics sent by Checkout Kit. */
+public data class Telemetry(
+    /** Set to false to prevent Checkout Kit from recording or sending diagnostic metrics. */
     public val enabled: Boolean = true,
 )
 

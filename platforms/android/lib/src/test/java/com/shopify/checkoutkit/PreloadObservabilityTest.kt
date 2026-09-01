@@ -31,6 +31,7 @@ class PreloadObservabilityTest {
 
     @Before
     fun setUp() {
+        CheckoutTelemetry.overrideRecorderForTesting(NoOpTestCheckoutTelemetryRecorder)
         initialConfiguration = ShopifyCheckoutKit.getConfiguration()
         webMessageTransport = FakeWebMessageTransport()
         CheckoutWebView.clearCache()
@@ -41,6 +42,7 @@ class PreloadObservabilityTest {
 
     @After
     fun tearDown() {
+        CheckoutTelemetry.overrideRecorderForTesting(null)
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
         CheckoutWebView.cacheClock = PreloadCache.Clock()

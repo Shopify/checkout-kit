@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -33,8 +34,18 @@ import androidx.core.net.toUri
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
 import com.shopify.checkoutkit.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.telemetry.TelemetryErrorCategory
+import com.shopify.checkoutkit.telemetry.TelemetryErrorCode
+import com.shopify.checkoutkit.telemetry.TelemetryErrorMetric
+import com.shopify.checkoutkit.telemetry.TelemetryErrorStage
+import com.shopify.checkoutkit.telemetry.TelemetryNavigationDurationMetric
+import com.shopify.checkoutkit.telemetry.TelemetryNavigationDurationResult
+import com.shopify.checkoutkit.telemetry.TelemetryNavigationRetryMetric
+import com.shopify.checkoutkit.telemetry.TelemetryNavigationRetryReason
+import com.shopify.checkoutkit.telemetry.TelemetryNavigationRetryResult
 import java.util.concurrent.CountDownLatch
 
+@Suppress("TooManyFunctions")
 internal class CheckoutWebView private constructor(
     context: Context,
     attributeSet: AttributeSet?,
@@ -67,6 +78,8 @@ internal class CheckoutWebView private constructor(
      */
     internal var hasHandledTerminalFailure = false
 
+    private var checkoutRequestRetryReason: TelemetryNavigationRetryReason? = null
+    private var navigationTiming: NavigationTiming? = null
     private val touchHandler = CheckoutWebViewTouchHandler()
 
     /** Origin of the loaded checkout URL, trusted as a safe default for incoming-message validation. */
@@ -150,6 +163,8 @@ internal class CheckoutWebView private constructor(
             )
             checkoutRequest = request
             didRetryCheckoutRequest = false
+            checkoutRequestRetryReason = null
+            navigationTiming = NavigationTiming(SystemClock.elapsedRealtime(), preloaded = isPreload)
             loadCheckoutRequest(request)
         }
     }
@@ -171,12 +186,43 @@ internal class CheckoutWebView private constructor(
     private fun resetCheckoutRequestRetryState() {
         checkoutRequest = null
         didRetryCheckoutRequest = false
+        checkoutRequestRetryReason = null
     }
 
     private data class CheckoutRequest(
         val url: String,
         val headers: Map<String, String>,
     )
+
+    private data class NavigationTiming(
+        val startedAtMillis: Long,
+        val preloaded: Boolean,
+    )
+
+    internal fun recordTerminalProtocolFailureTelemetry() {
+        CheckoutTelemetry.recorder.recordError(
+            TelemetryErrorMetric(
+                category = TelemetryErrorCategory.Protocol,
+                stage = TelemetryErrorStage.Message,
+                code = TelemetryErrorCode.Unknown,
+                retryable = false,
+                isRetry = didRetryCheckoutRequest,
+            ),
+        )
+        recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
+    }
+
+    private fun recordNavigationDuration(result: TelemetryNavigationDurationResult) {
+        val timing = navigationTiming ?: return
+        navigationTiming = null
+        CheckoutTelemetry.recorder.recordNavigationDuration(
+            TelemetryNavigationDurationMetric(
+                milliseconds = (SystemClock.elapsedRealtime() - timing.startedAtMillis).toDouble(),
+                result = result,
+                preloaded = timing.preloaded,
+            ),
+        )
+    }
 
     internal fun markPreloadConsumed() {
         isPreloadRequest = false
@@ -200,6 +246,17 @@ internal class CheckoutWebView private constructor(
                 "Web content process terminated.",
             )
             if (wasBackgroundedUnconsumedPreload || !shouldDeliverLifecycleFailure) return true
+
+            CheckoutTelemetry.recorder.recordError(
+                TelemetryErrorMetric(
+                    category = TelemetryErrorCategory.RenderProcess,
+                    stage = TelemetryErrorStage.Presentation,
+                    code = TelemetryErrorCode.Unknown,
+                    retryable = false,
+                    isRetry = didRetryCheckoutRequest,
+                ),
+            )
+            recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
 
             // didCrash is API 26; framework delivery of this callback also begins on API 26.
             val didCrash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) detail.didCrash() else null
@@ -225,6 +282,7 @@ internal class CheckoutWebView private constructor(
             loadComplete = true
             preloadCache.transition(this@CheckoutWebView, PreloadState.Ready)
             listener.onCheckoutViewLoadComplete()
+            recordNavigationDuration(TelemetryNavigationDurationResult.Success)
             resetCheckoutRequestRetryState()
         }
 
@@ -236,6 +294,13 @@ internal class CheckoutWebView private constructor(
             if (shouldRetryCheckoutRequest(request, error)) {
                 val checkoutRequest = requireNotNull(checkoutRequest)
                 didRetryCheckoutRequest = true
+                checkoutRequestRetryReason = CheckoutTelemetry.retryReason(error?.errorCode)
+                CheckoutTelemetry.recorder.recordNavigationRetry(
+                    TelemetryNavigationRetryMetric(
+                        reason = requireNotNull(checkoutRequestRetryReason),
+                        result = TelemetryNavigationRetryResult.Started,
+                    ),
+                )
                 log.w(
                     LOG_TAG,
                     "Retrying checkout navigation. Error code: ${error?.errorCode}, " +
@@ -247,6 +312,14 @@ internal class CheckoutWebView private constructor(
 
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
+                if (didRetryCheckoutRequest) {
+                    CheckoutTelemetry.recorder.recordNavigationRetry(
+                        TelemetryNavigationRetryMetric(
+                            reason = checkoutRequestRetryReason ?: TelemetryNavigationRetryReason.Unknown,
+                            result = TelemetryNavigationRetryResult.Failed,
+                        ),
+                    )
+                }
                 preloadCache.evict(
                     PreloadState.Failed(
                         PreloadState.FailureReason.NavigationFailed,
@@ -260,6 +333,16 @@ internal class CheckoutWebView private constructor(
                 handleClientError(request, it)
             }
             if (isMainFrame) {
+                CheckoutTelemetry.recorder.recordError(
+                    TelemetryErrorMetric(
+                        category = TelemetryErrorCategory.Navigation,
+                        stage = TelemetryErrorStage.Load,
+                        code = CheckoutTelemetry.errorCode(error?.errorCode),
+                        retryable = error?.errorCode in RETRYABLE_CHECKOUT_ERROR_CODES,
+                        isRetry = didRetryCheckoutRequest,
+                    ),
+                )
+                recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
                 resetCheckoutRequestRetryState()
             }
         }
@@ -272,6 +355,20 @@ internal class CheckoutWebView private constructor(
             val isMainFrame = request?.isForMainFrame == true
             if (isMainFrame) {
                 val statusCode = errorResponse?.statusCode ?: 0
+                CheckoutTelemetry.recorder.recordError(
+                    TelemetryErrorMetric(
+                        category = TelemetryErrorCategory.Http,
+                        stage = TelemetryErrorStage.Load,
+                        code = when (statusCode) {
+                            in 400..499 -> TelemetryErrorCode.Client
+                            in 500..599 -> TelemetryErrorCode.Server
+                            else -> TelemetryErrorCode.Unknown
+                        },
+                        retryable = statusCode >= 500,
+                        isRetry = didRetryCheckoutRequest,
+                    ),
+                )
+                recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
                 preloadCache.evict(
                     PreloadState.Failed(
                         PreloadState.FailureReason.HttpError(statusCode),

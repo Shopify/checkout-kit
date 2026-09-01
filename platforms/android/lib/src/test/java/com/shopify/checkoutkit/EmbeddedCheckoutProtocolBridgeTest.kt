@@ -40,6 +40,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @Before
     fun setUp() {
+        CheckoutTelemetry.overrideRecorderForTesting(NoOpTestCheckoutTelemetryRecorder)
         CheckoutWebView.clearCache()
         shadowOf(Looper.getMainLooper()).idle()
         activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
@@ -59,6 +60,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
 
     @After
     fun tearDown() {
+        CheckoutTelemetry.overrideRecorderForTesting(null)
         CheckoutWebView.clearCache()
         shadowOf(Looper.getMainLooper()).idle()
     }
