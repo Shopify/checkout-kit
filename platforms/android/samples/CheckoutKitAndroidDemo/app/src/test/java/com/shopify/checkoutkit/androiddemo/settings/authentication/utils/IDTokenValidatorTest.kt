@@ -43,7 +43,7 @@ class IDTokenValidatorTest {
 
     @Test
     fun `rejects an expired token`() {
-        val token = token(claims(expiration = now.epochSecond - 61))
+        val token = token(claims(expiration = now.epochSecond - EXPIRED_TOKEN_SECONDS_AGO))
 
         assertThatThrownBy { validator.validate(token, "expected") }
             .isInstanceOf(AuthenticationException::class.java)
@@ -53,7 +53,7 @@ class IDTokenValidatorTest {
     private fun claims(
         nonce: String = "expected",
         audience: String = CLIENT_ID,
-        expiration: Long = now.epochSecond + 300,
+        expiration: Long = now.epochSecond + DEFAULT_TOKEN_VALIDITY_SECONDS,
     ): String = """
         {
           "iss": "$ISSUER",
@@ -75,5 +75,7 @@ class IDTokenValidatorTest {
     private companion object {
         const val CLIENT_ID = "customer-account-client"
         const val ISSUER = "https://shopify.com/authentication/123"
+        const val EXPIRED_TOKEN_SECONDS_AGO = 61L
+        const val DEFAULT_TOKEN_VALIDITY_SECONDS = 300L
     }
 }
