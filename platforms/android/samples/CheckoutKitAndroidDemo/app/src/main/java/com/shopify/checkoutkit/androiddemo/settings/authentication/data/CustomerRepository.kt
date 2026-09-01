@@ -113,46 +113,49 @@ class CustomerRepository(
         previousToken: AccessToken?,
         expectedNonce: String?,
         clearOnFailure: Boolean,
-    ): AccessToken? {
-        return when (this) {
-            is OAuthTokenResult.Success -> {
-                val responseToken = token
-                val token = responseToken.copy(
-                    refreshToken = responseToken.refreshToken ?: previousToken?.refreshToken,
-                    idToken = responseToken.idToken ?: previousToken?.idToken,
-                )
-                val idToken = token.idToken
-                if (idToken == null) {
-                    Timber.w("Customer Account token response did not include an ID token")
-                    if (clearOnFailure) clearSession()
-                    null
-                } else {
-                    try {
-                        if (expectedNonce != null || responseToken.idToken != null) {
-                            idTokenValidator.validate(idToken, expectedNonce)
-                        }
-                        if (!localTokenStore.save(token)) {
-                            Timber.w("Customer Account token could not be stored")
-                            if (clearOnFailure) clearSession()
-                            return null
-                        }
-                        updateAuthenticationState()
-                        Timber.i("Customer Account API token stored")
-                        token
-                    } catch (error: Exception) {
-                        Timber.w(error, "Customer Account ID token validation failed")
-                        if (clearOnFailure) clearSession()
-                        null
-                    }
-                }
-            }
-
-            is OAuthTokenResult.Error -> {
-                Timber.w("Failed to fetch Customer Account API token: ${this.message}")
-                if (clearOnFailure) clearSession()
-                null
-            }
+    ): AccessToken? = when (this) {
+        is OAuthTokenResult.Success -> storeToken(token, previousToken, expectedNonce, clearOnFailure)
+        is OAuthTokenResult.Error -> {
+            Timber.w("Failed to fetch Customer Account API token: $message")
+            tokenFailure(clearOnFailure)
         }
+    }
+
+    private suspend fun storeToken(
+        responseToken: AccessToken,
+        previousToken: AccessToken?,
+        expectedNonce: String?,
+        clearOnFailure: Boolean,
+    ): AccessToken? {
+        val token = responseToken.copy(
+            refreshToken = responseToken.refreshToken ?: previousToken?.refreshToken,
+            idToken = responseToken.idToken ?: previousToken?.idToken,
+        )
+        val idToken = token.idToken ?: run {
+            Timber.w("Customer Account token response did not include an ID token")
+            return tokenFailure(clearOnFailure)
+        }
+
+        return try {
+            if (expectedNonce != null || responseToken.idToken != null) {
+                idTokenValidator.validate(idToken, expectedNonce)
+            }
+            if (!localTokenStore.save(token)) {
+                Timber.w("Customer Account token could not be stored")
+                return tokenFailure(clearOnFailure)
+            }
+            updateAuthenticationState()
+            Timber.i("Customer Account API token stored")
+            token
+        } catch (error: Exception) {
+            Timber.w(error, "Customer Account ID token validation failed")
+            tokenFailure(clearOnFailure)
+        }
+    }
+
+    private suspend fun tokenFailure(clearOnFailure: Boolean): AccessToken? {
+        if (clearOnFailure) clearSession()
+        return null
     }
 
     private suspend fun updateAuthenticationState() {
