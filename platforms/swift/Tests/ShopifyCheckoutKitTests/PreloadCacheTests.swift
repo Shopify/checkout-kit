@@ -17,6 +17,7 @@ class PreloadCacheTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
+        CheckoutTelemetry.overrideRecorderForTesting(NoOpTestTelemetryRecorder())
         ShopifyCheckoutKit.configuration.preloading.enabled = true
         CheckoutWebView.invalidate()
     }
@@ -25,6 +26,7 @@ class PreloadCacheTests: XCTestCase {
         CheckoutWebView.invalidate()
         ShopifyCheckoutKit.configuration.preloading.enabled = true
         ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
+        CheckoutTelemetry.overrideRecorderForTesting(nil)
         try await super.tearDown()
     }
 

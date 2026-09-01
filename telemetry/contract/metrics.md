@@ -36,7 +36,10 @@ Attributes:
 - `category`: `http`, `navigation`, `protocol`, `render_process`, or `unknown`
 - `stage`: `initialization`, `load`, `message`, or `presentation`
 - `code`: a bounded platform-independent code, falling back to `unknown`
-- `retryable`: `true` or `false`
+- `retryable`: `true` when the failure is of a transient class that could in
+  principle be retried. It does not imply the SDK attempted a retry; actual
+  attempts are reported by `checkout_kit_navigation_retry` and marked with
+  `is_retry`.
 - `is_retry`: `true` when the error occurred during a retry attempt, otherwise
   `false`
 
@@ -66,8 +69,11 @@ failed, and `not_attempted` means an eligible retry could not be launched.
 ### `checkout_kit_navigation_duration_ms`
 
 Delta histogram measuring the initial main-frame checkout navigation, from the
-navigation start until success or terminal failure. Subresource requests and
-subsequent WebView navigations are not measured.
+navigation start until success or terminal failure. Navigation start is when
+the SDK initiates the platform navigation; engine callback granularity differs
+per platform, and the window includes the single automatic retry when one
+occurs. Subresource requests and subsequent WebView navigations are not
+measured.
 
 Attributes:
 

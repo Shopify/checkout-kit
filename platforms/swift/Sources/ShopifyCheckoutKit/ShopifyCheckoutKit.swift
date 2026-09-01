@@ -34,6 +34,10 @@ public func configure(_ block: (inout Configuration) -> Void) {
 private func applyConfigurationChange(configuration: Configuration, previousConfiguration: Configuration) {
     OSLogger.shared.logLevel = configuration.logLevel
 
+    if previousConfiguration.telemetry.enabled, !configuration.telemetry.enabled {
+        CheckoutTelemetry.disable()
+    }
+
     if configuration.preloading.enabled != previousConfiguration.preloading.enabled {
         Task { @MainActor in
             invalidate()

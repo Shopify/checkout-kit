@@ -50,6 +50,16 @@ class ShopifyCheckoutKitTests: XCTestCase {
         )
     }
 
+    func test_configuration_telemetryDefaultsToEnabled() {
+        XCTAssertTrue(Configuration().telemetry.enabled)
+    }
+
+    func test_configuration_canDisableTelemetry() {
+        ShopifyCheckoutKit.configuration.telemetry.enabled = false
+
+        XCTAssertFalse(ShopifyCheckoutKit.configuration.telemetry.enabled)
+    }
+
     func test_configuration_onLogLevelChange_usesExistingInstance() {
         let originalLogger = OSLogger.shared
         let originalLogLevel = OSLogger.shared.logLevel
