@@ -362,6 +362,27 @@ describe("<shopify-checkout>", () => {
       });
     });
 
+    describe("ec.fulfillment.change", () => {
+      it("updates the checkout property and dispatches an ec.fulfillment.change event", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onFulfillmentChangeSpy = vi.fn();
+        const listenForEvent = waitForEvent(
+          checkout,
+          "ec.fulfillment.change",
+          onFulfillmentChangeSpy,
+        );
+
+        const payload = makeCheckoutPayload();
+        simulateProtocolMessageEvent(checkout, "ec.fulfillment.change", payload, {
+          source: mockCheckoutWindow,
+        });
+        await listenForEvent;
+
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
+        expect(onFulfillmentChangeSpy).toHaveBeenCalledOnce();
+      });
+    });
+
     describe("ec.totals.change", () => {
       it("updates the checkout property and dispatches an ec.totals.change event", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
@@ -480,6 +501,40 @@ describe("<shopify-checkout>", () => {
         const decoded = decodeCheckout(payload);
         expect(event.detail).toStrictEqual({ checkout: decoded });
         expect(event.detail.checkout.lineItems).toEqual(decoded.lineItems);
+      });
+
+      it("ec.fulfillment.change carries {checkout} with fulfillment nested in checkout", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const spy = vi.fn();
+        const wait = waitForEvent(checkout, "ec.fulfillment.change", spy);
+
+        const fulfillment = {
+          methods: [
+            {
+              id: "method-1",
+              type: "shipping",
+              line_item_ids: [],
+              selected_destination_id: "destination-1",
+              destinations: [
+                {
+                  id: "destination-1",
+                  street_address: "123 Main Street",
+                  address_country: "US",
+                },
+              ],
+            },
+          ],
+        };
+        const payload = makeCheckoutPayload({ fulfillment });
+        simulateProtocolMessageEvent(checkout, "ec.fulfillment.change", payload, {
+          source: mockCheckoutWindow,
+        });
+        await wait;
+
+        const event = spy.mock.calls[0]![0] as CustomEvent;
+        const decoded = decodeCheckout(payload);
+        expect(event.detail).toStrictEqual({ checkout: decoded });
+        expect(event.detail.checkout.fulfillment).toEqual(decoded.fulfillment);
       });
 
       it("ec.totals.change carries {checkout} with totals nested in checkout", async () => {

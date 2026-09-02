@@ -157,6 +157,7 @@ export interface CheckoutProtocolMessageMap {
   "ec.start": { checkout: Checkout };
   "ec.complete": { checkout: Checkout };
   "ec.error": { error: ErrorResponse };
+  "ec.fulfillment.change": { checkout: Checkout };
   "ec.line_items.change": { checkout: Checkout };
   "ec.totals.change": { checkout: Checkout };
   "ec.messages.change": { checkout: Checkout };

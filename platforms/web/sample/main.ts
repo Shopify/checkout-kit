@@ -26,6 +26,7 @@ const EVENT_TYPES = [
   "ec.complete",
   "ec.close",
   "ec.error",
+  "ec.fulfillment.change",
   "ec.line_items.change",
   "ec.totals.change",
   "ec.messages.change",
