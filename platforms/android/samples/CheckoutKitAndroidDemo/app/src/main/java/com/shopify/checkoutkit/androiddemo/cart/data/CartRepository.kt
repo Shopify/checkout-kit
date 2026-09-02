@@ -28,7 +28,7 @@ class CartRepository(
 
         if (cart == null) {
             val errors = cartCreate?.userErrors?.joinToString { "${it.field} - ${it.message}" }
-            throw RuntimeException("Failed to create cart, $errors")
+            throw CartOperationException("Failed to create cart, $errors")
         }
 
         Timber.i("Cart created with checkout URL")
@@ -43,7 +43,7 @@ class CartRepository(
 
         val data = storefrontApiClient.cartLinesAdd(cartId = cartId.id, lines = listOf(line))
         val cart = data.cartLinesAdd?.cart
-            ?: throw RuntimeException("Failed to add cart line")
+            ?: throw CartOperationException("Failed to add cart line")
 
         return cart.cartFragment.toLocal()
     }
@@ -56,12 +56,12 @@ class CartRepository(
             )
             val data = storefrontApiClient.cartLinesUpdate(cartId = cartId.id, lines = listOf(line))
             val cart = data.cartLinesUpdate?.cart
-                ?: throw RuntimeException("Failed to modify cart")
+                ?: throw CartOperationException("Failed to modify cart")
             return cart.cartFragment.toLocal()
         } else {
             val data = storefrontApiClient.cartLinesRemove(cartId = cartId.id, lineIds = listOf(lineItemId.id))
             val cart = data.cartLinesRemove?.cart
-                ?: throw RuntimeException("Failed to modify cart")
+                ?: throw CartOperationException("Failed to modify cart")
             return cart.cartFragment.toLocal()
         }
     }

@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit.androiddemo.products.product.data
 
 import com.shopify.checkoutkit.androiddemo.common.client.StorefrontApiClient
+import com.shopify.checkoutkit.androiddemo.common.client.StorefrontApiException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
@@ -17,7 +18,7 @@ class ProductRepository(
         return client.fetchProduct(productId = productId, numVariants = 20)
             .map { data ->
                 val product = data.product
-                    ?: throw RuntimeException("Failed to fetch product")
+                    ?: throw StorefrontApiException("Failed to fetch product")
                 val variants = product.variants.nodes.map { it.productVariantFragment.toLocal() }
                 product.productFragment.toLocal(variants)
             }

@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit.androiddemo.products.collection.data
 
 import com.shopify.checkoutkit.androiddemo.common.client.StorefrontApiClient
+import com.shopify.checkoutkit.androiddemo.common.client.StorefrontApiException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
@@ -35,7 +36,7 @@ class ProductCollectionRepository(
         return client.fetchCollection(handle = collectionHandle, numProducts = numberOfProducts)
             .map { data ->
                 val collection = data.collection
-                    ?: throw RuntimeException("Failed to fetch collection")
+                    ?: throw StorefrontApiException("Failed to fetch collection")
                 collection.toLocal()
             }
     }
