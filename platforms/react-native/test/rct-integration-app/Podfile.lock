@@ -2149,15 +2149,15 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - ShopifyCheckoutKit (~> 4.0.0-alpha.5)
-    - ShopifyCheckoutKit/AcceleratedCheckouts (~> 4.0.0-alpha.5)
+    - ShopifyCheckoutKit (~> 4.0.0-alpha.6)
+    - ShopifyCheckoutKit/AcceleratedCheckouts (~> 4.0.0-alpha.6)
     - SocketRocket
     - Yoga
-  - ShopifyCheckoutKit (4.0.0-alpha.5):
-    - ShopifyCheckoutKit/Core (= 4.0.0-alpha.5)
-  - ShopifyCheckoutKit/AcceleratedCheckouts (4.0.0-alpha.5):
+  - ShopifyCheckoutKit (4.0.0-alpha.6):
+    - ShopifyCheckoutKit/Core (= 4.0.0-alpha.6)
+  - ShopifyCheckoutKit/AcceleratedCheckouts (4.0.0-alpha.6):
     - ShopifyCheckoutKit/Core
-  - ShopifyCheckoutKit/Core (4.0.0-alpha.5)
+  - ShopifyCheckoutKit/Core (4.0.0-alpha.6)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
 
@@ -2464,8 +2464,8 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 8df342c127fd0c1e30e8b9f71ff814c22414a7c0
   ReactCodegen: 3ba2a79bc32ff858814c17ade10931b33b09dcf4
   ReactCommon: 592ef441605638b95e533653259254b4bd35ff4f
-  RNShopifyCheckoutKit: f7855358ff15db951f458320526ebd9ce2f91405
-  ShopifyCheckoutKit: 7874c8866e6c889d86194398c97e00388111d972
+  RNShopifyCheckoutKit: 5166025d75251fd0f2e896aeaa9f9cca115e382a
+  ShopifyCheckoutKit: c98a992e7371f1173b7e030c183fa5fe1a694459
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: a742cc68e8366fcfc681808162492bc0aa7a9498
 
