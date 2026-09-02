@@ -1,22 +1,46 @@
-# The sample enforces formatting, function naming, and magic-number checks. Compose UI and JUnit test functions use
-# idiomatic PascalCase and descriptive backticked names, respectively. Full static analysis is
-# enforced for the published library; enabling all default rules here would surface unrelated debt.
+# The sample enforces Detekt's default rules with targeted opt-outs for existing sample debt.
+# Compose UI and JUnit test functions use idiomatic PascalCase and descriptive backticked names.
+complexity:
+  CyclomaticComplexMethod:
+    active: false
+  LongMethod:
+    active: false
+  LongParameterList:
+    active: false
+  TooManyFunctions:
+    active: false
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+  TooGenericExceptionThrown:
+    active: false
+
 naming:
   FunctionNaming:
-    active: true
     ignoreAnnotated: [ 'Composable', 'Test' ]
+  MatchingDeclarationName:
+    active: false
 
 style:
   MagicNumber:
-    active: true
     # A named property documents the meaning of a value; retain the check for inline literals.
     ignorePropertyDeclaration: true
   MaxLineLength:
-    active: true
     maxLineLength: 140
+  ReturnCount:
+    active: false
+  ThrowsCount:
+    active: false
+  UnusedParameter:
+    active: false
+  UseRequire:
+    active: false
 
 formatting:
   active: true
+  Filename:
+    active: false
   autoCorrect: true
   MaximumLineLength:
     active: true

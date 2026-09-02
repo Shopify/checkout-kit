@@ -25,7 +25,6 @@ fun LoginView(
     navController: NavController,
     loginViewModel: LoginViewModel = koinViewModel(),
 ) {
-
     val uiState = loginViewModel.uiState.collectAsState().value
     val browserAuthenticationLauncher = LocalBrowserAuthenticationLauncher.current
     val locale = Locale.current.toString()
@@ -50,7 +49,9 @@ fun LoginView(
                 ) {
                     Button(
                         onClick = {
-                            browserAuthenticationLauncher.launch(uiState.status.authorizationContext.browserRequest) { result ->
+                            browserAuthenticationLauncher.launch(
+                                uiState.status.authorizationContext.browserRequest
+                            ) { result ->
                                 loginViewModel.browserAuthenticationCompleted(result)
                             }
                         },

@@ -74,21 +74,19 @@ class AuthenticationHelper(
     private fun validateConfiguration() {
         val issuerUri = issuer.toUri()
         val callbackUri = redirectUri.toUri()
-        val callbackScheme = callbackUri.scheme.orEmpty()
-        val callbackHasAuthority = !callbackUri.host.isNullOrBlank()
-        if (
-            clientId.isBlank() ||
-            !issuerUri.scheme.equals("https", ignoreCase = true) ||
-            issuerUri.host.isNullOrBlank() ||
-            callbackScheme.isBlank() ||
-            !callbackHasAuthority ||
-            callbackUri.query != null ||
-            callbackUri.fragment != null ||
-            callbackScheme.equals("http", ignoreCase = true)
-        ) {
+        if (clientId.isBlank() || !issuerUri.isValidIssuer() || !callbackUri.isValidCallback()) {
             throw AuthenticationException("Invalid Customer Account API configuration")
         }
     }
+
+    private fun Uri.isValidIssuer(): Boolean =
+        scheme.equals("https", ignoreCase = true) && !host.isNullOrBlank()
+
+    private fun Uri.isValidCallback(): Boolean =
+        hasValidCallbackScheme() && !host.isNullOrBlank() && query == null && fragment == null
+
+    private fun Uri.hasValidCallbackScheme(): Boolean =
+        !scheme.isNullOrBlank() && !scheme.equals("http", ignoreCase = true)
 
     private fun randomUrlSafeString(): String {
         val bytes = ByteArray(RANDOM_URL_SAFE_BYTE_LENGTH)
@@ -105,6 +103,8 @@ class AuthenticationHelper(
         return Base64.encodeToString(this, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
+    // Invalid external callback data is intentionally reduced to a safe domain error.
+    @Suppress("SwallowedException")
     private fun Uri.singleValueQueryParameters(): Map<String, String> {
         return try {
             queryParameterNames.associateWith { name ->

@@ -36,7 +36,7 @@ class E2ESampleAppTarget : E2ECommandTarget, KoinComponent {
 
         val variantId = products.getOrNull(atProductIndex)?.variants?.firstOrNull()?.id
 
-        return variantId?.id ?: throw IllegalStateException("No product at index $atProductIndex")
+        return checkNotNull(variantId?.id) { "No product at index $atProductIndex" }
     }
 
     override suspend fun addCartLine(variantId: String, quantity: Int) {

@@ -2,10 +2,6 @@ package com.shopify.checkoutkit.androiddemo.e2e
 
 import android.os.Process
 import com.shopify.checkoutkit.androiddemo.accessibility.AccessibilityIdentifiers
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Maps whether the SDK reported a ready preload cache hit to an identifier. */
 object PreloadCacheHitMarker {
@@ -110,9 +110,10 @@ class PreloadCacheHitLog(
 
                 writeBoundary(observationBoundary)
                 opened.lines.forEach(::record)
+            } catch (_: CancellationException) {
+                // Closing the observer cancels its reader; that is expected and not an error.
             } catch (error: Exception) {
-                val shouldReport = synchronized(resourceLock) { !closed } && error !is CancellationException
-                if (shouldReport) reportError(error)
+                if (synchronized(resourceLock) { !closed }) reportError(error)
             } finally {
                 closeStream()
             }
