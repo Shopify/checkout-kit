@@ -20,7 +20,7 @@ naming:
   FunctionNaming:
     ignoreAnnotated: [ 'Composable', 'Test' ]
   MatchingDeclarationName:
-    active: false
+    active: true
 
 style:
   MagicNumber:
@@ -40,7 +40,7 @@ style:
 formatting:
   active: true
   Filename:
-    active: false
+    active: true
   autoCorrect: true
   MaximumLineLength:
     active: true
