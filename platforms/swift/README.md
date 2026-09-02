@@ -7,7 +7,7 @@
 
 > [!WARNING]
 > **Alpha - early preview.** This software is an early preview and is **not**
-> production-ready. The current Checkout Kit for Swift alpha is `4.0.0-alpha.5`.
+> production-ready. The current Checkout Kit for Swift alpha is `4.0.0-alpha.6`.
 > Stability is not guaranteed, and breaking changes may occur in any release.
 
 **Checkout Kit for Swift** lets iOS apps present Shopify checkout in a native sheet while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods. The Swift package also includes `ShopifyAcceleratedCheckouts`, a SwiftUI library for rendering Shop Pay and Apple Pay buttons on iOS 16+.
@@ -47,7 +47,7 @@
 
 ## Install
 
-The current Checkout Kit for Swift alpha is `4.0.0-alpha.5`. For alpha testing, use that exact version until a stable `4.x` release is available.
+The current Checkout Kit for Swift alpha is `4.0.0-alpha.6`. For alpha testing, use that exact version until a stable `4.x` release is available.
 
 ### Swift Package Manager
 
@@ -61,7 +61,7 @@ Or add it to `Package.swift`:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.5")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.6")
 ]
 ```
 
@@ -81,10 +81,10 @@ Then add the products you need to your app target:
 ### CocoaPods
 
 ```ruby
-pod "ShopifyCheckoutKit", "4.0.0-alpha.5"
+pod "ShopifyCheckoutKit", "4.0.0-alpha.6"
 
 # Optional: Shop Pay and Apple Pay accelerated checkout buttons.
-pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0-alpha.5"
+pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0-alpha.6"
 ```
 
 ## Get a checkout URL
