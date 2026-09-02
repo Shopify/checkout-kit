@@ -470,6 +470,7 @@ exactly the fields relevant to that moment.
 | `ec.complete`          | `{checkout}`   | The buyer completed the order successfully.                                |
 | `ec.close`             | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. |
 | `ec.error`             | `{error}`      | Checkout reported an error. The component closes automatically only when a message has `unrecoverable` severity. |
+| `ec.fulfillment.change` | `{checkout}`   | The checkout's fulfillment details changed.                                |
 | `ec.line_items.change` | `{checkout}`   | The cart's line items changed (item added/removed/quantity updated).       |
 | `ec.totals.change`     | `{checkout}`   | The cart totals changed (subtotal, tax, shipping, discounts, total).       |
 | `ec.messages.change`   | `{checkout}`   | Checkout-level warnings/errors/info shown inside the checkout changed.     |

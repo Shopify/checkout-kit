@@ -162,6 +162,7 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @event ec.start - Dispatched when the checkout has started
  * @event ec.complete - Dispatched when the checkout was successfully completed
  * @event ec.error - Dispatched on a session-level fatal error
+ * @event ec.fulfillment.change - Dispatched when fulfillment details change
  * @event ec.line_items.change - Dispatched when cart line items change
  * @event ec.totals.change - Dispatched when totals change
  * @event ec.messages.change - Dispatched when checkout messages change
@@ -746,6 +747,10 @@ export class ShopifyCheckout
           this.close();
         }
       })
+      .on(Event.fulfillmentChange, ({ params: { checkout } }) => {
+        this.#checkout = checkout;
+        this.dispatchEvent(new ShopifyCheckoutFulfillmentChangeEvent({ checkout }));
+      })
       .on(Event.lineItemsChange, ({ params: { checkout } }) => {
         this.#checkout = checkout;
         this.dispatchEvent(new ShopifyCheckoutLineItemsChangeEvent({ checkout }));
@@ -881,6 +886,12 @@ export class ShopifyCheckout
   ): void;
 
   override addEventListener(
+    type: "ec.fulfillment.change",
+    listener: TypedEventListener<ShopifyCheckoutFulfillmentChangeEvent> | null,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+
+  override addEventListener(
     type: "ec.line_items.change",
     listener: TypedEventListener<ShopifyCheckoutLineItemsChangeEvent> | null,
     options?: boolean | AddEventListenerOptions,
@@ -926,6 +937,11 @@ export interface ShopifyCheckoutCompleteEventDetail {
 export interface ShopifyCheckoutErrorEventDetail {
   /** Error payload from the ECP `ec.error` notification. */
   error: ErrorResponse;
+}
+
+export interface ShopifyCheckoutFulfillmentChangeEventDetail {
+  /** Checkout snapshot with updated fulfillment details. */
+  checkout: Checkout;
 }
 
 export interface ShopifyCheckoutLineItemsChangeEventDetail {
@@ -977,6 +993,14 @@ export class ShopifyCheckoutErrorEvent extends CustomEvent<ShopifyCheckoutErrorE
 
   constructor(detail: ShopifyCheckoutErrorEventDetail) {
     super("ec.error", { detail, bubbles: true });
+  }
+}
+
+export class ShopifyCheckoutFulfillmentChangeEvent extends CustomEvent<ShopifyCheckoutFulfillmentChangeEventDetail> {
+  declare type: "ec.fulfillment.change";
+
+  constructor(detail: ShopifyCheckoutFulfillmentChangeEventDetail) {
+    super("ec.fulfillment.change", { detail, bubbles: true });
   }
 }
 
