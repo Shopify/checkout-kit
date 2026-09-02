@@ -18,7 +18,7 @@ pnpm version <new-version> --no-git-tag-version
 
 Use a [semver](https://semver.org/) string. Examples:
 
-- `4.0.0-alpha.3` — next alpha prerelease
+- `4.0.0-alpha.4` — next alpha prerelease
 - `4.0.0-beta.1` — first beta
 - `4.0.0-rc.1` — release candidate
 - `4.0.0` — stable
@@ -26,15 +26,15 @@ Use a [semver](https://semver.org/) string. Examples:
 `--no-git-tag-version` is intentional — the tag is created by the GitHub
 Release UI in step 2, not by `pnpm version`.
 
-Open a PR titled like `chore(web): bump to 4.0.0-alpha.3`. Get it reviewed
+Open a PR titled like `chore(web): bump to 4.0.0-alpha.4`. Get it reviewed
 and merged into `main`. Wait for CI to be green on `main`.
 
 ### 2. Draft a GitHub Release
 
 Go to <https://github.com/Shopify/checkout-kit/releases/new>:
 
-- **Tag**: `web/<version>` — e.g. `web/4.0.0-alpha.3`. Create the tag from `main`.
-- **Title**: `Web <version>` — e.g. `Web 4.0.0-alpha.3`.
+- **Tag**: `web/<version>` — e.g. `web/4.0.0-alpha.4`. Create the tag from `main`.
+- **Title**: `Web <version>` — e.g. `Web 4.0.0-alpha.4`.
 - **Notes**: click _Generate release notes_ and edit as needed. Highlight
   any breaking changes at the top.
 - **Set as a pre-release**: ✅ check this box for any version containing
@@ -80,7 +80,7 @@ run that built it.
 | Release type | Example tag | npm dist-tag | `npm install` resolves to |
 | --- | --- | --- | --- |
 | Stable | `web/4.0.0` | `latest` | `npm i @shopify/checkout-kit` |
-| Alpha / beta / rc | `web/4.0.0-alpha.3` | `next` | `npm i @shopify/checkout-kit@next` |
+| Alpha / beta / rc | `web/4.0.0-alpha.4` | `next` | `npm i @shopify/checkout-kit@next` |
 | Manual override | any | whatever you pass to `workflow_dispatch` | depends on tag |
 
 The dist-tag is computed from three layered signals, in priority order:
@@ -184,8 +184,8 @@ Confirm the npm Trusted Publisher settings match the workflow's
 ### Publish failed mid-way; some files showed up on npm
 
 npm doesn't allow republishing the same version, even if the previous
-publish was incomplete. Bump to the next patch (e.g. `4.0.0-alpha.3` →
-`4.0.0-alpha.4`) and run the release again. Don't try to delete and
+publish was incomplete. Bump to the next patch (e.g. `4.0.0-alpha.4` →
+`4.0.0-alpha.5`) and run the release again. Don't try to delete and
 re-publish.
 
 ### "ENEEDAUTH" or other auth errors despite Trusted Publishing being set up
