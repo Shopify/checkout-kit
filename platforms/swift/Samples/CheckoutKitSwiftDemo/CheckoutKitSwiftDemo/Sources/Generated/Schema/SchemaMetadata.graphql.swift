@@ -81,6 +81,8 @@ extension Storefront {
       "QueryRoot": Storefront.Objects.QueryRoot,
       "SearchQuerySuggestion": Storefront.Objects.SearchQuerySuggestion,
       "SellingPlan": Storefront.Objects.SellingPlan,
+      "SellingPlanAllocation": Storefront.Objects.SellingPlanAllocation,
+      "SellingPlanAllocationConnection": Storefront.Objects.SellingPlanAllocationConnection,
       "Shop": Storefront.Objects.Shop,
       "ShopPayInstallmentsFinancingPlan": Storefront.Objects.ShopPayInstallmentsFinancingPlan,
       "ShopPayInstallmentsFinancingPlanTerm": Storefront.Objects.ShopPayInstallmentsFinancingPlanTerm,

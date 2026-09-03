@@ -16,12 +16,20 @@ struct ProductView: View {
     @State private var showingCart = false
     @State private var descriptionExpanded: Bool = false
     @State private var addedToCart: Bool = false
+    @State private var selectedSellingPlanID: String?
+    @State private var addToCartError: String?
 
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
 
     init(product: Product) {
         _product = State(initialValue: product)
+
+        let variant = product.variants.nodes.first
+        let requiredSellingPlanID = product.requiresSellingPlan
+            ? variant?.sellingPlanAllocations.nodes.first?.sellingPlan.id
+            : nil
+        _selectedSellingPlanID = State(initialValue: requiredSellingPlanID)
     }
 
     // MARK: Body
@@ -93,6 +101,46 @@ struct ProductView: View {
 
                 if let variant = product.variants.nodes.first {
                     VStack(spacing: DesignSystem.buttonSpacing) {
+                        if !variant.sellingPlanAllocations.nodes.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Purchase option")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+
+                                Picker("Purchase option", selection: $selectedSellingPlanID) {
+                                    if !product.requiresSellingPlan {
+                                        Text("One-time purchase")
+                                            .tag(nil as String?)
+                                    }
+
+                                    ForEach(
+                                        variant.sellingPlanAllocations.nodes,
+                                        id: \.sellingPlan.id
+                                    ) { allocation in
+                                        Text(allocation.sellingPlan.name)
+                                            .tag(allocation.sellingPlan.id as String?)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        if let errorMessage = purchaseErrorMessage(for: variant) {
+                            Label {
+                                Text(errorMessage)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                            }
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
+                            .padding(12)
+                            .background(Color.red.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.cornerRadius))
+                            .accessibilityElement(children: .combine)
+                        }
+
                         Button(action: addToCart) {
                             HStack {
                                 Text(loading ? "Adding..." : (addedToCart ? "Added" : "Add to Cart"))
@@ -110,33 +158,11 @@ struct ProductView: View {
                         .background(addedToCart ? Color(ColorPalette.successColor) : Color(ColorPalette.primaryColor))
                         .foregroundStyle(.white)
                         .cornerRadius(DesignSystem.cornerRadius)
-                        .disabled(!variant.availableForSale || loading)
+                        .disabled(!canPurchase(variant) || loading)
 
-                        if variant.availableForSale {
+                        if canPurchase(variant), selectedSellingPlanID == nil {
                             if #available(iOS 16, *) {
-                                AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
-                                    .wallets([.applePay])
-                                    .applePayButtonStyle(applePayStyle.style)
-                                    .onFail { error in
-                                        print("[AcceleratedCheckout] Failed: \(error)")
-                                    }
-                                    .onDismiss {
-                                        print("[AcceleratedCheckout] Dismissed")
-                                    }
-                                    .environment(
-                                        \.shopifyAcceleratedCheckoutsConfiguration,
-                                        ShopifyAcceleratedCheckouts.Configuration(
-                                            storefrontDomain: InfoDictionary.shared.domain,
-                                            storefrontAccessToken: InfoDictionary.shared.accessToken
-                                        )
-                                    )
-                                    .environment(
-                                        \.shopifyApplePayConfiguration,
-                                        ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-                                            merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
-                                            contactFields: [.email, .phone]
-                                        )
-                                    )
+                                acceleratedCheckoutButton(for: variant)
                             }
                         }
                     }.padding([.leading, .trailing], 15)
@@ -159,23 +185,79 @@ struct ProductView: View {
         return MoneyV2(amount: variant.price.amount, currencyCode: variant.price.currencyCode).formattedString() ?? ""
     }
 
+    private func canPurchase(_ variant: Product.Variants.Node) -> Bool {
+        variant.availableForSale && (!product.requiresSellingPlan || selectedSellingPlanID != nil)
+    }
+
+    private func purchaseErrorMessage(for _: Product.Variants.Node) -> String? {
+        if let addToCartError {
+            return addToCartError
+        }
+        if product.requiresSellingPlan, selectedSellingPlanID == nil {
+            return "This subscription doesn't have an available purchase option."
+        }
+        return nil
+    }
+
+    @available(iOS 16, *)
+    private func acceleratedCheckoutButton(
+        for variant: Product.Variants.Node
+    ) -> some View {
+        AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
+            .wallets([.applePay])
+            .applePayButtonStyle(applePayStyle.style)
+            .onFail { error in
+                addToCartError = "We couldn't start accelerated checkout. Please try again."
+                print("[AcceleratedCheckout] Failed: \(error)")
+            }
+            .onDismiss {
+                print("[AcceleratedCheckout] Dismissed")
+            }
+            .environment(
+                \.shopifyAcceleratedCheckoutsConfiguration,
+                ShopifyAcceleratedCheckouts.Configuration(
+                    storefrontDomain: InfoDictionary.shared.domain,
+                    storefrontAccessToken: InfoDictionary.shared.accessToken
+                )
+            )
+            .environment(
+                \.shopifyApplePayConfiguration,
+                ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+                    merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
+                    contactFields: [.email, .phone]
+                )
+            )
+    }
+
     private func addToCart() {
         _Concurrency.Task {
             guard let variant = product.variants.nodes.first else { return }
 
             loading = true
+            addToCartError = nil
+            defer { loading = false }
             let start = Date()
 
-            _ = try await CartManager.shared.performCartLinesAdd(variant: variant.id)
+            do {
+                _ = try await CartManager.shared.performCartLinesAdd(
+                    variant: variant.id,
+                    sellingPlanID: selectedSellingPlanID
+                )
 
-            let diff = Date().timeIntervalSince(start)
-            let message = "Added item to cart in \(String(format: "%.0f", diff * 1000))ms"
-            ShopifyCheckoutKit.configuration.logger.log(message)
-            loading = false
-            addedToCart = true
+                let diff = Date().timeIntervalSince(start)
+                let message = "Added item to cart in \(String(format: "%.0f", diff * 1000))ms"
+                ShopifyCheckoutKit.configuration.logger.log(message)
+                addedToCart = true
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    addedToCart = false
+                }
+            } catch {
                 addedToCart = false
+                addToCartError = "We couldn't add this item to your cart. Please try again."
+                ShopifyCheckoutKit.configuration.logger.log(
+                    "Failed to add item to cart: \(error.localizedDescription)"
+                )
             }
         }
     }

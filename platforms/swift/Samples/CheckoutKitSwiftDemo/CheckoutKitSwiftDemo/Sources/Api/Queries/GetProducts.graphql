@@ -6,6 +6,7 @@ query GetProducts($first: Int = 20, $country: CountryCode!, $language: LanguageC
       handle
       description
       vendor
+      requiresSellingPlan
       featuredImage {
         url
       }
@@ -20,6 +21,14 @@ query GetProducts($first: Int = 20, $country: CountryCode!, $language: LanguageC
           id
           title
           availableForSale
+          sellingPlanAllocations(first: 10) {
+            nodes {
+              sellingPlan {
+                id
+                name
+              }
+            }
+          }
           price {
             amount
             currencyCode
