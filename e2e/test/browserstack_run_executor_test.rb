@@ -7,6 +7,21 @@ load File.expand_path("../scripts/execute_browserstack_run", __dir__)
 class BrowserStackRunExecutorTest < Minitest::Test
   E2E_ROOT = File.expand_path("..", __dir__)
 
+  class CompletedBuildClient
+    attr_reader :poll_count
+
+    def initialize
+      @poll_count = 0
+    end
+
+    def get_build(_build_id)
+      @poll_count += 1
+      raise "polled after completion" if @poll_count > 1
+
+      {"id" => "build-123", "status" => "completed", "devices" => []}
+    end
+  end
+
   def with_version_file(contents)
     Dir.mktmpdir do |dir|
       path = File.join(dir, ".maestro-version")
@@ -53,6 +68,21 @@ class BrowserStackRunExecutorTest < Minitest::Test
       )
 
       assert_equal "2.4.0", version
+    end
+  end
+
+  def test_a_completed_build_stops_polling
+    Dir.mktmpdir do |output_dir|
+      File.open(File::NULL, "w") do |output|
+        client = CompletedBuildClient.new
+        executor = BrowserStackRunExecutor.new({output_dir: output_dir}, client: client, output: output)
+
+        build, sessions = executor.send(:poll_build, "build-123")
+
+        assert_equal "completed", build.fetch("status")
+        assert_empty sessions
+        assert_equal 1, client.poll_count
+      end
     end
   end
 end
