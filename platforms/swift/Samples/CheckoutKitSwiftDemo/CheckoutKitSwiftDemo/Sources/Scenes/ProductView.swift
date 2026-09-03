@@ -305,23 +305,33 @@ class ProductCache: ObservableObject {
         }
     }
 
-    public func fetchCollection(limit: Int = 20) {
-        Task {
-            let network = Network.shared
+    public func fetchCollection(limit: Int = 20) async {
+        await fetchCollection(limit: limit, cachePolicy: .cacheFirst)
+    }
 
-            let query = Storefront.GetProductsQuery(
-                first: .some(Int32(limit)),
-                country: network.countryCode,
-                language: network.languageCode
-            )
+    public func refreshCollection(limit: Int = 20) async {
+        await fetchCollection(limit: limit, cachePolicy: .networkOnly)
+    }
 
-            do {
-                let response = try await network.apollo.fetch(query: query)
-                self.collection = response.data?.products.nodes
-                self.cachedProduct = response.data?.products.nodes.first
-            } catch {
-                // Fetch failed silently
-            }
+    private func fetchCollection(limit: Int, cachePolicy: CachePolicy.Query.SingleResponse) async {
+        guard !isFetching else { return }
+
+        isFetching = true
+        defer { isFetching = false }
+
+        let network = Network.shared
+        let query = Storefront.GetProductsQuery(
+            first: .some(Int32(limit)),
+            country: network.countryCode,
+            language: network.languageCode
+        )
+
+        do {
+            let response = try await network.apollo.fetch(query: query, cachePolicy: cachePolicy)
+            collection = response.data?.products.nodes
+            cachedProduct = response.data?.products.nodes.first
+        } catch {
+            // Fetch failed silently
         }
     }
 }
@@ -343,8 +353,8 @@ struct ProductGalleryView: View {
             }
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-        .onAppear {
-            productCache.fetchCollection()
+        .task {
+            await productCache.fetchCollection()
         }
     }
 }

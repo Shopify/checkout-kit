@@ -29,10 +29,13 @@ struct ProductGridView: View {
             .padding(.horizontal, 5)
             .padding(.top, 10)
         }
-        .onAppear {
+        .task {
             if productCache.collection == nil {
-                productCache.fetchCollection()
+                await productCache.fetchCollection()
             }
+        }
+        .refreshable {
+            await productCache.refreshCollection()
         }
         .sheet(isPresented: $showProductSheet) {
             ProductSheetView(product: $selectedProduct, isPresented: $showProductSheet)
