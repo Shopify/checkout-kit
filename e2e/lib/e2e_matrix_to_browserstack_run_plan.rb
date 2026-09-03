@@ -77,7 +77,7 @@ class E2EMatrixToBrowserStackRunPlan
     {
       "application_id" => application_id,
       "include_tags" => application_tags(application, "include"),
-      "exclude_tags" => effective_tags(application)
+      "exclude_tags" => application_tags(application, "exclude")
     }
   end
 
