@@ -26,8 +26,8 @@ Pod::Spec.new do |s|
     s.dependency "ShopifyCheckoutKit"
     s.dependency "ShopifyCheckoutKit/AcceleratedCheckouts"
   else
-    s.dependency "ShopifyCheckoutKit", "~> #{ios_native_sdk_version}"
-    s.dependency "ShopifyCheckoutKit/AcceleratedCheckouts", "~> #{ios_native_sdk_version}"
+    s.dependency "ShopifyCheckoutKit", "= #{ios_native_sdk_version}"
+    s.dependency "ShopifyCheckoutKit/AcceleratedCheckouts", "= #{ios_native_sdk_version}"
   end
 
   install_modules_dependencies(s)

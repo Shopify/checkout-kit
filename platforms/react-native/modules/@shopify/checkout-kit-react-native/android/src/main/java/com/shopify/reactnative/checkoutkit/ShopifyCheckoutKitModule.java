@@ -202,6 +202,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     resultConfig.putString("colorScheme", colorSchemeStringFor(checkoutConfig.getAppearance()));
     resultConfig.putString("logLevel", logLevelStringFor(checkoutConfig.getLogLevel()));
     resultConfig.putBoolean("preloading", checkoutConfig.getPreloading().getEnabled());
+    resultConfig.putBoolean("telemetry", checkoutConfig.getTelemetry().getEnabled());
     resultConfig.putArray("allowedMessageOrigins",
         Arguments.fromList(new ArrayList<>(checkoutConfig.getAllowedMessageOrigins())));
 
@@ -221,6 +222,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
       if (config.hasKey("allowedMessageOrigins")) {
         configuration.setAllowedMessageOrigins(toStringSet(config.getArray("allowedMessageOrigins")));
+      }
+
+      if (config.hasKey("telemetry")) {
+        configuration.setTelemetry(new Telemetry(config.getBoolean("telemetry")));
       }
 
       if (config.hasKey("logLevel")) {
