@@ -3,6 +3,19 @@ import XCTest
 
 @MainActor
 final class StorefrontInputFactoryTests: XCTestCase {
+    func testCartLineIncludesSellingPlan() {
+        let input = StorefrontInputFactory.shared.createCartLineInput(
+            variantID: "gid://shopify/ProductVariant/1",
+            sellingPlanID: "gid://shopify/SellingPlan/2"
+        )
+
+        XCTAssertEqual(input.merchandiseId, "gid://shopify/ProductVariant/1")
+        guard case let .some(sellingPlanID) = input.sellingPlanId else {
+            return XCTFail("Expected a selling plan ID")
+        }
+        XCTAssertEqual(sellingPlanID, "gid://shopify/SellingPlan/2")
+    }
+
     func testHardcodedCartUsesASelectedReusableDeliveryAddress() {
         let originalBuyerIdentityMode = appConfiguration.buyerIdentityMode
         defer { appConfiguration.buyerIdentityMode = originalBuyerIdentityMode }

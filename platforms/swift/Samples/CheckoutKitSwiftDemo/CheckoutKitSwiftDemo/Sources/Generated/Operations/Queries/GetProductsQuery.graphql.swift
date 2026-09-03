@@ -9,7 +9,7 @@ extension Storefront {
     static let operationName: String = "GetProducts"
     static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
-        #"query GetProducts($first: Int = 20, $country: CountryCode!, $language: LanguageCode!) @inContext(country: $country, language: $language) { products(first: $first) { __typename nodes { __typename id title handle description vendor featuredImage { __typename url } collections(first: 1) { __typename nodes { __typename id title } } variants(first: 1) { __typename nodes { __typename id title availableForSale price { __typename amount currencyCode } } } } } }"#
+        #"query GetProducts($first: Int = 20, $country: CountryCode!, $language: LanguageCode!) @inContext(country: $country, language: $language) { products(first: $first) { __typename nodes { __typename id title handle description vendor requiresSellingPlan featuredImage { __typename url } collections(first: 1) { __typename nodes { __typename id title } } variants(first: 1) { __typename nodes { __typename id title availableForSale sellingPlanAllocations(first: 10) { __typename nodes { __typename sellingPlan { __typename id name } } } price { __typename amount currencyCode } } } } } }"#
       ))
 
     public var first: GraphQLNullable<Int32>
@@ -83,6 +83,7 @@ extension Storefront {
             .field("handle", String.self),
             .field("description", String.self),
             .field("vendor", String.self),
+            .field("requiresSellingPlan", Bool.self),
             .field("featuredImage", FeaturedImage?.self),
             .field("collections", Collections.self, arguments: ["first": 1]),
             .field("variants", Variants.self, arguments: ["first": 1]),
@@ -104,6 +105,8 @@ extension Storefront {
           var description: String { __data["description"] }
           /// The name of the product's vendor.
           var vendor: String { __data["vendor"] }
+          /// Whether the product can only be purchased with a [selling plan](/docs/apps/build/purchase-options/subscriptions/selling-plans). Products that are sold on subscription (`requiresSellingPlan: true`) can be updated only for online stores. If you update a product to be subscription-only (`requiresSellingPlan:false`), then the product is unpublished from all channels, except the online store.
+          var requiresSellingPlan: Bool { __data["requiresSellingPlan"] }
           /// The featured image for the product.
           ///
           /// This field is functionally equivalent to `images(first: 1)`.
@@ -214,6 +217,7 @@ extension Storefront {
                 .field("id", Storefront.ID.self),
                 .field("title", String.self),
                 .field("availableForSale", Bool.self),
+                .field("sellingPlanAllocations", SellingPlanAllocations.self, arguments: ["first": 10]),
                 .field("price", Price.self),
               ] }
               static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
@@ -226,8 +230,73 @@ extension Storefront {
               var title: String { __data["title"] }
               /// Indicates if the product variant is available for sale.
               var availableForSale: Bool { __data["availableForSale"] }
+              /// Represents an association between a variant and a selling plan. Selling plan allocations describe which selling plans are available for each variant, and what their impact is on pricing.
+              var sellingPlanAllocations: SellingPlanAllocations { __data["sellingPlanAllocations"] }
               /// The product variant’s price.
               var price: Price { __data["price"] }
+
+              /// Products.Node.Variants.Node.SellingPlanAllocations
+              ///
+              /// Parent Type: `SellingPlanAllocationConnection`
+              nonisolated struct SellingPlanAllocations: Storefront.SelectionSet {
+                let __data: DataDict
+                init(_dataDict: DataDict) { __data = _dataDict }
+
+                static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.SellingPlanAllocationConnection }
+                static var __selections: [ApolloAPI.Selection] { [
+                  .field("__typename", String.self),
+                  .field("nodes", [Node].self),
+                ] }
+                static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+                  GetProductsQuery.Data.Products.Node.Variants.Node.SellingPlanAllocations.self
+                ] }
+
+                /// A list of the nodes contained in SellingPlanAllocationEdge.
+                var nodes: [Node] { __data["nodes"] }
+
+                /// Products.Node.Variants.Node.SellingPlanAllocations.Node
+                ///
+                /// Parent Type: `SellingPlanAllocation`
+                nonisolated struct Node: Storefront.SelectionSet {
+                  let __data: DataDict
+                  init(_dataDict: DataDict) { __data = _dataDict }
+
+                  static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.SellingPlanAllocation }
+                  static var __selections: [ApolloAPI.Selection] { [
+                    .field("__typename", String.self),
+                    .field("sellingPlan", SellingPlan.self),
+                  ] }
+                  static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+                    GetProductsQuery.Data.Products.Node.Variants.Node.SellingPlanAllocations.Node.self
+                  ] }
+
+                  /// A representation of how products and variants can be sold and purchased. For example, an individual selling plan could be '6 weeks of prepaid granola, delivered weekly'.
+                  var sellingPlan: SellingPlan { __data["sellingPlan"] }
+
+                  /// Products.Node.Variants.Node.SellingPlanAllocations.Node.SellingPlan
+                  ///
+                  /// Parent Type: `SellingPlan`
+                  nonisolated struct SellingPlan: Storefront.SelectionSet {
+                    let __data: DataDict
+                    init(_dataDict: DataDict) { __data = _dataDict }
+
+                    static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.SellingPlan }
+                    static var __selections: [ApolloAPI.Selection] { [
+                      .field("__typename", String.self),
+                      .field("id", Storefront.ID.self),
+                      .field("name", String.self),
+                    ] }
+                    static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+                      GetProductsQuery.Data.Products.Node.Variants.Node.SellingPlanAllocations.Node.SellingPlan.self
+                    ] }
+
+                    /// A globally-unique ID.
+                    var id: Storefront.ID { __data["id"] }
+                    /// The name of the selling plan. For example, '6 weeks of prepaid granola, delivered weekly'.
+                    var name: String { __data["name"] }
+                  }
+                }
+              }
 
               /// Products.Node.Variants.Node.Price
               ///

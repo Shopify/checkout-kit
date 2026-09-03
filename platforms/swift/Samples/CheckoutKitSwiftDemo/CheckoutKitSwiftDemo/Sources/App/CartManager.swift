@@ -31,12 +31,20 @@ class CartManager: ObservableObject {
 
     // MARK: Cart Actions
 
-    func performCartLinesAdd(variant: String) async throws -> Storefront.CartFragment {
+    func performCartLinesAdd(
+        variant: String,
+        sellingPlanID: String? = nil
+    ) async throws -> Storefront.CartFragment {
         guard let cartId = cart?.id else {
-            return try await performCartCreate(items: [variant])
+            return try await performCartCreate(items: [variant], sellingPlanID: sellingPlanID)
         }
 
-        let lines = [Storefront.CartLineInput(merchandiseId: variant)]
+        let lines = [
+            StorefrontInputFactory.shared.createCartLineInput(
+                variantID: variant,
+                sellingPlanID: sellingPlanID
+            )
+        ]
         let network = Network.shared
 
         let mutation = Storefront.CartLinesAddMutation(
@@ -120,12 +128,19 @@ class CartManager: ObservableObject {
         }
     }
 
-    private func performCartCreate(items: [String] = []) async throws -> Storefront.CartFragment {
+    private func performCartCreate(
+        items: [String] = [],
+        sellingPlanID: String? = nil
+    ) async throws -> Storefront.CartFragment {
         var customerAccessToken: String?
         if CustomerAccountManager.shared.isAuthenticated {
             customerAccessToken = try? await CustomerAccountManager.shared.getValidAccessToken()
         }
-        let input = StorefrontInputFactory.shared.createCartInput(items, customerAccessToken: customerAccessToken)
+        let input = StorefrontInputFactory.shared.createCartInput(
+            items,
+            sellingPlanID: sellingPlanID,
+            customerAccessToken: customerAccessToken
+        )
         let network = Network.shared
 
         let mutation = Storefront.CartCreateMutation(

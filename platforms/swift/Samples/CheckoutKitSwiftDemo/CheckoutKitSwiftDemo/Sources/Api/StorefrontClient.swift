@@ -53,9 +53,20 @@ class StorefrontInputFactory {
         case invariant(String)
     }
 
-    public func createCartInput(_ items: [String] = [], customerAccessToken: String? = nil) -> Storefront.CartInput {
+    func createCartLineInput(variantID: String, sellingPlanID: String? = nil) -> Storefront.CartLineInput {
+        Storefront.CartLineInput(
+            merchandiseId: variantID,
+            sellingPlanId: sellingPlanID.map(GraphQLNullable.some) ?? .none
+        )
+    }
+
+    public func createCartInput(
+        _ items: [String] = [],
+        sellingPlanID: String? = nil,
+        customerAccessToken: String? = nil
+    ) -> Storefront.CartInput {
         let lines: GraphQLNullable<[Storefront.CartLineInput]> = .some(
-            items.map { Storefront.CartLineInput(merchandiseId: $0) }
+            items.map { createCartLineInput(variantID: $0, sellingPlanID: sellingPlanID) }
         )
 
         switch appConfiguration.buyerIdentityMode {
