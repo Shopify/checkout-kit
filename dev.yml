@@ -450,21 +450,53 @@ commands:
             run: cd platforms/swift && ./Scripts/build_samples
 
       start:
-        desc: Build the swift sample app for the booted simulator (preferably)
+        desc: Build and install the Swift sample app on a simulator
         run: |
-          set -e
+          set -eo pipefail
           cd platforms/swift
-          ./Scripts/generate_xcode_projects
-          # Automatically detect if a booted simulator exists, otherwise fallback to default
-          BOOTED_ID=$(xcrun simctl list devices booted | grep -E 'iPhone|iPad|Air' | sed -n -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/p' | head -n1 || true)
-          if [ -n "$BOOTED_ID" ]; then
-            export CURRENT_SIMULATOR_UUID="$BOOTED_ID"
-            echo "Using booted simulator: $BOOTED_ID"
+          ./Scripts/generate_xcode_projects --spec Samples/CheckoutKitSwiftDemo/project.yml
+
+          DEVICE_ID=$(xcrun simctl list devices booted | awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36); exit }')
+          if [ -n "$DEVICE_ID" ]; then
+            echo "Using booted simulator: $DEVICE_ID"
           else
-            echo "No booted simulator found. Falling back to default simulator."
+            DEVICE_ID=$(./Scripts/get_device_id "iPhone 16" 2>/dev/null || ./Scripts/get_device_id "iPhone" 2>/dev/null || true)
+            if [ -z "$DEVICE_ID" ]; then
+              echo "No iOS simulator found." >&2
+              exit 1
+            fi
+            echo "No booted simulator found. Booting simulator: $DEVICE_ID"
+            xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+            xcrun simctl bootstatus "$DEVICE_ID" -b
           fi
+
+          DERIVED_DATA="$PWD/../../.build/swift-start-simulator"
           cd Samples
-          ../Scripts/xcode_run build CheckoutKitSwiftDemo
+          build_command=(
+            xcodebuild build
+            -workspace Samples.xcworkspace
+            -scheme CheckoutKitSwiftDemo
+            -sdk iphonesimulator
+            -destination "id=$DEVICE_ID"
+            -derivedDataPath "$DERIVED_DATA"
+            -skipPackagePluginValidation
+            -disableAutomaticPackageResolution
+            CODE_SIGNING_ALLOWED=NO
+          )
+          if command -v xcbeautify >/dev/null 2>&1; then
+            "${build_command[@]}" | xcbeautify
+          else
+            "${build_command[@]}"
+          fi
+
+          APP_PATH=$(find "$DERIVED_DATA/Build/Products" -maxdepth 2 -name "CheckoutKitSwiftDemo.app" -print -quit)
+          if [ -z "$APP_PATH" ]; then
+            echo "The build created no CheckoutKitSwiftDemo.app bundle." >&2
+            exit 1
+          fi
+
+          xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+          echo "Installed CheckoutKitSwiftDemo on simulator: $DEVICE_ID"
 
       e2e:
         desc: Run the Swift sample Maestro tests, filtered by tag
