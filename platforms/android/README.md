@@ -478,6 +478,8 @@ not evidence that checkout failed, so it does not fail a preload or invoke `onFa
 
 Use `onFail` and `onDismiss` for checkout outcomes handled by your app. Use `CheckoutProtocol.Client` for typed checkout state, including completion. These descriptors wrap checkout protocol messages defined in the [protocol schema](../../protocol/services/shopping/embedded.openrpc.json).
 
+Web pixel events are not relayed to the app — Checkout Sheet Kit's `onWebPixelEvent` has no equivalent here. Merchant [web pixels](https://shopify.dev/docs/api/web-pixels-api) run inside checkout automatically.
+
 ```kotlin
 import com.shopify.checkoutkit.CheckoutProtocol
 
