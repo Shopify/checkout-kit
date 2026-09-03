@@ -24,6 +24,44 @@ class BitriseCIHelpersTest < Minitest::Test
     end
   end
 
+  def test_non_pr_build_treats_every_tracked_file_as_changed
+    Dir.mktmpdir do |directory|
+      output, error, status = run_helper(
+        'changed_files="$(e2e_changed_files_file)"; cat "$changed_files"',
+        "TMPDIR" => directory,
+        "BITRISE_DEPLOY_DIR" => File.join(directory, "deploy")
+      )
+
+      assert status.success?, error
+      assert_equal `git ls-files`.lines.sort, output.lines.sort
+    end
+  end
+
+  def test_false_pull_request_value_treats_every_tracked_file_as_changed
+    Dir.mktmpdir do |directory|
+      output, error, status = run_helper(
+        'changed_files="$(e2e_changed_files_file)"; cat "$changed_files"',
+        "TMPDIR" => directory,
+        "BITRISE_DEPLOY_DIR" => File.join(directory, "deploy"),
+        "BITRISE_PULL_REQUEST" => "false"
+      )
+
+      assert status.success?, error
+      assert_equal `git ls-files`.lines.sort, output.lines.sort
+    end
+  end
+
+  def test_non_pr_build_does_not_require_a_github_token
+    Dir.mktmpdir do |directory|
+      _output, error, status = run_helper(
+        "e2e_export_github_token",
+        "BITRISE_DEPLOY_DIR" => directory
+      )
+
+      assert status.success?, error
+    end
+  end
+
   def test_pr_build_fails_when_branch_head_config_cannot_be_read
     Dir.mktmpdir do |directory|
       _output, error, status = run_helper(
