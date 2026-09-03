@@ -27,8 +27,7 @@ class E2EMatrixToBrowserStackRunPlan
   MISSING_BUILD_WORKFLOW_HINT = "Rebase on main to pick up the latest workflows, " \
     "or update e2e/config/matrix.yml if you're removing this target intentionally."
 
-  # Every application excludes capabilities that only the other platform supports.
-  PLATFORM_CAPABILITY_EXCLUDES = {"ios" => "android-only", "android" => "ios-only"}.freeze
+  SUPPORTED_PLATFORMS = ["ios", "android"].freeze
 
   attr_reader :config_path, :changed_files
 
@@ -133,7 +132,7 @@ class E2EMatrixToBrowserStackRunPlan
       "artifact_env" => application.fetch("artifact_env"),
       "execute" => workspace_path,
       "include_tags" => application_tags(application, "include"),
-      "exclude_tags" => effective_tags(application),
+      "exclude_tags" => application_tags(application, "exclude"),
       "ready_marker" => application.fetch("ready_marker"),
       "status_context" => "checkout-kit/e2e/#{application_id}/#{os_version_tag_id}"
     }
@@ -149,12 +148,6 @@ class E2EMatrixToBrowserStackRunPlan
     shared_tags = Array(default_tags.fetch(kind, nil))
     additional_tags = Array(application.fetch("additional_#{kind}_tags", nil))
     (shared_tags + additional_tags).uniq
-  end
-
-  def effective_tags(application)
-    configured_exclude_tags = application_tags(application, "exclude")
-    platform_exclude_tag = PLATFORM_CAPABILITY_EXCLUDES.fetch(application.fetch("platform"))
-    (configured_exclude_tags + [platform_exclude_tag]).uniq
   end
 
   def application_matches_changed_files?(application)
@@ -267,7 +260,7 @@ class E2EMatrixToBrowserStackRunPlan
       validate_application_changed_files_filters(errors, application)
       validate_application_tags(errors, application)
       platform = application.fetch("platform", nil)
-      if PLATFORM_CAPABILITY_EXCLUDES.key?(platform)
+      if SUPPORTED_PLATFORMS.include?(platform)
         validate_application_tag_overlap(errors, application)
       else
         errors << "application #{id} platform must be ios or android"
@@ -378,7 +371,7 @@ class E2EMatrixToBrowserStackRunPlan
   # BrowserStack rejects a build when the same tag appears in both lists.
   def validate_application_tag_overlap(errors, application)
     id = application.fetch("id", "<missing>")
-    overlap = application_tags(application, "include") & effective_tags(application)
+    overlap = application_tags(application, "include") & application_tags(application, "exclude")
     return if overlap.empty?
 
     errors << "application #{id} includes and excludes #{overlap.inspect}"

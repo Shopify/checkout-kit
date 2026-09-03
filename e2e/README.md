@@ -46,30 +46,28 @@ Each command runs the tests in `tests/shared/` and its target namespace under
 `tests/`. Narrow a run with `--tags`:
 
 ```bash
-dev swift e2e --tags checkout
-dev rn e2e ios --tags checkout
-dev android e2e --tags launch,checkout
+dev swift e2e --tags checkout-presentation
+dev rn e2e ios --tags checkout-completion
+dev android e2e --tags launch,buyer-identity
 ```
 
 Both options match **any** listed tag, because that is how Maestro filters.
-`--tags launch,checkout` runs the launch tests and the checkout tests.
+`--tags launch,buyer-identity` runs the launch and buyer identity coverage.
 `--exclude-tags` skips tests carrying any listed tag. `config.yaml` quarantines
 `flaky` and `wip` for every run, so those need no command line option.
 
 ### Tags
 
-Every test declares tags from this taxonomy. `e2e/test/maestro_test_tags_test.rb`
-enforces it.
+Every test declares tags from this taxonomy.
 
 | Group | Tags | Rule |
 |---|---|---|
-| Journey | `launch`, `cart`, `checkout`, `account`, `preload` | Exactly one per test |
+| Coverage | `launch`, `cart`, `checkout-presentation`, `checkout-completion`, `buyer-identity`, `account`, `preload` | Exactly one per test |
 | Cost tier | `smoke`, `full` | Exactly one per test |
 | Quarantine | `flaky`, `wip` | Excluded by default, in `config.yaml` |
-| Platform capability | `ios-only`, `android-only` | Needs a `# Platform capability:` comment |
 
-A platform tag marks a capability only one platform has, such as Apple Pay. It
-must never mark a test that is merely not ported yet.
+A coverage tag names the primary behavior whose regression the test detects,
+not every application surface the flow happens to traverse.
 
 Every command calls `scripts/run_local_e2e`, which selects the device, builds
 and installs the target, and then calls `scripts/run_maestro`. React Native targets

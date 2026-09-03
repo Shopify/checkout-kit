@@ -1,7 +1,7 @@
 appId: ${E2E_APP_ID}
 name: Checkout with hardcoded buyer identity
 tags:
-  - checkout
+  - buyer-identity
   # This test submits a real order, so it belongs to the expensive tier.
   - full
 

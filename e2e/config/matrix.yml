@@ -6,7 +6,9 @@ tests_path: tests
 tags:
   include:
     - launch
-    - checkout
+    - checkout-presentation
+    - checkout-completion
+    - buyer-identity
   exclude:
     - flaky
     - wip
@@ -41,7 +43,7 @@ applications:
     app_id: com.shopify.checkoutkit.androiddemo
     artifact_env: E2E_KOTLIN_ANDROID_APP_PATH
     ready_marker: checkout-kit-sample-ready
-    # The preload journey reads the native samples' PreloadState callbacks, which only the
+    # The preload coverage reads the native samples' PreloadState callbacks, which only the
     # Swift and Kotlin samples surface, so the two native rows adopt it ahead of the others.
     additional_include_tags:
       - preload
