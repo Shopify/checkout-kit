@@ -797,6 +797,11 @@ shopify.present(checkoutUrl, {
 `onClose` and `onFail` are mutually exclusive — exactly one of them fires
 per `present(...)` call, after which both handles are released.
 
+Web pixel events are not relayed to the app — Checkout Sheet Kit's `'pixel'`
+event listener has no equivalent here. Merchant
+[web pixels](https://shopify.dev/docs/api/web-pixels-api) run inside checkout
+automatically.
+
 ## Identity & customer accounts
 
 Buyer-aware checkout experience reduces friction and increases conversion.

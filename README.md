@@ -94,6 +94,10 @@ The legacy standalone Checkout Sheet Kit repositories remain available for apps 
 | Android | `com.shopify:checkout-sheet-kit` | `3.5.x` |
 | React Native | `@shopify/checkout-sheet-kit` | `4.0.x` |
 
+### Web pixel events
+
+Checkout Kit does not relay web pixel events to the host app. The Checkout Sheet Kit APIs for this — `checkoutDidEmitWebPixelEvent` (Swift), `onWebPixelEvent` (Android), and the `pixel` event listener (React Native) — have no Checkout Kit equivalent, so remove those handlers when migrating. [Web pixels](https://shopify.dev/docs/api/web-pixels-api) configured for the shop run inside checkout itself with the buyer's privacy consent applied, so checkout analytics continue to work without app-side forwarding.
+
 ## Contributing
 
 Issues and pull requests are welcome. See [CONTRIBUTING](.github/CONTRIBUTING.md) and our [Code of Conduct](.github/CODE_OF_CONDUCT.md).

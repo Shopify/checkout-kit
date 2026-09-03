@@ -320,6 +320,8 @@ let configuration = ShopifyCheckoutKit.configuration
 
 Typed checkout state, including completion, flows through `EmbeddedCheckoutProtocol`.
 
+Web pixel events are not relayed to the app — Checkout Sheet Kit's `checkoutDidEmitWebPixelEvent` has no equivalent here. Merchant [web pixels](https://shopify.dev/docs/api/web-pixels-api) run inside checkout automatically.
+
 ```swift
 import ShopifyCheckoutKit
 import EmbeddedCheckoutProtocol
