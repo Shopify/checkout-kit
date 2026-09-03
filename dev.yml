@@ -450,7 +450,7 @@ commands:
             run: cd platforms/swift && ./Scripts/build_samples
 
       start:
-        desc: Build and install the Swift sample app on a simulator
+        desc: Build, install, and run the Swift sample app on a simulator
         run: |
           set -eo pipefail
           cd platforms/swift
@@ -496,7 +496,37 @@ commands:
           fi
 
           xcrun simctl install "$DEVICE_ID" "$APP_PATH"
-          echo "Installed CheckoutKitSwiftDemo on simulator: $DEVICE_ID"
+          echo "Launching CheckoutKitSwiftDemo on simulator: $DEVICE_ID"
+          echo "Press Ctrl-C to stop the app."
+
+          colorize_logs() {
+            if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ] || [ "${TERM:-}" = "dumb" ]; then
+              cat
+              return
+            fi
+
+            awk '
+              BEGIN {
+                escape = sprintf("%c", 27)
+                reset = escape "[0m"
+                dim = escape "[2m"
+                green = escape "[32m"
+                yellow = escape "[33m"
+                blue = escape "[34m"
+                magenta = escape "[35m"
+                cyan = escape "[36m"
+              }
+              /^\[CheckoutKitSwiftDemo\]/ { print green $0 reset; next }
+              /^\[UCP\]/ { print cyan $0 reset; next }
+              /^\[Preload\]/ { print magenta $0 reset; next }
+              /^\[AcceleratedCheckout\]/ { print yellow $0 reset; next }
+              /^\[E2E\]/ { print blue $0 reset; next }
+              /^objc\[/ { print dim $0 reset; next }
+              { print }
+            '
+          }
+
+          xcrun simctl launch --terminate-running-process --console-pty "$DEVICE_ID" com.shopify.checkoutkit.swiftdemo | colorize_logs
 
       e2e:
         desc: Run the Swift sample Maestro tests, filtered by tag
