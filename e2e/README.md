@@ -54,13 +54,15 @@ dev swift e2e launch-smoke --tags preload
 ```
 
 Tag lists match **any** listed tag, including secondary tags such as `smoke` and
-`full` when they occur on tests enabled for the application. Positional files
-select exact flows and may be paths, filenames, or basenames without `.yaml`.
-Tags and files form a union,
-so the last example runs both launch and preload coverage. A file must belong to
-the application namespace and carry coverage enabled for that application.
-`--exclude-tags` adds exclusions to those configured in the matrix. `flaky` and
-`wip` are already excluded from every application by default.
+`full`, and remain limited by the application's matrix configuration. Positional
+files select exact flows and may be paths, filenames, or basenames without
+`.yaml`. Named files bypass the matrix include and exclude tags, which allows
+new or quarantined flows to run before they join a default or tag-selected run.
+They must still belong to the shared namespace or the target application's
+namespace. Tags and files form a union, so the last example runs both launch and
+preload coverage. `--exclude-tags` adds exclusions requested explicitly for that
+invocation. `flaky` and `wip` are excluded from automatic and tag-selected runs
+by default.
 
 ### Tags
 

@@ -89,6 +89,28 @@ class RunLocalE2ETest < Minitest::Test
     assert_includes error, "--exclude-tags needs a comma separated tag list"
   end
 
+  def test_matrix_exclusions_remain_separate_from_explicit_exclusions
+    output, error, status = Open3.capture3(
+      "bash",
+      "-c",
+      <<~'SH',
+        source "$1"
+        ruby() { printf '%s\n' '{"include_tags":["presentation"],"exclude_tags":["flaky","wip"]}'; }
+        configure_target swift-ios
+        INCLUDE_TAGS=""
+        EXCLUDE_TAGS="custom"
+        HAS_EXPLICIT_TAGS=false
+        load_application_tags
+        printf '%s\n%s\n' "$MATRIX_EXCLUDE_TAGS" "$EXCLUDE_TAGS"
+      SH
+      "run-local-e2e-test",
+      RUNNER
+    )
+
+    assert status.success?, error
+    assert_equal ["flaky,wip", "custom"], output.lines.map(&:chomp)
+  end
+
   def test_no_selectors_choose_every_eligible_test
     output, error, status = local_selection
 
@@ -127,11 +149,18 @@ class RunLocalE2ETest < Minitest::Test
     assert_includes error, "tests/swift/preload.yaml"
   end
 
-  def test_positional_selection_rejects_a_test_outside_application_coverage
-    _output, error, status = local_selection("completion")
+  def test_positional_selection_bypasses_application_coverage
+    output, error, status = local_selection("completion")
 
-    refute status.success?
-    assert_includes error, "tests/shared/completion.yaml is not enabled for swift-ios"
+    assert status.success?, error
+    assert_equal ["tests/shared/completion.yaml"], output.lines.map(&:chomp)
+  end
+
+  def test_positional_selection_bypasses_matrix_exclusions
+    output, error, status = local_selection("quarantined")
+
+    assert status.success?, error
+    assert_equal ["tests/shared/quarantined.yaml"], output.lines.map(&:chomp)
   end
 
   def test_maestro_runs_shared_and_target_specific_test_files
@@ -185,24 +214,25 @@ class RunLocalE2ETest < Minitest::Test
         CANDIDATE_TEST_FILES=(
           tests/shared/presentation.yaml
           tests/shared/completion.yaml
+          tests/shared/quarantined.yaml
           tests/swift/preload.yaml
         )
-        ELIGIBLE_TEST_FILES=(
-          tests/shared/presentation.yaml
-          tests/swift/preload.yaml
-        )
+        ELIGIBLE_TEST_FILES=()
         MATRIX_INCLUDE_TAGS="presentation,preload"
         MATRIX_EXCLUDE_TAGS="flaky,wip,android-only"
         ENABLED_TAGS=""
         RESOLVED_TEST_FILES=()
+        load_candidate_test_files() { :; }
         test_file_tags() {
           case "$1" in
             tests/shared/presentation.yaml) printf 'presentation,smoke\n' ;;
             tests/shared/completion.yaml) printf 'completion,full\n' ;;
+            tests/shared/quarantined.yaml) printf 'presentation,flaky\n' ;;
             tests/swift/preload.yaml) printf 'preload,smoke\n' ;;
           esac
         }
         parse_arguments "$@"
+        load_eligible_test_files
         load_enabled_tags
         validate_explicit_tags
         select_test_files

@@ -11,7 +11,7 @@ usage() {
 Usage: $DEV_COMMAND [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
 
 Runs the Maestro tests enabled for $TARGET in e2e/config/matrix.yml. Coverage tags
-select primary behaviors. Positional test files select exact enabled flows.
+select enabled behaviors. Positional test files directly select exact flows.
 
 Options:
   --tags TAG[,TAG...]           Run only tests carrying any of these tags.
@@ -133,8 +133,6 @@ load_application_tags() {
   if [ "$HAS_EXPLICIT_TAGS" = false ]; then
     INCLUDE_TAGS="$MATRIX_INCLUDE_TAGS"
   fi
-
-  EXCLUDE_TAGS="$(printf '%s' "${MATRIX_EXCLUDE_TAGS},${EXCLUDE_TAGS}" | tr ',' '\n' | awk 'NF && !seen[$0]++' | paste -sd, -)"
 }
 
 test_file_tags() {
@@ -168,9 +166,12 @@ load_eligible_test_files() {
   load_candidate_test_files
   ELIGIBLE_TEST_FILES=()
   local test_file
+  local tags
 
   for test_file in "${CANDIDATE_TEST_FILES[@]}"; do
-    if tag_lists_intersect "$(test_file_tags "$test_file")" "$MATRIX_INCLUDE_TAGS"; then
+    tags="$(test_file_tags "$test_file")"
+    if tag_lists_intersect "$tags" "$MATRIX_INCLUDE_TAGS" &&
+      ! tag_lists_intersect "$tags" "$MATRIX_EXCLUDE_TAGS"; then
       ELIGIBLE_TEST_FILES+=("$test_file")
     fi
   done
@@ -241,15 +242,7 @@ resolve_test_file() {
     return 1
   fi
 
-  for test_file in "${ELIGIBLE_TEST_FILES[@]}"; do
-    if [ "$test_file" = "${matches[0]}" ]; then
-      printf '%s\n' "$test_file"
-      return 0
-    fi
-  done
-
-  echo "${matches[0]} is not enabled for $TARGET" >&2
-  return 1
+  printf '%s\n' "${matches[0]}"
 }
 
 append_selected_test_file() {
