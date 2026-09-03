@@ -9,25 +9,29 @@ extension Storefront {
     static let operationName: String = "GetProducts"
     static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
-        #"query GetProducts($first: Int = 20, $country: CountryCode!, $language: LanguageCode!) @inContext(country: $country, language: $language) { products(first: $first) { __typename nodes { __typename id title handle description vendor requiresSellingPlan featuredImage { __typename url } collections(first: 1) { __typename nodes { __typename id title } } variants(first: 1) { __typename nodes { __typename id title availableForSale sellingPlanAllocations(first: 10) { __typename nodes { __typename sellingPlan { __typename id name } } } price { __typename amount currencyCode } } } } } }"#
+        #"query GetProducts($first: Int = 50, $after: String, $country: CountryCode!, $language: LanguageCode!) @inContext(country: $country, language: $language) { products(first: $first, after: $after, sortKey: CREATED_AT, reverse: true) { __typename nodes { __typename id title handle description vendor requiresSellingPlan featuredImage { __typename url } collections(first: 1) { __typename nodes { __typename id title } } variants(first: 1) { __typename nodes { __typename id title availableForSale sellingPlanAllocations(first: 10) { __typename nodes { __typename sellingPlan { __typename id name } } } price { __typename amount currencyCode } } } } pageInfo { __typename endCursor hasNextPage } } }"#
       ))
 
     public var first: GraphQLNullable<Int32>
+    public var after: GraphQLNullable<String>
     public var country: GraphQLEnum<CountryCode>
     public var language: GraphQLEnum<LanguageCode>
 
     public init(
-      first: GraphQLNullable<Int32> = 20,
+      first: GraphQLNullable<Int32> = 50,
+      after: GraphQLNullable<String>,
       country: GraphQLEnum<CountryCode>,
       language: GraphQLEnum<LanguageCode>
     ) {
       self.first = first
+      self.after = after
       self.country = country
       self.language = language
     }
 
     @_spi(Unsafe) public var __variables: Variables? { [
       "first": first,
+      "after": after,
       "country": country,
       "language": language
     ] }
@@ -38,7 +42,12 @@ extension Storefront {
 
       static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.QueryRoot }
       static var __selections: [ApolloAPI.Selection] { [
-        .field("products", Products.self, arguments: ["first": .variable("first")]),
+        .field("products", Products.self, arguments: [
+          "first": .variable("first"),
+          "after": .variable("after"),
+          "sortKey": "CREATED_AT",
+          "reverse": true
+        ]),
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
         GetProductsQuery.Data.self
@@ -60,6 +69,7 @@ extension Storefront {
         static var __selections: [ApolloAPI.Selection] { [
           .field("__typename", String.self),
           .field("nodes", [Node].self),
+          .field("pageInfo", PageInfo.self),
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           GetProductsQuery.Data.Products.self
@@ -67,6 +77,8 @@ extension Storefront {
 
         /// A list of the nodes contained in ProductEdge.
         var nodes: [Node] { __data["nodes"] }
+        /// Information to aid in pagination.
+        var pageInfo: PageInfo { __data["pageInfo"] }
 
         /// Products.Node
         ///
@@ -322,6 +334,29 @@ extension Storefront {
               }
             }
           }
+        }
+
+        /// Products.PageInfo
+        ///
+        /// Parent Type: `PageInfo`
+        nonisolated struct PageInfo: Storefront.SelectionSet {
+          let __data: DataDict
+          init(_dataDict: DataDict) { __data = _dataDict }
+
+          static var __parentType: any ApolloAPI.ParentType { Storefront.Objects.PageInfo }
+          static var __selections: [ApolloAPI.Selection] { [
+            .field("__typename", String.self),
+            .field("endCursor", String?.self),
+            .field("hasNextPage", Bool.self),
+          ] }
+          static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
+            GetProductsQuery.Data.Products.PageInfo.self
+          ] }
+
+          /// The cursor corresponding to the last node in edges.
+          var endCursor: String? { __data["endCursor"] }
+          /// Whether there are more pages to fetch following the current page.
+          var hasNextPage: Bool { __data["hasNextPage"] }
         }
       }
     }

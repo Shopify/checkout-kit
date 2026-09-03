@@ -275,6 +275,8 @@ class ProductCache: ObservableObject {
     @Published public var cachedProduct: Product?
     @Published public var isFetching: Bool = false
     @Published public var collection: [Product]?
+    private var endCursor: String?
+    private var hasNextPage = false
 
     func getProduct(handle: String?, completion: @escaping (Product?) -> Void) {
         if let product = cachedProduct {
@@ -293,6 +295,7 @@ class ProductCache: ObservableObject {
 
         let query = Storefront.GetProductsQuery(
             first: .some(1),
+            after: .none,
             country: network.countryCode,
             language: network.languageCode
         )
@@ -305,15 +308,31 @@ class ProductCache: ObservableObject {
         }
     }
 
-    public func fetchCollection(limit: Int = 20) async {
-        await fetchCollection(limit: limit, cachePolicy: .cacheFirst)
+    public func fetchCollection(limit: Int = 50) async {
+        await fetchCollection(limit: limit, after: nil, cachePolicy: .cacheFirst, replacingCollection: true)
     }
 
-    public func refreshCollection(limit: Int = 20) async {
-        await fetchCollection(limit: limit, cachePolicy: .networkOnly)
+    public func refreshCollection(limit: Int = 50) async {
+        await fetchCollection(limit: limit, after: nil, cachePolicy: .networkOnly, replacingCollection: true)
     }
 
-    private func fetchCollection(limit: Int, cachePolicy: CachePolicy.Query.SingleResponse) async {
+    public func fetchNextCollectionPage(limit: Int = 50) async {
+        guard hasNextPage, let endCursor else { return }
+
+        await fetchCollection(
+            limit: limit,
+            after: endCursor,
+            cachePolicy: .cacheFirst,
+            replacingCollection: false
+        )
+    }
+
+    private func fetchCollection(
+        limit: Int,
+        after: String?,
+        cachePolicy: CachePolicy.Query.SingleResponse,
+        replacingCollection: Bool
+    ) async {
         guard !isFetching else { return }
 
         isFetching = true
@@ -322,14 +341,24 @@ class ProductCache: ObservableObject {
         let network = Network.shared
         let query = Storefront.GetProductsQuery(
             first: .some(Int32(limit)),
+            after: after.map(GraphQLNullable.some) ?? .none,
             country: network.countryCode,
             language: network.languageCode
         )
 
         do {
             let response = try await network.apollo.fetch(query: query, cachePolicy: cachePolicy)
-            collection = response.data?.products.nodes
-            cachedProduct = response.data?.products.nodes.first
+            guard let products = response.data?.products else { return }
+
+            if replacingCollection {
+                collection = products.nodes
+                cachedProduct = products.nodes.first
+            } else {
+                collection = (collection ?? []) + products.nodes
+            }
+
+            endCursor = products.pageInfo.endCursor
+            hasNextPage = products.pageInfo.hasNextPage
         } catch {
             // Fetch failed silently
         }
@@ -354,7 +383,9 @@ struct ProductGalleryView: View {
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         .task {
-            await productCache.fetchCollection()
+            if productCache.collection == nil {
+                await productCache.fetchCollection()
+            }
         }
     }
 }

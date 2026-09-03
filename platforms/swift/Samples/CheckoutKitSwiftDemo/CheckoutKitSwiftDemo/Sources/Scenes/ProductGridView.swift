@@ -20,6 +20,11 @@ struct ProductGridView: View {
                             .onTapGesture {
                                 selectProductAndShowSheet(for: product)
                             }
+                            .task(id: product.id == products.last?.id) {
+                                if product.id == products.last?.id {
+                                    await productCache.fetchNextCollectionPage()
+                                }
+                            }
                     }
                 } else {
                     Text("Loading products...")
@@ -28,6 +33,11 @@ struct ProductGridView: View {
             }
             .padding(.horizontal, 5)
             .padding(.top, 10)
+
+            if productCache.isFetching, productCache.collection != nil {
+                ProgressView()
+                    .padding()
+            }
         }
         .task {
             if productCache.collection == nil {

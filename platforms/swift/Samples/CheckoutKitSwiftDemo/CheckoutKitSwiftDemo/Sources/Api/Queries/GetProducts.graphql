@@ -1,5 +1,5 @@
-query GetProducts($first: Int = 20, $country: CountryCode!, $language: LanguageCode!) @inContext(country: $country, language: $language) {
-  products(first: $first) {
+query GetProducts($first: Int = 50, $after: String, $country: CountryCode!, $language: LanguageCode!) @inContext(country: $country, language: $language) {
+  products(first: $first, after: $after, sortKey: CREATED_AT, reverse: true) {
     nodes {
       id
       title
@@ -35,6 +35,10 @@ query GetProducts($first: Int = 20, $country: CountryCode!, $language: LanguageC
           }
         }
       }
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
     }
   }
 }
