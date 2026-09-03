@@ -2122,7 +2122,7 @@ PODS:
     - React-perflogger (= 0.80.2)
     - React-utils (= 0.80.2)
     - SocketRocket
-  - RNShopifyCheckoutKit (4.0.0-alpha.4):
+  - RNShopifyCheckoutKit (4.0.0-alpha.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -2464,7 +2464,7 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 8df342c127fd0c1e30e8b9f71ff814c22414a7c0
   ReactCodegen: 3ba2a79bc32ff858814c17ade10931b33b09dcf4
   ReactCommon: 592ef441605638b95e533653259254b4bd35ff4f
-  RNShopifyCheckoutKit: 46c834f8f0f66257daad261de0d2638d662c983e
+  RNShopifyCheckoutKit: 7424be393789079c7420a44c853fe52a543d6ad0
   ShopifyCheckoutKit: c98a992e7371f1173b7e030c183fa5fe1a694459
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: a742cc68e8366fcfc681808162492bc0aa7a9498
