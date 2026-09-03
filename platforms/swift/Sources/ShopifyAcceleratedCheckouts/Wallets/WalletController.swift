@@ -27,6 +27,15 @@ class WalletController: ObservableObject {
             let items = Array(repeating: GraphQLScalars.ID(id), count: quantity)
             return try await storefront.cartCreate(
                 with: items,
+                sellingPlanID: nil,
+                customer: configuration.customer
+            )
+
+        case let .subscriptionVariant(id, quantity, sellingPlanID):
+            let items = Array(repeating: GraphQLScalars.ID(id), count: quantity)
+            return try await storefront.cartCreate(
+                with: items,
+                sellingPlanID: GraphQLScalars.ID(sellingPlanID),
                 customer: configuration.customer
             )
 
