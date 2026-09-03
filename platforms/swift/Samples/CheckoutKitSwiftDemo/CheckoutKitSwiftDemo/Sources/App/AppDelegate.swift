@@ -1,3 +1,4 @@
+import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
 import UIKit
 
@@ -21,6 +22,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let checkoutKitLogLevel: LogLevel = getLogLevel(
             key: AppStorageKeys.checkoutKitLogLevel.rawValue
         )
+        let acceleratedCheckoutsLogLevel: LogLevel = getLogLevel(
+            key: AppStorageKeys.acceleratedCheckoutsLogLevel.rawValue
+        )
         let checkoutPreloadingEnabled = UserDefaults.standard.object(
             forKey: AppStorageKeys.checkoutPreloadingEnabled.rawValue
         ) as? Bool ?? true
@@ -32,8 +36,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             $0.logLevel = checkoutKitLogLevel
             $0.preloading.enabled = checkoutPreloadingEnabled
         }
+        ShopifyAcceleratedCheckouts.logLevel = acceleratedCheckoutsLogLevel
 
         print("[CheckoutKitSwiftDemo] CheckoutKit Log level set to \(checkoutKitLogLevel)")
+        print(
+            "[CheckoutKitSwiftDemo] Accelerated Checkouts Log level set to \(acceleratedCheckoutsLogLevel)"
+        )
 
         UIBarButtonItem.appearance().tintColor = ColorPalette.primaryColor
 
